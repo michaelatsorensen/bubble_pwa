@@ -337,6 +337,26 @@ select.input { appearance: none; }
 .thread-input-row { display: flex; gap: 0.5rem; padding: 0.75rem 1.25rem max(env(safe-area-inset-bottom), 0.75rem); background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0; }
 .thread-input { flex: 1; padding: 0.65rem 1rem; background: var(--card); border: 1px solid var(--border); border-radius: 99px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 0.9rem; outline: none; }
 .send-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); border: none; color: white; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* ── Main nav cards (home dashboard) ── */
+.main-nav-card {
+  border-radius: 20px;
+  padding: 1.1rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.main-nav-card:active { transform: scale(0.98); }
+.card-bobler  { background: linear-gradient(135deg,rgba(108,99,255,0.15),rgba(108,99,255,0.05)); border: 1px solid rgba(108,99,255,0.25); }
+.card-beskeder{ background: linear-gradient(135deg,rgba(255,101,132,0.15),rgba(255,101,132,0.05)); border: 1px solid rgba(255,101,132,0.25); }
+.card-notif   { background: linear-gradient(135deg,rgba(67,232,176,0.15),rgba(67,232,176,0.05)); border: 1px solid rgba(67,232,176,0.25); }
+.main-nav-icon { width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0; }
+.main-nav-badge { min-width:26px;height:26px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;padding:0 6px;flex-shrink:0; }
+.badge-bobler  { background:rgba(108,99,255,0.3);color:#a9a3ff; }
+.badge-beskeder{ background:rgba(255,101,132,0.3);color:#ff8fa3; }
+.badge-notif   { background:rgba(67,232,176,0.3);color:#43e8b0; }
 </style>
 <script>
 window.onerror = function(msg, src, line, col, err) {
@@ -476,43 +496,118 @@ window.onunhandledrejection = function(e) {
   <div class="status-bar"><span id="home-time">9:41</span><span></span></div>
   <div class="topbar">
     <div class="topbar-logo" onclick="goTo('screen-home')" style="cursor:pointer">bubble</div>
-    <div style="display:flex;gap:0.75rem;align-items:center">
-      <div style="position:relative;cursor:pointer" onclick="goTo('screen-messages')">
-        <span style="font-size:1.3rem">💬</span>
-        <div class="notif-dot" id="msg-notif" style="display:none"></div>
-      </div>
-      <div class="avatar" style="background:linear-gradient(135deg,#6c63ff,#ff6584);cursor:pointer;width:34px;height:34px;font-size:0.8rem" id="home-avatar" onclick="goTo('screen-profile')">?</div>
-    </div>
+    <div class="avatar" style="background:linear-gradient(135deg,#6c63ff,#ff6584);cursor:pointer;width:34px;height:34px;font-size:0.8rem" id="home-avatar" onclick="goTo('screen-profile')">?</div>
   </div>
+
   <div class="scroll-area" id="home-scroll">
-    <!-- Radar card -->
-    <div class="radar-card">
-      <div style="font-size:0.95rem;font-weight:700;margin-bottom:0.25rem">📡 Din radar er aktiv</div>
-      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.85rem" id="radar-subtitle">Du er synlig i dine bobler</div>
-      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.85rem">
-        <div class="live-dot"></div><div class="live-dot" style="animation-delay:0.4s"></div><div class="live-dot" style="animation-delay:0.8s"></div>
-        <span style="font-size:0.78rem;color:var(--muted)" id="radar-count">Henter matches...</span>
-      </div>
-      <button class="btn-sm btn-accent" style="width:100%" onclick="goTo('screen-discover')">Opdag nye bobler →</button>
+
+    <!-- Greeting -->
+    <div style="padding:0.25rem 0 1.25rem">
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.2rem">Goddag,</div>
+      <div style="font-size:1.4rem;font-weight:700" id="home-greeting-name">👋</div>
     </div>
 
+    <!-- 3 main cards -->
+    <div style="display:flex;flex-direction:column;gap:0.85rem;margin-bottom:1.25rem">
+
+      <!-- Bobler -->
+      <div class="main-nav-card card-bobler" onclick="goTo('screen-bubbles')">
+        <div class="main-nav-icon" style="background:rgba(108,99,255,0.2)">🫧</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:1rem;margin-bottom:0.2rem">Bobler</div>
+          <div style="font-size:0.78rem;color:var(--muted)" id="home-bubbles-sub">Henter...</div>
+        </div>
+        <div class="main-nav-badge badge-bobler" id="home-bubbles-badge" style="display:none"></div>
+        <div style="color:var(--muted);font-size:1rem">›</div>
+      </div>
+
+      <!-- Beskeder -->
+      <div class="main-nav-card card-beskeder" onclick="goTo('screen-messages')">
+        <div class="main-nav-icon" style="background:rgba(255,101,132,0.2)">💬</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:1rem;margin-bottom:0.2rem">Beskeder</div>
+          <div style="font-size:0.78rem;color:var(--muted)" id="home-messages-sub">Henter...</div>
+        </div>
+        <div class="main-nav-badge badge-beskeder" id="home-messages-badge" style="display:none"></div>
+        <div style="color:var(--muted);font-size:1rem">›</div>
+      </div>
+
+      <!-- Notifikationer -->
+      <div class="main-nav-card card-notif" onclick="goTo('screen-notifications')">
+        <div class="main-nav-icon" style="background:rgba(67,232,176,0.2)">🔔</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:1rem;margin-bottom:0.2rem">Notifikationer</div>
+          <div style="font-size:0.78rem;color:var(--muted)" id="home-notif-sub">Henter...</div>
+        </div>
+        <div class="main-nav-badge badge-notif" id="home-notif-badge" style="display:none"></div>
+        <div style="color:var(--muted);font-size:1rem">›</div>
+      </div>
+
+    </div>
+
+    <!-- Radar strip -->
+    <div style="background:var(--surface);border-radius:16px;padding:0.85rem 1.1rem;display:flex;align-items:center;gap:0.75rem;border:1px solid rgba(255,255,255,0.04)">
+      <div class="live-dot"></div>
+      <div style="flex:1;font-size:0.8rem;color:var(--muted)">
+        <strong style="color:var(--text)">Din radar er aktiv</strong>
+        <span id="radar-count-home"> · Henter...</span>
+      </div>
+      <button class="btn-sm btn-ghost" onclick="goTo('screen-discover')" style="font-size:0.75rem;white-space:nowrap">Opdag →</button>
+    </div>
+
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span>Hjem</button>
+    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon">🔍</span>Opdag</button>
+    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative">💬<div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
+    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon">👤</span>Profil</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: BUBBLES
+════════════════════════════════════════ -->
+<div class="screen" id="screen-bubbles">
+  <div class="status-bar"><span>9:41</span><span></span></div>
+  <div class="topbar">
+    <button class="back-btn" onclick="goTo('screen-home')">← Tilbage</button>
+    <div class="topbar-logo">Bobler</div>
+    <button class="btn-sm btn-ghost" onclick="openCreateBubble()" style="font-size:0.75rem;padding:0.35rem 0.75rem">+ Ny</button>
+  </div>
+  <div class="scroll-area">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
       <div class="section-label" style="margin:0">👑 Bobler jeg ejer</div>
-      <button class="btn-sm btn-ghost" onclick="openCreateBubble()" style="font-size:0.75rem;padding:0.35rem 0.75rem">+ Ny boble</button>
     </div>
-    <div id="my-owned-bubbles-list">
-      <div class="spinner"></div>
-    </div>
+    <div id="my-owned-bubbles-list"><div class="spinner"></div></div>
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin:1.25rem 0 0.75rem">
       <div class="section-label" style="margin:0">🫧 Bobler jeg er med i</div>
     </div>
-    <div id="my-bubbles-list">
-      <div class="spinner"></div>
-    </div>
+    <div id="my-bubbles-list"><div class="spinner"></div></div>
   </div>
   <div class="bottom-nav">
-    <button class="nav-item active" onclick="goTo('screen-home')"><span class="nav-icon">🫧</span>Bobler</button>
+    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span>Hjem</button>
+    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon">🔍</span>Opdag</button>
+    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative">💬<div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
+    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon">👤</span>Profil</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: NOTIFICATIONS
+════════════════════════════════════════ -->
+<div class="screen" id="screen-notifications">
+  <div class="status-bar"><span>9:41</span><span></span></div>
+  <div class="topbar">
+    <button class="back-btn" onclick="goTo('screen-home')">← Tilbage</button>
+    <div class="topbar-logo">Notifikationer</div>
+  </div>
+  <div class="scroll-area">
+    <div id="notifications-list"><div class="spinner"></div></div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span>Hjem</button>
     <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon">🔍</span>Opdag</button>
     <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative">💬<div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
     <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon">👤</span>Profil</button>
@@ -534,7 +629,7 @@ window.onunhandledrejection = function(e) {
     <div id="all-bubbles-list"><div class="spinner"></div></div>
   </div>
   <div class="bottom-nav">
-    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🫧</span>Bobler</button>
+    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span>Hjem</button>
     <button class="nav-item active" onclick="goTo('screen-discover')"><span class="nav-icon">🔍</span>Opdag</button>
     <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative">💬<div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
     <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon">👤</span>Profil</button>
@@ -564,7 +659,7 @@ window.onunhandledrejection = function(e) {
     </div>
   </div>
   <div class="bottom-nav">
-    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🫧</span>Bobler</button>
+    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span>Hjem</button>
     <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon">🔍</span>Opdag</button>
     <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative">💬<div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
     <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon">👤</span>Profil</button>
@@ -636,7 +731,7 @@ window.onunhandledrejection = function(e) {
     <div id="conversations-list"><div class="spinner"></div></div>
   </div>
   <div class="bottom-nav">
-    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🫧</span>Bobler</button>
+    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span>Hjem</button>
     <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon">🔍</span>Opdag</button>
     <button class="nav-item active" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative">💬<div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
     <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon">👤</span>Profil</button>
@@ -697,7 +792,7 @@ window.onunhandledrejection = function(e) {
     </div>
   </div>
   <div class="bottom-nav">
-    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🫧</span>Bobler</button>
+    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span>Hjem</button>
     <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon">🔍</span>Opdag</button>
     <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative">💬<div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
     <button class="nav-item active"><span class="nav-icon">👤</span>Profil</button>
@@ -923,6 +1018,8 @@ function goTo(screenId) {
 
   // Load data for screen
   if (screenId === 'screen-home') loadHome();
+  if (screenId === 'screen-bubbles') loadMyBubbles();
+  if (screenId === 'screen-notifications') loadNotifications();
   if (screenId === 'screen-discover') loadDiscover();
   if (screenId === 'screen-messages') loadMessages();
   if (screenId === 'screen-profile') loadProfile();
@@ -1049,8 +1146,63 @@ function switchToLogin() {
 async function loadHome() {
   if (!currentProfile) await loadCurrentProfile();
   updateHomeAvatar();
-  await loadMyBubbles();
-  updateRadarCount();
+
+  // Greeting
+  const nameEl = document.getElementById('home-greeting-name');
+  if (nameEl && currentProfile?.name) {
+    nameEl.textContent = (currentProfile.name.split(' ')[0]) + ' 👋';
+  }
+
+  // Load all dashboard data in parallel
+  await Promise.all([
+    loadHomeBubblesCard(),
+    loadHomeMessagesCard(),
+    loadHomeNotifCard(),
+    updateRadarCount(),
+  ]);
+
+  // Also load bubbles screen data if it exists
+  loadMyBubbles();
+}
+
+async function loadHomeBubblesCard() {
+  const sub = document.getElementById('home-bubbles-sub');
+  const badge = document.getElementById('home-bubbles-badge');
+  const { data: memberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+  const count = memberships?.length || 0;
+  if (sub) sub.textContent = count > 0 ? `${count} aktiv${count !== 1 ? 'e' : ''} boble${count !== 1 ? 'r' : ''}` : 'Du er ikke i nogen bobler endnu';
+  if (badge) { badge.textContent = count; badge.style.display = count > 0 ? 'flex' : 'none'; }
+}
+
+async function loadHomeMessagesCard() {
+  const sub = document.getElementById('home-messages-sub');
+  const badge = document.getElementById('home-messages-badge');
+  const { data: msgs } = await sb.from('messages')
+    .select('*').or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+    .order('created_at', {ascending:false}).limit(1);
+  const { count: unread } = await sb.from('messages')
+    .select('*', {count:'exact',head:true}).eq('receiver_id', currentUser.id).is('read_at', null);
+  if (sub) sub.textContent = unread > 0 ? `${unread} ulæste beskeder` : msgs?.length > 0 ? `Sidst: "${msgs[0].content?.slice(0,30)}..."` : 'Ingen beskeder endnu';
+  if (badge) { badge.textContent = unread; badge.style.display = unread > 0 ? 'flex' : 'none'; }
+}
+
+async function loadHomeNotifCard() {
+  const sub = document.getElementById('home-notif-sub');
+  const badge = document.getElementById('home-notif-badge');
+  // Count new bubble members since last 7 days
+  const since = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+  const { data: memberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+  if (!memberships || memberships.length === 0) {
+    if (sub) sub.textContent = 'Ingen notifikationer';
+    return;
+  }
+  const ids = memberships.map(m => m.bubble_id);
+  const { count } = await sb.from('bubble_members')
+    .select('*', {count:'exact',head:true})
+    .in('bubble_id', ids).neq('user_id', currentUser.id).gte('joined_at', since);
+  const n = count || 0;
+  if (sub) sub.textContent = n > 0 ? `${n} nye i dine bobler` : 'Ingen nye notifikationer';
+  if (badge) { badge.textContent = n; badge.style.display = n > 0 ? 'flex' : 'none'; }
 }
 
 async function loadMyBubbles() {
@@ -1115,14 +1267,14 @@ async function loadMyBubbles() {
 
 async function updateRadarCount() {
   const { data: memberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+  const rcEl = document.getElementById('radar-count-home');
   if (!memberships || memberships.length === 0) {
-    document.getElementById('radar-count').textContent = 'Join en boble for at se matches';
+    if (rcEl) rcEl.textContent = ' · Join en boble for at se matches';
     return;
   }
   const ids = memberships.map(m => m.bubble_id);
   const { count } = await sb.from('bubble_members').select('*', {count:'exact',head:true}).in('bubble_id', ids).neq('user_id', currentUser.id);
-  document.getElementById('radar-count').textContent = `${count || 0} profiler synlige i dine bobler`;
-  document.getElementById('radar-subtitle').textContent = `Du er synlig i ${memberships.length} boble${memberships.length !== 1 ? 'r' : ''}`;
+  if (rcEl) rcEl.textContent = ` · ${count || 0} profiler synlige i dine bobler`;
 }
 
 function bubbleCard(b, joined) {
@@ -1989,6 +2141,42 @@ async function handleGoogleLogin() {
 // ══════════════════════════════════════════════════════════
 //  BOOT
 // ══════════════════════════════════════════════════════════
+async function loadNotifications() {
+  const list = document.getElementById('notifications-list');
+  if (!list) return;
+  list.innerHTML = '<div class="spinner"></div>';
+  const { data: memberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+  if (!memberships || memberships.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">🔔</div><div class="empty-text">Ingen notifikationer endnu</div></div>';
+    return;
+  }
+  const ids = memberships.map(m => m.bubble_id);
+  const since = new Date(Date.now() - 30*24*60*60*1000).toISOString();
+  const { data: newMembers } = await sb.from('bubble_members')
+    .select('user_id, joined_at, bubble_id, bubbles(name)')
+    .in('bubble_id', ids).neq('user_id', currentUser.id)
+    .gte('joined_at', since).order('joined_at', {ascending:false}).limit(30);
+  if (!newMembers || newMembers.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">🔔</div><div class="empty-text">Ingen nye aktiviteter</div></div>';
+    return;
+  }
+  const userIds = [...new Set(newMembers.map(m => m.user_id))];
+  const { data: profiles } = await sb.from('profiles').select('id,name,title').in('id', userIds);
+  const pMap = Object.fromEntries((profiles||[]).map(p=>[p.id,p]));
+  list.innerHTML = newMembers.map(m => {
+    const p = pMap[m.user_id] || {};
+    const initials = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const time = new Date(m.joined_at).toLocaleDateString('da-DK', {day:'numeric',month:'short'});
+    return `<div class="card" style="display:flex;align-items:center;gap:0.85rem">
+      <div class="avatar" style="background:linear-gradient(135deg,#6c63ff,#ff6584)">${initials}</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:0.9rem">${escHtml(p.name||'Ukendt')}</div>
+        <div style="font-size:0.78rem;color:var(--muted)">Joined ${escHtml(m.bubbles?.name||'')} · ${time}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 updateClock();
 setInterval(updateClock, 10000);
 window.addEventListener('load', async () => {
