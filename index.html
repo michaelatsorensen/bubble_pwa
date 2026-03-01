@@ -434,277 +434,79 @@ select.input { appearance:none; }
 
 
 /* ══ THEMES ══ */
-body[data-theme="arctic"] {
-  --bg:#F8F9FB; --bg2:#FFFFFF; --card:#FFFFFF; --card2:#EEF1F5;
-  --border:#E2E6ED; --text:#0D1117; --text2:#3D4A5C; --muted:#8A96A8;
-  --accent:#2563EB; --accent2:#DC2626; --accent-bg:#EFF6FF;
-  --green:#059669; --green-bg:#ECFDF5;
-  --nav-bg:#FFFFFF; --topbar-bg:#FFFFFF;
-  --shadow:0 1px 3px rgba(0,0,0,0.07),0 4px 12px rgba(0,0,0,0.05);
-  --shadow-sm:0 1px 2px rgba(0,0,0,0.05);
-  --radius:12px; --radius-sm:8px;
-  --score-bg:#EFF6FF; --score-color:#2563EB;
-  --tag-bg:#EEF1F5; --tag-color:#3D4A5C;
-  --active-dot:#059669;
-  --font:'DM Sans',sans-serif;
-  --logo-color:#2563EB;
-  --accent-gradient:linear-gradient(135deg,#2563EB,#3B82F6);
-}
 
-/* 2. MIDNIGHT — Mørk, elegant, premium */
+/* Helper mixin — alle temaer skal definere disse tokens */
+
+/* 1. MIDNIGHT — Default. Dyb, premium, mørk */
 body[data-theme="midnight"] {
-  --bg:#0A0E1A; --bg2:#111827; --card:#151C2C; --card2:#1C2537;
-  --border:#1E2D45; --text:#F0F4FF; --text2:#A8B8D0; --muted:#5A7090;
-  --accent:#60A5FA; --accent2:#F472B6; --accent-bg:#172035;
-  --green:#34D399; --green-bg:#064231;
-  --nav-bg:#111827; --topbar-bg:#0D1220;
-  --shadow:0 2px 8px rgba(0,0,0,0.4),0 0 0 1px rgba(255,255,255,0.04);
-  --shadow-sm:0 1px 3px rgba(0,0,0,0.3);
-  --radius:14px; --radius-sm:9px;
-  --score-bg:#172035; --score-color:#60A5FA;
-  --tag-bg:#1C2537; --tag-color:#A8B8D0;
-  --active-dot:#34D399;
-  --font:'Sora',sans-serif;
-  --logo-color:#60A5FA;
-  --accent-gradient:linear-gradient(135deg,#3B82F6,#8B5CF6);
+  --bg:#07090F; --surface:#0F1117; --card:#161B27; --card-hover:#1C2235;
+  --border:#1E2740; --border-subtle:#151D30;
+  --text:#EEF2FF; --text-secondary:#8896B3; --muted:#4A5568;
+  --accent:#6C63FF; --accent2:#FF6584; --accent3:#43E8B0;
+  --accent-soft:rgba(108,99,255,0.12); --gold:#F5C35A;
+  --radius:16px; --radius-sm:10px; --radius-xs:8px;
+  --shadow:0 4px 24px rgba(0,0,0,0.4); --shadow-sm:0 2px 8px rgba(0,0,0,0.25);
+  --glow:0 0 24px rgba(108,99,255,0.18);
+  --accent-gradient:linear-gradient(135deg,#6C63FF,#8B83FF);
+  --font:'Outfit',sans-serif;
 }
 
-/* 3. FOREST — Naturlig, varm, organisk */
-body[data-theme="forest"] {
-  --bg:#F2F5F0; --bg2:#FAFCF8; --card:#FFFFFF; --card2:#E8EDE4;
-  --border:#D4DBCC; --text:#1A2214; --text2:#3D5030; --muted:#7A906A;
-  --accent:#2D6A4F; --accent2:#B5451B; --accent-bg:#D8F3DC;
-  --green:#1B7A4A; --green-bg:#DCFCE7;
-  --nav-bg:#FAFCF8; --topbar-bg:#FAFCF8;
-  --shadow:0 1px 3px rgba(45,106,79,0.08),0 4px 12px rgba(0,0,0,0.05);
-  --shadow-sm:0 1px 2px rgba(0,0,0,0.04);
-  --radius:10px; --radius-sm:6px;
-  --score-bg:#D8F3DC; --score-color:#2D6A4F;
-  --tag-bg:#E8EDE4; --tag-color:#3D5030;
-  --active-dot:#1B7A4A;
-  --font:'DM Sans',sans-serif;
-  --logo-color:#2D6A4F;
-  --accent-gradient:linear-gradient(135deg,#2D6A4F,#40916C);
-}
-
-/* 4. CORAL — Varm, energisk, venlig */
-body[data-theme="coral"] {
-  --bg:#FFF8F6; --bg2:#FFFFFF; --card:#FFFFFF; --card2:#FDE8E2;
-  --border:#F5C9BE; --text:#2D1410; --text2:#6B3020; --muted:#C08070;
-  --accent:#E8450A; --accent2:#0891B2; --accent-bg:#FDE8E2;
-  --green:#059669; --green-bg:#ECFDF5;
-  --nav-bg:#FFFFFF; --topbar-bg:#FFFFFF;
-  --shadow:0 1px 3px rgba(232,69,10,0.08),0 4px 12px rgba(0,0,0,0.06);
-  --shadow-sm:0 1px 2px rgba(0,0,0,0.05);
-  --radius:16px; --radius-sm:10px;
-  --score-bg:#FDE8E2; --score-color:#E8450A;
-  --tag-bg:#FDE8E2; --tag-color:#6B3020;
-  --active-dot:#059669;
-  --font:'Space Grotesk',sans-serif;
-  --logo-color:#E8450A;
-  --accent-gradient:linear-gradient(135deg,#E8450A,#F97316);
-}
-
-/* 5. SLATE — Neutral, seriøs, enterprise */
-body[data-theme="slate"] {
-  --bg:#F1F3F6; --bg2:#FFFFFF; --card:#FFFFFF; --card2:#E5E9EF;
-  --border:#D0D5DE; --text:#111827; --text2:#374151; --muted:#9CA3AF;
-  --accent:#374151; --accent2:#6366F1; --accent-bg:#F3F4F6;
-  --green:#059669; --green-bg:#ECFDF5;
-  --nav-bg:#FFFFFF; --topbar-bg:#FFFFFF;
-  --shadow:0 1px 2px rgba(0,0,0,0.06),0 3px 8px rgba(0,0,0,0.04);
-  --shadow-sm:0 1px 2px rgba(0,0,0,0.04);
-  --radius:8px; --radius-sm:5px;
-  --score-bg:#F3F4F6; --score-color:#374151;
-  --tag-bg:#E5E9EF; --tag-color:#374151;
-  --active-dot:#059669;
-  --font:'Space Grotesk',sans-serif;
-  --logo-color:#111827;
-  --accent-gradient:linear-gradient(135deg,#374151,#4B5563);
-}
-
-/* 6. VIOLET — Moderne, kreativ, tech */
-body[data-theme="violet"] {
-  --bg:#F5F3FF; --bg2:#FFFFFF; --card:#FFFFFF; --card2:#EDE9FE;
-  --border:#DDD6FE; --text:#1E1B4B; --text2:#4338CA; --muted:#8B5CF6;
-  --accent:#7C3AED; --accent2:#DB2777; --accent-bg:#EDE9FE;
-  --green:#059669; --green-bg:#ECFDF5;
-  --nav-bg:#FFFFFF; --topbar-bg:#FFFFFF;
-  --shadow:0 1px 3px rgba(124,58,237,0.1),0 4px 12px rgba(124,58,237,0.07);
-  --shadow-sm:0 1px 2px rgba(124,58,237,0.06);
-  --radius:14px; --radius-sm:9px;
-  --score-bg:#EDE9FE; --score-color:#7C3AED;
-  --tag-bg:#EDE9FE; --tag-color:#4338CA;
-  --active-dot:#059669;
-  --font:'Sora',sans-serif;
-  --logo-color:#7C3AED;
-  --accent-gradient:linear-gradient(135deg,#7C3AED,#A855F7);
-}
-
-/* 7. OCEAN — Dyb, frisk, rolig */
-body[data-theme="ocean"] {
-  --bg:#EBF4FC; --bg2:#FFFFFF; --card:#FFFFFF; --card2:#DBEAFE;
-  --border:#BFDBFE; --text:#0C2340; --text2:#1E4D7B; --muted:#60A0C8;
-  --accent:#0066CC; --accent2:#0891B2; --accent-bg:#DBEAFE;
-  --green:#0891B2; --green-bg:#CFFAFE;
-  --nav-bg:#FFFFFF; --topbar-bg:#FFFFFF;
-  --shadow:0 1px 3px rgba(0,102,204,0.08),0 4px 12px rgba(0,102,204,0.07);
-  --shadow-sm:0 1px 2px rgba(0,102,204,0.05);
-  --radius:14px; --radius-sm:9px;
-  --score-bg:#DBEAFE; --score-color:#0066CC;
-  --tag-bg:#DBEAFE; --tag-color:#1E4D7B;
-  --active-dot:#0891B2;
-  --font:'DM Sans',sans-serif;
-  --logo-color:#0066CC;
-  --accent-gradient:linear-gradient(135deg,#0066CC,#0EA5E9);
-}
-
-/* 8. NOIR — Dramatisk, high-contrast, eksklusiv */
+/* 2. NOIR — Ultra-mørk, high-contrast, eksklusiv */
 body[data-theme="noir"] {
-  --bg:#0C0C0C; --bg2:#141414; --card:#1A1A1A; --card2:#222222;
-  --border:#2A2A2A; --text:#F5F5F5; --text2:#C0C0C0; --muted:#666666;
-  --accent:#FFFFFF; --accent2:#FFD700; --accent-bg:#252525;
-  --green:#50C878; --green-bg:#0A2A15;
-  --nav-bg:#141414; --topbar-bg:#0C0C0C;
-  --shadow:0 2px 8px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.05);
-  --shadow-sm:0 1px 3px rgba(0,0,0,0.5);
-  --radius:6px; --radius-sm:4px;
-  --score-bg:#252525; --score-color:#FFFFFF;
-  --tag-bg:#222222; --tag-color:#C0C0C0;
-  --active-dot:#50C878;
+  --bg:#0A0A0A; --surface:#111111; --card:#181818; --card-hover:#202020;
+  --border:#2A2A2A; --border-subtle:#1C1C1C;
+  --text:#F5F5F5; --text-secondary:#909090; --muted:#444444;
+  --accent:#FFFFFF; --accent2:#FFD700; --accent3:#50C878;
+  --accent-soft:rgba(255,255,255,0.07); --gold:#FFD700;
+  --radius:10px; --radius-sm:6px; --radius-xs:4px;
+  --shadow:0 4px 20px rgba(0,0,0,0.7); --shadow-sm:0 2px 8px rgba(0,0,0,0.5);
+  --glow:0 0 20px rgba(255,255,255,0.06);
+  --accent-gradient:linear-gradient(135deg,#444,#666);
   --font:'DM Mono',monospace;
-  --logo-color:#FFFFFF;
-  --accent-gradient:linear-gradient(135deg,#333,#555);
 }
 
-/* 9. SUNSET — Lekker, varm gradient, social */
-body[data-theme="sunset"] {
-  --bg:#FFF7F0; --bg2:#FFFFFF; --card:#FFFFFF; --card2:#FEE8D5;
-  --border:#FBD0AC; --text:#2C1A0E; --text2:#7B3A10; --muted:#C2845A;
-  --accent:#EA580C; --accent2:#9333EA; --accent-bg:#FEE8D5;
-  --green:#16A34A; --green-bg:#DCFCE7;
-  --nav-bg:#FFFFFF; --topbar-bg:#FFFFFF;
-  --shadow:0 1px 3px rgba(234,88,12,0.08),0 4px 12px rgba(0,0,0,0.06);
-  --shadow-sm:0 1px 2px rgba(0,0,0,0.04);
-  --radius:18px; --radius-sm:11px;
-  --score-bg:#FEE8D5; --score-color:#EA580C;
-  --tag-bg:#FEE8D5; --tag-color:#7B3A10;
-  --active-dot:#16A34A;
-  --font:'Sora',sans-serif;
-  --logo-color:#EA580C;
-  --accent-gradient:linear-gradient(135deg,#EA580C,#F97316,#FBBF24);
-}
-
-/* 10. NORDIC — Skandinavisk, minimalt, tillidsfuldt */
-body[data-theme="nordic"] {
-  --bg:#F5F0EB; --bg2:#FDFAF7; --card:#FDFAF7; --card2:#EDE5DC;
-  --border:#D8CDBF; --text:#1C1612; --text2:#4A3D30; --muted:#9A8A78;
-  --accent:#4A3D30; --accent2:#C0392B; --accent-bg:#EDE5DC;
-  --green:#27AE60; --green-bg:#D5F5E3;
-  --nav-bg:#FDFAF7; --topbar-bg:#FDFAF7;
-  --shadow:0 1px 3px rgba(0,0,0,0.06),0 4px 10px rgba(0,0,0,0.04);
-  --shadow-sm:0 1px 2px rgba(0,0,0,0.04);
-  --radius:8px; --radius-sm:5px;
-  --score-bg:#EDE5DC; --score-color:#4A3D30;
-  --tag-bg:#EDE5DC; --tag-color:#4A3D30;
-  --active-dot:#27AE60;
+/* 3. ARCTIC — Lys, ren, klinisk præcis */
+body[data-theme="arctic"] {
+  --bg:#F4F6FA; --surface:#FFFFFF; --card:#FFFFFF; --card-hover:#F0F2F7;
+  --border:#DDE1EB; --border-subtle:#E8EBF2;
+  --text:#0D1117; --text-secondary:#4A5568; --muted:#9AA3B2;
+  --accent:#3B5BDB; --accent2:#E64980; --accent3:#0CA678;
+  --accent-soft:rgba(59,91,219,0.08); --gold:#F08C00;
+  --radius:14px; --radius-sm:9px; --radius-xs:6px;
+  --shadow:0 2px 12px rgba(0,0,0,0.06); --shadow-sm:0 1px 4px rgba(0,0,0,0.05);
+  --glow:0 0 20px rgba(59,91,219,0.1);
+  --accent-gradient:linear-gradient(135deg,#3B5BDB,#4C6EF5);
   --font:'DM Sans',sans-serif;
-  --logo-color:#4A3D30;
-  --accent-gradient:linear-gradient(135deg,#4A3D30,#6B5744);
 }
 
-/* 11. NEON — Bold, ungdommelig, gaming-ish */
+/* 4. NEON — Mørk med elektrisk glow */
 body[data-theme="neon"] {
-  --bg:#06040F; --bg2:#0D0820; --card:#120D25; --card2:#1A1235;
-  --border:#2A1F50; --text:#F0EAFF; --text2:#C8BAFF; --muted:#6B5EA0;
-  --accent:#A855F7; --accent2:#22D3EE; --accent-bg:#1E1040;
-  --green:#22D3EE; --green-bg:#0A2030;
-  --nav-bg:#0D0820; --topbar-bg:#06040F;
-  --shadow:0 0 20px rgba(168,85,247,0.15),0 2px 8px rgba(0,0,0,0.5);
-  --shadow-sm:0 0 8px rgba(168,85,247,0.1);
-  --radius:16px; --radius-sm:10px;
-  --score-bg:#1E1040; --score-color:#A855F7;
-  --tag-bg:#1A1235; --tag-color:#C8BAFF;
-  --active-dot:#22D3EE;
-  --font:'Space Grotesk',sans-serif;
-  --logo-color:#A855F7;
+  --bg:#05030E; --surface:#0C0820; --card:#110D28; --card-hover:#181235;
+  --border:#261850; --border-subtle:#160F38;
+  --text:#F0EAFF; --text-secondary:#A89FCC; --muted:#5A4E88;
+  --accent:#A855F7; --accent2:#22D3EE; --accent3:#4ADE80;
+  --accent-soft:rgba(168,85,247,0.12); --gold:#FACC15;
+  --radius:16px; --radius-sm:10px; --radius-xs:7px;
+  --shadow:0 4px 24px rgba(0,0,0,0.5),0 0 16px rgba(168,85,247,0.1);
+  --shadow-sm:0 2px 8px rgba(0,0,0,0.4);
+  --glow:0 0 30px rgba(168,85,247,0.2);
   --accent-gradient:linear-gradient(135deg,#A855F7,#EC4899);
-}
-
-/* 12. SAND — Rolig, neutral, tidløs */
-body[data-theme="sand"] {
-  --bg:#FAF7F2; --bg2:#FFFFFF; --card:#FFFFFF; --card2:#F0EAE0;
-  --border:#E0D8CC; --text:#1A1510; --text2:#4A4035; --muted:#9A9080;
-  --accent:#B8860B; --accent2:#8B4513; --accent-bg:#FDF5E0;
-  --green:#2E7D32; --green-bg:#E8F5E9;
-  --nav-bg:#FFFFFF; --topbar-bg:#FFFFFF;
-  --shadow:0 1px 3px rgba(0,0,0,0.06),0 4px 10px rgba(0,0,0,0.04);
-  --shadow-sm:0 1px 2px rgba(0,0,0,0.04);
-  --radius:10px; --radius-sm:6px;
-  --score-bg:#FDF5E0; --score-color:#B8860B;
-  --tag-bg:#F0EAE0; --tag-color:#4A4035;
-  --active-dot:#2E7D32;
-  --font:'DM Sans',sans-serif;
-  --logo-color:#B8860B;
-  --accent-gradient:linear-gradient(135deg,#B8860B,#DAA520);
-}
-
-/* 13. ROSE — Feminin, blød, moderne */
-body[data-theme="rose"] {
-  --bg:#FFF5F7; --bg2:#FFFFFF; --card:#FFFFFF; --card2:#FFE4EC;
-  --border:#FFCCD8; --text:#2D0F18; --text2:#7D2040; --muted:#C07090;
-  --accent:#BE185D; --accent2:#7C3AED; --accent-bg:#FFE4EC;
-  --green:#059669; --green-bg:#ECFDF5;
-  --nav-bg:#FFFFFF; --topbar-bg:#FFFFFF;
-  --shadow:0 1px 3px rgba(190,24,93,0.08),0 4px 12px rgba(0,0,0,0.05);
-  --shadow-sm:0 1px 2px rgba(190,24,93,0.05);
-  --radius:20px; --radius-sm:12px;
-  --score-bg:#FFE4EC; --score-color:#BE185D;
-  --tag-bg:#FFE4EC; --tag-color:#7D2040;
-  --active-dot:#059669;
-  --font:'Sora',sans-serif;
-  --logo-color:#BE185D;
-  --accent-gradient:linear-gradient(135deg,#BE185D,#DB2777);
-}
-
-/* 14. DEEP SEA — Mørk, blå, seriøs */
-body[data-theme="deepsea"] {
-  --bg:#050E1A; --bg2:#091525; --card:#0D1E30; --card2:#122540;
-  --border:#1A3050; --text:#E8F4FF; --text2:#90B8D8; --muted:#3A6080;
-  --accent:#38BDF8; --accent2:#34D399; --accent-bg:#0D2035;
-  --green:#34D399; --green-bg:#042820;
-  --nav-bg:#091525; --topbar-bg:#050E1A;
-  --shadow:0 2px 8px rgba(0,0,0,0.4),0 0 0 1px rgba(56,189,248,0.08);
-  --shadow-sm:0 1px 3px rgba(0,0,0,0.3);
-  --radius:12px; --radius-sm:7px;
-  --score-bg:#0D2035; --score-color:#38BDF8;
-  --tag-bg:#122540; --tag-color:#90B8D8;
-  --active-dot:#34D399;
   --font:'Space Grotesk',sans-serif;
-  --logo-color:#38BDF8;
-  --accent-gradient:linear-gradient(135deg,#0369A1,#38BDF8);
 }
 
-/* 15. EDITORIAL — Avis-agtig, seriøs, tillid */
-body[data-theme="editorial"] {
-  --bg:#FFFEF9; --bg2:#FFFFFF; --card:#FFFFFF; --card2:#F5F0E8;
-  --border:#E0D8C8; --text:#0A0A08; --text2:#2A2A22; --muted:#888878;
-  --accent:#1A1A14; --accent2:#C0392B; --accent-bg:#F5F0E8;
-  --green:#2D7A3A; --green-bg:#E8F5E9;
-  --nav-bg:#FFFFFF; --topbar-bg:#FFFEF9;
-  --shadow:0 1px 2px rgba(0,0,0,0.05),0 3px 8px rgba(0,0,0,0.04);
-  --shadow-sm:0 1px 1px rgba(0,0,0,0.04);
-  --radius:4px; --radius-sm:3px;
-  --score-bg:#F5F0E8; --score-color:#1A1A14;
-  --tag-bg:#F5F0E8; --tag-color:#2A2A22;
-  --active-dot:#2D7A3A;
-  --font:'Playfair Display',serif;
-  --logo-color:#0A0A08;
-  --accent-gradient:linear-gradient(135deg,#1A1A14,#333328);
+/* 5. NORDIC — Varm, skandinavisk, rolig */
+body[data-theme="nordic"] {
+  --bg:#F6F1EB; --surface:#FDFAF6; --card:#FDFAF6; --card-hover:#F0E9DF;
+  --border:#DDD0C0; --border-subtle:#E8DDD0;
+  --text:#1A1410; --text-secondary:#5C4D3C; --muted:#A0907C;
+  --accent:#8B5E3C; --accent2:#C0392B; --accent3:#27AE60;
+  --accent-soft:rgba(139,94,60,0.1); --gold:#C68B2A;
+  --radius:12px; --radius-sm:7px; --radius-xs:5px;
+  --shadow:0 2px 12px rgba(0,0,0,0.07); --shadow-sm:0 1px 4px rgba(0,0,0,0.05);
+  --glow:0 0 16px rgba(139,94,60,0.08);
+  --accent-gradient:linear-gradient(135deg,#8B5E3C,#A0714F);
+  --font:'DM Sans',sans-serif;
 }
-
-
-
 /* ══ THEME DROPDOWN ══ */
 .theme-option {
   display: flex;
@@ -844,6 +646,68 @@ body[data-theme="editorial"] {
 .notif-btn { padding:0.38rem 0.85rem; border-radius:8px; font-size:0.75rem; font-family:'Outfit',sans-serif; font-weight:600; cursor:pointer; border:none; }
 .notif-btn.accept { background:linear-gradient(135deg,var(--accent),#8b83ff); color:white; }
 .notif-btn.decline { background:var(--surface); color:var(--muted); border:1px solid var(--border); }
+
+
+/* ── LIGHT THEME OVERRIDES ──
+   Arctic + Nordic bruger lys baggrund — override dark-specifik styling */
+body[data-theme="arctic"],
+body[data-theme="nordic"] {
+  /* Auth screen */
+  background: var(--bg);
+}
+body[data-theme="arctic"] #screen-auth,
+body[data-theme="nordic"] #screen-auth {
+  background: radial-gradient(ellipse at 50% 20%, rgba(59,91,219,0.08) 0%, transparent 60%), var(--bg);
+}
+body[data-theme="arctic"] #screen-loading,
+body[data-theme="nordic"] #screen-loading { background:var(--bg); }
+
+body[data-theme="arctic"] .topbar,
+body[data-theme="nordic"] .topbar { background:var(--surface); border-bottom:1px solid var(--border); }
+
+body[data-theme="arctic"] .bottom-nav,
+body[data-theme="nordic"] .bottom-nav { background:var(--surface); border-top:1px solid var(--border); }
+
+body[data-theme="arctic"] .screen,
+body[data-theme="nordic"] .screen { background:var(--bg); }
+
+body[data-theme="arctic"] .status-bar,
+body[data-theme="nordic"] .status-bar { background:var(--surface); }
+
+body[data-theme="arctic"] .topbar-logo,
+body[data-theme="nordic"] .topbar-logo {
+  background:var(--accent-gradient);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+
+/* Chat bubbles — me side stays accent color in light themes */
+body[data-theme="arctic"] .chat-msg-group.me .chat-bubble,
+body[data-theme="nordic"] .chat-msg-group.me .chat-bubble {
+  background:var(--accent-gradient); color:white;
+}
+
+/* Cards in light themes */
+body[data-theme="arctic"] .card-bobler { background:rgba(59,91,219,0.06); border-color:rgba(59,91,219,0.15); }
+body[data-theme="arctic"] .card-beskeder { background:rgba(230,73,128,0.06); border-color:rgba(230,73,128,0.15); }
+body[data-theme="arctic"] .card-notif { background:rgba(12,166,120,0.06); border-color:rgba(12,166,120,0.15); }
+body[data-theme="nordic"] .card-bobler { background:rgba(139,94,60,0.07); border-color:rgba(139,94,60,0.15); }
+body[data-theme="nordic"] .card-beskeder { background:rgba(192,57,43,0.07); border-color:rgba(192,57,43,0.15); }
+body[data-theme="nordic"] .card-notif { background:rgba(39,174,96,0.07); border-color:rgba(39,174,96,0.15); }
+
+/* Toast in light themes */
+body[data-theme="arctic"] .toast,
+body[data-theme="nordic"] .toast {
+  background:var(--text); color:var(--bg);
+  border-color:transparent;
+}
+
+/* Profile hero */
+body[data-theme="arctic"] .profile-hero { background:linear-gradient(180deg, rgba(59,91,219,0.07) 0%, transparent 100%); }
+body[data-theme="nordic"] .profile-hero { background:linear-gradient(180deg, rgba(139,94,60,0.07) 0%, transparent 100%); }
+
+/* Bubble chat input */
+body[data-theme="arctic"] .chat-input-area,
+body[data-theme="nordic"] .chat-input-area { background:var(--surface); }
 
 </style>
 <script>
@@ -1409,21 +1273,11 @@ window.onunhandledrejection = function(e) {
           border-radius:var(--radius,12px);z-index:100;overflow:hidden;
           box-shadow:0 8px 24px rgba(0,0,0,0.15)">
           <div style="max-height:260px;overflow-y:auto">
-            <div class="theme-option" data-theme="midnight" data-preview="linear-gradient(135deg,#0A0E1A,#60A5FA)" data-label="🌙 Midnight" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#0A0E1A,#60A5FA)"></div>🌙 Midnight</div>
-            <div class="theme-option" data-theme="arctic" data-preview="linear-gradient(135deg,#F8F9FB,#2563EB)" data-label="❄️ Arctic" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#F8F9FB,#2563EB)"></div>❄️ Arctic</div>
-            <div class="theme-option" data-theme="noir" data-preview="linear-gradient(135deg,#0C0C0C,#FFFFFF)" data-label="⬛ Noir" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#0C0C0C,#FFFFFF)"></div>⬛ Noir</div>
-            <div class="theme-option" data-theme="forest" data-preview="linear-gradient(135deg,#F2F5F0,#2D6A4F)" data-label="🌿 Forest" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#F2F5F0,#2D6A4F)"></div>🌿 Forest</div>
-            <div class="theme-option" data-theme="coral" data-preview="linear-gradient(135deg,#FFF8F6,#E8450A)" data-label="🪸 Coral" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#FFF8F6,#E8450A)"></div>🪸 Coral</div>
-            <div class="theme-option" data-theme="violet" data-preview="linear-gradient(135deg,#F5F3FF,#7C3AED)" data-label="💜 Violet" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#F5F3FF,#7C3AED)"></div>💜 Violet</div>
-            <div class="theme-option" data-theme="ocean" data-preview="linear-gradient(135deg,#EBF4FC,#0066CC)" data-label="🌊 Ocean" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#EBF4FC,#0066CC)"></div>🌊 Ocean</div>
-            <div class="theme-option" data-theme="sunset" data-preview="linear-gradient(135deg,#FFF7F0,#EA580C)" data-label="🌅 Sunset" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#FFF7F0,#EA580C)"></div>🌅 Sunset</div>
-            <div class="theme-option" data-theme="nordic" data-preview="linear-gradient(135deg,#F5F0EB,#4A3D30)" data-label="🏔 Nordic" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#F5F0EB,#4A3D30)"></div>🏔 Nordic</div>
-            <div class="theme-option" data-theme="neon" data-preview="linear-gradient(135deg,#06040F,#A855F7)" data-label="⚡ Neon" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#06040F,#A855F7)"></div>⚡ Neon</div>
-            <div class="theme-option" data-theme="slate" data-preview="linear-gradient(135deg,#F1F3F6,#374151)" data-label="🪨 Slate" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#F1F3F6,#374151)"></div>🪨 Slate</div>
-            <div class="theme-option" data-theme="sand" data-preview="linear-gradient(135deg,#FAF7F2,#B8860B)" data-label="🏜 Sand" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#FAF7F2,#B8860B)"></div>🏜 Sand</div>
-            <div class="theme-option" data-theme="rose" data-preview="linear-gradient(135deg,#FFF5F7,#BE185D)" data-label="🌸 Rose" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#FFF5F7,#BE185D)"></div>🌸 Rose</div>
-            <div class="theme-option" data-theme="deepsea" data-preview="linear-gradient(135deg,#050E1A,#38BDF8)" data-label="🐋 Deep Sea" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#050E1A,#38BDF8)"></div>🐋 Deep Sea</div>
-            <div class="theme-option" data-theme="editorial" data-preview="linear-gradient(135deg,#FFFEF9,#1A1A14)" data-label="📰 Editorial" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#FFFEF9,#1A1A14)"></div>📰 Editorial</div>
+            <div class="theme-option" data-theme="midnight" data-preview="linear-gradient(135deg,#07090F,#6C63FF)" data-label="🌙 Midnight" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#07090F,#6C63FF)"></div>🌙 Midnight</div>
+            <div class="theme-option" data-theme="noir" data-preview="linear-gradient(135deg,#0A0A0A,#FFFFFF)" data-label="⬛ Noir" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#0A0A0A,#FFFFFF)"></div>⬛ Noir</div>
+            <div class="theme-option" data-theme="arctic" data-preview="linear-gradient(135deg,#F4F6FA,#3B5BDB)" data-label="❄️ Arctic" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#F4F6FA,#3B5BDB)"></div>❄️ Arctic</div>
+            <div class="theme-option" data-theme="neon" data-preview="linear-gradient(135deg,#05030E,#A855F7)" data-label="⚡ Neon" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#05030E,#A855F7)"></div>⚡ Neon</div>
+            <div class="theme-option" data-theme="nordic" data-preview="linear-gradient(135deg,#F6F1EB,#8B5E3C)" data-label="🏔 Nordic" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#F6F1EB,#8B5E3C)"></div>🏔 Nordic</div>
           </div>
         </div>
       </div>
