@@ -631,28 +631,26 @@ body[data-theme="editorial"] {
 
 
 
-/* ══ THEME PICKER ══ */
-.theme-swatch {
+/* ══ THEME DROPDOWN ══ */
+.theme-option {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
-  background: var(--card);
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  padding: 0.5rem 0.35rem;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
   cursor: pointer;
-  transition: border-color 0.15s, transform 0.1s;
-  font-size: 0.65rem;
+  font-size: 0.88rem;
   color: var(--text);
-  font-family: var(--font, inherit);
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
 }
-.theme-swatch:active { transform: scale(0.95); }
-.theme-swatch.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
-.swatch-preview {
-  width: 100%;
-  height: 32px;
+.theme-option:last-child { border-bottom: none; }
+.theme-option:hover, .theme-option.active { background: var(--card2); }
+.theme-option.active { font-weight: 700; }
+.theme-opt-swatch {
+  width: 28px;
+  height: 28px;
   border-radius: 7px;
+  flex-shrink: 0;
 }
 </style>
 <script>
@@ -1082,68 +1080,42 @@ window.onunhandledrejection = function(e) {
         </div>
       </div>
       <!-- Theme Picker -->
-      <div class="section-label" style="margin-top:1.25rem">🎨 Vælg tema</div>
-      <div id="theme-picker" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;margin-bottom:1rem">
-      <button class="theme-swatch" data-theme="midnight" onclick="setTheme('midnight',this)">
-        <div class="swatch-preview" style="background:linear-gradient(135deg,#0A0E1A,#60A5FA)"></div>
-        <span>🌙 Midnight</span>
-      </button>
-      <button class="theme-swatch" data-theme="arctic" onclick="setTheme('arctic',this)">
-        <div class="swatch-preview" style="background:linear-gradient(135deg,#F8F9FB,#2563EB)"></div>
-        <span>❄️ Arctic</span>
-      </button>
-      <button class="theme-swatch" data-theme="noir" onclick="setTheme('noir',this)">
-        <div class="swatch-preview" style="background:linear-gradient(135deg,#0C0C0C,#FFFFFF)"></div>
-        <span>⬛ Noir</span>
-      </button>
-      <button class="theme-swatch" data-theme="forest" onclick="setTheme('forest',this)">
-        <div class="swatch-preview" style="background:linear-gradient(135deg,#F2F5F0,#2D6A4F)"></div>
-        <span>🌿 Forest</span>
-      </button>
-      <button class="theme-swatch" data-theme="coral" onclick="setTheme('coral',this)">
-        <div class="swatch-preview" style="background:linear-gradient(135deg,#FFF8F6,#E8450A)"></div>
-        <span>🪸 Coral</span>
-      </button>
-      <button class="theme-swatch" data-theme="violet" onclick="setTheme('violet',this)">
-        <div class="swatch-preview" style="background:linear-gradient(135deg,#F5F3FF,#7C3AED)"></div>
-        <span>💜 Violet</span>
-      </button>
-      <button class="theme-swatch" data-theme="ocean" onclick="setTheme('ocean',this)">
-        <div class="swatch-preview" style="background:linear-gradient(135deg,#EBF4FC,#0066CC)"></div>
-        <span>🌊 Ocean</span>
-      </button>
-      <button class="theme-swatch" data-theme="sunset" onclick="setTheme('sunset',this)">
-        <div class="swatch-preview" style="background:linear-gradient(135deg,#FFF7F0,#EA580C)"></div>
-        <span>🌅 Sunset</span>
-      </button>
-      <button class="theme-swatch" data-theme="nordic" onclick="setTheme('nordic',this)">
-        <div class="swatch-preview" style="background:linear-gradient(135deg,#F5F0EB,#4A3D30)"></div>
-        <span>🏔 Nordic</span>
-      </button>
-      <button class="theme-swatch" data-theme="neon" onclick="setTheme('neon',this)">
-        <div class="swatch-preview" style="background:linear-gradient(135deg,#06040F,#A855F7)"></div>
-        <span>⚡ Neon</span>
-      </button>
-      <button class="theme-swatch" data-theme="slate" onclick="setTheme('slate',this)">
-        <div class="swatch-preview" style="background:linear-gradient(135deg,#F1F3F6,#374151)"></div>
-        <span>🪨 Slate</span>
-      </button>
-      <button class="theme-swatch" data-theme="sand" onclick="setTheme('sand',this)">
-        <div class="swatch-preview" style="background:linear-gradient(135deg,#FAF7F2,#B8860B)"></div>
-        <span>🏜 Sand</span>
-      </button>
-      <button class="theme-swatch" data-theme="rose" onclick="setTheme('rose',this)">
-        <div class="swatch-preview" style="background:linear-gradient(135deg,#FFF5F7,#BE185D)"></div>
-        <span>🌸 Rose</span>
-      </button>
-      <button class="theme-swatch" data-theme="deepsea" onclick="setTheme('deepsea',this)">
-        <div class="swatch-preview" style="background:linear-gradient(135deg,#050E1A,#38BDF8)"></div>
-        <span>🐋 Deep Sea</span>
-      </button>
-      <button class="theme-swatch" data-theme="editorial" onclick="setTheme('editorial',this)">
-        <div class="swatch-preview" style="background:linear-gradient(135deg,#FFFEF9,#1A1A14)"></div>
-        <span>📰 Editorial</span>
-      </button>
+      <div class="section-label" style="margin-top:1.25rem">🎨 Tema</div>
+      <div style="position:relative;margin-bottom:1rem">
+        <div id="theme-dropdown-btn" onclick="toggleThemeDropdown()" style="
+          display:flex;align-items:center;justify-content:space-between;
+          background:var(--card);border:1px solid var(--border);
+          border-radius:var(--radius,12px);padding:0.75rem 1rem;
+          cursor:pointer;gap:0.75rem">
+          <div style="display:flex;align-items:center;gap:0.65rem">
+            <div id="theme-swatch-preview" style="width:28px;height:28px;border-radius:7px;flex-shrink:0;background:linear-gradient(135deg,#0A0E1A,#60A5FA)"></div>
+            <span id="theme-label-current" style="font-weight:600;font-size:0.9rem;color:var(--text)">🌙 Midnight</span>
+          </div>
+          <span id="theme-chevron" style="color:var(--muted);font-size:0.8rem;transition:transform 0.2s">▼</span>
+        </div>
+        <div id="theme-dropdown" style="
+          display:none;position:absolute;left:0;right:0;top:calc(100% + 6px);
+          background:var(--card);border:1px solid var(--border);
+          border-radius:var(--radius,12px);z-index:100;overflow:hidden;
+          box-shadow:0 8px 24px rgba(0,0,0,0.15)">
+          <div style="max-height:260px;overflow-y:auto">
+            <div class="theme-option" data-theme="midnight" data-preview="linear-gradient(135deg,#0A0E1A,#60A5FA)" data-label="🌙 Midnight" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#0A0E1A,#60A5FA)"></div>🌙 Midnight</div>
+            <div class="theme-option" data-theme="arctic" data-preview="linear-gradient(135deg,#F8F9FB,#2563EB)" data-label="❄️ Arctic" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#F8F9FB,#2563EB)"></div>❄️ Arctic</div>
+            <div class="theme-option" data-theme="noir" data-preview="linear-gradient(135deg,#0C0C0C,#FFFFFF)" data-label="⬛ Noir" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#0C0C0C,#FFFFFF)"></div>⬛ Noir</div>
+            <div class="theme-option" data-theme="forest" data-preview="linear-gradient(135deg,#F2F5F0,#2D6A4F)" data-label="🌿 Forest" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#F2F5F0,#2D6A4F)"></div>🌿 Forest</div>
+            <div class="theme-option" data-theme="coral" data-preview="linear-gradient(135deg,#FFF8F6,#E8450A)" data-label="🪸 Coral" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#FFF8F6,#E8450A)"></div>🪸 Coral</div>
+            <div class="theme-option" data-theme="violet" data-preview="linear-gradient(135deg,#F5F3FF,#7C3AED)" data-label="💜 Violet" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#F5F3FF,#7C3AED)"></div>💜 Violet</div>
+            <div class="theme-option" data-theme="ocean" data-preview="linear-gradient(135deg,#EBF4FC,#0066CC)" data-label="🌊 Ocean" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#EBF4FC,#0066CC)"></div>🌊 Ocean</div>
+            <div class="theme-option" data-theme="sunset" data-preview="linear-gradient(135deg,#FFF7F0,#EA580C)" data-label="🌅 Sunset" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#FFF7F0,#EA580C)"></div>🌅 Sunset</div>
+            <div class="theme-option" data-theme="nordic" data-preview="linear-gradient(135deg,#F5F0EB,#4A3D30)" data-label="🏔 Nordic" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#F5F0EB,#4A3D30)"></div>🏔 Nordic</div>
+            <div class="theme-option" data-theme="neon" data-preview="linear-gradient(135deg,#06040F,#A855F7)" data-label="⚡ Neon" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#06040F,#A855F7)"></div>⚡ Neon</div>
+            <div class="theme-option" data-theme="slate" data-preview="linear-gradient(135deg,#F1F3F6,#374151)" data-label="🪨 Slate" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#F1F3F6,#374151)"></div>🪨 Slate</div>
+            <div class="theme-option" data-theme="sand" data-preview="linear-gradient(135deg,#FAF7F2,#B8860B)" data-label="🏜 Sand" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#FAF7F2,#B8860B)"></div>🏜 Sand</div>
+            <div class="theme-option" data-theme="rose" data-preview="linear-gradient(135deg,#FFF5F7,#BE185D)" data-label="🌸 Rose" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#FFF5F7,#BE185D)"></div>🌸 Rose</div>
+            <div class="theme-option" data-theme="deepsea" data-preview="linear-gradient(135deg,#050E1A,#38BDF8)" data-label="🐋 Deep Sea" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#050E1A,#38BDF8)"></div>🐋 Deep Sea</div>
+            <div class="theme-option" data-theme="editorial" data-preview="linear-gradient(135deg,#FFFEF9,#1A1A14)" data-label="📰 Editorial" onclick="selectTheme(this)"><div class="theme-opt-swatch" style="background:linear-gradient(135deg,#FFFEF9,#1A1A14)"></div>📰 Editorial</div>
+          </div>
+        </div>
       </div>
 
       <div class="section-label" style="margin-top:1.25rem">Mine bobler</div>
@@ -2539,12 +2511,32 @@ async function loadNotifications() {
   }).join('');
 }
 
-function setTheme(theme, btn) {
+function setTheme(theme) {
   document.getElementById('app-root').setAttribute('data-theme', theme);
   localStorage.setItem('bubble-theme', theme);
-  document.querySelectorAll('.theme-swatch').forEach(b => {
+  document.querySelectorAll('.theme-option').forEach(b => {
     b.classList.toggle('active', b.dataset.theme === theme);
   });
+  // Update dropdown button
+  const opt = document.querySelector(`.theme-option[data-theme="${theme}"]`);
+  if (opt) {
+    document.getElementById('theme-swatch-preview').style.background = opt.dataset.preview;
+    document.getElementById('theme-label-current').textContent = opt.dataset.label;
+  }
+}
+
+function toggleThemeDropdown() {
+  const dd = document.getElementById('theme-dropdown');
+  const chevron = document.getElementById('theme-chevron');
+  const open = dd.style.display === 'block';
+  dd.style.display = open ? 'none' : 'block';
+  chevron.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+
+function selectTheme(el) {
+  setTheme(el.dataset.theme);
+  document.getElementById('theme-dropdown').style.display = 'none';
+  document.getElementById('theme-chevron').style.transform = 'rotate(0deg)';
 }
 
 updateClock();
