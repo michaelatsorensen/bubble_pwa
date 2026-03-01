@@ -2936,20 +2936,30 @@ async function bcLoadMessages() {
   const el = document.getElementById('bc-messages');
   el.innerHTML = '<div class="spinner"></div>';
 
-  const { data: msgs } = await sb.from('bubble_messages')
-    .select('*, profiles(id, name)')
+  // Hent beskeder uden profiles join — henter profiler separat
+  const { data: msgs, error: msgErr } = await sb.from('bubble_messages')
+    .select('id, bubble_id, user_id, content, file_url, file_name, file_size, file_type, edited, created_at')
     .eq('bubble_id', bcBubbleId)
     .order('created_at', {ascending:true})
     .limit(50);
+
+  if (msgErr) console.error('bcLoadMessages error:', msgErr);
 
   if (!msgs || msgs.length === 0) {
     el.innerHTML = '<div class="empty-state" style="margin-top:2rem"><div class="empty-icon">💬</div><div class="empty-text">Ingen beskeder endnu.<br>Vær den første!</div></div>';
     return;
   }
 
+  // Hent unikke profiler separat
+  const userIds = [...new Set(msgs.map(m => m.user_id))];
+  const { data: profiles } = await sb.from('profiles').select('id, name, title').in('id', userIds);
+  const profileMap = {};
+  (profiles || []).forEach(p => profileMap[p.id] = p);
+
   el.innerHTML = '';
   let lastDate = '';
   msgs.forEach(m => {
+    m.profiles = profileMap[m.user_id] || { name: '?' };
     const d = new Date(m.created_at).toLocaleDateString('da-DK', {weekday:'long', day:'numeric', month:'short'});
     if (d !== lastDate) {
       const sep = document.createElement('div');
@@ -3079,18 +3089,31 @@ async function bcSendMessage() {
     }
     bcCancelEdit();
   } else {
+    inp.value = '';
+
     const { data: newMsg, error } = await sb.from('bubble_messages').insert({
       bubble_id: bcBubbleId,
       user_id: currentUser.id,
       content: text
-    }).select('*, profiles(id,name)').single();
+    }).select('id, bubble_id, user_id, content, file_url, file_name, file_size, file_type, edited, created_at').single();
 
-    if (!error && newMsg) {
+    if (error) {
+      console.error('bcSendMessage insert error:', error);
+      showToast('Fejl: ' + (error.message || error.code || 'ukendt'));
+      inp.value = text;
+      return;
+    }
+
+    if (newMsg) {
+      // Injicer profil-data lokalt — undgår afhængighed af FK-join
+      newMsg.profiles = {
+        id: currentUser.id,
+        name: currentProfile?.name || currentUser.email?.split('@')[0] || '?'
+      };
       document.getElementById('bc-messages').appendChild(bcRenderMsg(newMsg));
       bcScrollToBottom();
     }
   }
-  inp.value = '';
 }
 
 async function bcHandleFile(input) {
@@ -3115,9 +3138,13 @@ async function bcHandleFile(input) {
     file_name: file.name,
     file_size: file.size,
     file_type: file.type
-  }).select('*, profiles(id,name)').single();
+  }).select('id, bubble_id, user_id, content, file_url, file_name, file_size, file_type, edited, created_at').single();
 
   if (newMsg) {
+    newMsg.profiles = {
+      id: currentUser.id,
+      name: currentProfile?.name || currentUser.email?.split('@')[0] || '?'
+    };
     document.getElementById('bc-messages').appendChild(bcRenderMsg(newMsg));
     bcScrollToBottom();
     showToast('Fil sendt! 📎');
@@ -3203,35 +3230,44 @@ function bcCreateHistoryModal() {
 async function bcLoadMembers() {
   const list = document.getElementById('bc-members-list');
   list.innerHTML = '<div class="spinner"></div>';
+
   const { data: members } = await sb.from('bubble_members')
-    .select('user_id, joined_at, profiles(id,name,title)')
+    .select('user_id, joined_at')
     .eq('bubble_id', bcBubbleId)
     .order('joined_at', {ascending:true});
 
-  if (!members || members.length === 0) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">Ingen medlemmer</div></div>'; return; }
+  if (!members || members.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">Ingen medlemmer</div></div>';
+    return;
+  }
+
+  // Hent profiler separat
+  const userIds = members.map(m => m.user_id);
+  const { data: profiles } = await sb.from('profiles').select('id, name, title').in('id', userIds);
+  const profileMap = {};
+  (profiles || []).forEach(p => profileMap[p.id] = p);
 
   const colors = ['linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#7C2D12,#F97316)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#4C1D95,#A78BFA)','linear-gradient(135deg,#0C4A6E,#38BDF8)'];
-  const isOwner = bcBubbleData?.created_by;
-
-  list.innerHTML = `<div class="chat-section-label">Ejer</div>`;
-  const owner = members.find(m => m.user_id === isOwner);
-  const others = members.filter(m => m.user_id !== isOwner);
+  const ownerId = bcBubbleData?.created_by;
+  const owner = members.find(m => m.user_id === ownerId);
+  const others = members.filter(m => m.user_id !== ownerId);
   const all = owner ? [owner, ...others] : members;
-  let shownOwner = false;
 
-  list.innerHTML += all.map((m, i) => {
-    const p = m.profiles || {};
+  let html = '';
+  all.forEach((m, i) => {
+    const p = profileMap[m.user_id] || {};
     const initials = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     const color = colors[i % colors.length];
-    const isOwnerRow = m.user_id === isOwner;
-    const label = shownOwner ? '' : (isOwnerRow ? (shownOwner=true,'') : '');
-    const sectionBreak = !shownOwner && !isOwnerRow ? (shownOwner=true,'<div class="chat-section-label" style="margin-top:0.8rem">Medlemmer · '+(others.length)+'</div>') : '';
-    return `${sectionBreak}<div class="chat-member-row" onclick="bcOpenPerson('${m.user_id}','${p.name||''}','${p.title||''}','${color}')">
+    const isOwnerRow = m.user_id === ownerId;
+    if (i === 0) html += `<div class="chat-section-label">${isOwnerRow ? 'Ejer' : 'Medlemmer'}</div>`;
+    if (!isOwnerRow && owner && i === 1) html += `<div class="chat-section-label" style="margin-top:0.8rem">Medlemmer · ${others.length}</div>`;
+    html += `<div class="chat-member-row" onclick="bcOpenPerson('${m.user_id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${color}')">
       <div class="chat-member-avatar" style="background:${color}">${initials}</div>
-      <div style="flex:1"><div class="chat-member-name">${escHtml(p.name||'Ukendt')}</div><div class="chat-member-status">${p.title||''}</div></div>
+      <div style="flex:1"><div class="chat-member-name">${escHtml(p.name||'Ukendt')}</div><div class="chat-member-status">${escHtml(p.title||'')}</div></div>
       ${isOwnerRow ? '<span class="chat-member-role">Ejer</span>' : ''}
     </div>`;
-  }).join('');
+  });
+  list.innerHTML = html;
 }
 
 async function bcLoadInfo() {
