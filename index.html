@@ -447,78 +447,141 @@ select.input { appearance:none; }
 
 /* ══ THEMES ══ */
 
-/* Helper mixin — alle temaer skal definere disse tokens */
-
-/* 1. MIDNIGHT — Default. Dyb, premium, mørk */
+/* ─────────────────────────────────────────
+   1. MIDNIGHT  Dyb nat — lilla accenter
+   bg→surface→card: sort → blå-grå → mørk blå
+───────────────────────────────────────── */
 body[data-theme="midnight"] {
-  --bg:#04050A; --surface:#0C1020; --card:#131928; --card-hover:#1A2235;
-  --border:#2A3450; --border-subtle:#1A2438;
-  --text:#F0F4FF; --text-secondary:#7A8FAD; --muted:#3D4F6A;
-  --accent:#7B72FF; --accent2:#FF6584; --accent3:#3DFFA0;
-  --accent-soft:rgba(123,114,255,0.15); --gold:#F5C35A;
+  --bg:          #02030A;
+  --surface:     #080D1E;
+  --card:        #101828;
+  --card-hover:  #18243A;
+  --border:      #2C3E5E;
+  --border-subtle:#182848;
+  --text:        #F2F6FF;
+  --text-secondary:#7A90B8;
+  --muted:       #3A5070;
+  --accent:      #8078FF;
+  --accent2:     #FF6080;
+  --accent3:     #30FFA0;
+  --accent-soft: rgba(128,120,255,0.16);
+  --gold:        #F0C040;
   --radius:16px; --radius-sm:10px; --radius-xs:8px;
-  --shadow:0 8px 32px rgba(0,0,0,0.6); --shadow-sm:0 3px 12px rgba(0,0,0,0.35);
-  --glow:0 0 28px rgba(123,114,255,0.22);
-  --accent-gradient:linear-gradient(135deg,#7B72FF,#9B94FF);
+  --shadow:      0 8px 40px rgba(0,0,0,0.75);
+  --shadow-sm:   0 3px 14px rgba(0,0,0,0.45);
+  --glow:        0 0 32px rgba(128,120,255,0.28);
+  --accent-gradient: linear-gradient(135deg,#8078FF,#A89AFF);
   --font:'Outfit',sans-serif;
 }
 
-/* 2. NOIR — Ultra-mørk, high-contrast, eksklusiv */
+/* ─────────────────────────────────────────
+   2. NOIR  Kulsort — guld & monospace
+   bg→surface→card: #000 → kul → mørkgrå
+───────────────────────────────────────── */
 body[data-theme="noir"] {
-  --bg:#050505; --surface:#0E0E0E; --card:#1A1A1A; --card-hover:#242424;
-  --border:#333333; --border-subtle:#1F1F1F;
-  --text:#F8F8F8; --text-secondary:#888888; --muted:#444444;
-  --accent:#FFFFFF; --accent2:#FFD700; --accent3:#50C878;
-  --accent-soft:rgba(255,255,255,0.08); --gold:#FFD700;
-  --radius:10px; --radius-sm:6px; --radius-xs:4px;
-  --shadow:0 8px 32px rgba(0,0,0,0.8); --shadow-sm:0 3px 12px rgba(0,0,0,0.6);
-  --glow:0 0 20px rgba(255,255,255,0.05);
-  --accent-gradient:linear-gradient(135deg,#555,#777);
+  --bg:          #000000;
+  --surface:     #0A0A0A;
+  --card:        #181818;
+  --card-hover:  #242424;
+  --border:      #383838;
+  --border-subtle:#222222;
+  --text:        #F8F8F2;
+  --text-secondary:#909090;
+  --muted:       #505050;
+  --accent:      #C8A020;
+  --accent2:     #CC3020;
+  --accent3:     #40C870;
+  --accent-soft: rgba(200,160,32,0.12);
+  --gold:        #C8A020;
+  --radius:8px; --radius-sm:5px; --radius-xs:3px;
+  --shadow:      0 8px 40px rgba(0,0,0,0.95);
+  --shadow-sm:   0 3px 12px rgba(0,0,0,0.75);
+  --glow:        0 0 24px rgba(200,160,32,0.15);
+  --accent-gradient: linear-gradient(135deg,#C8A020,#E8C040);
   --font:'DM Mono',monospace;
 }
 
-/* 3. ARCTIC — Lys, ren, klinisk præcis */
+/* ─────────────────────────────────────────
+   3. ARCTIC  Frostblå — hvide kort, isblå bg
+   bg→surface→card: mørk isblå → mellemblå → hvid
+───────────────────────────────────────── */
 body[data-theme="arctic"] {
-  --bg:#E8ECF4; --surface:#F4F7FC; --card:#FFFFFF; --card-hover:#EEF2FA;
-  --border:#C8D0E0; --border-subtle:#D8DFF0;
-  --text:#0A0E1A; --text-secondary:#3D4E6A; --muted:#8A96B0;
-  --accent:#3B5BDB; --accent2:#E64980; --accent3:#0CA678;
-  --accent-soft:rgba(59,91,219,0.1); --gold:#F08C00;
+  --bg:          #4A7EA8;
+  --surface:     #6898C0;
+  --card:        #EEF6FF;
+  --card-hover:  #FFFFFF;
+  --border:      #3A6A90;
+  --border-subtle:#5880A8;
+  --text:        #04182E;
+  --text-secondary:#1A4870;
+  --muted:       #4A78A8;
+  --accent:      #0A50A0;
+  --accent2:     #C02820;
+  --accent3:     #0A8A60;
+  --accent-soft: rgba(10,80,160,0.12);
+  --gold:        #A06800;
   --radius:14px; --radius-sm:9px; --radius-xs:6px;
-  --shadow:0 4px 16px rgba(0,0,0,0.1); --shadow-sm:0 2px 6px rgba(0,0,0,0.07);
-  --glow:0 0 20px rgba(59,91,219,0.12);
-  --accent-gradient:linear-gradient(135deg,#3B5BDB,#4C6EF5);
+  --shadow:      0 4px 24px rgba(4,24,46,0.25);
+  --shadow-sm:   0 2px 10px rgba(4,24,46,0.18);
+  --glow:        0 0 24px rgba(10,80,160,0.2);
+  --accent-gradient: linear-gradient(135deg,#0A50A0,#1870C8);
   --font:'DM Sans',sans-serif;
 }
 
-/* 4. NEON — Mørk med elektrisk glow */
+/* ─────────────────────────────────────────
+   4. NEON  Dyb violet nat — elektrisk glow
+   bg→surface→card: sort-lilla → mørk → dyblilla
+───────────────────────────────────────── */
 body[data-theme="neon"] {
-  --bg:#030109; --surface:#090618; --card:#100D22; --card-hover:#181530;
-  --border:#2E1F5E; --border-subtle:#1A1240;
-  --text:#F2EEFF; --text-secondary:#9B8FCC; --muted:#524680;
-  --accent:#B060FF; --accent2:#22D3EE; --accent3:#4ADE80;
-  --accent-soft:rgba(176,96,255,0.15); --gold:#FACC15;
+  --bg:          #030008;
+  --surface:     #0A0518;
+  --card:        #120A28;
+  --card-hover:  #1C1040;
+  --border:      #4820A0;
+  --border-subtle:#281060;
+  --text:        #F0EAFF;
+  --text-secondary:#9878D8;
+  --muted:       #503888;
+  --accent:      #C840FF;
+  --accent2:     #00D8FF;
+  --accent3:     #20FF60;
+  --accent-soft: rgba(200,64,255,0.18);
+  --gold:        #FFD020;
   --radius:16px; --radius-sm:10px; --radius-xs:7px;
-  --shadow:0 8px 32px rgba(0,0,0,0.7),0 0 20px rgba(176,96,255,0.12);
-  --shadow-sm:0 3px 12px rgba(0,0,0,0.5);
-  --glow:0 0 36px rgba(176,96,255,0.25);
-  --accent-gradient:linear-gradient(135deg,#B060FF,#EC4899);
+  --shadow:      0 8px 40px rgba(0,0,0,0.85), 0 0 30px rgba(200,64,255,0.2);
+  --shadow-sm:   0 3px 14px rgba(0,0,0,0.65);
+  --glow:        0 0 50px rgba(200,64,255,0.35);
+  --accent-gradient: linear-gradient(135deg,#C840FF,#8020D0);
   --font:'Space Grotesk',sans-serif;
 }
 
-/* 5. NORDIC — Varm, skandinavisk, rolig */
+/* ─────────────────────────────────────────
+   5. NORDIC  Varm birketræ — creme kort, brun bg
+   bg→surface→card: mørk brun → varm sand → creme
+───────────────────────────────────────── */
 body[data-theme="nordic"] {
-  --bg:#EDE5D8; --surface:#F8F2EA; --card:#FFFFFF; --card-hover:#F0E8DC;
-  --border:#C8B89A; --border-subtle:#D8CAB4;
-  --text:#160F08; --text-secondary:#4A3828; --muted:#9A8470;
-  --accent:#8B5E3C; --accent2:#C0392B; --accent3:#27AE60;
-  --accent-soft:rgba(139,94,60,0.12); --gold:#C68B2A;
+  --bg:          #5A3E28;
+  --surface:     #7A5438;
+  --card:        #FDF4E4;
+  --card-hover:  #FFFFFF;
+  --border:      #4A3020;
+  --border-subtle:#624030;
+  --text:        #160A02;
+  --text-secondary:#3A2010;
+  --muted:       #8A6040;
+  --accent:      #5A2E0A;
+  --accent2:     #900E0E;
+  --accent3:     #2A6E30;
+  --accent-soft: rgba(90,46,10,0.14);
+  --gold:        #906010;
   --radius:12px; --radius-sm:7px; --radius-xs:5px;
-  --shadow:0 4px 16px rgba(0,0,0,0.12); --shadow-sm:0 2px 6px rgba(0,0,0,0.08);
-  --glow:0 0 16px rgba(139,94,60,0.1);
-  --accent-gradient:linear-gradient(135deg,#8B5E3C,#A0714F);
+  --shadow:      0 4px 24px rgba(22,10,2,0.3);
+  --shadow-sm:   0 2px 10px rgba(22,10,2,0.2);
+  --glow:        0 0 20px rgba(90,46,10,0.15);
+  --accent-gradient: linear-gradient(135deg,#5A2E0A,#7A4820);
   --font:'DM Sans',sans-serif;
 }
+
 /* ══ THEME DROPDOWN ══ */
 .theme-option {
   display: flex;
@@ -660,66 +723,144 @@ body[data-theme="nordic"] {
 .notif-btn.decline { background:var(--surface); color:var(--muted); border:1px solid var(--border); }
 
 
-/* ── LIGHT THEME OVERRIDES ──
-   Arctic + Nordic bruger lys baggrund — override dark-specifik styling */
-body[data-theme="arctic"],
-body[data-theme="nordic"] {
-  /* Auth screen */
-  background: var(--bg);
-}
-body[data-theme="arctic"] #screen-auth,
-body[data-theme="nordic"] #screen-auth {
-  background: radial-gradient(ellipse at 50% 20%, rgba(59,91,219,0.08) 0%, transparent 60%), var(--bg);
-}
-body[data-theme="arctic"] #screen-loading,
-body[data-theme="nordic"] #screen-loading { background:var(--bg); }
 
-body[data-theme="arctic"] .topbar,
-body[data-theme="nordic"] .topbar { background:var(--surface); border-bottom:1px solid var(--border); }
+/* ─────────────────────────────────────────
+   LIGHT-BG THEME OVERRIDES
+   Arctic + Nordic: kortene er lyse, bg er mættet farve
+   Sørg for at chrome (topbar, nav, status) matcher surface
+───────────────────────────────────────── */
 
-body[data-theme="arctic"] .bottom-nav,
-body[data-theme="nordic"] .bottom-nav { background:var(--surface); border-top:1px solid var(--border); }
-
+/* Screen backgrounds følger temaet */
 body[data-theme="arctic"] .screen,
-body[data-theme="nordic"] .screen { background:var(--bg); }
+body[data-theme="nordic"] .screen { background: var(--bg); }
 
+/* Topbar + statusbar bruger surface (lidt lysere end bg) */
+body[data-theme="arctic"] .topbar,
+body[data-theme="nordic"] .topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
 body[data-theme="arctic"] .status-bar,
-body[data-theme="nordic"] .status-bar { background:var(--surface); }
+body[data-theme="nordic"] .status-bar {
+  background: var(--surface);
+  color: #EEF6FF;
+}
 
+/* Bottom nav */
+body[data-theme="arctic"] .bottom-nav,
+body[data-theme="nordic"] .bottom-nav {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+body[data-theme="arctic"] .nav-item,
+body[data-theme="nordic"] .nav-item { color: rgba(238,246,255,0.55); }
+body[data-theme="arctic"] .nav-item.active { color: #FFFFFF; }
+body[data-theme="nordic"] .nav-item { color: rgba(253,244,228,0.55); }
+body[data-theme="nordic"] .nav-item.active { color: #FDF4E4; }
+
+/* Back button synlig på mættet baggrund */
+body[data-theme="arctic"] .back-btn { color: #D0EAFF; }
+body[data-theme="nordic"] .back-btn { color: #F0D8B8; }
+
+/* Topbar logo gradient */
 body[data-theme="arctic"] .topbar-logo,
 body[data-theme="nordic"] .topbar-logo {
-  background:var(--accent-gradient);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background: linear-gradient(135deg, #FFFFFF, rgba(255,255,255,0.7));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-/* Chat bubbles — me side stays accent color in light themes */
+/* Topbar title */
+body[data-theme="arctic"] .topbar-title { color: #EEF6FF; }
+body[data-theme="nordic"] .topbar-title { color: #FDF4E4; }
+
+/* Auth screen */
+body[data-theme="arctic"] #screen-auth,
+body[data-theme="nordic"] #screen-auth { background: var(--bg); }
+body[data-theme="arctic"] #screen-loading,
+body[data-theme="nordic"] #screen-loading { background: var(--bg); }
+
+/* Cards forbliver lyse — det er kontrastpointet */
+body[data-theme="arctic"] .card,
+body[data-theme="nordic"] .card {
+  background: var(--card);
+  border-color: rgba(0,0,0,0.12);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+
+/* Home nav cards */
+body[data-theme="arctic"] .card-bobler   { background: rgba(255,255,255,0.9); border: 1.5px solid rgba(10,80,160,0.25); }
+body[data-theme="arctic"] .card-beskeder { background: rgba(255,255,255,0.9); border: 1.5px solid rgba(192,40,32,0.25); }
+body[data-theme="arctic"] .card-notif    { background: rgba(255,255,255,0.9); border: 1.5px solid rgba(10,138,96,0.25); }
+body[data-theme="nordic"] .card-bobler   { background: rgba(253,244,228,0.95); border: 1.5px solid rgba(90,46,10,0.2); }
+body[data-theme="nordic"] .card-beskeder { background: rgba(253,244,228,0.95); border: 1.5px solid rgba(144,14,14,0.2); }
+body[data-theme="nordic"] .card-notif    { background: rgba(253,244,228,0.95); border: 1.5px solid rgba(42,110,48,0.2); }
+
+/* Scroll area bg */
+body[data-theme="arctic"] .scroll-area,
+body[data-theme="nordic"] .scroll-area { background: var(--bg); }
+
+/* Chat input area */
+body[data-theme="arctic"] .chat-input-area { background: var(--surface); border-top: 1px solid var(--border); }
+body[data-theme="nordic"] .chat-input-area { background: var(--surface); border-top: 1px solid var(--border); }
+body[data-theme="arctic"] .chat-input { background: var(--card); color: var(--text); border-color: rgba(0,0,0,0.15); }
+body[data-theme="nordic"] .chat-input { background: var(--card); color: var(--text); border-color: rgba(0,0,0,0.15); }
+
+/* Chat bubbles */
 body[data-theme="arctic"] .chat-msg-group.me .chat-bubble,
 body[data-theme="nordic"] .chat-msg-group.me .chat-bubble {
-  background:var(--accent-gradient); color:white;
+  background: var(--accent-gradient); color: white;
 }
-
-/* Cards in light themes */
-body[data-theme="arctic"] .card-bobler { background:rgba(59,91,219,0.06); border-color:rgba(59,91,219,0.15); }
-body[data-theme="arctic"] .card-beskeder { background:rgba(230,73,128,0.06); border-color:rgba(230,73,128,0.15); }
-body[data-theme="arctic"] .card-notif { background:rgba(12,166,120,0.06); border-color:rgba(12,166,120,0.15); }
-body[data-theme="nordic"] .card-bobler { background:rgba(139,94,60,0.07); border-color:rgba(139,94,60,0.15); }
-body[data-theme="nordic"] .card-beskeder { background:rgba(192,57,43,0.07); border-color:rgba(192,57,43,0.15); }
-body[data-theme="nordic"] .card-notif { background:rgba(39,174,96,0.07); border-color:rgba(39,174,96,0.15); }
-
-/* Toast in light themes */
-body[data-theme="arctic"] .toast,
-body[data-theme="nordic"] .toast {
-  background:var(--text); color:var(--bg);
-  border-color:transparent;
+body[data-theme="arctic"] .chat-msg-group.them .chat-bubble,
+body[data-theme="nordic"] .chat-msg-group.them .chat-bubble {
+  background: var(--card); color: var(--text); border-color: rgba(0,0,0,0.12);
 }
 
 /* Profile hero */
-body[data-theme="arctic"] .profile-hero { background:linear-gradient(180deg, rgba(59,91,219,0.07) 0%, transparent 100%); }
-body[data-theme="nordic"] .profile-hero { background:linear-gradient(180deg, rgba(139,94,60,0.07) 0%, transparent 100%); }
+body[data-theme="arctic"] .profile-hero { background: var(--surface); border-bottom: 1px solid var(--border); }
+body[data-theme="nordic"] .profile-hero { background: var(--surface); border-bottom: 1px solid var(--border); }
+body[data-theme="arctic"] .profile-hero div[id="my-name"],
+body[data-theme="arctic"] .profile-hero div[id="my-role"] { color: #EEF6FF; }
+body[data-theme="nordic"] .profile-hero div[id="my-name"],
+body[data-theme="nordic"] .profile-hero div[id="my-role"] { color: #FDF4E4; }
 
-/* Bubble chat input */
-body[data-theme="arctic"] .chat-input-area,
-body[data-theme="nordic"] .chat-input-area { background:var(--surface); }
+/* Toast */
+body[data-theme="arctic"] .toast { background: #04182E; color: #EEF6FF; border-color: var(--border); }
+body[data-theme="nordic"] .toast { background: #160A02; color: #FDF4E4; border-color: var(--border); }
+
+/* Bubble tabs */
+body[data-theme="arctic"] .bubble-tabs,
+body[data-theme="nordic"] .bubble-tabs { background: var(--bg); border-color: var(--border); }
+body[data-theme="arctic"] .bubble-tab { color: rgba(238,246,255,0.6); }
+body[data-theme="arctic"] .bubble-tab.active { background: var(--card); color: var(--accent); }
+body[data-theme="nordic"] .bubble-tab { color: rgba(253,244,228,0.6); }
+body[data-theme="nordic"] .bubble-tab.active { background: var(--card); color: var(--accent); }
+
+/* Section labels synlige på farvet bg */
+body[data-theme="arctic"] .section-label { color: rgba(238,246,255,0.7); }
+body[data-theme="nordic"] .section-label { color: rgba(253,244,228,0.7); }
+
+/* Input felter i form contexts */
+body[data-theme="arctic"] .input,
+body[data-theme="nordic"] .input {
+  background: var(--card);
+  border-color: rgba(0,0,0,0.15);
+  color: var(--text);
+}
+
+/* Person cover gradient */
+body[data-theme="arctic"] .person-cover-gradient { background: linear-gradient(135deg, #0A50A0, #1870C8); }
+body[data-theme="nordic"] .person-cover-gradient { background: linear-gradient(135deg, #5A2E0A, #7A4820); }
+
+/* Spinner */
+body[data-theme="arctic"] .spinner { border-color: rgba(238,246,255,0.2); border-top-color: var(--accent); }
+body[data-theme="nordic"] .spinner { border-color: rgba(253,244,228,0.2); border-top-color: var(--accent); }
+
+/* Modal sheets */
+body[data-theme="arctic"] .modal-sheet,
+body[data-theme="arctic"] .person-sheet { background: var(--surface); border-top-color: var(--border); }
+body[data-theme="nordic"] .modal-sheet,
+body[data-theme="nordic"] .person-sheet { background: var(--surface); border-top-color: var(--border); }
 
 </style>
 <script>
