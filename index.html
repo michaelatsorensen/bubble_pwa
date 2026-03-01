@@ -1139,32 +1139,7 @@ window.onunhandledrejection = function(e) {
 <!-- ════════════════════════════════════════
      SCREEN: BUBBLE DETAIL
 ════════════════════════════════════════ -->
-<div class="screen" id="screen-bubble-detail">
-  <div class="status-bar"><span>9:41</span><span></span></div>
-  <div class="topbar">
-    <button class="back-btn" id="bubble-back-btn">← Tilbage</button>
-    <div style="display:flex;gap:0.5rem" id="bubble-join-area"></div>
-  </div>
-  <div class="scroll-area" style="padding:0">
-    <div style="padding:1.35rem 1.4rem;background:linear-gradient(180deg,rgba(108,99,255,0.12) 0%,transparent 100%);border-bottom:1px solid var(--border-subtle)">
-      <div style="font-size:2.2rem;margin-bottom:0.55rem" id="detail-icon">🫧</div>
-      <div style="font-size:1.45rem;font-weight:800;margin-bottom:0.25rem;letter-spacing:-0.02em" id="detail-name">...</div>
-      <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.85rem" id="detail-meta">...</div>
-      <div id="detail-tags" style="margin-bottom:1.1rem"></div>
-      <div style="display:flex;gap:0.5rem" id="detail-stats"></div>
-    </div>
-    <div style="padding:1.1rem 1.4rem">
-      <div class="section-label" style="margin-top:0">Top matches til dig</div>
-      <div id="bubble-members-list"><div class="spinner"></div></div>
-    </div>
-  </div>
-  <div class="bottom-nav">
-    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span>Hjem</button>
-    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon">🔍</span>Opdag</button>
-    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative">💬<div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
-    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon">👤</span>Profil</button>
-  </div>
-</div>
+<div class="screen" id="screen-bubble-detail" style="display:none"></div>
 
 <!-- ════════════════════════════════════════
      SCREEN: PERSON PROFILE
@@ -1240,30 +1215,38 @@ window.onunhandledrejection = function(e) {
 
 
 <!-- ════════════════════════════════════════
-     SCREEN: BOBLE CHAT
+     SCREEN: BOBLE CHAT (merged med detail)
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-bubble-chat">
   <div class="status-bar"><span id="bc-time">9:41</span><span></span></div>
-  <div class="topbar">
+
+  <!-- Kompakt topbar: tilbage + boble-identitet + actions -->
+  <div class="topbar" style="gap:0.5rem">
     <button class="back-btn" id="bc-back-btn">← Tilbage</button>
-    <div style="display:flex;align-items:center;gap:0.5rem;flex:1;margin-left:0.5rem">
-      <span id="bc-emoji" style="font-size:1.3rem">🫧</span>
-      <div>
-        <div style="font-weight:700;font-size:0.95rem" id="bc-name">...</div>
-        <div style="font-size:0.65rem;color:var(--muted)" id="bc-members-count">...</div>
+    <div style="display:flex;align-items:center;gap:0.5rem;flex:1">
+      <span id="bc-emoji" style="font-size:1.3rem;line-height:1">🫧</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:0.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="bc-name">...</div>
+        <div style="font-size:0.62rem;color:var(--text-secondary)" id="bc-members-count">...</div>
       </div>
     </div>
+    <div style="display:flex;gap:0.4rem;flex-shrink:0" id="bc-action-btns"></div>
   </div>
 
-  <!-- Tabs -->
+  <!-- Tabs: Medlemmer (default) / Chat (med badge) / Info -->
   <div class="bubble-tabs">
-    <button class="bubble-tab active" id="bc-tab-chat" onclick="bcSwitchTab('chat')">Chat <span class="bubble-tab-badge" id="bc-unread-badge" style="display:none">0</span></button>
-    <button class="bubble-tab" id="bc-tab-members" onclick="bcSwitchTab('members')">Medlemmer</button>
+    <button class="bubble-tab active" id="bc-tab-members" onclick="bcSwitchTab('members')">Medlemmer</button>
+    <button class="bubble-tab" id="bc-tab-chat" onclick="bcSwitchTab('chat')">Chat <span class="bubble-tab-badge" id="bc-unread-badge" style="display:none">0</span></button>
     <button class="bubble-tab" id="bc-tab-info" onclick="bcSwitchTab('info')">Info</button>
   </div>
 
+  <!-- MEMBERS TAB (default) -->
+  <div id="bc-panel-members" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+    <div class="chat-members-list" id="bc-members-list"></div>
+  </div>
+
   <!-- CHAT TAB -->
-  <div id="bc-panel-chat" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+  <div id="bc-panel-chat" style="display:none;flex-direction:column;flex:1;overflow:hidden">
     <div class="chat-messages" id="bc-messages"></div>
     <div class="chat-input-area">
       <div class="chat-edit-bar" id="bc-edit-bar">
@@ -1275,11 +1258,6 @@ window.onunhandledrejection = function(e) {
       <input class="chat-input" id="bc-input" placeholder="Skriv til boblen..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();bcSendMessage()}">
       <button class="chat-send-btn" id="bc-send-btn" onclick="bcSendMessage()">→</button>
     </div>
-  </div>
-
-  <!-- MEMBERS TAB -->
-  <div id="bc-panel-members" style="display:none;flex-direction:column;flex:1;overflow:hidden">
-    <div class="chat-members-list" id="bc-members-list"></div>
   </div>
 
   <!-- INFO TAB -->
@@ -1978,50 +1956,8 @@ function filterBubbles() {
 //  BUBBLE DETAIL
 // ══════════════════════════════════════════════════════════
 async function openBubble(bubbleId, fromScreen) {
-  currentBubble = bubbleId;
-  const backBtn = document.getElementById('bubble-back-btn');
-  backBtn.onclick = () => goTo(fromScreen || 'screen-home');
-
-  goTo('screen-bubble-detail');
-
-  const { data: b } = await sb.from('bubbles').select('*').eq('id', bubbleId).single();
-  if (!b) return;
-
-  document.getElementById('detail-icon').textContent = bubbleEmoji(b.type);
-  document.getElementById('detail-name').textContent = b.name;
-  // Member count
-  const memberCountEl = document.getElementById('bubble-member-count');
-  if (memberCountEl) {
-    const { count } = await sb.from('bubble_members').select('*', {count:'exact',head:true}).eq('bubble_id', b.id);
-    memberCountEl.textContent = (count || 0) + ' deltagere';
-  }
-  document.getElementById('detail-meta').textContent = `${typeLabel(b.type)}${b.location ? ' · ' + b.location : ''}`;
-
-  const tagsEl = document.getElementById('detail-tags');
-  tagsEl.innerHTML = (b.keywords || []).map(k => `<span class="tag">${escHtml(k)}</span>`).join('');
-
-  // Check membership
-  const { data: myMembership } = await sb.from('bubble_members')
-    .select('id').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).single();
-
-  const joinArea = document.getElementById('bubble-join-area');
-  const isOwner = b.created_by === currentUser.id;
-  if (myMembership) {
-    joinArea.innerHTML = `
-      ${isOwner ? `<button class="btn-sm btn-ghost" onclick="openEditBubble('${b.id}')" style="font-size:0.85rem">✏️</button>` : ''}
-      ${isOwner ? `<button class="btn-sm btn-ghost" onclick="openQRModal('${b.id}')" style="font-size:0.85rem">⬛</button>` : ''}
-      <button class="btn-sm btn-accent" onclick="openBubbleChat('${b.id}')">💬 Chat</button>
-      <button class="btn-sm btn-ghost" onclick="leaveBubble('${b.id}')">Forlad</button>`;
-  } else if (b.visibility === 'hidden') {
-    joinArea.innerHTML = `<span style="font-size:0.8rem;color:var(--muted)">👁️ Kun via invitation</span>`;
-  } else if (b.visibility === 'private') {
-    joinArea.innerHTML = `<button class="btn-sm btn-accent" onclick="requestJoin('${b.id}')">Anmod om adgang 🔒</button>`;
-  } else {
-    joinArea.innerHTML = `<button class="btn-sm btn-accent" onclick="joinBubble('${b.id}')">+ Join</button>`;
-  }
-
-  // Load members with match scores
-  await loadBubbleMembers(bubbleId);
+  // Kald openBubbleChat direkte — detail-siden er nu integreret i chat-skærmen
+  await openBubbleChat(bubbleId, fromScreen);
 }
 
 async function loadBubbleMembers(bubbleId) {
@@ -2895,14 +2831,54 @@ let bcMsgHistories = {};
 let bcSubscription = null;
 let bcBubbleData = null;
 
-async function openBubbleChat(bubbleId) {
+async function openBubbleChat(bubbleId, fromScreen) {
   bcBubbleId = bubbleId;
   const backBtn = document.getElementById('bc-back-btn');
-  backBtn.onclick = () => goTo('screen-bubble-detail');
+  backBtn.onclick = () => goTo(fromScreen || 'screen-bubbles');
   goTo('screen-bubble-chat');
-  bcSwitchTab('chat');
-  await bcLoadBubbleInfo();
-  await bcLoadMessages();
+
+  // Land altid på Medlemmer-tab
+  bcSwitchTab('members');
+
+  // Hent boble-info og vis metadata + actions i topbar
+  const { data: b } = await sb.from('bubbles').select('*').eq('id', bubbleId).single();
+  if (!b) return;
+  bcBubbleData = b;
+
+  document.getElementById('bc-emoji').textContent = bubbleEmoji(b.type);
+  document.getElementById('bc-name').textContent = b.name;
+
+  const { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bubbleId);
+  document.getElementById('bc-members-count').textContent = (count||0) + ' medlemmer';
+
+  // Vis actions i topbar baseret på membership
+  const { data: myMembership } = await sb.from('bubble_members')
+    .select('id').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).single();
+
+  const actionArea = document.getElementById('bc-action-btns');
+  const isOwner = b.created_by === currentUser.id;
+  if (myMembership) {
+    actionArea.innerHTML =
+      (isOwner ? `<button class="btn-sm btn-ghost" onclick="openEditBubble('${b.id}')" style="font-size:0.85rem;padding:0.35rem 0.55rem">✏️</button>
+      <button class="btn-sm btn-ghost" onclick="openQRModal('${b.id}')" style="font-size:0.85rem;padding:0.35rem 0.55rem">⬛</button>` : '') +
+      `<button class="btn-sm btn-ghost" onclick="leaveBubble('${b.id}')" style="font-size:0.72rem">Forlad</button>`;
+  } else if (b.visibility === 'hidden') {
+    actionArea.innerHTML = `<span style="font-size:0.75rem;color:var(--muted)">👁️ Kun via invitation</span>`;
+  } else if (b.visibility === 'private') {
+    actionArea.innerHTML = `<button class="btn-sm btn-accent" onclick="requestJoin('${b.id}')">Anmod 🔒</button>`;
+  } else {
+    actionArea.innerHTML = `<button class="btn-sm btn-accent" onclick="joinBubble('${b.id}')">+ Join</button>`;
+  }
+
+  // Load data til aktive tabs
+  await bcLoadMembers();
+
+  // Load beskeder i baggrunden + subscribe (badge vises hvis der er ulæste)
+  bcLoadMessages().then(() => {
+    // Tjek om der er nye beskeder siden sidst — vis badge
+    const badge = document.getElementById('bc-unread-badge');
+    // Badge sættes via real-time subscription når man er på en anden tab
+  });
   bcSubscribe();
 }
 
@@ -2918,17 +2894,21 @@ async function bcLoadBubbleInfo() {
 
 function bcSwitchTab(tab) {
   ['chat','members','info'].forEach(t => {
-    document.getElementById('bc-panel-'+t).style.display = t === tab ? 'flex' : 'none';
-    document.getElementById('bc-panel-'+t).style.flexDirection = 'column';
-    document.getElementById('bc-panel-'+t).style.flex = '1';
-    document.getElementById('bc-panel-'+t).style.overflow = 'hidden';
-    document.getElementById('bc-tab-'+t).classList.toggle('active', t === tab);
+    const panel = document.getElementById('bc-panel-'+t);
+    const tabBtn = document.getElementById('bc-tab-'+t);
+    if (panel) {
+      panel.style.display = t === tab ? 'flex' : 'none';
+      panel.style.flexDirection = 'column';
+      panel.style.flex = '1';
+      panel.style.overflow = 'hidden';
+    }
+    if (tabBtn) tabBtn.classList.toggle('active', t === tab);
   });
   if (tab === 'chat') {
-    document.getElementById('bc-unread-badge').style.display = 'none';
+    const badge = document.getElementById('bc-unread-badge');
+    if (badge) badge.style.display = 'none';
     setTimeout(() => bcScrollToBottom(), 100);
   }
-  if (tab === 'members') bcLoadMembers();
   if (tab === 'info') bcLoadInfo();
 }
 
