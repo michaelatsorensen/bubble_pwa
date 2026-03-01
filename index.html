@@ -2969,16 +2969,30 @@ function bcRenderMsg(m) {
 
   if (m.file_url) {
     const ext = m.file_name?.split('.').pop()?.toLowerCase() || '';
-    const icon = ['pdf'].includes(ext) ? '📄' : ['jpg','jpeg','png','gif','webp'].includes(ext) ? '🖼️' : ['zip','rar'].includes(ext) ? '🗜️' : '📎';
+    const isImage = ['jpg','jpeg','png','gif','webp'].includes(ext) || (m.file_type||'').startsWith('image/');
+    const icon = ext === 'pdf' ? '📄' : ['zip','rar','gz'].includes(ext) ? '🗜️' : '📎';
     const size = m.file_size ? (m.file_size < 1024*1024 ? Math.round(m.file_size/1024)+'KB' : (m.file_size/1024/1024).toFixed(1)+'MB') : '';
+
+    const fileContent = isImage
+      ? `<a href="${m.file_url}" target="_blank" rel="noopener" style="display:block">
+           <img src="${m.file_url}" alt="${escHtml(m.file_name||'Billede')}"
+             style="max-width:220px;max-height:260px;border-radius:12px;display:block;cursor:pointer"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+           <div style="display:none" class="chat-file-bubble">
+             <span class="chat-file-icon">🖼️</span>
+             <div><div class="chat-file-name">${escHtml(m.file_name||'Billede')}</div><div class="chat-file-size">${size} · Kan ikke vises</div></div>
+           </div>
+         </a>`
+      : `<a class="chat-file-bubble" href="${m.file_url}" target="_blank" rel="noopener">
+           <span class="chat-file-icon">${icon}</span>
+           <div><div class="chat-file-name">${escHtml(m.file_name||'Fil')}</div><div class="chat-file-size">${size}</div></div>
+         </a>`;
+
     g.innerHTML = `
       ${!isMe ? `<div class="chat-msg-avatar-row"><div class="chat-msg-avatar" style="background:${color}" onclick="bcOpenPerson('${m.user_id}','${p.name||''}','${p.title||''}','${color}')">${initials}</div><span class="chat-msg-sender">${escHtml(p.name||'')}</span></div>` : ''}
       <div class="chat-msg-wrap">
         ${isMe ? `<button class="chat-msg-actions" onclick="bcOpenContext(event,this,true,'${m.id}')">⋯</button>` : ''}
-        <a class="chat-file-bubble" href="${m.file_url}" target="_blank" rel="noopener">
-          <span class="chat-file-icon">${icon}</span>
-          <div><div class="chat-file-name">${escHtml(m.file_name||'Fil')}</div><div class="chat-file-size">${size}</div></div>
-        </a>
+        ${fileContent}
         ${!isMe ? `<button class="chat-msg-actions" onclick="bcOpenContext(event,this,false,'${m.id}')">⋯</button>` : ''}
       </div>
       <div class="chat-msg-meta"><span class="chat-msg-time">${time}</span></div>`;
@@ -3101,24 +3115,48 @@ async function bcHandleFile(input) {
   if (!file) return;
   if (file.size > 10 * 1024 * 1024) { showToast('Maks 10MB per fil'); return; }
 
-  showToast('Uploader...');
-  const path = `bubble-files/${bcBubbleId}/${Date.now()}-${file.name}`;
-  const { error: uploadErr } = await sb.storage.from('bubble-files').upload(path, file);
+  // Sørg for at filen er på chat-tab så bruger kan se progress
+  bcSwitchTab('chat');
+  showToast('📤 Uploader...');
+
+  // Sanitér filnavn — fjern mellemrum og specialtegn
+  const safeFilename = file.name
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // fjern accenter
+    .replace(/[^a-zA-Z0-9._-]/g, '_');                 // erstat ugyldige tegn
+
+  const path = `${bcBubbleId}/${Date.now()}-${safeFilename}`;
+
+  const { error: uploadErr } = await sb.storage.from('bubble-files').upload(path, file, {
+    cacheControl: '3600',
+    upsert: false,
+    contentType: file.type
+  });
+
   if (uploadErr) {
-    // Try creating bucket first
-    await sb.storage.createBucket('bubble-files', {public: true});
-    const { error: retry } = await sb.storage.from('bubble-files').upload(path, file);
-    if (retry) { showToast('Upload fejlede'); return; }
+    console.error('Upload error:', uploadErr);
+    showToast('Upload fejlede: ' + (uploadErr.message || uploadErr.error || 'ukendt fejl'));
+    input.value = '';
+    return;
   }
+
   const { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
-  const { data: newMsg } = await sb.from('bubble_messages').insert({
+
+  const { data: newMsg, error: msgErr } = await sb.from('bubble_messages').insert({
     bubble_id: bcBubbleId,
     user_id: currentUser.id,
+    content: null,
     file_url: urlData.publicUrl,
     file_name: file.name,
     file_size: file.size,
     file_type: file.type
   }).select('id, bubble_id, user_id, content, file_url, file_name, file_size, file_type, edited, created_at').single();
+
+  if (msgErr) {
+    console.error('File message insert error:', msgErr);
+    showToast('Fil uploadet men besked fejlede');
+    input.value = '';
+    return;
+  }
 
   if (newMsg) {
     newMsg.profiles = {
