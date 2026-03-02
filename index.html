@@ -405,11 +405,18 @@
 
   <!-- Context menu -->
   <div class="chat-context-menu" id="bc-context-menu">
-    <div class="chat-context-item" id="bc-ctx-edit" style="display:none" onclick="bcStartEdit()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg> Rediger besked</div>
-    <div class="chat-context-item" onclick="bcCloseContext()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17l-5-5 5-5"/><path d="M4 12h11a4 4 0 010 8h-1"/></svg> Svar</div>
-    <div class="chat-context-item" onclick="bcCloseContext()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="10" r="0.75" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="0.75" fill="currentColor" stroke="none"/></svg> Reaktion</div>
+    <div class="chat-reaction-bar" id="bc-reaction-bar">
+      <button class="chat-reaction-btn" onclick="bcReact('👍')">👍</button>
+      <button class="chat-reaction-btn" onclick="bcReact('❤️')">❤️</button>
+      <button class="chat-reaction-btn" onclick="bcReact('😂')">😂</button>
+      <button class="chat-reaction-btn" onclick="bcReact('😮')">😮</button>
+      <button class="chat-reaction-btn" onclick="bcReact('🙏')">🙏</button>
+      <button class="chat-reaction-btn" onclick="bcReact('🔥')">🔥</button>
+    </div>
+    <div class="chat-context-item" id="bc-ctx-edit" style="display:none" onclick="bcStartEdit()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg> Rediger</div>
+    <div class="chat-context-item" id="bc-ctx-history" style="display:none" onclick="bcShowHistory(bcCurrentMsgId)"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Historik</div>
     <div class="chat-context-divider"></div>
-    <div class="chat-context-item danger" onclick="bcDeleteMessage()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16M9 6.5V4.5a1.5 1.5 0 011.5-1.5h3A1.5 1.5 0 0115 4.5v2"/><path d="M18.5 6.5l-.8 13a2 2 0 01-2 1.8H8.3a2 2 0 01-2-1.8L5.5 6.5"/></svg> Slet</div>
+    <div class="chat-context-item danger" id="bc-ctx-delete" style="display:none" onclick="bcDeleteMessage()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16M9 6.5V4.5a1.5 1.5 0 011.5-1.5h3A1.5 1.5 0 0115 4.5v2"/><path d="M18.5 6.5l-.8 13a2 2 0 01-2 1.8H8.3a2 2 0 01-2-1.8L5.5 6.5"/></svg> Slet</div>
   </div>
 
   <!-- Bottom nav -->
