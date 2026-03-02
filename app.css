@@ -631,3 +631,8 @@ button {
 .chat-context-item .ico { width:0.9rem; height:0.9rem; }
 .tag .ico { width:0.7rem; height:0.7rem; }
 .empty-icon .ico { width:2.5rem; height:2.5rem; }
+
+/* Person-sheet LinkedIn button */
+.person-sheet-btn[id="ps-linkedin-btn"] { text-decoration:none; color:#0A66C2; }
+a.person-sheet-btn { text-decoration:none; }
+a.person-action-btn { text-decoration:none; }

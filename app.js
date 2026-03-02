@@ -1421,7 +1421,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
     if (!b) return;
     bcBubbleData = b;
 
-    document.getElementById('bc-emoji').textContent = bubbleEmoji(b.type);
+    document.getElementById('bc-emoji').innerHTML = bubbleEmoji(b.type);
     document.getElementById('bc-name').textContent = b.name;
 
     const { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bubbleId);
@@ -1436,7 +1436,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
     if (myMembership) {
       actionArea.innerHTML =
         (isOwner ? `<button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" style="font-size:0.85rem;padding:0.35rem 0.55rem">${icon("edit")}</button>
-        <button class="btn-sm btn-ghost" data-action="openQRModal" data-id="${b.id}" style="font-size:0.85rem;padding:0.35rem 0.55rem">⬛</button>` : '') +
+        <button class="btn-sm btn-ghost" data-action="openQRModal" data-id="${b.id}" style="font-size:0.85rem;padding:0.35rem 0.55rem"${icon("qrcode")}</button>` : '') +
         `<button class="btn-sm btn-ghost" data-action="leaveBubble" data-id="${b.id}" style="font-size:0.72rem">Forlad</button>`;
     } else if (b.visibility === 'hidden') {
       actionArea.innerHTML = `<span style="font-size:0.75rem;color:var(--muted)">${icon("eye")} Kun via invitation</span>`;
@@ -1464,7 +1464,7 @@ async function bcLoadBubbleInfo() {
     const { data: b } = await sb.from('bubbles').select('*').eq('id', bcBubbleId).single();
     if (!b) return;
     bcBubbleData = b;
-    document.getElementById('bc-emoji').textContent = bubbleEmoji(b.type);
+    document.getElementById('bc-emoji').innerHTML = bubbleEmoji(b.type);
     document.getElementById('bc-name').textContent = b.name;
     const { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bcBubbleId);
     document.getElementById('bc-members-count').textContent = (count||0) + ' medlemmer';
@@ -1908,6 +1908,12 @@ function bcOpenPerson(userId, name, title, color) {
   document.getElementById('ps-bio').textContent = '';
   document.getElementById('ps-bubbleup-btn').style.display = 'flex';
   document.getElementById('ps-bubbleup-confirm').classList.remove('show');
+  // LinkedIn — fetch profile to check
+  const liBtn = document.getElementById('ps-linkedin-btn');
+  liBtn.style.display = 'none';
+  sb.from('profiles').select('linkedin').eq('id', userId).single().then(({data}) => {
+    if (data?.linkedin) { liBtn.href = data.linkedin.startsWith('http') ? data.linkedin : 'https://' + data.linkedin; liBtn.style.display = 'flex'; }
+  });
   // Store userId
   document.getElementById('person-sheet-el').dataset.userId = userId;
   document.getElementById('person-sheet-el').dataset.userName = name;
