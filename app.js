@@ -705,11 +705,26 @@ function dmRenderMsg(m) {
   const initials = sent ? myInit : theirInit;
   const name = sent ? (currentProfile?.name||'Mig') : (currentChatName||'?');
   const edited = m.edited ? ' <span class="msg-edited">redigeret</span>' : '';
+
+  let bubble = '';
+  if (m.file_url) {
+    const ext = m.file_name?.split('.').pop()?.toLowerCase() || '';
+    const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext) || (m.file_type||'').startsWith('image/');
+    if (isImg) {
+      bubble = `<a href="${m.file_url}" target="_blank"><img class="msg-img" src="${m.file_url}" alt="${escHtml(m.file_name||'')}"></a>`;
+    } else {
+      const sz = m.file_size ? (m.file_size < 1048576 ? Math.round(m.file_size/1024)+'KB' : (m.file_size/1048576).toFixed(1)+'MB') : '';
+      bubble = `<a class="msg-file" href="${m.file_url}" target="_blank">${icon('clip')} ${escHtml(m.file_name||'Fil')} <span class="msg-file-sz">${sz}</span></a>`;
+    }
+  } else {
+    bubble = `<div class="msg-bubble${sent?' sent':''}" id="dm-bubble-${m.id}">${escHtml(m.content||'')}</div>`;
+  }
+
   return `<div class="msg-row${sent?' me':''}" data-msg-id="${m.id}">
     <div class="msg-avatar" style="background:linear-gradient(135deg,${sent?'#4C1D95,#A78BFA':'#8B7FFF,#E85D8A'})">${initials}</div>
     <div class="msg-body">
       <div class="msg-head"><span class="msg-name">${escHtml(name)}</span><span class="msg-time">${time}${edited}</span></div>
-      <div class="msg-content"><div class="msg-bubble${sent?' sent':''}" id="dm-bubble-${m.id}">${escHtml(m.content||'')}</div>${sent?`<button class="msg-dots" onclick="dmEditMsg('${m.id}')">⋯</button>`:''}</div>
+      <div class="msg-content">${bubble}${sent && !m.file_url ?`<button class="msg-dots" onclick="dmEditMsg('${m.id}')">⋯</button>`:''}</div>
     </div>
   </div>`;
 }
@@ -805,6 +820,72 @@ async function sendDirectMessage(toId, content) {
 function startChat() {
   if (!currentPerson) return;
   openChat(currentPerson);
+}
+
+// ══════════════════════════════════════════════════════════
+//  DM FILE ATTACH
+// ══════════════════════════════════════════════════════════
+async function dmHandleFile(input) {
+  try {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { showToast('Maks 10MB per fil'); return; }
+    showToast('Uploader...');
+
+    const safeFilename = file.name
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `dm/${currentUser.id}/${Date.now()}-${safeFilename}`;
+
+    const { error: uploadErr } = await sb.storage.from('bubble-files').upload(path, file, {
+      cacheControl: '3600', upsert: false, contentType: file.type
+    });
+    if (uploadErr) { showToast('Upload fejlede: ' + (uploadErr.message || 'ukendt')); input.value = ''; return; }
+
+    const { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
+
+    const { data: newMsg, error } = await sb.from('messages').insert({
+      sender_id: currentUser.id,
+      receiver_id: currentChatUser,
+      content: null,
+      file_url: urlData.publicUrl,
+      file_name: file.name,
+      file_size: file.size,
+      file_type: file.type
+    }).select().single();
+
+    if (error) { showToast('Besked fejlede'); input.value = ''; return; }
+    if (newMsg) {
+      const el = document.getElementById('chat-messages');
+      if (el && !el.querySelector('[data-msg-id="' + newMsg.id + '"]')) {
+        el.insertAdjacentHTML('beforeend', dmRenderMsg(newMsg));
+        el.scrollTop = el.scrollHeight;
+      }
+      showToast('Fil sendt!');
+    }
+    input.value = '';
+  } catch(e) { console.error("dmHandleFile:", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  PERSON-SHEET: SAVE CONTACT
+// ══════════════════════════════════════════════════════════
+async function psSaveContact() {
+  try {
+    const userId = document.getElementById('person-sheet-el')?.dataset?.userId;
+    if (!userId) return;
+    const { data: existing } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
+    const btn = document.getElementById('ps-save-btn');
+    if (existing) {
+      await sb.from('saved_contacts').delete().eq('id', existing.id);
+      if (btn) btn.innerHTML = icon('bookmark') + ' Gem';
+      showToast('Kontakt fjernet');
+    } else {
+      await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: userId });
+      if (btn) btn.innerHTML = icon('bookmarkFill') + ' Gemt';
+      showToast('Kontakt gemt!');
+    }
+  } catch(e) { console.error("psSaveContact:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2029,6 +2110,14 @@ function bcOpenPerson(userId, name, title, color) {
   // Store userId
   document.getElementById('person-sheet-el').dataset.userId = userId;
   document.getElementById('person-sheet-el').dataset.userName = name;
+  // Check if contact is already saved — update button state
+  const saveBtn = document.getElementById('ps-save-btn');
+  if (saveBtn) {
+    saveBtn.innerHTML = icon('bookmark') + ' Gem';
+    sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle().then(({data}) => {
+      if (data) saveBtn.innerHTML = icon('bookmarkFill') + ' Gemt';
+    });
+  }
   document.getElementById('ps-overlay').classList.add('open');
   setTimeout(() => document.getElementById('person-sheet-el').classList.add('open'), 10);
 }
@@ -2116,6 +2205,28 @@ async function sendBubbleUpInvitation(toUserId) {
   } catch(e) { console.error("sendBubbleUpInvitation:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
+
+// ══════════════════════════════════════════════════════════
+//  CHAT INPUT EVENT LISTENERS (moved from inline HTML)
+// ══════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  const bcInput = document.getElementById('bc-input');
+  if (bcInput) {
+    bcInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); bcSendMessage(); }
+    });
+  }
+  const dmFileInput = document.getElementById('dm-file-input');
+  if (dmFileInput) {
+    dmFileInput.addEventListener('change', () => dmHandleFile(dmFileInput));
+  }
+  const dmInput = document.getElementById('chat-input');
+  if (dmInput) {
+    dmInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
+    });
+  }
+});
 
 // ══════════════════════════════════════════════════════════
 //  GLOBAL EVENT DELEGATION
