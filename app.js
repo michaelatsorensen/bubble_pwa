@@ -574,11 +574,12 @@ async function openPerson(userId, fromScreen) {
 async function saveContact() {
   try {
     if (!currentPerson) return;
-    const { data: existing } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', currentPerson).single();
+    const { data: existing } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', currentPerson).maybeSingle();
     if (existing) { showToast('Allerede gemt'); return; }
     await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: currentPerson });
     document.getElementById('save-btn').innerHTML = icon('checkCircle') + '<span>Gemt</span>';
     showToast('Kontakt gemt!');
+    loadSavedContacts();
   } catch(e) { console.error("saveContact:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -590,16 +591,9 @@ async function removeSavedContact(savedId, btn) {
       card.style.transition = 'opacity 0.25s, transform 0.25s';
       card.style.opacity = '0';
       card.style.transform = 'translateX(20px)';
-      setTimeout(() => {
-        card.remove();
-        // Update count
-        const countEl = document.getElementById('saved-count');
-        const remaining = document.getElementById('saved-contacts')?.querySelectorAll('.card').length || 0;
-        if (countEl) countEl.textContent = remaining ? remaining + ' gemt' : '';
-        if (!remaining) {
-          document.getElementById('saved-contacts').innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bookmark') + '</div><div class="empty-text">Ingen gemte kontakter endnu.<br>Tryk Gem på en profil for at huske dem.</div></div>';
-        }
-      }, 260);
+      setTimeout(() => loadSavedContacts(), 260);
+    } else {
+      loadSavedContacts();
     }
     showToast('Kontakt fjernet');
   } catch(e) { console.error("removeSavedContact:", e); showToast(e.message || "Ukendt fejl"); }
@@ -912,6 +906,7 @@ async function psSaveContact() {
       if (btn) btn.innerHTML = icon('bookmarkFill') + ' Gemt';
       showToast('Kontakt gemt!');
     }
+    loadSavedContacts();
   } catch(e) { console.error("psSaveContact:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -932,11 +927,19 @@ async function loadProfile() {
     isAnon = currentProfile.is_anon || false;
     updateAnonToggle();
 
-    // Saved contacts
+    await loadSavedContacts();
+    await loadMyBubbles();
+    loadProfileChats();
+  } catch(e) { console.error("loadProfile:", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+// Standalone saved contacts loader — called from loadProfile AND after save/remove
+async function loadSavedContacts() {
+  try {
     const { data: saved } = await sb.from('saved_contacts')
       .select('id, contact_id, profiles(id,name,title,keywords,is_anon)').eq('user_id', currentUser.id);
     const savedEl = document.getElementById('saved-contacts');
-    // Saved contacts badge
+    if (!savedEl) return;
     const countEl = document.getElementById('saved-count');
     if (countEl) {
       if (saved?.length) { countEl.textContent = saved.length; countEl.style.display = 'inline-flex'; }
@@ -969,10 +972,7 @@ async function loadProfile() {
     } else {
       savedEl.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bookmark') + '</div><div class="empty-text">Ingen gemte kontakter endnu.<br>Tryk Gem på en profil for at huske dem.</div></div>';
     }
-
-    await loadMyBubbles();
-    loadProfileChats();
-  } catch(e) { console.error("loadProfile:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { console.error("loadSavedContacts:", e); }
 }
 
 // Profile tab switching — same pattern as bcSwitchTab
