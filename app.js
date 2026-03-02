@@ -1896,7 +1896,7 @@ async function bcLoadInfo() {
       <div class="chat-info-block"><div class="chat-info-label">Sted</div><div class="chat-info-val">${escHtml(b.location||'Ikke angivet')}</div></div>
       <div>
         <button class="chat-info-btn primary" data-action="openQRModal" data-id="${b.id}">${icon("qrcode")} Del boble / QR-kode</button>
-        <button class="chat-info-btn danger" data-action="leaveBubble" data-id="${b.id}"${icon("logout")} Forlad boblen</button>
+        <button class="chat-info-btn danger" data-action="leaveBubble" data-id="${b.id}">${icon("logout")} Forlad boblen</button>
       </div>`;
   } catch(e) { console.error("bcLoadInfo:", e); showToast(e.message || "Ukendt fejl"); }
 }
