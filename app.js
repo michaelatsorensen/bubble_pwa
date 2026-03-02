@@ -1483,7 +1483,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
     if (myMembership) {
       actionArea.innerHTML =
         (isOwner ? `<button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" style="font-size:0.85rem;padding:0.35rem 0.55rem">${icon("edit")}</button>
-        <button class="btn-sm btn-ghost" data-action="openQRModal" data-id="${b.id}" style="font-size:0.85rem;padding:0.35rem 0.55rem"${icon("qrcode")}</button>` : '') +
+        <button class="btn-sm btn-ghost" data-action="openQRModal" data-id="${b.id}" style="font-size:0.85rem;padding:0.35rem 0.55rem">${icon("qrcode")}</button>` : '') +
         `<button class="btn-sm btn-ghost" data-action="leaveBubble" data-id="${b.id}" style="font-size:0.72rem">Forlad</button>`;
     } else if (b.visibility === 'hidden') {
       actionArea.innerHTML = `<span style="font-size:0.75rem;color:var(--muted)">${icon("eye")} Kun via invitation</span>`;
@@ -1623,7 +1623,8 @@ function bcRenderMsg(m) {
         ${fileContent}
         ${!isMe ? `<button class="chat-msg-actions" onclick="bcOpenContext(event,this,false,'${m.id}')">⋯</button>` : ''}
       </div>
-      <div class="chat-msg-meta"><span class="chat-msg-time">${time}</span></div>`;
+      <div class="chat-msg-meta"><span class="chat-msg-time">${time}</span></div>
+      <div class="chat-reactions" id="bc-reactions-${m.id}"></div>`;
   } else {
     g.innerHTML = `
       ${!isMe ? `<div class="chat-msg-avatar-row"><div class="chat-msg-avatar" style="background:${color}" onclick="bcOpenPerson('${m.user_id}','${p.name||''}','${p.title||''}','${color}')">${initials}</div><span class="chat-msg-sender">${escHtml(p.name||'')}</span></div>` : ''}
@@ -1635,8 +1636,11 @@ function bcRenderMsg(m) {
       <div class="chat-msg-meta">
         <span class="chat-msg-time">${time}</span>
         ${m.edited ? `<span class="chat-msg-edited" onclick="bcShowHistory('${m.id}')">(redigeret)</span>` : ''}
-      </div>`;
+      </div>
+      <div class="chat-reactions" id="bc-reactions-${m.id}"></div>`;
   }
+  // Load reactions async
+  setTimeout(() => bcLoadReactions(m.id), 50);
   return g;
 }
 
@@ -1806,16 +1810,66 @@ function bcOpenContext(e, btn, isMe, msgId) {
   e.stopPropagation();
   bcCurrentMsgId = msgId;
   document.getElementById('bc-ctx-edit').style.display = isMe ? 'flex' : 'none';
+  document.getElementById('bc-ctx-delete').style.display = isMe ? 'flex' : 'none';
+  // Show history if message was edited
+  const bubble = document.getElementById('bc-bubble-' + msgId);
+  const msgGroup = document.getElementById('bc-msg-' + msgId);
+  const wasEdited = msgGroup?.querySelector('.chat-msg-edited');
+  document.getElementById('bc-ctx-history').style.display = wasEdited ? 'flex' : 'none';
   const menu = document.getElementById('bc-context-menu');
   menu.style.display = 'block';
   menu.classList.add('open');
   const r = btn.getBoundingClientRect();
   let top = r.bottom + 4;
-  let left = isMe ? r.right - 175 : r.left - 5;
-  left = Math.max(8, Math.min(left, window.innerWidth - 185));
+  let left = isMe ? r.right - 200 : r.left - 5;
+  left = Math.max(8, Math.min(left, window.innerWidth - 210));
+  if (top + 200 > window.innerHeight) top = r.top - 200;
   menu.style.top = top + 'px';
   menu.style.left = left + 'px';
   setTimeout(() => document.addEventListener('click', bcCloseContext, {once:true}), 10);
+}
+
+async function bcReact(emoji) {
+  bcCloseContext();
+  if (!bcCurrentMsgId) return;
+  try {
+    // Check if user already reacted with this emoji
+    const { data: existing } = await sb.from('bubble_message_reactions')
+      .select('id').eq('message_id', bcCurrentMsgId).eq('user_id', currentUser.id).eq('emoji', emoji).maybeSingle();
+    if (existing) {
+      // Remove reaction
+      await sb.from('bubble_message_reactions').delete().eq('id', existing.id);
+    } else {
+      // Add reaction
+      await sb.from('bubble_message_reactions').insert({ message_id: bcCurrentMsgId, user_id: currentUser.id, emoji });
+    }
+    await bcLoadReactions(bcCurrentMsgId);
+  } catch(e) { console.error("bcReact:", e); showToast(e.message || "Reaktion fejlede"); }
+}
+
+async function bcLoadReactions(msgId) {
+  try {
+    const { data: reactions } = await sb.from('bubble_message_reactions')
+      .select('emoji, user_id, profiles(name)').eq('message_id', msgId);
+    const el = document.getElementById('bc-reactions-' + msgId);
+    if (!el) return;
+    if (!reactions || reactions.length === 0) { el.innerHTML = ''; return; }
+    // Group by emoji
+    const groups = {};
+    reactions.forEach(r => {
+      if (!groups[r.emoji]) groups[r.emoji] = [];
+      groups[r.emoji].push(r.profiles?.name || '?');
+    });
+    el.innerHTML = Object.entries(groups).map(([emoji, names]) => {
+      const mine = reactions.some(r => r.emoji === emoji && r.user_id === currentUser.id);
+      return `<button class="chat-reaction-pill${mine ? ' mine' : ''}" onclick="bcToggleReaction('${msgId}','${emoji}')" title="${names.join(', ')}">${emoji} ${names.length}</button>`;
+    }).join('');
+  } catch(e) { /* silent */ }
+}
+
+async function bcToggleReaction(msgId, emoji) {
+  bcCurrentMsgId = msgId;
+  await bcReact(emoji);
 }
 
 function bcCloseContext() {
