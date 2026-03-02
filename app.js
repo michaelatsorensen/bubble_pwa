@@ -583,10 +583,44 @@ async function saveContact() {
   } catch(e) { console.error("saveContact:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
-async function removeSavedContact(savedId, btn) {
+let pendingRemoveSavedId = null;
+let pendingRemoveBtn = null;
+
+function removeSavedContact(savedId, btn) {
+  pendingRemoveSavedId = savedId;
+  pendingRemoveBtn = btn;
+  // Show inline confirm on the card
+  const card = btn.closest('.card');
+  if (!card) return;
+  // Prevent double-confirm
+  if (card.querySelector('.remove-confirm')) return;
+  const confirm = document.createElement('div');
+  confirm.className = 'remove-confirm';
+  confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(232,93,138,0.08);border:1px solid rgba(232,93,138,0.2);border-radius:10px;gap:0.5rem';
+  confirm.innerHTML = `<span style="font-size:0.72rem;color:var(--text-secondary)">Fjern kontakt?</span>
+    <div style="display:flex;gap:0.3rem">
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)" onclick="confirmRemoveSaved()">Fjern</button>
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelRemoveSaved(this)">Annuller</button>
+    </div>`;
+  card.appendChild(confirm);
+}
+
+function cancelRemoveSaved(btn) {
+  const confirm = btn.closest('.remove-confirm');
+  if (confirm) confirm.remove();
+  pendingRemoveSavedId = null;
+  pendingRemoveBtn = null;
+}
+
+async function confirmRemoveSaved() {
+  if (!pendingRemoveSavedId) return;
+  const savedId = pendingRemoveSavedId;
+  const btn = pendingRemoveBtn;
+  pendingRemoveSavedId = null;
+  pendingRemoveBtn = null;
   try {
     await sb.from('saved_contacts').delete().eq('id', savedId);
-    const card = btn.closest('.card');
+    const card = btn?.closest('.card');
     if (card) {
       card.style.transition = 'opacity 0.25s, transform 0.25s';
       card.style.opacity = '0';
@@ -596,7 +630,7 @@ async function removeSavedContact(savedId, btn) {
       loadSavedContacts();
     }
     showToast('Kontakt fjernet');
-  } catch(e) { console.error("removeSavedContact:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { console.error("confirmRemoveSaved:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 function proposeMeeting() {
