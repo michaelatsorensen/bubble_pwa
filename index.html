@@ -530,12 +530,172 @@
           <div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>
         </div>
       </div>
-    </div>
 
+      <div class="section-label" style="margin-top:1.25rem">Mine bobler</div>
+      <div id="profile-bubbles"><div class="spinner"></div></div>
+      <div class="section-label">Gemte kontakter</div>
+      <div id="saved-contacts" style="display:flex;flex-wrap:wrap;gap:0.75rem;padding-bottom:1rem"></div>
+      <button class="btn-secondary" onclick="handleLogout()" style="margin-top:1rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)">Log ud</button>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span>Hjem</button>
+    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon">🔍</span>Opdag</button>
+    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative">💬<div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
+    <button class="nav-item active"><span class="nav-icon">👤</span>Profil</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: EDIT BUBBLE
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-edit-bubble">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Rediger boble ✏️</div>
+    <div class="input-group">
+      <div class="input-label">Navn</div>
+      <input class="input" id="eb-name" placeholder="Boble navn">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Type</div>
+      <select class="input" id="eb-type">
+        <option value="event">🚀 Event</option>
+        <option value="local">📍 Lokal</option>
+        <option value="theme">🤖 Tematiseret</option>
+        <option value="company">🏢 Virksomhed</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Synlighed</div>
+      <select class="input" id="eb-visibility">
+        <option value="public">🌍 Offentlig — synlig, alle kan joine</option>
+        <option value="private">🔒 Privat — synlig, join kræver anmodning</option>
+        <option value="hidden">👁️ Skjult — usynlig, kun via QR-invitation</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Beskrivelse</div>
+      <textarea class="input" id="eb-desc" placeholder="Hvad handler denne boble om?"></textarea>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Nøgleord</div>
+      <div class="chips-container" id="eb-chips-container" onclick="document.getElementById('eb-chip-input').focus()">
+        <input class="chip-input" id="eb-chip-input" placeholder="Tilføj nøgleord..." onkeydown="handleChipInput(event,'eb-chips')">
+      </div>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Lokation (valgfrit)</div>
+      <input class="input" id="eb-location" placeholder="f.eks. København">
+    </div>
+    <button class="btn-primary" onclick="saveEditBubble()">Gem ændringer</button>
+    <button class="btn-secondary" onclick="closeModal('modal-edit-bubble')">Annuller</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: CREATE BUBBLE
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-create-bubble">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Opret ny boble 🫧</div>
+    <div class="input-group">
+      <div class="input-label">Navn</div>
+      <input class="input" id="cb-name" placeholder="f.eks. TechBBQ 2025">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Type</div>
+      <select class="input" id="cb-type">
+        <option value="event">🚀 Event</option>
+        <option value="local">📍 Lokal</option>
+        <option value="theme">🤖 Tematiseret</option>
+        <option value="company">🏢 Virksomhed</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Synlighed</div>
+      <select class="input" id="cb-visibility">
+        <option value="public">🌍 Offentlig — synlig, alle kan joine</option>
+        <option value="private">🔒 Privat — synlig, join kræver anmodning</option>
+        <option value="hidden">👁️ Skjult — usynlig, kun via QR-invitation</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Beskrivelse</div>
+      <textarea class="input" id="cb-desc" placeholder="Hvad handler denne boble om?"></textarea>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Nøgleord (tryk Enter for at tilføje)</div>
+      <div class="chips-container" id="cb-chips-container" onclick="document.getElementById('cb-chip-input').focus()">
+        <input class="chip-input" id="cb-chip-input" placeholder="Tilføj nøgleord..." onkeydown="handleChipInput(event,'cb-chips')">
+      </div>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Lokation (valgfrit)</div>
+      <input class="input" id="cb-location" placeholder="f.eks. København">
+    </div>
+    <button class="btn-primary" onclick="createBubble()">Opret boble</button>
+    <button class="btn-secondary" onclick="closeModal('modal-create-bubble')">Annuller</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: EDIT PROFILE
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-edit-profile">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Rediger profil</div>
+    <div class="input-group">
+      <div class="input-label">Navn</div>
+      <input class="input" id="ep-name">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Titel / Rolle</div>
+      <input class="input" id="ep-title" placeholder="f.eks. Founder · Bubble">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Om dig</div>
+      <textarea class="input" id="ep-bio" placeholder="Skriv kort om dig selv og hvad du søger..."></textarea>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Nøgleord (tryk Enter)</div>
+      <div class="chips-container" id="ep-chips-container" onclick="document.getElementById('ep-chip-input').focus()">
+        <input class="chip-input" id="ep-chip-input" placeholder="f.eks. SaaS, AI, Networking..." onkeydown="handleChipInput(event,'ep-chips')">
+      </div>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Dynamiske nøgleord (hvad du søger nu)</div>
+      <div class="chips-container" id="ep-dyn-chips-container" onclick="document.getElementById('ep-dyn-chip-input').focus()">
+        <input class="chip-input" id="ep-dyn-chip-input" placeholder="f.eks. Søger investor, Open to coffee..." onkeydown="handleChipInput(event,'ep-dyn-chips')">
+      </div>
+    </div>
+    <div class="input-group">
+      <div class="input-label">LinkedIn URL (valgfrit)</div>
+      <input class="input" id="ep-linkedin" placeholder="https://linkedin.com/in/dit-navn" type="url">
+    </div>
+    <button class="btn-primary" onclick="saveProfile()">Gem profil</button>
+    <button class="btn-secondary" onclick="closeModal('modal-edit-profile')">Annuller</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: QR CODE
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-qr">
+  <div class="modal-sheet" style="text-align:center">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="qr-modal-title">QR-kode 🫧</div>
+    <div style="font-size:0.85rem;color:var(--muted);margin-bottom:1.25rem" id="qr-modal-subtitle">Vis eller print denne kode ved indgangen</div>
+    <div style="display:flex;justify-content:center;margin-bottom:1.25rem">
+      <div id="qr-canvas-wrap" style="background:white;padding:16px;border-radius:16px;display:inline-block">
+        <div id="qr-code-el"></div>
+      </div>
+    </div>
     <div style="font-size:0.78rem;color:var(--muted);margin-bottom:1.5rem">
       Scan med iPhone-kamera for at joine boblen direkte
     </div>
-
     <button class="btn-primary" onclick="downloadQRPdf()">⬇️ Download PDF til print</button>
     <button class="btn-secondary" onclick="closeModal('modal-qr')">Luk</button>
   </div>
@@ -558,6 +718,18 @@
     </div>
     <button class="btn-primary" onclick="sendMeetingProposal()">Send mødeanmodning</button>
     <button class="btn-secondary" onclick="closeModal('modal-meeting')">Annuller</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: EDIT HISTORY
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-edit-history">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Redigeringshistorik</div>
+    <div id="edit-history-content" style="max-height:60vh;overflow-y:auto;padding:0.5rem 0"></div>
+    <button class="btn-secondary" onclick="closeModal('modal-edit-history')">Luk</button>
   </div>
 </div>
 

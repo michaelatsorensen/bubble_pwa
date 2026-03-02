@@ -418,10 +418,12 @@ async function loadBubbleMembers(bubbleId) {
       .eq('bubble_id', bubbleId).neq('user_id', currentUser.id);
 
     const list = document.getElementById('bubble-members-list');
+    if (!list) return;
 
     // Stats
     const { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id',bubbleId);
-    document.getElementById('detail-stats').innerHTML = `
+    const statsEl = document.getElementById('detail-stats');
+    if (statsEl) statsEl.innerHTML = `
       <div class="stat-box"><div class="stat-num">${count||0}</div><div class="stat-label">Aktive</div></div>
       <div class="stat-box"><div class="stat-num">${members?.length||0}</div><div class="stat-label">Andre</div></div>
       <div class="stat-box"><div class="stat-num" style="color:var(--accent3)">${members?.length ? Math.round(60 + Math.random()*35) : 0}%</div><div class="stat-label">Din match-rate</div></div>`;
