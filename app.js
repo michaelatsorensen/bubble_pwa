@@ -601,8 +601,10 @@ async function updateUnreadBadge() {
   } catch(e) { console.error("updateUnreadBadge:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
+let incomingSubscription = null;
 function subscribeToIncoming() {
-  sb.channel('incoming-messages')
+  if (incomingSubscription) incomingSubscription.unsubscribe();
+  incomingSubscription = sb.channel('incoming-messages')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages',
       filter: `receiver_id=eq.${currentUser.id}` }, () => {
       updateUnreadBadge();
@@ -614,11 +616,12 @@ async function loadMessages() {
     const list = document.getElementById('conversations-list');
     list.innerHTML = '<div class="spinner"></div>';
 
+    // TODO: Replace with conversations table or DISTINCT ON RPC for scale
     const { data: convs } = await sb.from('messages')
       .select('*')
       .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
       .order('created_at', {ascending:false})
-      .limit(200);
+      .limit(100);
 
     if (!convs || convs.length === 0) {
       list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">Ingen beskeder endnu.<br>Find en person og start en samtale!</div></div>';
@@ -660,9 +663,9 @@ async function loadMessages() {
 async function openChat(userId) {
   try {
     currentChatUser = userId;
-  currentChatName = name;
     const { data: p } = await sb.from('profiles').select('name,title').eq('id', userId).single();
-    document.getElementById('chat-name').textContent = p?.name || 'Ukendt';
+    currentChatName = p?.name || 'Ukendt';
+    document.getElementById('chat-name').textContent = currentChatName;
     document.getElementById('chat-role').textContent = p?.title || '';
     goTo('screen-chat');
     await loadChatMessages();
@@ -673,6 +676,24 @@ async function openChat(userId) {
       .eq('sender_id', userId).eq('receiver_id', currentUser.id).is('read_at', null);
     await updateUnreadBadge();
   } catch(e) { console.error("openChat:", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+
+function dmRenderMsg(m) {
+  const sent = m.sender_id === currentUser.id;
+  const time = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'});
+  const myInit = (currentProfile?.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const theirInit = (currentChatName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const initials = sent ? myInit : theirInit;
+  const name = sent ? (currentProfile?.name||'Mig') : (currentChatName||'?');
+  const edited = m.edited ? ' <span class="msg-edited">redigeret</span>' : '';
+  return `<div class="msg-row${sent?' me':''}" data-msg-id="${m.id}">
+    <div class="msg-avatar" style="background:linear-gradient(135deg,${sent?'#4C1D95,#A78BFA':'#8B7FFF,#E85D8A'})">${initials}</div>
+    <div class="msg-body">
+      <div class="msg-head"><span class="msg-name">${escHtml(name)}</span><span class="msg-time">${time}${edited}</span></div>
+      <div class="msg-content"><div class="msg-bubble${sent?' sent':''}" id="dm-bubble-${m.id}">${escHtml(m.content||'')}</div>${sent?`<button class="msg-dots" onclick="dmEditMsg('${m.id}')">⋯</button>`:''}</div>
+    </div>
+  </div>`;
 }
 
 async function loadChatMessages() {
@@ -686,30 +707,7 @@ async function loadChatMessages() {
     
     const sorted = (msgs||[]).reverse();
 
-    el.innerHTML = sorted.map(m => {
-      const sent = m.sender_id === currentUser.id;
-      const time = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'});
-      const edited = m.edited ? '<span class="dm-edited">(redigeret)</span>' : '';
-      if (sent) {
-        return `<div class="dm-msg me" data-msg-id="${m.id}">
-          <div class="dm-wrap">
-            <button class="dm-actions" onclick="dmEditMsg('${m.id}')">⋯</button>
-            <div class="msg-bubble sent" id="dm-bubble-${m.id}">${escHtml(m.content||'')}</div>
-          </div>
-          <div class="dm-meta">${time} ${edited}</div>
-        </div>`;
-      } else {
-        const p = m.sender_profile || {};
-        const ini = (currentChatName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-        return `<div class="dm-msg them">
-          <div class="dm-avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">${ini}</div>
-          <div>
-            <div class="msg-bubble recv">${escHtml(m.content||'')}</div>
-            <div class="dm-meta">${time} ${edited}</div>
-          </div>
-        </div>`;
-      }
-    }).join('');
+    el.innerHTML = sorted.map(m => dmRenderMsg(m)).join('');
     el.scrollTop = el.scrollHeight;
   } catch(e) { console.error("loadChatMessages:", e); showToast(e.message || "Ukendt fejl"); }
 }
@@ -725,15 +723,7 @@ function subscribeToChat() {
       const time = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'});
       const div = document.createElement('div');
       // styled via dm-msg class
-      if (sent) {
-        div.className = 'dm-msg me';
-        div.dataset.msgId = m.id;
-        div.innerHTML = `<div class="dm-wrap"><button class="dm-actions" onclick="dmEditMsg('${m.id}')">⋯</button><div class="msg-bubble sent" id="dm-bubble-${m.id}">${escHtml(m.content||'')}</div></div><div class="dm-meta">${time}</div>`;
-      } else {
-        div.className = 'dm-msg them';
-        const ini = (currentChatName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-        div.innerHTML = `<div class="dm-avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">${ini}</div><div><div class="msg-bubble recv">${escHtml(m.content||'')}</div><div class="dm-meta">${time}</div></div>`;
-      }
+      div.outerHTML = dmRenderMsg(m);
       el.appendChild(div);
       el.scrollTop = el.scrollHeight;
       if (!sent) updateUnreadBadge();
@@ -1523,10 +1513,14 @@ function bcSwitchTab(tab) {
     const panel = document.getElementById('bc-panel-'+t);
     const tabBtn = document.getElementById('bc-tab-'+t);
     if (panel) {
-      panel.style.display = t === tab ? 'flex' : 'none';
-      panel.style.flexDirection = 'column';
-      panel.style.flex = '1';
-      panel.style.overflow = 'hidden';
+      if (t === tab) {
+        panel.style.display = 'flex';
+        panel.style.flexDirection = 'column';
+        panel.style.flex = '1';
+        panel.style.overflow = 'hidden';
+      } else {
+        panel.style.display = 'none';
+      }
     }
     if (tabBtn) tabBtn.classList.toggle('active', t === tab);
   });
@@ -1587,52 +1581,42 @@ function bcRenderMsg(m) {
   const name = p.name || '?';
   const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   const time = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'});
-  const colors = ['linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#7C2D12,#F97316)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#4C1D95,#A78BFA)','linear-gradient(135deg,#0C4A6E,#38BDF8)'];
-  const color = colors[Math.abs(name.charCodeAt(0)) % colors.length];
+  const gradients = ['linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#7C2D12,#F97316)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#4C1D95,#A78BFA)','linear-gradient(135deg,#0C4A6E,#38BDF8)'];
+  const color = gradients[Math.abs(name.charCodeAt(0)) % gradients.length];
 
-  const g = document.createElement('div');
-  g.className = 'bc-msg ' + (isMe ? 'me' : 'them');
-  g.id = 'bc-msg-' + m.id;
-  g.dataset.msgId = m.id;
+  const row = document.createElement('div');
+  row.className = 'msg-row' + (isMe ? ' me' : '');
+  row.id = 'bc-msg-' + m.id;
 
-  // Avatar HTML (shown for everyone)
-  const avatarHtml = `<div class="bc-msg-avatar" style="background:${color}" onclick="bcOpenPerson('${m.user_id}','${escHtml(name)}','${escHtml(p.title||'')}','${color}')">${initials}</div>`;
-
-  // Content
-  let contentHtml = '';
+  // Build content
+  let bubble = '';
   if (m.file_url) {
     const ext = m.file_name?.split('.').pop()?.toLowerCase() || '';
-    const isImage = ['jpg','jpeg','png','gif','webp'].includes(ext) || (m.file_type||'').startsWith('image/');
-    const size = m.file_size ? (m.file_size < 1024*1024 ? Math.round(m.file_size/1024)+'KB' : (m.file_size/1024/1024).toFixed(1)+'MB') : '';
-    if (isImage) {
-      contentHtml = `<a href="${m.file_url}" target="_blank" rel="noopener"><img class="bc-msg-img" src="${m.file_url}" alt="${escHtml(m.file_name||'Billede')}"></a>`;
+    const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext) || (m.file_type||'').startsWith('image/');
+    if (isImg) {
+      bubble = `<a href="${m.file_url}" target="_blank"><img class="msg-img" src="${m.file_url}" alt="${escHtml(m.file_name||'')}"></a>`;
     } else {
-      contentHtml = `<a class="bc-msg-file" href="${m.file_url}" target="_blank" rel="noopener">${icon('clip')} ${escHtml(m.file_name||'Fil')} <span class="bc-msg-file-size">${size}</span></a>`;
+      const sz = m.file_size ? (m.file_size < 1048576 ? Math.round(m.file_size/1024)+'KB' : (m.file_size/1048576).toFixed(1)+'MB') : '';
+      bubble = `<a class="msg-file" href="${m.file_url}" target="_blank">${icon('clip')} ${escHtml(m.file_name||'Fil')} <span class="msg-file-sz">${sz}</span></a>`;
     }
   } else {
-    contentHtml = `<div class="bc-msg-bubble" id="bc-bubble-${m.id}">${escHtml(m.content||'')}</div>`;
+    bubble = `<div class="msg-bubble${isMe ? ' sent' : ''}" id="bc-bubble-${m.id}">${escHtml(m.content||'')}</div>`;
   }
 
-  // Edited indicator
-  const editedHtml = m.edited ? `<span class="bc-msg-edited" onclick="bcShowHistory('${m.id}')">(redigeret)</span>` : '';
+  const editedTag = m.edited ? ` <span class="msg-edited" onclick="bcShowHistory('${m.id}')">redigeret</span>` : '';
+  const nameHtml = escHtml(name);
+  const safeTitle = escHtml(p.title||'');
 
-  g.innerHTML = `
-    ${avatarHtml}
-    <div class="bc-msg-body">
-      <div class="bc-msg-header">
-        <span class="bc-msg-name">${escHtml(name)}</span>
-        <span class="bc-msg-time">${time}</span>
-        ${editedHtml}
-      </div>
-      <div class="bc-msg-content">
-        ${contentHtml}
-        <button class="bc-msg-dots" onclick="bcOpenContext(event,this,${isMe},'${m.id}')">⋯</button>
-      </div>
-      <div class="bc-msg-reactions" id="bc-reactions-${m.id}"></div>
-    </div>`;
+  row.innerHTML =
+    `<div class="msg-avatar" style="background:${color}" onclick="bcOpenPerson('${m.user_id}','${nameHtml}','${safeTitle}','${color}')">${initials}</div>` +
+    `<div class="msg-body">` +
+      `<div class="msg-head"><span class="msg-name">${nameHtml}</span><span class="msg-time">${time}${editedTag}</span></div>` +
+      `<div class="msg-content">${bubble}<button class="msg-dots" onclick="bcOpenContext(event,this,${isMe},'${m.id}')" aria-label="Mere">⋯</button></div>` +
+      `<div class="msg-reactions" id="bc-reactions-${m.id}"></div>` +
+    `</div>`;
 
-  setTimeout(() => bcLoadReactions(m.id), 50);
-  return g;
+  setTimeout(() => bcLoadReactions(m.id), 80);
+  return row;
 }
 
 function bcScrollToBottom() {
