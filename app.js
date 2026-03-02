@@ -346,7 +346,7 @@ async function loadMyBubbles() {
     // Profile bubbles
     document.getElementById('profile-bubbles').innerHTML = bubbles.map(b =>
       `<div class="card" style="padding:0.85rem 1.1rem;cursor:default">
-        <div style="font-weight:600;font-size:0.9rem">${bubbleEmoji(b.type)} ${escHtml(b.name)}</div>
+        <div style="font-weight:600;font-size:0.9rem">${bubbleIcon(b.type)} ${escHtml(b.name)}</div>
         <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem">${b.created_by === currentUser.id ? icon('crown') + ' Ejer' : 'Aktiv'}</div>
       </div>`).join('');
   } catch(e) { console.error("loadMyBubbles:", e); showToast(e.message || "Ukendt fejl"); }
@@ -368,7 +368,7 @@ async function updateRadarCount() {
 
 function bubbleCard(b, joined) {
   return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}">
-    <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)}">${bubbleEmoji(b.type)}</div>
+    <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)}">${bubbleIcon(b.type)}</div>
     <div style="flex:1">
       <div class="fw-600 fs-09">${escHtml(b.name)}</div>
       <div class="fs-075 text-muted">${escHtml(b.type_label || b.type)} ${b.location ? '· ' + escHtml(b.location) : ''}</div>
@@ -926,6 +926,9 @@ function showToast(msg) {
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function bubbleEmoji(type) {
+  return { event:ico('rocket'), local:ico('pin'), theme:ico('cpu'), company:ico('building') }[type] || ico('bubble');
+}
+function bubbleIcon(type) {
   return { event:icon('rocket'), local:icon('pin'), theme:icon('cpu'), company:icon('building') }[type] || icon('bubble');
 }
 
