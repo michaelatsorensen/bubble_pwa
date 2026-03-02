@@ -384,17 +384,19 @@
   </div>
 
   <!-- CHAT TAB -->
-  <div id="bc-panel-chat" style="display:none;flex-direction:column;flex:1;overflow:hidden">
-    <div class="chat-messages" id="bc-messages"></div>
-    <div class="chat-input-area">
+  <div id="bc-panel-chat" class="chat-panel">
+    <div class="chat-scroll" id="bc-messages"></div>
+    <div class="chat-composer">
       <div class="chat-edit-bar" id="bc-edit-bar">
         <span><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg> Redigerer besked</span>
         <span class="chat-edit-cancel" onclick="bcCancelEdit()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17M7 7l10 10"/></svg></span>
       </div>
-      <input type="file" id="bc-file-input" style="display:none" onchange="bcHandleFile(this)">
-      <button class="chat-file-btn" onclick="document.getElementById('bc-file-input').click()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg></button>
-      <input class="chat-input" id="bc-input" placeholder="Skriv til boblen..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();bcSendMessage()}">
-      <button class="chat-send-btn" id="bc-send-btn" onclick="bcSendMessage()">→</button>
+      <div class="chat-composer-row">
+        <input type="file" id="bc-file-input" style="display:none" onchange="bcHandleFile(this)">
+        <button class="chat-attach-btn" onclick="document.getElementById('bc-file-input').click()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1l-9.2 9.2a5.5 5.5 0 01-7.8-7.8l9.2-9.2a3.7 3.7 0 015.2 5.2l-9.2 9.2a1.8 1.8 0 01-2.6-2.6l8.5-8.4"/></svg></button>
+        <input class="chat-composer-input" id="bc-input" placeholder="Skriv en besked..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();bcSendMessage()}">
+        <button class="chat-send-btn" id="bc-send-btn" onclick="bcSendMessage()">→</button>
+      </div>
     </div>
   </div>
 
@@ -490,10 +492,14 @@
       <div style="font-size:0.68rem;color:var(--text-secondary)" id="chat-role">...</div>
     </div>
   </div>
-  <div class="scroll-area" id="chat-messages" style="padding:1rem 1.25rem;display:flex;flex-direction:column"></div>
-  <div class="thread-input-row">
-    <input class="thread-input" id="chat-input" placeholder="Skriv en besked..." onkeydown="if(event.key==='Enter')sendMessage()">
-    <button class="send-btn" onclick="sendMessage()">→</button>
+  <div class="chat-panel" id="dm-panel">
+    <div class="chat-scroll" id="chat-messages"></div>
+    <div class="chat-composer">
+      <div class="chat-composer-row">
+        <input class="chat-composer-input" id="chat-input" placeholder="Skriv en besked..." onkeydown="if(event.key==='Enter')sendMessage()">
+        <button class="chat-send-btn" onclick="sendMessage()">→</button>
+      </div>
+    </div>
   </div>
 </div>
 
