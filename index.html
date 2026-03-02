@@ -533,7 +533,7 @@
   <div class="bubble-tabs" style="flex-shrink:0">
     <button class="bubble-tab active" id="prof-tab-saved" onclick="profSwitchTab('saved')">Gemte <span class="bubble-tab-badge" id="saved-count" style="display:none">0</span></button>
     <button class="bubble-tab" id="prof-tab-bubbles" onclick="profSwitchTab('bubbles')">Bobler</button>
-    <button class="bubble-tab" id="prof-tab-chats" onclick="profSwitchTab('chats')">Chats</button>
+    <button class="bubble-tab" id="prof-tab-invites" onclick="profSwitchTab('invites')">Invitationer <span class="bubble-tab-badge" id="invite-count" style="display:none">0</span></button>
   </div>
 
   <!-- SAVED TAB -->
@@ -557,9 +557,9 @@
     <button class="btn-secondary" onclick="handleLogout()" style="margin-top:1.5rem;margin-bottom:2rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)">Log ud</button>
   </div>
 
-  <!-- CHATS TAB -->
-  <div id="prof-panel-chats" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
-    <div id="profile-conversations"></div>
+  <!-- INVITATIONS TAB -->
+  <div id="prof-panel-invites" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
+    <div id="profile-invitations"></div>
   </div>
 
   <div class="bottom-nav">

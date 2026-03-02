@@ -756,3 +756,38 @@ a.person-action-btn { text-decoration:none; }
   flex: 1;
   overflow: hidden;
 }
+
+/* ── PULL-TO-REFRESH ── */
+.ptr-indicator {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(-40px);
+  z-index: 999;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.ptr-indicator.visible { pointer-events: none; }
+.ptr-indicator.ready .ptr-spinner {
+  border-color: var(--accent);
+  border-top-color: transparent;
+}
+.ptr-indicator.refreshing .ptr-spinner {
+  animation: spin 0.6s linear infinite;
+}
+.ptr-spinner {
+  width: 18px; height: 18px;
+  border: 2px solid var(--muted);
+  border-top-color: transparent;
+  border-radius: 50%;
+  transition: border-color 0.2s;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

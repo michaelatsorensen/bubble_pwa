@@ -963,7 +963,7 @@ async function loadProfile() {
 
     await loadSavedContacts();
     await loadMyBubbles();
-    loadProfileChats();
+    loadProfileInvitations();
   } catch(e) { console.error("loadProfile:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -1030,7 +1030,7 @@ async function loadSavedContacts() {
 
 // Profile tab switching — same pattern as bcSwitchTab
 function profSwitchTab(tab) {
-  ['saved','bubbles','chats'].forEach(t => {
+  ['saved','bubbles','invites'].forEach(t => {
     const panel = document.getElementById('prof-panel-' + t);
     const tabBtn = document.getElementById('prof-tab-' + t);
     if (panel) panel.style.display = t === tab ? 'flex' : 'none';
@@ -1038,50 +1038,134 @@ function profSwitchTab(tab) {
   });
 }
 
-// Load conversations into profile chats tab
-async function loadProfileChats() {
+// Load invitations into profile invitations tab
+async function loadProfileInvitations() {
   try {
-    const list = document.getElementById('profile-conversations');
+    const list = document.getElementById('profile-invitations');
     if (!list) return;
     list.innerHTML = '<div class="spinner"></div>';
 
-    const { data: convs } = await sb.from('messages')
-      .select('*')
-      .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-      .order('created_at', {ascending:false})
-      .limit(200);
+    // Fetch pending invitations — newest first
+    const { data: invites, error: invErr } = await sb.from('bubble_invitations')
+      .select('id, from_user_id, bubble_id, created_at, status')
+      .eq('to_user_id', currentUser.id)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
 
-    if (!convs || convs.length === 0) {
-      list.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">Ingen samtaler endnu.<br>Find en person og start en samtale!</div></div>';
+    if (invErr) { console.error('loadProfileInvitations query:', invErr); list.innerHTML = ''; return; }
+
+    // Update badge
+    const countEl = document.getElementById('invite-count');
+    if (countEl) {
+      if (invites?.length) { countEl.textContent = invites.length; countEl.style.display = 'inline-flex'; }
+      else { countEl.style.display = 'none'; }
+    }
+
+    if (!invites || invites.length === 0) {
+      list.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bell') + '</div><div class="empty-text">Ingen invitationer lige nu.<br>Når nogen sender dig en Bubble Up,<br>dukker den op her.</div></div>';
       return;
     }
 
-    const seen = new Set();
-    const partners = [];
-    for (const m of convs) {
-      const partnerId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
-      if (!seen.has(partnerId)) { seen.add(partnerId); partners.push({ partnerId, lastMsg: m }); }
+    // Fetch sender profiles separately — no FK dependency
+    const senderIds = [...new Set(invites.map(i => i.from_user_id))];
+    const { data: profiles } = await sb.from('profiles').select('id, name, title, keywords').in('id', senderIds);
+    const profileMap = {};
+    (profiles || []).forEach(p => { profileMap[p.id] = p; });
+
+    // Fetch bubble names
+    const bubbleIds = [...new Set(invites.filter(i => i.bubble_id).map(i => i.bubble_id))];
+    let bubbleMap = {};
+    if (bubbleIds.length) {
+      const { data: bubbles } = await sb.from('bubbles').select('id, name').in('id', bubbleIds);
+      (bubbles || []).forEach(b => { bubbleMap[b.id] = b; });
     }
 
-    const pIds = partners.map(p => p.partnerId);
-    const { data: profiles } = await sb.from('profiles').select('id,name,title').in('id', pIds);
-    const profileMap = Object.fromEntries((profiles||[]).map(p=>[p.id,p]));
+    const colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#7C2D12,#F97316)'];
 
-    list.innerHTML = partners.map(({ partnerId, lastMsg }) => {
-      const p = profileMap[partnerId] || {};
-      const initials = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-      const isUnread = lastMsg.receiver_id === currentUser.id && !lastMsg.read_at;
-      const time = new Date(lastMsg.created_at).toLocaleDateString('da-DK', {day:'numeric',month:'short'});
-      return `<div class="card flex-row-center" data-action="openChat" data-id="${partnerId}" style="margin-bottom:0.4rem">
-        <div class="avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">${initials}</div>
-        <div style="flex:1;min-width:0">
-          <div class="flex-row-center" style="justify-content:space-between"><span class="${isUnread?'fw-700':'fw-600'} fs-09">${escHtml(p.name||'Ukendt')}</span><span class="fs-065 text-muted">${time}</span></div>
-          <div class="fs-078 text-muted text-truncate">${escHtml(lastMsg.content||'📎 Fil')}</div>
+    list.innerHTML = invites.map((inv, i) => {
+      const p = profileMap[inv.from_user_id] || {};
+      const b = bubbleMap[inv.bubble_id] || {};
+      const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const col = colors[i % colors.length];
+      const time = new Date(inv.created_at).toLocaleDateString('da-DK', { day:'numeric', month:'short' });
+      const tags = (p.keywords||[]).slice(0,2).map(k => `<span class="tag" style="font-size:0.58rem;padding:0.15rem 0.4rem">${escHtml(k)}</span>`).join('');
+
+      return `<div class="card" style="padding:0.7rem 0.9rem;margin-bottom:0.5rem" id="prof-invite-${inv.id}">
+        <div class="flex-row-center" style="gap:0.7rem">
+          <div class="avatar" style="background:${col};width:40px;height:40px;font-size:0.75rem;flex-shrink:0" data-action="openPerson" data-id="${inv.from_user_id}" data-from="screen-profile">${ini}</div>
+          <div style="flex:1;min-width:0">
+            <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||'Ukendt')}</div>
+            <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.title||'')}</div>
+            ${b.name ? `<div class="fs-065 text-muted" style="margin-top:0.15rem">${icon('bubble')} ${escHtml(b.name)} · ${time}</div>` : `<div class="fs-065 text-muted" style="margin-top:0.15rem">Bubble Up · ${time}</div>`}
+            ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.25rem">${tags}</div>` : ''}
+          </div>
         </div>
-        ${isUnread ? '<div class="live-dot" style="margin-left:0.5rem"></div>' : ''}
+        <div style="display:flex;gap:0.4rem;margin-top:0.5rem">
+          <button class="btn-sm" style="flex:1;padding:0.4rem;font-size:0.72rem;font-weight:600;background:var(--gradient-primary);border:1px solid var(--gradient-btn-border);color:white;border-radius:var(--radius-xs);cursor:pointer;font-family:inherit" onclick="profAcceptInvite('${inv.id}','${inv.from_user_id}')">Accepter</button>
+          <button class="btn-sm btn-ghost" style="flex:1;padding:0.4rem;font-size:0.72rem" onclick="profDeclineInvite('${inv.id}',this)">Afvis</button>
+        </div>
       </div>`;
     }).join('');
-  } catch(e) { console.error("loadProfileChats:", e); }
+  } catch(e) { console.error("loadProfileInvitations:", e); }
+}
+
+async function profAcceptInvite(inviteId, fromUserId) {
+  try {
+    await sb.from('bubble_invitations').update({ status: 'accepted' }).eq('id', inviteId);
+    const { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).single();
+    if (inv?.bubble_id) {
+      await sb.from('bubble_members').insert({ bubble_id: inv.bubble_id, user_id: currentUser.id });
+      showToast('Du er nu med i boblen!');
+      loadProfileInvitations();
+      setTimeout(() => openBubbleChat(inv.bubble_id), 800);
+    }
+  } catch(e) { console.error("profAcceptInvite:", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+let pendingDeclineInviteId = null;
+let pendingDeclineBtn = null;
+
+function profDeclineInvite(inviteId, btn) {
+  pendingDeclineInviteId = inviteId;
+  pendingDeclineBtn = btn;
+  const card = btn.closest('.card');
+  if (!card || card.querySelector('.remove-confirm')) return;
+  const confirm = document.createElement('div');
+  confirm.className = 'remove-confirm';
+  confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(232,93,138,0.08);border:1px solid rgba(232,93,138,0.2);border-radius:10px;gap:0.5rem';
+  confirm.innerHTML = `<span style="font-size:0.72rem;color:var(--text-secondary)">Afvis invitation?</span>
+    <div style="display:flex;gap:0.3rem">
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)" onclick="confirmDeclineInvite()">Afvis</button>
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelDeclineInvite(this)">Annuller</button>
+    </div>`;
+  card.appendChild(confirm);
+}
+
+function cancelDeclineInvite(btn) {
+  const confirm = btn.closest('.remove-confirm');
+  if (confirm) confirm.remove();
+  pendingDeclineInviteId = null;
+  pendingDeclineBtn = null;
+}
+
+async function confirmDeclineInvite() {
+  if (!pendingDeclineInviteId) return;
+  const inviteId = pendingDeclineInviteId;
+  pendingDeclineInviteId = null;
+  pendingDeclineBtn = null;
+  try {
+    await sb.from('bubble_invitations').update({ status: 'declined' }).eq('id', inviteId);
+    const card = document.getElementById('prof-invite-' + inviteId);
+    if (card) {
+      card.style.transition = 'opacity 0.25s, transform 0.25s';
+      card.style.opacity = '0';
+      card.style.transform = 'translateX(20px)';
+      setTimeout(() => loadProfileInvitations(), 260);
+    } else {
+      loadProfileInvitations();
+    }
+    showToast('Invitation afvist');
+  } catch(e) { console.error("confirmDeclineInvite:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 function openEditProfile() {
@@ -2418,6 +2502,124 @@ document.addEventListener('click', (e) => {
     case 'openBubbleChat': openBubbleChat(id, from); break;
   }
 });
+
+// ══════════════════════════════════════════════════════════
+//  PULL-TO-REFRESH
+// ══════════════════════════════════════════════════════════
+(function initPullToRefresh() {
+  const PTR_THRESHOLD = 60;   // px to pull before triggering
+  const PTR_MAX = 90;         // max indicator travel
+  const PTR_RESISTANCE = 2.5; // finger-to-indicator ratio
+
+  // Map: screen ID → { scrollEl selector, refreshFn }
+  const screenMap = {
+    'screen-home':          { scroll: '#home-scroll', fn: loadHome },
+    'screen-bubbles':       { scroll: '#screen-bubbles .scroll-area', fn: loadMyBubbles },
+    'screen-discover':      { scroll: '#screen-discover .scroll-area', fn: loadDiscover },
+    'screen-messages':      { scroll: '#screen-messages .scroll-area', fn: loadMessages },
+    'screen-notifications': { scroll: '#screen-notifications .scroll-area', fn: loadNotifications },
+    'screen-profile':       { scroll: null, fn: loadProfile }, // uses active panel
+  };
+
+  // Create the indicator element
+  const indicator = document.createElement('div');
+  indicator.className = 'ptr-indicator';
+  indicator.innerHTML = '<div class="ptr-spinner"></div>';
+  document.body.appendChild(indicator);
+
+  let startY = 0;
+  let pulling = false;
+  let refreshing = false;
+
+  function getScrollEl() {
+    const active = document.querySelector('.screen.active');
+    if (!active) return null;
+    const cfg = screenMap[active.id];
+    if (!cfg) return null;
+
+    // Profile: find the visible panel
+    if (active.id === 'screen-profile') {
+      return active.querySelector('[id^="prof-panel-"]:not([style*="display:none"]):not([style*="display: none"])') ||
+             active.querySelector('[id^="prof-panel-"]');
+    }
+    return cfg.scroll ? document.querySelector(cfg.scroll) : active.querySelector('.scroll-area');
+  }
+
+  function getRefreshFn() {
+    const active = document.querySelector('.screen.active');
+    if (!active) return null;
+    const cfg = screenMap[active.id];
+    return cfg?.fn || null;
+  }
+
+  document.addEventListener('touchstart', (e) => {
+    if (refreshing) return;
+    const scrollEl = getScrollEl();
+    if (!scrollEl) return;
+    if (scrollEl.scrollTop > 5) return; // only when at top
+    startY = e.touches[0].clientY;
+    pulling = true;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!pulling || refreshing) return;
+    const scrollEl = getScrollEl();
+    if (!scrollEl || scrollEl.scrollTop > 5) { pulling = false; return; }
+
+    const dy = (e.touches[0].clientY - startY) / PTR_RESISTANCE;
+    if (dy < 0) return;
+
+    const travel = Math.min(dy, PTR_MAX);
+    indicator.style.transform = `translateX(-50%) translateY(${travel - 40}px)`;
+    indicator.style.opacity = Math.min(travel / PTR_THRESHOLD, 1);
+    indicator.classList.add('visible');
+
+    if (travel >= PTR_THRESHOLD) {
+      indicator.classList.add('ready');
+    } else {
+      indicator.classList.remove('ready');
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', async () => {
+    if (!pulling) return;
+    pulling = false;
+
+    if (!indicator.classList.contains('ready')) {
+      resetIndicator();
+      return;
+    }
+
+    const fn = getRefreshFn();
+    if (!fn) { resetIndicator(); return; }
+
+    // Trigger refresh
+    refreshing = true;
+    indicator.classList.add('refreshing');
+    indicator.classList.remove('ready');
+    indicator.style.transform = 'translateX(-50%) translateY(20px)';
+    indicator.style.opacity = '1';
+
+    try {
+      await fn();
+    } catch(e) { console.error('PTR refresh error:', e); }
+
+    refreshing = false;
+    indicator.classList.remove('refreshing');
+    resetIndicator();
+    showToast('Opdateret');
+  }, { passive: true });
+
+  function resetIndicator() {
+    indicator.style.transition = 'transform 0.3s, opacity 0.3s';
+    indicator.style.transform = 'translateX(-50%) translateY(-40px)';
+    indicator.style.opacity = '0';
+    setTimeout(() => {
+      indicator.classList.remove('visible', 'ready', 'refreshing');
+      indicator.style.transition = '';
+    }, 300);
+  }
+})();
 
 // ══════════════════════════════════════════════════════════
 //  APP BOOT
