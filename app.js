@@ -566,8 +566,8 @@ async function openPerson(userId, fromScreen) {
     } else { dynEl.innerHTML = ''; }
 
     // Check if saved
-    const { data: saved } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).single();
-    document.getElementById('save-btn').innerHTML = saved ? icon('checkCircle') + '<span>Gemt</span>' : icon('bookmark') + '<span>Gem</span>';
+    const { data: savedCheck } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
+    document.getElementById('save-btn').innerHTML = savedCheck ? icon('checkCircle') + '<span>Gemt</span>' : icon('bookmark') + '<span>Gem</span>';
   } catch(e) { console.error("openPerson:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -936,42 +936,61 @@ async function loadProfile() {
 // Standalone saved contacts loader — called from loadProfile AND after save/remove
 async function loadSavedContacts() {
   try {
-    const { data: saved } = await sb.from('saved_contacts')
-      .select('id, contact_id, profiles(id,name,title,keywords,is_anon)').eq('user_id', currentUser.id);
     const savedEl = document.getElementById('saved-contacts');
     if (!savedEl) return;
+
+    // Fetch saved contacts — chronological (newest first)
+    const { data: saved, error: savedErr } = await sb.from('saved_contacts')
+      .select('id, contact_id, created_at')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
+
+    if (savedErr) { console.error('loadSavedContacts query error:', savedErr); return; }
+
     const countEl = document.getElementById('saved-count');
     if (countEl) {
       if (saved?.length) { countEl.textContent = saved.length; countEl.style.display = 'inline-flex'; }
       else { countEl.style.display = 'none'; }
     }
-    if (saved && saved.length) {
-      const colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#7C2D12,#F97316)'];
-      savedEl.innerHTML = saved.map((s, i) => {
-        const p = s.profiles;
-        if (!p) return '';
-        const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-        const col = colors[i % colors.length];
-        const tags = (p.keywords||[]).slice(0,3).map(k => `<span class="tag" style="font-size:0.58rem;padding:0.15rem 0.4rem">${escHtml(k)}</span>`).join('');
-        return `<div class="card" style="padding:0.7rem 0.9rem;margin-bottom:0.4rem">
-          <div class="flex-row-center" style="gap:0.7rem">
-            <div class="avatar" style="background:${col};width:40px;height:40px;font-size:0.75rem;flex-shrink:0" data-action="openPerson" data-id="${p.id}" data-from="screen-profile">${ini}</div>
-            <div style="flex:1;min-width:0">
-              <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||'Ukendt')}</div>
-              <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.title||'')}</div>
-              ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.3rem">${tags}</div>` : ''}
-            </div>
-            <div style="display:flex;gap:0.3rem;flex-shrink:0">
-              <button class="btn-sm btn-ghost" style="padding:0.3rem 0.45rem;font-size:0.75rem" data-action="openChat" data-id="${p.id}" title="Send besked">${icon('chat')}</button>
-              <button class="btn-sm btn-ghost" style="padding:0.3rem 0.45rem;font-size:0.75rem" data-action="openPerson" data-id="${p.id}" data-from="screen-profile" title="Se profil">${icon('user')}</button>
-              <button class="btn-sm btn-ghost" style="padding:0.3rem 0.45rem;font-size:0.75rem;color:var(--accent2)" onclick="removeSavedContact('${s.id}',this)" title="Fjern">${icon('x')}</button>
-            </div>
-          </div>
-        </div>`;
-      }).join('');
-    } else {
+
+    if (!saved || saved.length === 0) {
       savedEl.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bookmark') + '</div><div class="empty-text">Ingen gemte kontakter endnu.<br>Tryk Gem på en profil for at huske dem.</div></div>';
+      return;
     }
+
+    // Fetch profiles separately — no FK dependency
+    const contactIds = saved.map(s => s.contact_id);
+    const { data: profiles, error: profErr } = await sb.from('profiles')
+      .select('id, name, title, keywords').in('id', contactIds);
+
+    if (profErr) console.error('loadSavedContacts profiles error:', profErr);
+    const profileMap = {};
+    (profiles || []).forEach(p => { profileMap[p.id] = p; });
+
+    const colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#7C2D12,#F97316)'];
+
+    savedEl.innerHTML = saved.map((s, i) => {
+      const p = profileMap[s.contact_id];
+      if (!p) return '';
+      const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const col = colors[i % colors.length];
+      const tags = (p.keywords||[]).slice(0,3).map(k => `<span class="tag" style="font-size:0.58rem;padding:0.15rem 0.4rem">${escHtml(k)}</span>`).join('');
+      return `<div class="card" style="padding:0.7rem 0.9rem;margin-bottom:0.4rem">
+        <div class="flex-row-center" style="gap:0.7rem">
+          <div class="avatar" style="background:${col};width:40px;height:40px;font-size:0.75rem;flex-shrink:0" data-action="openPerson" data-id="${p.id}" data-from="screen-profile">${ini}</div>
+          <div style="flex:1;min-width:0">
+            <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||'Ukendt')}</div>
+            <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.title||'')}</div>
+            ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.3rem">${tags}</div>` : ''}
+          </div>
+          <div style="display:flex;gap:0.3rem;flex-shrink:0">
+            <button class="btn-sm btn-ghost" style="padding:0.3rem 0.45rem;font-size:0.75rem" data-action="openChat" data-id="${p.id}" title="Send besked">${icon('chat')}</button>
+            <button class="btn-sm btn-ghost" style="padding:0.3rem 0.45rem;font-size:0.75rem" data-action="openPerson" data-id="${p.id}" data-from="screen-profile" title="Se profil">${icon('user')}</button>
+            <button class="btn-sm btn-ghost" style="padding:0.3rem 0.45rem;font-size:0.75rem;color:var(--accent2)" onclick="removeSavedContact('${s.id}',this)" title="Fjern">${icon('x')}</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
   } catch(e) { console.error("loadSavedContacts:", e); }
 }
 
