@@ -228,7 +228,7 @@ async function loadHome() {
     // Greeting
     const nameEl = document.getElementById('home-greeting-name');
     if (nameEl && currentProfile?.name) {
-      nameEl.textContent = (currentProfile.name.split(' ')[0]) + ' 👋';
+      nameEl.innerHTML = (currentProfile.name.split(' ')[0]) + ' ' + icon('wave');
     }
 
     // Load all dashboard data in parallel
@@ -302,7 +302,7 @@ async function loadMyBubbles() {
 
     if (!memberships || memberships.length === 0) {
       ownedList.innerHTML  = '<div class="sub-muted" style="padding:0.5rem 0">Du har ikke oprettet nogen bobler endnu.</div>';
-      joinedList.innerHTML = '<div class="empty-state"><div class="empty-icon">🫧</div><div class="empty-text">Du er ikke i nogen bobler endnu.<br>Opdag eller opret en boble!</div></div>';
+      joinedList.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke i nogen bobler endnu.<br>Opdag eller opret en boble!</div></div>';
       return;
     }
 
@@ -321,7 +321,7 @@ async function loadMyBubbles() {
       ownedList.innerHTML = '<div class="sub-muted" style="padding:0.5rem 0">Du har ikke oprettet nogen bobler endnu.</div>';
     } else {
       ownedList.innerHTML = owned.map(b => {
-        const visIcon = b.visibility === 'private' ? '🔒' : b.visibility === 'hidden' ? '👁️' : '🌍';
+        const visIcon = b.visibility === 'private' ? icon('lock') : b.visibility === 'hidden' ? icon('eye') : icon('globe');
         return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}">
           <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)}">${bubbleEmoji(b.type)}</div>
           <div style="flex:1">
@@ -329,7 +329,7 @@ async function loadMyBubbles() {
             <div class="fs-075 text-muted">${visIcon} ${b.type_label||b.type}${b.location ? ' · '+escHtml(b.location) : ''}</div>
           </div>
           <div style="display:flex;gap:0.4rem;align-items:center">
-            <button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" onclick="event.stopPropagation()" style="font-size:0.8rem;padding:0.3rem 0.5rem">✏️</button>
+            <button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" onclick="event.stopPropagation()" style="font-size:0.8rem;padding:0.3rem 0.5rem">${icon("edit")}</button>
             <div class="live-dot"></div>
           </div>
         </div>`;
@@ -347,7 +347,7 @@ async function loadMyBubbles() {
     document.getElementById('profile-bubbles').innerHTML = bubbles.map(b =>
       `<div class="card" style="padding:0.85rem 1.1rem;cursor:default">
         <div style="font-weight:600;font-size:0.9rem">${bubbleEmoji(b.type)} ${escHtml(b.name)}</div>
-        <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem">${b.created_by === currentUser.id ? '👑 Ejer' : 'Aktiv'}</div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem">${b.created_by === currentUser.id ? icon('crown') + ' Ejer' : 'Aktiv'}</div>
       </div>`).join('');
   } catch(e) { console.error("loadMyBubbles:", e); showToast(e.message || "Ukendt fejl"); }
 }
@@ -400,7 +400,7 @@ async function loadDiscover() {
 function renderBubbleList(bubbles) {
   const list = document.getElementById('all-bubbles-list');
   if (!bubbles.length) {
-    list.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Ingen bobler endnu.<br>Opret den første!</div></div>';
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('search') + '</div><div class="empty-text">Ingen bobler endnu.<br>Opret den første!</div></div>';
     return;
   }
   list.innerHTML = bubbles.map(b => bubbleCard(b, false)).join('');
@@ -446,7 +446,7 @@ async function loadBubbleMembers(bubbleId) {
       <div class="stat-box"><div class="stat-num" style="color:var(--accent3)">${members?.length ? Math.round(60 + Math.random()*35) : 0}%</div><div class="stat-label">Din match-rate</div></div>`;
 
     if (!members || members.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">Ingen andre i boblen endnu.</div></div>';
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('users') + '</div><div class="empty-text">Ingen andre i boblen endnu.</div></div>';
       return;
     }
 
@@ -536,14 +536,14 @@ async function openPerson(userId, fromScreen) {
 
     const overlapEl = document.getElementById('person-overlap');
     if (overlap.length) {
-      overlapEl.innerHTML = overlap.map(k => `<span class="tag mint">✓ ${escHtml(k)}</span>`).join('');
+      overlapEl.innerHTML = overlap.map(k => `<span class="tag mint">${icon("check")} ${escHtml(k)}</span>`).join('');
     } else {
       overlapEl.innerHTML = '<span class="fs-085 text-muted">Ingen direkte overlap fundet</span>';
     }
 
     const dynEl = document.getElementById('person-dynamic-keywords');
     if ((p.dynamic_keywords||[]).length) {
-      dynEl.innerHTML = '<div class="section-label">Søger nu</div>' + p.dynamic_keywords.map(k => `<span class="tag gold">🔥 ${escHtml(k)}</span>`).join('');
+      dynEl.innerHTML = '<div class="section-label">Søger nu</div>' + p.dynamic_keywords.map(k => `<span class="tag gold">${icon("fire")} ${escHtml(k)}</span>`).join('');
     } else { dynEl.innerHTML = ''; }
 
     // Check if saved
@@ -573,7 +573,7 @@ async function sendMeetingProposal() {
     const msg = document.getElementById('meeting-msg').value.trim();
     const time = document.getElementById('meeting-time').value;
     if (!msg) return showToast('Skriv en besked');
-    const fullMsg = `☕ Mødeanmodning${time ? '\n📅 ' + new Date(time).toLocaleString('da-DK') : ''}\n\n${msg}`;
+    const fullMsg = `Mødeanmodning${time ? '\n' + new Date(time).toLocaleString('da-DK') : ''}\n\n${msg}`;
     await sendDirectMessage(currentPerson, fullMsg);
     closeModal('modal-meeting');
     showToast('Mødeanmodning sendt! ☕');
@@ -620,7 +620,7 @@ async function loadMessages() {
       .limit(200);
 
     if (!convs || convs.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div><div class="empty-text">Ingen beskeder endnu.<br>Find en person og start en samtale!</div></div>';
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">Ingen beskeder endnu.<br>Find en person og start en samtale!</div></div>';
       return;
     }
 
@@ -926,7 +926,7 @@ function showToast(msg) {
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function bubbleEmoji(type) {
-  return { event:'🚀', local:'📍', theme:'🤖', company:'🏢' }[type] || '🫧';
+  return { event:icon('rocket'), local:icon('pin'), theme:icon('cpu'), company:icon('building') }[type] || icon('bubble');
 }
 
 function bubbleColor(type, alpha) {
@@ -1006,7 +1006,7 @@ async function openQRModal(bubbleId) {
     const { data: b } = await sb.from('bubbles').select('*').eq('id', bubbleId).single();
     if (!b) return;
 
-    document.getElementById('qr-modal-title').textContent = b.name + ' 🫧';
+    document.getElementById('qr-modal-title').innerHTML = b.name + ' ' + icon('bubble');
     document.getElementById('qr-modal-subtitle').textContent =
       `${typeLabel(b.type)}${b.location ? ' · ' + b.location : ''} — scan for at joine`;
 
@@ -1073,7 +1073,7 @@ async function downloadQRPdf() {
   // Bubble text in logo
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(22);
-  doc.text('🫧', pageW/2, 51, { align: 'center' });
+  doc.text('bubble', pageW/2, 51, { align: 'center' });
 
   // App name
   doc.setFontSize(28);
@@ -1321,7 +1321,7 @@ async function loadNotifications() {
           <div class="notif-header">
             <div class="notif-avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">${initials}</div>
             <div>
-              <div class="notif-title">🫧 Bubble up invitation</div>
+              <div class="notif-title">${icon("bubble")} Bubble up invitation</div>
               <div class="notif-sub">${escHtml(p.name||'Nogen')} vil oprette en privat boble med dig</div>
             </div>
           </div>
@@ -1365,7 +1365,7 @@ async function loadNotifications() {
     }
 
     if (!html) {
-      html = '<div class="empty-state"><div class="empty-icon">🔔</div><div class="empty-text">Ingen notifikationer endnu</div></div>';
+      html = '<div class="empty-state"><div class="empty-icon">' + icon('bell') + '</div><div class="empty-text">Ingen notifikationer endnu</div></div>';
     }
     list.innerHTML = html;
   } catch(e) { console.error("loadNotifications:", e); showToast(e.message || "Ukendt fejl"); }
@@ -1435,13 +1435,13 @@ async function openBubbleChat(bubbleId, fromScreen) {
     const isOwner = b.created_by === currentUser.id;
     if (myMembership) {
       actionArea.innerHTML =
-        (isOwner ? `<button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" style="font-size:0.85rem;padding:0.35rem 0.55rem">✏️</button>
+        (isOwner ? `<button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" style="font-size:0.85rem;padding:0.35rem 0.55rem">${icon("edit")}</button>
         <button class="btn-sm btn-ghost" data-action="openQRModal" data-id="${b.id}" style="font-size:0.85rem;padding:0.35rem 0.55rem">⬛</button>` : '') +
         `<button class="btn-sm btn-ghost" data-action="leaveBubble" data-id="${b.id}" style="font-size:0.72rem">Forlad</button>`;
     } else if (b.visibility === 'hidden') {
-      actionArea.innerHTML = `<span style="font-size:0.75rem;color:var(--muted)">👁️ Kun via invitation</span>`;
+      actionArea.innerHTML = `<span style="font-size:0.75rem;color:var(--muted)">${icon("eye")} Kun via invitation</span>`;
     } else if (b.visibility === 'private') {
-      actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="requestJoin" data-id="${b.id}">Anmod 🔒</button>`;
+      actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="requestJoin" data-id="${b.id}">${icon("lock")} Anmod</button>`;
     } else {
       actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="joinBubble" data-id="${b.id}">+ Join</button>`;
     }
@@ -1506,7 +1506,7 @@ async function bcLoadMessages() {
     if (msgErr) console.error('bcLoadMessages error:', msgErr);
 
     if (!msgs || msgs.length === 0) {
-      el.innerHTML = '<div class="empty-state" style="margin-top:2rem"><div class="empty-icon">💬</div><div class="empty-text">Ingen beskeder endnu.<br>Vær den første!</div></div>';
+      el.innerHTML = '<div class="empty-state" style="margin-top:2rem"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">Ingen beskeder endnu.<br>Vær den første!</div></div>';
       return;
     }
 
@@ -1551,7 +1551,7 @@ function bcRenderMsg(m) {
   if (m.file_url) {
     const ext = m.file_name?.split('.').pop()?.toLowerCase() || '';
     const isImage = ['jpg','jpeg','png','gif','webp'].includes(ext) || (m.file_type||'').startsWith('image/');
-    const icon = ext === 'pdf' ? '📄' : ['zip','rar','gz'].includes(ext) ? '🗜️' : '📎';
+    const fIcon = ext === 'pdf' ? icon('file') : ['zip','rar','gz'].includes(ext) ? icon('clip') : icon('clip');
     const size = m.file_size ? (m.file_size < 1024*1024 ? Math.round(m.file_size/1024)+'KB' : (m.file_size/1024/1024).toFixed(1)+'MB') : '';
 
     const fileContent = isImage
@@ -1560,7 +1560,7 @@ function bcRenderMsg(m) {
              style="max-width:220px;max-height:260px;border-radius:12px;display:block;cursor:pointer"
              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
            <div style="display:none" class="chat-file-bubble">
-             <span class="chat-file-icon">🖼️</span>
+             <span class="chat-file-icon">${icon('eye')}</span>
              <div><div class="chat-file-name">${escHtml(m.file_name||'Billede')}</div><div class="chat-file-size">${size} · Kan ikke vises</div></div>
            </div>
          </a>`
@@ -1786,7 +1786,7 @@ function bcStartEdit() {
   document.getElementById('bc-input').value = bubbleEl.textContent;
   document.getElementById('bc-input').focus();
   document.getElementById('bc-edit-bar').classList.add('show');
-  document.getElementById('bc-send-btn').textContent = '✓';
+  document.getElementById('bc-send-btn').innerHTML = icon('check');
 }
 
 function bcCancelEdit() {
@@ -1829,7 +1829,7 @@ function bcCreateHistoryModal() {
   const m = document.createElement('div');
   m.id = 'modal-edit-history';
   m.className = 'modal';
-  m.innerHTML = `<div class="modal-content"><div class="modal-header"><div class="modal-title">📝 Redigeringshistorik</div><button class="modal-close" onclick="closeModal('modal-edit-history')">✕</button></div><div id="edit-history-content" style="padding:0 1.25rem 1rem;overflow-y:auto;max-height:60vh"></div></div>`;
+  m.innerHTML = `<div class="modal-content"><div class="modal-header"><div class="modal-title">${icon("edit")} Redigeringshistorik</div><button class="modal-close" onclick="closeModal('modal-edit-history')">${icon('x')}</button></div><div id="edit-history-content" style="padding:0 1.25rem 1rem;overflow-y:auto;max-height:60vh"></div></div>`;
   document.getElementById('app-root').appendChild(m);
   return m;
 }
@@ -1845,7 +1845,7 @@ async function bcLoadMembers() {
       .order('joined_at', {ascending:true});
 
     if (!members || members.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">Ingen medlemmer</div></div>';
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('users') + '</div><div class="empty-text">Ingen medlemmer</div></div>';
       return;
     }
 
@@ -1892,7 +1892,7 @@ async function bcLoadInfo() {
       <div class="chat-info-block"><div class="chat-info-label">Boble-type</div><div class="chat-info-val">${typeLabel(b.type)}</div></div>
       <div class="chat-info-block"><div class="chat-info-label">Sted</div><div class="chat-info-val">${escHtml(b.location||'Ikke angivet')}</div></div>
       <div>
-        <button class="chat-info-btn primary" data-action="openQRModal" data-id="${b.id}">🔗 Del boble / QR-kode</button>
+        <button class="chat-info-btn primary" data-action="openQRModal" data-id="${b.id}">${icon("qrcode")} Del boble / QR-kode</button>
         <button class="chat-info-btn danger" data-action="leaveBubble" data-id="${b.id}">↩ Forlad boblen</button>
       </div>`;
   } catch(e) { console.error("bcLoadInfo:", e); showToast(e.message || "Ukendt fejl"); }
