@@ -11,7 +11,7 @@ window.onerror = function(msg, src, line, col, err) {
   const el = document.getElementById('loading-msg');
   if (el) {
     el.textContent = '❌ JS Fejl linje ' + line + ': ' + msg;
-    el.style.color = '#ff6584';
+    el.style.color = '#E85D8A';
     el.style.fontSize = '0.75rem';
     el.style.maxWidth = '320px';
     el.style.margin = '1rem auto';
@@ -23,7 +23,7 @@ window.onunhandledrejection = function(e) {
   const el = document.getElementById('loading-msg');
   if (el) {
     el.textContent = '❌ Promise fejl: ' + (e.reason?.message || e.reason || 'Ukendt');
-    el.style.color = '#ff6584';
+    el.style.color = '#E85D8A';
   }
   console.error('Unhandled rejection:', e.reason);
 };
@@ -45,7 +45,7 @@ let isAnon = false;
 function initSupabase() {
   if (SUPABASE_URL === "DIN_SUPABASE_URL_HER") {
     document.getElementById('loading-msg').textContent = '⚠️ Indsæt dine Supabase-nøgler i filen';
-    document.getElementById('loading-msg').style.color = '#ff6584';
+    document.getElementById('loading-msg').style.color = '#E85D8A';
     return false;
   }
   try {
@@ -110,7 +110,7 @@ async function checkAuth() {
     }
   } catch(e) {
     document.getElementById('loading-msg').textContent = 'Fejl: ' + e.message;
-    document.getElementById('loading-msg').style.color = '#ff6584';
+    document.getElementById('loading-msg').style.color = '#E85D8A';
   }
 }
 
@@ -445,7 +445,7 @@ async function loadBubbleMembers(bubbleId) {
       const initials = p.is_anon ? '?' : (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const name = p.is_anon ? 'Anonym bruger' : escHtml(p.name || '?');
       const role = p.is_anon ? '' : escHtml(p.title || '');
-      const colors = ['linear-gradient(135deg,#6c63ff,#8b83ff)','linear-gradient(135deg,#ff6584,#ffb347)','linear-gradient(135deg,#43e8b0,#6c63ff)','linear-gradient(135deg,#ffb347,#ff6584)'];
+      const colors = ['linear-gradient(135deg,#8B7FFF,#A89FFF)','linear-gradient(135deg,#E85D8A,#FF8C69)','linear-gradient(135deg,#2ECFCF,#8B7FFF)','linear-gradient(135deg,#FF8C69,#E85D8A)'];
       const col = colors[Math.abs(p.id.charCodeAt(0)) % colors.length];
       return `<div class="card flex-row-center" data-action="openPerson" data-id="${p.id}" data-from="screen-bubble-detail">
         <div class="avatar" style="background:${col}">${initials}</div>
@@ -625,7 +625,7 @@ async function loadMessages() {
       const initials = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const isUnread = lastMsg.receiver_id === currentUser.id && !lastMsg.read_at;
       return `<div class="card flex-row-center" data-action="openChat" data-id="${partnerId}">
-        <div class="avatar" style="background:linear-gradient(135deg,#6c63ff,#ff6584)">${initials}</div>
+        <div class="avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">${initials}</div>
         <div style="flex:1">
           <div class="${isUnread?'fw-700':'fw-600'} fs-09">${escHtml(p.name||'Ukendt')}</div>
           <div class="fs-078 text-muted text-truncate">${escHtml(lastMsg.content||'')}</div>
@@ -747,7 +747,7 @@ async function loadProfile() {
         if (!p) return '';
         const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
         return `<div class="flex-col-center saved-contact" data-action="openPerson" data-id="${p.id}" data-from="screen-profile">
-          <div class="avatar" style="background:linear-gradient(135deg,#6c63ff,#ff6584);width:48px;height:48px;font-size:0.85rem">${ini}</div>
+          <div class="avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A);width:48px;height:48px;font-size:0.85rem">${ini}</div>
           <div class="fs-065 text-muted text-center text-truncate" style="max-width:56px">${escHtml(p.name?.split(' ')[0]||'?')}</div>
         </div>`;
       }).join('');
@@ -1303,7 +1303,7 @@ async function loadNotifications() {
         const initials = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
         html += `<div class="notif-card invite" id="invite-${inv.id}">
           <div class="notif-header">
-            <div class="notif-avatar" style="background:linear-gradient(135deg,#6c63ff,#ff6584)">${initials}</div>
+            <div class="notif-avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">${initials}</div>
             <div>
               <div class="notif-title">🫧 Bubble up invitation</div>
               <div class="notif-sub">${escHtml(p.name||'Nogen')} vil oprette en privat boble med dig</div>
@@ -1337,7 +1337,7 @@ async function loadNotifications() {
           const time = new Date(m.joined_at).toLocaleDateString('da-DK', {day:'numeric',month:'short'});
           html += `<div class="notif-card">
             <div class="notif-header">
-              <div class="notif-avatar" style="background:linear-gradient(135deg,#43e8b0,#6c63ff)">${initials}</div>
+              <div class="notif-avatar" style="background:linear-gradient(135deg,#2ECFCF,#8B7FFF)">${initials}</div>
               <div>
                 <div class="notif-title">${escHtml(p.name||'Ukendt')} joined</div>
                 <div class="notif-sub">${escHtml(m.bubbles?.name||'')} · ${time}</div>

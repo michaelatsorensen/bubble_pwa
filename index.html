@@ -35,7 +35,7 @@
 <div class="screen active" id="screen-loading">
   <div style="text-align:center">
     <div style="font-size:4rem;margin-bottom:0.5rem">🫧</div>
-    <div style="font-size:1.8rem;font-weight:800;background:linear-gradient(135deg,#6c63ff,#ff6584);-webkit-background-clip:text;-webkit-text-fill-color:transparent">bubble</div>
+    <div style="font-size:1.8rem;font-weight:900;letter-spacing:-0.05em;background:linear-gradient(135deg,#A89FFF 0%,#8B7FFF 40%,#FF6B9D 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent">bubble</div>
     <div class="spinner" style="margin-top:2rem"></div>
     <div style="font-size:0.85rem;color:var(--muted);margin-top:1rem" id="loading-msg">Forbinder til server...</div>
   </div>
@@ -47,7 +47,7 @@
 <div class="screen" id="screen-auth">
   <div style="text-align:center;margin-bottom:2.5rem">
     <div style="font-size:3.5rem;margin-bottom:0.75rem">🫧</div>
-    <div style="font-size:2.4rem;font-weight:800;background:linear-gradient(135deg,#6c63ff,#ff6584);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.4rem">Bubble</div>
+    <div style="font-size:2.4rem;font-weight:900;letter-spacing:-0.05em;background:linear-gradient(135deg,#A89FFF 0%,#8B7FFF 40%,#FF6B9D 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.4rem">bubble</div>
     <div style="font-size:0.9rem;color:var(--muted)">Network Radar for Business</div>
   </div>
 
@@ -147,7 +147,7 @@
   <div class="status-bar"><span id="home-time">9:41</span><span></span></div>
   <div class="topbar">
     <div class="topbar-logo" onclick="goTo('screen-home')" style="cursor:pointer">bubble</div>
-    <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6C63FF,#FF6584);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;border:1.5px solid rgba(255,255,255,0.1)" id="home-avatar" onclick="goTo('screen-profile')">?</div>
+    <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;border:1.5px solid rgba(255,255,255,0.1)" id="home-avatar" onclick="goTo('screen-profile')">?</div>
   </div>
 
   <div class="scroll-area" id="home-scroll">
@@ -163,7 +163,7 @@
 
       <!-- Bobler -->
       <div class="main-nav-card card-bobler" onclick="goTo('screen-bubbles')">
-        <div class="main-nav-icon" style="background:rgba(108,99,255,0.2)">🫧</div>
+        <div class="main-nav-icon" style="background:rgba(139,127,255,0.15)">🫧</div>
         <div style="flex:1">
           <div class="section-title">Bobler</div>
           <div class="sub-muted" id="home-bubbles-sub">Henter...</div>
@@ -174,7 +174,7 @@
 
       <!-- Beskeder -->
       <div class="main-nav-card card-beskeder" onclick="goTo('screen-messages')">
-        <div class="main-nav-icon" style="background:rgba(255,101,132,0.2)">💬</div>
+        <div class="main-nav-icon" style="background:rgba(232,93,138,0.15)">💬</div>
         <div style="flex:1">
           <div class="section-title">Beskeder</div>
           <div class="sub-muted" id="home-messages-sub">Henter...</div>
@@ -185,7 +185,7 @@
 
       <!-- Notifikationer -->
       <div class="main-nav-card card-notif" onclick="goTo('screen-notifications')">
-        <div class="main-nav-icon" style="background:rgba(67,232,176,0.2)">🔔</div>
+        <div class="main-nav-icon" style="background:rgba(46,207,207,0.15)">🔔</div>
         <div style="flex:1">
           <div class="section-title">Notifikationer</div>
           <div class="sub-muted" id="home-notif-sub">Henter...</div>
@@ -197,7 +197,7 @@
     </div>
 
     <!-- Radar strip -->
-    <div style="background:var(--surface);border-radius:var(--radius);padding:0.9rem 1.1rem;display:flex;align-items:center;gap:0.75rem;border:1px solid var(--border-subtle)">
+    <div class="radar-card">
       <div class="live-dot"></div>
       <div style="flex:1;font-size:0.78rem;color:var(--text-secondary)">
         <strong style="color:var(--text);font-weight:700">Din radar er aktiv</strong>
@@ -223,7 +223,7 @@
   <div class="status-bar"><span>9:41</span><span></span></div>
   <div class="topbar">
     <button class="back-btn" onclick="goTo('screen-home')">← Tilbage</button>
-    <div class="topbar-logo">Bobler</div>
+    <div class="topbar-title">Bobler</div>
     <button class="btn-sm btn-ghost" onclick="openCreateBubble()" style="font-size:0.75rem;padding:0.35rem 0.75rem">+ Ny</button>
   </div>
   <div class="scroll-area">
@@ -514,7 +514,7 @@
   </div>
   <div class="scroll-area" style="padding:0">
     <div class="profile-hero">
-      <div style="width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#6C63FF,#FF6584);margin:0 auto 0.9rem;display:flex;align-items:center;justify-content:center;font-size:1.7rem;font-weight:800;color:white;box-shadow:0 4px 20px rgba(108,99,255,0.35);border:2px solid rgba(255,255,255,0.08)" id="my-avatar">?</div>
+      <div style="width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);margin:0 auto 0.9rem;display:flex;align-items:center;justify-content:center;font-size:1.7rem;font-weight:800;color:white;box-shadow:0 4px 20px rgba(139,127,255,0.35);border:2px solid rgba(255,255,255,0.08)" id="my-avatar">?</div>
       <div style="font-size:1.3rem;font-weight:800;margin-bottom:0.2rem;letter-spacing:-0.02em" id="my-name">...</div>
       <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.85rem" id="my-role">...</div>
       <div id="my-keywords" style="margin-bottom:0.5rem"></div>

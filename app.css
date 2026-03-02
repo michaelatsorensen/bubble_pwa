@@ -65,7 +65,7 @@ body {
 
 /* ── TOPBAR ── */
 .topbar { display:flex; align-items:center; padding:0.65rem 1.2rem; gap:0.65rem; flex-shrink:0; background:rgba(6,6,15,0.6); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border-bottom:1px solid var(--glass-border-subtle); }
-.topbar-logo { font-size:1.4rem; }
+.topbar-logo { font-size:1.4rem; font-weight:900; letter-spacing:-0.05em; background:linear-gradient(135deg,#A89FFF 0%,#8B7FFF 40%,#FF6B9D 80%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 .topbar-title { font-size:1rem; font-weight:800; letter-spacing:-0.03em; flex:1; }
 
 /* ── SCROLL AREA ── */
@@ -319,3 +319,76 @@ textarea.input { min-height:80px; resize:vertical; }
 .label-sm { display:block; font-size:0.78rem; font-weight:600; }
 .saved-contact { cursor:pointer; }
 [data-action] { cursor:pointer; }
+
+/* ════════════════════════════════════════════════════════════
+   FIXES: Backward-compatible variable aliases
+   ════════════════════════════════════════════════════════════ */
+:root {
+  --border: var(--glass-border);
+  --border-subtle: var(--glass-border-subtle);
+  --surface: var(--glass-bg);
+  --card: var(--glass-bg);
+  --card-hover: var(--glass-bg-hover);
+  --card2: var(--glass-bg-strong);
+}
+
+/* ════════════════════════════════════════════════════════════
+   FIXES: Missing component styles
+   ════════════════════════════════════════════════════════════ */
+
+/* Main nav icon circles (home dashboard) */
+.main-nav-icon {
+  width: 42px; height: 42px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+}
+
+/* Main nav cards need flex layout */
+.main-nav-card, .card-bobler, .card-beskeder, .card-notif {
+  display: flex; align-items: center; gap: 0.85rem;
+}
+
+/* Screens that need centering */
+#screen-loading {
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+#screen-auth {
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+}
+
+/* Radar strip on home */
+.radar-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* select elements */
+select.input {
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(242,240,255,0.4)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+}
+select.input option { background: #0c0c1e; color: var(--text); }
+
+/* Reset button browser defaults for nav items and ghost buttons */
+.nav-item, .btn-ghost, .btn-sm, .btn-accent, .bubble-tab,
+.back-btn, .chat-send-btn, .send-btn, .notif-btn,
+.person-sheet-btn, .person-action-btn, .chat-info-btn,
+.bubble-up-no, .bubble-up-yes, .btn-primary, .btn-secondary {
+  font-family: 'Outfit', sans-serif;
+}
+button { font-family: 'Outfit', sans-serif; }
+
+/* Profile scroll padding fix */
+#screen-profile .scroll-area { padding-bottom: 6rem; }
+
+/* Invite notification style */
+.invite { }
