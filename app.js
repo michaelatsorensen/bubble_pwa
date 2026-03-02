@@ -511,6 +511,7 @@ async function openPerson(userId, fromScreen) {
     const liBtn = document.getElementById('person-linkedin-btn');
     if (p.linkedin && !p.is_anon) {
       liBtn.style.display = 'flex';
+      liBtn.style.flexDirection = 'column';
       liBtn.href = p.linkedin.startsWith('http') ? p.linkedin : 'https://' + p.linkedin;
     } else {
       liBtn.style.display = 'none';
@@ -530,7 +531,7 @@ async function openPerson(userId, fromScreen) {
 
     // Check if saved
     const { data: saved } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).single();
-    document.getElementById('save-btn').textContent = saved ? '✅ Gemt' : '🔖 Gem';
+    document.getElementById('save-btn').innerHTML = saved ? '✅<span>Gemt</span>' : '🔖<span>Gem</span>';
   } catch(e) { console.error("openPerson:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -540,7 +541,7 @@ async function saveContact() {
     const { data: existing } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', currentPerson).single();
     if (existing) { showToast('Allerede gemt'); return; }
     await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: currentPerson });
-    document.getElementById('save-btn').querySelector('.btn-icon').textContent = '✅';
+    document.getElementById('save-btn').innerHTML = '✅<span>Gemt</span>';
     showToast('Kontakt gemt! 🔖');
   } catch(e) { console.error("saveContact:", e); showToast(e.message || "Ukendt fejl"); }
 }
