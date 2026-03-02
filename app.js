@@ -1247,12 +1247,36 @@ async function handleGoogleLogin() {
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://michaelatsorensen.github.io/bubble_pwa',
+        redirectTo: window.location.origin + window.location.pathname,
         queryParams: { access_type: 'offline', prompt: 'consent' }
       }
     });
     if (error) showToast('Google login fejl: ' + error.message);
   } catch(e) { console.error("handleGoogleLogin:", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+async function handleLinkedInLogin() {
+  try {
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'linkedin_oidc',
+      options: {
+        redirectTo: window.location.origin + window.location.pathname
+      }
+    });
+    if (error) showToast('LinkedIn login fejl: ' + error.message);
+  } catch(e) { console.error("handleLinkedInLogin:", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+async function handleFacebookLogin() {
+  try {
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'facebook',
+      options: {
+        redirectTo: window.location.origin + window.location.pathname
+      }
+    });
+    if (error) showToast('Facebook login fejl: ' + error.message);
+  } catch(e) { console.error("handleFacebookLogin:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1959,37 +1983,6 @@ async function sendBubbleUpInvitation(toUserId) {
 }
 
 
-function setTheme(theme) {
-  document.getElementById('app-root').setAttribute('data-theme', theme);
-  localStorage.setItem('bubble-theme', theme);
-  document.querySelectorAll('.theme-option').forEach(b => {
-    b.classList.toggle('active', b.dataset.theme === theme);
-  });
-  // Update dropdown button
-  const opt = document.querySelector(`.theme-option[data-theme="${theme}"]`);
-  if (opt) {
-    document.getElementById('theme-swatch-preview').style.background = opt.dataset.preview;
-    document.getElementById('theme-label-current').textContent = opt.dataset.label;
-  }
-}
-
-function toggleThemeDropdown() {
-  const dd = document.getElementById('theme-dropdown');
-  const chevron = document.getElementById('theme-chevron');
-  const open = dd.style.display === 'block';
-  dd.style.display = open ? 'none' : 'block';
-  chevron.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
-}
-
-function selectTheme(el) {
-  setTheme(el.dataset.theme);
-  document.getElementById('theme-dropdown').style.display = 'none';
-  document.getElementById('theme-chevron').style.transform = 'rotate(0deg)';
-}
-
-updateClock();
-setInterval(updateClock, 10000);
-
 // ══════════════════════════════════════════════════════════
 //  GLOBAL EVENT DELEGATION
 // ══════════════════════════════════════════════════════════
@@ -2012,9 +2005,12 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// ══════════════════════════════════════════════════════════
+//  APP BOOT
+// ══════════════════════════════════════════════════════════
 window.addEventListener('load', async () => {
-  const savedTheme = localStorage.getItem('bubble-theme') || 'midnight';
-  setTheme(savedTheme);
+  updateClock();
+  setInterval(updateClock, 10000);
   await checkAuth();
   await checkQRJoin();
   await checkPendingJoin();
