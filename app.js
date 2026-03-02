@@ -62,8 +62,26 @@ function initSupabase() {
 //  NAVIGATION
 // ══════════════════════════════════════════════════════════
 function goTo(screenId) {
+  console.debug('[nav] goTo:', screenId);
+  // Cleanup: unsubscribe when leaving chat screens
+  const prev = document.querySelector('.screen.active');
+  if (prev) {
+    const prevId = prev.id;
+    if (prevId === 'screen-chat' && screenId !== 'screen-chat') {
+      if (chatSubscription) { chatSubscription.unsubscribe(); chatSubscription = null; }
+      dmEditingId = null;
+    }
+    if (prevId === 'screen-bubble-chat' && screenId !== 'screen-bubble-chat') {
+      if (bcSubscription) { bcSubscription.unsubscribe(); bcSubscription = null; }
+      bcEditingId = null;
+      bcCurrentMsgId = null;
+      bcCloseContext();
+    }
+  }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(screenId).classList.add('active');
+  const target = document.getElementById(screenId);
+  if (!target) { console.error('[nav] screen not found:', screenId); return; }
+  target.classList.add('active');
   window.scrollTo(0,0);
 
   // Update bottom nav active state
@@ -660,6 +678,7 @@ async function loadMessages() {
 }
 
 async function openChat(userId) {
+  console.debug('[dm] openChat:', userId);
   try {
     currentChatUser = userId;
     const { data: p } = await sb.from('profiles').select('name,title').eq('id', userId).single();
@@ -712,20 +731,22 @@ async function loadChatMessages() {
 }
 
 function subscribeToChat() {
-  if (chatSubscription) chatSubscription.unsubscribe();
+  console.debug('[dm] subscribeToChat, user:', currentChatUser);
+  if (chatSubscription) { chatSubscription.unsubscribe(); chatSubscription = null; }
   chatSubscription = sb.channel('chat-' + currentChatUser)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
       const m = payload.new;
       if (!m) return;
+      const isRelevant = (m.sender_id === currentUser.id && m.receiver_id === currentChatUser)
+                      || (m.sender_id === currentChatUser && m.receiver_id === currentUser.id);
+      if (!isRelevant) return;
       const el = document.getElementById('chat-messages');
-      const sent = m.sender_id === currentUser.id;
-      const time = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'});
-      const div = document.createElement('div');
-      // styled via dm-msg class
-      div.outerHTML = dmRenderMsg(m);
-      el.appendChild(div);
+      if (!el) return;
+      // Prevent duplicate: check if msg already rendered
+      if (el.querySelector('[data-msg-id="' + m.id + '"]')) return;
+      el.insertAdjacentHTML('beforeend', dmRenderMsg(m));
       el.scrollTop = el.scrollHeight;
-      if (!sent) updateUnreadBadge();
+      if (m.sender_id !== currentUser.id) updateUnreadBadge();
     }).subscribe();
 }
 
@@ -740,6 +761,7 @@ function dmEditMsg(msgId) {
 }
 
 async function sendMessage() {
+  console.debug('[dm] sendMessage');
   try {
     const input = document.getElementById('chat-input');
     const content = input.value.trim();
@@ -752,8 +774,20 @@ async function sendMessage() {
       input.value = '';
     } else {
       input.value = '';
-      await sendDirectMessage(currentChatUser, content);
-      await loadChatMessages();
+      const { data: newMsg, error } = await sb.from('messages').insert({
+        sender_id: currentUser.id,
+        receiver_id: currentChatUser,
+        content
+      }).select().single();
+      if (error) { console.error('sendMessage insert:', error); input.value = content; return; }
+      if (newMsg) {
+        const el = document.getElementById('chat-messages');
+        if (el && !el.querySelector('[data-msg-id="' + newMsg.id + '"]')) {
+          el.insertAdjacentHTML('beforeend', dmRenderMsg(newMsg));
+          el.scrollTop = el.scrollHeight;
+        }
+      }
+      input.focus();
     }
   } catch(e) { console.error("sendMessage:", e); showToast(e.message || "Ukendt fejl"); }
 }
@@ -1443,6 +1477,7 @@ let bcSubscription = null;
 let bcBubbleData = null;
 
 async function openBubbleChat(bubbleId, fromScreen) {
+  console.debug('[bc] openBubbleChat:', bubbleId, 'from:', fromScreen);
   try {
     bcBubbleId = bubbleId;
     const backBtn = document.getElementById('bc-back-btn');
@@ -1624,6 +1659,7 @@ function bcScrollToBottom() {
 }
 
 function bcSubscribe() {
+  console.debug('[bc] bcSubscribe, bubble:', bcBubbleId);
   if (bcSubscription) bcSubscription.unsubscribe();
   bcSubscription = sb.channel('bc-' + bcBubbleId)
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_messages', filter:`bubble_id=eq.${bcBubbleId}`},
@@ -1662,6 +1698,7 @@ function bcSubscribe() {
 }
 
 async function bcSendMessage() {
+  console.debug('[bc] bcSendMessage');
   try {
     const inp = document.getElementById('bc-input');
     const text = inp.value.trim();
