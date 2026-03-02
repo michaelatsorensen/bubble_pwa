@@ -37,6 +37,7 @@ let currentProfile = null;
 let currentBubble = null;
 let currentPerson = null;
 let currentChatUser = null;
+let currentChatName = null;
 let allBubbles = [];
 let cbChips = [], epChips = [], epDynChips = [], ebChips = [], obChips = [];
 let chatSubscription = null;
@@ -659,6 +660,7 @@ async function loadMessages() {
 async function openChat(userId) {
   try {
     currentChatUser = userId;
+  currentChatName = name;
     const { data: p } = await sb.from('profiles').select('name,title').eq('id', userId).single();
     document.getElementById('chat-name').textContent = p?.name || 'Ukendt';
     document.getElementById('chat-role').textContent = p?.title || '';
@@ -687,10 +689,26 @@ async function loadChatMessages() {
     el.innerHTML = sorted.map(m => {
       const sent = m.sender_id === currentUser.id;
       const time = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'});
-      return `<div style="display:flex;flex-direction:column;align-items:${sent?'flex-end':'flex-start'}">
-        <div class="msg-bubble ${sent?'sent':'recv'}">${escHtml(m.content||'')}</div>
-        <div class="msg-time" style="text-align:${sent?'right':'left'}">${time}</div>
-      </div>`;
+      const edited = m.edited ? '<span class="dm-edited">(redigeret)</span>' : '';
+      if (sent) {
+        return `<div class="dm-msg me" data-msg-id="${m.id}">
+          <div class="dm-wrap">
+            <button class="dm-actions" onclick="dmEditMsg('${m.id}')">⋯</button>
+            <div class="msg-bubble sent" id="dm-bubble-${m.id}">${escHtml(m.content||'')}</div>
+          </div>
+          <div class="dm-meta">${time} ${edited}</div>
+        </div>`;
+      } else {
+        const p = m.sender_profile || {};
+        const ini = (currentChatName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+        return `<div class="dm-msg them">
+          <div class="dm-avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">${ini}</div>
+          <div>
+            <div class="msg-bubble recv">${escHtml(m.content||'')}</div>
+            <div class="dm-meta">${time} ${edited}</div>
+          </div>
+        </div>`;
+      }
     }).join('');
     el.scrollTop = el.scrollHeight;
   } catch(e) { console.error("loadChatMessages:", e); showToast(e.message || "Ukendt fejl"); }
@@ -706,12 +724,30 @@ function subscribeToChat() {
       const sent = m.sender_id === currentUser.id;
       const time = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'});
       const div = document.createElement('div');
-      div.style.cssText = 'display:flex;flex-direction:column;align-items:' + (sent ? 'flex-end' : 'flex-start');
-      div.innerHTML = `<div class="msg-bubble ${sent?'sent':'recv'}">${escHtml(m.content||'')}</div><div class="msg-time" style="text-align:${sent?'right':'left'}">${time}</div>`;
+      // styled via dm-msg class
+      if (sent) {
+        div.className = 'dm-msg me';
+        div.dataset.msgId = m.id;
+        div.innerHTML = `<div class="dm-wrap"><button class="dm-actions" onclick="dmEditMsg('${m.id}')">⋯</button><div class="msg-bubble sent" id="dm-bubble-${m.id}">${escHtml(m.content||'')}</div></div><div class="dm-meta">${time}</div>`;
+      } else {
+        div.className = 'dm-msg them';
+        const ini = (currentChatName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+        div.innerHTML = `<div class="dm-avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">${ini}</div><div><div class="msg-bubble recv">${escHtml(m.content||'')}</div><div class="dm-meta">${time}</div></div>`;
+      }
       el.appendChild(div);
       el.scrollTop = el.scrollHeight;
       if (!sent) updateUnreadBadge();
     }).subscribe();
+}
+
+let dmEditingId = null;
+function dmEditMsg(msgId) {
+  dmEditingId = msgId;
+  const bubble = document.getElementById('dm-bubble-' + msgId);
+  if (!bubble) return;
+  const input = document.getElementById('chat-input');
+  input.value = bubble.textContent;
+  input.focus();
 }
 
 async function sendMessage() {
@@ -719,9 +755,17 @@ async function sendMessage() {
     const input = document.getElementById('chat-input');
     const content = input.value.trim();
     if (!content) return;
-    input.value = '';
-    await sendDirectMessage(currentChatUser, content);
-    await loadChatMessages();
+    if (dmEditingId) {
+      await sb.from('messages').update({ content, edited: true }).eq('id', dmEditingId);
+      const bubble = document.getElementById('dm-bubble-' + dmEditingId);
+      if (bubble) bubble.textContent = content;
+      dmEditingId = null;
+      input.value = '';
+    } else {
+      input.value = '';
+      await sendDirectMessage(currentChatUser, content);
+      await loadChatMessages();
+    }
   } catch(e) { console.error("sendMessage:", e); showToast(e.message || "Ukendt fejl"); }
 }
 

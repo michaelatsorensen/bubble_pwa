@@ -640,3 +640,16 @@ a.person-action-btn { text-decoration:none; }
 
 /* Bubble-chat topbar icon */
 #bc-emoji svg { width:100%; height:100%; }
+
+/* ════════════════════════════════════════
+   DM MESSAGE LAYOUT
+   ════════════════════════════════════════ */
+.dm-msg { display:flex; margin-bottom:0.5rem; }
+.dm-msg.me { flex-direction:column; align-items:flex-end; }
+.dm-msg.them { flex-direction:row; align-items:flex-end; gap:0.5rem; }
+.dm-avatar { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.55rem; font-weight:800; color:white; flex-shrink:0; }
+.dm-wrap { display:flex; align-items:center; gap:0.3rem; }
+.dm-actions { background:none; border:none; color:var(--muted); font-size:0.75rem; cursor:pointer; padding:0.2rem; opacity:0; transition:opacity 0.15s; }
+.dm-msg.me:hover .dm-actions, .dm-msg.me:active .dm-actions { opacity:1; }
+.dm-meta { font-size:0.58rem; color:var(--muted); margin-top:0.15rem; padding:0 0.25rem; }
+.dm-edited { color:var(--accent); cursor:default; margin-left:0.2rem; }
