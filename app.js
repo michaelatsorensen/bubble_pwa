@@ -1584,62 +1584,53 @@ async function bcLoadMessages() {
 function bcRenderMsg(m) {
   const isMe = m.user_id === currentUser.id;
   const p = m.profiles || {};
-  const initials = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const name = p.name || '?';
+  const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   const time = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'});
   const colors = ['linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#7C2D12,#F97316)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#4C1D95,#A78BFA)','linear-gradient(135deg,#0C4A6E,#38BDF8)'];
-  const color = colors[Math.abs((p.name||'?').charCodeAt(0)) % colors.length];
+  const color = colors[Math.abs(name.charCodeAt(0)) % colors.length];
 
   const g = document.createElement('div');
-  g.className = 'chat-msg-group ' + (isMe ? 'me' : 'them');
+  g.className = 'bc-msg ' + (isMe ? 'me' : 'them');
   g.id = 'bc-msg-' + m.id;
   g.dataset.msgId = m.id;
-  g.dataset.isMe = isMe;
 
+  // Avatar HTML (shown for everyone)
+  const avatarHtml = `<div class="bc-msg-avatar" style="background:${color}" onclick="bcOpenPerson('${m.user_id}','${escHtml(name)}','${escHtml(p.title||'')}','${color}')">${initials}</div>`;
+
+  // Content
+  let contentHtml = '';
   if (m.file_url) {
     const ext = m.file_name?.split('.').pop()?.toLowerCase() || '';
     const isImage = ['jpg','jpeg','png','gif','webp'].includes(ext) || (m.file_type||'').startsWith('image/');
-    const fIcon = ext === 'pdf' ? icon('file') : ['zip','rar','gz'].includes(ext) ? icon('clip') : icon('clip');
     const size = m.file_size ? (m.file_size < 1024*1024 ? Math.round(m.file_size/1024)+'KB' : (m.file_size/1024/1024).toFixed(1)+'MB') : '';
-
-    const fileContent = isImage
-      ? `<a href="${m.file_url}" target="_blank" rel="noopener" style="display:block">
-           <img src="${m.file_url}" alt="${escHtml(m.file_name||'Billede')}"
-             style="max-width:220px;max-height:260px;border-radius:12px;display:block;cursor:pointer"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-           <div style="display:none" class="chat-file-bubble">
-             <span class="chat-file-icon">${icon('eye')}</span>
-             <div><div class="chat-file-name">${escHtml(m.file_name||'Billede')}</div><div class="chat-file-size">${size} · Kan ikke vises</div></div>
-           </div>
-         </a>`
-      : `<a class="chat-file-bubble" href="${m.file_url}" target="_blank" rel="noopener">
-           <span class="chat-file-icon">${icon}</span>
-           <div><div class="chat-file-name">${escHtml(m.file_name||'Fil')}</div><div class="chat-file-size">${size}</div></div>
-         </a>`;
-
-    g.innerHTML = `
-      ${!isMe ? `<div class="chat-msg-avatar-row"><div class="chat-msg-avatar" style="background:${color}" onclick="bcOpenPerson('${m.user_id}','${p.name||''}','${p.title||''}','${color}')">${initials}</div><span class="chat-msg-sender">${escHtml(p.name||'')}</span></div>` : ''}
-      <div class="chat-msg-wrap">
-        ${isMe ? `<button class="chat-msg-actions" onclick="bcOpenContext(event,this,true,'${m.id}')">⋯</button>` : ''}
-        ${fileContent}
-        ${!isMe ? `<button class="chat-msg-actions" onclick="bcOpenContext(event,this,false,'${m.id}')">⋯</button>` : ''}
-      </div>
-      <div class="chat-msg-meta"><span class="chat-msg-time">${time}</span></div>
-      <div class="chat-reactions" id="bc-reactions-${m.id}"></div>`;
+    if (isImage) {
+      contentHtml = `<a href="${m.file_url}" target="_blank" rel="noopener"><img class="bc-msg-img" src="${m.file_url}" alt="${escHtml(m.file_name||'Billede')}"></a>`;
+    } else {
+      contentHtml = `<a class="bc-msg-file" href="${m.file_url}" target="_blank" rel="noopener">${icon('clip')} ${escHtml(m.file_name||'Fil')} <span class="bc-msg-file-size">${size}</span></a>`;
+    }
   } else {
-    g.innerHTML = `
-      ${!isMe ? `<div class="chat-msg-avatar-row"><div class="chat-msg-avatar" style="background:${color}" onclick="bcOpenPerson('${m.user_id}','${p.name||''}','${p.title||''}','${color}')">${initials}</div><span class="chat-msg-sender">${escHtml(p.name||'')}</span></div>` : ''}
-      <div class="chat-msg-wrap">
-        ${isMe ? `<button class="chat-msg-actions" onclick="bcOpenContext(event,this,true,'${m.id}')">⋯</button>` : ''}
-        <div class="chat-bubble" id="bc-bubble-${m.id}">${escHtml(m.content||'')}${m.edited ? '' : ''}</div>
-        ${!isMe ? `<button class="chat-msg-actions" onclick="bcOpenContext(event,this,false,'${m.id}')">⋯</button>` : ''}
-      </div>
-      <div class="chat-msg-meta">
-        <span class="chat-msg-time">${time}</span>
-        ${m.edited ? `<span class="chat-msg-edited" onclick="bcShowHistory('${m.id}')">(redigeret)</span>` : ''}
-      </div>
-      <div class="chat-reactions" id="bc-reactions-${m.id}"></div>`;
+    contentHtml = `<div class="bc-msg-bubble" id="bc-bubble-${m.id}">${escHtml(m.content||'')}</div>`;
   }
-  // Load reactions async
+
+  // Edited indicator
+  const editedHtml = m.edited ? `<span class="bc-msg-edited" onclick="bcShowHistory('${m.id}')">(redigeret)</span>` : '';
+
+  g.innerHTML = `
+    ${avatarHtml}
+    <div class="bc-msg-body">
+      <div class="bc-msg-header">
+        <span class="bc-msg-name">${escHtml(name)}</span>
+        <span class="bc-msg-time">${time}</span>
+        ${editedHtml}
+      </div>
+      <div class="bc-msg-content">
+        ${contentHtml}
+        <button class="bc-msg-dots" onclick="bcOpenContext(event,this,${isMe},'${m.id}')">⋯</button>
+      </div>
+      <div class="bc-msg-reactions" id="bc-reactions-${m.id}"></div>
+    </div>`;
+
   setTimeout(() => bcLoadReactions(m.id), 50);
   return g;
 }
