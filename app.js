@@ -920,11 +920,7 @@ function typeLabel(type) {
   return { event:'Event', local:'Lokal', theme:'Tema', company:'Virksomhed' }[type] || type;
 }
 
-function updateClock() {
-  const now = new Date();
-  const t = now.toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'});
-  document.querySelectorAll('.status-bar span:first-child').forEach(el => el.textContent = t);
-}
+// Clock removed — iPhone shows native status bar
 
 // ══════════════════════════════════════════════════════════
 //  PRIVATE BUBBLE — JOIN REQUEST
@@ -2011,8 +2007,6 @@ document.addEventListener('click', (e) => {
 //  APP BOOT
 // ══════════════════════════════════════════════════════════
 window.addEventListener('load', async () => {
-  updateClock();
-  setInterval(updateClock, 10000);
   await checkAuth();
   await checkQRJoin();
   await checkPendingJoin();

@@ -107,7 +107,7 @@
      SCREEN: ONBOARDING
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-onboarding">
-  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2rem 1.5rem;display:flex;flex-direction:column;justify-content:center">
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(2rem + env(safe-area-inset-top, 0px)) 1.5rem 2rem;display:flex;flex-direction:column;justify-content:center">
     <div style="text-align:center;margin-bottom:2rem">
       <div style="font-size:3rem;margin-bottom:0.5rem">🫧</div>
       <div style="font-size:1.6rem;font-weight:800;margin-bottom:0.4rem">Næsten klar!</div>
@@ -144,7 +144,6 @@
      SCREEN: HOME
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-home">
-  <div class="status-bar"><span id="home-time">9:41</span><span></span></div>
   <div class="topbar">
     <div class="topbar-logo" onclick="goTo('screen-home')" style="cursor:pointer">bubble</div>
     <div style="flex:1"></div>
@@ -221,7 +220,6 @@
      SCREEN: BUBBLES
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-bubbles">
-  <div class="status-bar"><span>9:41</span><span></span></div>
   <div class="topbar">
     <button class="back-btn" onclick="goTo('screen-home')">← Tilbage</button>
     <div class="topbar-title">Bobler</div>
@@ -245,7 +243,6 @@
      SCREEN: NOTIFICATIONS
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-notifications">
-  <div class="status-bar"><span>9:41</span><span></span></div>
   <div class="topbar">
     <button class="back-btn" onclick="goTo('screen-home')">← Tilbage</button>
     <div class="topbar-title" style="font-weight:800">Notifikationer</div>
@@ -265,7 +262,6 @@
      SCREEN: DISCOVER BUBBLES
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-discover">
-  <div class="status-bar"><span id="disc-time">9:41</span><span></span></div>
   <div class="topbar">
     <div class="topbar-title">Opdag bobler</div>
     <button class="btn-sm btn-accent" onclick="openCreateBubble()">+ Opret</button>
@@ -365,7 +361,6 @@
      SCREEN: BOBLE CHAT (merged med detail)
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-bubble-chat">
-  <div class="status-bar"><span id="bc-time">9:41</span><span></span></div>
 
   <!-- Kompakt topbar: tilbage + boble-identitet + actions -->
   <div class="topbar" style="gap:0.5rem">
@@ -467,7 +462,6 @@
      SCREEN: MESSAGES LIST
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-messages">
-  <div class="status-bar"><span>9:41</span><span></span></div>
   <div class="topbar">
     <div class="topbar-title">Beskeder</div>
     <button class="btn-sm btn-ghost" onclick="openCreateBubble()" style="font-size:0.72rem;padding:0.38rem 0.7rem">+ Ny boble</button>
@@ -487,7 +481,6 @@
      SCREEN: CHAT THREAD
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-chat">
-  <div class="status-bar"><span>9:41</span><span></span></div>
   <div class="topbar">
     <button class="back-btn" onclick="goTo('screen-messages')">← Tilbage</button>
     <div style="text-align:right">
@@ -506,7 +499,6 @@
      SCREEN: MY PROFILE
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-profile">
-  <div class="status-bar"><span>9:41</span><span></span></div>
   <div class="topbar">
     <div class="topbar-title">Min profil</div>
     <button class="btn-sm btn-ghost" onclick="openEditProfile()">Rediger</button>
