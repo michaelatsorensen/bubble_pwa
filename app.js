@@ -65,6 +65,23 @@ function goTo(screenId) {
   document.getElementById(screenId).classList.add('active');
   window.scrollTo(0,0);
 
+  // Update bottom nav active state
+  const navMap = {
+    'screen-home': 0, 'screen-bubbles': 0,
+    'screen-discover': 1,
+    'screen-messages': 2, 'screen-chat': 2,
+    'screen-profile': 3,
+    'screen-notifications': 0
+  };
+  const activeIdx = navMap[screenId];
+  if (activeIdx !== undefined) {
+    document.querySelectorAll('.bottom-nav').forEach(nav => {
+      nav.querySelectorAll('.nav-item').forEach((btn, i) => {
+        btn.classList.toggle('active', i === activeIdx);
+      });
+    });
+  }
+
   // Load data for screen
   if (screenId === 'screen-home') loadHome();
   if (screenId === 'screen-bubbles') loadMyBubbles();
