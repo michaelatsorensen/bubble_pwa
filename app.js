@@ -775,7 +775,10 @@ function dmEditMsg(msgId) {
   input.focus();
 }
 
+let dmSending = false;
 async function sendMessage() {
+  if (dmSending) return;
+  dmSending = true;
   console.debug('[dm] sendMessage');
   try {
     const input = document.getElementById('chat-input');
@@ -805,6 +808,7 @@ async function sendMessage() {
       input.focus();
     }
   } catch(e) { console.error("sendMessage:", e); showToast(e.message || "Ukendt fejl"); }
+  finally { dmSending = false; }
 }
 
 async function sendDirectMessage(toId, content) {
@@ -1778,7 +1782,10 @@ function bcSubscribe() {
     .subscribe();
 }
 
+let bcSending = false;
 async function bcSendMessage() {
+  if (bcSending) return;
+  bcSending = true;
   console.debug('[bc] bcSendMessage');
   try {
     const inp = document.getElementById('bc-input');
@@ -1824,7 +1831,6 @@ async function bcSendMessage() {
       }
 
       if (newMsg) {
-        // Injicer profil-data lokalt — undgår afhængighed af FK-join
         newMsg.profiles = {
           id: currentUser.id,
           name: currentProfile?.name || currentUser.email?.split('@')[0] || '?'
@@ -1834,6 +1840,7 @@ async function bcSendMessage() {
       }
     }
   } catch(e) { console.error("bcSendMessage:", e); showToast(e.message || "Ukendt fejl"); }
+  finally { bcSending = false; }
 }
 
 async function bcHandleFile(input) {
@@ -2207,24 +2214,33 @@ async function sendBubbleUpInvitation(toUserId) {
 
 
 // ══════════════════════════════════════════════════════════
-//  CHAT INPUT EVENT LISTENERS (moved from inline HTML)
+//  CHAT INPUT EVENT LISTENERS (bind exactly once on load)
 // ══════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('load', () => {
   const bcInput = document.getElementById('bc-input');
   if (bcInput) {
     bcInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); bcSendMessage(); }
-    });
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        bcSendMessage();
+      }
+    }, { passive: false });
   }
-  const dmFileInput = document.getElementById('dm-file-input');
-  if (dmFileInput) {
-    dmFileInput.addEventListener('change', () => dmHandleFile(dmFileInput));
-  }
+
   const dmInput = document.getElementById('chat-input');
   if (dmInput) {
     dmInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
-    });
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (!currentChatUser) return;
+        sendMessage();
+      }
+    }, { passive: false });
+  }
+
+  const dmFileInput = document.getElementById('dm-file-input');
+  if (dmFileInput) {
+    dmFileInput.addEventListener('change', () => dmHandleFile(dmFileInput));
   }
 });
 
