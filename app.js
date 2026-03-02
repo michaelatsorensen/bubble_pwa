@@ -578,8 +578,31 @@ async function saveContact() {
     if (existing) { showToast('Allerede gemt'); return; }
     await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: currentPerson });
     document.getElementById('save-btn').innerHTML = icon('checkCircle') + '<span>Gemt</span>';
-    showToast('Kontakt gemt! 🔖');
+    showToast('Kontakt gemt!');
   } catch(e) { console.error("saveContact:", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+async function removeSavedContact(savedId, btn) {
+  try {
+    await sb.from('saved_contacts').delete().eq('id', savedId);
+    const card = btn.closest('.card');
+    if (card) {
+      card.style.transition = 'opacity 0.25s, transform 0.25s';
+      card.style.opacity = '0';
+      card.style.transform = 'translateX(20px)';
+      setTimeout(() => {
+        card.remove();
+        // Update count
+        const countEl = document.getElementById('saved-count');
+        const remaining = document.getElementById('saved-contacts')?.querySelectorAll('.card').length || 0;
+        if (countEl) countEl.textContent = remaining ? remaining + ' gemt' : '';
+        if (!remaining) {
+          document.getElementById('saved-contacts').innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bookmark') + '</div><div class="empty-text">Ingen gemte kontakter endnu.<br>Tryk Gem på en profil for at huske dem.</div></div>';
+        }
+      }, 260);
+    }
+    showToast('Kontakt fjernet');
+  } catch(e) { console.error("removeSavedContact:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 function proposeMeeting() {
@@ -911,24 +934,101 @@ async function loadProfile() {
 
     // Saved contacts
     const { data: saved } = await sb.from('saved_contacts')
-      .select('contact_id, profiles(id,name,title)').eq('user_id', currentUser.id);
+      .select('id, contact_id, profiles(id,name,title,keywords,is_anon)').eq('user_id', currentUser.id);
     const savedEl = document.getElementById('saved-contacts');
+    // Saved contacts badge
+    const countEl = document.getElementById('saved-count');
+    if (countEl) {
+      if (saved?.length) { countEl.textContent = saved.length; countEl.style.display = 'inline-flex'; }
+      else { countEl.style.display = 'none'; }
+    }
     if (saved && saved.length) {
-      savedEl.innerHTML = saved.map(s => {
+      const colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#7C2D12,#F97316)'];
+      savedEl.innerHTML = saved.map((s, i) => {
         const p = s.profiles;
         if (!p) return '';
         const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-        return `<div class="flex-col-center saved-contact" data-action="openPerson" data-id="${p.id}" data-from="screen-profile">
-          <div class="avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A);width:48px;height:48px;font-size:0.85rem">${ini}</div>
-          <div class="fs-065 text-muted text-center text-truncate" style="max-width:56px">${escHtml(p.name?.split(' ')[0]||'?')}</div>
+        const col = colors[i % colors.length];
+        const tags = (p.keywords||[]).slice(0,3).map(k => `<span class="tag" style="font-size:0.58rem;padding:0.15rem 0.4rem">${escHtml(k)}</span>`).join('');
+        return `<div class="card" style="padding:0.7rem 0.9rem;margin-bottom:0.4rem">
+          <div class="flex-row-center" style="gap:0.7rem">
+            <div class="avatar" style="background:${col};width:40px;height:40px;font-size:0.75rem;flex-shrink:0" data-action="openPerson" data-id="${p.id}" data-from="screen-profile">${ini}</div>
+            <div style="flex:1;min-width:0">
+              <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||'Ukendt')}</div>
+              <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.title||'')}</div>
+              ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.3rem">${tags}</div>` : ''}
+            </div>
+            <div style="display:flex;gap:0.3rem;flex-shrink:0">
+              <button class="btn-sm btn-ghost" style="padding:0.3rem 0.45rem;font-size:0.75rem" data-action="openChat" data-id="${p.id}" title="Send besked">${icon('chat')}</button>
+              <button class="btn-sm btn-ghost" style="padding:0.3rem 0.45rem;font-size:0.75rem" data-action="openPerson" data-id="${p.id}" data-from="screen-profile" title="Se profil">${icon('user')}</button>
+              <button class="btn-sm btn-ghost" style="padding:0.3rem 0.45rem;font-size:0.75rem;color:var(--accent2)" onclick="removeSavedContact('${s.id}',this)" title="Fjern">${icon('x')}</button>
+            </div>
+          </div>
         </div>`;
       }).join('');
     } else {
-      savedEl.innerHTML = '<div class="fs-085 text-muted">Ingen gemte kontakter endnu</div>';
+      savedEl.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bookmark') + '</div><div class="empty-text">Ingen gemte kontakter endnu.<br>Tryk Gem på en profil for at huske dem.</div></div>';
     }
 
     await loadMyBubbles();
+    loadProfileChats();
   } catch(e) { console.error("loadProfile:", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+// Profile tab switching — same pattern as bcSwitchTab
+function profSwitchTab(tab) {
+  ['saved','bubbles','chats'].forEach(t => {
+    const panel = document.getElementById('prof-panel-' + t);
+    const tabBtn = document.getElementById('prof-tab-' + t);
+    if (panel) panel.style.display = t === tab ? 'flex' : 'none';
+    if (tabBtn) tabBtn.classList.toggle('active', t === tab);
+  });
+}
+
+// Load conversations into profile chats tab
+async function loadProfileChats() {
+  try {
+    const list = document.getElementById('profile-conversations');
+    if (!list) return;
+    list.innerHTML = '<div class="spinner"></div>';
+
+    const { data: convs } = await sb.from('messages')
+      .select('*')
+      .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+      .order('created_at', {ascending:false})
+      .limit(200);
+
+    if (!convs || convs.length === 0) {
+      list.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">Ingen samtaler endnu.<br>Find en person og start en samtale!</div></div>';
+      return;
+    }
+
+    const seen = new Set();
+    const partners = [];
+    for (const m of convs) {
+      const partnerId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
+      if (!seen.has(partnerId)) { seen.add(partnerId); partners.push({ partnerId, lastMsg: m }); }
+    }
+
+    const pIds = partners.map(p => p.partnerId);
+    const { data: profiles } = await sb.from('profiles').select('id,name,title').in('id', pIds);
+    const profileMap = Object.fromEntries((profiles||[]).map(p=>[p.id,p]));
+
+    list.innerHTML = partners.map(({ partnerId, lastMsg }) => {
+      const p = profileMap[partnerId] || {};
+      const initials = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const isUnread = lastMsg.receiver_id === currentUser.id && !lastMsg.read_at;
+      const time = new Date(lastMsg.created_at).toLocaleDateString('da-DK', {day:'numeric',month:'short'});
+      return `<div class="card flex-row-center" data-action="openChat" data-id="${partnerId}" style="margin-bottom:0.4rem">
+        <div class="avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">${initials}</div>
+        <div style="flex:1;min-width:0">
+          <div class="flex-row-center" style="justify-content:space-between"><span class="${isUnread?'fw-700':'fw-600'} fs-09">${escHtml(p.name||'Ukendt')}</span><span class="fs-065 text-muted">${time}</span></div>
+          <div class="fs-078 text-muted text-truncate">${escHtml(lastMsg.content||'📎 Fil')}</div>
+        </div>
+        ${isUnread ? '<div class="live-dot" style="margin-left:0.5rem"></div>' : ''}
+      </div>`;
+    }).join('');
+  } catch(e) { console.error("loadProfileChats:", e); }
 }
 
 function openEditProfile() {

@@ -520,32 +520,48 @@
     <div class="topbar-title">Min profil</div>
     <button class="btn-sm btn-ghost" onclick="openEditProfile()">Rediger</button>
   </div>
-  <div class="scroll-area" style="padding:0">
-    <div class="profile-hero">
-      <div style="width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);margin:0 auto 0.9rem;display:flex;align-items:center;justify-content:center;font-size:1.7rem;font-weight:800;color:white;box-shadow:0 4px 20px rgba(139,127,255,0.35);border:2px solid rgba(255,255,255,0.08)" id="my-avatar">?</div>
-      <div style="font-size:1.3rem;font-weight:800;margin-bottom:0.2rem;letter-spacing:-0.02em" id="my-name">...</div>
-      <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.85rem" id="my-role">...</div>
-      <div id="my-keywords" style="margin-bottom:0.5rem"></div>
-    </div>
-    <div style="padding:1rem 1.25rem">
-      <div class="section-label">Synlighed</div>
-      <div class="card" style="display:flex;justify-content:space-between;align-items:center;cursor:default">
-        <div>
-          <div style="font-size:0.88rem;font-weight:700">Anonym tilstand</div>
-          <div style="font-size:0.73rem;color:var(--text-secondary);margin-top:0.15rem">Skjul navn og billede</div>
-        </div>
-        <div id="anon-toggle" onclick="toggleAnon()" style="width:46px;height:26px;background:var(--border);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s">
-          <div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>
-        </div>
-      </div>
 
-      <div class="section-label" style="margin-top:1.25rem">Mine bobler</div>
-      <div id="profile-bubbles"><div class="spinner"></div></div>
-      <div class="section-label">Gemte kontakter</div>
-      <div id="saved-contacts" style="display:flex;flex-wrap:wrap;gap:0.75rem;padding-bottom:1rem"></div>
-      <button class="btn-secondary" onclick="handleLogout()" style="margin-top:1.5rem;margin-bottom:2rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)">Log ud</button>
-    </div>
+  <!-- Profile hero (always visible above tabs) -->
+  <div class="profile-hero" style="flex-shrink:0">
+    <div style="width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);margin:0 auto 0.9rem;display:flex;align-items:center;justify-content:center;font-size:1.7rem;font-weight:800;color:white;box-shadow:0 4px 20px rgba(139,127,255,0.35);border:2px solid rgba(255,255,255,0.08)" id="my-avatar">?</div>
+    <div style="font-size:1.3rem;font-weight:800;margin-bottom:0.2rem;letter-spacing:-0.02em" id="my-name">...</div>
+    <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.85rem" id="my-role">...</div>
+    <div id="my-keywords" style="margin-bottom:0.5rem"></div>
   </div>
+
+  <!-- Tabs -->
+  <div class="bubble-tabs" style="flex-shrink:0">
+    <button class="bubble-tab active" id="prof-tab-saved" onclick="profSwitchTab('saved')">Gemte <span class="bubble-tab-badge" id="saved-count" style="display:none">0</span></button>
+    <button class="bubble-tab" id="prof-tab-bubbles" onclick="profSwitchTab('bubbles')">Bobler</button>
+    <button class="bubble-tab" id="prof-tab-chats" onclick="profSwitchTab('chats')">Chats</button>
+  </div>
+
+  <!-- SAVED TAB -->
+  <div id="prof-panel-saved" style="display:flex;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
+    <div id="saved-contacts"></div>
+  </div>
+
+  <!-- BUBBLES TAB -->
+  <div id="prof-panel-bubbles" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
+    <div id="profile-bubbles"><div class="spinner"></div></div>
+    <div class="section-label" style="margin-top:1.25rem">Synlighed</div>
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;cursor:default">
+      <div>
+        <div style="font-size:0.88rem;font-weight:700">Anonym tilstand</div>
+        <div style="font-size:0.73rem;color:var(--text-secondary);margin-top:0.15rem">Skjul navn og billede</div>
+      </div>
+      <div id="anon-toggle" onclick="toggleAnon()" style="width:46px;height:26px;background:var(--border);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s">
+        <div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>
+      </div>
+    </div>
+    <button class="btn-secondary" onclick="handleLogout()" style="margin-top:1.5rem;margin-bottom:2rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)">Log ud</button>
+  </div>
+
+  <!-- CHATS TAB -->
+  <div id="prof-panel-chats" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
+    <div id="profile-conversations"></div>
+  </div>
+
   <div class="bottom-nav">
     <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
     <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
