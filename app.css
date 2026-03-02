@@ -760,7 +760,7 @@ a.person-action-btn { text-decoration:none; }
 /* ── PULL-TO-REFRESH ── */
 .ptr-indicator {
   position: fixed;
-  top: calc(env(safe-area-inset-top, 44px) + 52px);
+  top: calc(env(safe-area-inset-top, 54px) + 60px);
   left: 50%;
   transform: translateX(-50%) translateY(-40px);
   z-index: 999;
