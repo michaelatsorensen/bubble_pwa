@@ -148,13 +148,13 @@ textarea.input { min-height:80px; resize:vertical; }
 .person-sheet { position:fixed; bottom:0; left:0; right:0; z-index:201; max-height:88vh; background:rgba(12,12,25,0.92); backdrop-filter:blur(40px) saturate(180%); -webkit-backdrop-filter:blur(40px) saturate(180%); border:1px solid var(--glass-border); border-bottom:none; border-radius:24px 24px 0 0; transform:translateY(100%); transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1); overflow-y:auto; padding-bottom:env(safe-area-inset-bottom,1rem); }
 .person-sheet-overlay.open .person-sheet { transform:translateY(0); }
 .person-sheet-handle { width:36px; height:4px; border-radius:99px; background:rgba(255,255,255,0.15); margin:0.75rem auto 0.5rem; }
-.person-sheet-close { position:absolute; top:0.75rem; right:1rem; background:var(--glass-bg); border:1px solid var(--glass-border-subtle); border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-size:0.75rem; color:var(--text-secondary); cursor:pointer; }
-.person-sheet-header { display:flex; flex-direction:column; align-items:center; padding:0.5rem 1.5rem 0.75rem; text-align:center; }
+.person-sheet-close { position:absolute; top:0.5rem; right:1.2rem; background:var(--glass-bg); border:1px solid var(--glass-border-subtle); border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:0.78rem; color:var(--text-secondary); cursor:pointer; z-index:2; }
+.person-sheet-header { display:flex; flex-direction:column; align-items:center; padding:0.5rem 1.5rem 0.5rem; text-align:center; position:relative; }
 .person-sheet-avatar { width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem; font-weight:800; color:white; margin-bottom:0.6rem; box-shadow:0 4px 20px rgba(0,0,0,0.3); }
 .person-sheet-name { font-size:1.1rem; font-weight:800; letter-spacing:-0.03em; }
 .person-sheet-sub { font-size:0.72rem; color:var(--text-secondary); margin-top:0.1rem; }
-.person-sheet-bio { font-size:0.75rem; color:var(--text-secondary); line-height:1.55; padding:0 1.5rem; text-align:center; margin-top:0.5rem; }
-.person-sheet-actions { display:flex; gap:0.5rem; padding:0.75rem 1.5rem; }
+.person-sheet-bio { font-size:0.78rem; color:var(--text-secondary); line-height:1.55; padding:0 1.5rem; text-align:center; margin-top:0.25rem; margin-bottom:0.25rem; }
+.person-sheet-actions { display:flex; gap:0.5rem; padding:0.5rem 1.2rem 0.25rem; }
 .person-sheet-btn { flex:1; padding:0.55rem 0.3rem; border-radius:var(--radius-sm); font-size:0.72rem; font-family:'Outfit',sans-serif; font-weight:600; cursor:pointer; border:none; text-align:center; transition:all 0.2s; }
 .person-sheet-btn.primary { background:var(--gradient-primary); border:1px solid var(--gradient-btn-border); color:white; box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 2px 10px rgba(139,127,255,0.25); }
 .person-sheet-btn.secondary { background:var(--glass-bg); border:1px solid var(--glass-border); color:var(--text-secondary); }
@@ -264,7 +264,7 @@ textarea.input { min-height:80px; resize:vertical; }
 .thread-input { flex:1; background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-pill); padding:0.4rem 0.75rem; font-size:0.75rem; font-family:'Outfit',sans-serif; color:var(--text); outline:none; }
 
 /* ── BUBBLE UP ── */
-.bubble-up-btn { width:100%; padding:0.6rem 1rem; border-radius:var(--radius-sm); background:linear-gradient(135deg,rgba(139,127,255,0.12),rgba(232,93,138,0.08)); border:1px solid rgba(139,127,255,0.25); color:var(--text); font-size:0.78rem; font-family:'Outfit',sans-serif; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:0.6rem; transition:all 0.2s; }
+.bubble-up-btn { width:100%; padding:0.65rem 1rem; border-radius:var(--radius-sm); background:linear-gradient(135deg,rgba(139,127,255,0.12),rgba(232,93,138,0.08)); border:1px solid rgba(139,127,255,0.25); color:var(--text); font-size:0.82rem; font-family:'Outfit',sans-serif; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem; transition:all 0.2s; }
 .bubble-up-btn:hover { border-color:rgba(139,127,255,0.4); }
 .bubble-up-sub-text { font-size:0.65rem; color:var(--text-secondary); margin-top:0.15rem; }
 .bubble-up-confirm { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius); padding:1rem; text-align:center; }
@@ -451,10 +451,15 @@ button {
 
 /* Person sheet internal padding for bubble-up btn etc */
 .person-sheet .bubble-up-btn {
-  margin: 0.5rem 1.2rem;
+  margin: 0.75rem 1.2rem 0.5rem;
+  display: flex; align-items: center; gap: 0.6rem;
 }
 .person-sheet .bubble-up-confirm {
-  margin: 0.5rem 1.2rem;
+  margin: 0 1.2rem 0.75rem;
+  display: none;
+}
+.person-sheet .bubble-up-confirm.show {
+  display: block;
 }
 
 /* FIX 5: Topbar — push avatar to far right */
