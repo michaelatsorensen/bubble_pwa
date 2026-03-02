@@ -601,8 +601,10 @@ async function updateUnreadBadge() {
   } catch(e) { console.error("updateUnreadBadge:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
+let incomingSubscription = null;
 function subscribeToIncoming() {
-  sb.channel('incoming-messages')
+  if (incomingSubscription) { incomingSubscription.unsubscribe(); incomingSubscription = null; }
+  incomingSubscription = sb.channel('incoming-messages')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages',
       filter: `receiver_id=eq.${currentUser.id}` }, () => {
       updateUnreadBadge();
@@ -660,9 +662,9 @@ async function loadMessages() {
 async function openChat(userId) {
   try {
     currentChatUser = userId;
-  currentChatName = name;
     const { data: p } = await sb.from('profiles').select('name,title').eq('id', userId).single();
-    document.getElementById('chat-name').textContent = p?.name || 'Ukendt';
+    currentChatName = p?.name || 'Ukendt';
+    document.getElementById('chat-name').textContent = currentChatName;
     document.getElementById('chat-role').textContent = p?.title || '';
     goTo('screen-chat');
     await loadChatMessages();

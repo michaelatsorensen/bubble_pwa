@@ -283,7 +283,13 @@
 <!-- ════════════════════════════════════════
      SCREEN: BUBBLE DETAIL
 ════════════════════════════════════════ -->
-<div class="screen" id="screen-bubble-detail" style="display:none"></div>
+<div class="screen" id="screen-bubble-detail">
+  <div class="topbar"><button class="back-btn" onclick="goTo('screen-discover')">← Tilbage</button><div class="topbar-title">Boble</div></div>
+  <div class="scroll-area">
+    <div id="detail-stats" style="display:flex;gap:0.5rem;margin-bottom:1rem"></div>
+    <div id="bubble-members-list"></div>
+  </div>
+</div>
 
 <!-- ════════════════════════════════════════
      SCREEN: PERSON PROFILE

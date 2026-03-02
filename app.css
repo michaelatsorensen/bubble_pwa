@@ -721,3 +721,38 @@ a.person-action-btn { text-decoration:none; }
 @media (hover:none) { .msg-dots { opacity:0.35; } }
 .msg-dots:active { opacity:1; }
 .msg-reactions { display:flex; flex-wrap:wrap; gap:0.2rem; margin-top:0.15rem; min-height:0; }
+
+/* ══════════════════════════════════════
+   FIX: Chat screens — locked height, only messages scroll
+   Topbar = ceiling (messages fade under it)
+   Composer = fixed floor
+   ══════════════════════════════════════ */
+#screen-bubble-chat.active,
+#screen-chat.active {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+#screen-bubble-chat .topbar,
+#screen-bubble-chat .bubble-tabs,
+#screen-chat .topbar {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 5;
+}
+/* Messages fade under the topbar edge — "invisible ceiling" */
+.chat-scroll {
+  mask-image: linear-gradient(to bottom, transparent 0px, black 12px, black 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0px, black 12px, black 100%);
+}
+/* Composer padding above fixed bottom-nav in bubble-chat */
+#screen-bubble-chat .chat-composer {
+  padding-bottom: calc(0.5rem + 4.5rem + env(safe-area-inset-bottom, 0px));
+}
+/* DM chat — no bottom-nav, just safe area */
+#screen-chat .chat-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
