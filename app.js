@@ -603,7 +603,9 @@ async function updateUnreadBadge() {
 
 let incomingSubscription = null;
 function subscribeToIncoming() {
-  if (incomingSubscription) incomingSubscription.unsubscribe();
+  try {
+    if (incomingSubscription) incomingSubscription.unsubscribe();
+  } catch(e) {}
   incomingSubscription = sb.channel('incoming-messages')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages',
       filter: `receiver_id=eq.${currentUser.id}` }, () => {
@@ -616,12 +618,11 @@ async function loadMessages() {
     const list = document.getElementById('conversations-list');
     list.innerHTML = '<div class="spinner"></div>';
 
-    // TODO: Replace with conversations table or DISTINCT ON RPC for scale
     const { data: convs } = await sb.from('messages')
       .select('*')
       .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
       .order('created_at', {ascending:false})
-      .limit(100);
+      .limit(200);
 
     if (!convs || convs.length === 0) {
       list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">Ingen beskeder endnu.<br>Find en person og start en samtale!</div></div>';
@@ -665,7 +666,7 @@ async function openChat(userId) {
     currentChatUser = userId;
     const { data: p } = await sb.from('profiles').select('name,title').eq('id', userId).single();
     currentChatName = p?.name || 'Ukendt';
-    document.getElementById('chat-name').textContent = currentChatName;
+    document.getElementById('chat-name').textContent = p?.name || 'Ukendt';
     document.getElementById('chat-role').textContent = p?.title || '';
     goTo('screen-chat');
     await loadChatMessages();
@@ -721,13 +722,10 @@ function subscribeToChat() {
       const el = document.getElementById('chat-messages');
       const sent = m.sender_id === currentUser.id;
       const time = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'});
-      const div = document.createElement('div');
-      // styled via dm-msg class
-      div.outerHTML = dmRenderMsg(m);
-      el.appendChild(div);
+      el.insertAdjacentHTML('beforeend', dmRenderMsg(m));
       el.scrollTop = el.scrollHeight;
       if (!sent) updateUnreadBadge();
-    }).subscribe();
+}).subscribe();
 }
 
 let dmEditingId = null;
