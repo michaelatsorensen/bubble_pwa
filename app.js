@@ -364,9 +364,13 @@ async function loadMyBubbles() {
 
     // Profile bubbles
     document.getElementById('profile-bubbles').innerHTML = bubbles.map(b =>
-      `<div class="card" style="padding:0.85rem 1.1rem;cursor:default">
-        <div style="font-weight:600;font-size:0.9rem">${bubbleIcon(b.type)} ${escHtml(b.name)}</div>
-        <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem">${b.created_by === currentUser.id ? icon('crown') + ' Ejer' : 'Aktiv'}</div>
+      `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}" style="padding:0.85rem 1.1rem">
+        <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};flex-shrink:0">${bubbleEmoji(b.type)}</div>
+        <div style="flex:1;min-width:0">
+          <div class="fw-600 fs-09">${escHtml(b.name)}</div>
+          <div class="fs-075 text-muted">${b.created_by === currentUser.id ? icon('crown') + ' Ejer' : 'Aktiv'}${b.location ? ' · ' + escHtml(b.location) : ''}</div>
+        </div>
+        <div class="icon-muted">›</div>
       </div>`).join('');
   } catch(e) { console.error("loadMyBubbles:", e); showToast(e.message || "Ukendt fejl"); }
 }
@@ -447,56 +451,7 @@ async function openBubble(bubbleId, fromScreen) {
   } catch(e) { console.error("openBubble:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
-async function loadBubbleMembers(bubbleId) {
-  try {
-    const { data: members } = await sb.from('bubble_members')
-      .select('user_id, profiles(id, name, title, keywords, is_anon)')
-      .eq('bubble_id', bubbleId).neq('user_id', currentUser.id);
-
-    const list = document.getElementById('bubble-members-list');
-    if (!list) return;
-
-    // Stats
-    const { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id',bubbleId);
-    const statsEl = document.getElementById('detail-stats');
-    if (statsEl) statsEl.innerHTML = `
-      <div class="stat-box"><div class="stat-num">${count||0}</div><div class="stat-label">Aktive</div></div>
-      <div class="stat-box"><div class="stat-num">${members?.length||0}</div><div class="stat-label">Andre</div></div>
-      <div class="stat-box"><div class="stat-num" style="color:var(--accent3)">${members?.length ? Math.round(60 + Math.random()*35) : 0}%</div><div class="stat-label">Din match-rate</div></div>`;
-
-    if (!members || members.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('users') + '</div><div class="empty-text">Ingen andre i boblen endnu.</div></div>';
-      return;
-    }
-
-    const myKw = (currentProfile?.keywords || []).map(k => k.toLowerCase());
-    const scored = members.map(m => {
-      const p = m.profiles;
-      if (!p) return null;
-      const theirKw = (p.keywords || []).map(k => k.toLowerCase());
-      const overlap = myKw.filter(k => theirKw.includes(k));
-      const score = theirKw.length ? Math.round((overlap.length / Math.max(myKw.length, theirKw.length, 1)) * 100 + 40 + Math.random()*20) : Math.round(40 + Math.random()*30);
-      return { ...p, score: Math.min(score, 99), overlap };
-    }).filter(Boolean).sort((a,b) => b.score - a.score);
-
-    list.innerHTML = scored.map(p => {
-      const initials = p.is_anon ? '?' : (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-      const name = p.is_anon ? 'Anonym bruger' : escHtml(p.name || '?');
-      const role = p.is_anon ? '' : escHtml(p.title || '');
-      const colors = ['linear-gradient(135deg,#8B7FFF,#A89FFF)','linear-gradient(135deg,#E85D8A,#FF8C69)','linear-gradient(135deg,#2ECFCF,#8B7FFF)','linear-gradient(135deg,#FF8C69,#E85D8A)'];
-      const col = colors[Math.abs(p.id.charCodeAt(0)) % colors.length];
-      return `<div class="card flex-row-center" data-action="openPerson" data-id="${p.id}" data-from="screen-bubble-detail">
-        <div class="avatar" style="background:${col}">${initials}</div>
-        <div style="flex:1">
-          <div class="fw-600 fs-09">${name}</div>
-          <div class="fs-075 text-muted">${role}</div>
-          <div class="match-bar-wrap"><div class="match-bar" style="width:${p.score}%"></div></div>
-        </div>
-        <div class="fs-08 fw-700" style="color:var(--accent3)">${p.score}%</div>
-      </div>`;
-    }).join('');
-  } catch(e) { console.error("loadBubbleMembers:", e); showToast(e.message || "Ukendt fejl"); }
-}
+// loadBubbleMembers removed — integrated into screen-bubble-chat bcLoadMembers
 
 async function joinBubble(bubbleId) {
   try {
@@ -633,22 +588,7 @@ async function confirmRemoveSaved() {
   } catch(e) { console.error("confirmRemoveSaved:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
-function proposeMeeting() {
-  document.getElementById('meeting-msg').value = '';
-  openModal('modal-meeting');
-}
-
-async function sendMeetingProposal() {
-  try {
-    const msg = document.getElementById('meeting-msg').value.trim();
-    const time = document.getElementById('meeting-time').value;
-    if (!msg) return showToast('Skriv en besked');
-    const fullMsg = `Mødeanmodning${time ? '\n' + new Date(time).toLocaleString('da-DK') : ''}\n\n${msg}`;
-    await sendDirectMessage(currentPerson, fullMsg);
-    closeModal('modal-meeting');
-    showToast('Mødeanmodning sendt! ☕');
-  } catch(e) { console.error("sendMeetingProposal:", e); showToast(e.message || "Ukendt fejl"); }
-}
+// proposeMeeting / sendMeetingProposal removed — feature shelved
 
 // ══════════════════════════════════════════════════════════
 //  MESSAGES
@@ -728,14 +668,16 @@ async function loadMessages() {
   } catch(e) { console.error("loadMessages:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
-async function openChat(userId) {
-  console.debug('[dm] openChat:', userId);
+async function openChat(userId, fromScreen) {
+  console.debug('[dm] openChat:', userId, 'from:', fromScreen);
   try {
     currentChatUser = userId;
     const { data: p } = await sb.from('profiles').select('name,title').eq('id', userId).single();
     currentChatName = p?.name || 'Ukendt';
     document.getElementById('chat-name').textContent = currentChatName;
     document.getElementById('chat-role').textContent = p?.title || '';
+    const backBtn = document.getElementById('dm-back-btn');
+    if (backBtn) backBtn.onclick = () => goTo(fromScreen || 'screen-messages');
     goTo('screen-chat');
     await loadChatMessages();
     subscribeToChat();
@@ -874,7 +816,7 @@ async function sendDirectMessage(toId, content) {
 
 function startChat() {
   if (!currentPerson) return;
-  openChat(currentPerson);
+  openChat(currentPerson, 'screen-person');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2373,9 +2315,9 @@ function psClose() {
   setTimeout(() => document.getElementById('ps-overlay').classList.remove('open'), 320);
 }
 
-function psMessage() { const uid = document.getElementById('person-sheet-el').dataset.userId; psClose(); setTimeout(() => openChat(uid), 350); }
+function psMessage() { const uid = document.getElementById('person-sheet-el').dataset.userId; psClose(); setTimeout(() => openChat(uid, 'screen-bubble-chat'), 350); }
 function psProfile() { const uid = document.getElementById('person-sheet-el').dataset.userId; psClose(); setTimeout(() => openPerson(uid, 'screen-bubble-chat'), 350); }
-function psMeeting() { const uid = document.getElementById('person-sheet-el').dataset.userId; psClose(); setTimeout(() => { currentPerson = uid; proposeMeeting(); }, 350); }
+// psMeeting removed — feature shelved
 
 function psTriggerBubbleUp() {
   const name = document.getElementById('person-sheet-el').dataset.userName?.split(' ')[0] || 'personen';
@@ -2493,7 +2435,7 @@ document.addEventListener('click', (e) => {
   switch (action) {
     case 'openBubble': openBubble(id); break;
     case 'openPerson': openPerson(id, from); break;
-    case 'openChat': openChat(id); break;
+    case 'openChat': openChat(id, from); break;
     case 'joinBubble': joinBubble(id); break;
     case 'requestJoin': requestJoin(id); break;
     case 'openQRModal': openQRModal(id); break;
