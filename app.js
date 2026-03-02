@@ -601,12 +601,8 @@ async function updateUnreadBadge() {
   } catch(e) { console.error("updateUnreadBadge:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
-let incomingSubscription = null;
 function subscribeToIncoming() {
-  try {
-    if (incomingSubscription) incomingSubscription.unsubscribe();
-  } catch(e) {}
-  incomingSubscription = sb.channel('incoming-messages')
+  sb.channel('incoming-messages')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages',
       filter: `receiver_id=eq.${currentUser.id}` }, () => {
       updateUnreadBadge();
@@ -664,8 +660,8 @@ async function loadMessages() {
 async function openChat(userId) {
   try {
     currentChatUser = userId;
+  currentChatName = name;
     const { data: p } = await sb.from('profiles').select('name,title').eq('id', userId).single();
-    currentChatName = p?.name || 'Ukendt';
     document.getElementById('chat-name').textContent = p?.name || 'Ukendt';
     document.getElementById('chat-role').textContent = p?.title || '';
     goTo('screen-chat');
@@ -722,10 +718,13 @@ function subscribeToChat() {
       const el = document.getElementById('chat-messages');
       const sent = m.sender_id === currentUser.id;
       const time = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'});
-      el.insertAdjacentHTML('beforeend', dmRenderMsg(m));
+      const div = document.createElement('div');
+      // styled via dm-msg class
+      div.outerHTML = dmRenderMsg(m);
+      el.appendChild(div);
       el.scrollTop = el.scrollHeight;
       if (!sent) updateUnreadBadge();
-}).subscribe();
+    }).subscribe();
 }
 
 let dmEditingId = null;

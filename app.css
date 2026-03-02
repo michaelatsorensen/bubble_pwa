@@ -678,9 +678,6 @@ a.person-action-btn { text-decoration:none; }
    ══════════════════════════════════════ */
 .chat-panel { display:none; flex-direction:column; flex:1; overflow:hidden; position:relative; }
 .chat-panel[style*="flex"] { display:flex; } /* compat with JS toggle */
-/* DM panel skal altid være synlig */
-#dm-panel.chat-panel{ display:flex; flex-direction:column; flex:1; overflow:hidden; }
-
 #bc-panel-chat.chat-panel { display:none; }
 .chat-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0.75rem 1rem; display:flex; flex-direction:column; gap:0.15rem; }
 .chat-composer { flex-shrink:0; border-top:1px solid var(--glass-border-subtle); background:rgba(6,6,15,0.9); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); padding:0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom, 0px)); z-index:10; }
