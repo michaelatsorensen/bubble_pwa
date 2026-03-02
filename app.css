@@ -62,7 +62,7 @@ body {
 
 /* ── TOPBAR ── */
 .topbar { display:flex; align-items:center; padding:calc(0.75rem + env(safe-area-inset-top,0px)) 1.2rem 0.75rem; gap:0.65rem; flex-shrink:0; background:rgba(6,6,15,0.6); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border-bottom:1px solid var(--glass-border-subtle); }
-.topbar-logo { font-size:1.4rem; font-weight:900; letter-spacing:-0.05em; background:linear-gradient(135deg,#A89FFF 0%,#8B7FFF 40%,#FF6B9D 80%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.topbar-logo { font-size:1.4rem; font-weight:900; letter-spacing:-0.05em; padding-right:0.05em; background:linear-gradient(135deg,#A89FFF 0%,#8B7FFF 40%,#FF6B9D 80%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 .topbar-title { font-size:1rem; font-weight:800; letter-spacing:-0.03em; flex:1; }
 
 /* ── SCROLL AREA ── */
