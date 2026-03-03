@@ -87,9 +87,10 @@ function goTo(screenId) {
   if (!target) { console.error('[nav] screen not found:', screenId); return; }
   target.classList.add('active');
 
-  // Show/hide profile settings trigger
-  var settingsTrigger = document.querySelector('.profile-settings-trigger');
-  if (settingsTrigger) settingsTrigger.style.display = (screenId === 'screen-profile') ? 'flex' : 'none';
+  // Reset profile tab to default when navigating to profile
+  if (screenId === 'screen-profile') {
+    // keep current tab
+  }
   window.scrollTo(0,0);
 
   // Update bottom nav active state
@@ -1520,12 +1521,14 @@ function renderSavedStoryBar(saved, profileMap) {
 
 // Profile tab switching — same pattern as bcSwitchTab
 function profSwitchTab(tab) {
-  ['saved','bubbles','invites'].forEach(t => {
+  ['saved','bubbles','invites','settings'].forEach(t => {
     const panel = document.getElementById('prof-panel-' + t);
     const tabBtn = document.getElementById('prof-tab-' + t);
     if (panel) panel.style.display = t === tab ? 'flex' : 'none';
     if (tabBtn) tabBtn.classList.toggle('active', t === tab);
   });
+  // Refresh anon toggle state when opening settings
+  if (tab === 'settings') updateAnonToggle();
 }
 
 // Load invitations into profile invitations tab
@@ -1782,19 +1785,8 @@ function removeChip(arrayName, index, containerId, inputId) {
 // ══════════════════════════════════════════════════════════
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 
-function openSettingsSheet() {
-  var overlay = document.getElementById('settings-overlay');
-  var sheet = document.getElementById('settings-sheet');
-  if (overlay) overlay.classList.add('open');
-  if (sheet) sheet.classList.add('open');
-}
+// Settings sheet removed — now a tab in profile
 
-function closeSettingsSheet() {
-  var overlay = document.getElementById('settings-overlay');
-  var sheet = document.getElementById('settings-sheet');
-  if (overlay) overlay.classList.remove('open');
-  if (sheet) sheet.classList.remove('open');
-}
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 // Close modal on backdrop click
