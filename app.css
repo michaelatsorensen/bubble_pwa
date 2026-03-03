@@ -1098,7 +1098,7 @@ a.person-action-btn { text-decoration:none; }
 
   body {
     position: relative;
-    max-width: 520px;
+    max-width: 680px;
     margin: 0 auto;
     min-height: 100vh;
     border-left: 1px solid rgba(139,127,255,0.06);
@@ -1109,23 +1109,19 @@ a.person-action-btn { text-decoration:none; }
       0 0 200px rgba(139,127,255,0.02);
   }
 
-  /* Fixed elements stay within the container */
   .bottom-nav {
-    max-width: 520px;
+    max-width: 680px;
     left: 0 !important;
     right: 0 !important;
     margin: 0 auto;
   }
 
-  .toast {
-    max-width: 420px;
-  }
+  .toast { max-width: 540px; }
 
-  /* Modals and overlays scoped to container */
   .modal-overlay,
   .person-sheet-overlay,
   .radar-person-overlay {
-    max-width: 520px;
+    max-width: 680px;
     left: 0 !important;
     right: 0 !important;
     margin: 0 auto;
@@ -1133,77 +1129,27 @@ a.person-action-btn { text-decoration:none; }
 
   .person-sheet,
   .radar-person-sheet {
-    max-width: 520px;
+    max-width: 680px;
     left: 0 !important;
     right: 0 !important;
     margin: 0 auto;
     border-radius: 24px 24px 0 0;
   }
 
-  .modal-overlay .modal-sheet {
-    max-width: 460px;
-  }
+  .modal-overlay .modal-sheet { max-width: 540px; }
 
-  /* Chat input pinned inside container */
   .chat-input-bar {
-    max-width: 520px;
+    max-width: 680px;
     left: 0 !important;
     right: 0 !important;
     margin: 0 auto;
   }
 
-  /* Screens scroll nicely */
-  .screen {
-    overscroll-behavior: contain;
-  }
-
-  /* Disable pull-to-refresh on desktop */
+  .screen { overscroll-behavior: contain; }
   .ptr-indicator { display: none !important; }
-
-  /* Topbar */
-  .topbar {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-  }
+  .topbar { position: sticky; top: 0; z-index: 50; }
 }
 
-/* Wide screens: branding */
-@media (min-width: 1100px) {
-  body {
-    margin-left: calc(50% - 40px);
-    margin-right: auto;
-  }
-
-  html::before {
-    content: 'bubble';
-    position: fixed;
-    left: calc(50% - 380px);
-    top: 50%;
-    transform: translateY(-50%);
-    font-family: 'Outfit', sans-serif;
-    font-size: 2.8rem;
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    background: linear-gradient(135deg, #8B7FFF, #E85D8A);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    pointer-events: none;
-    opacity: 0.6;
-  }
-  html::after {
-    content: 'The chat layer for the real world';
-    position: fixed;
-    left: calc(50% - 380px);
-    top: calc(50% + 2.2rem);
-    transform: translateY(-50%);
-    font-family: 'Outfit', sans-serif;
-    font-size: 0.8rem;
-    color: rgba(255,255,255,0.15);
-    letter-spacing: 0.02em;
-    pointer-events: none;
-  }
-}
 
 /* -- LIVE SCANNER (inside bubble card) -- */
 .live-scanner-viewport {

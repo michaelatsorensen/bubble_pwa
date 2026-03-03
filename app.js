@@ -271,6 +271,11 @@ async function loadHome() {
     // Greeting
     const nameEl = document.getElementById('home-greeting-name');
     if (nameEl && currentProfile?.name) {
+    // Dynamic greeting
+    var hour = new Date().getHours();
+    var greetText = hour < 5 ? 'God nat' : hour < 12 ? 'Godmorgen' : hour < 17 ? 'Goddag' : hour < 22 ? 'God aften' : 'God nat';
+    var greetLabel = nameEl?.previousElementSibling;
+    if (greetLabel) greetLabel.textContent = greetText + ',';
       nameEl.innerHTML = (currentProfile.name.split(' ')[0]) + ' ' + icon('wave');
     }
 
@@ -297,19 +302,7 @@ async function loadHomeBubblesCard() {
   } catch(e) { console.error("loadHomeBubblesCard:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
-async function loadHomeMessagesCard() {
-  try {
-    const sub = document.getElementById('home-messages-sub');
-    const badge = document.getElementById('home-messages-badge');
-    const { data: msgs } = await sb.from('messages')
-      .select('*').or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-      .order('created_at', {ascending:false}).limit(1);
-    const { count: unread } = await sb.from('messages')
-      .select('*', {count:'exact',head:true}).eq('receiver_id', currentUser.id).is('read_at', null);
-    if (sub) sub.textContent = unread > 0 ? `${unread} ulæste beskeder` : msgs?.length > 0 ? `Sidst: "${msgs[0].content?.slice(0,30)}..."` : 'Ingen beskeder endnu';
-    if (badge) { badge.textContent = unread; badge.style.display = unread > 0 ? 'flex' : 'none'; }
-  } catch(e) { console.error("loadHomeMessagesCard:", e); showToast(e.message || "Ukendt fejl"); }
-}
+// loadHomeMessagesCard removed — HTML elements no longer exist
 
 async function loadHomeNotifCard() {
   try {
@@ -487,6 +480,14 @@ async function joinBubble(bubbleId) {
 }
 
 async function leaveBubble(bubbleId) {
+  // Show confirmation first
+  if (!_leaveBubbleConfirmed) {
+    _leaveBubbleConfirmed = bubbleId;
+    showToast('Tryk igen for at bekræfte');
+    setTimeout(function() { _leaveBubbleConfirmed = null; }, 3000);
+    return;
+  }
+  _leaveBubbleConfirmed = null;
   try {
     await sb.from('bubble_members').delete().eq('bubble_id', bubbleId).eq('user_id', currentUser.id);
     showToast('Du har forladt boblen');
@@ -546,6 +547,8 @@ async function openPerson(userId, fromScreen) {
 
     document.getElementById('person-tags').innerHTML = (p.keywords||[]).map(k => `<span class="tag">${escHtml(k)}</span>`).join('');
     document.getElementById('person-bio').textContent = p.bio || '';
+    var bioSection = document.getElementById('person-bio-section');
+    if (bioSection) bioSection.style.display = p.bio ? 'block' : 'none';
 
     // LinkedIn button
     const liBtn = document.getElementById('person-linkedin-btn');
@@ -964,6 +967,7 @@ function radarResetDismissed() { radarDismissed = []; renderRadarList(); }
 //  RADAR: TOP-DROP PERSON SHEET
 // ══════════════════════════════════════════════════════════
 var rpCurrentUserId = null;
+var _leaveBubbleConfirmed = null;
 
 async function openRadarPerson(userId) {
   rpCurrentUserId = userId;
@@ -3048,6 +3052,17 @@ window.addEventListener('load', () => {
     dmFileInput.addEventListener('change', () => dmHandleFile(dmFileInput));
   }
 });
+// Login/signup Enter key handling
+document.getElementById('login-password')?.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); handleLogin(); }
+});
+document.getElementById('login-email')?.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('login-password').focus(); }
+});
+document.getElementById('signup-password')?.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); handleSignup(); }
+});
+
 
 // ══════════════════════════════════════════════════════════
 //  GLOBAL EVENT DELEGATION
@@ -3273,7 +3288,7 @@ function openLiveCheckin() {
   if (confirmed) confirmed.style.display = 'none';
   var status = document.getElementById('live-scan-status');
   if (status) { status.textContent = 'Starter kamera...'; status.className = 'live-scan-status'; }
-  var trigger = document.getElementById('live-scan-trigger');
+  // live-scan-trigger removed from HTML
   if (trigger) { trigger.style.display = 'flex'; trigger.style.background = ''; }
   startLiveCamera();
 }
@@ -3380,44 +3395,7 @@ async function liveCheckin(bubbleId) {
   }
 }
 
-async function liveCreateAndCheckin() {
-  try {
-    const name = document.getElementById('live-new-name').value.trim();
-    if (!name) return showToast('Angiv stedets navn');
-
-    showToast('Opretter sted...');
-
-    // Create live bubble
-    const { data: bubble, error } = await sb.from('bubbles').insert({
-      name,
-      type: 'live',
-      type_label: 'Live',
-      visibility: 'public',
-      created_by: currentUser.id,
-      description: 'Live check-in'
-    }).select().single();
-
-    if (error) return showToast('Fejl: ' + error.message);
-
-    // Check in
-    await liveAutoCheckout();
-    await sb.from('bubble_members').insert({
-      bubble_id: bubble.id,
-      user_id: currentUser.id,
-      checked_in_at: new Date().toISOString()
-    });
-
-    // Clear form
-    document.getElementById('live-new-name').value = '';
-
-    closeLiveCheckinModal();
-    showToast('📍 ' + name + ' oprettet — du er checked ind!');
-    await loadLiveBubbleStatus();
-  } catch (e) {
-    console.error('liveCreateAndCheckin:', e);
-    showToast('Fejl: ' + (e.message || 'ukendt'));
-  }
-}
+// liveCreateAndCheckin removed — UI element no longer exists
 
 async function liveAutoCheckout() {
   try {
