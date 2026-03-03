@@ -857,10 +857,18 @@
       <div class="live-scanner-line"></div>
     </div>
     <div id="live-scan-status" class="live-scan-status">Peg kameraet mod en Bubble QR-kode</div>
-    <div style="display:flex;gap:0.4rem;margin-top:0.4rem;margin-bottom:0.6rem">
-      <button class="live-bubble-btn primary" id="live-scan-trigger" onclick="liveScanCapture()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:0.4rem"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg> Scan nu</button>
+
+    <!-- Confirmation after scan (replaces status) -->
+    <div id="live-scan-found" class="live-scan-found-card" style="display:none">
+      <div class="live-scan-found-name" id="live-scan-found-name"></div>
+      <div class="live-scan-found-meta" id="live-scan-found-meta"></div>
+      <div style="display:flex;gap:0.4rem;margin-top:0.5rem">
+        <button class="live-bubble-btn primary" id="live-scan-confirm-btn" onclick="liveScanConfirmJoin()" style="flex:1">Check ind her</button>
+        <button class="live-bubble-btn ghost" onclick="liveScanReset()" style="flex:0 0 auto">Annuller</button>
+      </div>
     </div>
-    <!-- Confirmation after scan -->
+
+    <!-- Checked in confirmation -->
     <div id="live-scan-confirmed" class="live-scan-confirmed" style="display:none">
       <div class="live-scan-confirmed-icon">✓</div>
       <div>
@@ -869,21 +877,12 @@
       </div>
     </div>
 
-    <div class="divider" style="margin:0.5rem 0 0.75rem"></div>
+    <div class="divider" style="margin:0.75rem 0"></div>
 
-    <!-- Existing live bubbles -->
+    <!-- Existing live bubbles as fallback -->
     <div class="section-label">Eller vælg et aktivt sted</div>
-    <div id="live-checkin-list" style="margin-bottom:0.75rem"><div class="spinner"></div></div>
+    <div id="live-checkin-list" style="margin-bottom:0.5rem"><div class="spinner"></div></div>
 
-    <div class="divider" style="margin:0.5rem 0 0.75rem"></div>
-
-    <!-- Create new live bubble -->
-    <div class="section-label">Opret nyt sted</div>
-    <div class="input-group">
-      <div class="input-label">Stedets navn</div>
-      <input class="input" id="live-new-name" placeholder="f.eks. Café Vivaldi, Roskilde Festival...">
-    </div>
-    <button class="btn-primary" onclick="liveCreateAndCheckin()" style="background:linear-gradient(135deg,#2ECFCF,#8B7FFF)">Check ind her</button>
     <button class="btn-secondary" onclick="closeLiveCheckinModal()">Luk</button>
   </div>
 </div>

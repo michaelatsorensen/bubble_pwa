@@ -3423,35 +3423,25 @@ function liveQrPreviewLoop() {
   ctx.drawImage(video, 0, 0);
   var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   if (typeof jsQR !== 'undefined') {
-    var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'dontInvert' });
-    if (code && code.data) {
+    var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
+    if (code && code.data && !_liveQrPending) {
       _liveQrFound = code.data;
-      var status = document.getElementById('live-scan-status');
-      if (status) { status.textContent = 'QR-kode fundet — tryk Scan nu'; status.className = 'live-scan-status found'; }
-      var btn = document.getElementById('live-scan-trigger');
-      if (btn) btn.style.background = 'linear-gradient(135deg,#2ECFCF,#8B7FFF)';
-    } else {
-      _liveQrFound = null;
-      var status = document.getElementById('live-scan-status');
-      if (status && status.className.indexOf('found') >= 0) {
-        status.textContent = 'Peg kameraet mod en Bubble QR-kode';
-        status.className = 'live-scan-status';
-      }
-      var btn = document.getElementById('live-scan-trigger');
-      if (btn) btn.style.background = '';
+      // Auto-resolve the QR and show confirmation
+      liveScanAutoResolve(code.data);
+      return; // Stop scanning while showing confirmation
     }
   }
   _liveQrFrame = requestAnimationFrame(liveQrPreviewLoop);
 }
 
-function liveScanCapture() {
-  if (!_liveQrFound) {
-    showToast('Ingen QR-kode fundet endnu');
-    return;
-  }
-  var data = _liveQrFound;
+var _liveQrPending = false;
+var _liveQrResolvedBubble = null;
+
+async function liveScanAutoResolve(data) {
+  _liveQrPending = true;
   var status = document.getElementById('live-scan-status');
-  if (status) { status.textContent = 'Joiner...'; status.className = 'live-scan-status found'; }
+  if (status) { status.textContent = 'QR fundet — henter info...'; status.className = 'live-scan-status found'; }
+  
   // Parse QR data
   var joinCode = data;
   if (data.includes('join=')) {
@@ -3459,20 +3449,55 @@ function liveScanCapture() {
   } else if (data.includes('/b/')) {
     joinCode = data.split('/b/').pop().split('?')[0];
   }
-  liveScanJoin(joinCode);
+  
+  try {
+    // Try multiple lookup strategies
+    var bubble = null;
+    // 1. Try by join_code or id
+    var r1 = await sb.from('bubbles').select('id, name, type, location')
+      .or('join_code.eq.' + joinCode + ',id.eq.' + joinCode).limit(1).maybeSingle();
+    if (r1.data) bubble = r1.data;
+    
+    // 2. If full URL, try extracting UUID pattern
+    if (!bubble && data.length > 30) {
+      var uuidMatch = data.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+      if (uuidMatch) {
+        var r2 = await sb.from('bubbles').select('id, name, type, location').eq('id', uuidMatch[0]).maybeSingle();
+        if (r2.data) bubble = r2.data;
+      }
+    }
+    
+    if (!bubble) throw new Error('Boble ikke fundet');
+    _liveQrResolvedBubble = bubble;
+    
+    // Show confirmation card
+    if (status) status.style.display = 'none';
+    var found = document.getElementById('live-scan-found');
+    var fName = document.getElementById('live-scan-found-name');
+    var fMeta = document.getElementById('live-scan-found-meta');
+    if (fName) fName.textContent = bubble.name;
+    if (fMeta) fMeta.textContent = (bubble.location ? bubble.location : '') + (bubble.type ? ' · ' + bubble.type : '');
+    if (found) found.style.display = 'block';
+  } catch(e) {
+    console.error('liveScanAutoResolve:', e);
+    if (status) { status.textContent = e.message || 'QR ikke genkendt'; status.className = 'live-scan-status error'; }
+    _liveQrPending = false;
+    _liveQrFound = null;
+    // Resume scanning after delay
+    setTimeout(function() {
+      if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; }
+      liveQrPreviewLoop();
+    }, 2000);
+  }
 }
 
-async function liveScanJoin(code) {
+async function liveScanConfirmJoin() {
+  if (!_liveQrResolvedBubble) return;
+  var bubble = _liveQrResolvedBubble;
   try {
-    if (!code) throw new Error('Ingen kode fundet');
-    var { data: bubble, error } = await sb.from('bubbles')
-      .select('id, name, join_code, location')
-      .or('join_code.eq.' + code + ',id.eq.' + code)
-      .limit(1).single();
-    if (error || !bubble) throw new Error('Boble ikke fundet');
     // Check if already member
     var { data: existing } = await sb.from('bubble_members')
-      .select('id').eq('bubble_id', bubble.id).eq('user_id', currentUser.id).single();
+      .select('id').eq('bubble_id', bubble.id).eq('user_id', currentUser.id).maybeSingle();
     if (!existing) {
       await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id, role: 'member' });
     }
@@ -3482,32 +3507,38 @@ async function liveScanJoin(code) {
     }, { onConflict: 'bubble_id,user_id' });
 
     stopLiveCamera();
-    // Show confirmation inside scanner area
-    var status = document.getElementById('live-scan-status');
-    if (status) status.style.display = 'none';
-    var trigger = document.getElementById('live-scan-trigger');
-    if (trigger) trigger.style.display = 'none';
+    // Hide found card, show confirmed
+    document.getElementById('live-scan-found').style.display = 'none';
     var confirmed = document.getElementById('live-scan-confirmed');
     var cName = document.getElementById('live-scan-confirmed-name');
     var cMeta = document.getElementById('live-scan-confirmed-meta');
     if (cName) cName.textContent = bubble.name;
-    if (cMeta) cMeta.textContent = (bubble.location ? bubble.location + ' — ' : '') + 'Du er checked ind ✓';
+    if (cMeta) cMeta.textContent = 'Du er checked ind ✓';
     if (confirmed) confirmed.style.display = 'flex';
 
     showToast('Checked ind i ' + bubble.name + ' ✓');
     loadMyBubbles();
     loadLiveBubbleStatus();
-    // After 2s, close scanner and show active state
     setTimeout(function() { closeLiveCheckinModal(); }, 2500);
   } catch(e) {
-    console.error('liveScanJoin:', e);
-    var status = document.getElementById('live-scan-status');
-    if (status) { status.textContent = e.message || 'Fejl'; status.className = 'live-scan-status error'; }
-    setTimeout(function() {
-      if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; }
-    }, 2000);
+    console.error('liveScanConfirmJoin:', e);
+    showToast(e.message || 'Fejl ved check-in');
   }
+  _liveQrPending = false;
+  _liveQrResolvedBubble = null;
 }
+
+function liveScanReset() {
+  _liveQrPending = false;
+  _liveQrFound = null;
+  _liveQrResolvedBubble = null;
+  document.getElementById('live-scan-found').style.display = 'none';
+  var status = document.getElementById('live-scan-status');
+  if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; }
+  liveQrPreviewLoop();
+}
+
+
 
 
 

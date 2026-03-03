@@ -1273,3 +1273,15 @@ a.person-action-btn { text-decoration:none; }
 }
 .live-scan-confirmed-title { font-size: 0.78rem; font-weight: 700; color: var(--text); }
 .live-scan-confirmed-sub { font-size: 0.65rem; color: var(--text-secondary); }
+
+/* -- QR SCAN FOUND CARD -- */
+.live-scan-found-card {
+  padding: 0.7rem 0.8rem;
+  margin-top: 0.5rem;
+  background: rgba(139,127,255,0.08);
+  border: 1px solid rgba(139,127,255,0.2);
+  border-radius: var(--radius);
+  animation: fadeSlideUp 0.25s ease;
+}
+.live-scan-found-name { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+.live-scan-found-meta { font-size: 0.68rem; color: var(--text-secondary); margin-top: 0.15rem; }
