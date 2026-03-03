@@ -35,41 +35,7 @@
 html { height:100%; }
 
 /* ── DESKTOP PHONE FRAME ── */
-@media (min-width: 600px) {
-  html {
-    background: #020208;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  body {
-    width: 390px;
-    max-height: 844px;
-    height: 100vh;
-    border-radius: 40px;
-    overflow: hidden;
-    position: relative;
-    box-shadow:
-      0 0 0 8px #1a1a2e,
-      0 0 0 10px rgba(139,127,255,0.15),
-      0 25px 80px rgba(0,0,0,0.6),
-      0 0 120px rgba(139,127,255,0.06);
-    margin: 1rem 0;
-  }
-  .bg-canvas,
-  .bottom-nav,
-  .person-sheet-overlay,
-  .person-sheet,
-  .modal-overlay,
-  .chat-context-menu,
-  .toast,
-  .ptr-indicator,
-  .radar-person-overlay,
-  .radar-person-sheet { position: absolute !important; }
-  .toast { left: 50% !important; }
-  .bottom-nav { left: 0 !important; right: 0 !important; }
-  .modal-overlay { inset: 0 !important; }
-}
+
 
 body {
   font-family: 'Outfit', sans-serif;
@@ -1070,23 +1036,7 @@ a.person-action-btn { text-decoration:none; }
 }
 
 /* ── DESKTOP FRAME EXTRAS ── */
-@media (min-width: 600px) {
-  .screen {
-    min-height: 100%;
-    max-height: 844px;
-    overflow-y: auto;
-  }
-  .person-sheet {
-    border-radius: 24px 24px 0 0;
-    max-width: 390px;
-  }
-  .radar-person-sheet {
-    max-width: 390px;
-  }
-  .modal-overlay .modal-sheet {
-    max-width: 370px;
-  }
-}
+
 
 
 
@@ -1134,3 +1084,192 @@ a.person-action-btn { text-decoration:none; }
 
 
 
+
+/* ══════════════════════════════════════════════════════════
+   DESKTOP VIEW (min-width: 600px)
+   Phone-frame centered with ambient branding
+══════════════════════════════════════════════════════════ */
+@media (min-width: 600px) {
+  html {
+    background: #020208;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  /* Phone frame container */
+  body {
+    position: relative;
+    width: 390px;
+    height: min(844px, calc(100vh - 2rem));
+    border-radius: 40px;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 8px #1a1a2e,
+      0 0 0 10px rgba(139,127,255,0.12),
+      0 30px 100px rgba(0,0,0,0.5),
+      0 0 200px rgba(139,127,255,0.04);
+    margin: 1rem 0;
+  }
+
+  /* Scope ALL fixed elements to the phone frame */
+  .bg-canvas,
+  .bottom-nav,
+  .person-sheet-overlay,
+  .person-sheet,
+  .radar-person-overlay,
+  .radar-person-sheet,
+  .modal-overlay,
+  .chat-context-menu,
+  .toast,
+  .ptr-indicator {
+    position: absolute !important;
+  }
+
+  /* Keep toast centered inside frame */
+  .toast { left: 50% !important; max-width: 340px; }
+
+  /* Bottom nav inside frame */
+  .bottom-nav { left: 0 !important; right: 0 !important; bottom: 0 !important; }
+
+  /* Modals inside frame */
+  .modal-overlay { inset: 0 !important; }
+
+  /* Screens scrollable inside frame */
+  .screen {
+    min-height: 100%;
+    max-height: 844px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* Sheets capped to frame */
+  .person-sheet,
+  .radar-person-sheet { max-width: 390px; border-radius: 24px 24px 0 0; }
+  .modal-overlay .modal-sheet { max-width: 370px; }
+
+  /* Scroll areas inside frame */
+  .scroll-area { overscroll-behavior: contain; }
+
+  /* Disable pull-to-refresh on desktop (mouse doesn't need it) */
+  .ptr-indicator { display: none !important; }
+
+  /* Chat input pinned inside frame */
+  .chat-input-bar { position: absolute !important; left: 0 !important; right: 0 !important; bottom: 0 !important; }
+
+  /* Topbar inside frame */
+  .topbar { position: sticky; top: 0; z-index: 50; }
+}
+
+/* Ultra-wide: show branding sidebar */
+@media (min-width: 900px) {
+  html {
+    gap: 3rem;
+  }
+  html::before {
+    content: 'bubble';
+    position: fixed;
+    left: calc(50% - 300px);
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    background: linear-gradient(135deg, #8B7FFF, #E85D8A);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    pointer-events: none;
+    opacity: 0.7;
+  }
+  html::after {
+    content: 'The chat layer for the real world';
+    position: fixed;
+    left: calc(50% - 300px);
+    top: calc(50% + 1.8rem);
+    transform: translateY(-50%);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 0.02em;
+    pointer-events: none;
+  }
+}
+
+/* -- LIVE SCANNER (inside bubble card) -- */
+.live-scanner-viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #000;
+  margin-top: 0.5rem;
+}
+.live-scanner-viewport video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.live-scanner-frame {
+  position: absolute;
+  inset: 18%;
+  border-radius: 8px;
+  pointer-events: none;
+}
+.live-scanner-corner {
+  position: absolute;
+  width: 18px; height: 18px;
+  border-color: rgba(139,127,255,0.8);
+  border-style: solid;
+  border-width: 0;
+}
+.live-scanner-corner.tl { top:0; left:0; border-top-width:2.5px; border-left-width:2.5px; border-radius:4px 0 0 0; }
+.live-scanner-corner.tr { top:0; right:0; border-top-width:2.5px; border-right-width:2.5px; border-radius:0 4px 0 0; }
+.live-scanner-corner.bl { bottom:0; left:0; border-bottom-width:2.5px; border-left-width:2.5px; border-radius:0 0 0 4px; }
+.live-scanner-corner.br { bottom:0; right:0; border-bottom-width:2.5px; border-right-width:2.5px; border-radius:0 0 4px 0; }
+.live-scanner-line {
+  position: absolute;
+  left: 18%; right: 18%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(139,127,255,0.7), transparent);
+  top: 30%;
+  animation: scanLine 2.5s ease-in-out infinite;
+}
+@keyframes scanLine {
+  0%, 100% { top: 25%; opacity: 0.4; }
+  50% { top: 68%; opacity: 1; }
+}
+.live-scan-status {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 0.4rem;
+  transition: color 0.2s;
+}
+.live-scan-status.found { color: var(--accent3); font-weight: 600; }
+.live-scan-status.error { color: var(--accent2); }
+.live-scan-confirmed {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.7rem;
+  margin-top: 0.5rem;
+  background: rgba(46,207,207,0.08);
+  border: 1px solid rgba(46,207,207,0.2);
+  border-radius: var(--radius);
+  animation: fadeSlideUp 0.3s ease;
+}
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.live-scan-confirmed-icon {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent3), var(--accent));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; color: white; font-weight: 700; flex-shrink: 0;
+}
+.live-scan-confirmed-title { font-size: 0.78rem; font-weight: 700; color: var(--text); }
+.live-scan-confirmed-sub { font-size: 0.65rem; color: var(--text-secondary); }
