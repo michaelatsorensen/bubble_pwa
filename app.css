@@ -1045,3 +1045,55 @@ a.person-action-btn { text-decoration:none; }
   font-size: 0.72rem; font-weight: 600; color: #2ECFCF;
   display: flex; align-items: center; gap: 0.3rem; flex-shrink: 0;
 }
+
+/* ── LIVE QR SCANNER ── */
+.live-qr-section {
+  margin-bottom: 0.5rem;
+}
+.live-qr-viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #000;
+  border: 1px solid var(--glass-border-subtle);
+}
+.live-qr-viewport video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.live-qr-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.live-qr-frame {
+  width: 55%; aspect-ratio: 1;
+  border: 2px solid rgba(46,207,207,0.6);
+  border-radius: 12px;
+  box-shadow: 0 0 0 2000px rgba(0,0,0,0.35);
+  animation: qrFramePulse 2.5s ease-in-out infinite;
+}
+@keyframes qrFramePulse {
+  0%, 100% { border-color: rgba(46,207,207,0.6); }
+  50% { border-color: rgba(46,207,207,1); box-shadow: 0 0 0 2000px rgba(0,0,0,0.35), 0 0 20px rgba(46,207,207,0.3); }
+}
+.live-qr-hint {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 0.5rem; text-align: center;
+  font-size: 0.7rem; font-weight: 600; color: white;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+}
+.live-qr-controls {
+  display: flex; justify-content: center; padding: 0.5rem 0 0;
+}
+.live-qr-toggle {
+  font-family: 'Outfit', sans-serif; font-size: 0.7rem; font-weight: 600;
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.35rem 0.7rem; border-radius: var(--radius-pill);
+  border: 1px solid var(--glass-border-subtle); background: var(--glass-bg);
+  color: var(--text-secondary); cursor: pointer; transition: all 0.2s;
+}
+.live-qr-toggle:active { transform: scale(0.96); }
+.live-qr-toggle svg { color: #2ECFCF; }
