@@ -21,6 +21,9 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="bubble-icons.js?v=1772450666" defer></script>
 <script src="app.js?v=1772450666" defer></script>
+  
+
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body id="app-root">
 
@@ -904,6 +907,912 @@
 
 
 
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"><\/script>
+E html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bubble">
+<meta name="theme-color" content="#06060F">
+<title>Bubble — Network Radar</title>
+<link rel="manifest" href="manifest.json?v=2">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=2">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=2">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=2">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=2">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=2">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=2">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css?v=1772450666">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
+<script src="bubble-icons.js?v=1772450666" defer></script>
+<script src="app.js?v=1772450666" defer></script>
+</head>
+<body id="app-root">
+
+<!-- ANIMATED BG -->
+<div class="bg-canvas">
+  <div class="orb o1"></div>
+  <div class="orb o2"></div>
+  <div class="orb o3"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: LOADING
+════════════════════════════════════════ -->
+<div class="screen active" id="screen-loading">
+  <div style="text-align:center">
+    <div style="width:64px;height:64px;margin:0 auto 0.5rem;color:var(--accent)"><svg class="ico" style="width:64px;height:64px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
+    <div style="font-size:1.8rem;font-weight:900;letter-spacing:-0.05em;background:linear-gradient(135deg,#A89FFF 0%,#8B7FFF 40%,#FF6B9D 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent">bubble</div>
+    <div class="spinner" style="margin-top:2rem"></div>
+    <div style="font-size:0.85rem;color:var(--muted);margin-top:1rem" id="loading-msg">Forbinder til server...</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: AUTH (Login / Signup)
+════════════════════════════════════════ -->
+<div class="screen" id="screen-auth">
+  <div style="text-align:center;margin-bottom:2.5rem">
+    <div style="width:56px;height:56px;margin:0 auto 0.75rem;color:var(--accent)"><svg class="ico" style="width:56px;height:56px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
+    <div style="font-size:2.4rem;font-weight:900;letter-spacing:-0.05em;background:linear-gradient(135deg,#A89FFF 0%,#8B7FFF 40%,#FF6B9D 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.4rem">bubble</div>
+    <div style="font-size:0.9rem;color:var(--muted)">Network Radar for Business</div>
+  </div>
+
+  <div id="auth-login" style="width:100%;max-width:380px">
+    <div class="input-group">
+      <div class="input-label">Email</div>
+      <input class="input" type="email" id="login-email" placeholder="din@email.dk" autocomplete="email">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Adgangskode</div>
+      <input class="input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-primary" onclick="handleLogin()">Log ind</button>
+    <div style="display:flex;align-items:center;gap:0.75rem;margin:0.5rem 0">
+      <div class="divider"></div>
+      <div style="font-size:0.75rem;color:var(--muted)">eller</div>
+      <div class="divider"></div>
+    </div>
+    <button class="btn-secondary" onclick="handleGoogleLogin()" style="display:flex;align-items:center;justify-content:center;gap:0.6rem">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Fortsæt med Google
+    </button>
+    <button class="btn-secondary" onclick="handleLinkedInLogin()" style="display:flex;align-items:center;justify-content:center;gap:0.6rem">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#0A66C2" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      Fortsæt med LinkedIn
+    </button>
+    <button class="btn-secondary" onclick="handleFacebookLogin()" style="display:flex;align-items:center;justify-content:center;gap:0.6rem">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      Fortsæt med Facebook
+    </button>
+    <button class="btn-secondary" onclick="switchToSignup()">Opret ny konto</button>
+  </div>
+
+  <div id="auth-signup" style="width:100%;max-width:380px;display:none">
+    <div class="input-group">
+      <div class="input-label">Navn</div>
+      <input class="input" type="text" id="signup-name" placeholder="Dit fulde navn" autocomplete="name">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Email</div>
+      <input class="input" type="email" id="signup-email" placeholder="din@email.dk" autocomplete="email">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Adgangskode</div>
+      <input class="input" type="password" id="signup-password" placeholder="Min. 6 tegn" autocomplete="new-password">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Titel / Rolle</div>
+      <input class="input" type="text" id="signup-title" placeholder="f.eks. Founder · Bubble">
+    </div>
+    <button class="btn-primary" onclick="handleSignup()">Opret konto</button>
+    <button class="btn-secondary" onclick="switchToLogin()">Har allerede en konto</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: ONBOARDING
+════════════════════════════════════════ -->
+<div class="screen" id="screen-onboarding">
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(2rem + env(safe-area-inset-top, 0px)) 1.5rem 2rem;display:flex;flex-direction:column;justify-content:center">
+    <div style="text-align:center;margin-bottom:2rem">
+      <div style="width:48px;height:48px;margin:0 auto 0.5rem;color:var(--accent)"><svg class="ico" style="width:48px;height:48px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
+      <div style="font-size:1.6rem;font-weight:800;margin-bottom:0.4rem">Næsten klar!</div>
+      <div style="font-size:0.9rem;color:var(--muted)">Udfyld din profil så andre kan finde dig</div>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Dit navn *</div>
+      <input class="input" id="ob-name" placeholder="Dit fulde navn" autocomplete="name">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Titel / Rolle *</div>
+      <input class="input" id="ob-title" placeholder="f.eks. Founder · Bubble">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Om dig</div>
+      <textarea class="input" id="ob-bio" placeholder="Kort om hvem du er og hvad du arbejder med..."></textarea>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Nøgleord * (tryk Enter efter hvert)</div>
+      <div class="chips-container" id="ob-chips-container" onclick="document.getElementById('ob-chip-input').focus()">
+        <input class="chip-input" id="ob-chip-input" placeholder="f.eks. SaaS, AI, Bæredygtighed..." onkeydown="handleChipInput(event,'ob-chips')">
+      </div>
+      <div style="font-size:0.72rem;color:var(--muted);margin-top:0.4rem">Mindst ét nøgleord er påkrævet</div>
+    </div>
+    <div class="input-group">
+      <div class="input-label">LinkedIn URL (valgfrit)</div>
+      <input class="input" id="ob-linkedin" placeholder="https://linkedin.com/in/dit-navn" type="url">
+    </div>
+    <button class="btn-primary" onclick="saveOnboarding()" style="margin-top:0.5rem">Kom i gang</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: HOME
+════════════════════════════════════════ -->
+<div class="screen" id="screen-home">
+  <div class="topbar">
+    <div class="topbar-logo" onclick="goTo('screen-home')" style="cursor:pointer">bubble</div>
+    <div style="flex:1"></div>
+    <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;border:1.5px solid rgba(255,255,255,0.1)" id="home-avatar" onclick="goTo('screen-profile')">?</div>
+  </div>
+
+  <div class="scroll-area" id="home-scroll">
+
+    <!-- Greeting -->
+    <div style="padding:0.5rem 0 1.35rem">
+      <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.3rem;letter-spacing:0.04em;text-transform:uppercase;font-weight:600">Goddag,</div>
+      <div style="font-size:1.5rem;font-weight:800;letter-spacing:-0.02em" id="home-greeting-name"><svg class="ico" style="width:1.5rem;height:1.5rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 11V6.5a1.5 1.5 0 013 0V11"/><path d="M12.5 10V5.5a1.5 1.5 0 013 0v5"/><path d="M15.5 11V7.5a1.5 1.5 0 013 0v5.5a7 7 0 01-7 7h-1a7 7 0 01-5.8-3.1L4 15.5a1.5 1.5 0 012.1-2.1L9.5 16"/><path d="M9.5 11V4.5a1.5 1.5 0 00-3 0V12"/></svg></div>
+    </div>
+
+    <!-- LIVE BUBBLE -->
+    <div id="live-bubble-card" class="live-bubble-card" style="display:none">
+      <!-- State: checked in -->
+      <div id="live-bubble-active" style="display:none">
+        <div class="live-bubble-header">
+          <div class="live-bubble-pulse"></div>
+          <div style="flex:1;min-width:0">
+            <div class="live-bubble-label">DU ER HER</div>
+            <div class="live-bubble-name" id="live-bubble-name">...</div>
+            <div class="live-bubble-meta" id="live-bubble-meta">...</div>
+          </div>
+          <div class="live-bubble-count" id="live-bubble-count">0</div>
+        </div>
+        <div class="live-bubble-actions">
+          <button class="live-bubble-btn primary" id="live-bubble-open-btn" onclick="openLiveBubble()">Se hvem der er her →</button>
+          <button class="live-bubble-btn ghost" onclick="liveCheckout()">Check ud</button>
+        </div>
+      </div>
+      <!-- State: not checked in -->
+      <div id="live-bubble-idle">
+        <div class="live-bubble-idle-content" onclick="openLiveCheckin()">
+          <div class="live-bubble-idle-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M12 21.5c-3.5-3.5-6.5-7-6.5-10.5a6.5 6.5 0 0113 0c0 3.5-3 7-6.5 10.5z"/><circle cx="12" cy="11" r="2.5"/></svg></div>
+          <div style="flex:1">
+            <div class="live-bubble-idle-title">Live Bubble</div>
+            <div class="live-bubble-idle-sub">Check ind hvor du er — se hvem der er her lige nu</div>
+          </div>
+          <div class="live-bubble-idle-arrow">→</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 main cards -->
+    <div style="display:flex;flex-direction:column;gap:0.85rem;margin-bottom:1.25rem">
+
+    <!-- GEMTE PROFILER (story-bar) -->
+    <div id="saved-profiles-bar" style="display:none;padding:0.2rem 0 0.8rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+        <div style="font-size:0.78rem;font-weight:700;color:var(--text)">Gemte profiler <span id="saved-count-badge" class="saved-count-badge"></span></div>
+        <button class="btn-sm btn-ghost" onclick="goTo('screen-profile');setTimeout(function(){document.querySelector('[data-tab=prof-panel-saved]')?.click()},200)" style="font-size:0.65rem">Se alle</button>
+      </div>
+      <div class="saved-story-scroll" id="saved-story-list"></div>
+    </div>
+
+
+      <!-- Bobler -->
+      <div class="main-nav-card card-bobler" onclick="goTo('screen-bubbles')">
+        <div class="main-nav-icon" style="background:rgba(139,127,255,0.15);color:#A89FFF"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
+        <div style="flex:1">
+          <div class="section-title">Bobler</div>
+          <div class="sub-muted" id="home-bubbles-sub">Henter...</div>
+        </div>
+        <div class="main-nav-badge badge-bobler" id="home-bubbles-badge" style="display:none"></div>
+        <div class="icon-muted">›</div>
+      </div>
+
+      <!-- Notifikationer -->
+      <div class="main-nav-card card-notif" onclick="goTo('screen-notifications')">
+        <div class="main-nav-icon" style="background:rgba(46,207,207,0.15);color:#2ECFCF"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5A6 6 0 006 8.5c0 6-2.5 8.5-2.5 8.5h17S18 14.5 18 8.5"/><path d="M13.73 20a2 2 0 01-3.46 0"/></svg></div>
+        <div style="flex:1">
+          <div class="section-title">Notifikationer</div>
+          <div class="sub-muted" id="home-notif-sub">Henter...</div>
+        </div>
+        <div class="main-nav-badge badge-notif" id="home-notif-badge" style="display:none"></div>
+        <div class="icon-muted">›</div>
+      </div>
+
+    </div>
+
+    <!-- Radar strip -->
+    <div class="radar-card">
+      <div class="live-dot"></div>
+      <div style="flex:1;font-size:0.78rem;color:var(--text-secondary)">
+        <strong style="color:var(--text);font-weight:700">Din radar er aktiv</strong>
+        <span id="radar-count-home"> · Henter...</span>
+      </div>
+      <button class="btn-sm btn-ghost" onclick="openRadarSheet()" style="font-size:0.72rem;white-space:nowrap">Kort →</button>
+    </div>
+
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
+    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
+    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
+    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: BUBBLES
+════════════════════════════════════════ -->
+<div class="screen" id="screen-bubbles">
+  <div class="topbar">
+    <button class="back-btn" onclick="goTo('screen-home')">← Tilbage</button>
+    <div class="topbar-title">Bobler</div>
+    <button class="btn-sm btn-ghost" onclick="openCreateBubble()" style="font-size:0.75rem;padding:0.35rem 0.75rem">+ Ny</button>
+  </div>
+  <div class="scroll-area">
+    <div class="section-label" style="margin-top:0.25rem">Mine bobler</div>
+    <div id="my-owned-bubbles-list"><div class="spinner"></div></div>
+    <div class="section-label">Bobler jeg er med i</div>
+    <div id="my-bubbles-list"><div class="spinner"></div></div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
+    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
+    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
+    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: NOTIFICATIONS
+════════════════════════════════════════ -->
+<div class="screen" id="screen-notifications">
+  <div class="topbar">
+    <button class="back-btn" onclick="goTo('screen-home')">← Tilbage</button>
+    <div class="topbar-title" style="font-weight:800">Notifikationer</div>
+  </div>
+  <div class="scroll-area">
+    <div id="notifications-list"><div class="spinner"></div></div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
+    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
+    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
+    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: DISCOVER BUBBLES
+════════════════════════════════════════ -->
+<div class="screen" id="screen-discover">
+  <div class="topbar">
+    <div class="topbar-title">Opdag bobler</div>
+    <button class="btn-sm btn-accent" onclick="openCreateBubble()">+ Opret</button>
+  </div>
+  <div class="scroll-area">
+    <input class="input" type="search" placeholder="Søg bobler..." id="bubble-search" oninput="filterBubbles()" style="margin-bottom:1rem">
+    <div class="section-label">Alle bobler</div>
+    <div id="all-bubbles-list"><div class="spinner"></div></div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
+    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
+    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
+    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: BUBBLE DETAIL
+════════════════════════════════════════ -->
+<!-- screen-bubble-detail removed — integrated into screen-bubble-chat -->
+
+<!-- ════════════════════════════════════════
+     SCREEN: PERSON PROFILE
+════════════════════════════════════════ -->
+<div class="screen" id="screen-person" style="position:relative">
+  <div class="scroll-area" style="padding:0">
+    <!-- Cover -->
+    <div class="person-cover" id="person-cover">
+      <div class="person-cover-gradient" id="person-cover-grad"></div>
+      <div class="person-cover-pattern"></div>
+      <div style="position:absolute;bottom:0.75rem;left:0;right:0;display:flex;justify-content:space-between;padding:0 1rem;z-index:5">
+        <button id="person-back-btn" onclick="" style="background:rgba(0,0,0,0.4);backdrop-filter:blur(8px);border:none;border-radius:99px;padding:0.3rem 0.8rem;color:white;font-size:0.8rem;font-family:inherit;cursor:pointer">← Tilbage</button>
+        <div id="person-match-label" style="background:rgba(0,0,0,0.4);backdrop-filter:blur(8px);border-radius:99px;padding:0.3rem 0.8rem;font-size:0.75rem;font-weight:700;color:white"></div>
+      </div>
+    </div>
+    <!-- Avatar + name -->
+    <div class="person-info-section">
+      <div class="person-avatar-wrap">
+        <div class="person-avatar-ring" id="person-avatar">?</div>
+      </div>
+      <div style="margin-top:0.6rem">
+        <div class="person-display-name" id="person-name">...</div>
+        <div class="person-display-title" id="person-role">...</div>
+        <div id="person-tags" style="margin-bottom:0.25rem"></div>
+      </div>
+    </div>
+    <!-- Action bar -->
+    <div class="person-action-bar">
+      <button class="person-action-btn" onclick="startChat()">
+        <svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><span>Besked</span>
+      </button>
+
+      <button class="person-action-btn" onclick="saveContact()" id="save-btn">
+        <svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4a1.5 1.5 0 011.5-1.5h9A1.5 1.5 0 0118 4v17l-6-3.5L6 21V4z"/></svg><span>Gem</span>
+      </button>
+      <a id="person-linkedin-btn" href="#" target="_blank" rel="noopener" class="person-action-btn linkedin" style="display:none">
+        <svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 11 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg><span>LinkedIn</span>
+      </a>
+    </div>
+    <!-- Match -->
+    <div class="person-section" id="person-overlap-section">
+      <div class="person-section-title">Fælles interesser</div>
+      <div id="person-overlap"></div>
+    </div>
+    <!-- Bio -->
+    <div class="person-section" id="person-bio-section" style="display:none">
+      <div class="person-section-title">Om</div>
+      <div class="person-bio-text" id="person-bio"></div>
+    </div>
+    <!-- Dynamic keywords -->
+    <div id="person-dynamic-keywords" style="padding:0 1.25rem 1rem"></div>
+    <!-- Bubble-up -->
+    <div style="padding:0.5rem 1.25rem 1.5rem">
+      <button class="bubble-up-btn" id="person-bubbleup-btn" onclick="personTriggerBubbleUp()">
+        <svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg><span class="fw-600">Bubble up</span>
+        <span style="font-size:0.68rem;color:var(--text-secondary)">· Opret en privat boble</span>
+      </button>
+      <div class="bubble-up-confirm" id="person-bubbleup-confirm" style="margin-top:0.65rem">
+        <div class="bubble-up-confirm-text">Send en boble-invitation til <span class="bubble-up-confirm-name" id="person-bubbleup-name"></span>?<br>De skal acceptere — begge bliver ejere.</div>
+        <div class="bubble-up-confirm-row" style="margin-top:0.4rem">
+          <button class="bubble-up-yes" onclick="personConfirmBubbleUp()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg> Send invitation</button>
+          <button class="bubble-up-no" onclick="personCancelBubbleUp()">Annuller</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SCREEN: BOBLE CHAT (merged med detail)
+════════════════════════════════════════ -->
+<div class="screen" id="screen-bubble-chat">
+
+  <!-- Kompakt topbar: tilbage + boble-identitet + actions -->
+  <div class="topbar" style="gap:0.5rem">
+    <button class="back-btn" id="bc-back-btn">← Tilbage</button>
+    <div style="display:flex;align-items:center;gap:0.5rem;flex:1">
+      <span id="bc-emoji" style="display:inline-flex;width:1.3rem;height:1.3rem;flex-shrink:0"></span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:0.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="bc-name">...</div>
+        <div style="font-size:0.62rem;color:var(--text-secondary)" id="bc-members-count">...</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.4rem;flex-shrink:0" id="bc-action-btns"></div>
+  </div>
+
+  <!-- Tabs: Medlemmer (default) / Chat (med badge) / Info -->
+  <div class="bubble-tabs">
+    <button class="bubble-tab active" id="bc-tab-members" onclick="bcSwitchTab('members')">Medlemmer</button>
+    <button class="bubble-tab" id="bc-tab-chat" onclick="bcSwitchTab('chat')">Chat <span class="bubble-tab-badge" id="bc-unread-badge" style="display:none">0</span></button>
+    <button class="bubble-tab" id="bc-tab-info" onclick="bcSwitchTab('info')">Info</button>
+  </div>
+
+  <!-- MEMBERS TAB (default) -->
+  <div id="bc-panel-members" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+    <div class="chat-members-list" id="bc-members-list"></div>
+  </div>
+
+  <!-- CHAT TAB -->
+  <div id="bc-panel-chat" class="chat-panel">
+    <div class="chat-scroll" id="bc-messages"></div>
+    <div class="chat-composer">
+      <div class="chat-edit-bar" id="bc-edit-bar">
+        <span><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg> Redigerer besked</span>
+        <span class="chat-edit-cancel" onclick="bcCancelEdit()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17M7 7l10 10"/></svg></span>
+      </div>
+      <div class="chat-composer-row">
+        <input type="file" id="bc-file-input" style="display:none" onchange="bcHandleFile(this)">
+        <button class="chat-attach-btn" onclick="document.getElementById('bc-file-input').click()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1l-9.2 9.2a5.5 5.5 0 01-7.8-7.8l9.2-9.2a3.7 3.7 0 015.2 5.2l-9.2 9.2a1.8 1.8 0 01-2.6-2.6l8.5-8.4"/></svg></button>
+        <input class="chat-composer-input" id="bc-input" placeholder="Skriv en besked...">
+        <button class="chat-send-btn" id="bc-send-btn" onclick="bcSendMessage()">→</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INFO TAB -->
+  <div id="bc-panel-info" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+    <div class="chat-info-list" id="bc-info-list"></div>
+  </div>
+
+  <!-- Context menu -->
+  <div class="chat-context-menu" id="bc-context-menu">
+    <div class="chat-reaction-bar" id="bc-reaction-bar">
+      <button class="chat-reaction-btn" onclick="bcReact('👍')">👍</button>
+      <button class="chat-reaction-btn" onclick="bcReact('❤️')">❤️</button>
+      <button class="chat-reaction-btn" onclick="bcReact('😂')">😂</button>
+      <button class="chat-reaction-btn" onclick="bcReact('😮')">😮</button>
+      <button class="chat-reaction-btn" onclick="bcReact('🙏')">🙏</button>
+      <button class="chat-reaction-btn" onclick="bcReact('🔥')">🔥</button>
+    </div>
+    <div class="chat-context-item" id="bc-ctx-edit" style="display:none" onclick="bcStartEdit()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg> Rediger</div>
+    <div class="chat-context-item" id="bc-ctx-history" style="display:none" onclick="bcShowHistory(bcCurrentMsgId)"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Historik</div>
+    <div class="chat-context-divider"></div>
+    <div class="chat-context-item danger" id="bc-ctx-delete" style="display:none" onclick="bcDeleteMessage()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16M9 6.5V4.5a1.5 1.5 0 011.5-1.5h3A1.5 1.5 0 0115 4.5v2"/><path d="M18.5 6.5l-.8 13a2 2 0 01-2 1.8H8.3a2 2 0 01-2-1.8L5.5 6.5"/></svg> Slet</div>
+  </div>
+
+  <!-- Bottom nav -->
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
+    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
+    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
+    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
+  </div>
+</div>
+
+<!-- Person sheet (boble-chat avatar tap) -->
+<div class="person-sheet-overlay" id="ps-overlay" onclick="psClose()"></div>
+<div class="person-sheet" id="person-sheet-el">
+  <div class="person-sheet-handle" onclick="psClose()"></div>
+  <div class="person-sheet-header">
+    <div class="person-sheet-avatar" id="ps-avatar"></div>
+    <div>
+      <div class="person-sheet-name" id="ps-name"></div>
+      <div class="person-sheet-sub" id="ps-sub"></div>
+    </div>
+    <button class="person-sheet-close" onclick="psClose()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17M7 7l10 10"/></svg></button>
+  </div>
+  <div class="person-sheet-bio" id="ps-bio"></div>
+  <div class="person-sheet-actions">
+    <button class="person-sheet-btn primary" onclick="psMessage()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg> Besked</button>
+    <button class="person-sheet-btn secondary" id="ps-save-btn" onclick="psSaveContact()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4a1.5 1.5 0 011.5-1.5h9A1.5 1.5 0 0118 4v17l-6-3.5L6 21V4z"/></svg> Gem</button>
+    <button class="person-sheet-btn secondary" onclick="psProfile()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg> Profil</button>
+    <a class="person-sheet-btn secondary" id="ps-linkedin-btn" href="#" target="_blank" rel="noopener" style="display:none;text-decoration:none"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> LinkedIn</a>
+  </div>
+  <!-- Bubble-up -->
+  <button class="bubble-up-btn" id="ps-bubbleup-btn" onclick="psTriggerBubbleUp()">
+    <svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg><span class="fw-600">Bubble up</span>
+    <span style="font-size:0.68rem;color:var(--text-secondary)">· Opret en privat boble</span>
+  </button>
+  <div class="bubble-up-confirm" id="ps-bubbleup-confirm">
+    <div class="bubble-up-confirm-text">Send en boble-invitation til <span class="bubble-up-confirm-name" id="ps-bubbleup-name"></span>?<br>De skal acceptere — begge bliver ejere.</div>
+    <div class="bubble-up-confirm-row">
+      <button class="bubble-up-yes" onclick="psConfirmBubbleUp()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg> Send invitation</button>
+      <button class="bubble-up-no" onclick="psCancelBubbleUp()">Annuller</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="person-sheet-overlay" id="radar-overlay" onclick="closeRadarSheet()" ontouchmove="event.preventDefault()"></div>
+<div class="person-sheet" id="radar-sheet" style="max-height:calc(100vh - 3rem);max-height:calc(100dvh - 3rem);padding:0 1.2rem 1.5rem">
+  <div class="person-sheet-handle" onclick="closeRadarSheet()"></div>
+
+  <!-- View toggle + visibility -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:0 0.2rem 0.5rem">
+    <div class="radar-view-toggle">
+      <button class="radar-view-btn active" id="radar-btn-map" onclick="radarSwitchView('map')">Radar</button>
+      <button class="radar-view-btn" id="radar-btn-list" onclick="radarSwitchView('list')">N&aelig;rhed</button>
+    </div>
+    <button class="btn-sm btn-ghost" id="prox-toggle" onclick="toggleProximityVisibility()" style="font-size:0.65rem;padding:0.25rem 0.6rem;gap:0.3rem;display:flex;align-items:center">
+      <span id="prox-toggle-dot" class="live-dot" style="width:6px;height:6px;margin:0"></span>
+      <span id="prox-toggle-label">Synlig</span>
+    </button>
+  </div>
+
+  <!-- Range slider (map view only) -->
+  <div id="radar-map-controls" style="display:flex;align-items:center;gap:0.6rem;padding:0 0.2rem 0.5rem">
+    <input type="range" id="prox-range" min="1" max="5" value="5" oninput="updateProximityRange(this.value)" style="flex:1;max-width:140px;-webkit-appearance:none;appearance:none;height:4px;background:var(--glass-border-subtle);border-radius:2px;outline:none">
+    <span id="prox-range-label" style="font-size:0.65rem;color:var(--muted);min-width:3rem">1km</span>
+  </div>
+
+  <!-- MAP VIEW -->
+  <div id="radar-view-map">
+    <div class="proximity-map" id="proximity-map" style="border-radius:16px">
+      <canvas id="prox-canvas"></canvas>
+      <div id="prox-avatars"></div>
+      <div class="prox-center" id="prox-center">DU</div>
+    </div>
+  </div>
+
+  <!-- LIST VIEW -->
+  <div id="radar-view-list" style="display:none;max-height:calc(100dvh - 12rem);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:1rem">
+    <div id="radar-list-content"></div>
+  </div>
+
+  <div id="prox-empty" style="display:none;text-align:center;padding:1.5rem 0;font-size:0.78rem;color:var(--muted)">Ingen profiler fundet</div>
+</div>
+
+<!-- TOP-DROP PERSON SHEET (radar) -->
+<div class="radar-person-overlay" id="radar-person-overlay" onclick="closeRadarPerson()"></div>
+<div class="radar-person-sheet" id="radar-person-sheet">
+  <div class="radar-person-inner">
+    <div class="radar-person-header">
+      <div class="radar-person-avatar" id="rp-avatar">?</div>
+      <div style="flex:1;min-width:0">
+        <div class="radar-person-name" id="rp-name">...</div>
+        <div class="radar-person-sub" id="rp-sub">...</div>
+      </div>
+      <div class="radar-person-match" id="rp-match"></div>
+      <button class="radar-person-close" onclick="closeRadarPerson()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M17 7L7 17M7 7l10 10"/></svg></button>
+    </div>
+    <div class="radar-person-bio" id="rp-bio"></div>
+    <div class="radar-person-tags" id="rp-tags"></div>
+    <div class="radar-person-overlap" id="rp-overlap"></div>
+    <div class="radar-person-actions">
+      <button class="radar-person-action-btn primary" onclick="rpMessage()">Besked</button>
+      <button class="radar-person-action-btn" id="rp-save-btn" onclick="rpSaveContact()">Gem</button>
+      <button class="radar-person-action-btn" onclick="rpFullProfile()">Profil</button>
+      <a class="radar-person-action-btn" id="rp-linkedin-btn" href="#" target="_blank" rel="noopener" style="display:none;text-decoration:none">LinkedIn</a>
+    </div>
+    <div class="radar-person-handle" onclick="closeRadarPerson()"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: MESSAGES LIST
+════════════════════════════════════════ -->
+<div class="screen" id="screen-messages">
+  <div class="topbar">
+    <div class="topbar-title">Beskeder</div>
+    <button class="btn-sm btn-ghost" onclick="openCreateBubble()" style="font-size:0.72rem;padding:0.38rem 0.7rem">+ Ny boble</button>
+  </div>
+  <div class="scroll-area">
+    <div id="conversations-list"><div class="spinner"></div></div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
+    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
+    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
+    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: CHAT THREAD
+════════════════════════════════════════ -->
+<div class="screen" id="screen-chat">
+  <div class="topbar">
+    <button class="back-btn" id="dm-back-btn" onclick="goTo('screen-messages')">← Tilbage</button>
+    <div style="text-align:right">
+      <div style="font-size:0.88rem;font-weight:700;letter-spacing:-0.01em" id="chat-name">...</div>
+      <div style="font-size:0.68rem;color:var(--text-secondary)" id="chat-role">...</div>
+    </div>
+  </div>
+  <div class="chat-panel" id="dm-panel">
+    <div class="chat-scroll" id="chat-messages"></div>
+    <div class="chat-composer">
+      <div class="chat-composer-row">
+        <input type="file" id="dm-file-input" style="display:none">
+        <button class="chat-attach-btn" onclick="document.getElementById('dm-file-input').click()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1l-9.2 9.2a5.5 5.5 0 01-7.8-7.8l9.2-9.2a3.7 3.7 0 015.2 5.2l-9.2 9.2a1.8 1.8 0 01-2.6-2.6l8.5-8.4"/></svg></button>
+        <input class="chat-composer-input" id="chat-input" placeholder="Skriv en besked...">
+        <button class="chat-send-btn" onclick="sendMessage()">→</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: MY PROFILE
+════════════════════════════════════════ -->
+<div class="screen" id="screen-profile">
+  <div class="topbar">
+    <div class="topbar-title">Min profil</div>
+    <button class="btn-sm btn-ghost" onclick="openEditProfile()">Rediger</button>
+  </div>
+
+  <!-- Profile hero (always visible above tabs) -->
+  <div class="profile-hero" style="flex-shrink:0">
+    <div style="width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);margin:0 auto 0.9rem;display:flex;align-items:center;justify-content:center;font-size:1.7rem;font-weight:800;color:white;box-shadow:0 4px 20px rgba(139,127,255,0.35);border:2px solid rgba(255,255,255,0.08)" id="my-avatar">?</div>
+    <div style="font-size:1.3rem;font-weight:800;margin-bottom:0.2rem;letter-spacing:-0.02em" id="my-name">...</div>
+    <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.85rem" id="my-role">...</div>
+    <div id="my-keywords" style="margin-bottom:0.5rem"></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="bubble-tabs" style="flex-shrink:0">
+    <button class="bubble-tab active" id="prof-tab-saved" onclick="profSwitchTab('saved')">Gemte <span class="bubble-tab-badge" id="saved-count" style="display:none">0</span></button>
+    <button class="bubble-tab" id="prof-tab-bubbles" onclick="profSwitchTab('bubbles')">Bobler</button>
+    <button class="bubble-tab" id="prof-tab-invites" onclick="profSwitchTab('invites')">Invitationer <span class="bubble-tab-badge" id="invite-count" style="display:none">0</span></button>
+  </div>
+
+  <!-- SAVED TAB -->
+  <div id="prof-panel-saved" style="display:flex;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
+    <div id="saved-contacts"></div>
+  </div>
+
+  <!-- BUBBLES TAB -->
+  <div id="prof-panel-bubbles" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
+    <div id="profile-bubbles"><div class="spinner"></div></div>
+    <div class="section-label" style="margin-top:1.25rem">Synlighed</div>
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;cursor:default">
+      <div>
+        <div style="font-size:0.88rem;font-weight:700">Anonym tilstand</div>
+        <div style="font-size:0.73rem;color:var(--text-secondary);margin-top:0.15rem">Skjul navn og billede</div>
+      </div>
+      <div id="anon-toggle" onclick="toggleAnon()" style="width:46px;height:26px;background:var(--border);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s">
+        <div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>
+      </div>
+    </div>
+    <button class="btn-secondary" onclick="handleLogout()" style="margin-top:1.5rem;margin-bottom:2rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)">Log ud</button>
+  </div>
+
+  <!-- INVITATIONS TAB -->
+  <div id="prof-panel-invites" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
+    <div id="profile-invitations"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
+    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
+    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
+    <button class="nav-item"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: EDIT BUBBLE
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-edit-bubble">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Rediger boble <svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg></div>
+    <div class="input-group">
+      <div class="input-label">Navn</div>
+      <input class="input" id="eb-name" placeholder="Boble navn">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Type</div>
+      <select class="input" id="eb-type">
+        <option value="event">🚀 Event</option>
+        <option value="local">📍 Lokal</option>
+        <option value="theme">🤖 Tematiseret</option>
+        <option value="company">🏢 Virksomhed</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Synlighed</div>
+      <select class="input" id="eb-visibility">
+        <option value="public">🌍 Offentlig — synlig, alle kan joine</option>
+        <option value="private">🔒 Privat — synlig, join kræver anmodning</option>
+        <option value="hidden">👁️ Skjult — usynlig, kun via QR-invitation</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Beskrivelse</div>
+      <textarea class="input" id="eb-desc" placeholder="Hvad handler denne boble om?"></textarea>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Nøgleord</div>
+      <div class="chips-container" id="eb-chips-container" onclick="document.getElementById('eb-chip-input').focus()">
+        <input class="chip-input" id="eb-chip-input" placeholder="Tilføj nøgleord..." onkeydown="handleChipInput(event,'eb-chips')">
+      </div>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Lokation (valgfrit)</div>
+      <input class="input" id="eb-location" placeholder="f.eks. København">
+    </div>
+    <button class="btn-primary" onclick="saveEditBubble()">Gem ændringer</button>
+    <button class="btn-secondary" onclick="closeModal('modal-edit-bubble')">Annuller</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: CREATE BUBBLE
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-create-bubble">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Opret ny boble <svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
+    <div class="input-group">
+      <div class="input-label">Navn</div>
+      <input class="input" id="cb-name" placeholder="f.eks. TechBBQ 2025">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Type</div>
+      <select class="input" id="cb-type">
+        <option value="event">🚀 Event</option>
+        <option value="local">📍 Lokal</option>
+        <option value="theme">🤖 Tematiseret</option>
+        <option value="company">🏢 Virksomhed</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Synlighed</div>
+      <select class="input" id="cb-visibility">
+        <option value="public">🌍 Offentlig — synlig, alle kan joine</option>
+        <option value="private">🔒 Privat — synlig, join kræver anmodning</option>
+        <option value="hidden">👁️ Skjult — usynlig, kun via QR-invitation</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Beskrivelse</div>
+      <textarea class="input" id="cb-desc" placeholder="Hvad handler denne boble om?"></textarea>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Nøgleord (tryk Enter for at tilføje)</div>
+      <div class="chips-container" id="cb-chips-container" onclick="document.getElementById('cb-chip-input').focus()">
+        <input class="chip-input" id="cb-chip-input" placeholder="Tilføj nøgleord..." onkeydown="handleChipInput(event,'cb-chips')">
+      </div>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Lokation (valgfrit)</div>
+      <input class="input" id="cb-location" placeholder="f.eks. København">
+    </div>
+    <button class="btn-primary" onclick="createBubble()">Opret boble</button>
+    <button class="btn-secondary" onclick="closeModal('modal-create-bubble')">Annuller</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: EDIT PROFILE
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-edit-profile">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Rediger profil</div>
+    <div class="input-group">
+      <div class="input-label">Navn</div>
+      <input class="input" id="ep-name">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Titel / Rolle</div>
+      <input class="input" id="ep-title" placeholder="f.eks. Founder · Bubble">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Om dig</div>
+      <textarea class="input" id="ep-bio" placeholder="Skriv kort om dig selv og hvad du søger..."></textarea>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Nøgleord (tryk Enter)</div>
+      <div class="chips-container" id="ep-chips-container" onclick="document.getElementById('ep-chip-input').focus()">
+        <input class="chip-input" id="ep-chip-input" placeholder="f.eks. SaaS, AI, Networking..." onkeydown="handleChipInput(event,'ep-chips')">
+      </div>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Dynamiske nøgleord (hvad du søger nu)</div>
+      <div class="chips-container" id="ep-dyn-chips-container" onclick="document.getElementById('ep-dyn-chip-input').focus()">
+        <input class="chip-input" id="ep-dyn-chip-input" placeholder="f.eks. Søger investor, Open to coffee..." onkeydown="handleChipInput(event,'ep-dyn-chips')">
+      </div>
+    </div>
+    <div class="input-group">
+      <div class="input-label">LinkedIn URL (valgfrit)</div>
+      <input class="input" id="ep-linkedin" placeholder="https://linkedin.com/in/dit-navn" type="url">
+    </div>
+    <button class="btn-primary" onclick="saveProfile()">Gem profil</button>
+    <button class="btn-secondary" onclick="closeModal('modal-edit-profile')">Annuller</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: QR CODE
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-qr">
+  <div class="modal-sheet" style="text-align:center">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="qr-modal-title">QR-kode <svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
+    <div style="font-size:0.85rem;color:var(--muted);margin-bottom:1.25rem" id="qr-modal-subtitle">Vis eller print denne kode ved indgangen</div>
+    <div style="display:flex;justify-content:center;margin-bottom:1.25rem">
+      <div id="qr-canvas-wrap" style="background:white;padding:16px;border-radius:16px;display:inline-block">
+        <div id="qr-code-el"></div>
+      </div>
+    </div>
+    <div style="font-size:0.78rem;color:var(--muted);margin-bottom:1.5rem">
+      Scan med iPhone-kamera for at joine boblen direkte
+    </div>
+    <button class="btn-primary" onclick="downloadQRPdf()">Download PDF til print</button>
+    <button class="btn-secondary" onclick="closeModal('modal-qr')">Luk</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: PROPOSE MEETING
+════════════════════════════════════════ -->
+<!-- modal-meeting removed — feature shelved -->
+
+<!-- ════════════════════════════════════════
+     MODAL: EDIT HISTORY
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-edit-history">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Redigeringshistorik</div>
+    <div id="edit-history-content" style="max-height:60vh;overflow-y:auto;padding:0.5rem 0"></div>
+    <button class="btn-secondary" onclick="closeModal('modal-edit-history')">Luk</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: LIVE CHECK-IN
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-live-checkin">
+  <div class="modal-sheet" style="max-height:calc(100dvh - 3rem);overflow-y:auto">
+    <div class="modal-handle"></div>
+    <div class="modal-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="ico" style="color:#2ECFCF"><path d="M12 21.5c-3.5-3.5-6.5-7-6.5-10.5a6.5 6.5 0 0113 0c0 3.5-3 7-6.5 10.5z"/><circle cx="12" cy="11" r="2.5"/></svg> Live Check-in</div>
+
+    <!-- QR SCANNER -->
+    <div class="live-scanner-viewport" id="live-scanner-viewport">
+      <video id="live-qr-video" autoplay playsinline></video>
+      <canvas id="live-qr-canvas" style="display:none"></canvas>
+      <div class="live-scanner-frame">
+        <div class="live-scanner-corner tl"></div>
+        <div class="live-scanner-corner tr"></div>
+        <div class="live-scanner-corner bl"></div>
+        <div class="live-scanner-corner br"></div>
+      </div>
+      <div class="live-scanner-line"></div>
+    </div>
+    <div id="live-scan-status" class="live-scan-status">Peg kameraet mod en Bubble QR-kode</div>
+
+    <!-- Confirmation after scan (replaces status) -->
+    <div id="live-scan-found" class="live-scan-found-card" style="display:none">
+      <div class="live-scan-found-name" id="live-scan-found-name"></div>
+      <div class="live-scan-found-meta" id="live-scan-found-meta"></div>
+      <div style="display:flex;gap:0.4rem;margin-top:0.5rem">
+        <button class="live-bubble-btn primary" id="live-scan-confirm-btn" onclick="liveScanConfirmJoin()" style="flex:1">Check ind her</button>
+        <button class="live-bubble-btn ghost" onclick="liveScanReset()" style="flex:0 0 auto">Annuller</button>
+      </div>
+    </div>
+
+    <!-- Checked in confirmation -->
+    <div id="live-scan-confirmed" class="live-scan-confirmed" style="display:none">
+      <div class="live-scan-confirmed-icon">✓</div>
+      <div>
+        <div class="live-scan-confirmed-title" id="live-scan-confirmed-name">Checked ind!</div>
+        <div class="live-scan-confirmed-sub" id="live-scan-confirmed-meta">Du er nu her</div>
+      </div>
+    </div>
+
+    <div class="divider" style="margin:0.75rem 0"></div>
+
+    <!-- Existing live bubbles as fallback -->
+    <div class="section-label">Eller vælg et aktivt sted</div>
+    <div id="live-checkin-list" style="margin-bottom:0.5rem"><div class="spinner"></div></div>
+
+    <button class="btn-secondary" onclick="closeLiveCheckinModal()">Luk</button>
+  </div>
+</div>
+
+
+<!-- INVITE TO BUBBLE MODAL -->
+<div class="modal-overlay" id="invite-modal-overlay" onclick="closeInviteModal()" style="display:none">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle" onclick="closeInviteModal()"></div>
+    <div style="font-weight:700;font-size:1rem;margin-bottom:0.6rem">Invitér til boble</div>
+    <div id="invite-list" style="max-height:50vh;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
+    <div style="display:flex;gap:0.5rem;margin-top:0.8rem">
+      <button class="btn btn-ghost" onclick="closeInviteModal()" style="flex:1">Annuller</button>
+      <button class="btn btn-accent" id="invite-send-btn" onclick="sendBubbleInvites()" style="flex:1">Send invitationer</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
 </body>
 </html>

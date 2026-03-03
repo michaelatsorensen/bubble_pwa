@@ -3375,20 +3375,32 @@ var _liveQrFound = null;
 async function startLiveCamera() {
   var video = document.getElementById('live-qr-video');
   if (!video) return;
+  var status = document.getElementById('live-scan-status');
   try {
+    // Ensure jsQR is loaded
+    if (typeof jsQR === 'undefined') {
+      if (status) status.textContent = 'Indlæser scanner...';
+      await new Promise(function(resolve, reject) {
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+        s.onload = resolve;
+        s.onerror = function() { reject(new Error('Kunne ikke indlæse QR-scanner')); };
+        document.head.appendChild(s);
+      });
+    }
+    if (status) status.textContent = 'Starter kamera...';
     _liveQrStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
     });
     video.srcObject = _liveQrStream;
-    video.play();
-    var status = document.getElementById('live-scan-status');
+    video.setAttribute('playsinline', '');
+    video.setAttribute('autoplay', '');
+    await video.play();
     if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; }
-    // Start continuous background scanning for preview
     liveQrPreviewLoop();
   } catch(e) {
     console.error('Camera error:', e);
-    var status = document.getElementById('live-scan-status');
-    if (status) { status.textContent = 'Kunne ikke starte kamera'; status.className = 'live-scan-status error'; }
+    if (status) { status.textContent = e.message || 'Kunne ikke starte kamera'; status.className = 'live-scan-status error'; }
   }
 }
 
@@ -3410,18 +3422,27 @@ function liveQrPreviewLoop() {
     _liveQrFrame = requestAnimationFrame(liveQrPreviewLoop);
     return;
   }
-  var ctx = canvas.getContext('2d');
+  var ctx = canvas.getContext('2d', { willReadFrequently: true });
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
-  ctx.drawImage(video, 0, 0);
-  var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   if (typeof jsQR !== 'undefined') {
+    var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    // Try multiple detection strategies
     var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
+    // If full frame fails, try center crop (more focused)
+    if (!code && canvas.width > 200) {
+      var cx = Math.floor(canvas.width * 0.15);
+      var cy = Math.floor(canvas.height * 0.15);
+      var cw = Math.floor(canvas.width * 0.7);
+      var ch = Math.floor(canvas.height * 0.7);
+      var cropData = ctx.getImageData(cx, cy, cw, ch);
+      code = jsQR(cropData.data, cw, ch, { inversionAttempts: 'attemptBoth' });
+    }
     if (code && code.data && !_liveQrPending) {
       _liveQrFound = code.data;
-      // Auto-resolve the QR and show confirmation
       liveScanAutoResolve(code.data);
-      return; // Stop scanning while showing confirmation
+      return;
     }
   }
   _liveQrFrame = requestAnimationFrame(liveQrPreviewLoop);
