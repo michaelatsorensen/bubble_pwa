@@ -3389,6 +3389,7 @@ async function startLiveCamera() {
       });
     }
     if (status) status.textContent = 'Starter kamera...';
+    await initBarcodeDetector();
     _liveQrStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
     });
@@ -3414,38 +3415,74 @@ function stopLiveCamera() {
   if (video) video.srcObject = null;
 }
 
+var _barcodeDetector = null;
+var _useNativeDetector = false;
+
+async function initBarcodeDetector() {
+  if (typeof BarcodeDetector !== 'undefined') {
+    try {
+      var formats = await BarcodeDetector.getSupportedFormats();
+      if (formats.includes('qr_code')) {
+        _barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+        _useNativeDetector = true;
+        console.log('[QR] Using native BarcodeDetector');
+        return;
+      }
+    } catch(e) {}
+  }
+  _useNativeDetector = false;
+  console.log('[QR] Using jsQR fallback');
+}
+
 function liveQrPreviewLoop() {
   var video = document.getElementById('live-qr-video');
-  var canvas = document.getElementById('live-qr-canvas');
-  if (!video || !canvas || !_liveQrStream) return;
+  if (!video || !_liveQrStream || _liveQrPending) return;
   if (video.readyState < video.HAVE_ENOUGH_DATA) {
     _liveQrFrame = requestAnimationFrame(liveQrPreviewLoop);
     return;
   }
-  var ctx = canvas.getContext('2d', { willReadFrequently: true });
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  if (typeof jsQR !== 'undefined') {
-    var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    // Try multiple detection strategies
-    var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
-    // If full frame fails, try center crop (more focused)
-    if (!code && canvas.width > 200) {
-      var cx = Math.floor(canvas.width * 0.15);
-      var cy = Math.floor(canvas.height * 0.15);
-      var cw = Math.floor(canvas.width * 0.7);
-      var ch = Math.floor(canvas.height * 0.7);
-      var cropData = ctx.getImageData(cx, cy, cw, ch);
-      code = jsQR(cropData.data, cw, ch, { inversionAttempts: 'attemptBoth' });
+
+  if (_useNativeDetector && _barcodeDetector) {
+    // Native BarcodeDetector — much better recognition
+    _barcodeDetector.detect(video).then(function(codes) {
+      if (codes && codes.length > 0 && codes[0].rawValue && !_liveQrPending) {
+        _liveQrFound = codes[0].rawValue;
+        liveScanAutoResolve(codes[0].rawValue);
+        return;
+      }
+      // Throttle to ~10fps for performance
+      setTimeout(function() { _liveQrFrame = requestAnimationFrame(liveQrPreviewLoop); }, 100);
+    }).catch(function() {
+      setTimeout(function() { _liveQrFrame = requestAnimationFrame(liveQrPreviewLoop); }, 200);
+    });
+  } else {
+    // jsQR fallback
+    var canvas = document.getElementById('live-qr-canvas');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    if (typeof jsQR !== 'undefined') {
+      var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
+      if (!code && canvas.width > 200) {
+        var cx = Math.floor(canvas.width * 0.15);
+        var cy = Math.floor(canvas.height * 0.15);
+        var cw = Math.floor(canvas.width * 0.7);
+        var ch = Math.floor(canvas.height * 0.7);
+        var cropData = ctx.getImageData(cx, cy, cw, ch);
+        code = jsQR(cropData.data, cw, ch, { inversionAttempts: 'attemptBoth' });
+      }
+      if (code && code.data && !_liveQrPending) {
+        _liveQrFound = code.data;
+        liveScanAutoResolve(code.data);
+        return;
+      }
     }
-    if (code && code.data && !_liveQrPending) {
-      _liveQrFound = code.data;
-      liveScanAutoResolve(code.data);
-      return;
-    }
+    // Throttle jsQR to ~8fps
+    setTimeout(function() { _liveQrFrame = requestAnimationFrame(liveQrPreviewLoop); }, 120);
   }
-  _liveQrFrame = requestAnimationFrame(liveQrPreviewLoop);
 }
 
 var _liveQrPending = false;
