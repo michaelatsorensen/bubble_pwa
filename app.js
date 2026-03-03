@@ -601,7 +601,9 @@ var proxVisible = true;
 var proxRange = 3;
 var proxAllProfiles = [];
 var proxColors = ['linear-gradient(135deg,#8B7FFF,#A89FFF)','linear-gradient(135deg,#E85D8A,#FF8C69)','linear-gradient(135deg,#2ECFCF,#8B7FFF)','linear-gradient(135deg,#FF8C69,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)'];
-var proxRangeLabels = ['Min boble','Naere','Alle bobler','Udvidet','Alle'];
+var proxRangeLabels = ['20m','50m','200m','500m','1km'];
+// Relevance thresholds for each range: higher = closer = more relevant
+var proxThresholds = [0.6, 0.35, 0.15, 0.05, 0];
 
 async function loadProximityMap() {
   try {
@@ -639,23 +641,67 @@ function renderProximityDots() {
   var canvas = document.getElementById('prox-canvas');
   var emptyEl = document.getElementById('prox-empty');
   if (!map || !av || !canvas) return;
-  var maxN = [4,8,12,20,50][proxRange-1] || 12;
-  var fil = proxAllProfiles.slice(0, maxN);
+
+  // Filter by relevance threshold for current range
+  var threshold = (proxThresholds || [0.6,0.35,0.15,0.05,0])[proxRange-1] || 0;
+  var fil = proxAllProfiles.filter(function(p) { return p.relevance >= threshold; });
+
   if (fil.length === 0) { av.innerHTML = ''; drawProxRings(canvas); if (emptyEl) emptyEl.style.display = 'block'; return; }
   if (emptyEl) emptyEl.style.display = 'none';
   drawProxRings(canvas);
+
   var ce = document.getElementById('prox-center');
-  if (ce && currentProfile && currentProfile.name) { ce.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); }
-  var w = map.offsetWidth || 300, h = w, cx = w/2, cy = h/2, out = '';
-  for (var i=0; i<fil.length; i++) {
+  if (ce && currentProfile && currentProfile.name) {
+    ce.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+  }
+
+  var w = map.offsetWidth || 300, h = map.offsetHeight || w, cx = w/2, cy = h/2;
+  var maxR = Math.min(cx, cy) - 24;
+  var out = '';
+
+  // Collision avoidance: track placed positions
+  var placed = [];
+  function findSafePos(idealX, idealY, sz) {
+    var halfSz = sz / 2;
+    var tryX = idealX, tryY = idealY;
+    for (var attempt = 0; attempt < 12; attempt++) {
+      var collides = false;
+      for (var j = 0; j < placed.length; j++) {
+        var dx = (tryX + halfSz) - (placed[j].x + placed[j].sz/2);
+        var dy = (tryY + halfSz) - (placed[j].y + placed[j].sz/2);
+        var minDist = (halfSz + placed[j].sz/2) + 3;
+        if (Math.sqrt(dx*dx + dy*dy) < minDist) { collides = true; break; }
+      }
+      if (!collides) return { x: tryX, y: tryY };
+      // Nudge outward
+      var nudgeAng = Math.atan2(tryY + halfSz - cy, tryX + halfSz - cx) + (attempt * 0.5);
+      tryX = idealX + Math.cos(nudgeAng) * (8 + attempt * 5);
+      tryY = idealY + Math.sin(nudgeAng) * (8 + attempt * 5);
+    }
+    return { x: tryX, y: tryY };
+  }
+
+  for (var i = 0; i < fil.length; i++) {
     var p = fil[i], isA = p.is_anon;
     var ini = isA ? '?' : (p.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
     var col = isA ? 'rgba(255,255,255,0.08)' : proxColors[i % proxColors.length];
     var bd = isA ? 'border-color:rgba(255,255,255,0.06);' : '';
-    var d = 0.2 + (1-p.relevance)*0.35, ang = (i*2.399)+0.7;
-    var x = cx + Math.cos(ang)*d*(cx-20)-16, y = cy + Math.sin(ang)*d*(cy-20)-16;
-    var sz = p.relevance > 0.3 ? 34 : 28, op = isA ? 0.5 : (0.6+p.relevance*0.4);
-    out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+x.toFixed(1)+'px;top:'+y.toFixed(1)+'px;background:'+col+';opacity:'+op.toFixed(2)+';font-size:'+(sz<32?'0.48':'0.52')+'rem;'+bd+'" onclick="openRadarPerson(\''+p.id+'\')" data-id="'+p.id+'">'+escHtml(ini)+'</div>';
+
+    // Distance from center: high relevance = close, low = far
+    var dist = (1 - p.relevance) * 0.7 + 0.15;
+    var r = dist * maxR;
+
+    // Golden angle distribution
+    var ang = (i * 2.399) + (Math.floor(p.relevance * 3) * 0.8);
+    var idealX = cx + Math.cos(ang) * r - 17;
+    var idealY = cy + Math.sin(ang) * r - 17;
+
+    var sz = p.relevance > 0.4 ? 36 : p.relevance > 0.15 ? 32 : 28;
+    var pos = findSafePos(idealX, idealY, sz);
+    placed.push({ x: pos.x, y: pos.y, sz: sz });
+
+    var op = isA ? 0.5 : (0.55 + p.relevance * 0.45);
+    out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+pos.x.toFixed(1)+'px;top:'+pos.y.toFixed(1)+'px;background:'+col+';opacity:'+op.toFixed(2)+';font-size:'+(sz<32?'0.48':'0.52')+'rem;'+bd+'" onclick="openRadarPerson(\''+p.id+'\')" data-id="'+p.id+'">'+escHtml(ini)+'</div>';
   }
   av.innerHTML = out;
 }
@@ -676,8 +722,11 @@ function drawProxRings(canvas) {
 function updateProximityRange(val) {
   proxRange = parseInt(val);
   var el = document.getElementById('prox-range-label');
-  if (el) el.textContent = proxRangeLabels[proxRange-1] || '';
-  renderProximityDots();
+  var threshold = (proxThresholds || [0.6,0.35,0.15,0.05,0])[proxRange-1] || 0;
+  var count = proxAllProfiles.filter(function(p) { return p.relevance >= threshold; }).length;
+  if (el) el.textContent = (proxRangeLabels[proxRange-1] || '') + ' · ' + count;
+  if (radarCurrentView === 'map') renderProximityDots();
+  if (radarCurrentView === 'list') renderRadarList();
 }
 
 function toggleProximityVisibility() {
@@ -717,7 +766,8 @@ function radarSwitchView(view) {
   document.getElementById('radar-btn-list').classList.toggle('active', view === 'list');
   document.getElementById('radar-view-map').style.display = view === 'map' ? 'block' : 'none';
   document.getElementById('radar-view-list').style.display = view === 'list' ? 'block' : 'none';
-  document.getElementById('radar-map-controls').style.display = view === 'map' ? 'flex' : 'none';
+  // Show range slider in both views
+  document.getElementById('radar-map-controls').style.display = 'flex';
   if (view === 'map') renderProximityDots();
   if (view === 'list') renderRadarList();
 }
@@ -726,8 +776,8 @@ function renderRadarList() {
   var el = document.getElementById('radar-list-content');
   var emptyEl = document.getElementById('prox-empty');
   if (!el) return;
-  var maxN = [4,8,12,20,50][proxRange-1] || 50;
-  var fil = proxAllProfiles.slice(0, maxN);
+  var threshold = (proxThresholds || [0.6,0.35,0.15,0.05,0])[proxRange-1] || 0;
+  var fil = proxAllProfiles.filter(function(p) { return p.relevance >= threshold; });
   if (fil.length === 0) {
     el.innerHTML = '';
     if (emptyEl) emptyEl.style.display = 'block';
