@@ -868,13 +868,15 @@ function renderRadarList() {
     }).join('');
     var bubbleInfo = p.sharedBubbles > 0 ? '<span class="fs-065 text-muted">' + p.sharedBubbles + ' f\u00e6lles boble' + (p.sharedBubbles > 1 ? 'r' : '') + '</span>' : '';
     return '<div class="radar-list-card" data-uid="' + p.id + '" data-name="' + escHtml(name) + '" style="--card-delay:' + (i * 40) + 'ms">' +
-      '<div class="radar-list-avatar" style="background:' + col + ';' + bd + '" onclick="openRadarPerson(\'' + p.id + '\')">' + escHtml(ini) + '</div>' +
-      '<div style="flex:1;min-width:0;cursor:pointer" onclick="openRadarPerson(\'' + p.id + '\')">' +
-        '<div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(name) + '</div>' +
-        (isA ? '' : '<div class="fs-072 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + '</div>') +
+      '<div class="flex-row-center" style="gap:0.7rem">' +
+        '<div class="radar-list-avatar" style="background:' + col + ';' + bd + '" onclick="openRadarPerson(\'' + p.id + '\')">' + escHtml(ini) + '</div>' +
+        '<div style="flex:1;min-width:0;cursor:pointer" onclick="openRadarPerson(\'' + p.id + '\')">' +
+          '<div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(name) + '</div>' +
+          (isA ? '' : '<div class="fs-072 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + '</div>') +
+        '</div>' +
+        (isA ? '' : '<div class="radar-list-match">' + matchPct + '%</div>') +
+        '<button class="radar-list-remove" onclick="event.stopPropagation();radarConfirmRemove(\'' + p.id + '\',\'' + escHtml(name).replace(/'/g,'') + '\')" title="Fjern">' + icon('x') + '</button>' +
       '</div>' +
-      (isA ? '' : '<div class="radar-list-match">' + matchPct + '%</div>') +
-      '<button class="radar-list-remove" onclick="event.stopPropagation();radarConfirmRemove(\'' + p.id + '\',\'' + escHtml(name).replace(/'/g,'') + '\')" title="Fjern">' + icon('x') + '</button>' +
     '</div>';
   }).join('');
 }
@@ -887,7 +889,7 @@ function radarConfirmRemove(uid, name) {
   var confirm = document.createElement('div');
   confirm.className = 'remove-confirm';
   confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(232,93,138,0.08);border:1px solid rgba(232,93,138,0.2);border-radius:10px;gap:0.5rem';
-  confirm.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Fjern profil?</span>' +
+  confirm.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Fjern kontakt?</span>' +
     '<div style="display:flex;gap:0.3rem">' +
       '<button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)" onclick="event.stopPropagation();radarDoRemove()">Fjern</button>' +
       '<button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="event.stopPropagation();radarCancelRemove()">Annuller</button>' +
@@ -3348,6 +3350,134 @@ function openLiveBubble() {
 }
 
 // ══════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════
+//  QR SCANNER (camera-based)
+// ══════════════════════════════════════════════════════════
+var _qrStream = null;
+var _qrAnimFrame = null;
+
+function openQRScanModal() {
+  openModal('modal-qr-scan');
+  var status = document.getElementById('qr-scan-status');
+  if (status) status.textContent = 'Starter kamera...';
+  startQRCamera();
+}
+
+function closeQRScanModal() {
+  stopQRCamera();
+  closeModal('modal-qr-scan');
+}
+
+async function startQRCamera() {
+  var video = document.getElementById('qr-video');
+  if (!video) return;
+  try {
+    _qrStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 640 } }
+    });
+    video.srcObject = _qrStream;
+    video.play();
+    var status = document.getElementById('qr-scan-status');
+    if (status) status.textContent = 'Søger efter QR-kode...';
+    qrScanLoop();
+  } catch(e) {
+    console.error('Camera error:', e);
+    var status = document.getElementById('qr-scan-status');
+    if (status) status.textContent = 'Kunne ikke starte kamera. Brug manuel kode.';
+  }
+}
+
+function stopQRCamera() {
+  if (_qrAnimFrame) { cancelAnimationFrame(_qrAnimFrame); _qrAnimFrame = null; }
+  if (_qrStream) {
+    _qrStream.getTracks().forEach(function(t) { t.stop(); });
+    _qrStream = null;
+  }
+  var video = document.getElementById('qr-video');
+  if (video) video.srcObject = null;
+}
+
+function qrScanLoop() {
+  var video = document.getElementById('qr-video');
+  var canvas = document.getElementById('qr-canvas');
+  if (!video || !canvas || !_qrStream) return;
+  if (video.readyState < video.HAVE_ENOUGH_DATA) {
+    _qrAnimFrame = requestAnimationFrame(qrScanLoop);
+    return;
+  }
+  var ctx = canvas.getContext('2d');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0);
+  var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  if (typeof jsQR !== 'undefined') {
+    var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'dontInvert' });
+    if (code && code.data) {
+      handleQRResult(code.data);
+      return;
+    }
+  }
+  _qrAnimFrame = requestAnimationFrame(qrScanLoop);
+}
+
+function handleQRResult(data) {
+  stopQRCamera();
+  var status = document.getElementById('qr-scan-status');
+  if (status) { status.style.color = 'var(--accent3)'; status.textContent = 'QR fundet! Joiner...'; }
+  // Extract bubble join code from URL or raw code
+  var joinCode = data;
+  if (data.includes('join=')) {
+    try { joinCode = new URL(data).searchParams.get('join') || data; } catch(e) {}
+  } else if (data.includes('/b/')) {
+    joinCode = data.split('/b/').pop().split('?')[0];
+  }
+  // Try to join
+  qrJoinBubble(joinCode);
+}
+
+async function qrJoinBubble(code) {
+  try {
+    if (!code) throw new Error('Ingen kode fundet');
+    var { data: bubble, error } = await sb.from('bubbles')
+      .select('id, name, join_code')
+      .or('join_code.eq.' + code + ',id.eq.' + code)
+      .limit(1).single();
+    if (error || !bubble) throw new Error('Boble ikke fundet med kode: ' + code);
+    // Check if already member
+    var { data: existing } = await sb.from('bubble_members')
+      .select('id').eq('bubble_id', bubble.id).eq('user_id', currentUser.id).single();
+    if (existing) {
+      showToast('Du er allerede i ' + bubble.name);
+      closeQRScanModal();
+      openBubbleChat(bubble.id, 'screen-home');
+      return;
+    }
+    // Join
+    await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id, role: 'member' });
+    showToast('Joined ' + bubble.name + ' ✓');
+    closeQRScanModal();
+    loadMyBubbles();
+    openBubbleChat(bubble.id, 'screen-home');
+  } catch(e) {
+    console.error('qrJoinBubble:', e);
+    var status = document.getElementById('qr-scan-status');
+    if (status) { status.style.color = 'var(--accent2)'; status.textContent = e.message || 'Kunne ikke joine'; }
+    // Restart scanning
+    setTimeout(function() {
+      if (status) { status.style.color = ''; status.textContent = 'Søger efter QR-kode...'; }
+      startQRCamera();
+    }, 2000);
+  }
+}
+
+function qrManualJoin() {
+  var input = document.getElementById('qr-manual-code');
+  if (!input || !input.value.trim()) return showToast('Indtast en kode');
+  handleQRResult(input.value.trim());
+}
+
+
 //  APP BOOT
 // ══════════════════════════════════════════════════════════
 window.addEventListener('load', async () => {

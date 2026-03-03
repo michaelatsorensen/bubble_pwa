@@ -841,7 +841,7 @@ a.person-action-btn { text-decoration:none; }
 
 /* ── RADAR LIST VIEW ── */
 .radar-list-card {
-  display: flex; align-items: center; gap: 0.7rem;
+  display: flex; flex-direction: column;
   padding: 0.7rem 0.9rem; border-radius: var(--radius);
   background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border-subtle);

@@ -191,6 +191,9 @@
           </div>
           <div class="live-bubble-idle-arrow">→</div>
         </div>
+        <div style="padding:0.4rem 0.6rem 0">
+          <button class="btn-sm btn-ghost" onclick="event.stopPropagation();openQRScanModal()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:0.4rem;font-size:0.72rem;padding:0.45rem"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 7V5a2 2 0 012-2h2"/><path d="M17 3h2a2 2 0 012 2v2"/><path d="M21 17v2a2 2 0 01-2 2h-2"/><path d="M7 21H5a2 2 0 01-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg> Scan QR for at joine</button>
+        </div>
       </div>
     </div>
 
@@ -880,5 +883,27 @@
   </div>
 </div>
 
+
+<!-- QR SCANNER MODAL -->
+<div class="modal-overlay" id="modal-qr-scan" style="display:none" onclick="closeQRScanModal()">
+  <div class="modal-sheet" onclick="event.stopPropagation()" style="max-width:340px">
+    <div class="modal-handle" onclick="closeQRScanModal()"></div>
+    <div style="font-weight:700;font-size:1rem;margin-bottom:0.3rem;text-align:center">Scan Bubble QR</div>
+    <div style="font-size:0.72rem;color:var(--text-secondary);text-align:center;margin-bottom:0.8rem">Peg kameraet mod en Bubble QR-kode</div>
+    <div id="qr-scan-area" style="position:relative;width:100%;aspect-ratio:1;border-radius:var(--radius);overflow:hidden;background:#000;margin-bottom:0.8rem">
+      <video id="qr-video" autoplay playsinline style="width:100%;height:100%;object-fit:cover"></video>
+      <canvas id="qr-canvas" style="display:none"></canvas>
+      <div style="position:absolute;inset:15%;border:2px solid rgba(139,127,255,0.6);border-radius:12px;pointer-events:none"></div>
+    </div>
+    <div id="qr-scan-status" style="font-size:0.7rem;color:var(--muted);text-align:center;margin-bottom:0.5rem">Starter kamera...</div>
+    <div style="display:flex;gap:0.5rem">
+      <input class="input" id="qr-manual-code" placeholder="Eller indtast kode manuelt..." style="flex:1;font-size:0.75rem">
+      <button class="btn-sm btn-accent" onclick="qrManualJoin()" style="white-space:nowrap">Join</button>
+    </div>
+    <button class="btn btn-ghost" onclick="closeQRScanModal()" style="margin-top:0.5rem;width:100%">Luk</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"><\/script>
 </body>
 </html>
