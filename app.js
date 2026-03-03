@@ -598,10 +598,11 @@ async function confirmRemoveSaved() {
 
 // PROXIMITY MAP
 var proxVisible = true;
-var proxRange = 3;
+var proxRange = 5;
 var proxAllProfiles = [];
 var proxColors = ['linear-gradient(135deg,#8B7FFF,#A89FFF)','linear-gradient(135deg,#E85D8A,#FF8C69)','linear-gradient(135deg,#2ECFCF,#8B7FFF)','linear-gradient(135deg,#FF8C69,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)'];
-var proxRangeLabels = ['Min boble','Naere','Alle bobler','Udvidet','Alle'];
+var proxRangeLabels = ['20m','50m','200m','500m','1km'];
+var proxThresholds = [0.6, 0.35, 0.15, 0.05, 0];
 
 async function loadProximityMap() {
   try {
@@ -717,33 +718,26 @@ function radarSwitchView(view) {
   document.getElementById('radar-btn-list').classList.toggle('active', view === 'list');
   document.getElementById('radar-view-map').style.display = view === 'map' ? 'block' : 'none';
   document.getElementById('radar-view-list').style.display = view === 'list' ? 'block' : 'none';
-  document.getElementById('radar-map-controls').style.display = view === 'map' ? 'flex' : 'none';
+  document.getElementById('radar-map-controls').style.display = 'flex';
   if (view === 'map') renderProximityDots();
   if (view === 'list') renderRadarList();
 }
-
-var radarDismissed = [];
 
 function renderRadarList() {
   var el = document.getElementById('radar-list-content');
   var emptyEl = document.getElementById('prox-empty');
   if (!el) return;
-  var threshold = (proxThresholds || [0.6,0.35,0.15,0.05,0])[proxRange-1] || 0;
-  var fil = proxAllProfiles.filter(function(p) { return p.relevance >= threshold && radarDismissed.indexOf(p.id) < 0; });
+  var maxN = [4,8,12,20,50][proxRange-1] || 50;
+  var fil = proxAllProfiles.slice(0, maxN);
   if (fil.length === 0) {
-    el.innerHTML = '<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:var(--muted)">Ingen flere profiler<br><button class="btn-sm btn-ghost" onclick="radarResetDismissed()" style="margin-top:0.5rem;font-size:0.7rem">Vis alle igen</button></div>';
-    if (emptyEl) emptyEl.style.display = 'none';
+    el.innerHTML = '';
+    if (emptyEl) emptyEl.style.display = 'block';
     return;
   }
   if (emptyEl) emptyEl.style.display = 'none';
   var myKw = (currentProfile && currentProfile.keywords ? currentProfile.keywords : []).map(function(k){ return k.toLowerCase(); });
   var colors = proxColors;
-  var hint = '';
-  if (!window._radarSwipeHinted) {
-    hint = '<div class="radar-swipe-hint" id="radar-swipe-hint"><span class="rsh-left">\u2190 Skip</span><span class="rsh-center">Tryk for profil</span><span class="rsh-right">Gem \u2192</span></div>';
-    window._radarSwipeHinted = true;
-  }
-  el.innerHTML = hint + fil.map(function(p, i) {
+  el.innerHTML = fil.map(function(p, i) {
     var isA = p.is_anon;
     var name = isA ? 'Anonym bruger' : (p.name || '?');
     var ini = isA ? '?' : name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
@@ -756,103 +750,19 @@ function renderRadarList() {
       var isOv = overlap.indexOf(k.toLowerCase()) >= 0;
       return '<span class="tag' + (isOv ? ' mint' : '') + '" style="font-size:0.58rem;padding:0.15rem 0.4rem">' + escHtml(k) + '</span>';
     }).join('');
-    var bubbleInfo = p.sharedBubbles > 0 ? '<span class="fs-065 text-muted">' + p.sharedBubbles + ' f\u00e6lles boble' + (p.sharedBubbles > 1 ? 'r' : '') + '</span>' : '';
-    return '<div class="radar-list-card radar-swipeable" data-uid="' + p.id + '" data-name="' + escHtml(name) + '" style="--card-delay:' + (i * 40) + 'ms">' +
-      '<div class="radar-swipe-ind left">SKIP</div><div class="radar-swipe-ind right">GEM \u2713</div>' +
+    var bubbleInfo = p.sharedBubbles > 0 ? '<span class="fs-065 text-muted">' + p.sharedBubbles + ' fælles boble' + (p.sharedBubbles > 1 ? 'r' : '') + '</span>' : '';
+    return '<div class="radar-list-card" onclick="openRadarPerson(\'' + p.id + '\')" style="--card-delay:' + (i * 40) + 'ms">' +
       '<div class="radar-list-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>' +
-      '<div style="flex:1;min-width:0"><div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(name) + '</div>' +
-      '<div class="fs-072 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + '</div>' +
-      (tags ? '<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.25rem">' + tags + '</div>' : '') +
-      (bubbleInfo ? '<div style="margin-top:0.2rem">' + bubbleInfo + '</div>' : '') +
-      '</div><div class="radar-list-match">' + matchPct + '%</div></div>';
+      '<div style="flex:1;min-width:0">' +
+        '<div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(name) + '</div>' +
+        '<div class="fs-072 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + '</div>' +
+        (tags ? '<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.25rem">' + tags + '</div>' : '') +
+        (bubbleInfo ? '<div style="margin-top:0.2rem">' + bubbleInfo + '</div>' : '') +
+      '</div>' +
+      '<div class="radar-list-match">' + matchPct + '%</div>' +
+    '</div>';
   }).join('');
-  el.querySelectorAll('.radar-swipeable').forEach(function(card) { radarAttachSwipe(card); });
 }
-
-function radarAttachSwipe(card) {
-  var startX=0, currentX=0, swiping=false, tapped=true, threshold=75;
-  card.addEventListener('touchstart', function(e) { startX=e.touches[0].clientX; currentX=0; swiping=true; tapped=true; card.style.transition='none'; }, {passive:true});
-  card.addEventListener('touchmove', function(e) {
-    if(!swiping) return; currentX=e.touches[0].clientX-startX; if(Math.abs(currentX)>8) tapped=false;
-    card.style.transform='translateX('+currentX+'px)';
-    var li=card.querySelector('.radar-swipe-ind.left'), ri=card.querySelector('.radar-swipe-ind.right');
-    if(currentX<-20){li.style.opacity=Math.min(Math.abs(currentX)/threshold,1);ri.style.opacity=0;card.style.borderColor='rgba(232,93,138,'+Math.min(Math.abs(currentX)/threshold*0.3,0.3)+')';}
-    else if(currentX>20){ri.style.opacity=Math.min(currentX/threshold,1);li.style.opacity=0;card.style.borderColor='rgba(46,207,207,'+Math.min(currentX/threshold*0.3,0.3)+')';}
-    else{li.style.opacity=0;ri.style.opacity=0;card.style.borderColor='';}
-  }, {passive:true});
-  card.addEventListener('touchend', function() {
-    if(!swiping) return; swiping=false; card.style.transition='';
-    if(tapped&&Math.abs(currentX)<10){card.style.transform='';card.style.borderColor='';openRadarPerson(card.dataset.uid);return;}
-    if(currentX<-threshold) radarSwipeDismiss(card,'left');
-    else if(currentX>threshold) radarSwipeDismiss(card,'right');
-    else{card.style.transform='';card.style.borderColor='';var li=card.querySelector('.radar-swipe-ind.left'),ri=card.querySelector('.radar-swipe-ind.right');if(li)li.style.opacity=0;if(ri)ri.style.opacity=0;}
-  });
-  var mouseDown=false, mouseStartX=0, mouseTapped=true;
-  card.addEventListener('mousedown', function(e){mouseStartX=e.clientX;mouseDown=true;mouseTapped=true;currentX=0;card.style.transition='none';e.preventDefault();});
-  document.addEventListener('mousemove', function(e){
-    if(!mouseDown) return; currentX=e.clientX-mouseStartX; if(Math.abs(currentX)>8) mouseTapped=false;
-    card.style.transform='translateX('+currentX+'px)';
-    var li=card.querySelector('.radar-swipe-ind.left'),ri=card.querySelector('.radar-swipe-ind.right');
-    if(currentX<-20){li.style.opacity=Math.min(Math.abs(currentX)/threshold,1);ri.style.opacity=0;}
-    else if(currentX>20){ri.style.opacity=Math.min(currentX/threshold,1);li.style.opacity=0;}
-  });
-  document.addEventListener('mouseup', function(){
-    if(!mouseDown) return; mouseDown=false; card.style.transition='';
-    if(mouseTapped&&Math.abs(currentX)<10){card.style.transform='';openRadarPerson(card.dataset.uid);return;}
-    if(currentX<-threshold) radarSwipeDismiss(card,'left');
-    else if(currentX>threshold) radarSwipeDismiss(card,'right');
-    else{card.style.transform='';card.style.borderColor='';var li=card.querySelector('.radar-swipe-ind.left'),ri=card.querySelector('.radar-swipe-ind.right');if(li)li.style.opacity=0;if(ri)ri.style.opacity=0;}
-    currentX=0;
-  });
-}
-
-var radarLastSwipe = null;
-function radarSwipeDismiss(card, direction) {
-  var uid=card.dataset.uid, name=card.dataset.name, dist=direction==='left'?-420:420;
-  card.style.transition='transform 0.35s ease-out, opacity 0.35s ease-out';
-  card.style.transform='translateX('+dist+'px)'; card.style.opacity='0'; card.style.pointerEvents='none';
-  radarDismissed.push(uid);
-  radarLastSwipe={uid:uid,card:card,direction:direction,name:name};
-  if(direction==='right'){radarSaveContact(uid);showToast('Gemt: '+name+' \u2713');}
-  else{showToast(name+' skippet');}
-  var hint=document.getElementById('radar-swipe-hint');
-  if(hint){hint.style.opacity='0';setTimeout(function(){hint.style.display='none';},300);}
-  radarShowUndo(name, direction==='right'?'gemt':'skippet');
-  setTimeout(function(){
-    card.style.display='none';
-    var all=document.querySelectorAll('.radar-swipeable'), vis=0;
-    all.forEach(function(c){if(c.style.display!=='none')vis++;});
-    if(vis===0){var el=document.getElementById('radar-list-content');
-      if(el) el.insertAdjacentHTML('beforeend','<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:var(--muted)">Ingen flere profiler<br><button class="btn-sm btn-ghost" onclick="radarResetDismissed()" style="margin-top:0.5rem;font-size:0.7rem">Vis alle igen</button></div>');}
-  }, 360);
-}
-async function radarSaveContact(uid) {
-  try{var r=await sb.from('saved_contacts').select('id').eq('user_id',currentUser.id).eq('contact_id',uid).maybeSingle();
-    if(!r.data){await sb.from('saved_contacts').insert({user_id:currentUser.id,contact_id:uid});loadSavedContacts();}
-  }catch(e){console.error('radarSaveContact:',e);}
-}
-function radarShowUndo(name, action) {
-  var bar=document.getElementById('radar-undo-bar');
-  if(!bar){var listEl=document.getElementById('radar-view-list');if(!listEl)return;
-    listEl.insertAdjacentHTML('afterend','<div class="radar-undo-bar" id="radar-undo-bar"><span class="radar-undo-text" id="radar-undo-text"></span><button class="radar-undo-btn" onclick="radarUndo()">Fortryd</button></div>');
-    bar=document.getElementById('radar-undo-bar');}
-  document.getElementById('radar-undo-text').textContent=name+' '+action;
-  bar.classList.add('show'); clearTimeout(window._radarUndoTimer);
-  window._radarUndoTimer=setTimeout(function(){bar.classList.remove('show');},4000);
-}
-function radarUndo() {
-  if(!radarLastSwipe) return; var ls=radarLastSwipe;
-  var idx=radarDismissed.indexOf(ls.uid); if(idx>=0) radarDismissed.splice(idx,1);
-  if(ls.direction==='right'){sb.from('saved_contacts').delete().eq('user_id',currentUser.id).eq('contact_id',ls.uid).then(function(){loadSavedContacts();});}
-  ls.card.style.display='';ls.card.style.transition='transform 0.3s ease, opacity 0.3s ease';
-  ls.card.style.transform='';ls.card.style.opacity='';ls.card.style.pointerEvents='';ls.card.style.borderColor='';
-  var li=ls.card.querySelector('.radar-swipe-ind.left'),ri=ls.card.querySelector('.radar-swipe-ind.right');
-  if(li)li.style.opacity=0;if(ri)ri.style.opacity=0;
-  radarLastSwipe=null; document.getElementById('radar-undo-bar').classList.remove('show');
-  showToast('Fortrudt \u21a9');
-}
-function radarResetDismissed(){radarDismissed=[];window._radarSwipeHinted=false;renderRadarList();}
-
 
 // ══════════════════════════════════════════════════════════
 //  RADAR: TOP-DROP PERSON SHEET
