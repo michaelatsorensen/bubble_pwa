@@ -793,7 +793,7 @@ function renderRadarList() {
 
   var hint = '';
   if (!window._radarSwipeHinted && fil.length > 0) {
-    hint = '<div class="radar-swipe-hint" id="radar-swipe-hint"><span class="rsh-left">\u2190 Skip</span><span class="rsh-center">Tryk for profil</span><span class="rsh-right">Gem \u2192</span></div>';
+    hint = '<div class="radar-swipe-hint" id="radar-swipe-hint"><span class="rsh-left">\u2190 Fjern</span><span class="rsh-center">Tryk for profil</span></div>';
     window._radarSwipeHinted = true;
   }
 
@@ -813,7 +813,7 @@ function renderRadarList() {
     }).join('');
     var bubbleInfo = p.sharedBubbles > 0 ? '<span class="fs-065 text-muted">' + p.sharedBubbles + ' f\u00e6lles boble' + (p.sharedBubbles > 1 ? 'r' : '') + '</span>' : '';
     return '<div class="radar-list-card radar-swipeable" data-uid="' + p.id + '" data-name="' + escHtml(name) + '" style="--card-delay:' + (i * 40) + 'ms">' +
-      '<div class="radar-swipe-ind left">SKIP</div><div class="radar-swipe-ind right">GEM \u2713</div>' +
+      '<div class="radar-swipe-ind left">FJERN</div>' +
       '<div class="radar-list-avatar" style="background:' + col + ';' + bd + '">' + escHtml(ini) + '</div>' +
       '<div style="flex:1;min-width:0">' +
         '<div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(name) + '</div>' +
@@ -829,55 +829,114 @@ function renderRadarList() {
 }
 
 function radarAttachSwipe(card) {
-  var startX=0, currentX=0, swiping=false, tapped=true, threshold=75;
-  card.addEventListener('touchstart', function(e) { startX=e.touches[0].clientX; currentX=0; swiping=true; tapped=true; card.style.transition='none'; }, {passive:true});
-  card.addEventListener('touchmove', function(e) {
-    if(!swiping) return; currentX=e.touches[0].clientX-startX; if(Math.abs(currentX)>8) tapped=false;
-    card.style.transform='translateX('+currentX+'px)';
-    var li=card.querySelector('.radar-swipe-ind.left'), ri=card.querySelector('.radar-swipe-ind.right');
-    if(currentX<-20){li.style.opacity=Math.min(Math.abs(currentX)/threshold,1);ri.style.opacity=0;card.style.borderColor='rgba(232,93,138,'+Math.min(Math.abs(currentX)/threshold*0.3,0.3)+')';}
-    else if(currentX>20){ri.style.opacity=Math.min(currentX/threshold,1);li.style.opacity=0;card.style.borderColor='rgba(46,207,207,'+Math.min(currentX/threshold*0.3,0.3)+')';}
-    else{li.style.opacity=0;ri.style.opacity=0;card.style.borderColor='';}
+  var startX=0, currentX=0, swiping=false, tapped=true, threshold=70;
+  var revealed = false;
+
+  // Use the existing left indicator as the "Fjern" reveal zone
+  var li = card.querySelector('.radar-swipe-ind.left');
+  if(li) {
+    li.innerHTML = 'FJERN';
+    li.style.cursor = 'pointer';
+    li.addEventListener('click', function(e) {
+      e.stopPropagation();
+      radarRemoveFromList(card);
+    });
+  }
+
+  card.addEventListener('touchstart', function(e) {
+    startX=e.touches[0].clientX; currentX=0; swiping=true; tapped=true;
+    card.style.transition='none';
   }, {passive:true});
+
+  card.addEventListener('touchmove', function(e) {
+    if(!swiping) return;
+    currentX=e.touches[0].clientX-startX;
+    if(Math.abs(currentX)>8) tapped=false;
+    // Only left swipe
+    if(currentX>0) currentX=0;
+    // Rubberband after threshold
+    var displayX=currentX;
+    if(Math.abs(currentX)>threshold) {
+      var over=Math.abs(currentX)-threshold;
+      displayX=-(threshold+over*0.3);
+    }
+    card.style.transform='translateX('+displayX+'px)';
+    if(li && currentX<-15) {
+      li.style.opacity=Math.min(Math.abs(currentX)/threshold,1);
+      card.style.borderColor='rgba(232,93,138,'+Math.min(Math.abs(currentX)/threshold*0.25,0.25)+')';
+    } else if(li) { li.style.opacity=0; card.style.borderColor=''; }
+  }, {passive:true});
+
   card.addEventListener('touchend', function() {
-    if(!swiping) return; swiping=false; card.style.transition='';
-    if(tapped&&Math.abs(currentX)<10){card.style.transform='';card.style.borderColor='';openRadarPerson(card.dataset.uid);return;}
-    if(currentX<-threshold) radarSwipeDismiss(card,'left');
-    else if(currentX>threshold) radarSwipeDismiss(card,'right');
-    else{card.style.transform='';card.style.borderColor='';var l=card.querySelector('.radar-swipe-ind.left'),r=card.querySelector('.radar-swipe-ind.right');if(l)l.style.opacity=0;if(r)r.style.opacity=0;}
+    if(!swiping) return; swiping=false;
+    if(tapped && Math.abs(currentX)<10) {
+      card.style.transition=''; card.style.transform=''; card.style.borderColor='';
+      if(revealed) { radarSnapBack(card, li); revealed=false; return; }
+      openRadarPerson(card.dataset.uid); return;
+    }
+    if(currentX<-threshold) {
+      // Snap to reveal "Fjern"
+      card.style.transition='transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94)';
+      card.style.transform='translateX(-75px)';
+      if(li) { li.style.opacity='1'; li.style.pointerEvents='auto'; li.style.width='75px'; }
+      revealed=true;
+    } else {
+      radarSnapBack(card, li); revealed=false;
+    }
   });
+
   // Mouse for desktop
-  var md=false,msx=0,mt=true;
-  card.addEventListener('mousedown',function(e){msx=e.clientX;md=true;mt=true;currentX=0;card.style.transition='none';e.preventDefault();});
-  document.addEventListener('mousemove',function(e){if(!md)return;currentX=e.clientX-msx;if(Math.abs(currentX)>8)mt=false;card.style.transform='translateX('+currentX+'px)';var l=card.querySelector('.radar-swipe-ind.left'),r=card.querySelector('.radar-swipe-ind.right');if(currentX<-20){l.style.opacity=Math.min(Math.abs(currentX)/threshold,1);r.style.opacity=0;}else if(currentX>20){r.style.opacity=Math.min(currentX/threshold,1);l.style.opacity=0;}});
-  document.addEventListener('mouseup',function(){if(!md)return;md=false;card.style.transition='';if(mt&&Math.abs(currentX)<10){card.style.transform='';openRadarPerson(card.dataset.uid);return;}if(currentX<-threshold)radarSwipeDismiss(card,'left');else if(currentX>threshold)radarSwipeDismiss(card,'right');else{card.style.transform='';card.style.borderColor='';var l=card.querySelector('.radar-swipe-ind.left'),r=card.querySelector('.radar-swipe-ind.right');if(l)l.style.opacity=0;if(r)r.style.opacity=0;}currentX=0;});
+  var md=false, msx=0, mt=true;
+  card.addEventListener('mousedown', function(e) { msx=e.clientX; md=true; mt=true; currentX=0; card.style.transition='none'; e.preventDefault(); });
+  document.addEventListener('mousemove', function(e) {
+    if(!md) return; currentX=e.clientX-msx; if(Math.abs(currentX)>8) mt=false;
+    if(currentX>0) currentX=0;
+    var displayX=currentX;
+    if(Math.abs(currentX)>threshold){var over=Math.abs(currentX)-threshold;displayX=-(threshold+over*0.3);}
+    card.style.transform='translateX('+displayX+'px)';
+    if(li&&currentX<-15) li.style.opacity=Math.min(Math.abs(currentX)/threshold,1);
+    else if(li) li.style.opacity=0;
+  });
+  document.addEventListener('mouseup', function() {
+    if(!md) return; md=false;
+    if(mt&&Math.abs(currentX)<10) { card.style.transition=''; card.style.transform='';
+      if(revealed){radarSnapBack(card,li);revealed=false;return;}
+      openRadarPerson(card.dataset.uid); return; }
+    if(currentX<-threshold) {
+      card.style.transition='transform 0.25s ease'; card.style.transform='translateX(-75px)';
+      if(li){li.style.opacity='1';li.style.pointerEvents='auto';li.style.width='75px';}
+      revealed=true;
+    } else { radarSnapBack(card,li); revealed=false; }
+    currentX=0;
+  });
 }
 
+function radarSnapBack(card, li) {
+  card.style.transition='transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94)';
+  card.style.transform=''; card.style.borderColor='';
+  if(li){li.style.opacity=0;li.style.pointerEvents='';li.style.width='';}
+}
+
+
 var radarLastSwipe = null;
-function radarSwipeDismiss(card, direction) {
-  var uid=card.dataset.uid, name=card.dataset.name, dist=direction==='left'?-420:420;
-  card.style.transition='transform 0.35s ease-out, opacity 0.35s ease-out';
-  card.style.transform='translateX('+dist+'px)'; card.style.opacity='0'; card.style.pointerEvents='none';
+
+function radarRemoveFromList(card) {
+  var uid=card.dataset.uid, name=card.dataset.name;
+  card.style.transition='transform 0.3s ease-out, opacity 0.3s ease-out';
+  card.style.transform='translateX(-420px)'; card.style.opacity='0'; card.style.pointerEvents='none';
   radarDismissed.push(uid);
-  radarLastSwipe={uid:uid,card:card,direction:direction,name:name};
-  if(direction==='right'){radarSaveContact(uid);showToast('Gemt: '+name+' \u2713');}
-  else{showToast(name+' skippet');}
-  var hint=document.getElementById('radar-swipe-hint');
-  if(hint){hint.style.opacity='0';setTimeout(function(){hint.style.display='none';},300);}
-  radarShowUndo(name, direction==='right'?'gemt':'skippet');
+  radarLastSwipe={uid:uid,card:card,name:name};
+  showToast(name+' fjernet');
+  radarShowUndo(name, 'fjernet');
   setTimeout(function(){
     card.style.display='none';
-    var all=el=document.querySelectorAll('.radar-swipeable'), vis=0;
+    var all=document.querySelectorAll('.radar-swipeable'), vis=0;
     all.forEach(function(c){if(c.style.display!=='none')vis++;});
-    if(vis===0){var el2=document.getElementById('radar-list-content');
-      if(el2) el2.insertAdjacentHTML('beforeend','<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:var(--muted)">Ingen flere i n\u00e6rheden<br><button class="btn-sm btn-ghost" onclick="radarResetDismissed()" style="margin-top:0.5rem;font-size:0.7rem">Vis alle igen</button></div>');}
-  }, 360);
+    if(vis===0){var el=document.getElementById('radar-list-content');
+      if(el) el.insertAdjacentHTML('beforeend','<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:var(--muted)">Ingen flere i n\u00e6rheden<br><button class="btn-sm btn-ghost" onclick="radarResetDismissed()" style="margin-top:0.5rem;font-size:0.7rem">Vis alle igen</button></div>');}
+  }, 320);
 }
-async function radarSaveContact(uid) {
-  try{var r=await sb.from('saved_contacts').select('id').eq('user_id',currentUser.id).eq('contact_id',uid).maybeSingle();
-    if(!r.data){await sb.from('saved_contacts').insert({user_id:currentUser.id,contact_id:uid});loadSavedContacts();}
-  }catch(e){console.error('radarSaveContact:',e);}
-}
+
 function radarShowUndo(name, action) {
   var bar=document.getElementById('radar-undo-bar');
   if(!bar){var listEl=document.getElementById('radar-view-list');if(!listEl)return;
@@ -887,16 +946,16 @@ function radarShowUndo(name, action) {
   bar.classList.add('show');clearTimeout(window._radarUndoTimer);
   window._radarUndoTimer=setTimeout(function(){bar.classList.remove('show');},4000);
 }
+
 function radarUndo() {
   if(!radarLastSwipe) return; var ls=radarLastSwipe;
   var idx=radarDismissed.indexOf(ls.uid);if(idx>=0)radarDismissed.splice(idx,1);
-  if(ls.direction==='right'){sb.from('saved_contacts').delete().eq('user_id',currentUser.id).eq('contact_id',ls.uid).then(function(){loadSavedContacts();});}
   ls.card.style.display='';ls.card.style.transition='transform 0.3s ease, opacity 0.3s ease';
   ls.card.style.transform='';ls.card.style.opacity='';ls.card.style.pointerEvents='';ls.card.style.borderColor='';
-  var li=ls.card.querySelector('.radar-swipe-ind.left'),ri=ls.card.querySelector('.radar-swipe-ind.right');
-  if(li)li.style.opacity=0;if(ri)ri.style.opacity=0;
+  var li=ls.card.querySelector('.radar-swipe-ind.left');if(li){li.style.opacity=0;li.style.pointerEvents='';li.style.width='';}
   radarLastSwipe=null;document.getElementById('radar-undo-bar').classList.remove('show');showToast('Fortrudt \u21a9');
 }
+
 function radarResetDismissed(){radarDismissed=[];window._radarSwipeHinted=false;renderRadarList();}
 
 // ══════════════════════════════════════════════════════════
@@ -2829,9 +2888,9 @@ document.addEventListener('click', (e) => {
 //  PULL-TO-REFRESH
 // ══════════════════════════════════════════════════════════
 (function initPullToRefresh() {
-  const PTR_THRESHOLD = 60;   // px to pull before triggering
-  const PTR_MAX = 90;         // max indicator travel
-  const PTR_RESISTANCE = 2.5; // finger-to-indicator ratio
+  const PTR_THRESHOLD = 100;  // px to pull before triggering
+  const PTR_MAX = 120;        // max indicator travel
+  const PTR_RESISTANCE = 3;   // finger-to-indicator ratio
 
   // Map: screen ID → { scrollEl selector, refreshFn }
   const screenMap = {

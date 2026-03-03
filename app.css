@@ -1105,8 +1105,8 @@ a.person-action-btn { text-decoration:none; }
 
 .radar-swipeable { position: relative; overflow: hidden; touch-action: pan-y; }
 .radar-swipe-ind { position: absolute; top: 0; bottom: 0; width: 55px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em; opacity: 0; pointer-events: none; z-index: 2; }
-.radar-swipe-ind.left { left: 0; background: linear-gradient(90deg, rgba(232,93,138,0.15), transparent); color: var(--accent2); border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
-.radar-swipe-ind.right { right: 0; background: linear-gradient(-90deg, rgba(46,207,207,0.15), transparent); color: var(--accent3); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.radar-swipe-ind.left { right: 0; left: auto; background: var(--accent2); color: white; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; pointer-events: none; }
+
 .radar-swipe-hint { display: flex; justify-content: center; gap: 1.2rem; padding: 0.25rem 0 0.5rem; font-size: 0.58rem; color: var(--muted); transition: opacity 0.3s; }
 .rsh-left { color: var(--accent2); }
 .rsh-right { color: var(--accent3); }
@@ -1116,4 +1116,9 @@ a.person-action-btn { text-decoration:none; }
 .radar-undo-text { font-size: 0.72rem; color: var(--text-secondary); }
 .radar-undo-btn { font-family: Outfit, sans-serif; font-size: 0.68rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: var(--radius-pill); border: 1px solid rgba(139,127,255,0.3); background: var(--accent-soft); color: var(--accent); cursor: pointer; }
 .radar-undo-btn:active { transform: scale(0.95); }
+
+
+
+
+
 
