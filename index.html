@@ -654,17 +654,12 @@
   </div>
 
   
-    <!-- SETTINGS (fixed above bottom-nav) -->
-    <div class="profile-settings-bar" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem">
-        <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0">
-          <div id="anon-toggle" onclick="toggleAnon()" style="width:42px;height:24px;background:var(--border);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0">
-            <div id="anon-knob" style="width:18px;height:18px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>
-          </div>
-          <div style="font-size:0.72rem;color:var(--text-secondary)">Anonym tilstand</div>
-        </div>
-        <button onclick="handleLogout()" style="background:none;border:1px solid rgba(232,93,138,0.2);border-radius:8px;padding:0.3rem 0.75rem;font-size:0.7rem;font-family:inherit;font-weight:600;color:var(--accent2);cursor:pointer">Log ud</button>
-      </div>
+    <!-- SETTINGS TRIGGER (fixed above bottom-nav) -->
+    <div class="profile-settings-trigger" style="display:none">
+      <button onclick="openSettingsSheet()" style="display:flex;align-items:center;gap:0.4rem;background:none;border:1px solid var(--glass-border-subtle);border-radius:10px;padding:0.4rem 0.85rem;font-size:0.72rem;font-family:inherit;font-weight:600;color:var(--text-secondary);cursor:pointer">
+        <svg class="ico" style="width:0.85rem;height:0.85rem" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Indstillinger
+      </button>
     </div>
 
 <div class="bottom-nav">
@@ -910,6 +905,42 @@
       <button class="btn btn-accent" id="invite-send-btn" onclick="sendBubbleInvites()" style="flex:1">Send invitationer</button>
     </div>
   </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SHEET: SETTINGS
+════════════════════════════════════════ -->
+<div class="settings-sheet-overlay" id="settings-overlay" onclick="closeSettingsSheet()"></div>
+<div class="settings-sheet" id="settings-sheet">
+  <div class="person-sheet-handle" onclick="closeSettingsSheet()"></div>
+  <div style="font-size:1rem;font-weight:800;margin-bottom:1rem;letter-spacing:-0.02em">Indstillinger</div>
+
+  <!-- Anonym tilstand -->
+  <div class="settings-row">
+    <div style="flex:1">
+      <div style="font-size:0.85rem;font-weight:600">Anonym tilstand</div>
+      <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:0.1rem">Skjul dit navn og billede på radaren</div>
+    </div>
+    <div id="anon-toggle" onclick="toggleAnon()" style="width:46px;height:26px;background:var(--border);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0">
+      <div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>
+    </div>
+  </div>
+
+  <!-- Placeholder: Sprog -->
+  <!--
+  <div class="settings-row">
+    <div style="flex:1">
+      <div style="font-size:0.85rem;font-weight:600">Sprog</div>
+      <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:0.1rem">Vælg dit foretrukne sprog</div>
+    </div>
+    <div style="font-size:0.78rem;color:var(--text-secondary)">Dansk ›</div>
+  </div>
+  -->
+
+  <!-- Log ud -->
+  <button onclick="handleLogout()" style="width:100%;margin-top:1rem;padding:0.7rem;background:none;border:1px solid rgba(232,93,138,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent2);cursor:pointer;transition:background 0.2s" onmouseenter="this.style.background='rgba(232,93,138,0.06)'" onmouseleave="this.style.background='none'">Log ud</button>
+
+  <div style="text-align:center;margin-top:1rem;font-size:0.62rem;color:var(--muted)">Bubble v1.0</div>
 </div>
 
 </body>

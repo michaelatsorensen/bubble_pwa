@@ -87,9 +87,9 @@ function goTo(screenId) {
   if (!target) { console.error('[nav] screen not found:', screenId); return; }
   target.classList.add('active');
 
-  // Show/hide profile settings bar
-  var settingsBar = document.querySelector('.profile-settings-bar');
-  if (settingsBar) settingsBar.style.display = (screenId === 'screen-profile') ? 'block' : 'none';
+  // Show/hide profile settings trigger
+  var settingsTrigger = document.querySelector('.profile-settings-trigger');
+  if (settingsTrigger) settingsTrigger.style.display = (screenId === 'screen-profile') ? 'flex' : 'none';
   window.scrollTo(0,0);
 
   // Update bottom nav active state
@@ -1781,6 +1781,21 @@ function removeChip(arrayName, index, containerId, inputId) {
 //  MODAL HELPERS
 // ══════════════════════════════════════════════════════════
 function openModal(id) { document.getElementById(id).classList.add('open'); }
+
+function openSettingsSheet() {
+  var overlay = document.getElementById('settings-overlay');
+  var sheet = document.getElementById('settings-sheet');
+  if (overlay) overlay.classList.add('open');
+  if (sheet) sheet.classList.add('open');
+}
+
+function closeSettingsSheet() {
+  var overlay = document.getElementById('settings-overlay');
+  var sheet = document.getElementById('settings-sheet');
+  if (overlay) overlay.classList.remove('open');
+  if (sheet) sheet.classList.remove('open');
+}
+
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 // Close modal on backdrop click
 document.querySelectorAll('.modal-overlay').forEach(el => {
