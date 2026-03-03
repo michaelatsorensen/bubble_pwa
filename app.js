@@ -596,13 +596,16 @@ async function confirmRemoveSaved() {
 // proposeMeeting / sendMeetingProposal removed — feature shelved
 
 
-// PROXIMITY MAP
+// PROXIMITY MAP / RADAR
 var proxVisible = true;
 var proxRange = 5;
 var proxAllProfiles = [];
 var proxColors = ['linear-gradient(135deg,#8B7FFF,#A89FFF)','linear-gradient(135deg,#E85D8A,#FF8C69)','linear-gradient(135deg,#2ECFCF,#8B7FFF)','linear-gradient(135deg,#FF8C69,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)'];
-var proxRangeLabels = ['20m','50m','200m','500m','1km'];
-var proxThresholds = [0.6, 0.35, 0.15, 0.05, 0];
+// Radar (map): relevance labels + thresholds — "who matches me?"
+var proxRangeLabels = ['Nær match','Gode matches','Alle matches','Udvidet','Alle'];
+var proxThresholds  = [0.6, 0.35, 0.15, 0.05, 0];
+// List: proximity labels — "who is nearby?" (GPS-ready, simulated for now)
+var listRangeLabels = ['50m','200m','500m','2km','10km'];
 
 async function loadProximityMap() {
   try {
@@ -634,29 +637,62 @@ async function loadProximityMap() {
   } catch (e) { console.error('loadProximityMap:', e); }
 }
 
+// ── RADAR MAP VIEW ──
+// Shows only visible (non-anon) profiles, filtered by relevance threshold
 function renderProximityDots() {
   var map = document.getElementById('proximity-map');
   var av = document.getElementById('prox-avatars');
   var canvas = document.getElementById('prox-canvas');
   var emptyEl = document.getElementById('prox-empty');
   if (!map || !av || !canvas) return;
-  var maxN = [4,8,12,20,50][proxRange-1] || 12;
-  var fil = proxAllProfiles.slice(0, maxN);
+
+  var threshold = proxThresholds[proxRange-1] || 0;
+  // Radar = only visible profiles (not anonymous)
+  var fil = proxAllProfiles.filter(function(p) { return !p.is_anon && p.relevance >= threshold; });
+
   if (fil.length === 0) { av.innerHTML = ''; drawProxRings(canvas); if (emptyEl) emptyEl.style.display = 'block'; return; }
   if (emptyEl) emptyEl.style.display = 'none';
   drawProxRings(canvas);
+
   var ce = document.getElementById('prox-center');
-  if (ce && currentProfile && currentProfile.name) { ce.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); }
-  var w = map.offsetWidth || 300, h = w, cx = w/2, cy = h/2, out = '';
-  for (var i=0; i<fil.length; i++) {
-    var p = fil[i], isA = p.is_anon;
-    var ini = isA ? '?' : (p.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
-    var col = isA ? 'rgba(255,255,255,0.08)' : proxColors[i % proxColors.length];
-    var bd = isA ? 'border-color:rgba(255,255,255,0.06);' : '';
-    var d = 0.2 + (1-p.relevance)*0.35, ang = (i*2.399)+0.7;
-    var x = cx + Math.cos(ang)*d*(cx-20)-16, y = cy + Math.sin(ang)*d*(cy-20)-16;
-    var sz = p.relevance > 0.3 ? 34 : 28, op = isA ? 0.5 : (0.6+p.relevance*0.4);
-    out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+x.toFixed(1)+'px;top:'+y.toFixed(1)+'px;background:'+col+';opacity:'+op.toFixed(2)+';font-size:'+(sz<32?'0.48':'0.52')+'rem;'+bd+'" onclick="openRadarPerson(\''+p.id+'\')" data-id="'+p.id+'">'+escHtml(ini)+'</div>';
+  if (ce && currentProfile && currentProfile.name) {
+    ce.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+  }
+
+  var w = map.offsetWidth || 300, h = map.offsetHeight || w, cx = w/2, cy = h/2;
+  var maxR = Math.min(cx, cy) - 24;
+  var out = '';
+
+  // Collision avoidance
+  var placed = [];
+  function findSafe(ix, iy, sz) {
+    var hs = sz/2, tx = ix, ty = iy;
+    for (var a = 0; a < 12; a++) {
+      var hit = false;
+      for (var j = 0; j < placed.length; j++) {
+        var dx = (tx+hs)-(placed[j].x+placed[j].s/2), dy = (ty+hs)-(placed[j].y+placed[j].s/2);
+        if (Math.sqrt(dx*dx+dy*dy) < (hs+placed[j].s/2)+3) { hit = true; break; }
+      }
+      if (!hit) return {x:tx, y:ty};
+      var na = Math.atan2(ty+hs-cy, tx+hs-cx) + a*0.5;
+      tx = ix + Math.cos(na)*(8+a*5); ty = iy + Math.sin(na)*(8+a*5);
+    }
+    return {x:tx, y:ty};
+  }
+
+  for (var i = 0; i < fil.length; i++) {
+    var p = fil[i];
+    var ini = (p.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
+    var col = proxColors[i % proxColors.length];
+    var dist = (1 - p.relevance) * 0.7 + 0.15;
+    var r = dist * maxR;
+    var ang = (i * 2.399) + (Math.floor(p.relevance * 3) * 0.8);
+    var ix = cx + Math.cos(ang)*r - 17, iy = cy + Math.sin(ang)*r - 17;
+    var sz = p.relevance > 0.4 ? 36 : p.relevance > 0.15 ? 32 : 28;
+    var pos = findSafe(ix, iy, sz);
+    placed.push({x:pos.x, y:pos.y, s:sz});
+    var op = (0.55 + p.relevance * 0.45).toFixed(2);
+    out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+pos.x.toFixed(1)+'px;top:'+pos.y.toFixed(1)+'px;background:'+col+';opacity:'+op+';font-size:'+(sz<32?'0.48':'0.52')+'rem" onclick="openRadarPerson(\''+p.id+'\')" data-id="'+p.id+'">'+escHtml(ini)+'</div>';
   }
   av.innerHTML = out;
 }
@@ -677,8 +713,18 @@ function drawProxRings(canvas) {
 function updateProximityRange(val) {
   proxRange = parseInt(val);
   var el = document.getElementById('prox-range-label');
-  if (el) el.textContent = proxRangeLabels[proxRange-1] || '';
-  renderProximityDots();
+  if (radarCurrentView === 'map') {
+    var threshold = proxThresholds[proxRange-1] || 0;
+    var count = proxAllProfiles.filter(function(p) { return !p.is_anon && p.relevance >= threshold; }).length;
+    if (el) el.textContent = (proxRangeLabels[proxRange-1]||'') + ' \u00b7 ' + count;
+    renderProximityDots();
+  } else {
+    // List: show all profiles at this "distance"
+    var maxN = [5,10,20,35,50][proxRange-1] || 50;
+    var count2 = Math.min(proxAllProfiles.length, maxN);
+    if (el) el.textContent = (listRangeLabels[proxRange-1]||'') + ' \u00b7 ' + count2;
+    renderRadarList();
+  }
 }
 
 function toggleProximityVisibility() {
@@ -693,13 +739,11 @@ function toggleProximityVisibility() {
 }
 
 function openRadarSheet() {
-  console.log('openRadarSheet called');
   var overlay = document.getElementById('radar-overlay');
   var sheet = document.getElementById('radar-sheet');
-  console.log('overlay:', overlay, 'sheet:', sheet);
   if (overlay) overlay.classList.add('open');
   if (sheet) sheet.classList.add('open');
-  setTimeout(function(){ renderProximityDots(); }, 120);
+  setTimeout(function(){ if (radarCurrentView === 'map') renderProximityDots(); else renderRadarList(); }, 120);
 }
 
 function closeRadarSheet() {
@@ -719,29 +763,46 @@ function radarSwitchView(view) {
   document.getElementById('radar-view-map').style.display = view === 'map' ? 'block' : 'none';
   document.getElementById('radar-view-list').style.display = view === 'list' ? 'block' : 'none';
   document.getElementById('radar-map-controls').style.display = 'flex';
-  if (view === 'map') renderProximityDots();
-  if (view === 'list') renderRadarList();
+  // Update range label for the new view
+  updateProximityRange(proxRange);
 }
+
+// ══════════════════════════════════════════════════════════
+//  LIST VIEW — "Who is nearby?" (all profiles, proximity)
+// ══════════════════════════════════════════════════════════
+var radarDismissed = [];
 
 function renderRadarList() {
   var el = document.getElementById('radar-list-content');
   var emptyEl = document.getElementById('prox-empty');
   if (!el) return;
-  var maxN = [4,8,12,20,50][proxRange-1] || 50;
-  var fil = proxAllProfiles.slice(0, maxN);
+
+  // List shows ALL profiles (incl. anonymous) — simulated proximity via maxN
+  var maxN = [5,10,20,35,50][proxRange-1] || 50;
+  var fil = proxAllProfiles.filter(function(p) { return radarDismissed.indexOf(p.id) < 0; }).slice(0, maxN);
+
   if (fil.length === 0) {
-    el.innerHTML = '';
-    if (emptyEl) emptyEl.style.display = 'block';
+    el.innerHTML = '<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:var(--muted)">Ingen profiler i n\u00e6rheden' +
+      (radarDismissed.length > 0 ? '<br><button class="btn-sm btn-ghost" onclick="radarResetDismissed()" style="margin-top:0.5rem;font-size:0.7rem">Vis alle igen</button>' : '') + '</div>';
+    if (emptyEl) emptyEl.style.display = 'none';
     return;
   }
   if (emptyEl) emptyEl.style.display = 'none';
   var myKw = (currentProfile && currentProfile.keywords ? currentProfile.keywords : []).map(function(k){ return k.toLowerCase(); });
   var colors = proxColors;
-  el.innerHTML = fil.map(function(p, i) {
+
+  var hint = '';
+  if (!window._radarSwipeHinted && fil.length > 0) {
+    hint = '<div class="radar-swipe-hint" id="radar-swipe-hint"><span class="rsh-left">\u2190 Skip</span><span class="rsh-center">Tryk for profil</span><span class="rsh-right">Gem \u2192</span></div>';
+    window._radarSwipeHinted = true;
+  }
+
+  el.innerHTML = hint + fil.map(function(p, i) {
     var isA = p.is_anon;
     var name = isA ? 'Anonym bruger' : (p.name || '?');
     var ini = isA ? '?' : name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     var col = isA ? 'rgba(255,255,255,0.08)' : colors[i % colors.length];
+    var bd = isA ? 'border:1px solid rgba(255,255,255,0.06);' : '';
     var theirKw = (p.keywords || []).map(function(k){ return k.toLowerCase(); });
     var overlap = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; });
     var matchPct = Math.round(p.relevance * 60 + 30 + (p.title ? 10 : 0));
@@ -750,19 +811,93 @@ function renderRadarList() {
       var isOv = overlap.indexOf(k.toLowerCase()) >= 0;
       return '<span class="tag' + (isOv ? ' mint' : '') + '" style="font-size:0.58rem;padding:0.15rem 0.4rem">' + escHtml(k) + '</span>';
     }).join('');
-    var bubbleInfo = p.sharedBubbles > 0 ? '<span class="fs-065 text-muted">' + p.sharedBubbles + ' fælles boble' + (p.sharedBubbles > 1 ? 'r' : '') + '</span>' : '';
-    return '<div class="radar-list-card" onclick="openRadarPerson(\'' + p.id + '\')" style="--card-delay:' + (i * 40) + 'ms">' +
-      '<div class="radar-list-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>' +
+    var bubbleInfo = p.sharedBubbles > 0 ? '<span class="fs-065 text-muted">' + p.sharedBubbles + ' f\u00e6lles boble' + (p.sharedBubbles > 1 ? 'r' : '') + '</span>' : '';
+    return '<div class="radar-list-card radar-swipeable" data-uid="' + p.id + '" data-name="' + escHtml(name) + '" style="--card-delay:' + (i * 40) + 'ms">' +
+      '<div class="radar-swipe-ind left">SKIP</div><div class="radar-swipe-ind right">GEM \u2713</div>' +
+      '<div class="radar-list-avatar" style="background:' + col + ';' + bd + '">' + escHtml(ini) + '</div>' +
       '<div style="flex:1;min-width:0">' +
         '<div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(name) + '</div>' +
-        '<div class="fs-072 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + '</div>' +
+        (isA ? '' : '<div class="fs-072 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + '</div>') +
         (tags ? '<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.25rem">' + tags + '</div>' : '') +
         (bubbleInfo ? '<div style="margin-top:0.2rem">' + bubbleInfo + '</div>' : '') +
       '</div>' +
-      '<div class="radar-list-match">' + matchPct + '%</div>' +
+      (isA ? '' : '<div class="radar-list-match">' + matchPct + '%</div>') +
     '</div>';
   }).join('');
+
+  el.querySelectorAll('.radar-swipeable').forEach(function(card) { radarAttachSwipe(card); });
 }
+
+function radarAttachSwipe(card) {
+  var startX=0, currentX=0, swiping=false, tapped=true, threshold=75;
+  card.addEventListener('touchstart', function(e) { startX=e.touches[0].clientX; currentX=0; swiping=true; tapped=true; card.style.transition='none'; }, {passive:true});
+  card.addEventListener('touchmove', function(e) {
+    if(!swiping) return; currentX=e.touches[0].clientX-startX; if(Math.abs(currentX)>8) tapped=false;
+    card.style.transform='translateX('+currentX+'px)';
+    var li=card.querySelector('.radar-swipe-ind.left'), ri=card.querySelector('.radar-swipe-ind.right');
+    if(currentX<-20){li.style.opacity=Math.min(Math.abs(currentX)/threshold,1);ri.style.opacity=0;card.style.borderColor='rgba(232,93,138,'+Math.min(Math.abs(currentX)/threshold*0.3,0.3)+')';}
+    else if(currentX>20){ri.style.opacity=Math.min(currentX/threshold,1);li.style.opacity=0;card.style.borderColor='rgba(46,207,207,'+Math.min(currentX/threshold*0.3,0.3)+')';}
+    else{li.style.opacity=0;ri.style.opacity=0;card.style.borderColor='';}
+  }, {passive:true});
+  card.addEventListener('touchend', function() {
+    if(!swiping) return; swiping=false; card.style.transition='';
+    if(tapped&&Math.abs(currentX)<10){card.style.transform='';card.style.borderColor='';openRadarPerson(card.dataset.uid);return;}
+    if(currentX<-threshold) radarSwipeDismiss(card,'left');
+    else if(currentX>threshold) radarSwipeDismiss(card,'right');
+    else{card.style.transform='';card.style.borderColor='';var l=card.querySelector('.radar-swipe-ind.left'),r=card.querySelector('.radar-swipe-ind.right');if(l)l.style.opacity=0;if(r)r.style.opacity=0;}
+  });
+  // Mouse for desktop
+  var md=false,msx=0,mt=true;
+  card.addEventListener('mousedown',function(e){msx=e.clientX;md=true;mt=true;currentX=0;card.style.transition='none';e.preventDefault();});
+  document.addEventListener('mousemove',function(e){if(!md)return;currentX=e.clientX-msx;if(Math.abs(currentX)>8)mt=false;card.style.transform='translateX('+currentX+'px)';var l=card.querySelector('.radar-swipe-ind.left'),r=card.querySelector('.radar-swipe-ind.right');if(currentX<-20){l.style.opacity=Math.min(Math.abs(currentX)/threshold,1);r.style.opacity=0;}else if(currentX>20){r.style.opacity=Math.min(currentX/threshold,1);l.style.opacity=0;}});
+  document.addEventListener('mouseup',function(){if(!md)return;md=false;card.style.transition='';if(mt&&Math.abs(currentX)<10){card.style.transform='';openRadarPerson(card.dataset.uid);return;}if(currentX<-threshold)radarSwipeDismiss(card,'left');else if(currentX>threshold)radarSwipeDismiss(card,'right');else{card.style.transform='';card.style.borderColor='';var l=card.querySelector('.radar-swipe-ind.left'),r=card.querySelector('.radar-swipe-ind.right');if(l)l.style.opacity=0;if(r)r.style.opacity=0;}currentX=0;});
+}
+
+var radarLastSwipe = null;
+function radarSwipeDismiss(card, direction) {
+  var uid=card.dataset.uid, name=card.dataset.name, dist=direction==='left'?-420:420;
+  card.style.transition='transform 0.35s ease-out, opacity 0.35s ease-out';
+  card.style.transform='translateX('+dist+'px)'; card.style.opacity='0'; card.style.pointerEvents='none';
+  radarDismissed.push(uid);
+  radarLastSwipe={uid:uid,card:card,direction:direction,name:name};
+  if(direction==='right'){radarSaveContact(uid);showToast('Gemt: '+name+' \u2713');}
+  else{showToast(name+' skippet');}
+  var hint=document.getElementById('radar-swipe-hint');
+  if(hint){hint.style.opacity='0';setTimeout(function(){hint.style.display='none';},300);}
+  radarShowUndo(name, direction==='right'?'gemt':'skippet');
+  setTimeout(function(){
+    card.style.display='none';
+    var all=el=document.querySelectorAll('.radar-swipeable'), vis=0;
+    all.forEach(function(c){if(c.style.display!=='none')vis++;});
+    if(vis===0){var el2=document.getElementById('radar-list-content');
+      if(el2) el2.insertAdjacentHTML('beforeend','<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:var(--muted)">Ingen flere i n\u00e6rheden<br><button class="btn-sm btn-ghost" onclick="radarResetDismissed()" style="margin-top:0.5rem;font-size:0.7rem">Vis alle igen</button></div>');}
+  }, 360);
+}
+async function radarSaveContact(uid) {
+  try{var r=await sb.from('saved_contacts').select('id').eq('user_id',currentUser.id).eq('contact_id',uid).maybeSingle();
+    if(!r.data){await sb.from('saved_contacts').insert({user_id:currentUser.id,contact_id:uid});loadSavedContacts();}
+  }catch(e){console.error('radarSaveContact:',e);}
+}
+function radarShowUndo(name, action) {
+  var bar=document.getElementById('radar-undo-bar');
+  if(!bar){var listEl=document.getElementById('radar-view-list');if(!listEl)return;
+    listEl.insertAdjacentHTML('afterend','<div class="radar-undo-bar" id="radar-undo-bar"><span class="radar-undo-text" id="radar-undo-text"></span><button class="radar-undo-btn" onclick="radarUndo()">Fortryd</button></div>');
+    bar=document.getElementById('radar-undo-bar');}
+  document.getElementById('radar-undo-text').textContent=name+' '+action;
+  bar.classList.add('show');clearTimeout(window._radarUndoTimer);
+  window._radarUndoTimer=setTimeout(function(){bar.classList.remove('show');},4000);
+}
+function radarUndo() {
+  if(!radarLastSwipe) return; var ls=radarLastSwipe;
+  var idx=radarDismissed.indexOf(ls.uid);if(idx>=0)radarDismissed.splice(idx,1);
+  if(ls.direction==='right'){sb.from('saved_contacts').delete().eq('user_id',currentUser.id).eq('contact_id',ls.uid).then(function(){loadSavedContacts();});}
+  ls.card.style.display='';ls.card.style.transition='transform 0.3s ease, opacity 0.3s ease';
+  ls.card.style.transform='';ls.card.style.opacity='';ls.card.style.pointerEvents='';ls.card.style.borderColor='';
+  var li=ls.card.querySelector('.radar-swipe-ind.left'),ri=ls.card.querySelector('.radar-swipe-ind.right');
+  if(li)li.style.opacity=0;if(ri)ri.style.opacity=0;
+  radarLastSwipe=null;document.getElementById('radar-undo-bar').classList.remove('show');showToast('Fortrudt \u21a9');
+}
+function radarResetDismissed(){radarDismissed=[];window._radarSwipeHinted=false;renderRadarList();}
 
 // ══════════════════════════════════════════════════════════
 //  RADAR: TOP-DROP PERSON SHEET
@@ -777,12 +912,9 @@ async function openRadarPerson(userId) {
     var isA = p.is_anon;
     var name = isA ? 'Anonym bruger' : (p.name || '?');
     var ini = isA ? '?' : name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-
     document.getElementById('rp-avatar').textContent = ini;
     document.getElementById('rp-name').textContent = name;
     document.getElementById('rp-sub').textContent = isA ? '' : (p.title || '');
-
-    // Match
     var myKw = (currentProfile?.keywords || []).map(function(k){ return k.toLowerCase(); });
     var theirKw = (p.keywords || []).map(function(k){ return k.toLowerCase(); });
     var overlap = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; });
@@ -790,42 +922,24 @@ async function openRadarPerson(userId) {
     var score = theirKw.length ? Math.round(overlapRatio * 60 + 30 + (p.bio?10:0) + (p.title?10:0) + (p.linkedin?5:0)) : Math.round(30 + (p.title?10:0));
     score = Math.min(score, 99);
     document.getElementById('rp-match').textContent = score + '%';
-
-    // Bio
     document.getElementById('rp-bio').textContent = p.bio || '';
     document.getElementById('rp-bio').style.display = p.bio ? 'block' : 'none';
-
-    // Tags
     document.getElementById('rp-tags').innerHTML = (p.keywords||[]).map(function(k){
       var isOv = overlap.indexOf(k.toLowerCase()) >= 0;
       return '<span class="tag' + (isOv ? ' mint' : '') + '">' + escHtml(k) + '</span>';
     }).join('');
-
-    // Overlap section
     if (overlap.length > 0) {
-      document.getElementById('rp-overlap').innerHTML = '<div style="font-size:0.68rem;color:var(--muted);margin-bottom:0.3rem;font-weight:600">Fælles interesser</div>' +
+      document.getElementById('rp-overlap').innerHTML = '<div style="font-size:0.68rem;color:var(--muted);margin-bottom:0.3rem;font-weight:600">F\u00e6lles interesser</div>' +
         overlap.map(function(k){ return '<span class="tag mint">' + icon('check') + ' ' + escHtml(k) + '</span>'; }).join('');
       document.getElementById('rp-overlap').style.display = 'block';
-    } else {
-      document.getElementById('rp-overlap').style.display = 'none';
-    }
-
-    // LinkedIn
+    } else { document.getElementById('rp-overlap').style.display = 'none'; }
     var liBtn = document.getElementById('rp-linkedin-btn');
-    if (p.linkedin && !isA) {
-      liBtn.style.display = 'inline-flex';
-      liBtn.href = p.linkedin.startsWith('http') ? p.linkedin : 'https://' + p.linkedin;
-    } else {
-      liBtn.style.display = 'none';
-    }
-
-    // Save btn state
+    if (p.linkedin && !isA) { liBtn.style.display = 'inline-flex'; liBtn.href = p.linkedin.startsWith('http') ? p.linkedin : 'https://' + p.linkedin; }
+    else { liBtn.style.display = 'none'; }
     var saveBtn = document.getElementById('rp-save-btn');
     var { data: savedCheck } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
-    saveBtn.textContent = savedCheck ? 'Gemt ✓' : 'Gem';
+    saveBtn.textContent = savedCheck ? 'Gemt \u2713' : 'Gem';
     saveBtn.dataset.saved = savedCheck ? '1' : '0';
-
-    // Show
     document.getElementById('radar-person-overlay').classList.add('open');
     setTimeout(function(){ document.getElementById('radar-person-sheet').classList.add('open'); }, 10);
   } catch(e) { console.error("openRadarPerson:", e); showToast(e.message || "Ukendt fejl"); }
@@ -835,35 +949,23 @@ function closeRadarPerson() {
   document.getElementById('radar-person-sheet').classList.remove('open');
   setTimeout(function(){ document.getElementById('radar-person-overlay').classList.remove('open'); }, 320);
 }
-
-function rpMessage() {
-  closeRadarPerson();
-  closeRadarSheet();
-  setTimeout(function(){ openChat(rpCurrentUserId, 'screen-home'); }, 400);
-}
-
+function rpMessage() { closeRadarPerson(); closeRadarSheet(); setTimeout(function(){ openChat(rpCurrentUserId, 'screen-home'); }, 400); }
 async function rpSaveContact() {
   try {
     if (!rpCurrentUserId) return;
     var btn = document.getElementById('rp-save-btn');
-    if (btn.dataset.saved === '1') {
-      showToast('Allerede gemt');
-      return;
-    }
+    if (btn.dataset.saved === '1') { showToast('Allerede gemt'); return; }
     await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: rpCurrentUserId });
-    btn.textContent = 'Gemt ✓';
-    btn.dataset.saved = '1';
-    showToast('Kontakt gemt!');
-    loadSavedContacts();
+    btn.textContent = 'Gemt \u2713'; btn.dataset.saved = '1';
+    showToast('Kontakt gemt!'); loadSavedContacts();
   } catch(e) { console.error("rpSaveContact:", e); showToast(e.message || "Ukendt fejl"); }
 }
-
 function rpFullProfile() {
-  var uid = rpCurrentUserId;
-  closeRadarPerson();
-  closeRadarSheet();
+  var uid = rpCurrentUserId; closeRadarPerson(); closeRadarSheet();
   setTimeout(function(){ openPerson(uid, 'screen-home'); }, 400);
 }
+
+
 
 // ══════════════════════════════════════════════════════════
 //  MESSAGES
