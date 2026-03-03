@@ -8,13 +8,9 @@
 <meta name="apple-mobile-web-app-title" content="Bubble">
 <meta name="theme-color" content="#06060F">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=2">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=2">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=2">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=2">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=2">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=2">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=2">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="167x167" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css?v=1772450666">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
@@ -208,28 +204,7 @@
         <strong style="color:var(--text);font-weight:700">Din radar er aktiv</strong>
         <span id="radar-count-home"> · Henter...</span>
       </div>
-      <button class="btn-sm btn-ghost" onclick="goTo('screen-discover')" style="font-size:0.72rem;white-space:nowrap">Opdag →</button>
-    </div>
-
-    <!-- Proximity Map -->
-    <div style="margin-top:1rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
-        <div class="section-title" style="font-size:0.82rem">I nærheden</div>
-        <button class="btn-sm btn-ghost" id="prox-toggle" onclick="toggleProximityVisibility()" style="font-size:0.65rem;padding:0.25rem 0.6rem;gap:0.3rem;display:flex;align-items:center">
-          <span id="prox-toggle-dot" class="live-dot" style="width:6px;height:6px;margin:0"></span>
-          <span id="prox-toggle-label">Synlig</span>
-        </button>
-      </div>
-      <div class="proximity-map" id="proximity-map">
-        <canvas id="prox-canvas"></canvas>
-        <div id="prox-avatars"></div>
-        <div class="prox-center" id="prox-center">DU</div>
-      </div>
-      <div class="prox-range-wrap" id="prox-range-wrap">
-        <input type="range" id="prox-range" min="1" max="5" value="3" oninput="updateProximityRange(this.value)">
-        <span class="prox-range-label" id="prox-range-label">Alle bobler</span>
-      </div>
-      <div id="prox-empty" style="display:none;text-align:center;padding:1rem 0;font-size:0.75rem;color:var(--muted)">Ingen profiler fundet i nærheden</div>
+      <button class="btn-sm btn-ghost" onclick="openRadarSheet()" style="font-size:0.72rem;white-space:nowrap">Radar →</button>
     </div>
 
   </div>
@@ -308,7 +283,7 @@
 <!-- ════════════════════════════════════════
      SCREEN: BUBBLE DETAIL
 ════════════════════════════════════════ -->
-<!-- screen-bubble-detail removed — integrated into screen-bubble-chat -->
+<div class="screen" id="screen-bubble-detail" style="display:none"></div>
 
 <!-- ════════════════════════════════════════
      SCREEN: PERSON PROFILE
@@ -419,7 +394,7 @@
       <div class="chat-composer-row">
         <input type="file" id="bc-file-input" style="display:none" onchange="bcHandleFile(this)">
         <button class="chat-attach-btn" onclick="document.getElementById('bc-file-input').click()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1l-9.2 9.2a5.5 5.5 0 01-7.8-7.8l9.2-9.2a3.7 3.7 0 015.2 5.2l-9.2 9.2a1.8 1.8 0 01-2.6-2.6l8.5-8.4"/></svg></button>
-        <input class="chat-composer-input" id="bc-input" placeholder="Skriv en besked...">
+        <input class="chat-composer-input" id="bc-input" placeholder="Skriv en besked..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();bcSendMessage()}">
         <button class="chat-send-btn" id="bc-send-btn" onclick="bcSendMessage()">→</button>
       </div>
     </div>
@@ -470,7 +445,6 @@
   <div class="person-sheet-bio" id="ps-bio"></div>
   <div class="person-sheet-actions">
     <button class="person-sheet-btn primary" onclick="psMessage()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg> Besked</button>
-    <button class="person-sheet-btn secondary" id="ps-save-btn" onclick="psSaveContact()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4a1.5 1.5 0 011.5-1.5h9A1.5 1.5 0 0118 4v17l-6-3.5L6 21V4z"/></svg> Gem</button>
     <button class="person-sheet-btn secondary" onclick="psProfile()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg> Profil</button>
     <a class="person-sheet-btn secondary" id="ps-linkedin-btn" href="#" target="_blank" rel="noopener" style="display:none;text-decoration:none"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> LinkedIn</a>
   </div>
@@ -486,6 +460,27 @@
       <button class="bubble-up-no" onclick="psCancelBubbleUp()">Annuller</button>
     </div>
   </div>
+</div>
+
+<div class="person-sheet-overlay" id="radar-overlay" onclick="closeRadarSheet()"></div>
+<div class="person-sheet" id="radar-sheet" style="max-height:85vh;padding:1rem 1.2rem 2rem">
+  <div class="person-sheet-handle" onclick="closeRadarSheet()"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:0 0 0.6rem">
+    <div style="display:flex;align-items:center;gap:0.5rem;flex:1">
+      <input type="range" id="prox-range" min="1" max="5" value="3" oninput="updateProximityRange(this.value)" style="flex:1;max-width:130px">
+      <span id="prox-range-label" style="font-size:0.65rem;color:var(--muted);min-width:3rem">Alle bobler</span>
+    </div>
+    <button class="btn-sm btn-ghost" id="prox-toggle" onclick="toggleProximityVisibility()" style="font-size:0.65rem;padding:0.25rem 0.6rem;gap:0.3rem;display:flex;align-items:center">
+      <span id="prox-toggle-dot" class="live-dot" style="width:6px;height:6px;margin:0"></span>
+      <span id="prox-toggle-label">Synlig</span>
+    </button>
+  </div>
+  <div class="proximity-map" id="proximity-map">
+    <canvas id="prox-canvas"></canvas>
+    <div id="prox-avatars"></div>
+    <div class="prox-center" id="prox-center">DU</div>
+  </div>
+  <div id="prox-empty" style="display:none;text-align:center;padding:1.5rem 0;font-size:0.78rem;color:var(--muted)">Ingen profiler fundet</div>
 </div>
 
 <!-- ════════════════════════════════════════
@@ -512,7 +507,7 @@
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-chat">
   <div class="topbar">
-    <button class="back-btn" id="dm-back-btn" onclick="goTo('screen-messages')">← Tilbage</button>
+    <button class="back-btn" onclick="goTo('screen-messages')">← Tilbage</button>
     <div style="text-align:right">
       <div style="font-size:0.88rem;font-weight:700;letter-spacing:-0.01em" id="chat-name">...</div>
       <div style="font-size:0.68rem;color:var(--text-secondary)" id="chat-role">...</div>
@@ -522,9 +517,7 @@
     <div class="chat-scroll" id="chat-messages"></div>
     <div class="chat-composer">
       <div class="chat-composer-row">
-        <input type="file" id="dm-file-input" style="display:none">
-        <button class="chat-attach-btn" onclick="document.getElementById('dm-file-input').click()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1l-9.2 9.2a5.5 5.5 0 01-7.8-7.8l9.2-9.2a3.7 3.7 0 015.2 5.2l-9.2 9.2a1.8 1.8 0 01-2.6-2.6l8.5-8.4"/></svg></button>
-        <input class="chat-composer-input" id="chat-input" placeholder="Skriv en besked...">
+        <input class="chat-composer-input" id="chat-input" placeholder="Skriv en besked..." onkeydown="if(event.key==='Enter')sendMessage()">
         <button class="chat-send-btn" onclick="sendMessage()">→</button>
       </div>
     </div>
@@ -539,48 +532,32 @@
     <div class="topbar-title">Min profil</div>
     <button class="btn-sm btn-ghost" onclick="openEditProfile()">Rediger</button>
   </div>
-
-  <!-- Profile hero (always visible above tabs) -->
-  <div class="profile-hero" style="flex-shrink:0">
-    <div style="width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);margin:0 auto 0.9rem;display:flex;align-items:center;justify-content:center;font-size:1.7rem;font-weight:800;color:white;box-shadow:0 4px 20px rgba(139,127,255,0.35);border:2px solid rgba(255,255,255,0.08)" id="my-avatar">?</div>
-    <div style="font-size:1.3rem;font-weight:800;margin-bottom:0.2rem;letter-spacing:-0.02em" id="my-name">...</div>
-    <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.85rem" id="my-role">...</div>
-    <div id="my-keywords" style="margin-bottom:0.5rem"></div>
-  </div>
-
-  <!-- Tabs -->
-  <div class="bubble-tabs" style="flex-shrink:0">
-    <button class="bubble-tab active" id="prof-tab-saved" onclick="profSwitchTab('saved')">Gemte <span class="bubble-tab-badge" id="saved-count" style="display:none">0</span></button>
-    <button class="bubble-tab" id="prof-tab-bubbles" onclick="profSwitchTab('bubbles')">Bobler</button>
-    <button class="bubble-tab" id="prof-tab-invites" onclick="profSwitchTab('invites')">Invitationer <span class="bubble-tab-badge" id="invite-count" style="display:none">0</span></button>
-  </div>
-
-  <!-- SAVED TAB -->
-  <div id="prof-panel-saved" style="display:flex;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
-    <div id="saved-contacts"></div>
-  </div>
-
-  <!-- BUBBLES TAB -->
-  <div id="prof-panel-bubbles" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
-    <div id="profile-bubbles"><div class="spinner"></div></div>
-    <div class="section-label" style="margin-top:1.25rem">Synlighed</div>
-    <div class="card" style="display:flex;justify-content:space-between;align-items:center;cursor:default">
-      <div>
-        <div style="font-size:0.88rem;font-weight:700">Anonym tilstand</div>
-        <div style="font-size:0.73rem;color:var(--text-secondary);margin-top:0.15rem">Skjul navn og billede</div>
-      </div>
-      <div id="anon-toggle" onclick="toggleAnon()" style="width:46px;height:26px;background:var(--border);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s">
-        <div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>
-      </div>
+  <div class="scroll-area" style="padding:0">
+    <div class="profile-hero">
+      <div style="width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);margin:0 auto 0.9rem;display:flex;align-items:center;justify-content:center;font-size:1.7rem;font-weight:800;color:white;box-shadow:0 4px 20px rgba(139,127,255,0.35);border:2px solid rgba(255,255,255,0.08)" id="my-avatar">?</div>
+      <div style="font-size:1.3rem;font-weight:800;margin-bottom:0.2rem;letter-spacing:-0.02em" id="my-name">...</div>
+      <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.85rem" id="my-role">...</div>
+      <div id="my-keywords" style="margin-bottom:0.5rem"></div>
     </div>
-    <button class="btn-secondary" onclick="handleLogout()" style="margin-top:1.5rem;margin-bottom:2rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)">Log ud</button>
-  </div>
+    <div style="padding:1rem 1.25rem">
+      <div class="section-label">Synlighed</div>
+      <div class="card" style="display:flex;justify-content:space-between;align-items:center;cursor:default">
+        <div>
+          <div style="font-size:0.88rem;font-weight:700">Anonym tilstand</div>
+          <div style="font-size:0.73rem;color:var(--text-secondary);margin-top:0.15rem">Skjul navn og billede</div>
+        </div>
+        <div id="anon-toggle" onclick="toggleAnon()" style="width:46px;height:26px;background:var(--border);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s">
+          <div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>
+        </div>
+      </div>
 
-  <!-- INVITATIONS TAB -->
-  <div id="prof-panel-invites" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
-    <div id="profile-invitations"></div>
+      <div class="section-label" style="margin-top:1.25rem">Mine bobler</div>
+      <div id="profile-bubbles"><div class="spinner"></div></div>
+      <div class="section-label">Gemte kontakter</div>
+      <div id="saved-contacts" style="display:flex;flex-wrap:wrap;gap:0.75rem;padding-bottom:1rem"></div>
+      <button class="btn-secondary" onclick="handleLogout()" style="margin-top:1.5rem;margin-bottom:2rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)">Log ud</button>
+    </div>
   </div>
-
   <div class="bottom-nav">
     <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
     <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
@@ -747,7 +724,22 @@
 <!-- ════════════════════════════════════════
      MODAL: PROPOSE MEETING
 ════════════════════════════════════════ -->
-<!-- modal-meeting removed — feature shelved -->
+<div class="modal-overlay" id="modal-meeting">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Foreslå et møde <svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8.5h1.5a2.5 2.5 0 010 5H17"/><path d="M5 8.5h12v7.5a4 4 0 01-4 4H9a4 4 0 01-4-4V8.5z"/><path d="M8 3v3M11 3v3M14 3v3"/></svg></div>
+    <div class="input-group">
+      <div class="input-label">Besked</div>
+      <textarea class="input" id="meeting-msg" placeholder="Hej! Jeg så du er med i [boble]. Vil du tage en kop kaffe og høre mere om...?" style="min-height:120px"></textarea>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Foreslå tidspunkt (valgfrit)</div>
+      <input class="input" type="datetime-local" id="meeting-time">
+    </div>
+    <button class="btn-primary" onclick="sendMeetingProposal()">Send mødeanmodning</button>
+    <button class="btn-secondary" onclick="closeModal('modal-meeting')">Annuller</button>
+  </div>
+</div>
 
 <!-- ════════════════════════════════════════
      MODAL: EDIT HISTORY
