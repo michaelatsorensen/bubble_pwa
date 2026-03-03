@@ -3167,6 +3167,19 @@ async function loadLiveBubbleStatus() {
 function openLiveCheckin() {
   loadLiveCheckinList();
   openModal('modal-live-checkin');
+  // Reset scanner state
+  var confirmed = document.getElementById('live-scan-confirmed');
+  if (confirmed) confirmed.style.display = 'none';
+  var status = document.getElementById('live-scan-status');
+  if (status) { status.textContent = 'Starter kamera...'; status.className = 'live-scan-status'; }
+  var trigger = document.getElementById('live-scan-trigger');
+  if (trigger) { trigger.style.display = 'flex'; trigger.style.background = ''; }
+  startLiveCamera();
+}
+
+function closeLiveCheckinModal() {
+  stopLiveCamera();
+  closeModal('modal-live-checkin');
 }
 
 async function loadLiveCheckinList() {
@@ -3269,7 +3282,6 @@ async function liveCheckin(bubbleId) {
 async function liveCreateAndCheckin() {
   try {
     const name = document.getElementById('live-new-name').value.trim();
-    const location = document.getElementById('live-new-location').value.trim();
     if (!name) return showToast('Angiv stedets navn');
 
     showToast('Opretter sted...');
@@ -3280,7 +3292,6 @@ async function liveCreateAndCheckin() {
       type: 'live',
       type_label: 'Live',
       visibility: 'public',
-      location,
       created_by: currentUser.id,
       description: 'Live check-in'
     }).select().single();
@@ -3297,9 +3308,8 @@ async function liveCreateAndCheckin() {
 
     // Clear form
     document.getElementById('live-new-name').value = '';
-    document.getElementById('live-new-location').value = '';
 
-    closeModal('modal-live-checkin');
+    closeLiveCheckinModal();
     showToast('📍 ' + name + ' oprettet — du er checked ind!');
     await loadLiveBubbleStatus();
   } catch (e) {
@@ -3365,22 +3375,9 @@ var _liveQrStream = null;
 var _liveQrFrame = null;
 var _liveQrFound = null;
 
-function openLiveScanner() {
-  document.getElementById('live-idle-default').style.display = 'none';
-  document.getElementById('live-scanner-area').style.display = 'block';
-  document.getElementById('live-scan-confirmed').style.display = 'none';
-  _liveQrFound = null;
-  var status = document.getElementById('live-scan-status');
-  if (status) { status.textContent = 'Starter kamera...'; status.className = 'live-scan-status'; }
-  startLiveCamera();
-}
 
-function closeLiveScanner() {
-  stopLiveCamera();
-  document.getElementById('live-scanner-area').style.display = 'none';
-  document.getElementById('live-idle-default').style.display = 'flex';
-  _liveQrFound = null;
-}
+
+
 
 async function startLiveCamera() {
   var video = document.getElementById('live-qr-video');
@@ -3501,10 +3498,7 @@ async function liveScanJoin(code) {
     loadMyBubbles();
     loadLiveBubbleStatus();
     // After 2s, close scanner and show active state
-    setTimeout(function() {
-      document.getElementById('live-scanner-area').style.display = 'none';
-      document.getElementById('live-idle-default').style.display = 'flex';
-    }, 2500);
+    setTimeout(function() { closeLiveCheckinModal(); }, 2500);
   } catch(e) {
     console.error('liveScanJoin:', e);
     var status = document.getElementById('live-scan-status');
