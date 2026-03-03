@@ -88,9 +88,9 @@ function goTo(screenId) {
   const navMap = {
     'screen-home': 0, 'screen-bubbles': 0,
     'screen-discover': 1,
-    'screen-messages': 2, 'screen-chat': 2,
+    'screen-messages': 2, 'screen-chat': 2, 'screen-bubble-chat': 2,
     'screen-profile': 3,
-    'screen-notifications': 0
+    'screen-notifications': -1, 'screen-person': -1
   };
   const activeIdx = navMap[screenId];
   if (activeIdx !== undefined) {
@@ -211,7 +211,8 @@ async function handleSignup() {
     }
 
     await loadCurrentProfile();
-    goTo('screen-home');
+    const needsOnboarding = await maybeShowOnboarding();
+    if (!needsOnboarding) goTo('screen-home');
     showToast('Velkommen til Bubble! 🫧');
   } catch(e) { console.error("handleSignup:", e); showToast(e.message || "Ukendt fejl"); }
 }
@@ -258,9 +259,6 @@ async function loadHome() {
       updateRadarCount(),
       loadProximityMap(),
     ]);
-
-    // Also load bubbles screen data if it exists
-    loadMyBubbles();
   } catch(e) { console.error("loadHome:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -493,7 +491,12 @@ async function openPerson(userId, fromScreen) {
     const myKw = (currentProfile?.keywords || []).map(k => k.toLowerCase());
     const theirKw = (p.keywords || []).map(k => k.toLowerCase());
     const overlap = myKw.filter(k => theirKw.includes(k));
-    const score = theirKw.length ? Math.round((overlap.length / Math.max(myKw.length, theirKw.length, 1)) * 100 + 40 + Math.random()*20) : Math.round(40 + Math.random()*30);
+    // Deterministisk match-score: overlap-ratio + base-bonus baseret på profil-komplethed
+    const overlapRatio = overlap.length / Math.max(myKw.length, theirKw.length, 1);
+    const profileBonus = (p.bio ? 10 : 0) + (p.title ? 10 : 0) + (p.linkedin ? 5 : 0);
+    const score = theirKw.length
+      ? Math.round(overlapRatio * 60 + 30 + profileBonus)
+      : Math.round(30 + profileBonus);
     document.getElementById('person-match-label').textContent = `Match: ${Math.min(score,99)}%`;
 
     document.getElementById('person-tags').innerHTML = (p.keywords||[]).map(k => `<span class="tag">${escHtml(k)}</span>`).join('');
@@ -651,7 +654,7 @@ function renderProximityDots() {
     var d = 0.2 + (1-p.relevance)*0.35, ang = (i*2.399)+0.7;
     var x = cx + Math.cos(ang)*d*(cx-20)-16, y = cy + Math.sin(ang)*d*(cy-20)-16;
     var sz = p.relevance > 0.3 ? 34 : 28, op = isA ? 0.5 : (0.6+p.relevance*0.4);
-    out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+x.toFixed(1)+'px;top:'+y.toFixed(1)+'px;background:'+col+';opacity:'+op.toFixed(2)+';font-size:'+(sz<32?'0.48':'0.52')+'rem;'+bd+'" data-action="openPerson" data-id="'+p.id+'" data-from="screen-home">'+escHtml(ini)+'</div>';
+    out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+x.toFixed(1)+'px;top:'+y.toFixed(1)+'px;background:'+col+';opacity:'+op.toFixed(2)+';font-size:'+(sz<32?'0.48':'0.52')+'rem;'+bd+'" onclick="openRadarPerson(\''+p.id+'\')" data-id="'+p.id+'">'+escHtml(ini)+'</div>';
   }
   av.innerHTML = out;
 }
@@ -700,6 +703,164 @@ function openRadarSheet() {
 function closeRadarSheet() {
   document.getElementById('radar-overlay').classList.remove('open');
   document.getElementById('radar-sheet').classList.remove('open');
+}
+
+// ══════════════════════════════════════════════════════════
+//  RADAR: VIEW TOGGLE (KORT / LISTE)
+// ══════════════════════════════════════════════════════════
+var radarCurrentView = 'map';
+
+function radarSwitchView(view) {
+  radarCurrentView = view;
+  document.getElementById('radar-btn-map').classList.toggle('active', view === 'map');
+  document.getElementById('radar-btn-list').classList.toggle('active', view === 'list');
+  document.getElementById('radar-view-map').style.display = view === 'map' ? 'block' : 'none';
+  document.getElementById('radar-view-list').style.display = view === 'list' ? 'block' : 'none';
+  document.getElementById('radar-map-controls').style.display = view === 'map' ? 'flex' : 'none';
+  if (view === 'map') renderProximityDots();
+  if (view === 'list') renderRadarList();
+}
+
+function renderRadarList() {
+  var el = document.getElementById('radar-list-content');
+  var emptyEl = document.getElementById('prox-empty');
+  if (!el) return;
+  var maxN = [4,8,12,20,50][proxRange-1] || 50;
+  var fil = proxAllProfiles.slice(0, maxN);
+  if (fil.length === 0) {
+    el.innerHTML = '';
+    if (emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+  var myKw = (currentProfile && currentProfile.keywords ? currentProfile.keywords : []).map(function(k){ return k.toLowerCase(); });
+  var colors = proxColors;
+  el.innerHTML = fil.map(function(p, i) {
+    var isA = p.is_anon;
+    var name = isA ? 'Anonym bruger' : (p.name || '?');
+    var ini = isA ? '?' : name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    var col = isA ? 'rgba(255,255,255,0.08)' : colors[i % colors.length];
+    var theirKw = (p.keywords || []).map(function(k){ return k.toLowerCase(); });
+    var overlap = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; });
+    var matchPct = Math.round(p.relevance * 60 + 30 + (p.title ? 10 : 0));
+    matchPct = Math.min(matchPct, 99);
+    var tags = (p.keywords || []).slice(0, 3).map(function(k){
+      var isOv = overlap.indexOf(k.toLowerCase()) >= 0;
+      return '<span class="tag' + (isOv ? ' mint' : '') + '" style="font-size:0.58rem;padding:0.15rem 0.4rem">' + escHtml(k) + '</span>';
+    }).join('');
+    var bubbleInfo = p.sharedBubbles > 0 ? '<span class="fs-065 text-muted">' + p.sharedBubbles + ' fælles boble' + (p.sharedBubbles > 1 ? 'r' : '') + '</span>' : '';
+    return '<div class="radar-list-card" onclick="openRadarPerson(\'' + p.id + '\')" style="--card-delay:' + (i * 40) + 'ms">' +
+      '<div class="radar-list-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(name) + '</div>' +
+        '<div class="fs-072 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + '</div>' +
+        (tags ? '<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.25rem">' + tags + '</div>' : '') +
+        (bubbleInfo ? '<div style="margin-top:0.2rem">' + bubbleInfo + '</div>' : '') +
+      '</div>' +
+      '<div class="radar-list-match">' + matchPct + '%</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+//  RADAR: TOP-DROP PERSON SHEET
+// ══════════════════════════════════════════════════════════
+var rpCurrentUserId = null;
+
+async function openRadarPerson(userId) {
+  rpCurrentUserId = userId;
+  try {
+    var { data: p } = await sb.from('profiles').select('*').eq('id', userId).single();
+    if (!p) return;
+    var isA = p.is_anon;
+    var name = isA ? 'Anonym bruger' : (p.name || '?');
+    var ini = isA ? '?' : name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+
+    document.getElementById('rp-avatar').textContent = ini;
+    document.getElementById('rp-name').textContent = name;
+    document.getElementById('rp-sub').textContent = isA ? '' : (p.title || '');
+
+    // Match
+    var myKw = (currentProfile?.keywords || []).map(function(k){ return k.toLowerCase(); });
+    var theirKw = (p.keywords || []).map(function(k){ return k.toLowerCase(); });
+    var overlap = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; });
+    var overlapRatio = overlap.length / Math.max(myKw.length, theirKw.length, 1);
+    var score = theirKw.length ? Math.round(overlapRatio * 60 + 30 + (p.bio?10:0) + (p.title?10:0) + (p.linkedin?5:0)) : Math.round(30 + (p.title?10:0));
+    score = Math.min(score, 99);
+    document.getElementById('rp-match').textContent = score + '%';
+
+    // Bio
+    document.getElementById('rp-bio').textContent = p.bio || '';
+    document.getElementById('rp-bio').style.display = p.bio ? 'block' : 'none';
+
+    // Tags
+    document.getElementById('rp-tags').innerHTML = (p.keywords||[]).map(function(k){
+      var isOv = overlap.indexOf(k.toLowerCase()) >= 0;
+      return '<span class="tag' + (isOv ? ' mint' : '') + '">' + escHtml(k) + '</span>';
+    }).join('');
+
+    // Overlap section
+    if (overlap.length > 0) {
+      document.getElementById('rp-overlap').innerHTML = '<div style="font-size:0.68rem;color:var(--muted);margin-bottom:0.3rem;font-weight:600">Fælles interesser</div>' +
+        overlap.map(function(k){ return '<span class="tag mint">' + icon('check') + ' ' + escHtml(k) + '</span>'; }).join('');
+      document.getElementById('rp-overlap').style.display = 'block';
+    } else {
+      document.getElementById('rp-overlap').style.display = 'none';
+    }
+
+    // LinkedIn
+    var liBtn = document.getElementById('rp-linkedin-btn');
+    if (p.linkedin && !isA) {
+      liBtn.style.display = 'inline-flex';
+      liBtn.href = p.linkedin.startsWith('http') ? p.linkedin : 'https://' + p.linkedin;
+    } else {
+      liBtn.style.display = 'none';
+    }
+
+    // Save btn state
+    var saveBtn = document.getElementById('rp-save-btn');
+    var { data: savedCheck } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
+    saveBtn.textContent = savedCheck ? 'Gemt ✓' : 'Gem';
+    saveBtn.dataset.saved = savedCheck ? '1' : '0';
+
+    // Show
+    document.getElementById('radar-person-overlay').classList.add('open');
+    setTimeout(function(){ document.getElementById('radar-person-sheet').classList.add('open'); }, 10);
+  } catch(e) { console.error("openRadarPerson:", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+function closeRadarPerson() {
+  document.getElementById('radar-person-sheet').classList.remove('open');
+  setTimeout(function(){ document.getElementById('radar-person-overlay').classList.remove('open'); }, 320);
+}
+
+function rpMessage() {
+  closeRadarPerson();
+  closeRadarSheet();
+  setTimeout(function(){ openChat(rpCurrentUserId, 'screen-home'); }, 400);
+}
+
+async function rpSaveContact() {
+  try {
+    if (!rpCurrentUserId) return;
+    var btn = document.getElementById('rp-save-btn');
+    if (btn.dataset.saved === '1') {
+      showToast('Allerede gemt');
+      return;
+    }
+    await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: rpCurrentUserId });
+    btn.textContent = 'Gemt ✓';
+    btn.dataset.saved = '1';
+    showToast('Kontakt gemt!');
+    loadSavedContacts();
+  } catch(e) { console.error("rpSaveContact:", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+function rpFullProfile() {
+  var uid = rpCurrentUserId;
+  closeRadarPerson();
+  closeRadarSheet();
+  setTimeout(function(){ openPerson(uid, 'screen-home'); }, 400);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -854,19 +1015,19 @@ function subscribeToChat() {
   console.debug('[dm] subscribeToChat, user:', currentChatUser);
   if (chatSubscription) { chatSubscription.unsubscribe(); chatSubscription = null; }
   chatSubscription = sb.channel('chat-' + currentChatUser)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages',
+      filter: `receiver_id=eq.${currentUser.id}` }, (payload) => {
       const m = payload.new;
       if (!m) return;
-      const isRelevant = (m.sender_id === currentUser.id && m.receiver_id === currentChatUser)
-                      || (m.sender_id === currentChatUser && m.receiver_id === currentUser.id);
-      if (!isRelevant) return;
+      if (m.sender_id !== currentChatUser) return;
       const el = document.getElementById('chat-messages');
       if (!el) return;
-      // Prevent duplicate: check if msg already rendered
       if (el.querySelector('[data-msg-id="' + m.id + '"]')) return;
       el.insertAdjacentHTML('beforeend', dmRenderMsg(m));
       el.scrollTop = el.scrollHeight;
-      if (m.sender_id !== currentUser.id) updateUnreadBadge();
+      // Mark as read immediately since chat is open
+      sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', m.id);
+      updateUnreadBadge();
     }).subscribe();
 }
 
@@ -1355,12 +1516,14 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
 //  TOAST
 // ══════════════════════════════════════════════════════════
 let toastTimer;
-function showToast(msg) {
+function showToast(msg, duration) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
+  const isError = /^(Fejl|❌|⚠️)/.test(msg);
+  const ms = duration || (isError ? 4500 : 2500);
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+  toastTimer = setTimeout(() => t.classList.remove('show'), ms);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2399,10 +2562,11 @@ function bcOpenPerson(userId, name, title, color) {
   document.getElementById('ps-bio').textContent = '';
   document.getElementById('ps-bubbleup-btn').style.display = 'flex';
   document.getElementById('ps-bubbleup-confirm').classList.remove('show');
-  // LinkedIn — fetch profile to check
+  // Fetch full profile for bio + LinkedIn
   const liBtn = document.getElementById('ps-linkedin-btn');
   liBtn.style.display = 'none';
-  sb.from('profiles').select('linkedin').eq('id', userId).single().then(({data}) => {
+  sb.from('profiles').select('bio,linkedin').eq('id', userId).single().then(({data}) => {
+    if (data?.bio) document.getElementById('ps-bio').textContent = data.bio;
     if (data?.linkedin) { liBtn.href = data.linkedin.startsWith('http') ? data.linkedin : 'https://' + data.linkedin; liBtn.style.display = 'flex'; }
   });
   // Store userId
