@@ -791,3 +791,12 @@ a.person-action-btn { text-decoration:none; }
   transition: border-color 0.2s;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* PROXIMITY MAP */
+.proximity-map { position:relative; width:100%; aspect-ratio:1; max-height:320px; border-radius:var(--radius-lg); background:rgba(255,255,255,0.03); border:1px solid var(--glass-border-subtle); overflow:hidden; }
+.proximity-map canvas { position:absolute; inset:0; width:100%; height:100%; }
+.proximity-map #prox-avatars { position:absolute; inset:0; }
+.prox-center { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:42px; height:42px; border-radius:50%; background:var(--gradient-primary); display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:800; color:white; letter-spacing:0.03em; border:2px solid rgba(255,255,255,0.15); box-shadow:0 0 20px rgba(139,127,255,0.3); z-index:5; }
+.prox-dot { position:absolute; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.52rem; font-weight:700; color:white; cursor:pointer; transition:transform 0.3s ease,opacity 0.3s ease; border:1.5px solid rgba(255,255,255,0.12); z-index:3; }
+.prox-dot:active { transform:scale(1.15); }
+.prox-ring { position:absolute; top:50%; left:50%; border-radius:50%; border:1px solid rgba(255,255,255,0.04); transform:translate(-50%,-50%); pointer-events:none; }

@@ -256,6 +256,7 @@ async function loadHome() {
       loadHomeMessagesCard(),
       loadHomeNotifCard(),
       updateRadarCount(),
+      loadProximityMap(),
     ]);
 
     // Also load bubbles screen data if it exists
@@ -593,6 +594,101 @@ async function confirmRemoveSaved() {
 // ══════════════════════════════════════════════════════════
 //  MESSAGES
 // ══════════════════════════════════════════════════════════
+// PROXIMITY MAP
+let proxVisible = true;
+const proxColors = ['linear-gradient(135deg,#8B7FFF,#A89FFF)','linear-gradient(135deg,#E85D8A,#FF8C69)','linear-gradient(135deg,#2ECFCF,#8B7FFF)','linear-gradient(135deg,#FF8C69,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)'];
+
+async function loadProximityMap() {
+  try {
+    const map = document.getElementById('proximity-map');
+    const avatarsEl = document.getElementById('prox-avatars');
+    const emptyEl = document.getElementById('prox-empty');
+    const canvas = document.getElementById('prox-canvas');
+    if (!map || !avatarsEl || !canvas) return;
+    const { data: memberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+    if (!memberships || memberships.length === 0) {
+      map.style.display = 'none';
+      if (emptyEl) emptyEl.style.display = 'block';
+      return;
+    }
+    map.style.display = 'block';
+    if (emptyEl) emptyEl.style.display = 'none';
+    const bubbleIds = memberships.map(m => m.bubble_id);
+    const { data: allMembers } = await sb.from('bubble_members').select('user_id').in('bubble_id', bubbleIds).neq('user_id', currentUser.id);
+    const uniqueIds = [...new Set((allMembers||[]).map(m => m.user_id))];
+    if (uniqueIds.length === 0) { avatarsEl.innerHTML = ''; drawRings(canvas); return; }
+    const { data: profiles } = await sb.from('profiles').select('id,name,title,keywords,is_anon').in('id', uniqueIds);
+    if (!profiles || profiles.length === 0) { avatarsEl.innerHTML = ''; drawRings(canvas); return; }
+    const myKw = (currentProfile?.keywords || []).map(k => k.toLowerCase());
+    const scored = profiles.map(p => {
+      const theirKw = (p.keywords || []).map(k => k.toLowerCase());
+      const overlap = myKw.filter(k => theirKw.includes(k)).length;
+      const maxKw = Math.max(myKw.length, theirKw.length, 1);
+      return { ...p, relevance: overlap / maxKw, overlap };
+    }).sort((a, b) => b.relevance - a.relevance).slice(0, 12);
+    drawRings(canvas);
+    const centerEl = document.getElementById('prox-center');
+    if (centerEl && currentProfile?.name) {
+      centerEl.textContent = currentProfile.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    }
+    const rect = map.getBoundingClientRect();
+    const w = rect.width || 300;
+    const h = rect.height || 300;
+    const cx = w / 2, cy = h / 2;
+    avatarsEl.innerHTML = scored.map((p, i) => {
+      const ini = p.is_anon ? '?' : (p.name || '?').split(' ').map(ww => ww[0]).join('').slice(0, 2).toUpperCase();
+      const col = proxColors[i % proxColors.length];
+      const dist = 0.22 + (1 - p.relevance) * 0.32;
+      const angle = (i * 2.399) + (i * 0.3);
+      const x = cx + Math.cos(angle) * dist * cx - 16;
+      const y = cy + Math.sin(angle) * dist * cy - 16;
+      const sz = p.relevance > 0.3 ? 34 : 28;
+      const op = (0.6 + p.relevance * 0.4).toFixed(2);
+      const fs = sz < 32 ? '0.48rem' : '0.52rem';
+      return `<div class="prox-dot" style="width:${sz}px;height:${sz}px;left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;background:${col};opacity:${op};font-size:${fs}" data-action="openPerson" data-id="${p.id}" data-from="screen-home">${escHtml(ini)}</div>`;
+    }).join('');
+  } catch (e) { console.error('loadProximityMap:', e); }
+}
+
+function drawRings(canvas) {
+  if (!canvas) return;
+  const parent = canvas.parentElement;
+  if (!parent) return;
+  const w = parent.offsetWidth || 300, h = parent.offsetHeight || 300;
+  canvas.width = w * 2; canvas.height = h * 2;
+  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(2, 2); ctx.clearRect(0, 0, w, h);
+  const cx = w / 2, cy = h / 2;
+  [0.25, 0.45, 0.7].forEach(r => {
+    ctx.beginPath(); ctx.arc(cx, cy, r * Math.min(cx, cy), 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1; ctx.stroke();
+  });
+  const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, cx * 0.3);
+  grd.addColorStop(0, 'rgba(139,127,255,0.06)');
+  grd.addColorStop(1, 'rgba(139,127,255,0)');
+  ctx.fillStyle = grd; ctx.fillRect(0, 0, w, h);
+}
+
+function toggleProximityVisibility() {
+  proxVisible = !proxVisible;
+  const dot = document.getElementById('prox-toggle-dot');
+  const label = document.getElementById('prox-toggle-label');
+  const center = document.getElementById('prox-center');
+  if (dot) dot.style.background = proxVisible ? 'var(--accent3)' : 'var(--muted)';
+  if (label) label.textContent = proxVisible ? 'Synlig' : 'Anonym';
+  if (center) {
+    if (proxVisible && currentProfile?.name) {
+      center.textContent = currentProfile.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      center.style.background = 'var(--gradient-primary)';
+    } else {
+      center.textContent = '?';
+      center.style.background = 'var(--glass-bg)';
+    }
+  }
+  toggleAnon();
+}
+
 async function updateUnreadBadge() {
   try {
     const { count } = await sb.from('messages')

@@ -211,6 +211,23 @@
       <button class="btn-sm btn-ghost" onclick="goTo('screen-discover')" style="font-size:0.72rem;white-space:nowrap">Opdag →</button>
     </div>
 
+    <!-- Proximity Map -->
+    <div style="margin-top:1rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+        <div class="section-title" style="font-size:0.82rem">I nærheden</div>
+        <button class="btn-sm btn-ghost" id="prox-toggle" onclick="toggleProximityVisibility()" style="font-size:0.65rem;padding:0.25rem 0.6rem;gap:0.3rem;display:flex;align-items:center">
+          <span id="prox-toggle-dot" class="live-dot" style="width:6px;height:6px;margin:0"></span>
+          <span id="prox-toggle-label">Synlig</span>
+        </button>
+      </div>
+      <div class="proximity-map" id="proximity-map">
+        <canvas id="prox-canvas"></canvas>
+        <div id="prox-avatars"></div>
+        <div class="prox-center" id="prox-center">DU</div>
+      </div>
+      <div id="prox-empty" style="display:none;text-align:center;padding:1rem 0;font-size:0.75rem;color:var(--muted)">Join en boble for at se folk i nærheden</div>
+    </div>
+
   </div>
 
   <div class="bottom-nav">
