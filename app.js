@@ -269,6 +269,7 @@ async function loadHome() {
       updateRadarCount(),
       loadProximityMap(),
       loadLiveBubbleStatus(),
+      loadSavedContacts(),
     ]);
   } catch(e) { console.error("loadHome:", e); showToast(e.message || "Ukendt fejl"); }
 }
@@ -753,10 +754,12 @@ function openRadarSheet() {
   var sheet = document.getElementById('radar-sheet');
   if (overlay) overlay.classList.add('open');
   if (sheet) sheet.classList.add('open');
+  document.body.style.overflow = 'hidden';
   setTimeout(function(){ if (radarCurrentView === 'map') renderProximityDots(); else renderRadarList(); }, 120);
 }
 
 function closeRadarSheet() {
+  document.body.style.overflow = '';
   document.getElementById('radar-overlay').classList.remove('open');
   document.getElementById('radar-sheet').classList.remove('open');
 }
