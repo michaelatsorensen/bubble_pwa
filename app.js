@@ -1507,18 +1507,10 @@ function removeChip(arrayName, index, containerId, inputId) {
 //  MODAL HELPERS
 // ══════════════════════════════════════════════════════════
 function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-  if (id === 'modal-live-checkin' && typeof stopLiveQR === 'function') stopLiveQR();
-}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 // Close modal on backdrop click
 document.querySelectorAll('.modal-overlay').forEach(el => {
-  el.addEventListener('click', (e) => {
-    if (e.target === el) {
-      el.classList.remove('open');
-      if (el.id === 'modal-live-checkin' && typeof stopLiveQR === 'function') stopLiveQR();
-    }
-  });
+  el.addEventListener('click', (e) => { if (e.target === el) el.classList.remove('open'); });
 });
 
 // ══════════════════════════════════════════════════════════
@@ -2922,176 +2914,6 @@ async function loadLiveBubbleStatus() {
 function openLiveCheckin() {
   loadLiveCheckinList();
   openModal('modal-live-checkin');
-  // Start QR scanner automatically
-  setTimeout(() => startLiveQR(), 300);
-}
-
-function closeLiveCheckin() {
-  stopLiveQR();
-  closeModal('modal-live-checkin');
-}
-
-// ── QR SCANNER ──
-let liveQRStream = null;
-let liveQRScanning = false;
-let liveQRAnimFrame = null;
-
-async function startLiveQR() {
-  const video = document.getElementById('live-qr-video');
-  const hint = document.getElementById('live-qr-hint');
-  const toggleLabel = document.getElementById('live-qr-toggle-label');
-  if (!video) return;
-
-  // Check camera support
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    hint.textContent = 'Kamera ikke understøttet';
-    hint.style.color = '#E85D8A';
-    return;
-  }
-
-  try {
-    hint.textContent = 'Starter kamera...';
-    liveQRStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
-    });
-    video.srcObject = liveQRStream;
-    await video.play();
-    liveQRScanning = true;
-    toggleLabel.textContent = 'Stop scanner';
-    hint.textContent = 'Ret kameraet mod QR-koden';
-
-    // Start scanning loop
-    liveQRScanLoop();
-  } catch (e) {
-    console.error('QR camera error:', e);
-    if (e.name === 'NotAllowedError') {
-      hint.textContent = 'Kamera-adgang afvist — tillad i indstillinger';
-    } else {
-      hint.textContent = 'Kunne ikke starte kamera';
-    }
-    hint.style.color = '#E85D8A';
-  }
-}
-
-function stopLiveQR() {
-  liveQRScanning = false;
-  if (liveQRAnimFrame) { cancelAnimationFrame(liveQRAnimFrame); liveQRAnimFrame = null; }
-  if (liveQRStream) {
-    liveQRStream.getTracks().forEach(t => t.stop());
-    liveQRStream = null;
-  }
-  const video = document.getElementById('live-qr-video');
-  if (video) video.srcObject = null;
-}
-
-function toggleLiveQR() {
-  if (liveQRScanning) {
-    stopLiveQR();
-    document.getElementById('live-qr-toggle-label').textContent = 'Start scanner';
-    document.getElementById('live-qr-hint').textContent = 'Scanner stoppet';
-    document.getElementById('live-qr-hint').style.color = 'var(--muted)';
-  } else {
-    startLiveQR();
-  }
-}
-
-async function liveQRScanLoop() {
-  if (!liveQRScanning) return;
-  const video = document.getElementById('live-qr-video');
-  if (!video || video.readyState < 2) {
-    liveQRAnimFrame = requestAnimationFrame(liveQRScanLoop);
-    return;
-  }
-
-  try {
-    // Use BarcodeDetector if available (native in Safari/Chrome)
-    if ('BarcodeDetector' in window) {
-      const detector = new BarcodeDetector({ formats: ['qr_code'] });
-      const barcodes = await detector.detect(video);
-      if (barcodes.length > 0) {
-        const url = barcodes[0].rawValue;
-        if (url && handleLiveQRResult(url)) return;
-      }
-    } else {
-      // Fallback: use canvas + jsQR if available, or prompt manual
-      // For most modern phones BarcodeDetector works — show hint for others
-      if (!window._qrFallbackWarned) {
-        window._qrFallbackWarned = true;
-        // Try loading jsQR as fallback
-        if (!window.jsQR) {
-          const s = document.createElement('script');
-          s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
-          s.onload = () => { console.log('jsQR loaded as fallback'); };
-          document.head.appendChild(s);
-        }
-      }
-
-      if (window.jsQR) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, canvas.width, canvas.height);
-        if (code && code.data && handleLiveQRResult(code.data)) return;
-      }
-    }
-  } catch (e) {
-    // Scanning error — just keep trying
-  }
-
-  // Continue scanning
-  liveQRAnimFrame = requestAnimationFrame(liveQRScanLoop);
-}
-
-function handleLiveQRResult(url) {
-  // Check if it's a Bubble join URL
-  try {
-    const parsed = new URL(url);
-    const joinId = parsed.searchParams.get('join');
-    if (joinId) {
-      // Stop scanner and check in
-      stopLiveQR();
-      document.getElementById('live-qr-hint').textContent = '✅ QR scannet!';
-      document.getElementById('live-qr-hint').style.color = '#2ECFCF';
-      // Check if it's a live bubble — either way, check in
-      liveQRCheckin(joinId);
-      return true;
-    }
-  } catch (e) { /* not a valid URL */ }
-  return false;
-}
-
-async function liveQRCheckin(bubbleId) {
-  try {
-    showToast('Checker ind via QR...');
-
-    // Verify the bubble exists
-    const { data: bubble } = await sb.from('bubbles').select('id, name, type').eq('id', bubbleId).single();
-    if (!bubble) {
-      showToast('Fejl: Boble ikke fundet');
-      return;
-    }
-
-    // If it's a live bubble, use live checkin flow
-    if (bubble.type === 'live') {
-      await liveCheckin(bubbleId);
-    } else {
-      // Regular bubble — join it normally
-      const { error } = await sb.from('bubble_members').insert({ bubble_id: bubbleId, user_id: currentUser.id });
-      if (error && !error.message.includes('duplicate')) {
-        showToast('Fejl: ' + error.message);
-        return;
-      }
-      closeLiveCheckin();
-      showToast('Du er i boblen! 🫧');
-      openBubbleChat(bubbleId, 'screen-home');
-    }
-  } catch (e) {
-    console.error('liveQRCheckin:', e);
-    showToast('Fejl: ' + (e.message || 'ukendt'));
-  }
 }
 
 async function loadLiveCheckinList() {
@@ -3181,7 +3003,7 @@ async function liveCheckin(bubbleId) {
       });
     }
 
-    closeLiveCheckin();
+    closeModal('modal-live-checkin');
     showToast('📍 Du er checked ind!');
     await loadLiveBubbleStatus();
     loadHome();
@@ -3224,7 +3046,7 @@ async function liveCreateAndCheckin() {
     document.getElementById('live-new-name').value = '';
     document.getElementById('live-new-location').value = '';
 
-    closeLiveCheckin();
+    closeModal('modal-live-checkin');
     showToast('📍 ' + name + ' oprettet — du er checked ind!');
     await loadLiveBubbleStatus();
   } catch (e) {

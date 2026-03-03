@@ -792,7 +792,7 @@ a.person-action-btn { text-decoration:none; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.proximity-map { position:relative; width:100%; height:0; padding-bottom:100%; border-radius:16px; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border-subtle); overflow:hidden; }
+.proximity-map { position:relative; width:100%; height:0; padding-bottom:min(100%, 55vh); border-radius:16px; background:rgba(255,255,255,0.03); border:1px solid var(--glass-border-subtle); overflow:hidden; }
 .proximity-map canvas { position:absolute; inset:0; width:100%; height:100%; }
 .proximity-map #prox-avatars { position:absolute; inset:0; }
 .prox-center { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:42px; height:42px; border-radius:50%; background:var(--gradient-primary); display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:800; color:white; letter-spacing:0.03em; border:2px solid rgba(255,255,255,0.15); box-shadow:0 0 20px rgba(139,127,255,0.3); z-index:5; }
@@ -869,8 +869,8 @@ a.person-action-btn { text-decoration:none; }
 
 .radar-person-handle {
   width: 36px; height: 4px; border-radius: 4px;
-  background: var(--glass-border); margin: 0.5rem auto 0;
-  cursor: pointer; padding-bottom: env(safe-area-inset-bottom, 0);
+  background: rgba(255,255,255,0.15); margin: 0.6rem auto 0;
+  cursor: pointer;
 }
 
 .radar-person-header {
@@ -1045,55 +1045,3 @@ a.person-action-btn { text-decoration:none; }
   font-size: 0.72rem; font-weight: 600; color: #2ECFCF;
   display: flex; align-items: center; gap: 0.3rem; flex-shrink: 0;
 }
-
-/* ── LIVE QR SCANNER ── */
-.live-qr-section {
-  margin-bottom: 0.5rem;
-}
-.live-qr-viewport {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 4/3;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  background: #000;
-  border: 1px solid var(--glass-border-subtle);
-}
-.live-qr-viewport video {
-  width: 100%; height: 100%;
-  object-fit: cover;
-}
-.live-qr-overlay {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: none;
-}
-.live-qr-frame {
-  width: 55%; aspect-ratio: 1;
-  border: 2px solid rgba(46,207,207,0.6);
-  border-radius: 12px;
-  box-shadow: 0 0 0 2000px rgba(0,0,0,0.35);
-  animation: qrFramePulse 2.5s ease-in-out infinite;
-}
-@keyframes qrFramePulse {
-  0%, 100% { border-color: rgba(46,207,207,0.6); }
-  50% { border-color: rgba(46,207,207,1); box-shadow: 0 0 0 2000px rgba(0,0,0,0.35), 0 0 20px rgba(46,207,207,0.3); }
-}
-.live-qr-hint {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  padding: 0.5rem; text-align: center;
-  font-size: 0.7rem; font-weight: 600; color: white;
-  background: linear-gradient(transparent, rgba(0,0,0,0.7));
-}
-.live-qr-controls {
-  display: flex; justify-content: center; padding: 0.5rem 0 0;
-}
-.live-qr-toggle {
-  font-family: 'Outfit', sans-serif; font-size: 0.7rem; font-weight: 600;
-  display: flex; align-items: center; gap: 0.35rem;
-  padding: 0.35rem 0.7rem; border-radius: var(--radius-pill);
-  border: 1px solid var(--glass-border-subtle); background: var(--glass-bg);
-  color: var(--text-secondary); cursor: pointer; transition: all 0.2s;
-}
-.live-qr-toggle:active { transform: scale(0.96); }
-.live-qr-toggle svg { color: #2ECFCF; }
