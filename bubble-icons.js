@@ -43,6 +43,7 @@ const ICONS = {
   chevronRight: `<svg ${_s}><path d="M9 18l6-6-6-6"/></svg>`,
   crown: `<svg ${_s}><path d="M3 18l2.5-11 4.5 4.5L12 4l2 7.5L18.5 7 21 18H3z"/><path d="M4.5 21h15"/></svg>`,
   users: `<svg ${_s}><circle cx="9" cy="7.5" r="3.5"/><path d="M2.5 20c0-3.3 2.9-6 6.5-6s6.5 2.7 6.5 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M21.5 20a4.5 4.5 0 00-5-4.5"/></svg>`,
+  'user-plus': `<svg ${_s}><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>`,
   target: `<svg ${_s}><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>`,
   qrcode: `<svg ${_s}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3.5" height="3.5"/><path d="M21 14h-3v3.5M14 21h3.5v-3.5M21 21h-3.5"/></svg>`,
   link: `<svg ${_s}><path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.7-1.7"/></svg>`,

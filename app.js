@@ -1389,6 +1389,9 @@ async function loadSavedContacts() {
     const profileMap = {};
     (profiles || []).forEach(p => { profileMap[p.id] = p; });
 
+    // Update home screen story bar
+    renderSavedStoryBar(saved, profileMap);
+
     const colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#7C2D12,#F97316)'];
 
     savedEl.innerHTML = saved.map((s, i) => {
@@ -1414,6 +1417,28 @@ async function loadSavedContacts() {
       </div>`;
     }).join('');
   } catch(e) { console.error("loadSavedContacts:", e); }
+}
+
+// Render saved contacts as story-bar on home screen
+function renderSavedStoryBar(saved, profileMap) {
+  var bar = document.getElementById('saved-profiles-bar');
+  var list = document.getElementById('saved-story-list');
+  var badge = document.getElementById('saved-count-badge');
+  if (!bar || !list) return;
+  if (!saved || saved.length === 0) { bar.style.display = 'none'; return; }
+  bar.style.display = 'block';
+  if (badge) badge.textContent = saved.length;
+  var colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#7C2D12,#F97316)'];
+  list.innerHTML = saved.map(function(s, i) {
+    var p = profileMap[s.contact_id];
+    if (!p) return '';
+    var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    var col = colors[i % colors.length];
+    var firstName = (p.name||'?').split(' ')[0];
+    return '<div class="saved-story-item" onclick="openChat(\'' + p.id + '\',\'screen-home\')">' +
+      '<div class="saved-story-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>' +
+      '<div class="saved-story-name">' + escHtml(firstName) + '</div></div>';
+  }).join('');
 }
 
 // Profile tab switching — same pattern as bcSwitchTab
@@ -2090,7 +2115,7 @@ async function loadNotifications() {
 
     // 1. Bubble-up invitations pending
     const { data: invites } = await sb.from('bubble_invitations')
-      .select('id, from_user_id, bubble_id, created_at, profiles!bubble_invitations_from_user_id_fkey(name,title)')
+      .select('id, from_user_id, bubble_id, created_at, profiles!bubble_invitations_from_user_id_fkey(name,title), bubbles(name)')
       .eq('to_user_id', currentUser.id)
       .eq('status', 'pending')
       .order('created_at', {ascending:false});
@@ -2103,8 +2128,8 @@ async function loadNotifications() {
           <div class="notif-header">
             <div class="notif-avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">${initials}</div>
             <div>
-              <div class="notif-title">${icon("bubble")} Bubble up invitation</div>
-              <div class="notif-sub">${escHtml(p.name||'Nogen')} vil oprette en privat boble med dig</div>
+              <div class="notif-title">${icon("bubble")} Invitation til boble</div>
+              <div class="notif-sub">${escHtml(p.name||'Nogen')} inviterer dig til ${escHtml(inv.bubbles?.name||'en boble')}</div>
             </div>
           </div>
           <div class="notif-actions">
@@ -2225,6 +2250,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
     const isOwner = b.created_by === currentUser.id;
     if (myMembership) {
       actionArea.innerHTML =
+        `<button class="btn-sm btn-ghost" onclick="openInviteModal('${b.id}')" style="font-size:0.85rem;padding:0.35rem 0.55rem" title="Invit\u00e9r">${icon("user-plus")}</button>` +
         (isOwner ? `<button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" style="font-size:0.85rem;padding:0.35rem 0.55rem">${icon("edit")}</button>
         <button class="btn-sm btn-ghost" data-action="openQRModal" data-id="${b.id}" style="font-size:0.85rem;padding:0.35rem 0.55rem">${icon("qrcode")}</button>` : '') +
         `<button class="btn-sm btn-ghost" data-action="leaveBubble" data-id="${b.id}" style="font-size:0.72rem">Forlad</button>`;
@@ -2733,6 +2759,91 @@ async function bcLoadInfo() {
 }
 
 // Person sheet from chat avatar
+
+// ══════════════════════════════════════════════════════════
+//  BUBBLE INVITE SYSTEM
+// ══════════════════════════════════════════════════════════
+var inviteBubbleId = null;
+var inviteSelected = [];
+
+async function openInviteModal(bubbleId) {
+  inviteBubbleId = bubbleId;
+  inviteSelected = [];
+  var overlay = document.getElementById('invite-modal-overlay');
+  var list = document.getElementById('invite-list');
+  if (!overlay || !list) return;
+  overlay.style.display = 'flex';
+  list.innerHTML = '<div style="text-align:center;padding:1rem;font-size:0.75rem;color:var(--muted)">Henter gemte kontakter...</div>';
+
+  try {
+    // Get saved contacts
+    var r1 = await sb.from('saved_contacts').select('contact_id').eq('user_id', currentUser.id);
+    var contactIds = (r1.data || []).map(function(s) { return s.contact_id; });
+    if (contactIds.length === 0) {
+      list.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">Du har ingen gemte kontakter endnu.<br>Gem profiler fra radaren f\u00f8rst.</div>';
+      return;
+    }
+    // Get profiles
+    var r2 = await sb.from('profiles').select('id,name,title,keywords').in('id', contactIds);
+    var profiles = r2.data || [];
+    // Get existing members to exclude
+    var r3 = await sb.from('bubble_members').select('user_id').eq('bubble_id', bubbleId);
+    var memberIds = (r3.data || []).map(function(m) { return m.user_id; });
+    // Get pending invites to exclude
+    var r4 = await sb.from('bubble_invitations').select('to_user_id').eq('bubble_id', bubbleId).eq('status', 'pending');
+    var pendingIds = (r4.data || []).map(function(inv) { return inv.to_user_id; });
+
+    var available = profiles.filter(function(p) { return memberIds.indexOf(p.id) < 0; });
+    if (available.length === 0) {
+      list.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">Alle dine gemte kontakter er allerede i denne boble.</div>';
+      return;
+    }
+    var colors = proxColors || ['linear-gradient(135deg,#8B7FFF,#E85D8A)'];
+    list.innerHTML = available.map(function(p, i) {
+      var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var col = colors[i % colors.length];
+      var isPending = pendingIds.indexOf(p.id) >= 0;
+      return '<label class="invite-row' + (isPending ? ' pending' : '') + '" data-uid="' + p.id + '">' +
+        '<div class="invite-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div class="fw-600 fs-085">' + escHtml(p.name || '?') + '</div>' +
+          '<div class="fs-072 text-muted">' + escHtml(p.title || '') + '</div>' +
+        '</div>' +
+        (isPending ? '<span class="fs-065 text-muted">Afventer</span>' :
+          '<input type="checkbox" class="invite-check" data-uid="' + p.id + '" onchange="toggleInvite(this)">') +
+      '</label>';
+    }).join('');
+  } catch(e) { console.error('openInviteModal:', e); list.innerHTML = '<div style="padding:1rem;color:var(--accent2)">Kunne ikke hente kontakter</div>'; }
+}
+
+function closeInviteModal() {
+  var overlay = document.getElementById('invite-modal-overlay');
+  if (overlay) overlay.style.display = 'none';
+  inviteSelected = [];
+}
+
+function toggleInvite(cb) {
+  var uid = cb.dataset.uid;
+  if (cb.checked) { if (inviteSelected.indexOf(uid) < 0) inviteSelected.push(uid); }
+  else { inviteSelected = inviteSelected.filter(function(id) { return id !== uid; }); }
+  var btn = document.getElementById('invite-send-btn');
+  if (btn) btn.textContent = inviteSelected.length > 0 ? 'Send (' + inviteSelected.length + ')' : 'Send invitationer';
+}
+
+async function sendBubbleInvites() {
+  if (inviteSelected.length === 0) return showToast('V\u00e6lg mindst \u00e9n kontakt');
+  try {
+    var rows = inviteSelected.map(function(uid) {
+      return { bubble_id: inviteBubbleId, from_user_id: currentUser.id, to_user_id: uid, status: 'pending' };
+    });
+    var { error } = await sb.from('bubble_invitations').insert(rows);
+    if (error) throw error;
+    closeInviteModal();
+    showToast(inviteSelected.length + ' invitation' + (inviteSelected.length > 1 ? 'er' : '') + ' sendt \u2713');
+  } catch(e) { console.error('sendBubbleInvites:', e); showToast('Kunne ikke sende: ' + (e.message || 'ukendt fejl')); }
+}
+
+
 function bcOpenPerson(userId, name, title, color) {
   const initials = (name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('ps-avatar').style.background = color;
