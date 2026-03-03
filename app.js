@@ -3100,28 +3100,29 @@ async function loadLiveBubbleStatus() {
     if (!card) return;
     card.style.display = 'block';
 
-    // Find active live check-in for current user
+    // Find active check-in for current user (ANY bubble type)
     const expireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 60 * 60 * 1000).toISOString();
 
     const { data: myLive } = await sb.from('bubble_members')
-      .select('bubble_id, checked_in_at, bubbles(id, name, location, type)')
+      .select('bubble_id, checked_in_at, bubbles(id, name, location, type, type_label)')
       .eq('user_id', currentUser.id)
       .not('checked_in_at', 'is', null)
       .is('checked_out_at', null)
       .gte('checked_in_at', expireCutoff)
+      .order('checked_in_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (myLive && myLive.bubbles && myLive.bubbles.type === 'live') {
-      // User is checked in
+    if (myLive && myLive.bubbles) {
       currentLiveBubble = {
         bubble_id: myLive.bubble_id,
         bubble_name: myLive.bubbles.name,
         bubble_location: myLive.bubbles.location,
+        bubble_type: myLive.bubbles.type,
         checked_in_at: myLive.checked_in_at
       };
 
-      // Count active members
+      // Count active members at same location
       const { count } = await sb.from('bubble_members')
         .select('*', { count: 'exact', head: true })
         .eq('bubble_id', myLive.bubble_id)
@@ -3135,25 +3136,28 @@ async function loadLiveBubbleStatus() {
       const since = new Date(currentLiveBubble.checked_in_at);
       const mins = Math.round((Date.now() - since.getTime()) / 60000);
       const timeStr = mins < 60 ? mins + ' min' : Math.round(mins / 60) + 't ' + (mins % 60) + 'min';
+      const typeLabel = myLive.bubbles.type_label || myLive.bubbles.type || '';
       document.getElementById('live-bubble-meta').textContent =
-        (currentLiveBubble.bubble_location ? currentLiveBubble.bubble_location + ' · ' : '') + timeStr + ' siden';
+        (typeLabel ? typeLabel + ' · ' : '') +
+        (currentLiveBubble.bubble_location ? currentLiveBubble.bubble_location + ' · ' : '') +
+        timeStr + ' siden';
       document.getElementById('live-bubble-count').textContent = currentLiveBubble.member_count;
 
       activeEl.style.display = 'block';
       idleEl.style.display = 'none';
     } else {
-      // Not checked in — auto-expire old ones
       currentLiveBubble = null;
       activeEl.style.display = 'none';
       idleEl.style.display = 'block';
     }
   } catch (e) {
     console.error('loadLiveBubbleStatus:', e);
-    // Show idle state on error
     const card = document.getElementById('live-bubble-card');
     if (card) card.style.display = 'block';
-    document.getElementById('live-bubble-active').style.display = 'none';
-    document.getElementById('live-bubble-idle').style.display = 'block';
+    var a = document.getElementById('live-bubble-active');
+    var b = document.getElementById('live-bubble-idle');
+    if (a) a.style.display = 'none';
+    if (b) b.style.display = 'block';
   }
 }
 
@@ -3313,24 +3317,21 @@ async function liveCreateAndCheckin() {
 
 async function liveAutoCheckout() {
   try {
-    // Checkout from ALL active live bubbles
-    const expireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 60 * 60 * 1000).toISOString();
-
-    const { data: activeLive } = await sb.from('bubble_members')
-      .select('id, bubble_id, bubbles(type)')
+    // Checkout from ALL active check-ins (any bubble type)
+    const { data: activeCheckins } = await sb.from('bubble_members')
+      .select('id')
       .eq('user_id', currentUser.id)
       .not('checked_in_at', 'is', null)
-      .is('checked_out_at', null)
-      .gte('checked_in_at', expireCutoff);
+      .is('checked_out_at', null);
 
-    if (!activeLive || activeLive.length === 0) return;
+    if (!activeCheckins || activeCheckins.length === 0) return;
 
-    const liveIds = activeLive.filter(m => m.bubbles?.type === 'live').map(m => m.id);
-    if (liveIds.length > 0) {
-      await sb.from('bubble_members').update({
-        checked_out_at: new Date().toISOString()
-      }).in('id', liveIds);
-    }
+    const ids = activeCheckins.map(m => m.id);
+    await sb.from('bubble_members').update({
+      checked_out_at: new Date().toISOString()
+    }).in('id', ids);
+
+    // Note: this only sets checked_out_at — user remains a member
   } catch (e) {
     console.error('liveAutoCheckout:', e);
   }
@@ -3546,25 +3547,38 @@ async function liveScanConfirmJoin() {
   if (!_liveQrResolvedBubble) return;
   var bubble = _liveQrResolvedBubble;
   try {
-    // Check if already member
+    // Auto-checkout from any current check-in first
+    await liveAutoCheckout();
+
+    // Check if already a member
     var { data: existing } = await sb.from('bubble_members')
-      .select('id').eq('bubble_id', bubble.id).eq('user_id', currentUser.id).maybeSingle();
-    if (!existing) {
-      await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id, role: 'member' });
+      .select('id, checked_in_at, checked_out_at')
+      .eq('bubble_id', bubble.id).eq('user_id', currentUser.id).maybeSingle();
+
+    if (existing) {
+      // Already member — just re-check-in
+      await sb.from('bubble_members').update({
+        checked_in_at: new Date().toISOString(),
+        checked_out_at: null
+      }).eq('id', existing.id);
+    } else {
+      // New member + check-in
+      await sb.from('bubble_members').insert({
+        bubble_id: bubble.id,
+        user_id: currentUser.id,
+        role: 'member',
+        checked_in_at: new Date().toISOString()
+      });
     }
-    // Auto check-in
-    await sb.from('bubble_checkins').upsert({
-      bubble_id: bubble.id, user_id: currentUser.id, checked_in_at: new Date().toISOString()
-    }, { onConflict: 'bubble_id,user_id' });
 
     stopLiveCamera();
-    // Hide found card, show confirmed
+    // Show confirmation
     document.getElementById('live-scan-found').style.display = 'none';
     var confirmed = document.getElementById('live-scan-confirmed');
     var cName = document.getElementById('live-scan-confirmed-name');
     var cMeta = document.getElementById('live-scan-confirmed-meta');
     if (cName) cName.textContent = bubble.name;
-    if (cMeta) cMeta.textContent = 'Du er checked ind ✓';
+    if (cMeta) cMeta.textContent = (existing ? 'Checked ind igen' : 'Joined + checked ind') + ' ✓';
     if (confirmed) confirmed.style.display = 'flex';
 
     showToast('Checked ind i ' + bubble.name + ' ✓');
