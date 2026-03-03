@@ -47,16 +47,6 @@ let cbChips = [], epChips = [], epDynChips = [], ebChips = [], obChips = [];
 let chatSubscription = null;
 let isAnon = false;
 
-// ── GLOBAL ERROR HANDLER ──
-window.addEventListener('error', function(e) {
-  console.error('Global error:', e.message, e.filename, e.lineno);
-  if (typeof showToast === 'function') showToast('Noget gik galt \u2013 pr\u00f8v igen');
-});
-window.addEventListener('unhandledrejection', function(e) {
-  console.error('Unhandled promise:', e.reason);
-  if (typeof showToast === 'function') showToast('Noget gik galt \u2013 pr\u00f8v igen');
-});
-
 function initSupabase() {
   if (SUPABASE_URL === "DIN_SUPABASE_URL_HER") {
     document.getElementById('loading-msg').textContent = '⚠️ Indsæt dine Supabase-nøgler i filen';
@@ -159,8 +149,9 @@ async function checkAuth() {
       goTo('screen-auth');
     }
   } catch(e) {
-    document.getElementById('loading-msg').textContent = 'Fejl: ' + e.message;
-    document.getElementById('loading-msg').style.color = '#E85D8A';
+    var el = document.getElementById('loading-msg');
+    if (el) { el.textContent = 'Fejl: ' + (e.message || 'Ukendt'); el.style.color = '#E85D8A'; }
+    console.error('checkAuth:', e);
   }
 }
 
@@ -470,7 +461,7 @@ async function openBubble(bubbleId, fromScreen) {
 async function joinBubble(bubbleId) {
   try {
     const { error } = await sb.from('bubble_members').insert({ bubble_id: bubbleId, user_id: currentUser.id });
-    if (error && !error.message.includes('duplicate')) return showToast('Fejl ved joining');
+    if (error && !String(error.message || '').includes('duplicate')) return showToast('Fejl ved joining');
     showToast('Du er nu i boblen! 🫧');
     await openBubble(bubbleId);
     loadHome();
@@ -1718,7 +1709,7 @@ async function requestJoin(bubbleId) {
     const { error } = await sb.from('bubble_members').insert({
       bubble_id: bubbleId, user_id: currentUser.id, status: 'pending'
     });
-    if (error && !error.message.includes('duplicate')) return showToast('Fejl: ' + error.message);
+    if (error && !String(error.message || '').includes('duplicate')) return showToast('Fejl: ' + error.message);
     showToast('Anmodning sendt! Ejeren skal godkende 🔒');
     await openBubble(bubbleId);
   } catch(e) { console.error("requestJoin:", e); showToast(e.message || "Ukendt fejl"); }
@@ -1953,7 +1944,7 @@ async function checkQRJoin() {
     const { error } = await sb.from('bubble_members')
       .insert({ bubble_id: joinId, user_id: session.user.id });
 
-    if (!error || error.message.includes('duplicate')) {
+    if (!error || String(error.message || '').includes('duplicate')) {
       showToast('Du er checket ind! 🫧');
       await openBubble(joinId, 'screen-home');
     }
@@ -1967,7 +1958,7 @@ async function checkPendingJoin() {
     sessionStorage.removeItem('pending_join');
     const { error } = await sb.from('bubble_members')
       .insert({ bubble_id: joinId, user_id: currentUser.id });
-    if (!error || error.message.includes('duplicate')) {
+    if (!error || String(error.message || '').includes('duplicate')) {
       showToast('Du er checket ind! 🫧');
       await openBubble(joinId, 'screen-home');
     }
@@ -1995,7 +1986,7 @@ async function maybeShowOnboarding() {
       document.getElementById('ob-title').value = currentProfile?.title || '';
       document.getElementById('ob-bio').value = currentProfile?.bio || '';
       document.getElementById('ob-linkedin').value = currentProfile?.linkedin || '';
-      obChips = [...(currentProfile?.keywords || [])];
+      obChips = Array.isArray(currentProfile?.keywords) ? [...currentProfile.keywords] : [];
       renderChips('ob-chips', obChips, 'ob-chips-container', 'ob-chip-input');
       goTo('screen-onboarding');
       return true;
@@ -2183,6 +2174,7 @@ function bcUnsubscribeAll() {
 }
 
 async function openBubbleChat(bubbleId, fromScreen) {
+  if (!currentUser || !bubbleId) { console.warn('openBubbleChat: missing user or bubbleId'); return; }
   console.debug('[bc] openBubbleChat:', bubbleId, 'from:', fromScreen);
   try {
     bcBubbleId = bubbleId;
@@ -2234,7 +2226,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
       // Badge sættes via real-time subscription når man er på en anden tab
     });
     bcSubscribe();
-  } catch(e) { console.error("openBubbleChat:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { console.error("openBubbleChat:", e); bcUnsubscribeAll(); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function bcLoadBubbleInfo() {
@@ -2366,6 +2358,7 @@ function bcScrollToBottom() {
 }
 
 function bcSubscribe() {
+  if (!currentUser || !bcBubbleId) { console.warn('bcSubscribe: missing user or bubbleId'); return; }
   console.debug('[bc] bcSubscribe, bubble:', bcBubbleId);
   if (bcSubscription) bcSubscription.unsubscribe();
   bcSubscription = sb.channel('bc-' + bcBubbleId)
