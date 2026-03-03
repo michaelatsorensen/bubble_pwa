@@ -225,7 +225,11 @@
         <div id="prox-avatars"></div>
         <div class="prox-center" id="prox-center">DU</div>
       </div>
-      <div id="prox-empty" style="display:none;text-align:center;padding:1rem 0;font-size:0.75rem;color:var(--muted)">Join en boble for at se folk i nærheden</div>
+      <div class="prox-range-wrap" id="prox-range-wrap">
+        <input type="range" id="prox-range" min="1" max="5" value="3" oninput="updateProximityRange(this.value)">
+        <span class="prox-range-label" id="prox-range-label">Alle bobler</span>
+      </div>
+      <div id="prox-empty" style="display:none;text-align:center;padding:1rem 0;font-size:0.75rem;color:var(--muted)">Ingen profiler fundet i nærheden</div>
     </div>
 
   </div>
