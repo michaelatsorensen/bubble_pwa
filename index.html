@@ -246,6 +246,8 @@
 
   </div>
 
+  
+    
   <div class="bottom-nav">
     <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
     <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
@@ -643,17 +645,7 @@
   <!-- BUBBLES TAB -->
   <div id="prof-panel-bubbles" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
     <div id="profile-bubbles"><div class="spinner"></div></div>
-    <div class="section-label" style="margin-top:1.25rem">Synlighed</div>
-    <div class="card" style="display:flex;justify-content:space-between;align-items:center;cursor:default">
-      <div>
-        <div style="font-size:0.88rem;font-weight:700">Anonym tilstand</div>
-        <div style="font-size:0.73rem;color:var(--text-secondary);margin-top:0.15rem">Skjul navn og billede</div>
-      </div>
-      <div id="anon-toggle" onclick="toggleAnon()" style="width:46px;height:26px;background:var(--border);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s">
-        <div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>
-      </div>
-    </div>
-    <button class="btn-secondary" onclick="handleLogout()" style="margin-top:1.5rem;margin-bottom:2rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)">Log ud</button>
+    
   </div>
 
   <!-- INVITATIONS TAB -->
@@ -1549,23 +1541,28 @@ E html>
   <!-- BUBBLES TAB -->
   <div id="prof-panel-bubbles" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
     <div id="profile-bubbles"><div class="spinner"></div></div>
-    <div class="section-label" style="margin-top:1.25rem">Synlighed</div>
-    <div class="card" style="display:flex;justify-content:space-between;align-items:center;cursor:default">
-      <div>
-        <div style="font-size:0.88rem;font-weight:700">Anonym tilstand</div>
-        <div style="font-size:0.73rem;color:var(--text-secondary);margin-top:0.15rem">Skjul navn og billede</div>
-      </div>
-      <div id="anon-toggle" onclick="toggleAnon()" style="width:46px;height:26px;background:var(--border);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s">
-        <div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>
-      </div>
-    </div>
-    <button class="btn-secondary" onclick="handleLogout()" style="margin-top:1.5rem;margin-bottom:2rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)">Log ud</button>
+    
   </div>
 
   <!-- INVITATIONS TAB -->
   <div id="prof-panel-invites" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
     <div id="profile-invitations"></div>
   </div>
+
+  
+    <!-- SETTINGS -->
+    <div style="padding:0.75rem 1.1rem 1.5rem;border-top:1px solid var(--glass-border-subtle)">
+      <div class="card" style="display:flex;justify-content:space-between;align-items:center;cursor:default">
+        <div>
+          <div style="font-size:0.82rem;font-weight:700">Anonym tilstand</div>
+          <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:0.1rem">Skjul navn og billede i radar</div>
+        </div>
+        <div id="anon-toggle" onclick="toggleAnon()" style="width:46px;height:26px;background:var(--border);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s">
+          <div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>
+        </div>
+      </div>
+      <button class="btn-secondary" onclick="handleLogout()" style="margin-top:0.75rem;color:var(--accent2);border-color:rgba(232,93,138,0.2);font-size:0.8rem">Log ud</button>
+    </div>
 
   <div class="bottom-nav">
     <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
