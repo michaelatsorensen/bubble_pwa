@@ -1315,3 +1315,38 @@ a.person-action-btn { text-decoration:none; }
   min-width: 0;
   overflow: hidden;
 }
+
+/* ── LIVE PRESENCE INDICATORS ── */
+.live-badge-mini {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.08rem 0.35rem;
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #10B981;
+  background: rgba(16,185,129,0.12);
+  border: 1px solid rgba(16,185,129,0.25);
+  border-radius: 4px;
+  vertical-align: middle;
+  margin-left: 0.3rem;
+  animation: livePulse 2s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.live-dot {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 9px;
+  height: 9px;
+  background: #10B981;
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+  animation: livePulse 2s ease-in-out infinite;
+}
+.chat-member-avatar {
+  position: relative;
+}

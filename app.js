@@ -494,6 +494,27 @@ async function openPerson(userId, fromScreen) {
     document.getElementById('person-name').textContent = p.is_anon ? 'Anonym bruger' : (p.name || '?');
     document.getElementById('person-role').textContent = p.is_anon ? '' : (p.title || '');
 
+    // Check live presence
+    var personLiveEl = document.getElementById('person-live-badge');
+    if (personLiveEl) {
+      var expCut = new Date(Date.now() - LIVE_EXPIRE_HOURS * 3600000).toISOString();
+      var { data: pLive } = await sb.from('bubble_members')
+        .select('checked_in_at, bubbles(name)')
+        .eq('user_id', userId)
+        .not('checked_in_at', 'is', null)
+        .is('checked_out_at', null)
+        .gte('checked_in_at', expCut)
+        .order('checked_in_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (pLive) {
+        personLiveEl.innerHTML = '<span class="live-badge-mini">LIVE</span> ' + escHtml(pLive.bubbles?.name || '');
+        personLiveEl.style.display = 'block';
+      } else {
+        personLiveEl.style.display = 'none';
+      }
+    }
+
     const myKw = (currentProfile?.keywords || []).map(k => k.toLowerCase());
     const theirKw = (p.keywords || []).map(k => k.toLowerCase());
     const overlap = myKw.filter(k => theirKw.includes(k));
@@ -937,6 +958,26 @@ async function openRadarPerson(userId) {
     document.getElementById('rp-avatar').textContent = ini;
     document.getElementById('rp-name').textContent = name;
     document.getElementById('rp-sub').textContent = isA ? '' : (p.title || '');
+    // Check live presence
+    var rpLiveEl = document.getElementById('rp-live-badge');
+    if (rpLiveEl) {
+      var expireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 3600000).toISOString();
+      var { data: liveCheck } = await sb.from('bubble_members')
+        .select('checked_in_at, bubbles(name)')
+        .eq('user_id', userId)
+        .not('checked_in_at', 'is', null)
+        .is('checked_out_at', null)
+        .gte('checked_in_at', expireCutoff)
+        .order('checked_in_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (liveCheck) {
+        rpLiveEl.innerHTML = '<span class="live-badge-mini">LIVE</span> ' + escHtml(liveCheck.bubbles?.name || '');
+        rpLiveEl.style.display = 'block';
+      } else {
+        rpLiveEl.style.display = 'none';
+      }
+    }
     var myKw = (currentProfile?.keywords || []).map(function(k){ return k.toLowerCase(); });
     var theirKw = (p.keywords || []).map(function(k){ return k.toLowerCase(); });
     var overlap = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; });
@@ -2654,8 +2695,10 @@ async function bcLoadMembers() {
     const list = document.getElementById('bc-members-list');
     list.innerHTML = '<div class="spinner"></div>';
 
+    const expireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 60 * 60 * 1000).toISOString();
+
     const { data: members } = await sb.from('bubble_members')
-      .select('user_id, joined_at')
+      .select('user_id, joined_at, checked_in_at, checked_out_at')
       .eq('bubble_id', bcBubbleId)
       .order('joined_at', {ascending:true});
 
@@ -2670,23 +2713,49 @@ async function bcLoadMembers() {
     const profileMap = {};
     (profiles || []).forEach(p => profileMap[p.id] = p);
 
+    // Determine live status per member
+    const now = Date.now();
+    members.forEach(m => {
+      m._isLive = m.checked_in_at && !m.checked_out_at &&
+        new Date(m.checked_in_at).getTime() > (now - LIVE_EXPIRE_HOURS * 3600000);
+    });
+
     const colors = ['linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#7C2D12,#F97316)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#4C1D95,#A78BFA)','linear-gradient(135deg,#0C4A6E,#38BDF8)'];
     const ownerId = bcBubbleData?.created_by;
-    const owner = members.find(m => m.user_id === ownerId);
-    const others = members.filter(m => m.user_id !== ownerId);
-    const all = owner ? [owner, ...others] : members;
+
+    // Sort: owner first, then live members, then rest
+    const sorted = [...members].sort((a, b) => {
+      if (a.user_id === ownerId) return -1;
+      if (b.user_id === ownerId) return 1;
+      if (a._isLive && !b._isLive) return -1;
+      if (!a._isLive && b._isLive) return 1;
+      return 0;
+    });
+
+    const liveCount = members.filter(m => m._isLive).length;
 
     let html = '';
-    all.forEach((m, i) => {
+    let prevSection = '';
+    sorted.forEach((m, i) => {
       const p = profileMap[m.user_id] || {};
       const initials = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const color = colors[i % colors.length];
       const isOwnerRow = m.user_id === ownerId;
-      if (i === 0) html += `<div class="chat-section-label">${isOwnerRow ? 'Ejer' : 'Medlemmer'}</div>`;
-      if (!isOwnerRow && owner && i === 1) html += `<div class="chat-section-label" style="margin-top:0.8rem">Medlemmer · ${others.length}</div>`;
+
+      // Section labels
+      let section = isOwnerRow ? 'owner' : (m._isLive ? 'live' : 'members');
+      if (section !== prevSection) {
+        if (section === 'owner') html += `<div class="chat-section-label">Ejer</div>`;
+        else if (section === 'live') html += `<div class="chat-section-label" style="margin-top:0.8rem">Her lige nu · ${liveCount}</div>`;
+        else html += `<div class="chat-section-label" style="margin-top:0.8rem">Medlemmer · ${members.length - liveCount - (ownerId ? 1 : 0)}</div>`;
+        prevSection = section;
+      }
+
+      const liveBadge = m._isLive ? '<span class="live-badge-mini">LIVE</span>' : '';
+
       html += `<div class="chat-member-row" onclick="bcOpenPerson('${m.user_id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${color}')">
-        <div class="chat-member-avatar" style="background:${color}">${initials}</div>
-        <div style="flex:1"><div class="chat-member-name">${escHtml(p.name||'Ukendt')}</div><div class="chat-member-status">${escHtml(p.title||'')}</div></div>
+        <div class="chat-member-avatar" style="background:${color}">${initials}${m._isLive ? '<span class="live-dot"></span>' : ''}</div>
+        <div style="flex:1;min-width:0"><div class="chat-member-name">${escHtml(p.name||'Ukendt')} ${liveBadge}</div><div class="chat-member-status">${escHtml(p.title||'')}</div></div>
         ${isOwnerRow ? '<span class="chat-member-role">Ejer</span>' : ''}
       </div>`;
     });
