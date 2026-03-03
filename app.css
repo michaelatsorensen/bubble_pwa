@@ -1093,106 +1093,113 @@ a.person-action-btn { text-decoration:none; }
 @media (min-width: 600px) {
   html {
     background: #020208;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     min-height: 100vh;
   }
 
-  /* Phone frame container */
   body {
     position: relative;
-    width: 390px;
-    height: min(844px, calc(100vh - 2rem));
-    border-radius: 40px;
-    overflow: hidden;
+    max-width: 520px;
+    margin: 0 auto;
+    min-height: 100vh;
+    border-left: 1px solid rgba(139,127,255,0.06);
+    border-right: 1px solid rgba(139,127,255,0.06);
     box-shadow:
-      0 0 0 8px #1a1a2e,
-      0 0 0 10px rgba(139,127,255,0.12),
-      0 30px 100px rgba(0,0,0,0.5),
-      0 0 200px rgba(139,127,255,0.04);
-    margin: 1rem 0;
+      -40px 0 80px rgba(0,0,0,0.3),
+      40px 0 80px rgba(0,0,0,0.3),
+      0 0 200px rgba(139,127,255,0.02);
   }
 
-  /* Scope ALL fixed elements to the phone frame */
-  .bg-canvas,
-  .bottom-nav,
-  .person-sheet-overlay,
-  .person-sheet,
-  .radar-person-overlay,
-  .radar-person-sheet,
+  /* Fixed elements stay within the container */
+  .bottom-nav {
+    max-width: 520px;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 auto;
+  }
+
+  .toast {
+    max-width: 420px;
+  }
+
+  /* Modals and overlays scoped to container */
   .modal-overlay,
-  .chat-context-menu,
-  .toast,
-  .ptr-indicator {
-    position: absolute !important;
+  .person-sheet-overlay,
+  .radar-person-overlay {
+    max-width: 520px;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 auto;
   }
 
-  /* Keep toast centered inside frame */
-  .toast { left: 50% !important; max-width: 340px; }
+  .person-sheet,
+  .radar-person-sheet {
+    max-width: 520px;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 auto;
+    border-radius: 24px 24px 0 0;
+  }
 
-  /* Bottom nav inside frame */
-  .bottom-nav { left: 0 !important; right: 0 !important; bottom: 0 !important; }
+  .modal-overlay .modal-sheet {
+    max-width: 460px;
+  }
 
-  /* Modals inside frame */
-  .modal-overlay { inset: 0 !important; }
+  /* Chat input pinned inside container */
+  .chat-input-bar {
+    max-width: 520px;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 auto;
+  }
 
-  /* Screens scrollable inside frame */
+  /* Screens scroll nicely */
   .screen {
-    min-height: 100%;
-    max-height: 844px;
-    overflow-y: auto;
     overscroll-behavior: contain;
   }
 
-  /* Sheets capped to frame */
-  .person-sheet,
-  .radar-person-sheet { max-width: 390px; border-radius: 24px 24px 0 0; }
-  .modal-overlay .modal-sheet { max-width: 370px; }
-
-  /* Scroll areas inside frame */
-  .scroll-area { overscroll-behavior: contain; }
-
-  /* Disable pull-to-refresh on desktop (mouse doesn't need it) */
+  /* Disable pull-to-refresh on desktop */
   .ptr-indicator { display: none !important; }
 
-  /* Chat input pinned inside frame */
-  .chat-input-bar { position: absolute !important; left: 0 !important; right: 0 !important; bottom: 0 !important; }
-
-  /* Topbar inside frame */
-  .topbar { position: sticky; top: 0; z-index: 50; }
+  /* Topbar */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
 }
 
-/* Ultra-wide: show branding sidebar */
-@media (min-width: 900px) {
-  html {
-    gap: 3rem;
+/* Wide screens: branding */
+@media (min-width: 1100px) {
+  body {
+    margin-left: calc(50% - 40px);
+    margin-right: auto;
   }
+
   html::before {
     content: 'bubble';
     position: fixed;
-    left: calc(50% - 300px);
+    left: calc(50% - 380px);
     top: 50%;
     transform: translateY(-50%);
     font-family: 'Outfit', sans-serif;
-    font-size: 2.2rem;
+    font-size: 2.8rem;
     font-weight: 800;
     letter-spacing: -0.04em;
     background: linear-gradient(135deg, #8B7FFF, #E85D8A);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     pointer-events: none;
-    opacity: 0.7;
+    opacity: 0.6;
   }
   html::after {
     content: 'The chat layer for the real world';
     position: fixed;
-    left: calc(50% - 300px);
-    top: calc(50% + 1.8rem);
+    left: calc(50% - 380px);
+    top: calc(50% + 2.2rem);
     transform: translateY(-50%);
     font-family: 'Outfit', sans-serif;
-    font-size: 0.75rem;
-    color: rgba(255,255,255,0.2);
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.15);
     letter-spacing: 0.02em;
     pointer-events: none;
   }
