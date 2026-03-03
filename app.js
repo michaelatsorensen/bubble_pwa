@@ -119,6 +119,7 @@ function goTo(screenId) {
 // ══════════════════════════════════════════════════════════
 async function checkAuth() {
   if (!initSupabase()) return;
+  setupAuthListener();
   try {
     // Handle OAuth redirect — Supabase v2 processes hash automatically
     if (window.location.hash && window.location.hash.includes('access_token')) {
@@ -153,6 +154,23 @@ async function checkAuth() {
     if (el) { el.textContent = 'Fejl: ' + (e.message || 'Ukendt'); el.style.color = '#E85D8A'; }
     console.error('checkAuth:', e);
   }
+}
+
+function setupAuthListener() {
+  sb.auth.onAuthStateChange((event, session) => {
+    console.debug('[auth] state change:', event);
+    if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
+      // User signed out (possibly in another tab)
+      bcUnsubscribeAll();
+      currentUser = null;
+      currentProfile = null;
+      _profileCache = {};
+      goTo('screen-auth');
+    } else if (event === 'TOKEN_REFRESHED' && session) {
+      // Token refreshed — update user reference
+      currentUser = session.user;
+    }
+  });
 }
 
 async function loadCurrentProfile() {
@@ -2208,10 +2226,19 @@ let bcSubscription = null;
 let bcBubbleData = null;
 
 // ── REALTIME CLEANUP HELPER ──
-function bcUnsubscribeAll() {
-  if (chatSubscription) { chatSubscription.unsubscribe(); chatSubscription = null; }
+function bcUnsubscribe() {
   if (bcSubscription) { bcSubscription.unsubscribe(); bcSubscription = null; }
+}
+function dmUnsubscribe() {
+  if (chatSubscription) { chatSubscription.unsubscribe(); chatSubscription = null; }
+}
+function incomingUnsubscribe() {
   if (incomingSubscription) { incomingSubscription.unsubscribe(); incomingSubscription = null; }
+}
+function bcUnsubscribeAll() {
+  bcUnsubscribe();
+  dmUnsubscribe();
+  incomingUnsubscribe();
 }
 
 async function openBubbleChat(bubbleId, fromScreen) {
@@ -2267,7 +2294,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
       // Badge sættes via real-time subscription når man er på en anden tab
     });
     bcSubscribe();
-  } catch(e) { console.error("openBubbleChat:", e); bcUnsubscribeAll(); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { console.error("openBubbleChat:", e); bcUnsubscribe(); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function bcLoadBubbleInfo() {
@@ -2398,6 +2425,15 @@ function bcScrollToBottom() {
   if (el) el.scrollTop = el.scrollHeight;
 }
 
+var _profileCache = {};
+
+async function getCachedProfile(userId) {
+  if (_profileCache[userId]) return _profileCache[userId];
+  var { data: p } = await sb.from('profiles').select('name,title').eq('id', userId).single();
+  if (p) _profileCache[userId] = p;
+  return p || {};
+}
+
 function bcSubscribe() {
   if (!currentUser || !bcBubbleId) { console.warn('bcSubscribe: missing user or bubbleId'); return; }
   console.debug('[bc] bcSubscribe, bubble:', bcBubbleId);
@@ -2407,8 +2443,7 @@ function bcSubscribe() {
       async (payload) => {
         const m = payload.new;
         if (m.user_id === currentUser.id) return;
-        const { data: p } = await sb.from('profiles').select('name,title').eq('id', m.user_id).single();
-        m.profiles = p || {};
+        m.profiles = await getCachedProfile(m.user_id);
         const panel = document.getElementById('bc-panel-chat');
         if (panel.style.display !== 'none') {
           document.getElementById('bc-messages').appendChild(bcRenderMsg(m));
