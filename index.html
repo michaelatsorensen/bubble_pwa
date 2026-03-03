@@ -638,34 +638,33 @@
   </div>
 
   <!-- SAVED TAB -->
-  <div id="prof-panel-saved" style="display:flex;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
+  <div id="prof-panel-saved" style="display:flex;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 8.5rem">
     <div id="saved-contacts"></div>
   </div>
 
   <!-- BUBBLES TAB -->
-  <div id="prof-panel-bubbles" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
+  <div id="prof-panel-bubbles" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 8.5rem">
     <div id="profile-bubbles"><div class="spinner"></div></div>
     
   </div>
 
   <!-- INVITATIONS TAB -->
-  <div id="prof-panel-invites" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
+  <div id="prof-panel-invites" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 8.5rem">
     <div id="profile-invitations"></div>
   </div>
 
   
-    <!-- SETTINGS -->
-    <div style="padding:0.75rem 1.1rem 1.5rem;border-top:1px solid var(--glass-border-subtle)">
-      <div class="card" style="display:flex;justify-content:space-between;align-items:center;cursor:default">
-        <div>
-          <div style="font-size:0.82rem;font-weight:700">Anonym tilstand</div>
-          <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:0.1rem">Skjul navn og billede i radar</div>
+    <!-- SETTINGS (fixed above bottom-nav) -->
+    <div class="profile-settings-bar" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem">
+        <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0">
+          <div id="anon-toggle" onclick="toggleAnon()" style="width:42px;height:24px;background:var(--border);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0">
+            <div id="anon-knob" style="width:18px;height:18px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>
+          </div>
+          <div style="font-size:0.72rem;color:var(--text-secondary)">Anonym tilstand</div>
         </div>
-        <div id="anon-toggle" onclick="toggleAnon()" style="width:46px;height:26px;background:var(--border);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s">
-          <div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>
-        </div>
+        <button onclick="handleLogout()" style="background:none;border:1px solid rgba(232,93,138,0.2);border-radius:8px;padding:0.3rem 0.75rem;font-size:0.7rem;font-family:inherit;font-weight:600;color:var(--accent2);cursor:pointer">Log ud</button>
       </div>
-      <button class="btn-secondary" onclick="handleLogout()" style="margin-top:0.75rem;color:var(--accent2);border-color:rgba(232,93,138,0.2);font-size:0.8rem">Log ud</button>
     </div>
 
 <div class="bottom-nav">

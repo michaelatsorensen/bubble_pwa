@@ -1090,6 +1090,20 @@ a.person-action-btn { text-decoration:none; }
    DESKTOP VIEW (min-width: 600px)
    Phone-frame centered with ambient branding
 ══════════════════════════════════════════════════════════ */
+
+/* Profile settings bar — fixed above bottom-nav */
+.profile-settings-bar {
+  position: fixed;
+  bottom: calc(3.6rem + env(safe-area-inset-bottom, 0px));
+  left: 0; right: 0;
+  z-index: 49;
+  padding: 0.5rem 1.1rem;
+  background: rgba(6,6,15,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--glass-border-subtle);
+}
+
 @media (min-width: 600px) {
   html {
     background: #020208;
@@ -1117,6 +1131,7 @@ a.person-action-btn { text-decoration:none; }
   }
 
   .toast { max-width: 540px; }
+  .profile-settings-bar { max-width: 680px; left: 0 !important; right: 0 !important; margin: 0 auto; }
 
   .modal-overlay,
   .person-sheet-overlay,

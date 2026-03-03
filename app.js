@@ -86,6 +86,10 @@ function goTo(screenId) {
   const target = document.getElementById(screenId);
   if (!target) { console.error('[nav] screen not found:', screenId); return; }
   target.classList.add('active');
+
+  // Show/hide profile settings bar
+  var settingsBar = document.querySelector('.profile-settings-bar');
+  if (settingsBar) settingsBar.style.display = (screenId === 'screen-profile') ? 'block' : 'none';
   window.scrollTo(0,0);
 
   // Update bottom nav active state
@@ -750,11 +754,38 @@ function drawProxRings(canvas) {
   var w = par.offsetWidth || 300, h = w;
   canvas.width = w*2; canvas.height = h*2; canvas.style.width = w+'px'; canvas.style.height = h+'px';
   var ctx = canvas.getContext('2d'); ctx.scale(2,2); ctx.clearRect(0,0,w,h);
-  var cx = w/2, cy = h/2, rings = [0.25,0.45,0.7];
-  for (var i=0; i<rings.length; i++) { ctx.beginPath(); ctx.arc(cx,cy,rings[i]*Math.min(cx,cy),0,Math.PI*2); ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=1; ctx.stroke(); }
-  var g = ctx.createRadialGradient(cx,cy,0,cx,cy,cx*0.3);
-  g.addColorStop(0,'rgba(139,127,255,0.06)'); g.addColorStop(1,'rgba(139,127,255,0)');
-  ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+  var cx = w/2, cy = h/2, maxR = Math.min(cx, cy);
+
+  // Dartboard zones — sart farvet fra center (best match) til edge (low match)
+  var zones = [
+    { r: 0.22, fill: 'rgba(139,127,255,0.10)' },  // bullseye — accent purple
+    { r: 0.42, fill: 'rgba(46,207,207,0.06)' },    // inner — teal
+    { r: 0.65, fill: 'rgba(232,93,138,0.04)' },    // mid — pink
+    { r: 0.88, fill: 'rgba(255,255,255,0.02)' },    // outer — faint white
+  ];
+  // Draw filled zones from outside in so inner overlaps
+  for (var i = zones.length - 1; i >= 0; i--) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, zones[i].r * maxR, 0, Math.PI * 2);
+    ctx.fillStyle = zones[i].fill;
+    ctx.fill();
+  }
+  // Draw ring borders
+  for (var i = 0; i < zones.length; i++) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, zones[i].r * maxR, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  // Subtle center glow
+  var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, zones[0].r * maxR);
+  g.addColorStop(0, 'rgba(139,127,255,0.08)');
+  g.addColorStop(1, 'rgba(139,127,255,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(cx, cy, zones[0].r * maxR, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 function updateProximityRange(val) {
@@ -776,11 +807,24 @@ function updateProximityRange(val) {
 
 function toggleProximityVisibility() {
   proxVisible = !proxVisible;
+  var btn = document.getElementById('prox-toggle');
   var d = document.getElementById('prox-toggle-dot');
   var l = document.getElementById('prox-toggle-label');
   var c = document.getElementById('prox-center');
-  if (d) d.style.background = proxVisible ? 'var(--accent3)' : 'var(--muted)';
-  if (l) l.textContent = proxVisible ? 'Synlig' : 'Anonym';
+  if (d) d.style.background = proxVisible ? '#10B981' : 'var(--muted)';
+  if (l) l.textContent = proxVisible ? 'Synlig' : 'Skjult';
+  // Restyle the whole button for clear on/off state
+  if (btn) {
+    if (proxVisible) {
+      btn.style.background = 'rgba(16,185,129,0.12)';
+      btn.style.borderColor = 'rgba(16,185,129,0.3)';
+      btn.style.color = '#10B981';
+    } else {
+      btn.style.background = 'rgba(255,255,255,0.04)';
+      btn.style.borderColor = 'rgba(255,255,255,0.08)';
+      btn.style.color = 'var(--muted)';
+    }
+  }
   if (c) { if (proxVisible && currentProfile && currentProfile.name) { c.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); c.style.background = 'var(--gradient-primary)'; } else { c.textContent = '?'; c.style.background = 'rgba(255,255,255,0.08)'; } }
   toggleAnon();
 }
@@ -791,6 +835,23 @@ function openRadarSheet() {
   if (overlay) overlay.classList.add('open');
   if (sheet) sheet.classList.add('open');
   document.body.style.overflow = 'hidden';
+  // Set initial toggle state visuals
+  var btn = document.getElementById('prox-toggle');
+  var d = document.getElementById('prox-toggle-dot');
+  var l = document.getElementById('prox-toggle-label');
+  if (d) d.style.background = proxVisible ? '#10B981' : 'var(--muted)';
+  if (l) l.textContent = proxVisible ? 'Synlig' : 'Skjult';
+  if (btn) {
+    if (proxVisible) {
+      btn.style.background = 'rgba(16,185,129,0.12)';
+      btn.style.borderColor = 'rgba(16,185,129,0.3)';
+      btn.style.color = '#10B981';
+    } else {
+      btn.style.background = 'rgba(255,255,255,0.04)';
+      btn.style.borderColor = 'rgba(255,255,255,0.08)';
+      btn.style.color = 'var(--muted)';
+    }
+  }
   setTimeout(function(){ if (radarCurrentView === 'map') renderProximityDots(); else renderRadarList(); }, 120);
   radarInitSwipeClose(sheet);
 }
