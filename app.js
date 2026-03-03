@@ -62,8 +62,26 @@ function initSupabase() {
 //  NAVIGATION
 // ══════════════════════════════════════════════════════════
 function goTo(screenId) {
+  console.debug('[nav] goTo:', screenId);
+  // Cleanup: unsubscribe when leaving chat screens
+  const prev = document.querySelector('.screen.active');
+  if (prev) {
+    const prevId = prev.id;
+    if (prevId === 'screen-chat' && screenId !== 'screen-chat') {
+      if (chatSubscription) { chatSubscription.unsubscribe(); chatSubscription = null; }
+      dmEditingId = null;
+    }
+    if (prevId === 'screen-bubble-chat' && screenId !== 'screen-bubble-chat') {
+      if (bcSubscription) { bcSubscription.unsubscribe(); bcSubscription = null; }
+      bcEditingId = null;
+      bcCurrentMsgId = null;
+      bcCloseContext();
+    }
+  }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(screenId).classList.add('active');
+  const target = document.getElementById(screenId);
+  if (!target) { console.error('[nav] screen not found:', screenId); return; }
+  target.classList.add('active');
   window.scrollTo(0,0);
 
   // Update bottom nav active state
@@ -238,6 +256,7 @@ async function loadHome() {
       loadHomeMessagesCard(),
       loadHomeNotifCard(),
       updateRadarCount(),
+      loadProximityMap(),
     ]);
 
     // Also load bubbles screen data if it exists
@@ -346,9 +365,13 @@ async function loadMyBubbles() {
 
     // Profile bubbles
     document.getElementById('profile-bubbles').innerHTML = bubbles.map(b =>
-      `<div class="card" style="padding:0.85rem 1.1rem;cursor:default">
-        <div style="font-weight:600;font-size:0.9rem">${bubbleIcon(b.type)} ${escHtml(b.name)}</div>
-        <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem">${b.created_by === currentUser.id ? icon('crown') + ' Ejer' : 'Aktiv'}</div>
+      `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}" style="padding:0.85rem 1.1rem">
+        <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};flex-shrink:0">${bubbleEmoji(b.type)}</div>
+        <div style="flex:1;min-width:0">
+          <div class="fw-600 fs-09">${escHtml(b.name)}</div>
+          <div class="fs-075 text-muted">${b.created_by === currentUser.id ? icon('crown') + ' Ejer' : 'Aktiv'}${b.location ? ' · ' + escHtml(b.location) : ''}</div>
+        </div>
+        <div class="icon-muted">›</div>
       </div>`).join('');
   } catch(e) { console.error("loadMyBubbles:", e); showToast(e.message || "Ukendt fejl"); }
 }
@@ -429,56 +452,7 @@ async function openBubble(bubbleId, fromScreen) {
   } catch(e) { console.error("openBubble:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
-async function loadBubbleMembers(bubbleId) {
-  try {
-    const { data: members } = await sb.from('bubble_members')
-      .select('user_id, profiles(id, name, title, keywords, is_anon)')
-      .eq('bubble_id', bubbleId).neq('user_id', currentUser.id);
-
-    const list = document.getElementById('bubble-members-list');
-    if (!list) return;
-
-    // Stats
-    const { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id',bubbleId);
-    const statsEl = document.getElementById('detail-stats');
-    if (statsEl) statsEl.innerHTML = `
-      <div class="stat-box"><div class="stat-num">${count||0}</div><div class="stat-label">Aktive</div></div>
-      <div class="stat-box"><div class="stat-num">${members?.length||0}</div><div class="stat-label">Andre</div></div>
-      <div class="stat-box"><div class="stat-num" style="color:var(--accent3)">${members?.length ? Math.round(60 + Math.random()*35) : 0}%</div><div class="stat-label">Din match-rate</div></div>`;
-
-    if (!members || members.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('users') + '</div><div class="empty-text">Ingen andre i boblen endnu.</div></div>';
-      return;
-    }
-
-    const myKw = (currentProfile?.keywords || []).map(k => k.toLowerCase());
-    const scored = members.map(m => {
-      const p = m.profiles;
-      if (!p) return null;
-      const theirKw = (p.keywords || []).map(k => k.toLowerCase());
-      const overlap = myKw.filter(k => theirKw.includes(k));
-      const score = theirKw.length ? Math.round((overlap.length / Math.max(myKw.length, theirKw.length, 1)) * 100 + 40 + Math.random()*20) : Math.round(40 + Math.random()*30);
-      return { ...p, score: Math.min(score, 99), overlap };
-    }).filter(Boolean).sort((a,b) => b.score - a.score);
-
-    list.innerHTML = scored.map(p => {
-      const initials = p.is_anon ? '?' : (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-      const name = p.is_anon ? 'Anonym bruger' : escHtml(p.name || '?');
-      const role = p.is_anon ? '' : escHtml(p.title || '');
-      const colors = ['linear-gradient(135deg,#8B7FFF,#A89FFF)','linear-gradient(135deg,#E85D8A,#FF8C69)','linear-gradient(135deg,#2ECFCF,#8B7FFF)','linear-gradient(135deg,#FF8C69,#E85D8A)'];
-      const col = colors[Math.abs(p.id.charCodeAt(0)) % colors.length];
-      return `<div class="card flex-row-center" data-action="openPerson" data-id="${p.id}" data-from="screen-bubble-detail">
-        <div class="avatar" style="background:${col}">${initials}</div>
-        <div style="flex:1">
-          <div class="fw-600 fs-09">${name}</div>
-          <div class="fs-075 text-muted">${role}</div>
-          <div class="match-bar-wrap"><div class="match-bar" style="width:${p.score}%"></div></div>
-        </div>
-        <div class="fs-08 fw-700" style="color:var(--accent3)">${p.score}%</div>
-      </div>`;
-    }).join('');
-  } catch(e) { console.error("loadBubbleMembers:", e); showToast(e.message || "Ukendt fejl"); }
-}
+// loadBubbleMembers removed — integrated into screen-bubble-chat bcLoadMembers
 
 async function joinBubble(bubbleId) {
   try {
@@ -548,40 +522,75 @@ async function openPerson(userId, fromScreen) {
     } else { dynEl.innerHTML = ''; }
 
     // Check if saved
-    const { data: saved } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).single();
-    document.getElementById('save-btn').innerHTML = saved ? icon('checkCircle') + '<span>Gemt</span>' : icon('bookmark') + '<span>Gem</span>';
+    const { data: savedCheck } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
+    document.getElementById('save-btn').innerHTML = savedCheck ? icon('checkCircle') + '<span>Gemt</span>' : icon('bookmark') + '<span>Gem</span>';
   } catch(e) { console.error("openPerson:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function saveContact() {
   try {
     if (!currentPerson) return;
-    const { data: existing } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', currentPerson).single();
+    const { data: existing } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', currentPerson).maybeSingle();
     if (existing) { showToast('Allerede gemt'); return; }
     await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: currentPerson });
     document.getElementById('save-btn').innerHTML = icon('checkCircle') + '<span>Gemt</span>';
-    showToast('Kontakt gemt! 🔖');
+    showToast('Kontakt gemt!');
+    loadSavedContacts();
   } catch(e) { console.error("saveContact:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
-function proposeMeeting() {
-  document.getElementById('meeting-msg').value = '';
-  openModal('modal-meeting');
+let pendingRemoveSavedId = null;
+let pendingRemoveBtn = null;
+
+function removeSavedContact(savedId, btn) {
+  pendingRemoveSavedId = savedId;
+  pendingRemoveBtn = btn;
+  // Show inline confirm on the card
+  const card = btn.closest('.card');
+  if (!card) return;
+  // Prevent double-confirm
+  if (card.querySelector('.remove-confirm')) return;
+  const confirm = document.createElement('div');
+  confirm.className = 'remove-confirm';
+  confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(232,93,138,0.08);border:1px solid rgba(232,93,138,0.2);border-radius:10px;gap:0.5rem';
+  confirm.innerHTML = `<span style="font-size:0.72rem;color:var(--text-secondary)">Fjern kontakt?</span>
+    <div style="display:flex;gap:0.3rem">
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)" onclick="confirmRemoveSaved()">Fjern</button>
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelRemoveSaved(this)">Annuller</button>
+    </div>`;
+  card.appendChild(confirm);
 }
 
-async function sendMeetingProposal() {
+function cancelRemoveSaved(btn) {
+  const confirm = btn.closest('.remove-confirm');
+  if (confirm) confirm.remove();
+  pendingRemoveSavedId = null;
+  pendingRemoveBtn = null;
+}
+
+async function confirmRemoveSaved() {
+  if (!pendingRemoveSavedId) return;
+  const savedId = pendingRemoveSavedId;
+  const btn = pendingRemoveBtn;
+  pendingRemoveSavedId = null;
+  pendingRemoveBtn = null;
   try {
-    const msg = document.getElementById('meeting-msg').value.trim();
-    const time = document.getElementById('meeting-time').value;
-    if (!msg) return showToast('Skriv en besked');
-    const fullMsg = `Mødeanmodning${time ? '\n' + new Date(time).toLocaleString('da-DK') : ''}\n\n${msg}`;
-    await sendDirectMessage(currentPerson, fullMsg);
-    closeModal('modal-meeting');
-    showToast('Mødeanmodning sendt! ☕');
-  } catch(e) { console.error("sendMeetingProposal:", e); showToast(e.message || "Ukendt fejl"); }
+    await sb.from('saved_contacts').delete().eq('id', savedId);
+    const card = btn?.closest('.card');
+    if (card) {
+      card.style.transition = 'opacity 0.25s, transform 0.25s';
+      card.style.opacity = '0';
+      card.style.transform = 'translateX(20px)';
+      setTimeout(() => loadSavedContacts(), 260);
+    } else {
+      loadSavedContacts();
+    }
+    showToast('Kontakt fjernet');
+  } catch(e) { console.error("confirmRemoveSaved:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
-// ══════════════════════════════════════════════════════════
+// proposeMeeting / sendMeetingProposal removed — feature shelved
+
 
 // PROXIMITY MAP
 var proxVisible = true;
@@ -596,29 +605,25 @@ async function loadProximityMap() {
     var emptyEl = document.getElementById('prox-empty');
     var canvas = document.getElementById('prox-canvas');
     if (!map || !canvas) return;
-    var resp = await sb.from('profiles').select('id,name,title,keywords,is_anon').neq('id', currentUser.id).limit(50);
-    var allProfiles = resp.data;
+    var r1 = await sb.from('profiles').select('id,name,title,keywords,is_anon').neq('id', currentUser.id).limit(50);
+    var allProfiles = r1.data;
     if (!allProfiles || allProfiles.length === 0) { map.style.display = 'none'; if (emptyEl) emptyEl.style.display = 'block'; return; }
-    map.style.display = 'block';
-    if (emptyEl) emptyEl.style.display = 'none';
-    var resp2 = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
-    var myBubbleIds = (resp2.data || []).map(function(m){ return m.bubble_id; });
-    var bubbleMemberMap = {};
+    map.style.display = 'block'; if (emptyEl) emptyEl.style.display = 'none';
+    var r2 = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+    var myBubbleIds = (r2.data || []).map(function(m){ return m.bubble_id; });
+    var bmMap = {};
     if (myBubbleIds.length > 0) {
-      var resp3 = await sb.from('bubble_members').select('user_id,bubble_id').in('bubble_id', myBubbleIds);
-      (resp3.data || []).forEach(function(bm) {
-        if (!bubbleMemberMap[bm.user_id]) bubbleMemberMap[bm.user_id] = [];
-        bubbleMemberMap[bm.user_id].push(bm.bubble_id);
-      });
+      var r3 = await sb.from('bubble_members').select('user_id,bubble_id').in('bubble_id', myBubbleIds);
+      (r3.data || []).forEach(function(bm) { if (!bmMap[bm.user_id]) bmMap[bm.user_id] = []; bmMap[bm.user_id].push(bm.bubble_id); });
     }
-    var myKw = (currentProfile && currentProfile.keywords || []).map(function(k){ return k.toLowerCase(); });
+    var myKw = (currentProfile && currentProfile.keywords ? currentProfile.keywords : []).map(function(k){ return k.toLowerCase(); });
     proxAllProfiles = allProfiles.map(function(p) {
       var theirKw = (p.keywords || []).map(function(k){ return k.toLowerCase(); });
-      var kwOverlap = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; }).length;
+      var kwOv = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; }).length;
       var maxKw = Math.max(myKw.length, theirKw.length, 1);
-      var sharedBubbles = (bubbleMemberMap[p.id] || []).length;
-      var relevance = (kwOverlap / maxKw) * 0.6 + Math.min(sharedBubbles / 3, 1) * 0.4;
-      return {id:p.id, name:p.name, title:p.title, keywords:p.keywords, is_anon:p.is_anon, relevance:relevance, kwOverlap:kwOverlap, sharedBubbles:sharedBubbles};
+      var shared = (bmMap[p.id] || []).length;
+      var rel = (kwOv / maxKw) * 0.6 + Math.min(shared / 3, 1) * 0.4;
+      return { id:p.id, name:p.name, title:p.title, keywords:p.keywords, is_anon:p.is_anon, relevance:rel, kwOverlap:kwOv, sharedBubbles:shared };
     }).sort(function(a,b){ return b.relevance - a.relevance; });
     renderProximityDots();
   } catch (e) { console.error('loadProximityMap:', e); }
@@ -626,100 +631,78 @@ async function loadProximityMap() {
 
 function renderProximityDots() {
   var map = document.getElementById('proximity-map');
-  var avatarsEl = document.getElementById('prox-avatars');
+  var av = document.getElementById('prox-avatars');
   var canvas = document.getElementById('prox-canvas');
   var emptyEl = document.getElementById('prox-empty');
-  if (!map || !avatarsEl || !canvas) return;
-  var maxCount = [4,8,12,20,50][proxRange - 1] || 12;
-  var filtered = proxAllProfiles.slice(0, maxCount);
-  if (filtered.length === 0) { avatarsEl.innerHTML = ''; drawProxRings(canvas); if (emptyEl) emptyEl.style.display = 'block'; return; }
+  if (!map || !av || !canvas) return;
+  var maxN = [4,8,12,20,50][proxRange-1] || 12;
+  var fil = proxAllProfiles.slice(0, maxN);
+  if (fil.length === 0) { av.innerHTML = ''; drawProxRings(canvas); if (emptyEl) emptyEl.style.display = 'block'; return; }
   if (emptyEl) emptyEl.style.display = 'none';
   drawProxRings(canvas);
-  var centerEl = document.getElementById('prox-center');
-  if (centerEl && currentProfile && currentProfile.name) {
-    centerEl.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+  var ce = document.getElementById('prox-center');
+  if (ce && currentProfile && currentProfile.name) { ce.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); }
+  var w = map.offsetWidth || 300, h = w, cx = w/2, cy = h/2, out = '';
+  for (var i=0; i<fil.length; i++) {
+    var p = fil[i], isA = p.is_anon;
+    var ini = isA ? '?' : (p.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
+    var col = isA ? 'rgba(255,255,255,0.08)' : proxColors[i % proxColors.length];
+    var bd = isA ? 'border-color:rgba(255,255,255,0.06);' : '';
+    var d = 0.2 + (1-p.relevance)*0.35, ang = (i*2.399)+0.7;
+    var x = cx + Math.cos(ang)*d*(cx-20)-16, y = cy + Math.sin(ang)*d*(cy-20)-16;
+    var sz = p.relevance > 0.3 ? 34 : 28, op = isA ? 0.5 : (0.6+p.relevance*0.4);
+    out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+x.toFixed(1)+'px;top:'+y.toFixed(1)+'px;background:'+col+';opacity:'+op.toFixed(2)+';font-size:'+(sz<32?'0.48':'0.52')+'rem;'+bd+'" data-action="openPerson" data-id="'+p.id+'" data-from="screen-home">'+escHtml(ini)+'</div>';
   }
-  var rect = map.getBoundingClientRect();
-  var w = rect.width || 300;
-  var h = w;
-  var cx = w / 2, cy = h / 2;
-  var out = '';
-  for (var i = 0; i < filtered.length; i++) {
-    var p = filtered[i];
-    var isAnon = p.is_anon;
-    var ini = isAnon ? '?' : (p.name || '?').split(' ').map(function(ww){return ww[0];}).join('').slice(0,2).toUpperCase();
-    var col = isAnon ? 'rgba(255,255,255,0.08)' : proxColors[i % proxColors.length];
-    var bdr = isAnon ? 'border-color:rgba(255,255,255,0.06);' : '';
-    var dist = 0.2 + (1 - p.relevance) * 0.35;
-    var angle = (i * 2.399) + 0.7;
-    var x = cx + Math.cos(angle) * dist * (cx - 22) - 16;
-    var y = cy + Math.sin(angle) * dist * (cy - 22) - 16;
-    var sz = p.relevance > 0.3 ? 34 : 28;
-    var op = isAnon ? 0.5 : (0.6 + p.relevance * 0.4);
-    var fs = sz < 32 ? '0.48rem' : '0.52rem';
-    out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+x.toFixed(1)+'px;top:'+y.toFixed(1)+'px;background:'+col+';opacity:'+op.toFixed(2)+';font-size:'+fs+';'+bdr+'" data-action="openPerson" data-id="'+p.id+'" data-from="screen-home">'+escHtml(ini)+'</div>';
-  }
-  avatarsEl.innerHTML = out;
+  av.innerHTML = out;
 }
 
 function drawProxRings(canvas) {
   if (!canvas) return;
-  var parent = canvas.parentElement;
-  if (!parent) return;
-  var w = parent.offsetWidth || 300;
-  var h = w;
-  canvas.width = w * 2; canvas.height = h * 2;
-  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
-  var ctx = canvas.getContext('2d');
-  ctx.scale(2, 2); ctx.clearRect(0, 0, w, h);
-  var cx = w / 2, cy = h / 2;
-  var rings = [0.25, 0.45, 0.7];
-  for (var ri = 0; ri < rings.length; ri++) {
-    ctx.beginPath(); ctx.arc(cx, cy, rings[ri] * Math.min(cx, cy), 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1; ctx.stroke();
-  }
-  var grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, cx * 0.3);
-  grd.addColorStop(0, 'rgba(139,127,255,0.06)');
-  grd.addColorStop(1, 'rgba(139,127,255,0)');
-  ctx.fillStyle = grd; ctx.fillRect(0, 0, w, h);
+  var par = canvas.parentElement; if (!par) return;
+  var w = par.offsetWidth || 300, h = w;
+  canvas.width = w*2; canvas.height = h*2; canvas.style.width = w+'px'; canvas.style.height = h+'px';
+  var ctx = canvas.getContext('2d'); ctx.scale(2,2); ctx.clearRect(0,0,w,h);
+  var cx = w/2, cy = h/2, rings = [0.25,0.45,0.7];
+  for (var i=0; i<rings.length; i++) { ctx.beginPath(); ctx.arc(cx,cy,rings[i]*Math.min(cx,cy),0,Math.PI*2); ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=1; ctx.stroke(); }
+  var g = ctx.createRadialGradient(cx,cy,0,cx,cy,cx*0.3);
+  g.addColorStop(0,'rgba(139,127,255,0.06)'); g.addColorStop(1,'rgba(139,127,255,0)');
+  ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
 }
 
 function updateProximityRange(val) {
   proxRange = parseInt(val);
-  var label = document.getElementById('prox-range-label');
-  if (label) label.textContent = proxRangeLabels[proxRange - 1] || '';
+  var el = document.getElementById('prox-range-label');
+  if (el) el.textContent = proxRangeLabels[proxRange-1] || '';
   renderProximityDots();
 }
 
 function toggleProximityVisibility() {
   proxVisible = !proxVisible;
-  var dot = document.getElementById('prox-toggle-dot');
-  var lbl = document.getElementById('prox-toggle-label');
-  var center = document.getElementById('prox-center');
-  if (dot) dot.style.background = proxVisible ? 'var(--accent3)' : 'var(--muted)';
-  if (lbl) lbl.textContent = proxVisible ? 'Synlig' : 'Anonym';
-  if (center) {
-    if (proxVisible && currentProfile && currentProfile.name) {
-      center.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-      center.style.background = 'var(--gradient-primary)';
-    } else {
-      center.textContent = '?';
-      center.style.background = 'rgba(255,255,255,0.08)';
-    }
-  }
+  var d = document.getElementById('prox-toggle-dot');
+  var l = document.getElementById('prox-toggle-label');
+  var c = document.getElementById('prox-center');
+  if (d) d.style.background = proxVisible ? 'var(--accent3)' : 'var(--muted)';
+  if (l) l.textContent = proxVisible ? 'Synlig' : 'Anonym';
+  if (c) { if (proxVisible && currentProfile && currentProfile.name) { c.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); c.style.background = 'var(--gradient-primary)'; } else { c.textContent = '?'; c.style.background = 'rgba(255,255,255,0.08)'; } }
   toggleAnon();
 }
 
-function openRadarSheet(){
-  document.getElementById("radar-overlay").classList.add("active");
-  document.getElementById("radar-sheet").classList.add("active");
-  loadProximityMap();
-}
-function closeRadarSheet(){
-  document.getElementById("radar-overlay").classList.remove("active");
-  document.getElementById("radar-sheet").classList.remove("active");
+function openRadarSheet() {
+  console.log('openRadarSheet called');
+  var overlay = document.getElementById('radar-overlay');
+  var sheet = document.getElementById('radar-sheet');
+  console.log('overlay:', overlay, 'sheet:', sheet);
+  if (overlay) overlay.classList.add('open');
+  if (sheet) sheet.classList.add('open');
+  setTimeout(function(){ renderProximityDots(); }, 120);
 }
 
+function closeRadarSheet() {
+  document.getElementById('radar-overlay').classList.remove('open');
+  document.getElementById('radar-sheet').classList.remove('open');
+}
+
+// ══════════════════════════════════════════════════════════
 //  MESSAGES
 // ══════════════════════════════════════════════════════════
 async function updateUnreadBadge() {
@@ -739,8 +722,10 @@ async function updateUnreadBadge() {
   } catch(e) { console.error("updateUnreadBadge:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
+let incomingSubscription = null;
 function subscribeToIncoming() {
-  sb.channel('incoming-messages')
+  if (incomingSubscription) { incomingSubscription.unsubscribe(); incomingSubscription = null; }
+  incomingSubscription = sb.channel('incoming-messages')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages',
       filter: `receiver_id=eq.${currentUser.id}` }, () => {
       updateUnreadBadge();
@@ -795,13 +780,16 @@ async function loadMessages() {
   } catch(e) { console.error("loadMessages:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
-async function openChat(userId) {
+async function openChat(userId, fromScreen) {
+  console.debug('[dm] openChat:', userId, 'from:', fromScreen);
   try {
     currentChatUser = userId;
-  currentChatName = name;
     const { data: p } = await sb.from('profiles').select('name,title').eq('id', userId).single();
-    document.getElementById('chat-name').textContent = p?.name || 'Ukendt';
+    currentChatName = p?.name || 'Ukendt';
+    document.getElementById('chat-name').textContent = currentChatName;
     document.getElementById('chat-role').textContent = p?.title || '';
+    const backBtn = document.getElementById('dm-back-btn');
+    if (backBtn) backBtn.onclick = () => goTo(fromScreen || 'screen-messages');
     goTo('screen-chat');
     await loadChatMessages();
     subscribeToChat();
@@ -822,11 +810,26 @@ function dmRenderMsg(m) {
   const initials = sent ? myInit : theirInit;
   const name = sent ? (currentProfile?.name||'Mig') : (currentChatName||'?');
   const edited = m.edited ? ' <span class="msg-edited">redigeret</span>' : '';
+
+  let bubble = '';
+  if (m.file_url) {
+    const ext = m.file_name?.split('.').pop()?.toLowerCase() || '';
+    const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext) || (m.file_type||'').startsWith('image/');
+    if (isImg) {
+      bubble = `<a href="${m.file_url}" target="_blank"><img class="msg-img" src="${m.file_url}" alt="${escHtml(m.file_name||'')}"></a>`;
+    } else {
+      const sz = m.file_size ? (m.file_size < 1048576 ? Math.round(m.file_size/1024)+'KB' : (m.file_size/1048576).toFixed(1)+'MB') : '';
+      bubble = `<a class="msg-file" href="${m.file_url}" target="_blank">${icon('clip')} ${escHtml(m.file_name||'Fil')} <span class="msg-file-sz">${sz}</span></a>`;
+    }
+  } else {
+    bubble = `<div class="msg-bubble${sent?' sent':''}" id="dm-bubble-${m.id}">${escHtml(m.content||'')}</div>`;
+  }
+
   return `<div class="msg-row${sent?' me':''}" data-msg-id="${m.id}">
     <div class="msg-avatar" style="background:linear-gradient(135deg,${sent?'#4C1D95,#A78BFA':'#8B7FFF,#E85D8A'})">${initials}</div>
     <div class="msg-body">
       <div class="msg-head"><span class="msg-name">${escHtml(name)}</span><span class="msg-time">${time}${edited}</span></div>
-      <div class="msg-content"><div class="msg-bubble${sent?' sent':''}" id="dm-bubble-${m.id}">${escHtml(m.content||'')}</div>${sent?`<button class="msg-dots" onclick="dmEditMsg('${m.id}')">⋯</button>`:''}</div>
+      <div class="msg-content">${bubble}${sent && !m.file_url ?`<button class="msg-dots" onclick="dmEditMsg('${m.id}')">⋯</button>`:''}</div>
     </div>
   </div>`;
 }
@@ -848,20 +851,22 @@ async function loadChatMessages() {
 }
 
 function subscribeToChat() {
-  if (chatSubscription) chatSubscription.unsubscribe();
+  console.debug('[dm] subscribeToChat, user:', currentChatUser);
+  if (chatSubscription) { chatSubscription.unsubscribe(); chatSubscription = null; }
   chatSubscription = sb.channel('chat-' + currentChatUser)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
       const m = payload.new;
       if (!m) return;
+      const isRelevant = (m.sender_id === currentUser.id && m.receiver_id === currentChatUser)
+                      || (m.sender_id === currentChatUser && m.receiver_id === currentUser.id);
+      if (!isRelevant) return;
       const el = document.getElementById('chat-messages');
-      const sent = m.sender_id === currentUser.id;
-      const time = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'});
-      const div = document.createElement('div');
-      // styled via dm-msg class
-      div.outerHTML = dmRenderMsg(m);
-      el.appendChild(div);
+      if (!el) return;
+      // Prevent duplicate: check if msg already rendered
+      if (el.querySelector('[data-msg-id="' + m.id + '"]')) return;
+      el.insertAdjacentHTML('beforeend', dmRenderMsg(m));
       el.scrollTop = el.scrollHeight;
-      if (!sent) updateUnreadBadge();
+      if (m.sender_id !== currentUser.id) updateUnreadBadge();
     }).subscribe();
 }
 
@@ -875,7 +880,11 @@ function dmEditMsg(msgId) {
   input.focus();
 }
 
+let dmSending = false;
 async function sendMessage() {
+  if (dmSending) return;
+  dmSending = true;
+  console.debug('[dm] sendMessage');
   try {
     const input = document.getElementById('chat-input');
     const content = input.value.trim();
@@ -888,10 +897,23 @@ async function sendMessage() {
       input.value = '';
     } else {
       input.value = '';
-      await sendDirectMessage(currentChatUser, content);
-      await loadChatMessages();
+      const { data: newMsg, error } = await sb.from('messages').insert({
+        sender_id: currentUser.id,
+        receiver_id: currentChatUser,
+        content
+      }).select().single();
+      if (error) { console.error('sendMessage insert:', error); input.value = content; return; }
+      if (newMsg) {
+        const el = document.getElementById('chat-messages');
+        if (el && !el.querySelector('[data-msg-id="' + newMsg.id + '"]')) {
+          el.insertAdjacentHTML('beforeend', dmRenderMsg(newMsg));
+          el.scrollTop = el.scrollHeight;
+        }
+      }
+      input.focus();
     }
   } catch(e) { console.error("sendMessage:", e); showToast(e.message || "Ukendt fejl"); }
+  finally { dmSending = false; }
 }
 
 async function sendDirectMessage(toId, content) {
@@ -906,7 +928,74 @@ async function sendDirectMessage(toId, content) {
 
 function startChat() {
   if (!currentPerson) return;
-  openChat(currentPerson);
+  openChat(currentPerson, 'screen-person');
+}
+
+// ══════════════════════════════════════════════════════════
+//  DM FILE ATTACH
+// ══════════════════════════════════════════════════════════
+async function dmHandleFile(input) {
+  try {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { showToast('Maks 10MB per fil'); return; }
+    showToast('Uploader...');
+
+    const safeFilename = file.name
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `dm/${currentUser.id}/${Date.now()}-${safeFilename}`;
+
+    const { error: uploadErr } = await sb.storage.from('bubble-files').upload(path, file, {
+      cacheControl: '3600', upsert: false, contentType: file.type
+    });
+    if (uploadErr) { showToast('Upload fejlede: ' + (uploadErr.message || 'ukendt')); input.value = ''; return; }
+
+    const { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
+
+    const { data: newMsg, error } = await sb.from('messages').insert({
+      sender_id: currentUser.id,
+      receiver_id: currentChatUser,
+      content: null,
+      file_url: urlData.publicUrl,
+      file_name: file.name,
+      file_size: file.size,
+      file_type: file.type
+    }).select().single();
+
+    if (error) { showToast('Besked fejlede'); input.value = ''; return; }
+    if (newMsg) {
+      const el = document.getElementById('chat-messages');
+      if (el && !el.querySelector('[data-msg-id="' + newMsg.id + '"]')) {
+        el.insertAdjacentHTML('beforeend', dmRenderMsg(newMsg));
+        el.scrollTop = el.scrollHeight;
+      }
+      showToast('Fil sendt!');
+    }
+    input.value = '';
+  } catch(e) { console.error("dmHandleFile:", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  PERSON-SHEET: SAVE CONTACT
+// ══════════════════════════════════════════════════════════
+async function psSaveContact() {
+  try {
+    const userId = document.getElementById('person-sheet-el')?.dataset?.userId;
+    if (!userId) return;
+    const { data: existing } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
+    const btn = document.getElementById('ps-save-btn');
+    if (existing) {
+      await sb.from('saved_contacts').delete().eq('id', existing.id);
+      if (btn) btn.innerHTML = icon('bookmark') + ' Gem';
+      showToast('Kontakt fjernet');
+    } else {
+      await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: userId });
+      if (btn) btn.innerHTML = icon('bookmarkFill') + ' Gemt';
+      showToast('Kontakt gemt!');
+    }
+    loadSavedContacts();
+  } catch(e) { console.error("psSaveContact:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -926,26 +1015,211 @@ async function loadProfile() {
     isAnon = currentProfile.is_anon || false;
     updateAnonToggle();
 
-    // Saved contacts
-    const { data: saved } = await sb.from('saved_contacts')
-      .select('contact_id, profiles(id,name,title)').eq('user_id', currentUser.id);
+    await loadSavedContacts();
+    await loadMyBubbles();
+    loadProfileInvitations();
+  } catch(e) { console.error("loadProfile:", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+// Standalone saved contacts loader — called from loadProfile AND after save/remove
+async function loadSavedContacts() {
+  try {
     const savedEl = document.getElementById('saved-contacts');
-    if (saved && saved.length) {
-      savedEl.innerHTML = saved.map(s => {
-        const p = s.profiles;
-        if (!p) return '';
-        const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-        return `<div class="flex-col-center saved-contact" data-action="openPerson" data-id="${p.id}" data-from="screen-profile">
-          <div class="avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A);width:48px;height:48px;font-size:0.85rem">${ini}</div>
-          <div class="fs-065 text-muted text-center text-truncate" style="max-width:56px">${escHtml(p.name?.split(' ')[0]||'?')}</div>
-        </div>`;
-      }).join('');
-    } else {
-      savedEl.innerHTML = '<div class="fs-085 text-muted">Ingen gemte kontakter endnu</div>';
+    if (!savedEl) return;
+
+    // Fetch saved contacts — chronological (newest first)
+    const { data: saved, error: savedErr } = await sb.from('saved_contacts')
+      .select('id, contact_id, created_at')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
+
+    if (savedErr) { console.error('loadSavedContacts query error:', savedErr); return; }
+
+    const countEl = document.getElementById('saved-count');
+    if (countEl) {
+      if (saved?.length) { countEl.textContent = saved.length; countEl.style.display = 'inline-flex'; }
+      else { countEl.style.display = 'none'; }
     }
 
-    await loadMyBubbles();
-  } catch(e) { console.error("loadProfile:", e); showToast(e.message || "Ukendt fejl"); }
+    if (!saved || saved.length === 0) {
+      savedEl.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bookmark') + '</div><div class="empty-text">Ingen gemte kontakter endnu.<br>Tryk Gem på en profil for at huske dem.</div></div>';
+      return;
+    }
+
+    // Fetch profiles separately — no FK dependency
+    const contactIds = saved.map(s => s.contact_id);
+    const { data: profiles, error: profErr } = await sb.from('profiles')
+      .select('id, name, title, keywords').in('id', contactIds);
+
+    if (profErr) console.error('loadSavedContacts profiles error:', profErr);
+    const profileMap = {};
+    (profiles || []).forEach(p => { profileMap[p.id] = p; });
+
+    const colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#7C2D12,#F97316)'];
+
+    savedEl.innerHTML = saved.map((s, i) => {
+      const p = profileMap[s.contact_id];
+      if (!p) return '';
+      const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const col = colors[i % colors.length];
+      const tags = (p.keywords||[]).slice(0,3).map(k => `<span class="tag" style="font-size:0.58rem;padding:0.15rem 0.4rem">${escHtml(k)}</span>`).join('');
+      return `<div class="card" style="padding:0.7rem 0.9rem;margin-bottom:0.4rem">
+        <div class="flex-row-center" style="gap:0.7rem">
+          <div class="avatar" style="background:${col};width:40px;height:40px;font-size:0.75rem;flex-shrink:0" data-action="openPerson" data-id="${p.id}" data-from="screen-profile">${ini}</div>
+          <div style="flex:1;min-width:0">
+            <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||'Ukendt')}</div>
+            <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.title||'')}</div>
+            ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.3rem">${tags}</div>` : ''}
+          </div>
+          <div style="display:flex;gap:0.3rem;flex-shrink:0">
+            <button class="btn-sm btn-ghost" style="padding:0.3rem 0.45rem;font-size:0.75rem" data-action="openChat" data-id="${p.id}" title="Send besked">${icon('chat')}</button>
+            <button class="btn-sm btn-ghost" style="padding:0.3rem 0.45rem;font-size:0.75rem" data-action="openPerson" data-id="${p.id}" data-from="screen-profile" title="Se profil">${icon('user')}</button>
+            <button class="btn-sm btn-ghost" style="padding:0.3rem 0.45rem;font-size:0.75rem;color:var(--accent2)" onclick="removeSavedContact('${s.id}',this)" title="Fjern">${icon('x')}</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { console.error("loadSavedContacts:", e); }
+}
+
+// Profile tab switching — same pattern as bcSwitchTab
+function profSwitchTab(tab) {
+  ['saved','bubbles','invites'].forEach(t => {
+    const panel = document.getElementById('prof-panel-' + t);
+    const tabBtn = document.getElementById('prof-tab-' + t);
+    if (panel) panel.style.display = t === tab ? 'flex' : 'none';
+    if (tabBtn) tabBtn.classList.toggle('active', t === tab);
+  });
+}
+
+// Load invitations into profile invitations tab
+async function loadProfileInvitations() {
+  try {
+    const list = document.getElementById('profile-invitations');
+    if (!list) return;
+    list.innerHTML = '<div class="spinner"></div>';
+
+    // Fetch pending invitations — newest first
+    const { data: invites, error: invErr } = await sb.from('bubble_invitations')
+      .select('id, from_user_id, bubble_id, created_at, status')
+      .eq('to_user_id', currentUser.id)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    if (invErr) { console.error('loadProfileInvitations query:', invErr); list.innerHTML = ''; return; }
+
+    // Update badge
+    const countEl = document.getElementById('invite-count');
+    if (countEl) {
+      if (invites?.length) { countEl.textContent = invites.length; countEl.style.display = 'inline-flex'; }
+      else { countEl.style.display = 'none'; }
+    }
+
+    if (!invites || invites.length === 0) {
+      list.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bell') + '</div><div class="empty-text">Ingen invitationer lige nu.<br>Når nogen sender dig en Bubble Up,<br>dukker den op her.</div></div>';
+      return;
+    }
+
+    // Fetch sender profiles separately — no FK dependency
+    const senderIds = [...new Set(invites.map(i => i.from_user_id))];
+    const { data: profiles } = await sb.from('profiles').select('id, name, title, keywords').in('id', senderIds);
+    const profileMap = {};
+    (profiles || []).forEach(p => { profileMap[p.id] = p; });
+
+    // Fetch bubble names
+    const bubbleIds = [...new Set(invites.filter(i => i.bubble_id).map(i => i.bubble_id))];
+    let bubbleMap = {};
+    if (bubbleIds.length) {
+      const { data: bubbles } = await sb.from('bubbles').select('id, name').in('id', bubbleIds);
+      (bubbles || []).forEach(b => { bubbleMap[b.id] = b; });
+    }
+
+    const colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#7C2D12,#F97316)'];
+
+    list.innerHTML = invites.map((inv, i) => {
+      const p = profileMap[inv.from_user_id] || {};
+      const b = bubbleMap[inv.bubble_id] || {};
+      const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const col = colors[i % colors.length];
+      const time = new Date(inv.created_at).toLocaleDateString('da-DK', { day:'numeric', month:'short' });
+      const tags = (p.keywords||[]).slice(0,2).map(k => `<span class="tag" style="font-size:0.58rem;padding:0.15rem 0.4rem">${escHtml(k)}</span>`).join('');
+
+      return `<div class="card" style="padding:0.7rem 0.9rem;margin-bottom:0.5rem" id="prof-invite-${inv.id}">
+        <div class="flex-row-center" style="gap:0.7rem">
+          <div class="avatar" style="background:${col};width:40px;height:40px;font-size:0.75rem;flex-shrink:0" data-action="openPerson" data-id="${inv.from_user_id}" data-from="screen-profile">${ini}</div>
+          <div style="flex:1;min-width:0">
+            <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||'Ukendt')}</div>
+            <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.title||'')}</div>
+            ${b.name ? `<div class="fs-065 text-muted" style="margin-top:0.15rem">${icon('bubble')} ${escHtml(b.name)} · ${time}</div>` : `<div class="fs-065 text-muted" style="margin-top:0.15rem">Bubble Up · ${time}</div>`}
+            ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.25rem">${tags}</div>` : ''}
+          </div>
+        </div>
+        <div style="display:flex;gap:0.4rem;margin-top:0.5rem">
+          <button class="btn-sm" style="flex:1;padding:0.4rem;font-size:0.72rem;font-weight:600;background:var(--gradient-primary);border:1px solid var(--gradient-btn-border);color:white;border-radius:var(--radius-xs);cursor:pointer;font-family:inherit" onclick="profAcceptInvite('${inv.id}','${inv.from_user_id}')">Accepter</button>
+          <button class="btn-sm btn-ghost" style="flex:1;padding:0.4rem;font-size:0.72rem" onclick="profDeclineInvite('${inv.id}',this)">Afvis</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { console.error("loadProfileInvitations:", e); }
+}
+
+async function profAcceptInvite(inviteId, fromUserId) {
+  try {
+    await sb.from('bubble_invitations').update({ status: 'accepted' }).eq('id', inviteId);
+    const { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).single();
+    if (inv?.bubble_id) {
+      await sb.from('bubble_members').insert({ bubble_id: inv.bubble_id, user_id: currentUser.id });
+      showToast('Du er nu med i boblen!');
+      loadProfileInvitations();
+      setTimeout(() => openBubbleChat(inv.bubble_id), 800);
+    }
+  } catch(e) { console.error("profAcceptInvite:", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+let pendingDeclineInviteId = null;
+let pendingDeclineBtn = null;
+
+function profDeclineInvite(inviteId, btn) {
+  pendingDeclineInviteId = inviteId;
+  pendingDeclineBtn = btn;
+  const card = btn.closest('.card');
+  if (!card || card.querySelector('.remove-confirm')) return;
+  const confirm = document.createElement('div');
+  confirm.className = 'remove-confirm';
+  confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(232,93,138,0.08);border:1px solid rgba(232,93,138,0.2);border-radius:10px;gap:0.5rem';
+  confirm.innerHTML = `<span style="font-size:0.72rem;color:var(--text-secondary)">Afvis invitation?</span>
+    <div style="display:flex;gap:0.3rem">
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)" onclick="confirmDeclineInvite()">Afvis</button>
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelDeclineInvite(this)">Annuller</button>
+    </div>`;
+  card.appendChild(confirm);
+}
+
+function cancelDeclineInvite(btn) {
+  const confirm = btn.closest('.remove-confirm');
+  if (confirm) confirm.remove();
+  pendingDeclineInviteId = null;
+  pendingDeclineBtn = null;
+}
+
+async function confirmDeclineInvite() {
+  if (!pendingDeclineInviteId) return;
+  const inviteId = pendingDeclineInviteId;
+  pendingDeclineInviteId = null;
+  pendingDeclineBtn = null;
+  try {
+    await sb.from('bubble_invitations').update({ status: 'declined' }).eq('id', inviteId);
+    const card = document.getElementById('prof-invite-' + inviteId);
+    if (card) {
+      card.style.transition = 'opacity 0.25s, transform 0.25s';
+      card.style.opacity = '0';
+      card.style.transform = 'translateX(20px)';
+      setTimeout(() => loadProfileInvitations(), 260);
+    } else {
+      loadProfileInvitations();
+    }
+    showToast('Invitation afvist');
+  } catch(e) { console.error("confirmDeclineInvite:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 function openEditProfile() {
@@ -1579,6 +1853,7 @@ let bcSubscription = null;
 let bcBubbleData = null;
 
 async function openBubbleChat(bubbleId, fromScreen) {
+  console.debug('[bc] openBubbleChat:', bubbleId, 'from:', fromScreen);
   try {
     bcBubbleId = bubbleId;
     const backBtn = document.getElementById('bc-back-btn');
@@ -1760,6 +2035,7 @@ function bcScrollToBottom() {
 }
 
 function bcSubscribe() {
+  console.debug('[bc] bcSubscribe, bubble:', bcBubbleId);
   if (bcSubscription) bcSubscription.unsubscribe();
   bcSubscription = sb.channel('bc-' + bcBubbleId)
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_messages', filter:`bubble_id=eq.${bcBubbleId}`},
@@ -1797,7 +2073,11 @@ function bcSubscribe() {
     .subscribe();
 }
 
+let bcSending = false;
 async function bcSendMessage() {
+  if (bcSending) return;
+  bcSending = true;
+  console.debug('[bc] bcSendMessage');
   try {
     const inp = document.getElementById('bc-input');
     const text = inp.value.trim();
@@ -1842,7 +2122,6 @@ async function bcSendMessage() {
       }
 
       if (newMsg) {
-        // Injicer profil-data lokalt — undgår afhængighed af FK-join
         newMsg.profiles = {
           id: currentUser.id,
           name: currentProfile?.name || currentUser.email?.split('@')[0] || '?'
@@ -1852,6 +2131,7 @@ async function bcSendMessage() {
       }
     }
   } catch(e) { console.error("bcSendMessage:", e); showToast(e.message || "Ukendt fejl"); }
+  finally { bcSending = false; }
 }
 
 async function bcHandleFile(input) {
@@ -2128,6 +2408,14 @@ function bcOpenPerson(userId, name, title, color) {
   // Store userId
   document.getElementById('person-sheet-el').dataset.userId = userId;
   document.getElementById('person-sheet-el').dataset.userName = name;
+  // Check if contact is already saved — update button state
+  const saveBtn = document.getElementById('ps-save-btn');
+  if (saveBtn) {
+    saveBtn.innerHTML = icon('bookmark') + ' Gem';
+    sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle().then(({data}) => {
+      if (data) saveBtn.innerHTML = icon('bookmarkFill') + ' Gemt';
+    });
+  }
   document.getElementById('ps-overlay').classList.add('open');
   setTimeout(() => document.getElementById('person-sheet-el').classList.add('open'), 10);
 }
@@ -2139,9 +2427,9 @@ function psClose() {
   setTimeout(() => document.getElementById('ps-overlay').classList.remove('open'), 320);
 }
 
-function psMessage() { const uid = document.getElementById('person-sheet-el').dataset.userId; psClose(); setTimeout(() => openChat(uid), 350); }
+function psMessage() { const uid = document.getElementById('person-sheet-el').dataset.userId; psClose(); setTimeout(() => openChat(uid, 'screen-bubble-chat'), 350); }
 function psProfile() { const uid = document.getElementById('person-sheet-el').dataset.userId; psClose(); setTimeout(() => openPerson(uid, 'screen-bubble-chat'), 350); }
-function psMeeting() { const uid = document.getElementById('person-sheet-el').dataset.userId; psClose(); setTimeout(() => { currentPerson = uid; proposeMeeting(); }, 350); }
+// psMeeting removed — feature shelved
 
 function psTriggerBubbleUp() {
   const name = document.getElementById('person-sheet-el').dataset.userName?.split(' ')[0] || 'personen';
@@ -2217,6 +2505,37 @@ async function sendBubbleUpInvitation(toUserId) {
 
 
 // ══════════════════════════════════════════════════════════
+//  CHAT INPUT EVENT LISTENERS (bind exactly once on load)
+// ══════════════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  const bcInput = document.getElementById('bc-input');
+  if (bcInput) {
+    bcInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        bcSendMessage();
+      }
+    }, { passive: false });
+  }
+
+  const dmInput = document.getElementById('chat-input');
+  if (dmInput) {
+    dmInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (!currentChatUser) return;
+        sendMessage();
+      }
+    }, { passive: false });
+  }
+
+  const dmFileInput = document.getElementById('dm-file-input');
+  if (dmFileInput) {
+    dmFileInput.addEventListener('change', () => dmHandleFile(dmFileInput));
+  }
+});
+
+// ══════════════════════════════════════════════════════════
 //  GLOBAL EVENT DELEGATION
 // ══════════════════════════════════════════════════════════
 document.addEventListener('click', (e) => {
@@ -2228,7 +2547,7 @@ document.addEventListener('click', (e) => {
   switch (action) {
     case 'openBubble': openBubble(id); break;
     case 'openPerson': openPerson(id, from); break;
-    case 'openChat': openChat(id); break;
+    case 'openChat': openChat(id, from); break;
     case 'joinBubble': joinBubble(id); break;
     case 'requestJoin': requestJoin(id); break;
     case 'openQRModal': openQRModal(id); break;
@@ -2237,6 +2556,124 @@ document.addEventListener('click', (e) => {
     case 'openBubbleChat': openBubbleChat(id, from); break;
   }
 });
+
+// ══════════════════════════════════════════════════════════
+//  PULL-TO-REFRESH
+// ══════════════════════════════════════════════════════════
+(function initPullToRefresh() {
+  const PTR_THRESHOLD = 60;   // px to pull before triggering
+  const PTR_MAX = 90;         // max indicator travel
+  const PTR_RESISTANCE = 2.5; // finger-to-indicator ratio
+
+  // Map: screen ID → { scrollEl selector, refreshFn }
+  const screenMap = {
+    'screen-home':          { scroll: '#home-scroll', fn: loadHome },
+    'screen-bubbles':       { scroll: '#screen-bubbles .scroll-area', fn: loadMyBubbles },
+    'screen-discover':      { scroll: '#screen-discover .scroll-area', fn: loadDiscover },
+    'screen-messages':      { scroll: '#screen-messages .scroll-area', fn: loadMessages },
+    'screen-notifications': { scroll: '#screen-notifications .scroll-area', fn: loadNotifications },
+    'screen-profile':       { scroll: null, fn: loadProfile }, // uses active panel
+  };
+
+  // Create the indicator element
+  const indicator = document.createElement('div');
+  indicator.className = 'ptr-indicator';
+  indicator.innerHTML = '<div class="ptr-spinner"></div>';
+  document.body.appendChild(indicator);
+
+  let startY = 0;
+  let pulling = false;
+  let refreshing = false;
+
+  function getScrollEl() {
+    const active = document.querySelector('.screen.active');
+    if (!active) return null;
+    const cfg = screenMap[active.id];
+    if (!cfg) return null;
+
+    // Profile: find the visible panel
+    if (active.id === 'screen-profile') {
+      return active.querySelector('[id^="prof-panel-"]:not([style*="display:none"]):not([style*="display: none"])') ||
+             active.querySelector('[id^="prof-panel-"]');
+    }
+    return cfg.scroll ? document.querySelector(cfg.scroll) : active.querySelector('.scroll-area');
+  }
+
+  function getRefreshFn() {
+    const active = document.querySelector('.screen.active');
+    if (!active) return null;
+    const cfg = screenMap[active.id];
+    return cfg?.fn || null;
+  }
+
+  document.addEventListener('touchstart', (e) => {
+    if (refreshing) return;
+    const scrollEl = getScrollEl();
+    if (!scrollEl) return;
+    if (scrollEl.scrollTop > 5) return; // only when at top
+    startY = e.touches[0].clientY;
+    pulling = true;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!pulling || refreshing) return;
+    const scrollEl = getScrollEl();
+    if (!scrollEl || scrollEl.scrollTop > 5) { pulling = false; return; }
+
+    const dy = (e.touches[0].clientY - startY) / PTR_RESISTANCE;
+    if (dy < 0) return;
+
+    const travel = Math.min(dy, PTR_MAX);
+    indicator.style.transform = `translateX(-50%) translateY(${travel - 40}px)`;
+    indicator.style.opacity = Math.min(travel / PTR_THRESHOLD, 1);
+    indicator.classList.add('visible');
+
+    if (travel >= PTR_THRESHOLD) {
+      indicator.classList.add('ready');
+    } else {
+      indicator.classList.remove('ready');
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', async () => {
+    if (!pulling) return;
+    pulling = false;
+
+    if (!indicator.classList.contains('ready')) {
+      resetIndicator();
+      return;
+    }
+
+    const fn = getRefreshFn();
+    if (!fn) { resetIndicator(); return; }
+
+    // Trigger refresh
+    refreshing = true;
+    indicator.classList.add('refreshing');
+    indicator.classList.remove('ready');
+    indicator.style.transform = 'translateX(-50%) translateY(20px)';
+    indicator.style.opacity = '1';
+
+    try {
+      await fn();
+    } catch(e) { console.error('PTR refresh error:', e); }
+
+    refreshing = false;
+    indicator.classList.remove('refreshing');
+    resetIndicator();
+    showToast('Opdateret');
+  }, { passive: true });
+
+  function resetIndicator() {
+    indicator.style.transition = 'transform 0.3s, opacity 0.3s';
+    indicator.style.transform = 'translateX(-50%) translateY(-40px)';
+    indicator.style.opacity = '0';
+    setTimeout(() => {
+      indicator.classList.remove('visible', 'ready', 'refreshing');
+      indicator.style.transition = '';
+    }, 300);
+  }
+})();
 
 // ══════════════════════════════════════════════════════════
 //  APP BOOT
