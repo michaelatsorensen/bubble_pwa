@@ -33,6 +33,44 @@
 }
 
 html { height:100%; }
+
+/* ── DESKTOP PHONE FRAME ── */
+@media (min-width: 600px) {
+  html {
+    background: #020208;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  body {
+    width: 390px;
+    max-height: 844px;
+    height: 100vh;
+    border-radius: 40px;
+    overflow: hidden;
+    position: relative;
+    box-shadow:
+      0 0 0 8px #1a1a2e,
+      0 0 0 10px rgba(139,127,255,0.15),
+      0 25px 80px rgba(0,0,0,0.6),
+      0 0 120px rgba(139,127,255,0.06);
+    margin: 1rem 0;
+  }
+  .bg-canvas,
+  .bottom-nav,
+  .person-sheet-overlay,
+  .person-sheet,
+  .modal-overlay,
+  .chat-context-menu,
+  .toast,
+  .ptr-indicator,
+  .radar-person-overlay,
+  .radar-person-sheet { position: absolute !important; }
+  .toast { left: 50% !important; }
+  .bottom-nav { left: 0 !important; right: 0 !important; }
+  .modal-overlay { inset: 0 !important; }
+}
+
 body {
   font-family: 'Outfit', sans-serif;
   background: var(--bg);
@@ -1044,4 +1082,23 @@ a.person-action-btn { text-decoration:none; }
 .live-checkin-count {
   font-size: 0.72rem; font-weight: 600; color: #2ECFCF;
   display: flex; align-items: center; gap: 0.3rem; flex-shrink: 0;
+}
+
+/* ── DESKTOP FRAME EXTRAS ── */
+@media (min-width: 600px) {
+  .screen {
+    min-height: 100%;
+    max-height: 844px;
+    overflow-y: auto;
+  }
+  .person-sheet {
+    border-radius: 24px 24px 0 0;
+    max-width: 390px;
+  }
+  .radar-person-sheet {
+    max-width: 390px;
+  }
+  .modal-overlay .modal-sheet {
+    max-width: 370px;
+  }
 }
