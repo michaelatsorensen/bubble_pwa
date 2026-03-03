@@ -43,6 +43,16 @@ let cbChips = [], epChips = [], epDynChips = [], ebChips = [], obChips = [];
 let chatSubscription = null;
 let isAnon = false;
 
+// ── GLOBAL ERROR HANDLER ──
+window.addEventListener('error', function(e) {
+  console.error('Global error:', e.message, e.filename, e.lineno);
+  if (typeof showToast === 'function') showToast('Noget gik galt \u2013 pr\u00f8v igen');
+});
+window.addEventListener('unhandledrejection', function(e) {
+  console.error('Unhandled promise:', e.reason);
+  if (typeof showToast === 'function') showToast('Noget gik galt \u2013 pr\u00f8v igen');
+});
+
 function initSupabase() {
   if (SUPABASE_URL === "DIN_SUPABASE_URL_HER") {
     document.getElementById('loading-msg').textContent = '⚠️ Indsæt dine Supabase-nøgler i filen';
@@ -220,7 +230,7 @@ async function handleSignup() {
 async function handleLogout() {
   try {
     // Clean up realtime subscriptions
-    if (chatSubscription) { chatSubscription.unsubscribe(); chatSubscription = null; }
+    bcUnsubscribeAll();
     sb.removeAllChannels();
     await sb.auth.signOut();
     currentUser = null; currentProfile = null;
@@ -2177,6 +2187,13 @@ let bcEditingId = null;
 let bcMsgHistories = {};
 let bcSubscription = null;
 let bcBubbleData = null;
+
+// ── REALTIME CLEANUP HELPER ──
+function bcUnsubscribeAll() {
+  if (chatSubscription) { chatSubscription.unsubscribe(); chatSubscription = null; }
+  if (bcSubscription) { bcSubscription.unsubscribe(); bcSubscription = null; }
+  if (incomingSubscription) { incomingSubscription.unsubscribe(); incomingSubscription = null; }
+}
 
 async function openBubbleChat(bubbleId, fromScreen) {
   console.debug('[bc] openBubbleChat:', bubbleId, 'from:', fromScreen);
