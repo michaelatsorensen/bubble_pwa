@@ -258,6 +258,7 @@ async function loadHome() {
       loadHomeNotifCard(),
       updateRadarCount(),
       loadProximityMap(),
+      loadLiveBubbleStatus(),
     ]);
   } catch(e) { console.error("loadHome:", e); showToast(e.message || "Ukendt fejl"); }
 }
@@ -410,7 +411,7 @@ async function loadDiscover() {
     const list = document.getElementById('all-bubbles-list');
     list.innerHTML = '<div class="spinner"></div>';
     const { data: bubbles } = await sb.from('bubbles').select('*, bubble_members(count)').or('visibility.eq.public,visibility.eq.private,visibility.is.null').order('created_at', {ascending:false});
-    allBubbles = (bubbles || []).map(b => ({
+    allBubbles = (bubbles || []).filter(b => b.type !== 'live').map(b => ({
       ...b,
       member_count: b.bubble_members?.[0]?.count || 0,
       type_label: typeLabel(b.type)
@@ -1532,19 +1533,19 @@ function showToast(msg, duration) {
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function bubbleEmoji(type) {
-  return { event:ico('rocket'), local:ico('pin'), theme:ico('cpu'), company:ico('building') }[type] || ico('bubble');
+  return { event:ico('rocket'), local:ico('pin'), theme:ico('cpu'), company:ico('building'), live:ico('pin') }[type] || ico('bubble');
 }
 function bubbleIcon(type) {
-  return { event:icon('rocket'), local:icon('pin'), theme:icon('cpu'), company:icon('building') }[type] || icon('bubble');
+  return { event:icon('rocket'), local:icon('pin'), theme:icon('cpu'), company:icon('building'), live:icon('pin') }[type] || icon('bubble');
 }
 
 function bubbleColor(type, alpha) {
-  const map = { event:`rgba(108,99,255,${alpha})`, local:`rgba(67,232,176,${alpha})`, theme:`rgba(255,179,71,${alpha})`, company:`rgba(255,101,132,${alpha})` };
+  const map = { event:`rgba(108,99,255,${alpha})`, local:`rgba(67,232,176,${alpha})`, theme:`rgba(255,179,71,${alpha})`, company:`rgba(255,101,132,${alpha})`, live:`rgba(46,207,207,${alpha})` };
   return map[type] || `rgba(108,99,255,${alpha})`;
 }
 
 function typeLabel(type) {
-  return { event:'Event', local:'Lokal', theme:'Tema', company:'Virksomhed' }[type] || type;
+  return { event:'Event', local:'Lokal', theme:'Tema', company:'Virksomhed', live:'Live' }[type] || type;
 }
 
 // Clock removed — iPhone shows native status bar
@@ -2840,6 +2841,268 @@ document.addEventListener('click', (e) => {
 })();
 
 // ══════════════════════════════════════════════════════════
+//  LIVE BUBBLE
+// ══════════════════════════════════════════════════════════
+const LIVE_EXPIRE_HOURS = 6;
+let currentLiveBubble = null; // { bubble_id, bubble_name, bubble_location, checked_in_at, member_count }
+
+async function loadLiveBubbleStatus() {
+  try {
+    const card = document.getElementById('live-bubble-card');
+    const activeEl = document.getElementById('live-bubble-active');
+    const idleEl = document.getElementById('live-bubble-idle');
+    if (!card) return;
+    card.style.display = 'block';
+
+    // Find active live check-in for current user
+    const expireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 60 * 60 * 1000).toISOString();
+
+    const { data: myLive } = await sb.from('bubble_members')
+      .select('bubble_id, checked_in_at, bubbles(id, name, location, type)')
+      .eq('user_id', currentUser.id)
+      .not('checked_in_at', 'is', null)
+      .is('checked_out_at', null)
+      .gte('checked_in_at', expireCutoff)
+      .limit(1)
+      .single();
+
+    if (myLive && myLive.bubbles && myLive.bubbles.type === 'live') {
+      // User is checked in
+      currentLiveBubble = {
+        bubble_id: myLive.bubble_id,
+        bubble_name: myLive.bubbles.name,
+        bubble_location: myLive.bubbles.location,
+        checked_in_at: myLive.checked_in_at
+      };
+
+      // Count active members
+      const { count } = await sb.from('bubble_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('bubble_id', myLive.bubble_id)
+        .not('checked_in_at', 'is', null)
+        .is('checked_out_at', null)
+        .gte('checked_in_at', expireCutoff);
+
+      currentLiveBubble.member_count = count || 1;
+
+      document.getElementById('live-bubble-name').textContent = currentLiveBubble.bubble_name;
+      const since = new Date(currentLiveBubble.checked_in_at);
+      const mins = Math.round((Date.now() - since.getTime()) / 60000);
+      const timeStr = mins < 60 ? mins + ' min' : Math.round(mins / 60) + 't ' + (mins % 60) + 'min';
+      document.getElementById('live-bubble-meta').textContent =
+        (currentLiveBubble.bubble_location ? currentLiveBubble.bubble_location + ' · ' : '') + timeStr + ' siden';
+      document.getElementById('live-bubble-count').textContent = currentLiveBubble.member_count;
+
+      activeEl.style.display = 'block';
+      idleEl.style.display = 'none';
+    } else {
+      // Not checked in — auto-expire old ones
+      currentLiveBubble = null;
+      activeEl.style.display = 'none';
+      idleEl.style.display = 'block';
+    }
+  } catch (e) {
+    console.error('loadLiveBubbleStatus:', e);
+    // Show idle state on error
+    const card = document.getElementById('live-bubble-card');
+    if (card) card.style.display = 'block';
+    document.getElementById('live-bubble-active').style.display = 'none';
+    document.getElementById('live-bubble-idle').style.display = 'block';
+  }
+}
+
+function openLiveCheckin() {
+  loadLiveCheckinList();
+  openModal('modal-live-checkin');
+}
+
+async function loadLiveCheckinList() {
+  const list = document.getElementById('live-checkin-list');
+  list.innerHTML = '<div class="spinner"></div>';
+  try {
+    const expireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 60 * 60 * 1000).toISOString();
+
+    // Get all live bubbles with recent activity
+    const { data: liveBubbles } = await sb.from('bubbles')
+      .select('id, name, location, created_at')
+      .eq('type', 'live')
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (!liveBubbles || liveBubbles.length === 0) {
+      list.innerHTML = '<div class="sub-muted" style="padding:0.5rem 0;text-align:center">Ingen aktive steder. Opret det første!</div>';
+      return;
+    }
+
+    // Get active member counts for each
+    const bubbleIds = liveBubbles.map(b => b.id);
+    const { data: activeMembers } = await sb.from('bubble_members')
+      .select('bubble_id')
+      .in('bubble_id', bubbleIds)
+      .not('checked_in_at', 'is', null)
+      .is('checked_out_at', null)
+      .gte('checked_in_at', expireCutoff);
+
+    const countMap = {};
+    (activeMembers || []).forEach(m => {
+      countMap[m.bubble_id] = (countMap[m.bubble_id] || 0) + 1;
+    });
+
+    // Filter to only show bubbles with active members OR created recently (last 24h)
+    const recentCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const filtered = liveBubbles.filter(b => (countMap[b.id] || 0) > 0 || b.created_at > recentCutoff);
+
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="sub-muted" style="padding:0.5rem 0;text-align:center">Ingen aktive steder lige nu. Opret det første!</div>';
+      return;
+    }
+
+    list.innerHTML = filtered.map(b => {
+      const cnt = countMap[b.id] || 0;
+      return `<div class="live-checkin-item" onclick="liveCheckin('${b.id}')">
+        <div class="live-checkin-icon">${ico('pin')}</div>
+        <div style="flex:1;min-width:0">
+          <div class="fw-600 fs-085">${escHtml(b.name)}</div>
+          <div class="fs-072 text-muted">${escHtml(b.location || '')}</div>
+        </div>
+        ${cnt > 0 ? '<div class="live-checkin-count"><div class="live-dot" style="width:6px;height:6px;margin:0"></div> ' + cnt + '</div>' : '<div class="fs-072 text-muted">0 her</div>'}
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.error('loadLiveCheckinList:', e);
+    list.innerHTML = '<div class="sub-muted" style="padding:0.5rem 0">Kunne ikke hente steder</div>';
+  }
+}
+
+async function liveCheckin(bubbleId) {
+  try {
+    showToast('Checker ind...');
+
+    // 1. Auto-checkout from any current live bubble
+    await liveAutoCheckout();
+
+    // 2. Check if already a member
+    const { data: existing } = await sb.from('bubble_members')
+      .select('id, checked_in_at, checked_out_at')
+      .eq('bubble_id', bubbleId)
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
+    if (existing) {
+      // Re-check-in
+      await sb.from('bubble_members').update({
+        checked_in_at: new Date().toISOString(),
+        checked_out_at: null
+      }).eq('id', existing.id);
+    } else {
+      // New member + check-in
+      await sb.from('bubble_members').insert({
+        bubble_id: bubbleId,
+        user_id: currentUser.id,
+        checked_in_at: new Date().toISOString()
+      });
+    }
+
+    closeModal('modal-live-checkin');
+    showToast('📍 Du er checked ind!');
+    await loadLiveBubbleStatus();
+    loadHome();
+  } catch (e) {
+    console.error('liveCheckin:', e);
+    showToast('Fejl ved check-in: ' + (e.message || 'ukendt'));
+  }
+}
+
+async function liveCreateAndCheckin() {
+  try {
+    const name = document.getElementById('live-new-name').value.trim();
+    const location = document.getElementById('live-new-location').value.trim();
+    if (!name) return showToast('Angiv stedets navn');
+
+    showToast('Opretter sted...');
+
+    // Create live bubble
+    const { data: bubble, error } = await sb.from('bubbles').insert({
+      name,
+      type: 'live',
+      type_label: 'Live',
+      visibility: 'public',
+      location,
+      created_by: currentUser.id,
+      description: 'Live check-in'
+    }).select().single();
+
+    if (error) return showToast('Fejl: ' + error.message);
+
+    // Check in
+    await liveAutoCheckout();
+    await sb.from('bubble_members').insert({
+      bubble_id: bubble.id,
+      user_id: currentUser.id,
+      checked_in_at: new Date().toISOString()
+    });
+
+    // Clear form
+    document.getElementById('live-new-name').value = '';
+    document.getElementById('live-new-location').value = '';
+
+    closeModal('modal-live-checkin');
+    showToast('📍 ' + name + ' oprettet — du er checked ind!');
+    await loadLiveBubbleStatus();
+  } catch (e) {
+    console.error('liveCreateAndCheckin:', e);
+    showToast('Fejl: ' + (e.message || 'ukendt'));
+  }
+}
+
+async function liveAutoCheckout() {
+  try {
+    // Checkout from ALL active live bubbles
+    const expireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 60 * 60 * 1000).toISOString();
+
+    const { data: activeLive } = await sb.from('bubble_members')
+      .select('id, bubble_id, bubbles(type)')
+      .eq('user_id', currentUser.id)
+      .not('checked_in_at', 'is', null)
+      .is('checked_out_at', null)
+      .gte('checked_in_at', expireCutoff);
+
+    if (!activeLive || activeLive.length === 0) return;
+
+    const liveIds = activeLive.filter(m => m.bubbles?.type === 'live').map(m => m.id);
+    if (liveIds.length > 0) {
+      await sb.from('bubble_members').update({
+        checked_out_at: new Date().toISOString()
+      }).in('id', liveIds);
+    }
+  } catch (e) {
+    console.error('liveAutoCheckout:', e);
+  }
+}
+
+async function liveCheckout() {
+  try {
+    if (!currentLiveBubble) return;
+    await sb.from('bubble_members').update({
+      checked_out_at: new Date().toISOString()
+    }).eq('bubble_id', currentLiveBubble.bubble_id).eq('user_id', currentUser.id);
+
+    currentLiveBubble = null;
+    showToast('Checked ud 👋');
+    await loadLiveBubbleStatus();
+  } catch (e) {
+    console.error('liveCheckout:', e);
+    showToast('Fejl ved checkout');
+  }
+}
+
+function openLiveBubble() {
+  if (!currentLiveBubble) return;
+  closeRadarSheet();
+  openBubbleChat(currentLiveBubble.bubble_id, 'screen-home');
+}
+
+// ══════════════════════════════════════════════════════════
 //  APP BOOT
 // ══════════════════════════════════════════════════════════
 window.addEventListener('load', async () => {
@@ -2849,5 +3112,6 @@ window.addEventListener('load', async () => {
   if (currentUser) {
     updateUnreadBadge();
     subscribeToIncoming();
+    loadLiveBubbleStatus();
   }
 });
