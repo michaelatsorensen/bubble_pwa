@@ -829,46 +829,41 @@ function renderRadarList() {
 }
 
 function radarConfirmRemove(uid, name) {
-  radarPendingRemove = { uid: uid, name: name };
-  var tray = document.getElementById('radar-remove-tray');
-  if (!tray) {
-    var listEl = document.getElementById('radar-view-list');
-    if (!listEl) return;
-    listEl.insertAdjacentHTML('afterend',
-      '<div class="radar-remove-tray" id="radar-remove-tray">' +
-        '<span class="radar-remove-tray-text" id="radar-remove-tray-text"></span>' +
-        '<div style="display:flex;gap:0.4rem">' +
-          '<button class="radar-remove-tray-btn cancel" onclick="radarCancelRemove()">Annuller</button>' +
-          '<button class="radar-remove-tray-btn confirm" onclick="radarDoRemove()">Fjern</button>' +
-        '</div>' +
-      '</div>');
-    tray = document.getElementById('radar-remove-tray');
-  }
-  document.getElementById('radar-remove-tray-text').textContent = 'Fjern ' + name + '?';
-  tray.classList.add('show');
+  var card = document.querySelector('.radar-list-card[data-uid="' + uid + '"]');
+  if (!card) return;
+  if (card.querySelector('.remove-confirm')) return;
+  radarPendingRemove = { uid: uid, name: name, card: card };
+  var confirm = document.createElement('div');
+  confirm.className = 'remove-confirm';
+  confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(232,93,138,0.08);border:1px solid rgba(232,93,138,0.2);border-radius:10px;gap:0.5rem';
+  confirm.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Fjern profil?</span>' +
+    '<div style="display:flex;gap:0.3rem">' +
+      '<button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)" onclick="event.stopPropagation();radarDoRemove()">Fjern</button>' +
+      '<button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="event.stopPropagation();radarCancelRemove()">Annuller</button>' +
+    '</div>';
+  card.appendChild(confirm);
 }
 
 function radarCancelRemove() {
+  if (radarPendingRemove && radarPendingRemove.card) {
+    var c = radarPendingRemove.card.querySelector('.remove-confirm');
+    if (c) c.remove();
+  }
   radarPendingRemove = null;
-  var tray = document.getElementById('radar-remove-tray');
-  if (tray) tray.classList.remove('show');
 }
 
 function radarDoRemove() {
   if (!radarPendingRemove) return;
   var uid = radarPendingRemove.uid;
   var name = radarPendingRemove.name;
+  var card = radarPendingRemove.card;
   radarDismissed.push(uid);
   radarPendingRemove = null;
-  var tray = document.getElementById('radar-remove-tray');
-  if (tray) tray.classList.remove('show');
-  // Animate card out
-  var card = document.querySelector('.radar-list-card[data-uid="' + uid + '"]');
   if (card) {
     card.style.transition = 'opacity 0.25s, transform 0.25s';
     card.style.opacity = '0';
-    card.style.transform = 'translateX(-30px)';
-    setTimeout(function() { renderRadarList(); }, 280);
+    card.style.transform = 'translateX(20px)';
+    setTimeout(function() { renderRadarList(); }, 260);
   } else {
     renderRadarList();
   }
@@ -1344,7 +1339,7 @@ function renderSavedStoryBar(saved, profileMap) {
     var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     var col = colors[i % colors.length];
     var firstName = (p.name||'?').split(' ')[0];
-    return '<div class="saved-story-item" onclick="openChat(\'' + p.id + '\',\'screen-home\')">' +
+    return '<div class="saved-story-item" onclick="openPerson(\'' + p.id + '\',\'screen-home\')">' +
       '<div class="saved-story-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>' +
       '<div class="saved-story-name">' + escHtml(firstName) + '</div></div>';
   }).join('');

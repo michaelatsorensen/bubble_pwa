@@ -1143,10 +1143,10 @@ a.person-action-btn { text-decoration:none; }
 /* -- LIST REMOVE BUTTON + TRAY -- */
 .radar-list-remove { background:none; border:none; color:var(--muted); cursor:pointer; padding:0.3rem; border-radius:50%; transition:color 0.15s, background 0.15s; flex-shrink:0; display:flex; align-items:center; }
 .radar-list-remove:hover, .radar-list-remove:active { color:var(--accent2); background:rgba(232,93,138,0.1); }
-.radar-remove-tray { display:flex; align-items:center; justify-content:space-between; padding:0.55rem 0.8rem; border-radius:var(--radius); background:rgba(12,12,25,0.95); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border:1px solid var(--glass-border-subtle); opacity:0; transform:translateY(8px); transition:all 0.25s; pointer-events:none; margin-top:0.5rem; }
-.radar-remove-tray.show { opacity:1; transform:translateY(0); pointer-events:auto; }
-.radar-remove-tray-text { font-size:0.75rem; color:var(--text-secondary); font-weight:500; }
-.radar-remove-tray-btn { font-family:Outfit,sans-serif; font-size:0.68rem; font-weight:600; padding:0.3rem 0.7rem; border-radius:var(--radius-pill); border:none; cursor:pointer; transition:transform 0.1s; }
-.radar-remove-tray-btn:active { transform:scale(0.95); }
-.radar-remove-tray-btn.cancel { background:var(--glass-bg); border:1px solid var(--glass-border-subtle); color:var(--text-secondary); }
-.radar-remove-tray-btn.confirm { background:var(--accent2); color:white; }
+
+
+
+
+
+
+
