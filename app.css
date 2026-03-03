@@ -34,36 +34,27 @@
 
 html { height:100%; }
 
-/* -- DESKTOP PHONE FRAME -- */
+/* ── DESKTOP PHONE FRAME ── */
 @media (min-width: 600px) {
   html {
     background: #020208;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100%;
-    overflow: hidden;
   }
   body {
     width: 390px;
-    height: min(844px, calc(100vh - 2rem));
-    min-height: 0 !important;
     max-height: 844px;
+    height: 100vh;
     border-radius: 40px;
     overflow: hidden;
     position: relative;
-    flex-shrink: 0;
     box-shadow:
       0 0 0 8px #1a1a2e,
       0 0 0 10px rgba(139,127,255,0.15),
       0 25px 80px rgba(0,0,0,0.6),
       0 0 120px rgba(139,127,255,0.06);
-  }
-  .screen {
-    min-height: 0 !important;
-    height: 100%;
-    max-height: 100%;
-    overflow-y: auto;
+    margin: 1rem 0;
   }
   .bg-canvas,
   .bottom-nav,
@@ -78,9 +69,6 @@ html { height:100%; }
   .toast { left: 50% !important; }
   .bottom-nav { left: 0 !important; right: 0 !important; }
   .modal-overlay { inset: 0 !important; }
-  .person-sheet { border-radius: 24px 24px 0 0; max-width: 390px; }
-  .radar-person-sheet { max-width: 390px; }
-  .modal-overlay .modal-sheet { max-width: 370px; }
 }
 
 body {
@@ -1096,4 +1084,35 @@ a.person-action-btn { text-decoration:none; }
   display: flex; align-items: center; gap: 0.3rem; flex-shrink: 0;
 }
 
+/* ── DESKTOP FRAME EXTRAS ── */
+@media (min-width: 600px) {
+  .screen {
+    min-height: 100%;
+    max-height: 844px;
+    overflow-y: auto;
+  }
+  .person-sheet {
+    border-radius: 24px 24px 0 0;
+    max-width: 390px;
+  }
+  .radar-person-sheet {
+    max-width: 390px;
+  }
+  .modal-overlay .modal-sheet {
+    max-width: 370px;
+  }
+}
 
+.radar-swipeable { position: relative; overflow: hidden; touch-action: pan-y; }
+.radar-swipe-ind { position: absolute; top: 0; bottom: 0; width: 55px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em; opacity: 0; pointer-events: none; z-index: 2; }
+.radar-swipe-ind.left { left: 0; background: linear-gradient(90deg, rgba(232,93,138,0.15), transparent); color: var(--accent2); border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+.radar-swipe-ind.right { right: 0; background: linear-gradient(-90deg, rgba(46,207,207,0.15), transparent); color: var(--accent3); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.radar-swipe-hint { display: flex; justify-content: center; gap: 1.2rem; padding: 0.25rem 0 0.5rem; font-size: 0.58rem; color: var(--muted); transition: opacity 0.3s; }
+.rsh-left { color: var(--accent2); }
+.rsh-right { color: var(--accent3); }
+.rsh-center { color: var(--text-secondary); }
+.radar-undo-bar { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.8rem; margin: 0.5rem 0; border-radius: var(--radius-sm); background: rgba(12,12,25,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border-subtle); opacity: 0; transform: translateY(8px); transition: all 0.3s; pointer-events: none; }
+.radar-undo-bar.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.radar-undo-text { font-size: 0.72rem; color: var(--text-secondary); }
+.radar-undo-btn { font-family: 'Outfit', sans-serif; font-size: 0.68rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: var(--radius-pill); border: 1px solid rgba(139,127,255,0.3); background: var(--accent-soft); color: var(--accent); cursor: pointer; }
+.radar-undo-btn:active { transform: scale(0.95); }
