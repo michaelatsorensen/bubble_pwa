@@ -821,8 +821,6 @@ function renderRadarList() {
       '<div style="flex:1;min-width:0;cursor:pointer" onclick="openRadarPerson(\'' + p.id + '\')">' +
         '<div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(name) + '</div>' +
         (isA ? '' : '<div class="fs-072 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + '</div>') +
-        (tags ? '<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.25rem">' + tags + '</div>' : '') +
-        (bubbleInfo ? '<div style="margin-top:0.2rem">' + bubbleInfo + '</div>' : '') +
       '</div>' +
       (isA ? '' : '<div class="radar-list-match">' + matchPct + '%</div>') +
       '<button class="radar-list-remove" onclick="event.stopPropagation();radarConfirmRemove(\'' + p.id + '\',\'' + escHtml(name).replace(/'/g,'') + '\')" title="Fjern">' + icon('x') + '</button>' +
