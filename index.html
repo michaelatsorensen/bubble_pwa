@@ -498,7 +498,7 @@
 </div>
 
 
-<div class="person-sheet-overlay" id="radar-overlay" onclick="closeRadarSheet()"></div>
+<div class="person-sheet-overlay" id="radar-overlay" onclick="closeRadarSheet()" ontouchmove="event.preventDefault()"></div>
 <div class="person-sheet" id="radar-sheet" style="max-height:calc(100vh - 3rem);max-height:calc(100dvh - 3rem);padding:0 1.2rem 1.5rem">
   <div class="person-sheet-handle" onclick="closeRadarSheet()"></div>
 

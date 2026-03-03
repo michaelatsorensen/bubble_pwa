@@ -264,7 +264,6 @@ async function loadHome() {
     // Load all dashboard data in parallel
     await Promise.all([
       loadHomeBubblesCard(),
-      loadHomeMessagesCard(),
       loadHomeNotifCard(),
       updateRadarCount(),
       loadProximityMap(),
@@ -756,12 +755,61 @@ function openRadarSheet() {
   if (sheet) sheet.classList.add('open');
   document.body.style.overflow = 'hidden';
   setTimeout(function(){ if (radarCurrentView === 'map') renderProximityDots(); else renderRadarList(); }, 120);
+  radarInitSwipeClose(sheet);
 }
 
 function closeRadarSheet() {
   document.body.style.overflow = '';
-  document.getElementById('radar-overlay').classList.remove('open');
-  document.getElementById('radar-sheet').classList.remove('open');
+  var sheet = document.getElementById('radar-sheet');
+  if (sheet) { sheet.style.transform = ''; sheet.classList.remove('open'); }
+  var overlay = document.getElementById('radar-overlay');
+  if (overlay) overlay.classList.remove('open');
+}
+
+// Swipe-down-to-close on the radar sheet
+var _radarSwipeCloseInit = false;
+function radarInitSwipeClose(sheet) {
+  if (_radarSwipeCloseInit || !sheet) return;
+  _radarSwipeCloseInit = true;
+  var startY = 0, currentY = 0, dragging = false;
+
+  sheet.addEventListener('touchstart', function(e) {
+    // Only start drag from the handle area (top 40px) or when list is scrolled to top
+    var listEl = document.getElementById('radar-view-list');
+    var mapEl = document.getElementById('radar-view-map');
+    var scrollEl = (listEl && listEl.style.display !== 'none') ? listEl : null;
+    var atTop = !scrollEl || scrollEl.scrollTop <= 0;
+    var touchY = e.touches[0].clientY;
+    var sheetRect = sheet.getBoundingClientRect();
+    var inHandle = (touchY - sheetRect.top) < 44;
+    if (inHandle || atTop) {
+      startY = e.touches[0].clientY;
+      currentY = 0;
+      dragging = true;
+      sheet.style.transition = 'none';
+    }
+  }, {passive: true});
+
+  sheet.addEventListener('touchmove', function(e) {
+    if (!dragging) return;
+    currentY = e.touches[0].clientY - startY;
+    if (currentY < 0) currentY = 0; // Only allow downward
+    if (currentY > 10) {
+      sheet.style.transform = 'translateY(' + currentY + 'px)';
+    }
+  }, {passive: true});
+
+  sheet.addEventListener('touchend', function() {
+    if (!dragging) return;
+    dragging = false;
+    sheet.style.transition = '';
+    if (currentY > 80) {
+      closeRadarSheet();
+    } else {
+      sheet.style.transform = '';
+    }
+    currentY = 0;
+  });
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1266,7 +1314,6 @@ async function loadProfile() {
 async function loadSavedContacts() {
   try {
     const savedEl = document.getElementById('saved-contacts');
-    if (!savedEl) return;
 
     // Fetch saved contacts — chronological (newest first)
     const { data: saved, error: savedErr } = await sb.from('saved_contacts')
@@ -1283,7 +1330,8 @@ async function loadSavedContacts() {
     }
 
     if (!saved || saved.length === 0) {
-      savedEl.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bookmark') + '</div><div class="empty-text">Ingen gemte kontakter endnu.<br>Tryk Gem på en profil for at huske dem.</div></div>';
+      if (savedEl) savedEl.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bookmark') + '</div><div class="empty-text">Ingen gemte kontakter endnu.<br>Tryk Gem på en profil for at huske dem.</div></div>';
+      renderSavedStoryBar(null, {});
       return;
     }
 
@@ -1301,7 +1349,7 @@ async function loadSavedContacts() {
 
     const colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#7C2D12,#F97316)'];
 
-    savedEl.innerHTML = saved.map((s, i) => {
+    if (savedEl) savedEl.innerHTML = saved.map((s, i) => {
       const p = profileMap[s.contact_id];
       if (!p) return '';
       const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
