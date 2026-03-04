@@ -1247,8 +1247,11 @@ function dmRenderMsg(m) {
     bubble = `<div class="msg-bubble${sent?' sent':''}" id="dm-bubble-${m.id}">${escHtml(m.content||'')}</div>`;
   }
 
+  const avatarStyle = `background:linear-gradient(135deg,${sent?'#4C1D95,#A78BFA':'#8B7FFF,#E85D8A'})${sent?'':';cursor:pointer'}`;
+  const avatarClick = sent ? '' : ` onclick="dmOpenPersonSheet('${m.sender_id}')"`;
+
   return `<div class="msg-row${sent?' me':''}" data-msg-id="${m.id}">
-    <div class="msg-avatar" style="background:linear-gradient(135deg,${sent?'#4C1D95,#A78BFA':'#8B7FFF,#E85D8A'})">${initials}</div>
+    <div class="msg-avatar"${avatarClick} style="${avatarStyle}">${initials}</div>
     <div class="msg-body">
       <div class="msg-head"><span class="msg-name">${escHtml(name)}</span><span class="msg-time">${time}${edited}</span></div>
       <div class="msg-content">${bubble}${sent && !m.file_url ?`<button class="msg-dots" onclick="dmEditMsg('${m.id}')">⋯</button>`:''}</div>
@@ -1327,7 +1330,7 @@ function convToggleSelectMode() {
         cb.className = 'conv-check';
         cb.setAttribute('data-id', id);
         cb.onclick = function(e) { e.stopPropagation(); convToggleConv(id, this); };
-        card.insertBefore(cb, card.firstChild);
+        card.appendChild(cb);
       });
     }
   } else {
@@ -3313,7 +3316,7 @@ async function sendBubbleInvites() {
 }
 
 
-function bcOpenPerson(userId, name, title, color) {
+function bcOpenPerson(userId, name, title, color, fromScreen) {
   const initials = (name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('ps-avatar').style.background = color;
   document.getElementById('ps-avatar').textContent = initials;
@@ -3329,9 +3332,10 @@ function bcOpenPerson(userId, name, title, color) {
     if (data?.bio) document.getElementById('ps-bio').textContent = data.bio;
     if (data?.linkedin) { liBtn.href = data.linkedin.startsWith('http') ? data.linkedin : 'https://' + data.linkedin; liBtn.style.display = 'flex'; }
   });
-  // Store userId
+  // Store userId and fromScreen
   document.getElementById('person-sheet-el').dataset.userId = userId;
   document.getElementById('person-sheet-el').dataset.userName = name;
+  document.getElementById('person-sheet-el').dataset.fromScreen = fromScreen || 'screen-bubble-chat';
   // Check if contact is already saved — update button state
   const saveBtn = document.getElementById('ps-save-btn');
   if (saveBtn) {
@@ -3344,6 +3348,14 @@ function bcOpenPerson(userId, name, title, color) {
   setTimeout(() => document.getElementById('person-sheet-el').classList.add('open'), 10);
 }
 
+async function dmOpenPersonSheet(userId) {
+  try {
+    var { data: p } = await sb.from('profiles').select('name,title').eq('id', userId).single();
+    bcOpenPerson(userId, p?.name || 'Ukendt', p?.title || '', 'linear-gradient(135deg,#8B7FFF,#E85D8A)', 'screen-chat');
+  } catch(e) { console.error('dmOpenPersonSheet:', e); }
+}
+
+
 function psClose() {
   document.getElementById('person-sheet-el').classList.remove('open');
   document.getElementById('ps-bubbleup-btn').style.display = 'flex';
@@ -3351,8 +3363,8 @@ function psClose() {
   setTimeout(() => document.getElementById('ps-overlay').classList.remove('open'), 320);
 }
 
-function psMessage() { const uid = document.getElementById('person-sheet-el').dataset.userId; psClose(); setTimeout(() => openChat(uid, 'screen-bubble-chat'), 350); }
-function psProfile() { const uid = document.getElementById('person-sheet-el').dataset.userId; psClose(); setTimeout(() => openPerson(uid, 'screen-bubble-chat'), 350); }
+function psMessage() { const uid = document.getElementById('person-sheet-el').dataset.userId; const from = document.getElementById('person-sheet-el').dataset.fromScreen || 'screen-home'; psClose(); setTimeout(() => openChat(uid, from), 350); }
+function psProfile() { const uid = document.getElementById('person-sheet-el').dataset.userId; const from = document.getElementById('person-sheet-el').dataset.fromScreen || 'screen-home'; psClose(); setTimeout(() => openPerson(uid, from), 350); }
 // psMeeting removed — feature shelved
 
 function psTriggerBubbleUp() {
