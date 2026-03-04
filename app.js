@@ -2364,10 +2364,9 @@ async function openBubbleChat(bubbleId, fromScreen) {
     const isOwner = b.created_by === currentUser.id;
     if (myMembership) {
       actionArea.innerHTML =
-        `<button class="btn-sm btn-ghost" onclick="openInviteModal('${b.id}')" style="font-size:0.85rem;padding:0.35rem 0.55rem" title="Invit\u00e9r">${icon("user-plus")}</button>` +
-        (isOwner ? `<button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" style="font-size:0.85rem;padding:0.35rem 0.55rem">${icon("edit")}</button>
-        <button class="btn-sm btn-ghost" data-action="openQRModal" data-id="${b.id}" style="font-size:0.85rem;padding:0.35rem 0.55rem">${icon("qrcode")}</button>` : '') +
-        `<button class="btn-sm btn-ghost" data-action="leaveBubble" data-id="${b.id}" style="font-size:0.72rem">Forlad</button>`;
+        `<button class="btn-sm btn-ghost" onclick="openInviteModal('${b.id}')" style="font-size:0.82rem;padding:0.3rem 0.4rem" title="Invitér medlemmer">${icon("user-plus")}</button>` +
+        (isOwner ? `<button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" style="font-size:0.82rem;padding:0.3rem 0.4rem" title="Rediger">${icon("edit")}</button>` +
+        `<button class="btn-sm btn-ghost" data-action="openQRModal" data-id="${b.id}" style="font-size:0.82rem;padding:0.3rem 0.4rem" title="QR-kode">${icon("qrcode")}</button>` : '');
     } else if (b.visibility === 'hidden') {
       actionArea.innerHTML = `<span style="font-size:0.75rem;color:var(--muted)">${icon("eye")} Kun via invitation</span>`;
     } else if (b.visibility === 'private') {
