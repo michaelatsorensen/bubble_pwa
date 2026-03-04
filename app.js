@@ -674,6 +674,23 @@ async function openPerson(userId, fromScreen) {
     // Check if saved
     const { data: savedCheck } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
     document.getElementById('save-btn').innerHTML = savedCheck ? icon('checkCircle') + '<span>Gemt</span>' : icon('bookmark') + '<span>Gem</span>';
+    // Star rating section (only for saved contacts)
+    var starSection = document.getElementById('person-star-section');
+    var starRatingEl = document.getElementById('person-star-rating');
+    if (starSection && starRatingEl) {
+      if (savedCheck) {
+        starSection.style.display = 'block';
+        var r = starGet(userId);
+        starRatingEl.innerHTML = [1,2,3].map(function(n) {
+          return '<div class="ps-star ' + (n <= r ? 'filled' : 'empty') + '" onclick="personSetStar(\'' + userId + '\',' + n + ')">\u2605</div>';
+        }).join('');
+      } else {
+        starSection.style.display = 'none';
+      }
+    }
+    // Tags section
+    var tagsSection = document.getElementById('person-tags-section');
+    if (tagsSection) tagsSection.style.display = (p.keywords||[]).length ? 'block' : 'none';
   } catch(e) { console.error("openPerson:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -1684,11 +1701,7 @@ function starCycle(contactId, el) {
 function starRender(contactId) {
   var r = starGet(contactId);
   if (r === 0) return '';
-  var out = '';
-  for (var i = 1; i <= 3; i++) {
-    out += '<span style="color:' + (i <= r ? 'var(--accent)' : 'var(--border)') + ';font-size:0.7rem">★</span>';
-  }
-  return out;
+  return '<span class="star-badge">' + '\u2605'.repeat(r) + '</span>';
 }
 
 async function loadSavedContacts() {
@@ -1745,13 +1758,15 @@ async function loadSavedContacts() {
       const stars = starRender(p.id);
       return `<div class="card saved-card" style="padding:0.7rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="bcOpenPerson('${p.id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${col}','screen-profile')">
         <div class="flex-row-center" style="gap:0.7rem">
-          <div class="avatar" style="background:${col};width:42px;height:42px;font-size:0.75rem;flex-shrink:0">${ini}</div>
+          <div class="saved-avatar-wrap" style="position:relative;flex-shrink:0">
+            <div class="avatar" style="background:${col};width:42px;height:42px;font-size:0.75rem">${ini}</div>
+            ${stars}
+          </div>
           <div style="flex:1;min-width:0">
             <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||'Ukendt')}</div>
             <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.title||'')}</div>
             ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.3rem">${tags}</div>` : ''}
           </div>
-          <div class="saved-card-stars" onclick="event.stopPropagation()">${stars}</div>
           <div style="display:flex;gap:0.35rem;flex-shrink:0" onclick="event.stopPropagation()">
             <button class="saved-action-btn" data-action="openChat" data-id="${p.id}" title="Send besked">${icon('chat')}</button>
             <button class="saved-action-btn danger" onclick="removeSavedContact('${s.id}',this)" title="Fjern">${icon('x')}</button>
@@ -3627,6 +3642,19 @@ function psSetStar(userId, rating) {
     }).join('');
   }
   // Refresh saved contacts list in background
+  loadSavedContacts();
+}
+
+function personSetStar(userId, rating) {
+  var current = starGet(userId);
+  var newRating = (current === rating) ? 0 : rating;
+  starSet(userId, newRating);
+  var el = document.getElementById('person-star-rating');
+  if (el) {
+    el.innerHTML = [1,2,3].map(function(n) {
+      return '<div class="ps-star ' + (n <= newRating ? 'filled' : 'empty') + '" onclick="personSetStar(\'' + userId + '\',' + n + ')">\u2605</div>';
+    }).join('');
+  }
   loadSavedContacts();
 }
 
