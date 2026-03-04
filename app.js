@@ -1208,6 +1208,8 @@ async function openChat(userId, fromScreen) {
     currentChatName = p?.name || 'Ukendt';
     document.getElementById('chat-name').textContent = currentChatName;
     document.getElementById('chat-role').textContent = p?.title || '';
+    var dmAvatar = document.getElementById('dm-topbar-avatar');
+    if (dmAvatar) dmAvatar.textContent = (currentChatName).split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     const backBtn = document.getElementById('dm-back-btn');
     if (backBtn) backBtn.onclick = () => goTo(fromScreen || 'screen-messages');
     goTo('screen-chat');

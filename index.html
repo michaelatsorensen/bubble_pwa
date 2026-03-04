@@ -617,9 +617,12 @@
 <div class="screen" id="screen-chat">
   <div class="topbar">
     <button class="back-btn" id="dm-back-btn" onclick="goTo('screen-messages')">←</button>
-    <div style="flex:1;min-width:0;text-align:right">
-      <div style="font-size:0.88rem;font-weight:700;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chat-name">...</div>
-      <div style="font-size:0.68rem;color:var(--text-secondary)" id="chat-role">...</div>
+    <div style="flex:1;min-width:0;display:flex;align-items:center;gap:0.5rem;cursor:pointer" id="dm-topbar-profile" onclick="openPerson(currentChatUser,'screen-chat')">
+      <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:white;flex-shrink:0" id="dm-topbar-avatar">?</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:0.85rem;font-weight:700;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chat-name">...</div>
+        <div style="font-size:0.62rem;color:var(--text-secondary)" id="chat-role">...</div>
+      </div>
     </div>
   </div>
   <div class="chat-panel" id="dm-panel">
