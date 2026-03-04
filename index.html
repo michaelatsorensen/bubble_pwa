@@ -506,6 +506,10 @@
     <button class="person-sheet-close" onclick="psClose()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17M7 7l10 10"/></svg></button>
   </div>
   <div class="person-sheet-bio" id="ps-bio"></div>
+  <div class="ps-star-row" id="ps-star-row" style="display:none">
+    <span style="font-size:0.72rem;color:var(--text-secondary);font-weight:600">Prioritet</span>
+    <div class="ps-stars" id="ps-stars"></div>
+  </div>
   <div class="person-sheet-actions">
     <button class="person-sheet-btn primary" onclick="psMessage()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg> Besked</button>
     <button class="person-sheet-btn secondary" id="ps-save-btn" onclick="psSaveContact()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4a1.5 1.5 0 011.5-1.5h9A1.5 1.5 0 0118 4v17l-6-3.5L6 21V4z"/></svg> Gem</button>

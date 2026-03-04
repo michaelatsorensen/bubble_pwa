@@ -1613,10 +1613,22 @@ async function psSaveContact() {
     if (existing) {
       await sb.from('saved_contacts').delete().eq('id', existing.id);
       if (btn) btn.innerHTML = icon('bookmark') + ' Gem';
+      var sr = document.getElementById('ps-star-row');
+      if (sr) sr.style.display = 'none';
+      starSet(userId, 0);
       showToast('Kontakt fjernet');
     } else {
       await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: userId });
       if (btn) btn.innerHTML = icon('bookmarkFill') + ' Gemt';
+      // Show star rating row
+      var sr2 = document.getElementById('ps-star-row');
+      var starsEl2 = document.getElementById('ps-stars');
+      if (sr2 && starsEl2) {
+        sr2.style.display = 'flex';
+        starsEl2.innerHTML = [1,2,3].map(function(n) {
+          return '<div class="ps-star empty" onclick="psSetStar(\'' + userId + '\',' + n + ')">\u2605</div>';
+        }).join('');
+      }
       showToast('Kontakt gemt!');
     }
     loadSavedContacts();
@@ -3526,6 +3538,22 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
       if (data) saveBtn.innerHTML = icon('bookmarkFill') + ' Gemt';
     });
   }
+  // Show star rating if contact is saved
+  var starRow = document.getElementById('ps-star-row');
+  var starsEl = document.getElementById('ps-stars');
+  if (starRow && starsEl) {
+    sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle().then(function(res) {
+      if (res.data) {
+        starRow.style.display = 'flex';
+        var r = starGet(userId);
+        starsEl.innerHTML = [1,2,3].map(function(n) {
+          return '<div class="ps-star ' + (n <= r ? 'filled' : 'empty') + '" onclick="psSetStar(\'' + userId + '\',' + n + ')">\u2605</div>';
+        }).join('');
+      } else {
+        starRow.style.display = 'none';
+      }
+    });
+  }
   document.getElementById('ps-overlay').classList.add('open');
   setTimeout(() => document.getElementById('person-sheet-el').classList.add('open'), 10);
 }
@@ -3544,6 +3572,23 @@ function psClose() {
   document.getElementById('ps-bubbleup-confirm').classList.remove('show');
   setTimeout(() => document.getElementById('ps-overlay').classList.remove('open'), 320);
 }
+
+function psSetStar(userId, rating) {
+  var current = starGet(userId);
+  // Tap same star = remove all
+  var newRating = (current === rating) ? 0 : rating;
+  starSet(userId, newRating);
+  // Update stars UI
+  var starsEl = document.getElementById('ps-stars');
+  if (starsEl) {
+    starsEl.innerHTML = [1,2,3].map(function(n) {
+      return '<div class="ps-star ' + (n <= newRating ? 'filled' : 'empty') + '" onclick="psSetStar(\'' + userId + '\',' + n + ')">\u2605</div>';
+    }).join('');
+  }
+  // Refresh saved contacts list in background
+  loadSavedContacts();
+}
+
 
 function psMessage() { const uid = document.getElementById('person-sheet-el').dataset.userId; const from = document.getElementById('person-sheet-el').dataset.fromScreen || 'screen-home'; psClose(); setTimeout(() => openChat(uid, from), 350); }
 function psProfile() { const uid = document.getElementById('person-sheet-el').dataset.userId; const from = document.getElementById('person-sheet-el').dataset.fromScreen || 'screen-home'; psClose(); setTimeout(() => openPerson(uid, from), 350); }
