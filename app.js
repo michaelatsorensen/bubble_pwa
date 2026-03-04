@@ -1554,6 +1554,37 @@ async function loadProfile() {
 }
 
 // Standalone saved contacts loader — called from loadProfile AND after save/remove
+// ══════════════════════════════════════════════════════════
+//  STAR RATING for saved contacts
+// ══════════════════════════════════════════════════════════
+function starGetAll() {
+  try { var s = localStorage.getItem('bubble_stars'); return s ? JSON.parse(s) : {}; } catch(e) { return {}; }
+}
+function starGet(contactId) {
+  return starGetAll()[contactId] || 0;
+}
+function starSet(contactId, rating) {
+  var all = starGetAll();
+  if (rating <= 0) { delete all[contactId]; } else { all[contactId] = Math.min(rating, 3); }
+  try { localStorage.setItem('bubble_stars', JSON.stringify(all)); } catch(e) {}
+}
+function starCycle(contactId, el) {
+  var current = starGet(contactId);
+  var next = current >= 3 ? 0 : current + 1;
+  starSet(contactId, next);
+  if (el) el.innerHTML = starRender(contactId);
+  // Re-sort saved contacts
+  loadSavedContacts();
+}
+function starRender(contactId) {
+  var r = starGet(contactId);
+  var out = '';
+  for (var i = 1; i <= 3; i++) {
+    out += '<span style="color:' + (i <= r ? 'var(--accent)' : 'var(--border)') + ';font-size:0.6rem">★</span>';
+  }
+  return out;
+}
+
 async function loadSavedContacts() {
   try {
     const savedEl = document.getElementById('saved-contacts');
@@ -1592,17 +1623,25 @@ async function loadSavedContacts() {
 
     const colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#7C2D12,#F97316)'];
 
+    // Sort by star rating (highest first), then by date
+    saved.sort(function(a, b) {
+      var sa = starGet(a.contact_id), sb2 = starGet(b.contact_id);
+      if (sb2 !== sa) return sb2 - sa;
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+
     if (savedEl) savedEl.innerHTML = saved.map((s, i) => {
       const p = profileMap[s.contact_id];
       if (!p) return '';
       const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const col = colors[i % colors.length];
       const tags = (p.keywords||[]).slice(0,3).map(k => `<span class="tag" style="font-size:0.58rem;padding:0.15rem 0.4rem">${escHtml(k)}</span>`).join('');
+      const stars = starRender(p.id);
       return `<div class="card" style="padding:0.7rem 0.9rem;margin-bottom:0.4rem">
         <div class="flex-row-center" style="gap:0.7rem">
           <div class="avatar" style="background:${col};width:40px;height:40px;font-size:0.75rem;flex-shrink:0" data-action="openPerson" data-id="${p.id}" data-from="screen-profile">${ini}</div>
           <div style="flex:1;min-width:0">
-            <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||'Ukendt')}</div>
+            <div style="display:flex;align-items:center;gap:0.4rem"><div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||'Ukendt')}</div><div class="star-btn" onclick="starCycle('${p.id}',this)" style="cursor:pointer;white-space:nowrap;line-height:1">${stars}</div></div>
             <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.title||'')}</div>
             ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.3rem">${tags}</div>` : ''}
           </div>
@@ -1626,6 +1665,11 @@ function renderSavedStoryBar(saved, profileMap) {
   if (!saved || saved.length === 0) { bar.style.display = 'none'; return; }
   bar.style.display = 'block';
   if (badge) badge.textContent = saved.length;
+  // Sort by stars for story bar too
+  saved = saved.slice().sort(function(a, b) {
+    var sa = starGet(a.contact_id), sb2 = starGet(b.contact_id);
+    return sb2 - sa;
+  });
   var colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#7C2D12,#F97316)'];
   list.innerHTML = saved.map(function(s, i) {
     var p = profileMap[s.contact_id];
