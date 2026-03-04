@@ -636,13 +636,16 @@ async function openPerson(userId, fromScreen) {
     const myKw = (currentProfile?.keywords || []).map(k => k.toLowerCase());
     const theirKw = (p.keywords || []).map(k => k.toLowerCase());
     const overlap = myKw.filter(k => theirKw.includes(k));
-    // Deterministisk match-score: overlap-ratio + base-bonus baseret på profil-komplethed
-    const overlapRatio = overlap.length / Math.max(myKw.length, theirKw.length, 1);
-    const profileBonus = (p.bio ? 10 : 0) + (p.title ? 10 : 0) + (p.linkedin ? 5 : 0);
-    const score = theirKw.length
-      ? Math.round(overlapRatio * 60 + 30 + profileBonus)
-      : Math.round(30 + profileBonus);
-    document.getElementById('person-match-label').textContent = `Match: ${Math.min(score,99)}%`;
+    // Smart match score (v2)
+    const { data: sharedBubs } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+    var myBIds = (sharedBubs || []).map(b => b.bubble_id);
+    var sharedCount = 0;
+    if (myBIds.length > 0) {
+      var { count: sc } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('user_id', userId).in('bubble_id', myBIds);
+      sharedCount = sc || 0;
+    }
+    const score = calcMatchScore(currentProfile || {}, p, sharedCount);
+    document.getElementById('person-match-label').textContent = `Match: ${score}%`;
 
     document.getElementById('person-tags').innerHTML = (p.keywords||[]).map(k => `<span class="tag">${escHtml(k)}</span>`).join('');
     document.getElementById('person-bio').textContent = p.bio || '';
@@ -776,10 +779,15 @@ async function loadProximityMap() {
     var emptyEl = document.getElementById('prox-empty');
     var canvas = document.getElementById('prox-canvas');
     if (!map || !canvas) return;
-    var r1 = await sb.from('profiles').select('id,name,title,keywords,is_anon').neq('id', currentUser.id).limit(50);
+    var r1 = await sb.from('profiles').select('id,name,title,keywords,dynamic_keywords,bio,linkedin,is_anon').neq('id', currentUser.id).limit(200);
     var allProfiles = r1.data;
     if (!allProfiles || allProfiles.length === 0) { map.style.display = 'none'; if (emptyEl) emptyEl.style.display = 'block'; return; }
     map.style.display = 'block'; if (emptyEl) emptyEl.style.display = 'none';
+
+    // Build tag popularity index for TF-IDF
+    buildTagPopularity(allProfiles);
+
+    // Get shared bubbles
     var r2 = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
     var myBubbleIds = (r2.data || []).map(function(m){ return m.bubble_id; });
     var bmMap = {};
@@ -787,15 +795,16 @@ async function loadProximityMap() {
       var r3 = await sb.from('bubble_members').select('user_id,bubble_id').in('bubble_id', myBubbleIds);
       (r3.data || []).forEach(function(bm) { if (!bmMap[bm.user_id]) bmMap[bm.user_id] = []; bmMap[bm.user_id].push(bm.bubble_id); });
     }
-    var myKw = (currentProfile && currentProfile.keywords ? currentProfile.keywords : []).map(function(k){ return k.toLowerCase(); });
+
+    // Calculate match scores using smart algorithm
     proxAllProfiles = allProfiles.map(function(p) {
-      var theirKw = (p.keywords || []).map(function(k){ return k.toLowerCase(); });
-      var kwOv = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; }).length;
-      var maxKw = Math.max(myKw.length, theirKw.length, 1);
-      var shared = (bmMap[p.id] || []).length;
-      var rel = (kwOv / maxKw) * 0.6 + Math.min(shared / 3, 1) * 0.4;
-      return { id:p.id, name:p.name, title:p.title, keywords:p.keywords, is_anon:p.is_anon, relevance:rel, kwOverlap:kwOv, sharedBubbles:shared };
-    }).sort(function(a,b){ return b.relevance - a.relevance; });
+      var sharedBubbles = (bmMap[p.id] || []).length;
+      var matchScore = calcMatchScore(currentProfile || {}, p, sharedBubbles);
+      var relevance = matchScore / 100;
+      return { id:p.id, name:p.name, title:p.title, keywords:p.keywords, dynamic_keywords:p.dynamic_keywords, is_anon:p.is_anon, bio:p.bio, linkedin:p.linkedin, relevance:relevance, matchScore:matchScore, sharedBubbles:sharedBubbles };
+    }).sort(function(a,b){ return b.matchScore - a.matchScore; });
+
+    matchPage = 0; // Reset pagination
     renderProximityDots();
   } catch (e) { console.error('loadProximityMap:', e); }
 }
@@ -810,8 +819,20 @@ function renderProximityDots() {
   if (!map || !av || !canvas) return;
 
   var threshold = proxThresholds[proxRange-1] || 0;
-  // Radar = only visible profiles (not anonymous)
-  var fil = proxAllProfiles.filter(function(p) { return !p.is_anon && p.relevance >= threshold; });
+  var allFil = proxAllProfiles.filter(function(p) { return !p.is_anon && p.relevance >= threshold; });
+
+  // Smart cap: show MATCH_CAP profiles per page, paginated
+  var start = matchPage * MATCH_CAP;
+  var fil = allFil.slice(start, start + MATCH_CAP);
+  var totalAvailable = allFil.length;
+
+  // Update counter with pagination info
+  var countEl = document.getElementById('radar-count-home');
+  if (countEl) countEl.textContent = ' · ' + Math.min(totalAvailable, MATCH_CAP) + ' af ' + totalAvailable;
+
+  // Show/hide "vis flere" button
+  var moreBtn = document.getElementById('radar-show-more');
+  if (moreBtn) moreBtn.style.display = totalAvailable > MATCH_CAP ? 'flex' : 'none';
 
   if (fil.length === 0) { av.innerHTML = ''; drawProxRings(canvas); if (emptyEl) emptyEl.style.display = 'block'; return; }
   if (emptyEl) emptyEl.style.display = 'none';
@@ -858,6 +879,15 @@ function renderProximityDots() {
     out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+pos.x.toFixed(1)+'px;top:'+pos.y.toFixed(1)+'px;background:'+col+';opacity:'+op+';font-size:'+(sz<32?'0.48':'0.52')+'rem" onclick="openRadarPerson(\''+p.id+'\')" data-id="'+p.id+'">'+escHtml(ini)+'</div>';
   }
   av.innerHTML = out;
+}
+
+
+function radarShowMore() {
+  var allFil = proxAllProfiles.filter(function(p) { return !p.is_anon; });
+  var maxPages = Math.ceil(allFil.length / MATCH_CAP);
+  matchPage = (matchPage + 1) % maxPages;
+  renderProximityDots();
+  showToast('Side ' + (matchPage + 1) + ' af ' + maxPages);
 }
 
 function drawProxRings(canvas) {
@@ -1078,8 +1108,7 @@ function renderRadarList() {
     var bd = isA ? 'border:1px solid rgba(255,255,255,0.06);' : '';
     var theirKw = (p.keywords || []).map(function(k){ return k.toLowerCase(); });
     var overlap = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; });
-    var matchPct = Math.round(p.relevance * 60 + 30 + (p.title ? 10 : 0));
-    matchPct = Math.min(matchPct, 99);
+    var matchPct = p.matchScore || Math.min(Math.round(p.relevance * 85 + 10), 99);
     var tags = (p.keywords || []).slice(0, 3).map(function(k){
       var isOv = overlap.indexOf(k.toLowerCase()) >= 0;
       return '<span class="tag' + (isOv ? ' mint' : '') + '" style="font-size:0.58rem;padding:0.15rem 0.4rem">' + escHtml(k) + '</span>';
@@ -1183,9 +1212,9 @@ async function openRadarPerson(userId) {
     var myKw = (currentProfile?.keywords || []).map(function(k){ return k.toLowerCase(); });
     var theirKw = (p.keywords || []).map(function(k){ return k.toLowerCase(); });
     var overlap = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; });
-    var overlapRatio = overlap.length / Math.max(myKw.length, theirKw.length, 1);
-    var score = theirKw.length ? Math.round(overlapRatio * 60 + 30 + (p.bio?10:0) + (p.title?10:0) + (p.linkedin?5:0)) : Math.round(30 + (p.title?10:0));
-    score = Math.min(score, 99);
+    // Use smart match from proxAllProfiles if available, otherwise calculate
+    var proxData = proxAllProfiles.find(function(pp) { return pp.id === p.id; });
+    var score = proxData ? proxData.matchScore : calcMatchScore(currentProfile || {}, p, 0);
     document.getElementById('rp-match').textContent = score + '%';
     document.getElementById('rp-bio').textContent = p.bio || '';
     document.getElementById('rp-bio').style.display = p.bio ? 'block' : 'none';
@@ -2648,6 +2677,114 @@ async function maybeShowOnboarding() {
   } catch(e) { console.error("maybeShowOnboarding:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
+
+
+// ══════════════════════════════════════════════════════════
+//  SMART MATCH ALGORITHM (v2)
+//  - TF-IDF: rare shared tags score higher
+//  - Category weighting: branche > kompetence > rolle > interesse
+//  - Cross-match: "søger" ↔ "er" bonus
+//  - Shared bubble bonus
+//  - Sigmoid normalization to 0-99
+// ══════════════════════════════════════════════════════════
+var MATCH_CAP = 25;  // Max profiles shown on radar at once
+var matchPage = 0;   // For "vis flere" rotation
+
+// Category weights for match scoring
+var CAT_WEIGHTS = { branche: 1.5, kompetence: 1.3, rolle: 1.0, interesse: 0.8, custom: 1.0 };
+
+// Calculate tag rarity weight (TF-IDF inspired)
+// tagPopularity: { tagLower: count } built from all visible profiles
+var _tagPopularity = {};
+
+function buildTagPopularity(allProfiles) {
+  _tagPopularity = {};
+  var total = allProfiles.length || 1;
+  allProfiles.forEach(function(p) {
+    (p.keywords || []).forEach(function(k) {
+      var key = k.toLowerCase();
+      _tagPopularity[key] = (_tagPopularity[key] || 0) + 1;
+    });
+  });
+  // Convert counts to rarity weights: rare = high, common = low
+  Object.keys(_tagPopularity).forEach(function(key) {
+    var freq = _tagPopularity[key] / total;
+    // Rarity: if 80% have it → ~0.3 weight; if 2% have it → ~1.7 weight
+    _tagPopularity[key] = 1.0 / Math.log2((_tagPopularity[key] + 1) / total * 10 + 2);
+  });
+}
+
+function getTagRarity(tagLower) {
+  return _tagPopularity[tagLower] || 1.2; // Unknown tags get above-average weight
+}
+
+function calcMatchScore(myProfile, theirProfile, sharedBubbleCount) {
+  var myKw = (myProfile.keywords || []).map(function(k) { return k.toLowerCase(); });
+  var theirKw = (theirProfile.keywords || []).map(function(k) { return k.toLowerCase(); });
+  var myDyn = (myProfile.dynamic_keywords || []).map(function(k) { return k.toLowerCase(); });
+  var theirDyn = (theirProfile.dynamic_keywords || []).map(function(k) { return k.toLowerCase(); });
+
+  if (myKw.length === 0 || theirKw.length === 0) {
+    // Minimal profile — give base score with profile completeness bonus
+    return Math.round(15 + (theirProfile.bio ? 8 : 0) + (theirProfile.title ? 7 : 0) + (sharedBubbleCount || 0) * 5);
+  }
+
+  // 1. Tag overlap with TF-IDF rarity weighting + category multiplier
+  var overlap = myKw.filter(function(k) { return theirKw.indexOf(k) >= 0; });
+  var tagScore = 0;
+  overlap.forEach(function(k) {
+    var rarity = getTagRarity(k);
+    // Find original casing to look up category
+    var original = (theirProfile.keywords || []).find(function(t) { return t.toLowerCase() === k; }) || k;
+    var cat = (typeof getTagCategory === 'function') ? getTagCategory(original) : 'custom';
+    var catWeight = CAT_WEIGHTS[cat] || 1.0;
+    tagScore += rarity * catWeight;
+  });
+
+  // Normalize by max possible score
+  var maxPossible = Math.max(myKw.length, theirKw.length);
+  var normalizedTagScore = tagScore / (maxPossible * 1.0); // Typically 0-2 range
+
+  // 2. Cross-match: my "søger" ↔ their "er" (and vice versa)
+  var crossScore = 0;
+  if (myDyn.length > 0) {
+    myDyn.forEach(function(d) {
+      if (theirKw.indexOf(d) >= 0) crossScore += 2.0; // Strong signal
+      // Fuzzy: check if any of their tags contain my search term
+      theirKw.forEach(function(tk) {
+        if (tk !== d && (tk.indexOf(d) >= 0 || d.indexOf(tk) >= 0)) crossScore += 0.8;
+      });
+    });
+  }
+  if (theirDyn.length > 0) {
+    theirDyn.forEach(function(d) {
+      if (myKw.indexOf(d) >= 0) crossScore += 2.0;
+      myKw.forEach(function(mk) {
+        if (mk !== d && (mk.indexOf(d) >= 0 || d.indexOf(mk) >= 0)) crossScore += 0.8;
+      });
+    });
+  }
+
+  // 3. Shared bubble bonus (being in the same bubble = shared context)
+  var bubbleScore = Math.min((sharedBubbleCount || 0) * 0.3, 1.0);
+
+  // 4. Profile completeness bonus (small)
+  var profileBonus = (theirProfile.bio ? 0.1 : 0) + (theirProfile.title ? 0.1 : 0) + (theirProfile.linkedin ? 0.05 : 0);
+
+  // Combine: tag overlap is primary, cross-match is high value, bubbles and profile are minor
+  var rawScore = normalizedTagScore * 3.0 + crossScore * 1.5 + bubbleScore + profileBonus;
+
+  // Sigmoid normalization: maps rawScore to 5-99 range
+  // sigmoid(x) = 1 / (1 + e^(-x)) mapped to our range
+  var sigmoid = 1 / (1 + Math.exp(-rawScore * 0.8 + 1.5));
+  var finalScore = Math.round(sigmoid * 85 + 10); // Range: ~12 to ~95
+  return Math.min(Math.max(finalScore, 5), 99);
+}
+
+// Quick relevance for sorting (0-1 range, used internally)
+function calcRelevance(myProfile, theirProfile, sharedBubbleCount) {
+  return calcMatchScore(myProfile, theirProfile, sharedBubbleCount) / 100;
+}
 
 // ══════════════════════════════════════════════════════════
 //  TAG PICKER SYSTEM
