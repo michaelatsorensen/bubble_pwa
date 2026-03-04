@@ -1743,7 +1743,7 @@ async function loadSavedContacts() {
       const col = colors[i % colors.length];
       const tags = (p.keywords||[]).slice(0,3).map(k => `<span class="tag" style="font-size:0.58rem;padding:0.15rem 0.4rem">${escHtml(k)}</span>`).join('');
       const stars = starRender(p.id);
-      return `<div class="card saved-card" style="padding:0.7rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" data-action="openPerson" data-id="${p.id}" data-from="screen-profile">
+      return `<div class="card saved-card" style="padding:0.7rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="bcOpenPerson('${p.id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${col}','screen-profile')">
         <div class="flex-row-center" style="gap:0.7rem">
           <div class="avatar" style="background:${col};width:42px;height:42px;font-size:0.75rem;flex-shrink:0">${ini}</div>
           <div style="flex:1;min-width:0">
