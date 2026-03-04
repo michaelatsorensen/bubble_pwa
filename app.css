@@ -110,6 +110,10 @@ textarea.input { min-height:80px; resize:vertical; }
 /* Chips */
 .chips-container { display:flex; flex-wrap:wrap; gap:0.35rem; background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-sm); padding:0.5rem 0.65rem; min-height:44px; }
 .chip-input { background:none; border:none; color:var(--text); font-family:'Outfit',sans-serif; font-size:0.85rem; outline:none; min-width:80px; flex:1; }
+
+.chip-add-btn { background:none; border:1px solid var(--glass-border); border-radius:6px; color:var(--muted); font-size:0.9rem; padding:0.1rem 0.5rem; cursor:pointer; flex-shrink:0; font-family:inherit; transition:all 0.2s; line-height:1; }
+.chip-add-btn:active { background:rgba(255,255,255,0.08); color:var(--text); }
+
 .chip-input::placeholder { color:var(--muted); }
 .chip-remove { cursor:pointer; margin-left:0.3rem; opacity:0.5; }
 .chip-remove:hover { opacity:1; }

@@ -137,6 +137,7 @@
       <div class="input-label">Nøgleord * (tryk Enter efter hvert)</div>
       <div class="chips-container" id="ob-chips-container" onclick="document.getElementById('ob-chip-input').focus()">
         <input class="chip-input" id="ob-chip-input" placeholder="f.eks. SaaS, AI, Bæredygtighed..." onkeydown="handleChipInput(event,'ob-chips')">
+              <button type="button" onclick="addChipFromBtn('ob-chip-input','ob-chips')" class="chip-add-btn">+</button>
       </div>
       <div style="font-size:0.72rem;color:var(--muted);margin-top:0.4rem">Mindst ét nøgleord er påkrævet</div>
     </div>
@@ -518,6 +519,7 @@
       <span id="prox-toggle-dot" class="live-dot" style="width:6px;height:6px;margin:0"></span>
       <span id="prox-toggle-label">Synlig</span>
     </button>
+    <div id="prox-toggle-hint" style="font-size:0.56rem;color:var(--muted);text-align:right;padding-right:0.2rem;margin-top:-0.2rem">Andre kan se dig p&aring; radar</div>
   </div>
 
   <!-- Range slider (map view only) -->
@@ -607,7 +609,7 @@
         <input type="file" id="dm-file-input" style="display:none">
         <button class="chat-attach-btn" onclick="document.getElementById('dm-file-input').click()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1l-9.2 9.2a5.5 5.5 0 01-7.8-7.8l9.2-9.2a3.7 3.7 0 015.2 5.2l-9.2 9.2a1.8 1.8 0 01-2.6-2.6l8.5-8.4"/></svg></button>
         <input class="chat-composer-input" id="chat-input" placeholder="Skriv en besked...">
-        <button class="chat-send-btn" onclick="sendMessage()">→</button>
+        <button class="chat-send-btn" id="chat-send-btn" onclick="sendMessage()">→</button>
       </div>
     </div>
   </div>
@@ -718,6 +720,7 @@
       <div class="input-label">Nøgleord</div>
       <div class="chips-container" id="eb-chips-container" onclick="document.getElementById('eb-chip-input').focus()">
         <input class="chip-input" id="eb-chip-input" placeholder="Tilføj nøgleord..." onkeydown="handleChipInput(event,'eb-chips')">
+              <button type="button" onclick="addChipFromBtn('eb-chip-input','eb-chips')" class="chip-add-btn">+</button>
       </div>
     </div>
     <div class="input-group">
@@ -765,6 +768,7 @@
       <div class="input-label">Nøgleord (tryk Enter for at tilføje)</div>
       <div class="chips-container" id="cb-chips-container" onclick="document.getElementById('cb-chip-input').focus()">
         <input class="chip-input" id="cb-chip-input" placeholder="Tilføj nøgleord..." onkeydown="handleChipInput(event,'cb-chips')">
+              <button type="button" onclick="addChipFromBtn('cb-chip-input','cb-chips')" class="chip-add-btn">+</button>
       </div>
     </div>
     <div class="input-group">
@@ -799,6 +803,7 @@
       <div class="input-label">Nøgleord (tryk Enter)</div>
       <div class="chips-container" id="ep-chips-container" onclick="document.getElementById('ep-chip-input').focus()">
         <input class="chip-input" id="ep-chip-input" placeholder="f.eks. SaaS, AI, Networking..." onkeydown="handleChipInput(event,'ep-chips')">
+              <button type="button" onclick="addChipFromBtn('ep-chip-input','ep-chips')" class="chip-add-btn">+</button>
       </div>
     </div>
     <div class="input-group">

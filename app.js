@@ -795,13 +795,12 @@ function updateProximityRange(val) {
   if (radarCurrentView === 'map') {
     var threshold = proxThresholds[proxRange-1] || 0;
     var count = proxAllProfiles.filter(function(p) { return !p.is_anon && p.relevance >= threshold; }).length;
-    if (el) el.textContent = (proxRangeLabels[proxRange-1]||'') + ' \u00b7 ' + count;
+    if (el) el.textContent = count + (count === 1 ? ' person' : ' personer') + ' · ' + (proxRangeLabels[proxRange-1]||'');
     renderProximityDots();
   } else {
-    // List: show all profiles at this "distance"
     var maxN = [5,10,20,35,50][proxRange-1] || 50;
     var count2 = Math.min(proxAllProfiles.length, maxN);
-    if (el) el.textContent = (listRangeLabels[proxRange-1]||'') + ' \u00b7 ' + count2;
+    if (el) el.textContent = count2 + (count2 === 1 ? ' person' : ' personer') + ' · ' + (listRangeLabels[proxRange-1]||'');
     renderRadarList();
   }
 }
@@ -827,6 +826,8 @@ function toggleProximityVisibility() {
     }
   }
   if (c) { if (proxVisible && currentProfile && currentProfile.name) { c.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); c.style.background = 'var(--gradient-primary)'; } else { c.textContent = '?'; c.style.background = 'rgba(255,255,255,0.08)'; } }
+  var hint = document.getElementById('prox-toggle-hint');
+  if (hint) hint.textContent = proxVisible ? 'Andre kan se dig på radar' : 'Du er usynlig på radar';
   toggleAnon();
 }
 
@@ -853,7 +854,13 @@ function openRadarSheet() {
       btn.style.color = 'var(--muted)';
     }
   }
-  setTimeout(function(){ if (radarCurrentView === 'map') renderProximityDots(); else renderRadarList(); }, 120);
+  // Show loading state then render
+  var loadingEl = document.getElementById('prox-empty');
+  if (loadingEl) { loadingEl.style.display = 'block'; loadingEl.textContent = 'Finder relevante personer…'; }
+  setTimeout(function(){
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (radarCurrentView === 'map') renderProximityDots(); else renderRadarList();
+  }, 120);
   radarInitSwipeClose(sheet);
 }
 
@@ -1296,6 +1303,8 @@ let dmSending = false;
 async function sendMessage() {
   if (dmSending) return;
   dmSending = true;
+  var sendBtn = document.getElementById("chat-send-btn");
+  if (sendBtn) { sendBtn.disabled = true; sendBtn.style.opacity = "0.4"; }
   console.debug('[dm] sendMessage');
   try {
     const input = document.getElementById('chat-input');
@@ -1325,7 +1334,7 @@ async function sendMessage() {
       input.focus();
     }
   } catch(e) { console.error("sendMessage:", e); showToast(e.message || "Ukendt fejl"); }
-  finally { dmSending = false; }
+  finally { dmSending = false; var sb2 = document.getElementById("chat-send-btn"); if (sb2) { sb2.disabled = false; sb2.style.opacity = ""; } }
 }
 
 async function sendDirectMessage(toId, content) {
@@ -1775,6 +1784,20 @@ function handleChipInput(e, arrayName) {
     renderChips(arrayName, arr, containerId, inputId);
   }
 }
+
+function addChipFromBtn(inputId, arrayName) {
+  var inp = document.getElementById(inputId);
+  if (!inp) return;
+  var val = inp.value.trim().replace(/,/g,'');
+  if (!val) { inp.focus(); return; }
+  var arr = arrayName === 'cb-chips' ? cbChips : arrayName === 'ep-chips' ? epChips : arrayName === 'eb-chips' ? ebChips : arrayName === 'ob-chips' ? obChips : epDynChips;
+  var containerId = arrayName === 'cb-chips' ? 'cb-chips-container' : arrayName === 'ep-chips' ? 'ep-chips-container' : arrayName === 'eb-chips' ? 'eb-chips-container' : arrayName === 'ob-chips' ? 'ob-chips-container' : 'ep-dyn-chips-container';
+  if (!arr.includes(val)) arr.push(val);
+  inp.value = '';
+  renderChips(arrayName, arr, containerId, inputId);
+  inp.focus();
+}
+
 
 function renderChips(arrayName, arr, containerId, inputId) {
   const container = document.getElementById(containerId);
@@ -2396,7 +2419,21 @@ async function bcLoadBubbleInfo() {
     document.getElementById('bc-emoji').innerHTML = bubbleEmoji(b.type);
     document.getElementById('bc-name').textContent = b.name;
     const { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bcBubbleId);
-    document.getElementById('bc-members-count').textContent = (count||0) + ' medlemmer';
+    // Check my LIVE status
+    var statusText = (count||0) + ' medlemmer';
+    var { data: myM } = await sb.from('bubble_members').select('checked_in_at,checked_out_at').eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id).maybeSingle();
+    var isLive = myM && myM.checked_in_at && !myM.checked_out_at && (Date.now() - new Date(myM.checked_in_at).getTime() < 6*3600000);
+    var countEl = document.getElementById('bc-members-count');
+    if (countEl) {
+      if (isLive) {
+        var expiry = new Date(new Date(myM.checked_in_at).getTime() + 6*3600000);
+        var hh = expiry.getHours().toString().padStart(2,'0');
+        var mm = expiry.getMinutes().toString().padStart(2,'0');
+        countEl.innerHTML = statusText + ' · <span style="color:#10B981">LIVE</span> <span style="opacity:0.6">udl. ' + hh + ':' + mm + '</span>';
+      } else {
+        countEl.textContent = statusText + ' · Medlem ✓';
+      }
+    }
   } catch(e) { console.error("bcLoadBubbleInfo:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -2568,6 +2605,8 @@ let bcSending = false;
 async function bcSendMessage() {
   if (bcSending) return;
   bcSending = true;
+  var sendBtn = document.getElementById("bc-send-btn");
+  if (sendBtn) { sendBtn.disabled = true; sendBtn.style.opacity = "0.4"; }
   console.debug('[bc] bcSendMessage');
   try {
     const inp = document.getElementById('bc-input');
@@ -2622,7 +2661,7 @@ async function bcSendMessage() {
       }
     }
   } catch(e) { console.error("bcSendMessage:", e); showToast(e.message || "Ukendt fejl"); }
-  finally { bcSending = false; }
+  finally { bcSending = false; var sb3 = document.getElementById("bc-send-btn"); if (sb3) { sb3.disabled = false; sb3.style.opacity = ""; } }
 }
 
 async function bcHandleFile(input) {
