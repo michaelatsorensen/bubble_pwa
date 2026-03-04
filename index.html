@@ -20,6 +20,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="bubble-icons.js?v=1772578838" defer></script>
+<script src="tag-data.js?v=1772578838" defer></script>
 <script src="app.js?v=1772578838" defer></script>
   
 
@@ -115,11 +116,11 @@
      SCREEN: ONBOARDING
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-onboarding">
-  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(2rem + env(safe-area-inset-top, 0px)) 1.5rem 2rem;display:flex;flex-direction:column;justify-content:center">
-    <div style="text-align:center;margin-bottom:2rem">
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(2rem + env(safe-area-inset-top, 0px)) 1.5rem 2rem;display:flex;flex-direction:column">
+    <div style="text-align:center;margin-bottom:1.5rem">
       <div style="width:48px;height:48px;margin:0 auto 0.5rem;color:var(--accent)"><svg class="ico" style="width:48px;height:48px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
-      <div style="font-size:1.6rem;font-weight:800;margin-bottom:0.4rem">Næsten klar!</div>
-      <div style="font-size:0.9rem;color:var(--muted)">Udfyld din profil så andre kan finde dig</div>
+      <div style="font-size:1.6rem;font-weight:800;margin-bottom:0.3rem">Næsten klar!</div>
+      <div style="font-size:0.85rem;color:var(--muted)">Udfyld din profil så radaren kan matche dig</div>
     </div>
     <div class="input-group">
       <div class="input-label">Dit navn *</div>
@@ -133,13 +134,15 @@
       <div class="input-label">Om dig</div>
       <textarea class="input" id="ob-bio" placeholder="Kort om hvem du er og hvad du arbejder med..."></textarea>
     </div>
+    <!-- Tag picker -->
     <div class="input-group">
-      <div class="input-label">Nøgleord * (tryk Enter efter hvert)</div>
-      <div class="chips-container" id="ob-chips-container" onclick="document.getElementById('ob-chip-input').focus()">
-        <input class="chip-input" id="ob-chip-input" placeholder="f.eks. SaaS, AI, Bæredygtighed..." onkeydown="handleChipInput(event,'ob-chips')">
-              <button type="button" onclick="addChipFromBtn('ob-chip-input','ob-chips')" class="chip-add-btn">+</button>
+      <div class="input-label">Vælg dine tags * <span style="font-weight:400;color:var(--muted)">(mindst 3)</span></div>
+      <div class="tag-search-wrap">
+        <input class="input" id="ob-tag-search" placeholder="Søg eller skriv nyt tag..." autocomplete="off" oninput="obTagSearch(this.value)" onfocus="obTagSearch(this.value)">
+        <div class="tag-suggestions" id="ob-tag-suggestions"></div>
       </div>
-      <div style="font-size:0.72rem;color:var(--muted);margin-top:0.4rem">Mindst ét nøgleord er påkrævet</div>
+      <div class="tag-selected" id="ob-tag-selected"></div>
+      <div id="ob-tag-categories"></div>
     </div>
     <div class="input-group">
       <div class="input-label">LinkedIn URL (valgfrit)</div>
@@ -877,14 +880,16 @@
       <textarea class="input" id="ep-bio" placeholder="Skriv kort om dig selv og hvad du søger..."></textarea>
     </div>
     <div class="input-group">
-      <div class="input-label">Nøgleord (tryk Enter)</div>
-      <div class="chips-container" id="ep-chips-container" onclick="document.getElementById('ep-chip-input').focus()">
-        <input class="chip-input" id="ep-chip-input" placeholder="f.eks. SaaS, AI, Networking..." onkeydown="handleChipInput(event,'ep-chips')">
-              <button type="button" onclick="addChipFromBtn('ep-chip-input','ep-chips')" class="chip-add-btn">+</button>
+      <div class="input-label">Tags</div>
+      <div class="tag-search-wrap">
+        <input class="input" id="ep-tag-search" placeholder="Søg eller skriv nyt tag..." autocomplete="off" oninput="epTagSearch(this.value)" onfocus="epTagSearch(this.value)">
+        <div class="tag-suggestions" id="ep-tag-suggestions"></div>
       </div>
+      <div class="tag-selected" id="ep-tag-selected"></div>
+      <div id="ep-tag-categories"></div>
     </div>
     <div class="input-group">
-      <div class="input-label">Dynamiske nøgleord (hvad du søger nu)</div>
+      <div class="input-label">Søger lige nu (dynamisk)</div>
       <div class="chips-container" id="ep-dyn-chips-container" onclick="document.getElementById('ep-dyn-chip-input').focus()">
         <input class="chip-input" id="ep-dyn-chip-input" placeholder="f.eks. Søger investor, Open to coffee..." onkeydown="handleChipInput(event,'ep-dyn-chips')">
       </div>

@@ -1970,9 +1970,12 @@ function openEditProfile() {
   document.getElementById('ep-name').value = currentProfile.name || '';
   document.getElementById('ep-title').value = currentProfile.title || '';
   document.getElementById('ep-bio').value = currentProfile.bio || '';
-  epChips = [...(currentProfile.keywords || [])];
+  // Tag picker
+  epSelectedTags = [...(currentProfile.keywords || [])];
+  epRenderSelectedTags();
+  epRenderCategories();
+  // Dynamic keywords (still chips)
   epDynChips = [...(currentProfile.dynamic_keywords || [])];
-  renderChips('ep-chips', epChips, 'ep-chips-container', 'ep-chip-input');
   renderChips('ep-dyn-chips', epDynChips, 'ep-dyn-chips-container', 'ep-dyn-chip-input');
   openModal('modal-edit-profile');
 }
@@ -1985,7 +1988,7 @@ async function saveProfile() {
     if (!name) return showToast('Navn er påkrævet');
     const { error } = await sb.from('profiles').upsert({
       id: currentUser.id, name, title, bio,
-      keywords: epChips, dynamic_keywords: epDynChips, is_anon: isAnon
+      keywords: epSelectedTags, dynamic_keywords: epDynChips, is_anon: isAnon
     });
     if (error) return showToast('Fejl: ' + error.message);
     await loadCurrentProfile();
@@ -2634,13 +2637,226 @@ async function maybeShowOnboarding() {
       document.getElementById('ob-title').value = currentProfile?.title || '';
       document.getElementById('ob-bio').value = currentProfile?.bio || '';
       document.getElementById('ob-linkedin').value = currentProfile?.linkedin || '';
-      obChips = Array.isArray(currentProfile?.keywords) ? [...currentProfile.keywords] : [];
-      renderChips('ob-chips', obChips, 'ob-chips-container', 'ob-chip-input');
+      // Initialize tag picker with existing tags
+      obSelectedTags = Array.isArray(currentProfile?.keywords) ? [...currentProfile.keywords] : [];
+      obRenderSelectedTags();
+      obRenderCategories();
       goTo('screen-onboarding');
       return true;
     }
     return false;
   } catch(e) { console.error("maybeShowOnboarding:", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+
+// ══════════════════════════════════════════════════════════
+//  TAG PICKER SYSTEM
+// ══════════════════════════════════════════════════════════
+var obSelectedTags = [];
+var epSelectedTags = [];
+
+function obTagSearch(q) {
+  var el = document.getElementById('ob-tag-suggestions');
+  if (!el) return;
+  if (!q || q.length < 1) {
+    el.style.display = 'none';
+    return;
+  }
+  var results = searchTags(q).filter(function(t) { return obSelectedTags.indexOf(t.label) < 0; });
+  if (results.length === 0 && q.trim().length > 1) {
+    // Allow custom tag
+    el.innerHTML = '<div class="tag-sug-item custom" onclick="obAddTag(\'' + escHtml(q.trim()) + '\',\'custom\')">' +
+      '<span class="tag-sug-label">+ \"' + escHtml(q.trim()) + '\" (nyt tag)</span></div>';
+    el.style.display = 'block';
+    return;
+  }
+  if (results.length === 0) { el.style.display = 'none'; return; }
+  el.innerHTML = results.map(function(t) {
+    var catInfo = TAG_CATEGORIES[t.category] || {};
+    return '<div class="tag-sug-item" onclick="obAddTag(\'' + escHtml(t.label).replace(/'/g,"\\'") + '\',\'' + t.category + '\')">' +
+      '<span class="tag-sug-dot" style="background:' + (catInfo.color || 'var(--accent)') + '"></span>' +
+      '<span class="tag-sug-label">' + escHtml(t.label) + '</span>' +
+      '<span class="tag-sug-cat">' + (catInfo.label || t.category) + '</span></div>';
+  }).join('');
+  el.style.display = 'block';
+}
+
+function obAddTag(label, category) {
+  if (obSelectedTags.indexOf(label) >= 0) return;
+  obSelectedTags.push(label);
+  obRenderSelectedTags();
+  var input = document.getElementById('ob-tag-search');
+  if (input) { input.value = ''; }
+  var sug = document.getElementById('ob-tag-suggestions');
+  if (sug) sug.style.display = 'none';
+}
+
+function obRemoveTag(label) {
+  obSelectedTags = obSelectedTags.filter(function(t) { return t !== label; });
+  obRenderSelectedTags();
+}
+
+function obRenderSelectedTags() {
+  var el = document.getElementById('ob-tag-selected');
+  if (!el) return;
+  if (obSelectedTags.length === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = obSelectedTags.map(function(t) {
+    var cat = getTagCategory(t);
+    var color = TAG_CATEGORIES[cat]?.color || 'var(--accent)';
+    return '<span class="tag-chip" style="border-color:' + color + '40;background:' + color + '15">' +
+      '<span class="tag-chip-dot" style="background:' + color + '"></span>' +
+      escHtml(t) +
+      '<span class="tag-chip-x" onclick="obRemoveTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\')">×</span></span>';
+  }).join('');
+}
+
+function obRenderCategories() {
+  var el = document.getElementById('ob-tag-categories');
+  if (!el) return;
+  el.innerHTML = Object.entries(TAG_CATEGORIES).map(function(entry) {
+    var cat = entry[0], info = entry[1];
+    var tags = TAG_DATABASE[cat] || [];
+    // Show top 8 popular tags per category
+    var shown = tags.slice(0, 8);
+    return '<div class="tag-cat-section">' +
+      '<div class="tag-cat-header" onclick="obToggleCat(this)" data-expanded="false">' +
+      '<span class="tag-cat-dot" style="background:' + info.color + '"></span>' +
+      '<span class="tag-cat-title">' + info.label + '</span>' +
+      '<span class="tag-cat-count">' + tags.length + '</span>' +
+      '<span class="tag-cat-arrow">›</span></div>' +
+      '<div class="tag-cat-tags" style="display:none">' +
+      tags.map(function(t) {
+        var selected = obSelectedTags.indexOf(t) >= 0;
+        return '<span class="tag-pick' + (selected ? ' selected' : '') + '" ' +
+          'style="border-color:' + info.color + '30;' + (selected ? 'background:' + info.color + '20' : '') + '" ' +
+          'onclick="obTogglePickTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\',\'' + cat + '\',this)">' +
+          escHtml(t) + '</span>';
+      }).join('') +
+      '</div></div>';
+  }).join('');
+}
+
+function obToggleCat(header) {
+  var expanded = header.dataset.expanded === 'true';
+  var tags = header.nextElementSibling;
+  if (expanded) {
+    tags.style.display = 'none';
+    header.dataset.expanded = 'false';
+    header.querySelector('.tag-cat-arrow').style.transform = '';
+  } else {
+    tags.style.display = 'flex';
+    header.dataset.expanded = 'true';
+    header.querySelector('.tag-cat-arrow').style.transform = 'rotate(90deg)';
+  }
+}
+
+function obTogglePickTag(label, cat, el) {
+  if (obSelectedTags.indexOf(label) >= 0) {
+    obRemoveTag(label);
+    if (el) { el.classList.remove('selected'); el.style.background = ''; }
+  } else {
+    obAddTag(label, cat);
+    var color = TAG_CATEGORIES[cat]?.color || 'var(--accent)';
+    if (el) { el.classList.add('selected'); el.style.background = color + '20'; }
+  }
+}
+
+// Close suggestions when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.tag-search-wrap')) {
+    var sug = document.getElementById('ob-tag-suggestions');
+    if (sug) sug.style.display = 'none';
+    var sug2 = document.getElementById('ep-tag-suggestions');
+    if (sug2) sug2.style.display = 'none';
+  }
+});
+
+// ── Edit Profile tag picker (mirrors OB pattern) ──
+function epTagSearch(q) {
+  var el = document.getElementById('ep-tag-suggestions');
+  if (!el) return;
+  if (!q || q.length < 1) { el.style.display = 'none'; return; }
+  var results = searchTags(q).filter(function(t) { return epSelectedTags.indexOf(t.label) < 0; });
+  if (results.length === 0 && q.trim().length > 1) {
+    el.innerHTML = '<div class="tag-sug-item custom" onclick="epAddTag(\'' + escHtml(q.trim()) + '\',\'custom\')">' +
+      '<span class="tag-sug-label">+ "' + escHtml(q.trim()) + '" (nyt tag)</span></div>';
+    el.style.display = 'block'; return;
+  }
+  if (results.length === 0) { el.style.display = 'none'; return; }
+  el.innerHTML = results.map(function(t) {
+    var catInfo = TAG_CATEGORIES[t.category] || {};
+    return '<div class="tag-sug-item" onclick="epAddTag(\'' + escHtml(t.label).replace(/'/g,"\\'") + '\',\'' + t.category + '\')">' +
+      '<span class="tag-sug-dot" style="background:' + (catInfo.color || 'var(--accent)') + '"></span>' +
+      '<span class="tag-sug-label">' + escHtml(t.label) + '</span>' +
+      '<span class="tag-sug-cat">' + (catInfo.label || t.category) + '</span></div>';
+  }).join('');
+  el.style.display = 'block';
+}
+function epAddTag(label, category) {
+  if (epSelectedTags.indexOf(label) >= 0) return;
+  epSelectedTags.push(label);
+  epRenderSelectedTags();
+  var input = document.getElementById('ep-tag-search');
+  if (input) input.value = '';
+  var sug = document.getElementById('ep-tag-suggestions');
+  if (sug) sug.style.display = 'none';
+}
+function epRemoveTag(label) {
+  epSelectedTags = epSelectedTags.filter(function(t) { return t !== label; });
+  epRenderSelectedTags();
+}
+function epRenderSelectedTags() {
+  var el = document.getElementById('ep-tag-selected');
+  if (!el) return;
+  if (epSelectedTags.length === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = epSelectedTags.map(function(t) {
+    var cat = getTagCategory(t);
+    var color = TAG_CATEGORIES[cat]?.color || 'var(--accent)';
+    return '<span class="tag-chip" style="border-color:' + color + '40;background:' + color + '15">' +
+      '<span class="tag-chip-dot" style="background:' + color + '"></span>' +
+      escHtml(t) +
+      '<span class="tag-chip-x" onclick="epRemoveTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\')">×</span></span>';
+  }).join('');
+}
+function epRenderCategories() {
+  var el = document.getElementById('ep-tag-categories');
+  if (!el) return;
+  el.innerHTML = Object.entries(TAG_CATEGORIES).map(function(entry) {
+    var cat = entry[0], info = entry[1];
+    var tags = TAG_DATABASE[cat] || [];
+    return '<div class="tag-cat-section">' +
+      '<div class="tag-cat-header" onclick="epToggleCat(this)" data-expanded="false">' +
+      '<span class="tag-cat-dot" style="background:' + info.color + '"></span>' +
+      '<span class="tag-cat-title">' + info.label + '</span>' +
+      '<span class="tag-cat-count">' + tags.length + '</span>' +
+      '<span class="tag-cat-arrow">›</span></div>' +
+      '<div class="tag-cat-tags" style="display:none">' +
+      tags.map(function(t) {
+        var selected = epSelectedTags.indexOf(t) >= 0;
+        return '<span class="tag-pick' + (selected ? ' selected' : '') + '" ' +
+          'style="border-color:' + info.color + '30;' + (selected ? 'background:' + info.color + '20' : '') + '" ' +
+          'onclick="epTogglePickTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\',\'' + cat + '\',this)">' +
+          escHtml(t) + '</span>';
+      }).join('') +
+      '</div></div>';
+  }).join('');
+}
+function epToggleCat(header) {
+  var expanded = header.dataset.expanded === 'true';
+  var tags = header.nextElementSibling;
+  tags.style.display = expanded ? 'none' : 'flex';
+  header.dataset.expanded = expanded ? 'false' : 'true';
+  header.querySelector('.tag-cat-arrow').style.transform = expanded ? '' : 'rotate(90deg)';
+}
+function epTogglePickTag(label, cat, el) {
+  if (epSelectedTags.indexOf(label) >= 0) {
+    epRemoveTag(label);
+    if (el) { el.classList.remove('selected'); el.style.background = ''; }
+  } else {
+    epAddTag(label, cat);
+    var color = TAG_CATEGORIES[cat]?.color || 'var(--accent)';
+    if (el) { el.classList.add('selected'); el.style.background = color + '20'; }
+  }
 }
 
 async function saveOnboarding() {
@@ -2651,10 +2867,10 @@ async function saveOnboarding() {
     const linkedin = document.getElementById('ob-linkedin').value.trim();
     if (!name)            return showToast('Navn er påkrævet');
     if (!title)           return showToast('Titel er påkrævet');
-    if (obChips.length === 0) return showToast('Tilføj mindst ét nøgleord');
+    if (obSelectedTags.length < 3) return showToast('Vælg mindst 3 tags');
     const { error } = await sb.from('profiles').upsert({
       id: currentUser.id, name, title, bio, linkedin,
-      keywords: obChips, dynamic_keywords: [], is_anon: false
+      keywords: obSelectedTags, dynamic_keywords: [], is_anon: false
     });
     if (error) return showToast('Fejl: ' + error.message);
     await loadCurrentProfile();
