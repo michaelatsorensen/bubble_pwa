@@ -597,13 +597,23 @@
 <div class="screen" id="screen-chat">
   <div class="topbar">
     <button class="back-btn" id="dm-back-btn" onclick="goTo('screen-messages')">←</button>
-    <div style="text-align:right">
-      <div style="font-size:0.88rem;font-weight:700;letter-spacing:-0.01em" id="chat-name">...</div>
+    <div style="flex:1;min-width:0;text-align:right">
+      <div style="font-size:0.88rem;font-weight:700;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chat-name">...</div>
       <div style="font-size:0.68rem;color:var(--text-secondary)" id="chat-role">...</div>
     </div>
+    <button class="btn-sm btn-ghost" id="dm-select-btn" onclick="dmToggleSelectMode()" style="font-size:0.68rem;padding:0.25rem 0.55rem">Vælg</button>
   </div>
   <div class="chat-panel" id="dm-panel">
     <div class="chat-scroll" id="chat-messages"></div>
+    <!-- Delete selection toolbar -->
+    <div class="dm-select-toolbar" id="dm-select-toolbar" style="display:none">
+      <span id="dm-select-count" style="font-size:0.78rem;font-weight:600">0 valgt</span>
+      <div style="display:flex;gap:0.4rem">
+        <button class="btn-sm btn-ghost" onclick="dmSelectAll()" style="font-size:0.68rem;padding:0.3rem 0.6rem">Vælg alle</button>
+        <button class="btn-sm" id="dm-delete-btn" onclick="dmDeleteSelected()" style="font-size:0.68rem;padding:0.3rem 0.6rem;background:rgba(232,93,138,0.15);color:var(--accent2);border:1px solid rgba(232,93,138,0.3);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600" disabled>Slet</button>
+        <button class="btn-sm btn-ghost" onclick="dmToggleSelectMode()" style="font-size:0.68rem;padding:0.3rem 0.6rem">Annuller</button>
+      </div>
+    </div>
     <div class="chat-composer">
       <div class="chat-composer-row">
         <input type="file" id="dm-file-input" style="display:none">
