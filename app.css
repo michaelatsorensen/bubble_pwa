@@ -1353,7 +1353,7 @@ a.person-action-btn { text-decoration:none; }
 .hs-view-btn.active { background:rgba(139,127,255,0.15) !important; color:var(--accent) !important; border-color:rgba(139,127,255,0.3) !important; }
 
 /* Bubble action bar under tabs */
-.bc-action-bar { display:flex; gap:3px; padding:3px; margin:0 0.75rem 0; flex-shrink:0; background:rgba(0,0,0,0.15); border-radius:10px; border:1px solid var(--glass-border-subtle); }
+.bc-action-bar { display:flex; gap:3px; padding:4px; margin:3px 1rem 0; flex-shrink:0; background:rgba(0,0,0,0.15); border-radius:10px; border:1px solid var(--glass-border-subtle); }
 .bc-bar-btn { display:flex; align-items:center; gap:0.25rem; font-size:0.72rem; font-weight:600; font-family:inherit; padding:0.45rem 0.6rem; border-radius:8px; border:none; background:transparent; color:var(--text-secondary); cursor:pointer; transition:all 0.15s; white-space:nowrap; flex:1; justify-content:center; }
 .bc-bar-btn .ico { width:0.78rem; height:0.78rem; }
 .bc-bar-btn:active { background:rgba(255,255,255,0.08); transform:scale(0.97); }
@@ -1375,3 +1375,11 @@ a.person-action-btn { text-decoration:none; }
 
 /* Home section spacing */
 .main-nav-card { margin-bottom:0.5rem; }
+
+/* Saved contacts card redesign */
+.saved-card-stars { flex-shrink:0; white-space:nowrap; line-height:1; display:flex; gap:1px; }
+.saved-action-btn { display:flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:10px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.04); color:var(--text-secondary); cursor:pointer; transition:all 0.15s; padding:0; }
+.saved-action-btn .ico { width:1rem; height:1rem; }
+.saved-action-btn:active { transform:scale(0.93); background:rgba(255,255,255,0.08); }
+.saved-action-btn.danger { color:var(--accent2); border-color:rgba(232,93,138,0.2); }
+.saved-action-btn.danger:active { background:rgba(232,93,138,0.1); }
