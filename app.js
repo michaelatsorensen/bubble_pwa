@@ -412,14 +412,17 @@ async function updateRadarCount() {
 }
 
 function bubbleCard(b, joined) {
+  var ups = b.upvote_count || bubbleUpvotes[b.id] || 0;
+  var upLabel = ups > 0 ? `<div class="fs-065" style="color:var(--accent);display:flex;align-items:center;gap:0.15rem">${icon('rocket')}<span style="font-weight:700">${ups}</span></div>` : '';
   return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}">
     <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)}">${bubbleIcon(b.type)}</div>
     <div style="flex:1">
       <div class="fw-600 fs-09">${escHtml(b.name)}</div>
       <div class="fs-075 text-muted">${escHtml(b.type_label || b.type)} ${b.location ? '· ' + escHtml(b.location) : ''}</div>
     </div>
-    <div class="flex-col-end">
+    <div class="flex-col-end" style="align-items:flex-end;gap:0.15rem">
       <div class="fw-700">${b.member_count || ''}</div>
+      ${upLabel}
       ${joined ? '<div class="live-dot"></div>' : '<div class="fs-09" style="color:var(--accent)">+</div>'}
     </div>
   </div>`;
@@ -428,16 +431,97 @@ function bubbleCard(b, joined) {
 // ══════════════════════════════════════════════════════════
 //  DISCOVER
 // ══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+//  BUBBLE UPVOTES / ANBEFAL
+// ══════════════════════════════════════════════════════════
+var bubbleUpvotes = {}; // { bubbleId: count }
+var myUpvotes = {};     // { bubbleId: true }
+
+async function loadBubbleUpvotes() {
+  try {
+    // Try loading from bubble_upvotes table
+    var { data: all, error } = await sb.from('bubble_upvotes').select('bubble_id');
+    if (error) {
+      // Table might not exist yet — use localStorage fallback
+      console.warn('bubble_upvotes table not found, using local fallback');
+      var local = {};
+      try { local = JSON.parse(localStorage.getItem('bubble_upvotes_local') || '{}'); } catch(e) {}
+      bubbleUpvotes = local;
+      var myLocal = {};
+      try { myLocal = JSON.parse(localStorage.getItem('bubble_my_upvotes') || '{}'); } catch(e) {}
+      myUpvotes = myLocal;
+      return;
+    }
+    // Count per bubble
+    bubbleUpvotes = {};
+    (all || []).forEach(function(row) {
+      bubbleUpvotes[row.bubble_id] = (bubbleUpvotes[row.bubble_id] || 0) + 1;
+    });
+    // Check which ones I upvoted
+    var { data: mine } = await sb.from('bubble_upvotes').select('bubble_id').eq('user_id', currentUser.id);
+    myUpvotes = {};
+    (mine || []).forEach(function(row) { myUpvotes[row.bubble_id] = true; });
+  } catch(e) { console.error('loadBubbleUpvotes:', e); }
+}
+
+async function toggleBubbleUpvote(bubbleId) {
+  try {
+    if (myUpvotes[bubbleId]) {
+      // Remove upvote
+      var { error } = await sb.from('bubble_upvotes').delete().eq('user_id', currentUser.id).eq('bubble_id', bubbleId);
+      if (error) {
+        // Fallback: localStorage
+        delete myUpvotes[bubbleId];
+        bubbleUpvotes[bubbleId] = Math.max((bubbleUpvotes[bubbleId] || 1) - 1, 0);
+        try { localStorage.setItem('bubble_upvotes_local', JSON.stringify(bubbleUpvotes)); localStorage.setItem('bubble_my_upvotes', JSON.stringify(myUpvotes)); } catch(e) {}
+      } else {
+        delete myUpvotes[bubbleId];
+        bubbleUpvotes[bubbleId] = Math.max((bubbleUpvotes[bubbleId] || 1) - 1, 0);
+      }
+      showToast('Anbefaling fjernet');
+    } else {
+      // Add upvote
+      var { error } = await sb.from('bubble_upvotes').insert({ user_id: currentUser.id, bubble_id: bubbleId });
+      if (error) {
+        // Fallback: localStorage
+        myUpvotes[bubbleId] = true;
+        bubbleUpvotes[bubbleId] = (bubbleUpvotes[bubbleId] || 0) + 1;
+        try { localStorage.setItem('bubble_upvotes_local', JSON.stringify(bubbleUpvotes)); localStorage.setItem('bubble_my_upvotes', JSON.stringify(myUpvotes)); } catch(e) {}
+      } else {
+        myUpvotes[bubbleId] = true;
+        bubbleUpvotes[bubbleId] = (bubbleUpvotes[bubbleId] || 0) + 1;
+      }
+      showToast('Anbefalet \u2713');
+    }
+    // Re-render discover if visible
+    if (allBubbles && allBubbles.length) renderBubbleList(allBubbles);
+    // Update info panel button if open
+    var recBtn = document.getElementById('bc-recommend-btn');
+    if (recBtn && bcBubbleId === bubbleId) {
+      recBtn.innerHTML = myUpvotes[bubbleId] ? icon('checkCircle') + ' Anbefalet' : icon('rocket') + ' Anbefal';
+      recBtn.className = myUpvotes[bubbleId] ? 'chat-info-btn success' : 'chat-info-btn primary';
+    }
+  } catch(e) { console.error('toggleBubbleUpvote:', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+}
+
 async function loadDiscover() {
   try {
     const list = document.getElementById('all-bubbles-list');
     list.innerHTML = '<div class="spinner"></div>';
+    await loadBubbleUpvotes();
     const { data: bubbles } = await sb.from('bubbles').select('*, bubble_members(count)').or('visibility.eq.public,visibility.eq.private,visibility.is.null').order('created_at', {ascending:false});
     allBubbles = (bubbles || []).filter(b => b.type !== 'live').map(b => ({
       ...b,
       member_count: b.bubble_members?.[0]?.count || 0,
-      type_label: typeLabel(b.type)
+      type_label: typeLabel(b.type),
+      upvote_count: bubbleUpvotes[b.id] || 0
     }));
+    // Sort: upvotes first, then member count, then date
+    allBubbles.sort(function(a, b) {
+      if (b.upvote_count !== a.upvote_count) return b.upvote_count - a.upvote_count;
+      if (b.member_count !== a.member_count) return b.member_count - a.member_count;
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
     renderBubbleList(allBubbles);
   } catch(e) { console.error("loadDiscover:", e); showToast(e.message || "Ukendt fejl"); }
 }
@@ -3295,6 +3379,7 @@ async function bcLoadInfo() {
       <div class="chat-info-block"><div class="chat-info-label">Boble-type</div><div class="chat-info-val">${typeLabel(b.type)}</div></div>
       <div class="chat-info-block"><div class="chat-info-label">Sted</div><div class="chat-info-val">${escHtml(b.location||'Ikke angivet')}</div></div>
       <div>
+        <button class="${myUpvotes[b.id] ? 'chat-info-btn success' : 'chat-info-btn primary'}" id="bc-recommend-btn" onclick="toggleBubbleUpvote('${b.id}')">${myUpvotes[b.id] ? icon('checkCircle') + ' Anbefalet' : icon('rocket') + ' Anbefal denne boble'}</button>
         <button class="chat-info-btn primary" data-action="openQRModal" data-id="${b.id}">${icon("qrcode")} Del boble / QR-kode</button>
         <button class="chat-info-btn danger" data-action="leaveBubble" data-id="${b.id}">${icon("logout")} Forlad boblen</button>
       </div>`;

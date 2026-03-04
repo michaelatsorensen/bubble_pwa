@@ -272,6 +272,7 @@ textarea.input { min-height:80px; resize:vertical; }
 .chat-info-btn .ico { width:1rem; height:1rem; flex-shrink:0; }
 .chat-info-btn.primary { background:var(--gradient-primary); border:1px solid var(--gradient-btn-border); color:white; }
 .chat-info-btn.danger { background:rgba(232,93,138,0.1); border:1px solid rgba(232,93,138,0.2); color:var(--accent2); }
+.chat-info-btn.success { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); color:#10B981; }
 .chat-section-label { font-size:0.52rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin:0.5rem 0 0.3rem; }
 
 /* Chat members */
