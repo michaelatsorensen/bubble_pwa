@@ -239,7 +239,7 @@
           <div style="font-size:0.78rem;font-weight:700">Notifikationer</div>
           <button class="btn-sm btn-ghost" onclick="goTo('screen-notifications')" style="font-size:0.62rem;padding:0.15rem 0.45rem">Se alle →</button>
         </div>
-        <div id="home-notif-feed-list" style="max-height:220px;overflow-y:auto;-webkit-overflow-scrolling:touch">
+        <div id="home-notif-feed-list" style="max-height:160px;overflow-y:auto;-webkit-overflow-scrolling:touch">
           <div class="fs-072 text-muted" style="text-align:center;padding:0.5rem">Henter...</div>
         </div>
       </div>
@@ -697,9 +697,9 @@
     <div class="settings-row" style="border-bottom:1px solid var(--glass-border-subtle)">
       <div style="flex:1">
         <div style="font-size:0.82rem;font-weight:600">Notifikationer</div>
-        <div class="hs-view-picker" style="display:flex;gap:0.3rem;margin-top:0.35rem">
-          <button class="hs-view-btn active" id="hs-notif-card" onclick="hsSetNotifView('card')" style="font-size:0.62rem;padding:0.2rem 0.5rem;border-radius:6px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.06);color:var(--text-secondary);cursor:pointer;font-family:inherit;font-weight:600;transition:all 0.2s">Kort</button>
-          <button class="hs-view-btn" id="hs-notif-feed" onclick="hsSetNotifView('feed')" style="font-size:0.62rem;padding:0.2rem 0.5rem;border-radius:6px;border:1px solid var(--glass-border);background:none;color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all 0.2s">Live feed</button>
+        <div class="hs-view-picker" style="display:flex;gap:0.35rem;margin-top:0.35rem">
+          <button class="hs-view-btn active" id="hs-notif-card" onclick="hsSetNotifView('card')" style="font-size:0.72rem;padding:0.35rem 0.7rem;border-radius:8px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.06);color:var(--text-secondary);cursor:pointer;font-family:inherit;font-weight:600;transition:all 0.2s">Kort</button>
+          <button class="hs-view-btn" id="hs-notif-feed" onclick="hsSetNotifView('feed')" style="font-size:0.72rem;padding:0.35rem 0.7rem;border-radius:8px;border:1px solid var(--glass-border);background:none;color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all 0.2s">Live feed</button>
         </div>
       </div>
       <div class="settings-toggle" id="hs-toggle-notifs" onclick="hsToggle('notifs')" data-on="true"><div class="settings-toggle-knob"></div></div>

@@ -1338,7 +1338,7 @@ a.person-action-btn { text-decoration:none; }
 [data-hs-hidden="true"] { display:none !important; }
 
 /* Notification feed window on home */
-.notif-feed-window { background:var(--glass-bg); border:1px solid var(--glass-border-subtle); border-radius:var(--radius-lg); padding:0.7rem 0.8rem; margin-bottom:0.75rem; backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); }
+.notif-feed-window { background:var(--glass-bg); border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:1rem 1.2rem; margin-bottom:0.65rem; backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); box-shadow:var(--glass-inset); }
 .notif-feed-item { display:flex; align-items:flex-start; gap:0.5rem; padding:0.4rem 0; border-bottom:1px solid rgba(255,255,255,0.03); }
 .notif-feed-item:last-child { border-bottom:none; }
 .notif-feed-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; margin-top:0.35rem; }
