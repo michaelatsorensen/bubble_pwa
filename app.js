@@ -1188,7 +1188,7 @@ async function loadMessages() {
       const p = profileMap[partnerId] || {};
       const initials = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const isUnread = lastMsg.receiver_id === currentUser.id && !lastMsg.read_at;
-      return `<div class="card flex-row-center" data-action="openChat" data-id="${partnerId}">
+      return `<div class="card flex-row-center" data-action="openChat" data-id="${partnerId}" data-conv-id="${partnerId}">
         <div class="avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">${initials}</div>
         <div style="flex:1">
           <div class="${isUnread?'fw-700':'fw-600'} fs-09">${escHtml(p.name||'Ukendt')}</div>
@@ -1204,7 +1204,6 @@ async function openChat(userId, fromScreen) {
   console.debug('[dm] openChat:', userId, 'from:', fromScreen);
   try {
     currentChatUser = userId;
-    if (dmSelectMode) dmToggleSelectMode();
     const { data: p } = await sb.from('profiles').select('name,title').eq('id', userId).single();
     currentChatName = p?.name || 'Ukendt';
     document.getElementById('chat-name').textContent = currentChatName;
@@ -1302,76 +1301,72 @@ function dmEditMsg(msgId) {
 }
 
 // ══════════════════════════════════════════════════════════
-//  DM: Multi-select delete
+//  CONVERSATIONS: Multi-select delete
 // ══════════════════════════════════════════════════════════
-var dmSelectMode = false;
-var dmSelectedIds = [];
+var convSelectMode = false;
+var convSelectedIds = [];
 
-function dmToggleSelectMode() {
-  dmSelectMode = !dmSelectMode;
-  dmSelectedIds = [];
-  var toolbar = document.getElementById('dm-select-toolbar');
-  var composer = document.querySelector('#dm-panel .chat-composer');
-  var selectBtn = document.getElementById('dm-select-btn');
-  var msgs = document.getElementById('chat-messages');
+function convToggleSelectMode() {
+  convSelectMode = !convSelectMode;
+  convSelectedIds = [];
+  var toolbar = document.getElementById('conv-select-toolbar');
+  var selectBtn = document.getElementById('conv-select-btn');
+  var list = document.getElementById('conversations-list');
 
-  if (dmSelectMode) {
+  if (convSelectMode) {
     if (toolbar) toolbar.style.display = 'flex';
-    if (composer) composer.style.display = 'none';
     if (selectBtn) { selectBtn.textContent = 'Annuller'; selectBtn.style.color = 'var(--accent2)'; }
-    // Add checkboxes to own messages
-    if (msgs) {
-      msgs.querySelectorAll('.msg-row.me').forEach(function(row) {
-        var id = row.getAttribute('data-msg-id');
-        if (!id || row.querySelector('.dm-check')) return;
+    // Add checkboxes to conversation cards
+    if (list) {
+      list.querySelectorAll('.card[data-conv-id]').forEach(function(card) {
+        var id = card.getAttribute('data-conv-id');
+        if (!id || card.querySelector('.conv-check')) return;
         var cb = document.createElement('div');
-        cb.className = 'dm-check';
+        cb.className = 'conv-check';
         cb.setAttribute('data-id', id);
-        cb.onclick = function(e) { e.stopPropagation(); dmToggleMsg(id, this); };
-        row.insertBefore(cb, row.firstChild);
+        cb.onclick = function(e) { e.stopPropagation(); convToggleConv(id, this); };
+        card.insertBefore(cb, card.firstChild);
       });
     }
   } else {
     if (toolbar) toolbar.style.display = 'none';
-    if (composer) composer.style.display = '';
-    if (selectBtn) { selectBtn.textContent = 'Vælg'; selectBtn.style.color = ''; }
-    // Remove all checkboxes
-    if (msgs) msgs.querySelectorAll('.dm-check').forEach(function(el) { el.remove(); });
+    if (selectBtn) { selectBtn.textContent = 'V\u00e6lg'; selectBtn.style.color = ''; }
+    if (list) list.querySelectorAll('.conv-check').forEach(function(el) { el.remove(); });
   }
-  dmUpdateSelectCount();
+  convUpdateSelectCount();
 }
 
-function dmToggleMsg(id, el) {
-  var idx = dmSelectedIds.indexOf(id);
+function convToggleConv(id, el) {
+  var idx = convSelectedIds.indexOf(id);
   if (idx >= 0) {
-    dmSelectedIds.splice(idx, 1);
+    convSelectedIds.splice(idx, 1);
     if (el) el.classList.remove('checked');
   } else {
-    dmSelectedIds.push(id);
+    convSelectedIds.push(id);
     if (el) el.classList.add('checked');
   }
-  dmUpdateSelectCount();
+  convUpdateSelectCount();
 }
 
-function dmSelectAll() {
-  var msgs = document.getElementById('chat-messages');
-  if (!msgs) return;
-  dmSelectedIds = [];
-  msgs.querySelectorAll('.msg-row.me').forEach(function(row) {
-    var id = row.getAttribute('data-msg-id');
+function convSelectAll() {
+  var list = document.getElementById('conversations-list');
+  if (!list) return;
+  convSelectedIds = [];
+  list.querySelectorAll('.card[data-conv-id]').forEach(function(card) {
+    var id = card.getAttribute('data-conv-id');
     if (id) {
-      dmSelectedIds.push(id);
-      var cb = row.querySelector('.dm-check');
+      convSelectedIds.push(id);
+      var cb = card.querySelector('.conv-check');
       if (cb) cb.classList.add('checked');
     }
   });
-  dmUpdateSelectCount();
+  convUpdateSelectCount();
 }
 
-function dmUpdateSelectCount() {
-  var countEl = document.getElementById('dm-select-count');
-  var delBtn = document.getElementById('dm-delete-btn');
-  var n = dmSelectedIds.length;
+function convUpdateSelectCount() {
+  var countEl = document.getElementById('conv-select-count');
+  var delBtn = document.getElementById('conv-delete-btn');
+  var n = convSelectedIds.length;
   if (countEl) countEl.textContent = n + ' valgt';
   if (delBtn) {
     delBtn.disabled = n === 0;
@@ -1380,32 +1375,34 @@ function dmUpdateSelectCount() {
   }
 }
 
-var _dmDeleteConfirmed = false;
-async function dmDeleteSelected() {
-  if (dmSelectedIds.length === 0) return;
-  if (!_dmDeleteConfirmed) {
-    _dmDeleteConfirmed = true;
-    showToast('Tryk Slet igen for at bekræfte');
-    setTimeout(function() { _dmDeleteConfirmed = false; }, 3000);
+var _convDeleteConfirmed = false;
+async function convDeleteSelected() {
+  if (convSelectedIds.length === 0) return;
+  if (!_convDeleteConfirmed) {
+    _convDeleteConfirmed = true;
+    showToast('Tryk Slet igen for at bekr\u00e6fte');
+    setTimeout(function() { _convDeleteConfirmed = false; }, 3000);
     return;
   }
-  _dmDeleteConfirmed = false;
+  _convDeleteConfirmed = false;
   try {
-    var ids = dmSelectedIds.slice();
-    // Delete from DB (only own messages)
+    var ids = convSelectedIds.slice();
     for (var i = 0; i < ids.length; i++) {
-      await sb.from('messages').delete().eq('id', ids[i]).eq('sender_id', currentUser.id);
+      var partnerId = ids[i];
+      // Delete all messages in this conversation (both directions)
+      await sb.from('messages').delete().or('and(sender_id.eq.' + currentUser.id + ',receiver_id.eq.' + partnerId + '),and(sender_id.eq.' + partnerId + ',receiver_id.eq.' + currentUser.id + ')');
     }
     // Remove from DOM
-    var msgs = document.getElementById('chat-messages');
+    var list = document.getElementById('conversations-list');
     ids.forEach(function(id) {
-      var row = msgs ? msgs.querySelector('[data-msg-id="' + id + '"]') : null;
-      if (row) { row.style.transition = 'opacity 0.2s'; row.style.opacity = '0'; setTimeout(function() { row.remove(); }, 200); }
+      var card = list ? list.querySelector('[data-conv-id="' + id + '"]') : null;
+      if (card) { card.style.transition = 'opacity 0.2s'; card.style.opacity = '0'; setTimeout(function() { card.remove(); }, 200); }
     });
-    showToast(ids.length + (ids.length === 1 ? ' besked slettet' : ' beskeder slettet'));
-    dmToggleSelectMode();
-  } catch(e) { console.error('dmDeleteSelected:', e); showToast(e.message || 'Fejl ved sletning'); }
+    showToast(ids.length + (ids.length === 1 ? ' samtale slettet' : ' samtaler slettet'));
+    convToggleSelectMode();
+  } catch(e) { console.error('convDeleteSelected:', e); showToast(e.message || 'Fejl ved sletning'); }
 }
+
 
 
 let dmSending = false;
