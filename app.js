@@ -3486,6 +3486,7 @@ function closeInviteModal() {
   if (sheet) sheet.classList.remove('open');
   setTimeout(function() { if (overlay) overlay.classList.remove('open'); }, 320);
   inviteSelected = [];
+  _inviteConfirmed = false;
 }
 
 function toggleInvite(cb) {
@@ -3493,11 +3494,50 @@ function toggleInvite(cb) {
   if (cb.checked) { if (inviteSelected.indexOf(uid) < 0) inviteSelected.push(uid); }
   else { inviteSelected = inviteSelected.filter(function(id) { return id !== uid; }); }
   var btn = document.getElementById('invite-send-btn');
-  if (btn) btn.textContent = inviteSelected.length > 0 ? 'Send (' + inviteSelected.length + ')' : 'Send invitationer';
+  var n = inviteSelected.length;
+  if (btn) {
+    btn.textContent = n > 0 ? 'Send (' + n + ')' : 'Send invitationer';
+    btn.disabled = n === 0;
+    btn.style.opacity = n > 0 ? '1' : '0.4';
+  }
+  // Update subtitle
+  var sub = document.getElementById('invite-subtitle');
+  if (sub) sub.textContent = n > 0 ? n + ' valgt' : 'Vælg fra dine gemte kontakter';
 }
 
+var _inviteConfirmed = false;
+function confirmAndSendInvites() {
+  if (inviteSelected.length === 0) return;
+  if (!_inviteConfirmed) {
+    _inviteConfirmed = true;
+    var btn = document.getElementById('invite-send-btn');
+    if (btn) { btn.textContent = 'Bekræft →'; btn.style.background = 'linear-gradient(135deg,#10B981,#059669)'; }
+    setTimeout(function() {
+      _inviteConfirmed = false;
+      var b2 = document.getElementById('invite-send-btn');
+      if (b2 && b2.textContent.indexOf('Bekræft') >= 0) {
+        b2.textContent = 'Send (' + inviteSelected.length + ')';
+        b2.style.background = 'var(--gradient-primary)';
+      }
+    }, 3000);
+    return;
+  }
+  _inviteConfirmed = false;
+  sendBubbleInvites();
+}
+
+var _inviteConfirmed = false;
 async function sendBubbleInvites() {
-  if (inviteSelected.length === 0) return showToast('V\u00e6lg mindst \u00e9n kontakt');
+  if (inviteSelected.length === 0) return showToast('Vælg mindst én kontakt');
+  if (!_inviteConfirmed) {
+    _inviteConfirmed = true;
+    var btn = document.getElementById('invite-send-btn');
+    if (btn) btn.textContent = 'Bekræft (' + inviteSelected.length + ')';
+    showToast('Tryk igen for at bekræfte');
+    setTimeout(function() { _inviteConfirmed = false; if (btn) btn.textContent = inviteSelected.length > 0 ? 'Send (' + inviteSelected.length + ')' : 'Send invitationer'; }, 3000);
+    return;
+  }
+  _inviteConfirmed = false;
   try {
     var rows = inviteSelected.map(function(uid) {
       return { bubble_id: inviteBubbleId, from_user_id: currentUser.id, to_user_id: uid, status: 'pending' };
