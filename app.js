@@ -293,6 +293,7 @@ async function loadHome() {
       loadLiveBubbleStatus(),
       loadSavedContacts(),
     ]);
+    hsApplyToHome();
   } catch(e) { console.error("loadHome:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -1664,7 +1665,7 @@ function profSwitchTab(tab) {
     if (panel) panel.style.display = t === tab ? 'flex' : 'none';
     if (tabBtn) tabBtn.classList.toggle('active', t === tab);
   });
-  if (tab === 'settings') updateAnonToggle();
+  if (tab === 'settings') { updateAnonToggle(); hsUpdateAllToggles(); }
 }
 
 // Load invitations into profile invitations tab
@@ -1831,6 +1832,58 @@ function toggleAnon() {
   isAnon = !isAnon;
   updateAnonToggle();
   sb.from('profiles').update({ is_anon: isAnon }).eq('id', currentUser.id).then();
+}
+
+
+// ══════════════════════════════════════════════════════════
+//  HOME SCREEN CUSTOMIZATION
+// ══════════════════════════════════════════════════════════
+var hsDefaults = { live: true, saved: true, bubbles: true, notifs: true, radar: true };
+
+function hsGetPrefs() {
+  try {
+    var stored = localStorage.getItem('bubble_hs_prefs');
+    if (stored) return JSON.parse(stored);
+  } catch(e) {}
+  return Object.assign({}, hsDefaults);
+}
+
+function hsSavePrefs(prefs) {
+  try { localStorage.setItem('bubble_hs_prefs', JSON.stringify(prefs)); } catch(e) {}
+}
+
+function hsToggle(key) {
+  var prefs = hsGetPrefs();
+  prefs[key] = !prefs[key];
+  hsSavePrefs(prefs);
+  hsUpdateToggleUI(key, prefs[key]);
+  hsApplyToHome();
+}
+
+function hsUpdateToggleUI(key, isOn) {
+  var el = document.getElementById('hs-toggle-' + key);
+  if (el) el.setAttribute('data-on', isOn ? 'true' : 'false');
+}
+
+function hsUpdateAllToggles() {
+  var prefs = hsGetPrefs();
+  ['live','saved','bubbles','notifs','radar'].forEach(function(key) {
+    hsUpdateToggleUI(key, prefs[key]);
+  });
+}
+
+function hsApplyToHome() {
+  var prefs = hsGetPrefs();
+  ['live','saved','bubbles','notifs','radar'].forEach(function(key) {
+    var els = document.querySelectorAll('[data-hs="' + key + '"]');
+    els.forEach(function(el) {
+      if (prefs[key]) {
+        el.removeAttribute('data-hs-hidden');
+      } else {
+        el.setAttribute('data-hs-hidden', 'true');
+      }
+    });
+  });
 }
 
 function updateAnonToggle() {
