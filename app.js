@@ -1521,13 +1521,32 @@ function renderSavedStoryBar(saved, profileMap) {
 
 // Profile tab switching — same pattern as bcSwitchTab
 function profSwitchTab(tab) {
-  ['saved','bubbles','invites','settings'].forEach(t => {
-    const panel = document.getElementById('prof-panel-' + t);
-    const tabBtn = document.getElementById('prof-tab-' + t);
+  // Ensure settings panel exists (in case of cached HTML)
+  if (tab === 'settings' && !document.getElementById('prof-panel-settings')) {
+    var container = document.getElementById('prof-panel-invites');
+    if (container && container.parentElement) {
+      var div = document.createElement('div');
+      div.id = 'prof-panel-settings';
+      div.style.cssText = 'display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem';
+      div.innerHTML = '<div class="section-label" style="margin-bottom:0.25rem">Synlighed</div>' +
+        '<div class="settings-row">' +
+          '<div style="flex:1"><div style="font-size:0.85rem;font-weight:600">Anonym tilstand</div>' +
+          '<div style="font-size:0.68rem;color:var(--text-secondary);margin-top:0.1rem">Skjul dit navn og billede p\u00e5 radaren</div></div>' +
+          '<div id="anon-toggle" onclick="toggleAnon()" style="width:46px;height:26px;background:var(--border);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0">' +
+            '<div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>' +
+          '</div></div>' +
+        '<div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Konto</div>' +
+        '<button onclick="handleLogout()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(232,93,138,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent2);cursor:pointer">Log ud</button>' +
+        '<div style="text-align:center;margin-top:2rem;font-size:0.62rem;color:var(--muted)">Bubble v1.0</div>';
+      container.parentElement.insertBefore(div, container.nextSibling);
+    }
+  }
+  ['saved','bubbles','invites','settings'].forEach(function(t) {
+    var panel = document.getElementById('prof-panel-' + t);
+    var tabBtn = document.getElementById('prof-tab-' + t);
     if (panel) panel.style.display = t === tab ? 'flex' : 'none';
     if (tabBtn) tabBtn.classList.toggle('active', t === tab);
   });
-  // Refresh anon toggle state when opening settings
   if (tab === 'settings') updateAnonToggle();
 }
 
@@ -1698,8 +1717,9 @@ function toggleAnon() {
 }
 
 function updateAnonToggle() {
-  const toggle = document.getElementById('anon-toggle');
-  const knob = document.getElementById('anon-knob');
+  var toggle = document.getElementById('anon-toggle');
+  var knob = document.getElementById('anon-knob');
+  if (!toggle || !knob) return;
   toggle.style.background = isAnon ? 'var(--accent)' : 'var(--border)';
   knob.style.background = isAnon ? 'white' : 'var(--muted)';
   knob.style.left = isAnon ? '23px' : '3px';
@@ -3354,10 +3374,10 @@ function openLiveCheckin() {
   // Reset scanner state
   var confirmed = document.getElementById('live-scan-confirmed');
   if (confirmed) confirmed.style.display = 'none';
+  var found = document.getElementById('live-scan-found');
+  if (found) found.style.display = 'none';
   var status = document.getElementById('live-scan-status');
   if (status) { status.textContent = 'Starter kamera...'; status.className = 'live-scan-status'; }
-  // live-scan-trigger removed from HTML
-  if (trigger) { trigger.style.display = 'flex'; trigger.style.background = ''; }
   startLiveCamera();
 }
 
