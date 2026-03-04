@@ -285,14 +285,14 @@ async function loadHome() {
     }
 
     // Load all dashboard data in parallel
-    await Promise.all([
-      loadHomeBubblesCard(),
-      loadHomeNotifCard(),
-      updateRadarCount(),
-      loadProximityMap(),
-      loadLiveBubbleStatus(),
-      loadSavedContacts(),
-    ]);
+    var hsp = hsGetPrefs();
+    var loaders = [];
+    if (hsp.bubbles) loaders.push(loadHomeBubblesCard());
+    if (hsp.notifs) loaders.push(loadHomeNotifCard());
+    if (hsp.radar) { loaders.push(updateRadarCount()); loaders.push(loadProximityMap()); }
+    if (hsp.live) loaders.push(loadLiveBubbleStatus());
+    if (hsp.saved) loaders.push(loadSavedContacts());
+    await Promise.all(loaders);
     hsApplyToHome();
   } catch(e) { console.error("loadHome:", e); showToast(e.message || "Ukendt fejl"); }
 }
@@ -1854,12 +1854,33 @@ function hsSavePrefs(prefs) {
   try { localStorage.setItem('bubble_hs_prefs', JSON.stringify(prefs)); } catch(e) {}
 }
 
+function hsReset() {
+  hsSavePrefs(Object.assign({}, hsDefaults));
+  try { localStorage.setItem('bubble_hs_notif_view', 'card'); } catch(e) {}
+  hsUpdateAllToggles();
+  hsApplyToHome();
+  showToast('Hjem-skærm nulstillet');
+}
+
+function hsUpdatePreview() {
+  var prefs = hsGetPrefs();
+  var labels = { live: 'Live', saved: 'Gemte', bubbles: 'Bobler', notifs: 'Notif.', radar: 'Radar' };
+  var active = [];
+  ['live','saved','bubbles','notifs','radar'].forEach(function(key) {
+    if (prefs[key]) active.push(labels[key]);
+  });
+  var el = document.getElementById('hs-preview-text');
+  if (el) el.textContent = active.length > 0 ? 'Viser: ' + active.join(' \u00b7 ') : 'Alt er slået fra';
+}
+
+
 function hsToggle(key) {
   var prefs = hsGetPrefs();
   prefs[key] = !prefs[key];
   hsSavePrefs(prefs);
   hsUpdateToggleUI(key, prefs[key]);
   hsApplyToHome();
+  hsUpdatePreview();
 }
 
 function hsUpdateToggleUI(key, isOn) {
@@ -1878,10 +1899,12 @@ function hsUpdateAllToggles() {
   var feedBtn = document.getElementById('hs-notif-feed');
   if (cardBtn) cardBtn.classList.toggle('active', mode === 'card');
   if (feedBtn) feedBtn.classList.toggle('active', mode === 'feed');
+  hsUpdatePreview();
 }
 
 function hsApplyToHome() {
   var prefs = hsGetPrefs();
+  var anyVisible = false;
   ['live','saved','bubbles','notifs','radar'].forEach(function(key) {
     if (key === 'notifs') return; // Handled by hsApplyNotifView
     var els = document.querySelectorAll('[data-hs="' + key + '"]');
@@ -1892,8 +1915,13 @@ function hsApplyToHome() {
         el.setAttribute('data-hs-hidden', 'true');
       }
     });
+    if (prefs[key]) anyVisible = true;
   });
+  if (prefs.notifs) anyVisible = true;
   hsApplyNotifView();
+  // Show empty state if nothing visible
+  var emptyEl = document.getElementById('home-empty-state');
+  if (emptyEl) emptyEl.style.display = anyVisible ? 'none' : 'block';
 }
 
 // Notification view mode: 'card' or 'feed'
@@ -1917,18 +1945,17 @@ function hsApplyNotifView() {
   var feed = document.getElementById('home-notif-feed');
   var prefs = hsGetPrefs();
   if (!prefs.notifs) {
-    // Both hidden if notifs disabled
     if (card) card.setAttribute('data-hs-hidden', 'true');
-    if (feed) feed.style.display = 'none';
+    if (feed) feed.setAttribute('data-hs-hidden', 'true');
     return;
   }
   if (mode === 'feed') {
     if (card) card.setAttribute('data-hs-hidden', 'true');
-    if (feed) { feed.style.display = ''; feed.removeAttribute('data-hs-hidden'); }
+    if (feed) { feed.removeAttribute('data-hs-hidden'); }
     loadHomeNotifFeed();
   } else {
     if (card) card.removeAttribute('data-hs-hidden');
-    if (feed) feed.style.display = 'none';
+    if (feed) feed.setAttribute('data-hs-hidden', 'true');
   }
 }
 

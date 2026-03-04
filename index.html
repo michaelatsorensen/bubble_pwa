@@ -234,7 +234,7 @@
       </div>
 
       <!-- Notifikationer: Live feed view -->
-      <div class="notif-feed-window" data-hs="notifs" id="home-notif-feed" style="display:none">
+      <div class="notif-feed-window" data-hs="notifs" id="home-notif-feed" data-hs-hidden="true">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
           <div style="font-size:0.78rem;font-weight:700">Notifikationer</div>
           <button class="btn-sm btn-ghost" onclick="goTo('screen-notifications')" style="font-size:0.62rem;padding:0.15rem 0.45rem">Se alle →</button>
@@ -254,6 +254,14 @@
         <span id="radar-count-home"> · Henter...</span>
       </div>
       <button class="btn-sm btn-ghost" onclick="openRadarSheet()" style="font-size:0.72rem;white-space:nowrap">Kort →</button>
+    </div>
+
+    <!-- Home empty state -->
+    <div id="home-empty-state" style="display:none;text-align:center;padding:2.5rem 1rem">
+      <div style="font-size:1.6rem;margin-bottom:0.6rem">🫧</div>
+      <div style="font-size:0.88rem;font-weight:700;margin-bottom:0.3rem">Din hjem-skærm er tom</div>
+      <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.45">Vælg hvad du vil se her under indstillinger</div>
+      <button class="btn-sm" onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('settings')},200)" style="font-size:0.75rem;padding:0.45rem 1rem;background:var(--accent);color:white;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Åbn indstillinger</button>
     </div>
 
   </div>
@@ -682,7 +690,10 @@
   <div id="prof-panel-settings" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 8rem">
 
     <div class="section-label" style="margin-bottom:0.25rem">Hjem-skærm</div>
-    <div class="fs-068 text-muted" style="margin-bottom:0.5rem">Vælg hvad der vises på din hjem-skærm</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+      <div class="fs-068 text-muted" id="hs-preview-text">Viser: ...</div>
+      <button class="btn-sm btn-ghost" onclick="hsReset()" style="font-size:0.62rem;padding:0.2rem 0.5rem">Nulstil</button>
+    </div>
     <div class="settings-row" style="border-bottom:1px solid var(--glass-border-subtle)">
       <div style="font-size:0.82rem;font-weight:600">Live Bubble</div>
       <div class="settings-toggle" id="hs-toggle-live" onclick="hsToggle('live')" data-on="true"><div class="settings-toggle-knob"></div></div>
