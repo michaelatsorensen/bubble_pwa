@@ -1347,3 +1347,10 @@ a.person-action-btn { text-decoration:none; }
 
 /* View picker active state */
 .hs-view-btn.active { background:rgba(139,127,255,0.15) !important; color:var(--accent) !important; border-color:rgba(139,127,255,0.3) !important; }
+
+/* Bubble action bar under tabs */
+.bc-action-bar { display:flex; gap:0.35rem; padding:0.4rem 0.8rem; flex-shrink:0; border-bottom:1px solid var(--glass-border-subtle); background:rgba(6,6,15,0.3); }
+.bc-bar-btn { display:flex; align-items:center; gap:0.25rem; font-size:0.68rem; font-weight:600; font-family:inherit; padding:0.35rem 0.6rem; border-radius:8px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.04); color:var(--text-secondary); cursor:pointer; transition:all 0.15s; white-space:nowrap; flex:1; justify-content:center; }
+.bc-bar-btn .ico { width:0.8rem; height:0.8rem; }
+.bc-bar-btn:active { background:rgba(255,255,255,0.08); transform:scale(0.97); }
+.bc-bar-btn.active { background:rgba(16,185,129,0.12); border-color:rgba(16,185,129,0.25); color:#10B981; }

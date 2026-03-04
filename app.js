@@ -501,6 +501,13 @@ async function toggleBubbleUpvote(bubbleId) {
       recBtn.innerHTML = myUpvotes[bubbleId] ? icon('checkCircle') + ' Anbefalet' : icon('rocket') + ' Anbefal';
       recBtn.className = myUpvotes[bubbleId] ? 'chat-info-btn success' : 'chat-info-btn primary';
     }
+    // Update action bar button
+    var barBtn = document.getElementById('bc-upvote-bar-btn');
+    if (barBtn && bcBubbleId === bubbleId) {
+      var up = myUpvotes[bubbleId];
+      barBtn.innerHTML = (up ? icon('checkCircle') : icon('rocket')) + ' ' + (up ? 'Anbefalet' : 'Anbefal');
+      barBtn.classList.toggle('active', !!up);
+    }
   } catch(e) { console.error('toggleBubbleUpvote:', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
 }
 
@@ -2818,6 +2825,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
     document.getElementById('bc-members-count').textContent = (count||0) + ' medlemmer';
 
     // Vis actions i topbar baseret på membership
+    await loadBubbleUpvotes();
     const { data: myMembership } = await sb.from('bubble_members')
       .select('id').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).single();
 
@@ -2825,15 +2833,26 @@ async function openBubbleChat(bubbleId, fromScreen) {
     const isOwner = b.created_by === currentUser.id;
     if (myMembership) {
       actionArea.innerHTML =
-        `<button class="btn-sm btn-ghost" onclick="openInviteModal('${b.id}')" style="font-size:0.82rem;padding:0.3rem 0.4rem" title="Invitér medlemmer">${icon("user-plus")}</button>` +
-        (isOwner ? `<button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" style="font-size:0.82rem;padding:0.3rem 0.4rem" title="Rediger">${icon("edit")}</button>` +
-        `<button class="btn-sm btn-ghost" data-action="openQRModal" data-id="${b.id}" style="font-size:0.82rem;padding:0.3rem 0.4rem" title="QR-kode">${icon("qrcode")}</button>` : '');
+        (isOwner ? `<button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" style="font-size:0.82rem;padding:0.3rem 0.4rem" title="Rediger">${icon("edit")}</button>` : '');
+      // Update action bar under tabs
+      var actionBar = document.getElementById('bc-action-bar');
+      if (actionBar) {
+        var upvoted = myUpvotes[b.id];
+        actionBar.innerHTML =
+          `<button class="bc-bar-btn" onclick="openInviteModal('${b.id}')">${icon('user-plus')} Invitér</button>` +
+          `<button class="bc-bar-btn${upvoted ? ' active' : ''}" id="bc-upvote-bar-btn" onclick="toggleBubbleUpvote('${b.id}')">${upvoted ? icon('checkCircle') : icon('rocket')} ${upvoted ? 'Anbefalet' : 'Anbefal'}</button>` +
+          `<button class="bc-bar-btn" data-action="openQRModal" data-id="${b.id}">${icon('qrcode')} QR</button>`;
+        actionBar.style.display = 'flex';
+      }
     } else if (b.visibility === 'hidden') {
       actionArea.innerHTML = `<span style="font-size:0.75rem;color:var(--muted)">${icon("eye")} Kun via invitation</span>`;
+      var actionBar2 = document.getElementById('bc-action-bar'); if (actionBar2) actionBar2.style.display = 'none';
     } else if (b.visibility === 'private') {
       actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="requestJoin" data-id="${b.id}">${icon("lock")} Anmod</button>`;
+      var actionBar3 = document.getElementById('bc-action-bar'); if (actionBar3) actionBar3.style.display = 'none';
     } else {
       actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="joinBubble" data-id="${b.id}">+ Join</button>`;
+      var actionBar4 = document.getElementById('bc-action-bar'); if (actionBar4) actionBar4.style.display = 'none';
     }
 
     // Load data til aktive tabs
