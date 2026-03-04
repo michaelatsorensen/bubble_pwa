@@ -3413,47 +3413,51 @@ async function bcLoadInfo() {
 var inviteBubbleId = null;
 var inviteSelected = [];
 
-async function openInviteModal(bubbleId) {
+async async function openInviteModal(bubbleId) {
   inviteBubbleId = bubbleId;
   inviteSelected = [];
-  var overlay = document.getElementById('invite-modal-overlay');
+  var overlay = document.getElementById('invite-overlay');
+  var sheet = document.getElementById('invite-sheet');
   var list = document.getElementById('invite-list');
-  if (!overlay || !list) return;
-  overlay.style.display = 'flex';
-  list.innerHTML = '<div style="text-align:center;padding:1rem;font-size:0.75rem;color:var(--muted)">Henter gemte kontakter...</div>';
+  if (!overlay || !sheet || !list) return;
+  overlay.classList.add('open');
+  setTimeout(function() { sheet.classList.add('open'); }, 10);
+  list.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">Henter gemte kontakter...</div>';
+  var btn = document.getElementById('invite-send-btn');
+  if (btn) btn.textContent = 'Send invitationer';
 
   try {
-    // Get saved contacts
     var r1 = await sb.from('saved_contacts').select('contact_id').eq('user_id', currentUser.id);
     var contactIds = (r1.data || []).map(function(s) { return s.contact_id; });
     if (contactIds.length === 0) {
-      list.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">Du har ingen gemte kontakter endnu.<br>Gem profiler fra radaren f\u00f8rst.</div>';
+      list.innerHTML = '<div style="text-align:center;padding:2rem;font-size:0.78rem;color:var(--muted)">Du har ingen gemte kontakter endnu.<br>Gem profiler fra radaren f\u00f8rst.</div>';
       return;
     }
-    // Get profiles
     var r2 = await sb.from('profiles').select('id,name,title,keywords').in('id', contactIds);
     var profiles = r2.data || [];
-    // Get existing members to exclude
     var r3 = await sb.from('bubble_members').select('user_id').eq('bubble_id', bubbleId);
     var memberIds = (r3.data || []).map(function(m) { return m.user_id; });
-    // Get pending invites to exclude
     var r4 = await sb.from('bubble_invitations').select('to_user_id').eq('bubble_id', bubbleId).eq('status', 'pending');
     var pendingIds = (r4.data || []).map(function(inv) { return inv.to_user_id; });
 
     var available = profiles.filter(function(p) { return memberIds.indexOf(p.id) < 0; });
     if (available.length === 0) {
-      list.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">Alle dine gemte kontakter er allerede i denne boble.</div>';
+      list.innerHTML = '<div style="text-align:center;padding:2rem;font-size:0.78rem;color:var(--muted)">Alle dine gemte kontakter er allerede i denne boble.</div>';
       return;
     }
+    // Sort by star rating
+    available.sort(function(a, b) { return (starGet(b.id) || 0) - (starGet(a.id) || 0); });
     var colors = proxColors || ['linear-gradient(135deg,#8B7FFF,#E85D8A)'];
     list.innerHTML = available.map(function(p, i) {
       var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var col = colors[i % colors.length];
       var isPending = pendingIds.indexOf(p.id) >= 0;
+      var stars = starGet(p.id);
+      var starHtml = stars > 0 ? ' <span style="font-size:0.55rem;color:var(--accent)">' + '\u2605'.repeat(stars) + '</span>' : '';
       return '<label class="invite-row' + (isPending ? ' pending' : '') + '" data-uid="' + p.id + '">' +
         '<div class="invite-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>' +
         '<div style="flex:1;min-width:0">' +
-          '<div class="fw-600 fs-085">' + escHtml(p.name || '?') + '</div>' +
+          '<div class="fw-600 fs-085">' + escHtml(p.name || '?') + starHtml + '</div>' +
           '<div class="fs-072 text-muted">' + escHtml(p.title || '') + '</div>' +
         '</div>' +
         (isPending ? '<span class="fs-065 text-muted">Afventer</span>' :
@@ -3464,8 +3468,10 @@ async function openInviteModal(bubbleId) {
 }
 
 function closeInviteModal() {
-  var overlay = document.getElementById('invite-modal-overlay');
-  if (overlay) overlay.style.display = 'none';
+  var sheet = document.getElementById('invite-sheet');
+  var overlay = document.getElementById('invite-overlay');
+  if (sheet) sheet.classList.remove('open');
+  setTimeout(function() { if (overlay) overlay.classList.remove('open'); }, 320);
   inviteSelected = [];
 }
 

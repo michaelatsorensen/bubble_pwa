@@ -977,15 +977,15 @@
 
 
 <!-- INVITE TO BUBBLE MODAL -->
-<div class="modal-overlay" id="invite-modal-overlay" onclick="closeInviteModal()" style="display:none">
-  <div class="modal-sheet" onclick="event.stopPropagation()">
-    <div class="modal-handle" onclick="closeInviteModal()"></div>
-    <div style="font-weight:700;font-size:1rem;margin-bottom:0.6rem">Invitér til boble</div>
-    <div id="invite-list" style="max-height:50vh;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
-    <div style="display:flex;gap:0.5rem;margin-top:0.8rem">
-      <button class="btn btn-ghost" onclick="closeInviteModal()" style="flex:1">Annuller</button>
-      <button class="btn btn-accent" id="invite-send-btn" onclick="sendBubbleInvites()" style="flex:1">Send invitationer</button>
-    </div>
+<div class="invite-sheet-overlay" id="invite-overlay" onclick="closeInviteModal()"></div>
+<div class="invite-sheet" id="invite-sheet" onclick="event.stopPropagation()">
+  <div class="person-sheet-handle" onclick="closeInviteModal()"></div>
+  <div style="font-weight:700;font-size:1rem;margin-bottom:0.15rem">Invitér til boble</div>
+  <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.8rem">Vælg fra dine gemte kontakter</div>
+  <div id="invite-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
+  <div style="display:flex;gap:0.5rem;margin-top:0.8rem;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0.5rem)">
+    <button class="btn btn-ghost" onclick="closeInviteModal()" style="flex:1">Annuller</button>
+    <button class="btn btn-accent" id="invite-send-btn" onclick="sendBubbleInvites()" style="flex:1">Send invitationer</button>
   </div>
 </div>
 
