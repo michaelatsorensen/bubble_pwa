@@ -3473,7 +3473,7 @@ async function liveCheckin(bubbleId) {
       });
     }
 
-    closeModal('modal-live-checkin');
+    closeLiveCheckinModal();
     showToast('📍 Du er checked ind!');
     await loadLiveBubbleStatus();
     loadHome();
