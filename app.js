@@ -8,6 +8,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
+var hsDefaults = { live: true, saved: true, bubbles: true, notifs: true, radar: true };
+
 // ══════════════════════════════════════════════════════════
 //  GLOBAL ERROR HANDLERS
 // ══════════════════════════════════════════════════════════
@@ -1975,7 +1977,6 @@ function toggleAnon() {
 // ══════════════════════════════════════════════════════════
 //  HOME SCREEN CUSTOMIZATION
 // ══════════════════════════════════════════════════════════
-var hsDefaults = { live: true, saved: true, bubbles: true, notifs: true, radar: true };
 
 function hsGetPrefs() {
   try {
@@ -3413,7 +3414,7 @@ async function bcLoadInfo() {
 var inviteBubbleId = null;
 var inviteSelected = [];
 
-async async function openInviteModal(bubbleId) {
+async function openInviteModal(bubbleId) {
   inviteBubbleId = bubbleId;
   inviteSelected = [];
   var overlay = document.getElementById('invite-overlay');
