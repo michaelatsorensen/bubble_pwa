@@ -1870,11 +1870,18 @@ function hsUpdateAllToggles() {
   ['live','saved','bubbles','notifs','radar'].forEach(function(key) {
     hsUpdateToggleUI(key, prefs[key]);
   });
+  // Update notif view picker
+  var mode = hsGetNotifView();
+  var cardBtn = document.getElementById('hs-notif-card');
+  var feedBtn = document.getElementById('hs-notif-feed');
+  if (cardBtn) cardBtn.classList.toggle('active', mode === 'card');
+  if (feedBtn) feedBtn.classList.toggle('active', mode === 'feed');
 }
 
 function hsApplyToHome() {
   var prefs = hsGetPrefs();
   ['live','saved','bubbles','notifs','radar'].forEach(function(key) {
+    if (key === 'notifs') return; // Handled by hsApplyNotifView
     var els = document.querySelectorAll('[data-hs="' + key + '"]');
     els.forEach(function(el) {
       if (prefs[key]) {
@@ -1884,7 +1891,120 @@ function hsApplyToHome() {
       }
     });
   });
+  hsApplyNotifView();
 }
+
+// Notification view mode: 'card' or 'feed'
+function hsGetNotifView() {
+  try { return localStorage.getItem('bubble_hs_notif_view') || 'card'; } catch(e) { return 'card'; }
+}
+
+function hsSetNotifView(mode) {
+  try { localStorage.setItem('bubble_hs_notif_view', mode); } catch(e) {}
+  // Update picker buttons
+  var cardBtn = document.getElementById('hs-notif-card');
+  var feedBtn = document.getElementById('hs-notif-feed');
+  if (cardBtn) { cardBtn.classList.toggle('active', mode === 'card'); }
+  if (feedBtn) { feedBtn.classList.toggle('active', mode === 'feed'); }
+  hsApplyNotifView();
+}
+
+function hsApplyNotifView() {
+  var mode = hsGetNotifView();
+  var card = document.querySelector('.card-notif[data-hs="notifs"]');
+  var feed = document.getElementById('home-notif-feed');
+  var prefs = hsGetPrefs();
+  if (!prefs.notifs) {
+    // Both hidden if notifs disabled
+    if (card) card.setAttribute('data-hs-hidden', 'true');
+    if (feed) feed.style.display = 'none';
+    return;
+  }
+  if (mode === 'feed') {
+    if (card) card.setAttribute('data-hs-hidden', 'true');
+    if (feed) { feed.style.display = ''; feed.removeAttribute('data-hs-hidden'); }
+    loadHomeNotifFeed();
+  } else {
+    if (card) card.removeAttribute('data-hs-hidden');
+    if (feed) feed.style.display = 'none';
+  }
+}
+
+async function loadHomeNotifFeed() {
+  var list = document.getElementById('home-notif-feed-list');
+  if (!list) return;
+  try {
+    // Get recent invitations
+    var items = [];
+    var { data: invites } = await sb.from('bubble_invitations')
+      .select('id, from_user_id, bubble_id, created_at, status, profiles!bubble_invitations_from_user_id_fkey(name), bubbles(name)')
+      .eq('to_user_id', currentUser.id)
+      .order('created_at', {ascending:false})
+      .limit(8);
+    if (invites) {
+      invites.forEach(function(inv) {
+        var name = inv.profiles ? inv.profiles.name : 'Nogen';
+        var bname = inv.bubbles ? inv.bubbles.name : 'en boble';
+        var isNew = inv.status === 'pending';
+        var ago = timeAgo(inv.created_at);
+        items.push({
+          html: '<strong>' + escHtml(name) + '</strong> inviterede dig til <strong>' + escHtml(bname) + '</strong>',
+          time: ago,
+          isNew: isNew
+        });
+      });
+    }
+
+    // Get recent bubble member joins (for your bubbles)
+    var { data: myBubbles } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+    var myBubbleIds = (myBubbles || []).map(function(m) { return m.bubble_id; });
+    if (myBubbleIds.length > 0) {
+      var { data: recentJoins } = await sb.from('bubble_members')
+        .select('user_id, bubble_id, created_at, profiles(name), bubbles(name)')
+        .in('bubble_id', myBubbleIds)
+        .neq('user_id', currentUser.id)
+        .order('created_at', {ascending:false})
+        .limit(5);
+      if (recentJoins) {
+        recentJoins.forEach(function(j) {
+          var name = j.profiles ? j.profiles.name : 'Nogen';
+          var bname = j.bubbles ? j.bubbles.name : 'en boble';
+          items.push({
+            html: '<strong>' + escHtml(name) + '</strong> joined <strong>' + escHtml(bname) + '</strong>',
+            time: timeAgo(j.created_at),
+            isNew: false
+          });
+        });
+      }
+    }
+
+    // Sort by time (most recent first) — use original date for sort
+    if (items.length === 0) {
+      list.innerHTML = '<div class="fs-072 text-muted" style="text-align:center;padding:0.8rem">Ingen notifikationer endnu</div>';
+      return;
+    }
+
+    list.innerHTML = items.slice(0, 6).map(function(item) {
+      return '<div class="notif-feed-item">' +
+        '<div class="notif-feed-dot' + (item.isNew ? '' : ' read') + '"></div>' +
+        '<div class="notif-feed-text">' + item.html + '</div>' +
+        '<div class="notif-feed-time">' + item.time + '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) { console.error('loadHomeNotifFeed:', e); list.innerHTML = '<div class="fs-072 text-muted" style="padding:0.5rem">Kunne ikke hente</div>'; }
+}
+
+function timeAgo(dateStr) {
+  var diff = Date.now() - new Date(dateStr).getTime();
+  var mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'nu';
+  if (mins < 60) return mins + 'm';
+  var hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 't';
+  var days = Math.floor(hrs / 24);
+  return days + 'd';
+}
+
 
 function updateAnonToggle() {
   var toggle = document.getElementById('anon-toggle');
