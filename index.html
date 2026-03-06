@@ -38,6 +38,19 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- GIF Picker -->
+<div class="gif-picker-overlay" id="gif-picker-overlay" onclick="closeGifPicker()"></div>
+<div class="gif-picker" id="gif-picker">
+  <div class="gif-picker-header">
+    <input class="gif-picker-search" id="gif-search" placeholder="Søg GIFs..." oninput="gifSearchDebounce()" autocomplete="off">
+    <button class="gif-picker-close" onclick="closeGifPicker()">✕</button>
+  </div>
+  <div class="gif-picker-grid" id="gif-grid">
+    <div style="text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">Søg efter en GIF...</div>
+  </div>
+  <div class="gif-picker-powered">Powered by Tenor</div>
+</div>
+
 <!-- ════════════════════════════════════════
      SCREEN: LOADING
 ════════════════════════════════════════ -->
@@ -553,6 +566,7 @@
       <div class="chat-composer-row">
         <input type="file" id="bc-file-input" style="display:none" onchange="bcHandleFile(this)">
         <button class="chat-attach-btn" onclick="document.getElementById('bc-file-input').click()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1l-9.2 9.2a5.5 5.5 0 01-7.8-7.8l9.2-9.2a3.7 3.7 0 015.2 5.2l-9.2 9.2a1.8 1.8 0 01-2.6-2.6l8.5-8.4"/></svg></button>
+        <button class="chat-gif-btn" onclick="toggleGifPicker('bc')">GIF</button>
         <input class="chat-composer-input" id="bc-input" placeholder="Skriv en besked...">
         <button class="chat-send-btn" id="bc-send-btn" onclick="bcSendMessage()">→</button>
       </div>
@@ -741,6 +755,7 @@
       <div class="chat-composer-row">
         <input type="file" id="dm-file-input" style="display:none">
         <button class="chat-attach-btn" onclick="document.getElementById('dm-file-input').click()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1l-9.2 9.2a5.5 5.5 0 01-7.8-7.8l9.2-9.2a3.7 3.7 0 015.2 5.2l-9.2 9.2a1.8 1.8 0 01-2.6-2.6l8.5-8.4"/></svg></button>
+        <button class="chat-gif-btn" onclick="toggleGifPicker('dm')">GIF</button>
         <input class="chat-composer-input" id="chat-input" placeholder="Skriv en besked...">
         <button class="chat-send-btn" id="chat-send-btn" onclick="sendMessage()">→</button>
       </div>

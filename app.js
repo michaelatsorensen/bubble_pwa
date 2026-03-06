@@ -3144,6 +3144,117 @@ async function handleFacebookLogin() {
   } catch(e) { console.error("handleFacebookLogin:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
+
+// ══════════════════════════════════════════════════════════
+//  GIF PICKER (Tenor API v2)
+// ══════════════════════════════════════════════════════════
+var TENOR_KEY = 'AIzaSyA3gqnPMTn0Btj_y2NHPg0FwWkldqUvqpA'; // Free public Tenor key
+var gifPickerMode = null; // 'bc' or 'dm'
+var _gifSearchTimer = null;
+
+function toggleGifPicker(mode) {
+  var picker = document.getElementById('gif-picker');
+  var overlay = document.getElementById('gif-picker-overlay');
+  if (picker.classList.contains('open')) { closeGifPicker(); return; }
+  gifPickerMode = mode;
+  overlay.classList.add('open');
+  setTimeout(function() { picker.classList.add('open'); }, 10);
+  var input = document.getElementById('gif-search');
+  if (input) { input.value = ''; input.focus(); }
+  // Load trending
+  loadTrendingGifs();
+}
+
+function closeGifPicker() {
+  var picker = document.getElementById('gif-picker');
+  var overlay = document.getElementById('gif-picker-overlay');
+  if (picker) picker.classList.remove('open');
+  setTimeout(function() { if (overlay) overlay.classList.remove('open'); }, 280);
+  gifPickerMode = null;
+}
+
+function gifSearchDebounce() {
+  clearTimeout(_gifSearchTimer);
+  _gifSearchTimer = setTimeout(function() {
+    var q = (document.getElementById('gif-search')?.value || '').trim();
+    if (q.length >= 2) searchGifs(q);
+    else if (q.length === 0) loadTrendingGifs();
+  }, 350);
+}
+
+async function loadTrendingGifs() {
+  var grid = document.getElementById('gif-grid');
+  if (!grid) return;
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem"><div class="spinner"></div></div>';
+  try {
+    var url = 'https://tenor.googleapis.com/v2/featured?key=' + TENOR_KEY + '&client_key=bubble_app&limit=20&media_filter=tinygif,gif&contentfilter=medium';
+    var res = await fetch(url);
+    var data = await res.json();
+    renderGifs(data.results || []);
+  } catch(e) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;font-size:0.75rem;color:var(--muted)">Kunne ikke hente GIFs</div>'; }
+}
+
+async function searchGifs(query) {
+  var grid = document.getElementById('gif-grid');
+  if (!grid) return;
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem"><div class="spinner"></div></div>';
+  try {
+    var url = 'https://tenor.googleapis.com/v2/search?q=' + encodeURIComponent(query) + '&key=' + TENOR_KEY + '&client_key=bubble_app&limit=20&media_filter=tinygif,gif&contentfilter=medium';
+    var res = await fetch(url);
+    var data = await res.json();
+    renderGifs(data.results || []);
+  } catch(e) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;font-size:0.75rem;color:var(--muted)">Søgning fejlede</div>'; }
+}
+
+function renderGifs(results) {
+  var grid = document.getElementById('gif-grid');
+  if (!grid) return;
+  if (results.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">Ingen GIFs fundet</div>';
+    return;
+  }
+  grid.innerHTML = results.map(function(r) {
+    var tiny = r.media_formats?.tinygif?.url || '';
+    var full = r.media_formats?.gif?.url || tiny;
+    if (!tiny) return '';
+    return '<img src="' + tiny + '" alt="GIF" loading="lazy" onclick="selectGif(\'' + full.replace(/'/g, '') + '\')">';
+  }).join('');
+}
+
+async function selectGif(gifUrl) {
+  closeGifPicker();
+  if (!gifUrl) return;
+  try {
+    if (gifPickerMode === 'bc') {
+      // Bubble chat — insert as message with GIF URL
+      var { data: msg, error } = await sb.from('bubble_messages').insert({
+        bubble_id: bcBubbleId, user_id: currentUser.id,
+        content: null, file_url: gifUrl, file_name: 'gif.gif', file_type: 'image/gif'
+      }).select('id, bubble_id, user_id, content, file_url, file_name, file_size, file_type, edited, created_at').single();
+      if (error) { showToast('Kunne ikke sende GIF'); return; }
+      if (msg) {
+        msg.profiles = { id: currentUser.id, name: currentProfile?.name || '?' };
+        document.getElementById('bc-messages').appendChild(bcRenderMsg(msg));
+        bcScrollToBottom();
+      }
+    } else {
+      // DM — insert as message with GIF URL
+      var { data: msg2, error: err2 } = await sb.from('messages').insert({
+        sender_id: currentUser.id, receiver_id: currentChatUser,
+        content: null, file_url: gifUrl, file_name: 'gif.gif', file_type: 'image/gif'
+      }).select().single();
+      if (err2) { showToast('Kunne ikke sende GIF'); return; }
+      if (msg2) {
+        var el = document.getElementById('chat-messages');
+        if (el && !el.querySelector('[data-msg-id="' + msg2.id + '"]')) {
+          el.insertAdjacentHTML('beforeend', dmRenderMsg(msg2));
+          el.scrollTop = el.scrollHeight;
+        }
+      }
+    }
+  } catch(e) { console.error('selectGif:', e); showToast('GIF fejl: ' + (e.message || 'ukendt')); }
+}
+
 // ══════════════════════════════════════════════════════════
 //  BOOT
 // ══════════════════════════════════════════════════════════
