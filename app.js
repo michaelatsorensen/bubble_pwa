@@ -1699,6 +1699,23 @@ async function loadProfile() {
     isAnon = currentProfile.is_anon || false;
     updateAnonToggle();
 
+    // Profile completeness nudge
+    var nudge = document.getElementById('profile-nudge');
+    var nudgeText = document.getElementById('profile-nudge-text');
+    if (nudge && nudgeText) {
+      var missing = [];
+      if (!currentProfile.bio) missing.push('en bio');
+      if ((currentProfile.keywords||[]).length < 5) missing.push('flere tags (har ' + (currentProfile.keywords||[]).length + ', anbefalet 5+)');
+      if (!(currentProfile.dynamic_keywords||[]).length) missing.push('"søger nu" tags');
+      if (!currentProfile.linkedin) missing.push('LinkedIn URL');
+      if (missing.length > 0) {
+        nudgeText.textContent = 'Tilføj ' + missing[0] + ' for bedre matches';
+        nudge.style.display = 'flex';
+      } else {
+        nudge.style.display = 'none';
+      }
+    }
+
     await loadSavedContacts();
     await loadMyBubbles();
     loadProfileInvitations();
@@ -2283,9 +2300,9 @@ function handleChipInput(e, arrayName) {
     e.preventDefault();
     const val = e.target.value.trim().replace(/,/g,'');
     if (!val) return;
-    const arr = arrayName === 'cb-chips' ? cbChips : arrayName === 'ep-chips' ? epChips : arrayName === 'eb-chips' ? ebChips : arrayName === 'ob-chips' ? obChips : epDynChips;
-    const containerId = arrayName === 'cb-chips' ? 'cb-chips-container' : arrayName === 'ep-chips' ? 'ep-chips-container' : arrayName === 'eb-chips' ? 'eb-chips-container' : arrayName === 'ob-chips' ? 'ob-chips-container' : 'ep-dyn-chips-container';
-    const inputId = arrayName === 'cb-chips' ? 'cb-chip-input' : arrayName === 'ep-chips' ? 'ep-chip-input' : arrayName === 'eb-chips' ? 'eb-chip-input' : arrayName === 'ob-chips' ? 'ob-chip-input' : 'ep-dyn-chip-input';
+    const arr = arrayName === 'cb-chips' ? cbChips : arrayName === 'ep-chips' ? epChips : arrayName === 'eb-chips' ? ebChips : arrayName === 'ob-chips' ? obChips : arrayName === 'ob-dyn-chips' ? obDynChips : arrayName === 'ep-dyn-chips' ? epDynChips : epDynChips;
+    const containerId = arrayName === 'cb-chips' ? 'cb-chips-container' : arrayName === 'ep-chips' ? 'ep-chips-container' : arrayName === 'eb-chips' ? 'eb-chips-container' : arrayName === 'ob-chips' ? 'ob-chips-container' : arrayName === 'ob-dyn-chips' ? 'ob-dyn-chips-container' : arrayName === 'ep-dyn-chips' ? 'ep-dyn-chips-container' : 'ep-dyn-chips-container';
+    const inputId = arrayName === 'cb-chips' ? 'cb-chip-input' : arrayName === 'ep-chips' ? 'ep-chip-input' : arrayName === 'eb-chips' ? 'eb-chip-input' : arrayName === 'ob-chips' ? 'ob-chip-input' : arrayName === 'ob-dyn-chips' ? 'ob-dyn-chip-input' : arrayName === 'ep-dyn-chips' ? 'ep-dyn-chip-input' : 'ep-dyn-chip-input';
     if (!arr.includes(val)) arr.push(val);
     e.target.value = '';
     renderChips(arrayName, arr, containerId, inputId);
@@ -2297,8 +2314,8 @@ function addChipFromBtn(inputId, arrayName) {
   if (!inp) return;
   var val = inp.value.trim().replace(/,/g,'');
   if (!val) { inp.focus(); return; }
-  var arr = arrayName === 'cb-chips' ? cbChips : arrayName === 'ep-chips' ? epChips : arrayName === 'eb-chips' ? ebChips : arrayName === 'ob-chips' ? obChips : epDynChips;
-  var containerId = arrayName === 'cb-chips' ? 'cb-chips-container' : arrayName === 'ep-chips' ? 'ep-chips-container' : arrayName === 'eb-chips' ? 'eb-chips-container' : arrayName === 'ob-chips' ? 'ob-chips-container' : 'ep-dyn-chips-container';
+  var arr = arrayName === 'cb-chips' ? cbChips : arrayName === 'ep-chips' ? epChips : arrayName === 'eb-chips' ? ebChips : arrayName === 'ob-chips' ? obChips : arrayName === 'ob-dyn-chips' ? obDynChips : arrayName === 'ep-dyn-chips' ? epDynChips : epDynChips;
+  var containerId = arrayName === 'cb-chips' ? 'cb-chips-container' : arrayName === 'ep-chips' ? 'ep-chips-container' : arrayName === 'eb-chips' ? 'eb-chips-container' : arrayName === 'ob-chips' ? 'ob-chips-container' : arrayName === 'ob-dyn-chips' ? 'ob-dyn-chips-container' : arrayName === 'ep-dyn-chips' ? 'ep-dyn-chips-container' : 'ep-dyn-chips-container';
   if (!arr.includes(val)) arr.push(val);
   inp.value = '';
   renderChips(arrayName, arr, containerId, inputId);
@@ -2325,7 +2342,7 @@ function renderChips(arrayName, arr, containerId, inputId) {
 }
 
 function removeChip(arrayName, index, containerId, inputId) {
-  const arr = arrayName === 'cb-chips' ? cbChips : arrayName === 'ep-chips' ? epChips : arrayName === 'eb-chips' ? ebChips : arrayName === 'ob-chips' ? obChips : epDynChips;
+  const arr = arrayName === 'cb-chips' ? cbChips : arrayName === 'ep-chips' ? epChips : arrayName === 'eb-chips' ? ebChips : arrayName === 'ob-chips' ? obChips : arrayName === 'ob-dyn-chips' ? obDynChips : arrayName === 'ep-dyn-chips' ? epDynChips : epDynChips;
   arr.splice(index, 1);
   renderChips(arrayName, arr, containerId, inputId);
 }
@@ -2684,6 +2701,39 @@ async function maybeShowOnboarding() {
 // ══════════════════════════════════════════════════════════
 //  WELCOME & GETTING STARTED
 // ══════════════════════════════════════════════════════════
+
+// ── Profile strength meter (onboarding) ──
+var obDynChips = [];
+
+function updateObStrength() {
+  var name = (document.getElementById('ob-name')?.value || '').trim();
+  var title = (document.getElementById('ob-title')?.value || '').trim();
+  var bio = (document.getElementById('ob-bio')?.value || '').trim();
+  var linkedin = (document.getElementById('ob-linkedin')?.value || '').trim();
+  var tags = obSelectedTags.length;
+  var dynTags = obDynChips.length;
+
+  var score = 0;
+  if (name) score += 15;
+  if (title) score += 15;
+  if (bio && bio.length > 20) score += 20;
+  else if (bio) score += 8;
+  if (tags >= 5) score += 25;
+  else if (tags >= 3) score += 15;
+  else if (tags >= 1) score += 5;
+  if (dynTags >= 1) score += 15;
+  if (linkedin) score += 10;
+
+  var bar = document.getElementById('ob-strength-bar');
+  var label = document.getElementById('ob-strength-label');
+  if (!bar || !label) return;
+  bar.style.width = score + '%';
+  if (score >= 80) { label.textContent = 'Stærk'; label.style.color = '#10B981'; bar.style.background = '#10B981'; }
+  else if (score >= 50) { label.textContent = 'God'; label.style.color = 'var(--accent)'; bar.style.background = 'var(--accent)'; }
+  else if (score >= 30) { label.textContent = 'OK'; label.style.color = 'var(--gold)'; bar.style.background = 'var(--gold)'; }
+  else { label.textContent = 'Svag'; label.style.color = 'var(--accent2)'; bar.style.background = 'var(--accent2)'; }
+}
+
 function welcomeGo(target) {
   localStorage.setItem('bubble_welcomed', '1');
   if (target === 'discover') {
@@ -2860,11 +2910,13 @@ function obAddTag(label, category) {
   if (input) { input.value = ''; }
   var sug = document.getElementById('ob-tag-suggestions');
   if (sug) sug.style.display = 'none';
+  updateObStrength();
 }
 
 function obRemoveTag(label) {
   obSelectedTags = obSelectedTags.filter(function(t) { return t !== label; });
   obRenderSelectedTags();
+  updateObStrength();
 }
 
 function obRenderSelectedTags() {
@@ -3041,7 +3093,7 @@ async function saveOnboarding() {
     if (obSelectedTags.length < 3) return showToast('Vælg mindst 3 tags');
     const { error } = await sb.from('profiles').upsert({
       id: currentUser.id, name, title, bio, linkedin,
-      keywords: obSelectedTags, dynamic_keywords: [], is_anon: false
+      keywords: obSelectedTags, dynamic_keywords: obDynChips, is_anon: false
     });
     if (error) return showToast('Fejl: ' + error.message);
     await loadCurrentProfile();
@@ -4127,6 +4179,12 @@ window.addEventListener('load', () => {
   if (dmFileInput) {
     dmFileInput.addEventListener('change', () => dmHandleFile(dmFileInput));
   }
+
+  // Onboarding strength meter — listen on all fields
+  ['ob-name','ob-title','ob-bio','ob-linkedin'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateObStrength);
+  });
 });
 // Login/signup Enter key handling
 document.getElementById('login-password')?.addEventListener('keydown', function(e) {

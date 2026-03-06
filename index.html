@@ -120,7 +120,12 @@
     <div style="text-align:center;margin-bottom:1.5rem">
       <div style="width:48px;height:48px;margin:0 auto 0.5rem;color:var(--accent)"><svg class="ico" style="width:48px;height:48px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
       <div style="font-size:1.6rem;font-weight:800;margin-bottom:0.3rem">Næsten klar!</div>
-      <div style="font-size:0.85rem;color:var(--muted)">Udfyld din profil så radaren kan matche dig</div>
+      <div style="font-size:0.85rem;color:var(--muted)">Jo mere præcis din profil er, desto bedre matches får du</div>
+    </div>
+    <!-- Profile quality tip -->
+    <div style="background:rgba(139,127,255,0.08);border:1px solid rgba(139,127,255,0.15);border-radius:12px;padding:0.75rem 1rem;margin-bottom:1.2rem;display:flex;gap:0.6rem;align-items:flex-start">
+      <div style="font-size:1.1rem;flex-shrink:0;margin-top:0.05rem">💡</div>
+      <div style="font-size:0.75rem;color:var(--text-secondary);line-height:1.5"><strong style="color:var(--text)">Tip:</strong> Profiler med titel, bio og 5+ tags får op til <strong style="color:var(--accent)">3× flere matches</strong>. Vær specifik — "Frontend React" er bedre end "Developer".</div>
     </div>
     <div class="input-group">
       <div class="input-label">Dit navn *</div>
@@ -128,15 +133,15 @@
     </div>
     <div class="input-group">
       <div class="input-label">Titel / Rolle *</div>
-      <input class="input" id="ob-title" placeholder="f.eks. Founder · Bubble">
+      <input class="input" id="ob-title" placeholder="f.eks. CTO · Cleantech startup">
     </div>
     <div class="input-group">
-      <div class="input-label">Om dig</div>
-      <textarea class="input" id="ob-bio" placeholder="Kort om hvem du er og hvad du arbejder med..."></textarea>
+      <div class="input-label">Om dig <span style="font-weight:400;color:var(--accent);font-size:0.68rem">· øger din synlighed</span></div>
+      <textarea class="input" id="ob-bio" placeholder="2-3 sætninger om hvem du er, hvad du arbejder med, og hvad du leder efter..."></textarea>
     </div>
     <!-- Tag picker -->
     <div class="input-group">
-      <div class="input-label">Vælg dine tags * <span style="font-weight:400;color:var(--muted)">(mindst 3)</span></div>
+      <div class="input-label">Vælg dine tags * <span style="font-weight:400;color:var(--muted)">(mindst 3, anbefalet 5+)</span></div>
       <div class="tag-search-wrap">
         <input class="input" id="ob-tag-search" placeholder="Søg eller skriv nyt tag..." autocomplete="off" oninput="obTagSearch(this.value)" onfocus="obTagSearch(this.value)">
         <div class="tag-suggestions" id="ob-tag-suggestions"></div>
@@ -145,8 +150,21 @@
       <div id="ob-tag-categories"></div>
     </div>
     <div class="input-group">
-      <div class="input-label">LinkedIn URL (valgfrit)</div>
+      <div class="input-label">Søger lige nu <span style="font-weight:400;color:var(--gold);font-size:0.68rem">· booster dine matches</span></div>
+      <div class="chips-container" id="ob-dyn-chips-container" onclick="document.getElementById('ob-dyn-chip-input').focus()">
+        <input class="chip-input" id="ob-dyn-chip-input" placeholder="f.eks. Co-founder, Investor-intro, Sparring..." onkeydown="handleChipInput(event,'ob-dyn-chips')">
+        <button type="button" onclick="addChipFromBtn('ob-dyn-chip-input','ob-dyn-chips')" class="chip-add-btn">+</button>
+      </div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:0.25rem">Disse matches mod andres tags med ×2 bonus i radaren</div>
+    </div>
+    <div class="input-group">
+      <div class="input-label">LinkedIn URL <span style="font-weight:400;color:var(--muted);font-size:0.68rem">· gør det nemt at connecte</span></div>
       <input class="input" id="ob-linkedin" placeholder="https://linkedin.com/in/dit-navn" type="url">
+    </div>
+    <!-- Profile strength meter -->
+    <div id="ob-strength" style="margin:0.5rem 0;padding:0.6rem 0.8rem;background:rgba(255,255,255,0.03);border-radius:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem"><span style="font-size:0.72rem;font-weight:600">Profil-styrke</span><span id="ob-strength-label" style="font-size:0.72rem;font-weight:700;color:var(--muted)">Svag</span></div>
+      <div style="height:4px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden"><div id="ob-strength-bar" style="height:100%;width:10%;border-radius:99px;background:var(--accent2);transition:all 0.4s"></div></div>
     </div>
     <button class="btn-primary" onclick="saveOnboarding()" style="margin-top:0.5rem">Kom i gang</button>
   </div>
@@ -745,6 +763,12 @@
     <div style="font-size:1.3rem;font-weight:800;margin-bottom:0.2rem;letter-spacing:-0.02em" id="my-name">...</div>
     <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.85rem" id="my-role">...</div>
     <div id="my-keywords" style="margin-bottom:0.5rem"></div>
+    <!-- Profile completeness nudge -->
+    <div id="profile-nudge" style="display:none;margin:0 1.2rem 0.5rem;padding:0.55rem 0.8rem;background:rgba(245,195,90,0.08);border:1px solid rgba(245,195,90,0.15);border-radius:10px;font-size:0.72rem;display:flex;gap:0.4rem;align-items:center">
+      <span style="flex-shrink:0">💡</span>
+      <span id="profile-nudge-text" style="color:var(--text-secondary)"></span>
+      <button onclick="openEditProfile()" style="flex-shrink:0;background:none;border:1px solid rgba(245,195,90,0.25);border-radius:8px;padding:0.2rem 0.5rem;font-size:0.65rem;font-weight:600;color:var(--gold);cursor:pointer;font-family:inherit">Udfyld</button>
+    </div>
   </div>
 
   <!-- Tabs -->
