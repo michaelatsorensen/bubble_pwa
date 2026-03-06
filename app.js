@@ -3148,7 +3148,7 @@ async function handleFacebookLogin() {
 // ══════════════════════════════════════════════════════════
 //  GIF PICKER (Tenor API v2)
 // ══════════════════════════════════════════════════════════
-var TENOR_KEY = 'AIzaSyA3gqnPMTn0Btj_y2NHPg0FwWkldqUvqpA'; // Free public Tenor key
+var GIPHY_KEY = 'dc6zaTOxFJmzC'; // GIPHY public beta key
 var gifPickerMode = null; // 'bc' or 'dm'
 var _gifSearchTimer = null;
 
@@ -3161,7 +3161,6 @@ function toggleGifPicker(mode) {
   setTimeout(function() { picker.classList.add('open'); }, 10);
   var input = document.getElementById('gif-search');
   if (input) { input.value = ''; input.focus(); }
-  // Load trending
   loadTrendingGifs();
 }
 
@@ -3170,7 +3169,6 @@ function closeGifPicker() {
   var overlay = document.getElementById('gif-picker-overlay');
   if (picker) picker.classList.remove('open');
   setTimeout(function() { if (overlay) overlay.classList.remove('open'); }, 280);
-  gifPickerMode = null;
 }
 
 function gifSearchDebounce() {
@@ -3187,11 +3185,10 @@ async function loadTrendingGifs() {
   if (!grid) return;
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem"><div class="spinner"></div></div>';
   try {
-    var url = 'https://tenor.googleapis.com/v2/featured?key=' + TENOR_KEY + '&client_key=bubble_app&limit=20&media_filter=tinygif,gif&contentfilter=medium';
-    var res = await fetch(url);
+    var res = await fetch('https://api.giphy.com/v1/gifs/trending?api_key=' + GIPHY_KEY + '&limit=20&rating=pg');
     var data = await res.json();
-    renderGifs(data.results || []);
-  } catch(e) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;font-size:0.75rem;color:var(--muted)">Kunne ikke hente GIFs</div>'; }
+    renderGifs(data.data || []);
+  } catch(e) { console.error('GIF trending error:', e); grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;font-size:0.75rem;color:var(--muted)">Kunne ikke hente GIFs</div>'; }
 }
 
 async function searchGifs(query) {
@@ -3199,25 +3196,24 @@ async function searchGifs(query) {
   if (!grid) return;
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem"><div class="spinner"></div></div>';
   try {
-    var url = 'https://tenor.googleapis.com/v2/search?q=' + encodeURIComponent(query) + '&key=' + TENOR_KEY + '&client_key=bubble_app&limit=20&media_filter=tinygif,gif&contentfilter=medium';
-    var res = await fetch(url);
+    var res = await fetch('https://api.giphy.com/v1/gifs/search?api_key=' + GIPHY_KEY + '&q=' + encodeURIComponent(query) + '&limit=20&rating=pg');
     var data = await res.json();
-    renderGifs(data.results || []);
-  } catch(e) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;font-size:0.75rem;color:var(--muted)">Søgning fejlede</div>'; }
+    renderGifs(data.data || []);
+  } catch(e) { console.error('GIF search error:', e); grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;font-size:0.75rem;color:var(--muted)">Søgning fejlede</div>'; }
 }
 
-function renderGifs(results) {
+function renderGifs(gifs) {
   var grid = document.getElementById('gif-grid');
   if (!grid) return;
-  if (results.length === 0) {
+  if (gifs.length === 0) {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">Ingen GIFs fundet</div>';
     return;
   }
-  grid.innerHTML = results.map(function(r) {
-    var tiny = r.media_formats?.tinygif?.url || '';
-    var full = r.media_formats?.gif?.url || tiny;
-    if (!tiny) return '';
-    return '<img src="' + tiny + '" alt="GIF" loading="lazy" onclick="selectGif(\'' + full.replace(/'/g, '') + '\')">';
+  grid.innerHTML = gifs.map(function(g) {
+    var preview = g.images?.fixed_width_small?.url || g.images?.fixed_width?.url || '';
+    var full = g.images?.original?.url || g.images?.fixed_width?.url || preview;
+    if (!preview) return '';
+    return '<img src="' + preview + '" alt="' + (g.title || 'GIF').replace(/"/g, '') + '" loading="lazy" onclick="selectGif(\'' + full.replace(/'/g, '') + '\')">';
   }).join('');
 }
 
