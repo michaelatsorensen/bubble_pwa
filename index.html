@@ -153,6 +153,48 @@
 </div>
 
 <!-- ════════════════════════════════════════
+     SCREEN: WELCOME (post-onboarding)
+════════════════════════════════════════ -->
+<div class="screen" id="screen-welcome">
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(2rem + env(safe-area-inset-top,0px)) 1.5rem 2rem;display:flex;flex-direction:column;justify-content:center">
+    <div style="text-align:center;margin-bottom:2rem">
+      <div style="width:56px;height:56px;margin:0 auto 0.75rem;color:var(--accent)"><svg class="ico" style="width:56px;height:56px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
+      <div style="font-size:1.8rem;font-weight:900;margin-bottom:0.35rem">Velkommen til Bubble!</div>
+      <div style="font-size:0.9rem;color:var(--text-secondary);max-width:320px;margin:0 auto">Lad os komme i gang — her er tre ting du kan gøre</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.8rem;max-width:380px;margin:0 auto;width:100%">
+      <!-- Step 1 -->
+      <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer" onclick="welcomeGo('discover')">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(139,127,255,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem">Udforsk bobler</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary)">Find communities, events og netværk</div>
+        </div>
+        <div style="color:var(--muted);font-size:1.1rem">→</div>
+      </div>
+      <!-- Step 2 -->
+      <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer" onclick="welcomeGo('radar')">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(232,93,138,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent2)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem">Se hvem der er her</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary)">Radaren viser profiler og match-%</div>
+        </div>
+        <div style="color:var(--muted);font-size:1.1rem">→</div>
+      </div>
+      <!-- Step 3 -->
+      <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer" onclick="welcomeGo('home')">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5v9a1.5 1.5 0 001.5 1.5H10v-5a2 2 0 014 0v5h3.5a1.5 1.5 0 001.5-1.5v-9"/></svg></div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem">Gå til hjem</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary)">Dit dashboard med bobler, radar og mere</div>
+        </div>
+        <div style="color:var(--muted);font-size:1.1rem">→</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
      SCREEN: HOME
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-home">
@@ -168,6 +210,31 @@
     <div style="padding:0.5rem 0 1.35rem">
       <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.3rem;letter-spacing:0.04em;text-transform:uppercase;font-weight:600">Goddag,</div>
       <div style="font-size:1.5rem;font-weight:800;letter-spacing:-0.02em" id="home-greeting-name"><svg class="ico" style="width:1.5rem;height:1.5rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 11V6.5a1.5 1.5 0 013 0V11"/><path d="M12.5 10V5.5a1.5 1.5 0 013 0v5"/><path d="M15.5 11V7.5a1.5 1.5 0 013 0v5.5a7 7 0 01-7 7h-1a7 7 0 01-5.8-3.1L4 15.5a1.5 1.5 0 012.1-2.1L9.5 16"/><path d="M9.5 11V4.5a1.5 1.5 0 00-3 0V12"/></svg></div>
+    </div>
+
+    <!-- GETTING STARTED (dismissible) -->
+    <div id="home-getting-started" style="display:none;margin-bottom:0.8rem">
+      <div style="background:linear-gradient(135deg,rgba(139,127,255,0.1),rgba(232,93,138,0.06));border:1px solid rgba(139,127,255,0.2);border-radius:16px;padding:1rem 1.1rem;position:relative">
+        <button onclick="dismissGettingStarted()" style="position:absolute;top:0.6rem;right:0.7rem;background:none;border:none;color:var(--muted);font-size:0.9rem;cursor:pointer;padding:0.2rem;font-family:inherit">✕</button>
+        <div style="font-size:0.85rem;font-weight:700;margin-bottom:0.6rem">Kom godt i gang</div>
+        <div style="display:flex;flex-direction:column;gap:0.45rem" id="gs-steps">
+          <div class="gs-step" onclick="goTo('screen-discover');loadDiscover()" style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem;border-radius:10px;background:rgba(255,255,255,0.03);cursor:pointer">
+            <div style="width:28px;height:28px;border-radius:8px;background:rgba(139,127,255,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent);font-size:0.85rem;font-weight:800">1</div>
+            <div style="flex:1"><div style="font-size:0.78rem;font-weight:600">Udforsk & join en boble</div><div style="font-size:0.65rem;color:var(--text-secondary)">Tryk her for at se bobler du kan joine</div></div>
+            <div style="color:var(--muted);font-size:0.85rem">→</div>
+          </div>
+          <div class="gs-step" onclick="openRadarSheet()" style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem;border-radius:10px;background:rgba(255,255,255,0.03);cursor:pointer">
+            <div style="width:28px;height:28px;border-radius:8px;background:rgba(232,93,138,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent2);font-size:0.85rem;font-weight:800">2</div>
+            <div style="flex:1"><div style="font-size:0.78rem;font-weight:600">Åbn radaren</div><div style="font-size:0.65rem;color:var(--text-secondary)">Se hvem der er i nærheden og match-%</div></div>
+            <div style="color:var(--muted);font-size:0.85rem">→</div>
+          </div>
+          <div class="gs-step" onclick="goTo('screen-profile');profSwitchTab('saved')" style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem;border-radius:10px;background:rgba(255,255,255,0.03);cursor:pointer">
+            <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#10B981;font-size:0.85rem;font-weight:800">3</div>
+            <div style="flex:1"><div style="font-size:0.78rem;font-weight:600">Gem en profil</div><div style="font-size:0.65rem;color:var(--text-secondary)">Tryk Gem på en person du vil huske</div></div>
+            <div style="color:var(--muted);font-size:0.85rem">→</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- LIVE BUBBLE -->

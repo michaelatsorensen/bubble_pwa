@@ -296,6 +296,7 @@ async function loadHome() {
     if (hsp.saved) loaders.push(loadSavedContacts());
     await Promise.all(loaders);
     hsApplyToHome();
+    showGettingStarted();
   } catch(e) { console.error("loadHome:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -2679,6 +2680,39 @@ async function maybeShowOnboarding() {
 
 
 
+
+// ══════════════════════════════════════════════════════════
+//  WELCOME & GETTING STARTED
+// ══════════════════════════════════════════════════════════
+function welcomeGo(target) {
+  localStorage.setItem('bubble_welcomed', '1');
+  if (target === 'discover') {
+    goTo('screen-discover');
+    loadDiscover();
+  } else if (target === 'radar') {
+    goTo('screen-home');
+    loadHome().then(function() { setTimeout(openRadarSheet, 500); });
+  } else {
+    goTo('screen-home');
+    loadHome();
+  }
+}
+
+function showGettingStarted() {
+  var dismissed = localStorage.getItem('bubble_gs_dismissed');
+  var el = document.getElementById('home-getting-started');
+  if (!el) return;
+  // Show if not dismissed and user has fewer than 2 saved contacts
+  if (dismissed) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+}
+
+function dismissGettingStarted() {
+  localStorage.setItem('bubble_gs_dismissed', '1');
+  var el = document.getElementById('home-getting-started');
+  if (el) { el.style.transition = 'opacity 0.3s, transform 0.3s'; el.style.opacity = '0'; el.style.transform = 'translateY(-10px)'; setTimeout(function() { el.style.display = 'none'; }, 300); }
+}
+
 // ══════════════════════════════════════════════════════════
 //  SMART MATCH ALGORITHM (v2)
 //  - TF-IDF: rare shared tags score higher
@@ -3012,7 +3046,9 @@ async function saveOnboarding() {
     if (error) return showToast('Fejl: ' + error.message);
     await loadCurrentProfile();
     showToast('Profil oprettet! 🎉');
-    goTo('screen-home');
+    // New users see welcome screen, not empty home
+    goTo('screen-welcome');
+    loadHome(); // Preload in background
   } catch(e) { console.error("saveOnboarding:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
