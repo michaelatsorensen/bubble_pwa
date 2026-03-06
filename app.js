@@ -3148,7 +3148,7 @@ async function handleFacebookLogin() {
 // ══════════════════════════════════════════════════════════
 //  GIF PICKER (Tenor API v2)
 // ══════════════════════════════════════════════════════════
-var GIPHY_KEY = 'dc6zaTOxFJmzC'; // GIPHY public beta key
+// Tenor GIF API — free tier, no key required for web
 var gifPickerMode = null; // 'bc' or 'dm'
 var _gifSearchTimer = null;
 
@@ -3185,10 +3185,14 @@ async function loadTrendingGifs() {
   if (!grid) return;
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem"><div class="spinner"></div></div>';
   try {
-    var res = await fetch('https://api.giphy.com/v1/gifs/trending?api_key=' + GIPHY_KEY + '&limit=20&rating=pg');
+    var res = await fetch('https://g.tenor.com/v1/trending?key=LIVDSRZULELA&limit=20&media_filter=minimal&contentfilter=medium');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
-    renderGifs(data.data || []);
-  } catch(e) { console.error('GIF trending error:', e); grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;font-size:0.75rem;color:var(--muted)">Kunne ikke hente GIFs</div>'; }
+    renderGifs(data.results || []);
+  } catch(e) {
+    console.error('GIF trending error:', e);
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">Kunne ikke hente GIFs.<br>Tjek din internetforbindelse.</div>';
+  }
 }
 
 async function searchGifs(query) {
@@ -3196,32 +3200,40 @@ async function searchGifs(query) {
   if (!grid) return;
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem"><div class="spinner"></div></div>';
   try {
-    var res = await fetch('https://api.giphy.com/v1/gifs/search?api_key=' + GIPHY_KEY + '&q=' + encodeURIComponent(query) + '&limit=20&rating=pg');
+    var res = await fetch('https://g.tenor.com/v1/search?q=' + encodeURIComponent(query) + '&key=LIVDSRZULELA&limit=20&media_filter=minimal&contentfilter=medium');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
-    renderGifs(data.data || []);
-  } catch(e) { console.error('GIF search error:', e); grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;font-size:0.75rem;color:var(--muted)">Søgning fejlede</div>'; }
+    renderGifs(data.results || []);
+  } catch(e) {
+    console.error('GIF search error:', e);
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">Søgning fejlede</div>';
+  }
 }
 
-function renderGifs(gifs) {
+function renderGifs(results) {
   var grid = document.getElementById('gif-grid');
   if (!grid) return;
-  if (gifs.length === 0) {
+  if (results.length === 0) {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">Ingen GIFs fundet</div>';
     return;
   }
-  grid.innerHTML = gifs.map(function(g) {
-    var preview = g.images?.fixed_width_small?.url || g.images?.fixed_width?.url || '';
-    var full = g.images?.original?.url || g.images?.fixed_width?.url || preview;
+  grid.innerHTML = results.map(function(r) {
+    // Tenor v1 media format
+    var media = r.media && r.media[0];
+    if (!media) return '';
+    var preview = media.tinygif?.url || media.nanogif?.url || '';
+    var full = media.gif?.url || media.mediumgif?.url || preview;
     if (!preview) return '';
-    return '<img src="' + preview + '" alt="' + (g.title || 'GIF').replace(/"/g, '') + '" loading="lazy" onclick="selectGif(\'' + full.replace(/'/g, '') + '\')">';
+    return '<img src="' + preview + '" alt="GIF" loading="lazy" onclick="selectGif(\'' + full.replace(/'/g, '') + '\')">';
   }).join('');
 }
 
 async function selectGif(gifUrl) {
+  var mode = gifPickerMode; // Capture before close
   closeGifPicker();
   if (!gifUrl) return;
   try {
-    if (gifPickerMode === 'bc') {
+    if (mode === 'bc') {
       // Bubble chat — insert as message with GIF URL
       var { data: msg, error } = await sb.from('bubble_messages').insert({
         bubble_id: bcBubbleId, user_id: currentUser.id,
