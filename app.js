@@ -785,6 +785,13 @@ async function loadProximityMap() {
     if (!allProfiles || allProfiles.length === 0) { map.style.display = 'none'; if (emptyEl) emptyEl.style.display = 'block'; return; }
     map.style.display = 'block'; if (emptyEl) emptyEl.style.display = 'none';
 
+    // Exclude saved contacts — they've already been "discovered"
+    var savedRes = await sb.from('saved_contacts').select('contact_id').eq('user_id', currentUser.id);
+    var savedIds = (savedRes.data || []).map(function(s) { return s.contact_id; });
+    allProfiles = allProfiles.filter(function(p) { return savedIds.indexOf(p.id) < 0; });
+
+    if (allProfiles.length === 0) { map.style.display = 'none'; if (emptyEl) { emptyEl.innerHTML = 'Alle profiler er gemt!<br>Du har opdaget alle i nærheden.'; emptyEl.style.display = 'block'; } return; }
+
     // Build tag popularity index for TF-IDF
     buildTagPopularity(allProfiles);
 
@@ -1560,7 +1567,7 @@ async function sendMessage() {
   try {
     const input = document.getElementById('chat-input');
     const content = input.value.trim();
-    if (!content) return;
+    if (!content) { dmSending = false; if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = ''; } return; }
     if (dmEditingId) {
       await sb.from('messages').update({ content, edited: true }).eq('id', dmEditingId);
       const bubble = document.getElementById('dm-bubble-' + dmEditingId);
@@ -3217,19 +3224,22 @@ function renderGifs(results) {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">Ingen GIFs fundet</div>';
     return;
   }
-  grid.innerHTML = results.map(function(r) {
-    // Tenor v1 media format
+  // Store GIF data and use index-based selection to avoid URL escaping issues
+  window._gifResults = [];
+  grid.innerHTML = results.map(function(r, idx) {
     var media = r.media && r.media[0];
     if (!media) return '';
     var preview = media.tinygif?.url || media.nanogif?.url || '';
     var full = media.gif?.url || media.mediumgif?.url || preview;
     if (!preview) return '';
-    return '<img src="' + preview + '" alt="GIF" loading="lazy" onclick="selectGif(\'' + full.replace(/'/g, '') + '\')">';
+    window._gifResults[idx] = full;
+    return '<img src="' + preview + '" alt="GIF" loading="lazy" onclick="selectGif(' + idx + ')">';
   }).join('');
 }
 
-async function selectGif(gifUrl) {
-  var mode = gifPickerMode; // Capture before close
+async function selectGif(idx) {
+  var gifUrl = window._gifResults && window._gifResults[idx];
+  var mode = gifPickerMode;
   closeGifPicker();
   if (!gifUrl) return;
   try {
@@ -3657,7 +3667,7 @@ async function bcSendMessage() {
   try {
     const inp = document.getElementById('bc-input');
     const text = inp.value.trim();
-    if (!text) return;
+    if (!text) { bcSending = false; if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = ''; } return; }
 
     if (bcEditingId) {
       // Save edit to history first
