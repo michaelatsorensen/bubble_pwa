@@ -386,9 +386,10 @@ textarea.input { min-height:80px; resize:vertical; }
   padding: calc(2rem + env(safe-area-inset-top, 0px)) 2rem 2rem;
 }
 #screen-auth {
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   padding: calc(2rem + env(safe-area-inset-top, 0px)) 1.5rem 2rem;
+  text-align: center;
 }
 
 /* Radar strip on home */
