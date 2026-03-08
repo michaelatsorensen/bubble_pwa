@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-09T03:20:00';
-const BUILD_VERSION  = 'v1.3.8';
+const BUILD_TIMESTAMP = '2026-03-09T03:30:00';
+const BUILD_VERSION  = 'v1.3.9';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -1403,13 +1403,19 @@ function initSwipeClose(sheetEl, closeFn) {
   var startY = 0, currentY = 0, dragging = false;
 
   sheetEl.addEventListener('touchstart', function(e) {
-    // Only from handle area (top 50px) or when scrolled to top
-    var scrollEl = sheetEl.querySelector('.modal-body, [style*="overflow"]');
-    var atTop = !scrollEl || scrollEl.scrollTop <= 0;
     var touchY = e.touches[0].clientY;
     var rect = sheetEl.getBoundingClientRect();
-    var inHandle = (touchY - rect.top) < 50;
-    if (inHandle || atTop) {
+    var inHandle = (touchY - rect.top) < 44;
+
+    // Check if any scrollable child has scroll position > 0
+    var scrollEls = sheetEl.querySelectorAll('[style*="overflow"], .scroll-area, .chat-messages, .chat-scroll, .chat-info-list, .chat-members-list');
+    var anyScrolled = false;
+    scrollEls.forEach(function(el) {
+      if (el.scrollTop > 5) anyScrolled = true;
+    });
+
+    // Only allow drag from the handle — never from scrollable content
+    if (inHandle && !anyScrolled) {
       startY = e.touches[0].clientY;
       currentY = 0;
       dragging = true;
@@ -1421,7 +1427,7 @@ function initSwipeClose(sheetEl, closeFn) {
     if (!dragging) return;
     currentY = e.touches[0].clientY - startY;
     if (currentY < 0) currentY = 0;
-    if (currentY > 8) {
+    if (currentY > 12) {
       sheetEl.style.transform = 'translateY(' + currentY + 'px)';
     }
   }, {passive: true});
@@ -1430,7 +1436,7 @@ function initSwipeClose(sheetEl, closeFn) {
     if (!dragging) return;
     dragging = false;
     sheetEl.style.transition = '';
-    if (currentY > 70) {
+    if (currentY > 100) {
       closeFn();
     } else {
       sheetEl.style.transform = '';
