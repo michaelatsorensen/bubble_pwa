@@ -83,6 +83,7 @@
       <input class="input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
     </div>
     <button class="btn-primary" onclick="handleLogin()">Log ind</button>
+    <button type="button" onclick="handleForgotPassword()" style="background:none;border:none;color:var(--accent);font-size:0.75rem;font-family:'Outfit',sans-serif;cursor:pointer;padding:0.3rem 0;margin-top:0.15rem">Glemt adgangskode?</button>
     <div style="display:flex;align-items:center;gap:0.75rem;margin:0.5rem 0">
       <div class="divider"></div>
       <div style="font-size:0.75rem;color:var(--muted)">eller</div>
@@ -204,7 +205,7 @@
     <div class="input-group">
       <div class="chips-container" id="ob-dyn-chips-container" onclick="document.getElementById('ob-dyn-chip-input').focus()">
         <input class="chip-input" id="ob-dyn-chip-input" placeholder="fx sparring, co-founder, investor-intro..." onkeydown="handleChipInput(event,'ob-dyn-chips')">
-        <button type="button" onclick="addChipFromBtn('ob-dyn-chip-input','ob-dyn-chips')" class="chip-add-btn">+</button>
+        <button type="button" onclick="addChipFromBtn('ob-dyn-chip-input','ob-dyn-chips')" class="ob-cat-custom-btn" title="Tilføj">✓</button>
       </div>
     </div>
 
@@ -694,6 +695,11 @@
       <button class="bubble-up-no" onclick="psCancelBubbleUp()">Annuller</button>
     </div>
   </div>
+  <!-- Block & Report -->
+  <div class="ps-moderation">
+    <button class="ps-mod-btn" onclick="psReportUser()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg> Rapportér</button>
+    <button class="ps-mod-btn danger" onclick="psBlockUser()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg> Blokér</button>
+  </div>
 </div>
 
 
@@ -1062,7 +1068,7 @@
       <div class="input-label">Søger lige nu</div>
       <div class="chips-container" id="ep-dyn-chips-container" onclick="document.getElementById('ep-dyn-chip-input').focus()">
         <input class="chip-input" id="ep-dyn-chip-input" placeholder="f.eks. Søger investor, Open to coffee..." onkeydown="handleChipInput(event,'ep-dyn-chips')">
-        <button type="button" onclick="addChipFromBtn('ep-dyn-chip-input','ep-dyn-chips')" class="chip-add-btn">+</button>
+        <button type="button" onclick="addChipFromBtn('ep-dyn-chip-input','ep-dyn-chips')" class="ob-cat-custom-btn" title="Tilføj">✓</button>
       </div>
     </div>
     <div class="input-group">

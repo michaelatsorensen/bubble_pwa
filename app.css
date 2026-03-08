@@ -1484,3 +1484,16 @@ a.person-action-btn { text-decoration:none; }
 .saved-stars { font-size:0.65rem; color:var(--accent); margin-top:0.2rem; letter-spacing:0.05em; }
 .saved-card-actions { display:flex; flex-direction:column; gap:0.35rem; flex-shrink:0; }
 .saved-card-tags { display:flex; flex-wrap:wrap; gap:0.25rem; margin-top:0.65rem; padding-top:0.55rem; border-top:1px solid var(--glass-border-subtle); }
+
+/* ═══ BUBBLE OWNER: KICK BUTTON ═══ */
+.bc-kick-btn { background:none; border:1px solid rgba(232,93,138,0.2); border-radius:8px; color:var(--accent2); padding:0.25rem; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s; opacity:0.5; }
+.bc-kick-btn:hover, .bc-kick-btn:active { opacity:1; background:rgba(232,93,138,0.1); border-color:rgba(232,93,138,0.4); }
+.bc-kick-btn .ico { width:14px; height:14px; }
+
+/* ═══ PERSON SHEET: BLOCK & REPORT ═══ */
+.ps-moderation { display:flex; gap:0.5rem; margin-top:0.8rem; padding-top:0.7rem; border-top:1px solid var(--glass-border-subtle); }
+.ps-mod-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:0.35rem; background:none; border:1px solid var(--glass-border-subtle); border-radius:10px; padding:0.5rem; font-size:0.72rem; font-weight:600; font-family:'Outfit',sans-serif; color:var(--muted); cursor:pointer; transition:all 0.2s; }
+.ps-mod-btn:active { background:rgba(255,255,255,0.04); }
+.ps-mod-btn .ico { width:14px; height:14px; }
+.ps-mod-btn.danger { color:var(--accent2); border-color:rgba(232,93,138,0.15); }
+.ps-mod-btn.danger:active { background:rgba(232,93,138,0.08); border-color:rgba(232,93,138,0.3); }

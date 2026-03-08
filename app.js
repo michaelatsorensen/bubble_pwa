@@ -223,8 +223,9 @@ async function checkAuth() {
       }
       await loadCurrentProfile();
       await loadPromotedCustomTags();
+      await loadBlockedUsers();
       const needsOnboarding = await maybeShowOnboarding();
-      if (!needsOnboarding) goTo('screen-home');
+      if (!needsOnboarding) { goTo('screen-home'); preloadAllData(); }
     } else {
       goTo('screen-auth');
     }
@@ -280,8 +281,9 @@ async function handleLogin() {
     currentUser = data.user;
     await loadCurrentProfile();
     await loadPromotedCustomTags();
+    await loadBlockedUsers();
     const needsOnboarding = await maybeShowOnboarding();
-    if (!needsOnboarding) goTo('screen-home');
+    if (!needsOnboarding) { goTo('screen-home'); preloadAllData(); }
   } catch(e) { logError("handleLogin", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -315,6 +317,7 @@ async function handleSignup() {
 
     await loadCurrentProfile();
     await loadPromotedCustomTags();
+      await loadBlockedUsers();
     const needsOnboarding = await maybeShowOnboarding();
     if (!needsOnboarding) goTo('screen-home');
     showToast('Velkommen til Bubble! 🫧');
@@ -323,13 +326,25 @@ async function handleSignup() {
 
 async function handleLogout() {
   try {
-    // Clean up realtime subscriptions
     bcUnsubscribeAll();
     sb.removeAllChannels();
     await sb.auth.signOut();
     currentUser = null; currentProfile = null;
     goTo('screen-auth');
   } catch(e) { logError("handleLogout", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+async function handleForgotPassword() {
+  var email = document.getElementById('login-email').value.trim();
+  if (!email) return showToast('Indtast din email først');
+  try {
+    showToast('Sender nulstillingslink...');
+    var { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin
+    });
+    if (error) return showToast('Fejl: ' + error.message);
+    showToast('Tjek din indbakke for nulstillingslink ✉️');
+  } catch(e) { logError('handleForgotPassword', e); showToast(e.message || 'Ukendt fejl'); }
 }
 
 function switchToSignup() {
@@ -685,7 +700,7 @@ async function openPerson(userId, fromScreen) {
     const initials = p.is_anon ? '?' : (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     document.getElementById('person-avatar').textContent = initials;
     document.getElementById('person-name').textContent = p.is_anon ? 'Anonym bruger' : (p.name || '?');
-    document.getElementById('person-role').textContent = p.is_anon ? '' : (p.title || '');
+    document.getElementById('person-role').textContent = p.is_anon ? '' : ((p.title || '') + (p.workplace ? ' · ' + p.workplace : ''));
 
     // Check live presence
     var personLiveEl = document.getElementById('person-live-badge');
@@ -862,7 +877,7 @@ async function loadProximityMap() {
     // Exclude saved contacts — they've already been "discovered"
     var savedRes = await sb.from('saved_contacts').select('contact_id').eq('user_id', currentUser.id);
     var savedIds = (savedRes.data || []).map(function(s) { return s.contact_id; });
-    allProfiles = allProfiles.filter(function(p) { return savedIds.indexOf(p.id) < 0; });
+    allProfiles = allProfiles.filter(function(p) { return savedIds.indexOf(p.id) < 0 && !isBlocked(p.id); });
 
     if (allProfiles.length === 0) { map.style.display = 'none'; if (emptyEl) { emptyEl.innerHTML = 'Alle profiler er gemt!<br>Du har opdaget alle i nærheden.'; emptyEl.style.display = 'block'; } return; }
 
@@ -1385,7 +1400,7 @@ async function loadMessages() {
       .limit(200);
 
     if (!convs || convs.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">Ingen beskeder endnu.<br>Find en person og start en samtale!</div></div>';
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">Ingen beskeder endnu</div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-home\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">Find folk på radaren →</button></div></div>';
       return;
     }
 
@@ -1394,7 +1409,7 @@ async function loadMessages() {
     const partners = [];
     for (const m of convs) {
       const partnerId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
-      if (!seen.has(partnerId)) {
+      if (!seen.has(partnerId) && !isBlocked(partnerId)) {
         seen.add(partnerId);
         partners.push({ partnerId, lastMsg: m });
       }
@@ -1423,6 +1438,7 @@ async function loadMessages() {
 
 async function openChat(userId, fromScreen) {
   console.debug('[dm] openChat:', userId, 'from:', fromScreen);
+  if (isBlocked(userId)) { showToast('Denne bruger er blokeret'); return; }
   try {
     currentChatUser = userId;
     const { data: p } = await sb.from('profiles').select('name,title').eq('id', userId).single();
@@ -1465,7 +1481,7 @@ function dmRenderMsg(m) {
       bubble = `<a class="msg-file" href="${m.file_url}" target="_blank">${icon('clip')} ${escHtml(m.file_name||'Fil')} <span class="msg-file-sz">${sz}</span></a>`;
     }
   } else {
-    bubble = `<div class="msg-bubble${sent?' sent':''}" id="dm-bubble-${m.id}">${escHtml(m.content||'')}</div>`;
+    bubble = `<div class="msg-bubble${sent?' sent':''}" id="dm-bubble-${m.id}">${escHtml(filterChatContent(m.content||''))}</div>`;
   }
 
   const avatarStyle = `background:linear-gradient(135deg,${sent?'#4C1D95,#A78BFA':'#8B7FFF,#E85D8A'})${sent?'':';cursor:pointer'}`;
@@ -1639,8 +1655,9 @@ async function sendMessage() {
   if (sendBtn) { sendBtn.disabled = true; sendBtn.style.opacity = "0.4"; }
   console.debug('[dm] sendMessage');
   try {
+    if (isBlocked(currentChatUser)) { showToast('Denne bruger er blokeret'); dmSending = false; if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = ''; } return; }
     const input = document.getElementById('chat-input');
-    const content = input.value.trim();
+    const content = filterChatContent(input.value.trim());
     if (!content) { dmSending = false; if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = ''; } return; }
     if (dmEditingId) {
       await sb.from('messages').update({ content, edited: true }).eq('id', dmEditingId);
@@ -2755,6 +2772,8 @@ async function checkPendingJoin() {
 // ══════════════════════════════════════════════════════════
 async function maybeShowOnboarding() {
   try {
+    // Don't re-trigger if user explicitly skipped
+    if (currentProfile?.onboarding_skipped) return false;
     if (!currentProfile ||
         !currentProfile.name ||
         currentProfile.name === currentProfile.id ||
@@ -2770,6 +2789,8 @@ async function maybeShowOnboarding() {
       document.getElementById('ob-title').value = currentProfile?.title || '';
       document.getElementById('ob-bio').value = currentProfile?.bio || '';
       document.getElementById('ob-linkedin').value = currentProfile?.linkedin || '';
+      var obWp = document.getElementById('ob-workplace');
+      if (obWp) obWp.value = currentProfile?.workplace || '';
       // Initialize tag picker with existing tags
       obSelectedTags = Array.isArray(currentProfile?.keywords) ? [...currentProfile.keywords] : [];
       obRenderSelectedTags();
@@ -2849,7 +2870,6 @@ var obLifestage = null;
 
 
 function skipOnboarding() {
-  // Save minimal profile so user isn't stuck
   var name = (document.getElementById('ob-name')?.value || '').trim();
   if (!name && currentProfile?.name) name = currentProfile.name;
   if (!name && currentUser?.email) name = currentUser.email.split('@')[0];
@@ -2858,13 +2878,14 @@ function skipOnboarding() {
   sb.from('profiles').upsert({
     id: currentUser.id, name: name,
     title: (document.getElementById('ob-title')?.value || '').trim() || 'Ikke udfyldt',
-    keywords: obSelectedTags.length > 0 ? obSelectedTags : [],
-    dynamic_keywords: [], bio: '', is_anon: false
+    keywords: obSelectedTags.length > 0 ? obSelectedTags : ['Ny bruger'],
+    dynamic_keywords: [], bio: '', is_anon: false,
+    onboarding_skipped: true
   }).then(function() {
     loadCurrentProfile();
     showToast('Du kan altid udfylde din profil senere');
     goTo('screen-home');
-    loadHome();
+    preloadAllData();
   }).catch(function(e) {
     showToast('Fejl: ' + (e.message || 'ukendt'));
   });
@@ -3447,9 +3468,28 @@ async function saveOnboarding() {
     if (error) return showToast('Fejl: ' + error.message);
     await loadCurrentProfile();
     showToast('Profil oprettet! 🎉');
+    // Aggressively preload everything so app feels instant
+    preloadAllData();
     goTo('screen-welcome');
-    loadHome();
   } catch(e) { logError("saveOnboarding", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  AGGRESSIVE PRELOAD — makes app feel instant
+// ══════════════════════════════════════════════════════════
+async function preloadAllData() {
+  try {
+    await Promise.all([
+      loadHome(),
+      loadDiscover(),
+      loadMessages(),
+      loadMyBubbles(),
+      loadSavedContacts(),
+      loadProximityMap(),
+      loadBlockedUsers(),
+      loadPromotedCustomTags()
+    ].map(function(p) { return p.catch(function(e) { logError('preload', e); }); }));
+  } catch(e) { logError('preloadAllData', e); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -3905,7 +3945,7 @@ function bcRenderMsg(m) {
       bubble = `<a class="msg-file" href="${m.file_url}" target="_blank">${icon('clip')} ${escHtml(m.file_name||'Fil')} <span class="msg-file-sz">${sz}</span></a>`;
     }
   } else {
-    bubble = `<div class="msg-bubble${isMe ? ' sent' : ''}" id="bc-bubble-${m.id}">${escHtml(m.content||'')}</div>`;
+    bubble = `<div class="msg-bubble${isMe ? ' sent' : ''}" id="bc-bubble-${m.id}">${escHtml(filterChatContent(m.content||''))}</div>`;
   }
 
   const editedTag = m.edited ? ` <span class="msg-edited" onclick="bcShowHistory('${m.id}')">redigeret</span>` : '';
@@ -3986,7 +4026,7 @@ async function bcSendMessage() {
   console.debug('[bc] bcSendMessage');
   try {
     const inp = document.getElementById('bc-input');
-    const text = inp.value.trim();
+    const text = filterChatContent(inp.value.trim());
     if (!text) { bcSending = false; if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = ''; } return; }
 
     if (bcEditingId) {
@@ -4263,9 +4303,10 @@ async function bcLoadMembers() {
 
     const colors = ['linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#7C2D12,#F97316)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#4C1D95,#A78BFA)','linear-gradient(135deg,#0C4A6E,#38BDF8)'];
     const ownerId = bcBubbleData?.created_by;
+    const isOwner = currentUser && ownerId === currentUser.id;
 
     // Sort: owner first, then live members, then rest
-    const sorted = [...members].sort((a, b) => {
+    const sorted = [...members].filter(m => !isBlocked(m.user_id)).sort((a, b) => {
       if (a.user_id === ownerId) return -1;
       if (b.user_id === ownerId) return 1;
       if (a._isLive && !b._isLive) return -1;
@@ -4297,11 +4338,38 @@ async function bcLoadMembers() {
       html += `<div class="chat-member-row" onclick="bcOpenPerson('${m.user_id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${color}')">
         <div class="chat-member-avatar" style="background:${color}">${initials}${m._isLive ? '<span class="live-dot"></span>' : ''}</div>
         <div style="flex:1;min-width:0"><div class="chat-member-name">${escHtml(p.name||'Ukendt')} ${liveBadge}</div><div class="chat-member-status">${escHtml(p.title||'')}</div></div>
-        ${isOwnerRow ? '<span class="chat-member-role">Ejer</span>' : ''}
+        ${isOwnerRow ? '<span class="chat-member-role">Ejer</span>' : (isOwner && !isOwnerRow ? '<button class="bc-kick-btn" onclick="event.stopPropagation();bcKickMember(\'' + m.user_id + '\',\'' + escHtml(p.name||'Ukendt').replace(/'/g,'') + '\')" title="Fjern fra boble">' + icon('x') + '</button>' : '')}
       </div>`;
     });
     list.innerHTML = html;
   } catch(e) { logError("bcLoadMembers", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+// ── Bubble owner: kick/remove member ──
+var _kickConfirm = null;
+async function bcKickMember(userId, userName) {
+  if (!bcBubbleId || !currentUser) return;
+  // Verify ownership
+  if (bcBubbleData?.created_by !== currentUser.id) { showToast('Kun ejeren kan fjerne medlemmer'); return; }
+  // Confirm
+  if (_kickConfirm !== userId) {
+    _kickConfirm = userId;
+    showToast('Fjern ' + userName + '? Tryk igen for at bekræfte');
+    setTimeout(function() { _kickConfirm = null; }, 3000);
+    return;
+  }
+  _kickConfirm = null;
+  try {
+    // Remove from bubble_members
+    var { error } = await sb.from('bubble_members').delete()
+      .eq('bubble_id', bcBubbleId).eq('user_id', userId);
+    if (error) throw error;
+    // Also remove any live check-in
+    await sb.from('bubble_members').update({ checked_in_at: null, checked_out_at: new Date().toISOString() })
+      .eq('bubble_id', bcBubbleId).eq('user_id', userId);
+    showToast(userName + ' er fjernet fra boblen');
+    bcLoadMembers(); // Refresh list
+  } catch(e) { logError('bcKickMember', e, { bubbleId: bcBubbleId, userId: userId }); showToast('Fejl: ' + (e.message || 'ukendt')); }
 }
 
 async function bcLoadInfo() {
@@ -4441,8 +4509,10 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
   // Fetch full profile for bio + LinkedIn
   const liBtn = document.getElementById('ps-linkedin-btn');
   liBtn.style.display = 'none';
-  sb.from('profiles').select('bio,linkedin').eq('id', userId).single().then(({data}) => {
+  sb.from('profiles').select('bio,linkedin,workplace').eq('id', userId).single().then(({data}) => {
     if (data?.bio) document.getElementById('ps-bio').textContent = data.bio;
+    var subEl = document.getElementById('ps-sub');
+    if (subEl && data?.workplace) subEl.textContent = (title || '') + (title && data.workplace ? ' · ' : '') + (data.workplace || '');
     if (data?.linkedin) { liBtn.href = data.linkedin.startsWith('http') ? data.linkedin : 'https://' + data.linkedin; liBtn.style.display = 'flex'; }
   });
   // Store userId and fromScreen
@@ -4490,6 +4560,104 @@ function psClose() {
   document.getElementById('ps-bubbleup-btn').style.display = 'flex';
   document.getElementById('ps-bubbleup-confirm').classList.remove('show');
   setTimeout(() => document.getElementById('ps-overlay').classList.remove('open'), 320);
+}
+
+// ══════════════════════════════════════════════════════════
+//  BLOCK & REPORT
+// ══════════════════════════════════════════════════════════
+var _blockedUsers = [];
+
+async function loadBlockedUsers() {
+  try {
+    if (!currentUser) return;
+    var { data } = await sb.from('blocked_users').select('blocked_id').eq('user_id', currentUser.id);
+    _blockedUsers = (data || []).map(function(r) { return r.blocked_id; });
+  } catch(e) { logError('loadBlockedUsers', e); }
+}
+
+function isBlocked(userId) {
+  return _blockedUsers.indexOf(userId) >= 0;
+}
+
+var _blockConfirm = null;
+async function psBlockUser() {
+  var userId = document.getElementById('person-sheet-el')?.dataset?.userId;
+  var userName = document.getElementById('person-sheet-el')?.dataset?.userName || 'bruger';
+  if (!userId || !currentUser) return;
+  if (userId === currentUser.id) { showToast('Du kan ikke blokere dig selv'); return; }
+  // Confirm
+  if (_blockConfirm !== userId) {
+    _blockConfirm = userId;
+    showToast('Blokér ' + userName + '? Tryk igen for at bekræfte');
+    setTimeout(function() { _blockConfirm = null; }, 3000);
+    return;
+  }
+  _blockConfirm = null;
+  try {
+    await sb.from('blocked_users').upsert({
+      user_id: currentUser.id, blocked_id: userId
+    }, { onConflict: 'user_id,blocked_id' });
+    _blockedUsers.push(userId);
+    // Also remove from saved contacts if saved
+    await sb.from('saved_contacts').delete().eq('user_id', currentUser.id).eq('contact_id', userId);
+    psClose();
+    showToast(userName + ' er blokeret');
+    // Refresh visible lists
+    if (typeof loadProximityMap === 'function') loadProximityMap();
+    if (typeof loadSavedContacts === 'function') loadSavedContacts();
+  } catch(e) { logError('psBlockUser', e, { blocked: userId }); showToast('Fejl: ' + (e.message || 'ukendt')); }
+}
+
+async function psReportUser() {
+  var userId = document.getElementById('person-sheet-el')?.dataset?.userId;
+  var userName = document.getElementById('person-sheet-el')?.dataset?.userName || 'bruger';
+  if (!userId || !currentUser) return;
+  try {
+    await sb.from('reports').insert({
+      reporter_id: currentUser.id,
+      reported_id: userId,
+      type: 'user',
+      reason: 'Rapporteret fra person sheet'
+    });
+    // Also send email alert
+    logError('USER_REPORT', new Error('Bruger rapporteret: ' + userName), { reported_id: userId, reporter_id: currentUser.id });
+    showToast('Tak — ' + userName + ' er rapporteret. Vi kigger på det.');
+  } catch(e) { logError('psReportUser', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+}
+
+// Report a specific message
+async function reportMessage(msgId, context) {
+  if (!currentUser || !msgId) return;
+  try {
+    await sb.from('reports').insert({
+      reporter_id: currentUser.id,
+      reported_id: null,
+      type: 'message',
+      reason: 'Besked rapporteret',
+      ref_id: msgId
+    });
+    logError('MSG_REPORT', new Error('Besked rapporteret'), { msg_id: msgId, context: context, reporter: currentUser.id });
+    showToast('Besked rapporteret. Tak!');
+  } catch(e) { logError('reportMessage', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+}
+
+// Simple chat word filter
+var CHAT_BLOCKED_WORDS = ['fuck','shit','dick','pik','lort','nazi','hitler','heil','kill','slut','whore','luder','bøsse'];
+function filterChatContent(text) {
+  if (!text) return text;
+  var lower = text.toLowerCase();
+  var flagged = false;
+  CHAT_BLOCKED_WORDS.forEach(function(w) {
+    if (lower.includes(w)) {
+      flagged = true;
+      var re = new RegExp(w, 'gi');
+      text = text.replace(re, '***');
+    }
+  });
+  if (flagged) {
+    logError('CONTENT_FILTER', new Error('Filtreret indhold'), { original_length: text.length, user: currentUser?.id });
+  }
+  return text;
 }
 
 function psSetStar(userId, rating) {
