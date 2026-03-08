@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-08T23:55:00';
-const BUILD_VERSION  = 'v1.2.3';
+const BUILD_TIMESTAMP = '2026-03-09T00:05:00';
+const BUILD_VERSION  = 'v1.2.4';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -2094,13 +2094,12 @@ function renderSavedStoryBar(saved, profileMap) {
     var col = colors[i % colors.length];
     var firstName = (p.name||'?').split(' ')[0];
     var starCount = starGet(s.contact_id);
-    var starBadge = starCount > 0 ? '<div class="saved-story-stars">' + '★'.repeat(starCount) + '</div>' : '';
+    var starBadge = starCount > 0 ? '<span class="star-badge">' + '★'.repeat(starCount) + '</span>' : '';
     var storyAvatar = p.avatar_url ?
-      '<div class="saved-story-avatar" style="overflow:hidden"><img src="' + p.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>' :
-      '<div class="saved-story-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>';
+      '<div class="saved-story-avatar" style="overflow:hidden;position:relative"><img src="' + p.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' + starBadge + '</div>' :
+      '<div class="saved-story-avatar" style="background:' + col + ';position:relative">' + escHtml(ini) + starBadge + '</div>';
     return '<div class="saved-story-item" onclick="openPerson(\'' + p.id + '\',\'screen-home\')">' +
       storyAvatar +
-      starBadge +
       '<div class="saved-story-name">' + escHtml(firstName) + '</div></div>';
   }).join('');
 }
