@@ -1146,39 +1146,60 @@ a.person-action-btn { text-decoration:none; }
 
   .bottom-nav {
     max-width: 680px;
-    left: 0 !important;
-    right: 0 !important;
-    margin: 0 auto;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%);
   }
 
-  .toast { max-width: 540px; }
-  
+  .toast { max-width: 540px; left:50%; transform:translateX(-50%); }
 
   .modal-overlay,
   .person-sheet-overlay,
-  .radar-person-overlay {
+  .radar-person-overlay,
+  .gif-picker-overlay,
+  .invite-sheet-overlay {
     max-width: 680px;
-    left: 0 !important;
-    right: 0 !important;
-    margin: 0 auto;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%);
   }
 
   .person-sheet,
-  .radar-person-sheet {
+  .radar-person-sheet,
+  .invite-sheet {
     max-width: 680px;
-    left: 0 !important;
-    right: 0 !important;
-    margin: 0 auto;
-    border-radius: 24px 24px 0 0;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) translateY(100%);
+    width: 680px;
+  }
+  .person-sheet.open,
+  .radar-person-sheet.open,
+  .invite-sheet.open {
+    transform: translateX(-50%) translateY(0);
   }
 
-  .modal-overlay .modal-sheet { max-width: 540px; }
+  .modal-overlay .modal-sheet {
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  .gif-picker {
+    max-width: 680px;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) translateY(100%);
+    width: 680px;
+  }
+  .gif-picker.open {
+    transform: translateX(-50%) translateY(0);
+  }
 
   .chat-input-bar {
     max-width: 680px;
-    left: 0 !important;
-    right: 0 !important;
-    margin: 0 auto;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%);
   }
 
   .screen { overscroll-behavior: contain; }

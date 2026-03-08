@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-08T22:45:00';
-const BUILD_VERSION  = 'v1.2.0';
+const BUILD_TIMESTAMP = '2026-03-08T23:55:00';
+const BUILD_VERSION  = 'v1.2.3';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -798,7 +798,11 @@ async function openPerson(userId, fromScreen) {
     if (!p) return;
 
     const initials = p.is_anon ? '?' : (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    document.getElementById('person-avatar').textContent = initials;
+    var personAvEl = document.getElementById('person-avatar');
+    if (personAvEl) {
+      if (p.avatar_url && !p.is_anon) { personAvEl.innerHTML = '<img src="'+p.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+      else { personAvEl.textContent = initials; personAvEl.innerHTML = initials; }
+    }
     document.getElementById('person-name').textContent = p.is_anon ? 'Anonym bruger' : (p.name || '?');
     document.getElementById('person-role').textContent = p.is_anon ? '' : ((p.title || '') + (p.workplace ? ' · ' + p.workplace : ''));
 
@@ -913,16 +917,18 @@ function removeSavedContact(savedId, btn) {
   const confirm = document.createElement('div');
   confirm.className = 'remove-confirm';
   confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(232,93,138,0.08);border:1px solid rgba(232,93,138,0.2);border-radius:10px;gap:0.5rem';
+  confirm.onclick = function(e) { e.stopPropagation(); };
   confirm.innerHTML = `<span style="font-size:0.72rem;color:var(--text-secondary)">Fjern kontakt?</span>
     <div style="display:flex;gap:0.3rem">
-      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)" onclick="confirmRemoveSaved()">Fjern</button>
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)" onclick="event.stopPropagation();confirmRemoveSaved()">Fjern</button>
       <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelRemoveSaved(this)">Annuller</button>
     </div>`;
   card.appendChild(confirm);
 }
 
 function cancelRemoveSaved(btn) {
-  const confirm = btn.closest('.remove-confirm');
+  event.stopPropagation();
+  var confirm = btn.closest('.remove-confirm');
   if (confirm) confirm.remove();
   pendingRemoveSavedId = null;
   pendingRemoveBtn = null;
@@ -969,7 +975,7 @@ async function loadProximityMap() {
     var emptyEl = document.getElementById('prox-empty');
     var canvas = document.getElementById('prox-canvas');
     if (!map || !canvas) return;
-    var r1 = await sb.from('profiles').select('id,name,title,keywords,dynamic_keywords,bio,linkedin,is_anon').neq('id', currentUser.id).limit(200);
+    var r1 = await sb.from('profiles').select('id,name,title,keywords,dynamic_keywords,bio,linkedin,is_anon,avatar_url').neq('id', currentUser.id).limit(200);
     var allProfiles = r1.data;
     if (!allProfiles || allProfiles.length === 0) { map.style.display = 'none'; if (emptyEl) emptyEl.style.display = 'block'; return; }
     map.style.display = 'block'; if (emptyEl) emptyEl.style.display = 'none';
@@ -1065,11 +1071,12 @@ function renderProximityDots() {
     var p = fil[i];
     var ini = (p.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
     var col = proxColors[i % proxColors.length];
-    // Match-based positioning: 100% match = center (r=0), 0% match = edge (r=maxR*0.9)
-    // matchScore is 0-100, relevance is 0-1
+    // Match-based positioning: profiles live OUTSIDE center (your avatar)
+    // 100% match = just outside center (r=0.12), 0% match = edge (r=0.88)
     var matchPct = p.matchScore || Math.round(p.relevance * 100);
-    var dist = (1 - matchPct / 100) * 0.88; // 100% → 0.0 (center), 0% → 0.88 (edge)
-    dist = Math.max(0.05, dist); // Never exactly center (that's the user)
+    var minDist = 0.14; // Start just outside center avatar
+    var maxDist = 0.88; // Edge
+    var dist = minDist + (1 - matchPct / 100) * (maxDist - minDist);
     var r = dist * maxR;
     var ang = (i * 2.399) + (matchPct * 0.03); // Golden angle spread + slight match-based offset
     var ix = cx + Math.cos(ang)*r - 17, iy = cy + Math.sin(ang)*r - 17;
@@ -1099,18 +1106,21 @@ function drawProxRings(canvas) {
   var ctx = canvas.getContext('2d'); ctx.scale(2,2); ctx.clearRect(0,0,w,h);
   var cx = w/2, cy = h/2, maxR = Math.min(cx, cy);
 
-  // Dartboard zones — 5 rings, each 20% match interval
-  // Ring 1 (center): 80-100% match — bullseye
-  // Ring 2: 60-80% — inner
-  // Ring 3: 40-60% — mid
-  // Ring 4: 20-40% — outer
-  // Ring 5 (edge): 0-20% — rim
+  // Dartboard: center avatar (you) + 5 match rings around it
+  // Center: your avatar (r=0.10)
+  // Ring 1: 80-100% match (closest to you)
+  // Ring 2: 60-80%
+  // Ring 3: 40-60%
+  // Ring 4: 20-40%
+  // Ring 5: 0-20% (outer edge)
+  var centerR = 0.10; // Your avatar zone
   var zones = [
-    { r: 0.18, fill: 'rgba(139,127,255,0.12)' },  // 80-100% — bullseye purple
-    { r: 0.36, fill: 'rgba(16,185,129,0.06)' },    // 60-80% — green
-    { r: 0.54, fill: 'rgba(46,207,207,0.05)' },    // 40-60% — teal
-    { r: 0.72, fill: 'rgba(232,93,138,0.03)' },    // 20-40% — pink
-    { r: 0.90, fill: 'rgba(255,255,255,0.02)' },    // 0-20% — faint
+    { r: centerR, fill: 'rgba(139,127,255,0.15)' },   // YOU — center
+    { r: 0.26, fill: 'rgba(139,127,255,0.08)' },       // 80-100% — inner purple
+    { r: 0.42, fill: 'rgba(16,185,129,0.05)' },        // 60-80% — green
+    { r: 0.58, fill: 'rgba(46,207,207,0.04)' },        // 40-60% — teal
+    { r: 0.74, fill: 'rgba(232,93,138,0.03)' },        // 20-40% — pink
+    { r: 0.90, fill: 'rgba(255,255,255,0.02)' },       // 0-20% — faint
   ];
   // Draw filled zones from outside in so inner overlaps
   for (var i = zones.length - 1; i >= 0; i--) {
@@ -1246,7 +1256,8 @@ function initSwipeClose(sheetEl, closeFn) {
     currentY = e.touches[0].clientY - startY;
     if (currentY < 0) currentY = 0;
     if (currentY > 8) {
-      sheetEl.style.transform = 'translateY(' + currentY + 'px)';
+      var tx = isDesktop ? 'translateX(-50%) ' : '';
+      sheetEl.style.transform = tx + 'translateY(' + currentY + 'px)';
     }
   }, {passive: true});
 
@@ -1413,7 +1424,11 @@ async function openRadarPerson(userId) {
     var isA = p.is_anon;
     var name = isA ? 'Anonym bruger' : (p.name || '?');
     var ini = isA ? '?' : name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-    document.getElementById('rp-avatar').textContent = ini;
+    var rpAvEl = document.getElementById('rp-avatar');
+    if (rpAvEl) {
+      if (p.avatar_url && !isA) { rpAvEl.innerHTML = '<img src="'+p.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; rpAvEl.style.overflow = 'hidden'; }
+      else { rpAvEl.textContent = ini; }
+    }
     document.getElementById('rp-name').textContent = name;
     document.getElementById('rp-sub').textContent = isA ? '' : (p.title || '');
     // Check live presence
@@ -1547,15 +1562,16 @@ async function loadMessages() {
 
     // Load partner profiles
     const pIds = partners.map(p => p.partnerId);
-    const { data: profiles } = await sb.from('profiles').select('id,name,title').in('id', pIds);
+    const { data: profiles } = await sb.from('profiles').select('id,name,title,avatar_url').in('id', pIds);
     const profileMap = Object.fromEntries((profiles||[]).map(p=>[p.id,p]));
 
     list.innerHTML = partners.map(({ partnerId, lastMsg }) => {
       const p = profileMap[partnerId] || {};
       const initials = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const isUnread = lastMsg.receiver_id === currentUser.id && !lastMsg.read_at;
+      const convAvatar = p.avatar_url ? '<div class="avatar" style="width:42px;height:42px;overflow:hidden;border-radius:50%"><img src="'+p.avatar_url+'" style="width:100%;height:100%;object-fit:cover"></div>' : '<div class="avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">'+initials+'</div>';
       return `<div class="card flex-row-center" data-action="openChat" data-id="${partnerId}" data-conv-id="${partnerId}">
-        <div class="avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">${initials}</div>
+        ${convAvatar}
         <div style="flex:1">
           <div class="${isUnread?'fw-700':'fw-600'} fs-09">${escHtml(p.name||'Ukendt')}</div>
           <div class="fs-078 text-muted text-truncate">${escHtml(lastMsg.content||'')}</div>
@@ -1571,7 +1587,7 @@ async function openChat(userId, fromScreen) {
   if (isBlocked(userId)) { showToast('Denne bruger er blokeret'); return; }
   try {
     currentChatUser = userId;
-    const { data: p } = await sb.from('profiles').select('name,title').eq('id', userId).single();
+    const { data: p } = await sb.from('profiles').select('name,title,avatar_url').eq('id', userId).single();
     currentChatName = p?.name || 'Ukendt';
     document.getElementById('chat-name').textContent = currentChatName;
     document.getElementById('chat-role').textContent = p?.title || '';
@@ -1919,7 +1935,11 @@ async function loadProfile() {
     if (!currentProfile) return;
 
     const initials = (currentProfile.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    document.getElementById('my-avatar').textContent = initials;
+    var myAvEl = document.getElementById('my-avatar');
+    if (myAvEl) {
+      if (currentProfile.avatar_url) { myAvEl.innerHTML = '<img src="'+currentProfile.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+      else { myAvEl.textContent = initials; }
+    }
     document.getElementById('my-name').textContent = currentProfile.name || '...';
     document.getElementById('my-role').textContent = currentProfile.title || '';
     document.getElementById('my-keywords').innerHTML = (currentProfile.keywords||[]).map(k=>`<span class="tag">${escHtml(k)}</span>`).join('');
@@ -2006,7 +2026,7 @@ async function loadSavedContacts() {
     // Fetch profiles separately — no FK dependency
     const contactIds = saved.map(s => s.contact_id);
     const { data: profiles, error: profErr } = await sb.from('profiles')
-      .select('id, name, title, keywords, workplace').in('id', contactIds);
+      .select('id, name, title, keywords, workplace, avatar_url').in('id', contactIds);
 
     if (profErr) console.error('loadSavedContacts profiles error:', profErr);
     const profileMap = {};
@@ -2034,7 +2054,7 @@ async function loadSavedContacts() {
       return `<div class="card saved-card" style="padding:0.7rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="bcOpenPerson('${p.id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${col}','screen-profile')">
         <div class="flex-row-center" style="gap:0.7rem">
           <div class="saved-avatar-wrap" style="position:relative;flex-shrink:0">
-            <div class="avatar" style="background:${col};width:42px;height:42px;font-size:0.75rem">${ini}</div>
+            ${p.avatar_url ? '<div class="avatar" style="width:42px;height:42px;overflow:hidden;border-radius:50%"><img src="'+p.avatar_url+'" style="width:100%;height:100%;object-fit:cover"></div>' : '<div class="avatar" style="background:'+col+';width:42px;height:42px;font-size:0.75rem">'+ini+'</div>'}
             ${stars}
           </div>
           <div style="flex:1;min-width:0">
@@ -2075,8 +2095,11 @@ function renderSavedStoryBar(saved, profileMap) {
     var firstName = (p.name||'?').split(' ')[0];
     var starCount = starGet(s.contact_id);
     var starBadge = starCount > 0 ? '<div class="saved-story-stars">' + '★'.repeat(starCount) + '</div>' : '';
+    var storyAvatar = p.avatar_url ?
+      '<div class="saved-story-avatar" style="overflow:hidden"><img src="' + p.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>' :
+      '<div class="saved-story-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>';
     return '<div class="saved-story-item" onclick="openPerson(\'' + p.id + '\',\'screen-home\')">' +
-      '<div class="saved-story-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>' +
+      storyAvatar +
       starBadge +
       '<div class="saved-story-name">' + escHtml(firstName) + '</div></div>';
   }).join('');
@@ -2143,7 +2166,7 @@ async function loadProfileInvitations() {
 
     // Fetch sender profiles separately — no FK dependency
     const senderIds = [...new Set(invites.map(i => i.from_user_id))];
-    const { data: profiles } = await sb.from('profiles').select('id, name, title, keywords').in('id', senderIds);
+    const { data: profiles } = await sb.from('profiles').select('id, name, title, keywords, avatar_url').in('id', senderIds);
     const profileMap = {};
     (profiles || []).forEach(p => { profileMap[p.id] = p; });
 
@@ -3856,7 +3879,7 @@ async function loadNotifications() {
 
       if (newMembers && newMembers.length > 0) {
         const userIds = [...new Set(newMembers.map(m => m.user_id))];
-        const { data: profiles } = await sb.from('profiles').select('id,name').in('id', userIds);
+        const { data: profiles } = await sb.from('profiles').select('id,name,avatar_url').in('id', userIds);
         const pMap = Object.fromEntries((profiles||[]).map(p=>[p.id,p]));
         newMembers.forEach(m => {
           const p = pMap[m.user_id] || {};
@@ -4071,7 +4094,7 @@ async function bcLoadMessages() {
 
     // Hent unikke profiler separat
     const userIds = [...new Set(msgs.map(m => m.user_id))];
-    const { data: profiles } = await sb.from('profiles').select('id, name, title').in('id', userIds);
+    const { data: profiles } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', userIds);
     const profileMap = {};
     (profiles || []).forEach(p => profileMap[p.id] = p);
 
@@ -4146,7 +4169,7 @@ var _profileCache = {};
 
 async function getCachedProfile(userId) {
   if (_profileCache[userId]) return _profileCache[userId];
-  var { data: p } = await sb.from('profiles').select('name,title').eq('id', userId).single();
+  var { data: p } = await sb.from('profiles').select('name,title,avatar_url').eq('id', userId).single();
   if (p) _profileCache[userId] = p;
   return p || {};
 }
@@ -4463,7 +4486,7 @@ async function bcLoadMembers() {
 
     // Hent profiler separat
     const userIds = members.map(m => m.user_id);
-    const { data: profiles } = await sb.from('profiles').select('id, name, title').in('id', userIds);
+    const { data: profiles } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', userIds);
     const profileMap = {};
     (profiles || []).forEach(p => profileMap[p.id] = p);
 
@@ -4593,7 +4616,7 @@ async function openInviteModal(bubbleId) {
       list.innerHTML = '<div style="text-align:center;padding:2rem;font-size:0.78rem;color:var(--muted)">Du har ingen gemte kontakter endnu.<br>Gem profiler fra radaren f\u00f8rst.</div>';
       return;
     }
-    var r2 = await sb.from('profiles').select('id,name,title,keywords').in('id', contactIds);
+    var r2 = await sb.from('profiles').select('id,name,title,keywords,avatar_url').in('id', contactIds);
     var profiles = r2.data || [];
     var r3 = await sb.from('bubble_members').select('user_id').eq('bubble_id', bubbleId);
     var memberIds = (r3.data || []).map(function(m) { return m.user_id; });
@@ -4674,19 +4697,25 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
   const initials = (name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('ps-avatar').style.background = color;
   document.getElementById('ps-avatar').textContent = initials;
+  document.getElementById('ps-avatar').style.overflow = 'hidden';
   document.getElementById('ps-name').textContent = name || 'Ukendt';
   document.getElementById('ps-sub').textContent = title || '';
   document.getElementById('ps-bio').textContent = '';
   document.getElementById('ps-bubbleup-btn').style.display = 'flex';
   document.getElementById('ps-bubbleup-confirm').classList.remove('show');
-  // Fetch full profile for bio + LinkedIn
+  // Fetch full profile for bio + LinkedIn + avatar
   const liBtn = document.getElementById('ps-linkedin-btn');
   liBtn.style.display = 'none';
-  sb.from('profiles').select('bio,linkedin,workplace').eq('id', userId).single().then(({data}) => {
+  sb.from('profiles').select('bio,linkedin,workplace,avatar_url').eq('id', userId).single().then(({data}) => {
     if (data?.bio) document.getElementById('ps-bio').textContent = data.bio;
     var subEl = document.getElementById('ps-sub');
     if (subEl && data?.workplace) subEl.textContent = (title || '') + (title && data.workplace ? ' · ' : '') + (data.workplace || '');
     if (data?.linkedin) { liBtn.href = data.linkedin.startsWith('http') ? data.linkedin : 'https://' + data.linkedin; liBtn.style.display = 'flex'; }
+    // Show avatar photo if available
+    var psAv = document.getElementById('ps-avatar');
+    if (psAv && data?.avatar_url) {
+      psAv.innerHTML = '<img src="' + data.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    }
   });
   // Store userId and fromScreen
   document.getElementById('person-sheet-el').dataset.userId = userId;
@@ -4722,7 +4751,7 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
 
 async function dmOpenPersonSheet(userId) {
   try {
-    var { data: p } = await sb.from('profiles').select('name,title').eq('id', userId).single();
+    var { data: p } = await sb.from('profiles').select('name,title,avatar_url').eq('id', userId).single();
     bcOpenPerson(userId, p?.name || 'Ukendt', p?.title || '', 'linear-gradient(135deg,#8B7FFF,#E85D8A)', 'screen-chat');
   } catch(e) { logError('dmOpenPersonSheet', e); }
 }
@@ -4781,10 +4810,19 @@ async function psBlockUser() {
   } catch(e) { logError('psBlockUser', e, { blocked: userId }); showToast('Fejl: ' + (e.message || 'ukendt')); }
 }
 
+var _reportConfirm = null;
 async function psReportUser() {
   var userId = document.getElementById('person-sheet-el')?.dataset?.userId;
   var userName = document.getElementById('person-sheet-el')?.dataset?.userName || 'bruger';
   if (!userId || !currentUser) return;
+  // Confirm
+  if (_reportConfirm !== userId) {
+    _reportConfirm = userId;
+    showToast('Rapportér ' + userName + '? Tryk igen for at bekræfte');
+    setTimeout(function() { _reportConfirm = null; }, 4000);
+    return;
+  }
+  _reportConfirm = null;
   try {
     await sb.from('reports').insert({
       reporter_id: currentUser.id,
