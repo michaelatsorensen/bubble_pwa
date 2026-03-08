@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-09T03:30:00';
-const BUILD_VERSION  = 'v1.3.9';
+const BUILD_TIMESTAMP = '2026-03-09T04:15:00';
+const BUILD_VERSION  = 'v1.4.1';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -152,10 +152,14 @@ function confirmInput(btn) {
 
 // Auto-wrap all designated inputs with confirm buttons on boot
 function initInputConfirmButtons() {
+  // All text inputs that get a confirm ✓ button
   var ids = [
     'ob-name','ob-title','ob-workplace','ob-bio','ob-linkedin',
     'ep-name','ep-title','ep-workplace','ep-bio','ep-linkedin',
-    'cb-name','cb-desc','eb-name','eb-desc'
+    'cb-name','cb-desc','cb-location',
+    'eb-name','eb-desc','eb-location',
+    'login-email','login-password',
+    'signup-name','signup-email','signup-password','signup-title'
   ];
   ids.forEach(function(id) {
     var input = document.getElementById(id);
@@ -190,6 +194,13 @@ function initInputConfirmButtons() {
           if (b && input.value.trim()) { b.classList.add('confirmed'); b.innerHTML = '✓'; }
         }
       });
+    }
+  });
+
+  // Also set enterkeyhint on ALL remaining inputs (chips, search, chat)
+  document.querySelectorAll('input:not([enterkeyhint])').forEach(function(inp) {
+    if (inp.type !== 'file' && inp.type !== 'hidden') {
+      inp.setAttribute('enterkeyhint', 'done');
     }
   });
 }
@@ -447,6 +458,22 @@ function updateHomeAvatar() {
   var myAv = document.getElementById('my-avatar');
   if (homeAv) { if (url) homeAv.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else homeAv.textContent = ini; }
   if (myAv) { if (url) myAv.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else myAv.textContent = ini; }
+}
+
+function toggleProfileTags() {
+  var kwEl = document.getElementById('my-keywords');
+  var btn = document.getElementById('my-tags-toggle');
+  if (!kwEl || !btn) return;
+  if (kwEl.classList.contains('profile-tags-collapsed')) {
+    kwEl.classList.remove('profile-tags-collapsed');
+    kwEl.classList.add('profile-tags-expanded');
+    btn.textContent = 'Skjul tags ▴';
+  } else {
+    kwEl.classList.remove('profile-tags-expanded');
+    kwEl.classList.add('profile-tags-collapsed');
+    var count = (currentProfile?.keywords || []).length;
+    btn.textContent = count + ' tags · Vis alle ▾';
+  }
 }
 
 async function handleLogin() {
@@ -2125,7 +2152,20 @@ async function loadProfile() {
     }
     document.getElementById('my-name').textContent = currentProfile.name || '...';
     document.getElementById('my-role').textContent = currentProfile.title || '';
-    document.getElementById('my-keywords').innerHTML = (currentProfile.keywords||[]).map(k=>`<span class="tag">${escHtml(k)}</span>`).join('');
+    var kwEl = document.getElementById('my-keywords');
+    var kws = currentProfile.keywords || [];
+    kwEl.innerHTML = kws.map(k=>`<span class="tag">${escHtml(k)}</span>`).join('');
+    kwEl.className = 'profile-tags-collapsed';
+    var toggleBtn = document.getElementById('my-tags-toggle');
+    if (toggleBtn) {
+      if (kws.length > 8) {
+        toggleBtn.style.display = 'block';
+        toggleBtn.textContent = kws.length + ' tags · Vis alle ▾';
+      } else {
+        toggleBtn.style.display = 'none';
+        kwEl.className = 'profile-tags-expanded';
+      }
+    }
 
     isAnon = currentProfile.is_anon || false;
     updateAnonToggle();
@@ -2750,13 +2790,14 @@ function handleChipInput(e, arrayName) {
   if (e.key === 'Enter' || e.key === ',') {
     e.preventDefault();
     const val = e.target.value.trim().replace(/,/g,'');
-    if (!val) return;
+    if (!val) { e.target.blur(); return; }
     const arr = arrayName === 'cb-chips' ? cbChips : arrayName === 'ep-chips' ? epChips : arrayName === 'eb-chips' ? ebChips : arrayName === 'ob-chips' ? obChips : arrayName === 'ob-dyn-chips' ? obDynChips : arrayName === 'ep-dyn-chips' ? epDynChips : epDynChips;
     const containerId = arrayName === 'cb-chips' ? 'cb-chips-container' : arrayName === 'ep-chips' ? 'ep-chips-container' : arrayName === 'eb-chips' ? 'eb-chips-container' : arrayName === 'ob-chips' ? 'ob-chips-container' : arrayName === 'ob-dyn-chips' ? 'ob-dyn-chips-container' : arrayName === 'ep-dyn-chips' ? 'ep-dyn-chips-container' : 'ep-dyn-chips-container';
     const inputId = arrayName === 'cb-chips' ? 'cb-chip-input' : arrayName === 'ep-chips' ? 'ep-chip-input' : arrayName === 'eb-chips' ? 'eb-chip-input' : arrayName === 'ob-chips' ? 'ob-chip-input' : arrayName === 'ob-dyn-chips' ? 'ob-dyn-chip-input' : arrayName === 'ep-dyn-chips' ? 'ep-dyn-chip-input' : 'ep-dyn-chip-input';
     if (!arr.includes(val)) arr.push(val);
     e.target.value = '';
     renderChips(arrayName, arr, containerId, inputId);
+    flashConfirmBtn(e.target);
   }
 }
 
@@ -2764,13 +2805,24 @@ function addChipFromBtn(inputId, arrayName) {
   var inp = document.getElementById(inputId);
   if (!inp) return;
   var val = inp.value.trim().replace(/,/g,'');
-  if (!val) { inp.focus(); return; }
+  if (!val) { inp.blur(); return; }
   var arr = arrayName === 'cb-chips' ? cbChips : arrayName === 'ep-chips' ? epChips : arrayName === 'eb-chips' ? ebChips : arrayName === 'ob-chips' ? obChips : arrayName === 'ob-dyn-chips' ? obDynChips : arrayName === 'ep-dyn-chips' ? epDynChips : epDynChips;
   var containerId = arrayName === 'cb-chips' ? 'cb-chips-container' : arrayName === 'ep-chips' ? 'ep-chips-container' : arrayName === 'eb-chips' ? 'eb-chips-container' : arrayName === 'ob-chips' ? 'ob-chips-container' : arrayName === 'ob-dyn-chips' ? 'ob-dyn-chips-container' : arrayName === 'ep-dyn-chips' ? 'ep-dyn-chips-container' : 'ep-dyn-chips-container';
   if (!arr.includes(val)) arr.push(val);
   inp.value = '';
   renderChips(arrayName, arr, containerId, inputId);
-  inp.focus();
+  // Flash the ✓ button green
+  var btn = inp.parentElement?.querySelector('.ob-cat-custom-btn');
+  if (btn) { btn.style.background = '#10B981'; setTimeout(function(){ btn.style.background = ''; }, 600); }
+}
+
+// Flash green on any nearby confirm button
+function flashConfirmBtn(input) {
+  var btn = input?.parentElement?.querySelector('.ob-cat-custom-btn, .input-confirm-btn');
+  if (btn) {
+    btn.classList.add('confirmed');
+    setTimeout(function() { btn.classList.remove('confirmed'); }, 800);
+  }
 }
 
 

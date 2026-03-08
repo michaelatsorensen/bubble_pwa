@@ -880,56 +880,64 @@
     <button class="btn-sm btn-ghost" onclick="openEditProfile()" style="font-size:0.75rem;padding:0.35rem 0.75rem">Rediger</button>
   </div>
 
-  <!-- Profile hero (compact) -->
-  <div class="profile-hero" style="flex-shrink:0;padding:0.8rem 1.1rem 0.5rem;display:flex;align-items:center;gap:0.8rem">
-    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:white;box-shadow:0 4px 16px rgba(139,127,255,0.3);border:2px solid rgba(255,255,255,0.08);flex-shrink:0;overflow:hidden;cursor:pointer" id="my-avatar" onclick="viewAvatarFull(this)">?</div>
-    <div style="flex:1;min-width:0">
-      <div style="font-size:1.05rem;font-weight:800;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-name">...</div>
-      <div style="font-size:0.78rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-role">...</div>
+  <!-- Scrollable area: hero + tags + nudge scroll with content, tabs stick -->
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column">
+
+    <!-- Profile hero (compact, left-aligned) -->
+    <div class="profile-hero" style="flex-shrink:0;padding:0.6rem 1.1rem 0.4rem;display:flex;align-items:center;gap:0.8rem">
+      <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:white;box-shadow:0 4px 16px rgba(139,127,255,0.3);border:2px solid rgba(255,255,255,0.08);flex-shrink:0;overflow:hidden;cursor:pointer" id="my-avatar" onclick="viewAvatarFull(this)">?</div>
+      <div style="flex:1;min-width:0;text-align:left">
+        <div style="font-size:1rem;font-weight:800;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-name">...</div>
+        <div style="font-size:0.75rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-role">...</div>
+      </div>
     </div>
-  </div>
-  <div style="padding:0 1.1rem 0.5rem">
-    <div id="my-keywords" style="margin-bottom:0.3rem"></div>
+
+    <!-- Tags: collapsed 1 line + "Vis alle" toggle -->
+    <div style="padding:0 1.1rem">
+      <div id="my-keywords" class="profile-tags-collapsed" style="margin-bottom:0"></div>
+      <button type="button" id="my-tags-toggle" onclick="toggleProfileTags()" class="collapse-btn" style="display:none;padding:0.25rem 0;font-size:0.65rem;font-weight:600;color:var(--accent);background:none;border:none;font-family:'Outfit',sans-serif;cursor:pointer;width:100%;text-align:left"></button>
+    </div>
+
     <!-- Profile completeness nudge -->
-    <div id="profile-nudge" style="display:none;padding:0.5rem 0.7rem;background:rgba(245,195,90,0.08);border:1px solid rgba(245,195,90,0.15);border-radius:10px;font-size:0.72rem;display:flex;gap:0.4rem;align-items:center;margin-bottom:0.3rem">
-      <span style="flex-shrink:0">💡</span>
-      <span id="profile-nudge-text" style="color:var(--text-secondary)"></span>
-      <button onclick="openEditProfile()" style="flex-shrink:0;background:none;border:1px solid rgba(245,195,90,0.25);border-radius:8px;padding:0.2rem 0.5rem;font-size:0.65rem;font-weight:600;color:var(--gold);cursor:pointer;font-family:inherit">Udfyld</button>
+    <div style="padding:0 1.1rem 0.3rem">
+      <div id="profile-nudge" style="display:none;padding:0.45rem 0.7rem;background:rgba(245,195,90,0.08);border:1px solid rgba(245,195,90,0.15);border-radius:10px;font-size:0.72rem;display:flex;gap:0.4rem;align-items:center">
+        <span style="flex-shrink:0">💡</span>
+        <span id="profile-nudge-text" style="color:var(--text-secondary)"></span>
+        <button onclick="openEditProfile()" style="flex-shrink:0;background:none;border:1px solid rgba(245,195,90,0.25);border-radius:8px;padding:0.2rem 0.5rem;font-size:0.65rem;font-weight:600;color:var(--gold);cursor:pointer;font-family:inherit">Udfyld</button>
+      </div>
     </div>
-  </div>
 
-  <!-- Tabs (sticky) -->
-  <div class="bubble-tabs" style="flex-shrink:0;position:sticky;top:0;z-index:5;background:var(--bg)">
-    <button class="bubble-tab active" id="prof-tab-saved" onclick="profSwitchTab('saved')">Gemte <span class="bubble-tab-badge" id="saved-count" style="display:none">0</span></button>
-    <button class="bubble-tab" id="prof-tab-bubbles" onclick="profSwitchTab('bubbles')">Bobler</button>
-    <button class="bubble-tab" id="prof-tab-invites" onclick="profSwitchTab('invites')">Invitationer <span class="bubble-tab-badge" id="invite-count" style="display:none">0</span></button>
-    <button class="bubble-tab" id="prof-tab-settings" onclick="profSwitchTab('settings')">Indstillinger</button>
-  </div>
-
-  <!-- SAVED TAB -->
-  <div id="prof-panel-saved" style="display:flex;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 8.5rem">
-    <div id="saved-contacts"></div>
-  </div>
-
-  <!-- BUBBLES TAB -->
-  <div id="prof-panel-bubbles" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 8.5rem">
-    <div id="profile-bubbles"><div class="spinner"></div></div>
-    
-  </div>
-
-  <!-- INVITATIONS TAB -->
-  <div id="prof-panel-invites" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem">
-    <div id="profile-invitations"></div>
-  </div>
-
-  <!-- SETTINGS TAB -->
-  <div id="prof-panel-settings" style="display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 8rem">
-
-    <div class="section-label" style="margin-bottom:0.25rem">Hjem-skærm</div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
-      <div class="fs-068 text-muted" id="hs-preview-text">Viser: ...</div>
-      <button class="btn-sm btn-ghost" onclick="hsReset()" style="font-size:0.62rem;padding:0.2rem 0.5rem">Nulstil</button>
+    <!-- Tabs (sticky) -->
+    <div class="bubble-tabs" style="flex-shrink:0;position:sticky;top:0;z-index:5;background:var(--bg)">
+      <button class="bubble-tab active" id="prof-tab-saved" onclick="profSwitchTab('saved')">Gemte <span class="bubble-tab-badge" id="saved-count" style="display:none">0</span></button>
+      <button class="bubble-tab" id="prof-tab-bubbles" onclick="profSwitchTab('bubbles')">Bobler</button>
+      <button class="bubble-tab" id="prof-tab-invites" onclick="profSwitchTab('invites')">Invitationer <span class="bubble-tab-badge" id="invite-count" style="display:none">0</span></button>
+      <button class="bubble-tab" id="prof-tab-settings" onclick="profSwitchTab('settings')">Indstillinger</button>
     </div>
+
+    <!-- SAVED TAB -->
+    <div id="prof-panel-saved" style="display:flex;flex-direction:column;flex:1;padding:0.75rem 1.1rem 8.5rem">
+      <div id="saved-contacts"></div>
+    </div>
+
+    <!-- BUBBLES TAB -->
+    <div id="prof-panel-bubbles" style="display:none;flex-direction:column;flex:1;padding:0.75rem 1.1rem 8.5rem">
+      <div id="profile-bubbles"><div class="spinner"></div></div>
+    </div>
+
+    <!-- INVITATIONS TAB -->
+    <div id="prof-panel-invites" style="display:none;flex-direction:column;flex:1;padding:0.75rem 1.1rem 6rem">
+      <div id="profile-invitations"></div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div id="prof-panel-settings" style="display:none;flex-direction:column;flex:1;padding:0.75rem 1.1rem 8rem">
+
+      <div class="section-label" style="margin-bottom:0.25rem">Hjem-skærm</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+        <div class="fs-068 text-muted" id="hs-preview-text">Viser: ...</div>
+        <button class="btn-sm btn-ghost" onclick="hsReset()" style="font-size:0.62rem;padding:0.2rem 0.5rem">Nulstil</button>
+      </div>
     <div class="settings-row" style="border-bottom:1px solid var(--glass-border-subtle)">
       <div style="font-size:0.82rem;font-weight:600">Live Bubble</div>
       <div class="settings-toggle" id="hs-toggle-live" onclick="hsToggle('live')" data-on="true"><div class="settings-toggle-knob"></div></div>
@@ -972,7 +980,9 @@
     <button onclick="handleLogout()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(232,93,138,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent2);cursor:pointer">Log ud</button>
 
     <div style="text-align:center;margin-top:2rem;margin-bottom:1rem;font-size:0.62rem;color:var(--muted)">Bubble v1.0</div>
-  </div>
+    </div>
+
+  </div><!-- /scroll area -->
 
   <div class="bottom-nav">
     <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
@@ -1018,7 +1028,7 @@
       <div class="input-label">Nøgleord</div>
       <div class="chips-container" id="eb-chips-container" onclick="document.getElementById('eb-chip-input').focus()">
         <input class="chip-input" id="eb-chip-input" placeholder="Tilføj nøgleord..." onkeydown="handleChipInput(event,'eb-chips')">
-              <button type="button" onclick="addChipFromBtn('eb-chip-input','eb-chips')" class="chip-add-btn">+</button>
+              <button type="button" onclick="addChipFromBtn('eb-chip-input','eb-chips')" class="ob-cat-custom-btn" title="Tilføj">✓</button>
       </div>
     </div>
     <div class="input-group">
@@ -1066,7 +1076,7 @@
       <div class="input-label">Nøgleord (tryk Enter for at tilføje)</div>
       <div class="chips-container" id="cb-chips-container" onclick="document.getElementById('cb-chip-input').focus()">
         <input class="chip-input" id="cb-chip-input" placeholder="Tilføj nøgleord..." onkeydown="handleChipInput(event,'cb-chips')">
-              <button type="button" onclick="addChipFromBtn('cb-chip-input','cb-chips')" class="chip-add-btn">+</button>
+              <button type="button" onclick="addChipFromBtn('cb-chip-input','cb-chips')" class="ob-cat-custom-btn" title="Tilføj">✓</button>
       </div>
     </div>
     <div class="input-group">
