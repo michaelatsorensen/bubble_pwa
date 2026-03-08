@@ -1497,3 +1497,10 @@ a.person-action-btn { text-decoration:none; }
 .ps-mod-btn .ico { width:14px; height:14px; }
 .ps-mod-btn.danger { color:var(--accent2); border-color:rgba(232,93,138,0.15); }
 .ps-mod-btn.danger:active { background:rgba(232,93,138,0.08); border-color:rgba(232,93,138,0.3); }
+
+/* ═══ SHOW MORE / FEWER TAGS ═══ */
+.ob-show-more { display:block; width:100%; background:none; border:none; font-family:'Outfit',sans-serif; font-size:0.7rem; font-weight:600; cursor:pointer; padding:0.4rem 0 0.1rem; text-align:left; opacity:0.7; transition:opacity 0.2s; }
+.ob-show-more:hover, .ob-show-more:active { opacity:1; }
+
+/* ═══ SAVED STORY BAR STARS ═══ */
+.saved-story-stars { font-size:0.5rem; color:var(--accent); text-align:center; margin-top:-0.1rem; letter-spacing:0.05em; }

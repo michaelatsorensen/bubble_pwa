@@ -263,11 +263,66 @@ async function loadCurrentProfile() {
   } catch(e) { logError("loadCurrentProfile", e); showToast(e.message || "Ukendt fejl"); }
 }
 
+// ── Avatar helper: returns <img> or initials ──
+function avatarHtml(name, avatarUrl, size, gradient) {
+  size = size || 42;
+  gradient = gradient || 'linear-gradient(135deg,#8B7FFF,#E85D8A)';
+  var ini = (name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+  if (avatarUrl) {
+    return '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="'+avatarUrl+'" style="width:100%;height:100%;object-fit:cover" alt=""></div>';
+  }
+  return '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+gradient+';display:flex;align-items:center;justify-content:center;font-size:'+(size*0.35)+'px;font-weight:700;color:white;flex-shrink:0">'+ini+'</div>';
+}
+
+// ── Avatar upload ──
+async function handleAvatarUpload(input) {
+  try {
+    var file = input.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { showToast('Maks 2MB'); input.value = ''; return; }
+    if (!file.type.startsWith('image/')) { showToast('Kun billeder (JPG/PNG)'); input.value = ''; return; }
+    showToast('Uploader billede...');
+
+    var path = 'avatars/' + currentUser.id + '/' + Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    var { error: upErr } = await sb.storage.from('bubble-files').upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type });
+    if (upErr) { showToast('Upload fejlede: ' + (upErr.message || 'ukendt')); input.value = ''; return; }
+
+    var { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
+    var avatarUrl = urlData.publicUrl;
+
+    var { error: saveErr } = await sb.from('profiles').update({ avatar_url: avatarUrl }).eq('id', currentUser.id);
+    if (saveErr) { showToast('Fejl ved gem: ' + saveErr.message); return; }
+
+    currentProfile.avatar_url = avatarUrl;
+    // Update preview
+    var img = document.getElementById('ep-avatar-img');
+    if (img) { img.src = avatarUrl; img.style.display = 'block'; }
+    // Update all visible avatars
+    updateAllAvatars();
+    showToast('Profilbillede opdateret! 📸');
+    input.value = '';
+  } catch(e) { logError('handleAvatarUpload', e); showToast('Upload fejl: ' + (e.message || 'ukendt')); }
+}
+
+function updateAllAvatars() {
+  var url = currentProfile?.avatar_url;
+  var ini = (currentProfile?.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+  // Home avatar
+  var homeAv = document.getElementById('home-avatar');
+  if (homeAv) { if (url) homeAv.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else homeAv.textContent = ini; }
+  // Profile avatar
+  var myAv = document.getElementById('my-avatar');
+  if (myAv) { if (url) myAv.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else myAv.textContent = ini; }
+}
+
 function updateHomeAvatar() {
   if (!currentProfile) return;
-  const initials = (currentProfile.name || '?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  document.getElementById('home-avatar').textContent = initials;
-  document.getElementById('my-avatar').textContent = initials;
+  var ini = (currentProfile.name || '?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  var url = currentProfile.avatar_url;
+  var homeAv = document.getElementById('home-avatar');
+  var myAv = document.getElementById('my-avatar');
+  if (homeAv) { if (url) homeAv.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else homeAv.textContent = ini; }
+  if (myAv) { if (url) myAv.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else myAv.textContent = ini; }
 }
 
 async function handleLogin() {
@@ -965,15 +1020,19 @@ function renderProximityDots() {
     var p = fil[i];
     var ini = (p.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
     var col = proxColors[i % proxColors.length];
-    var dist = (1 - p.relevance) * 0.7 + 0.15;
+    // Match-based positioning: 100% match = center (r=0), 0% match = edge (r=maxR*0.9)
+    // matchScore is 0-100, relevance is 0-1
+    var matchPct = p.matchScore || Math.round(p.relevance * 100);
+    var dist = (1 - matchPct / 100) * 0.88; // 100% → 0.0 (center), 0% → 0.88 (edge)
+    dist = Math.max(0.05, dist); // Never exactly center (that's the user)
     var r = dist * maxR;
-    var ang = (i * 2.399) + (Math.floor(p.relevance * 3) * 0.8);
+    var ang = (i * 2.399) + (matchPct * 0.03); // Golden angle spread + slight match-based offset
     var ix = cx + Math.cos(ang)*r - 17, iy = cy + Math.sin(ang)*r - 17;
-    var sz = p.relevance > 0.4 ? 36 : p.relevance > 0.15 ? 32 : 28;
+    var sz = matchPct >= 70 ? 38 : matchPct >= 40 ? 34 : 30; // Bigger dots for better matches
     var pos = findSafe(ix, iy, sz);
     placed.push({x:pos.x, y:pos.y, s:sz});
-    var op = (0.55 + p.relevance * 0.45).toFixed(2);
-    out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+pos.x.toFixed(1)+'px;top:'+pos.y.toFixed(1)+'px;background:'+col+';opacity:'+op+';font-size:'+(sz<32?'0.48':'0.52')+'rem" onclick="openRadarPerson(\''+p.id+'\')" data-id="'+p.id+'">'+escHtml(ini)+'</div>';
+    var op = (0.5 + (matchPct / 100) * 0.5).toFixed(2); // More opaque for better matches
+    out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+pos.x.toFixed(1)+'px;top:'+pos.y.toFixed(1)+'px;background:'+col+';opacity:'+op+';font-size:'+(sz<34?'0.48':'0.55')+'rem" onclick="openRadarPerson(\''+p.id+'\')" data-id="'+p.id+'">'+escHtml(ini)+'</div>';
   }
   av.innerHTML = out;
 }
@@ -995,12 +1054,18 @@ function drawProxRings(canvas) {
   var ctx = canvas.getContext('2d'); ctx.scale(2,2); ctx.clearRect(0,0,w,h);
   var cx = w/2, cy = h/2, maxR = Math.min(cx, cy);
 
-  // Dartboard zones — sart farvet fra center (best match) til edge (low match)
+  // Dartboard zones — 5 rings, each 20% match interval
+  // Ring 1 (center): 80-100% match — bullseye
+  // Ring 2: 60-80% — inner
+  // Ring 3: 40-60% — mid
+  // Ring 4: 20-40% — outer
+  // Ring 5 (edge): 0-20% — rim
   var zones = [
-    { r: 0.22, fill: 'rgba(139,127,255,0.10)' },  // bullseye — accent purple
-    { r: 0.42, fill: 'rgba(46,207,207,0.06)' },    // inner — teal
-    { r: 0.65, fill: 'rgba(232,93,138,0.04)' },    // mid — pink
-    { r: 0.88, fill: 'rgba(255,255,255,0.02)' },    // outer — faint white
+    { r: 0.18, fill: 'rgba(139,127,255,0.12)' },  // 80-100% — bullseye purple
+    { r: 0.36, fill: 'rgba(16,185,129,0.06)' },    // 60-80% — green
+    { r: 0.54, fill: 'rgba(46,207,207,0.05)' },    // 40-60% — teal
+    { r: 0.72, fill: 'rgba(232,93,138,0.03)' },    // 20-40% — pink
+    { r: 0.90, fill: 'rgba(255,255,255,0.02)' },    // 0-20% — faint
   ];
   // Draw filled zones from outside in so inner overlaps
   for (var i = zones.length - 1; i >= 0; i--) {
@@ -1943,8 +2008,11 @@ function renderSavedStoryBar(saved, profileMap) {
     var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     var col = colors[i % colors.length];
     var firstName = (p.name||'?').split(' ')[0];
+    var starCount = starGet(s.contact_id);
+    var starBadge = starCount > 0 ? '<div class="saved-story-stars">' + '★'.repeat(starCount) + '</div>' : '';
     return '<div class="saved-story-item" onclick="openPerson(\'' + p.id + '\',\'screen-home\')">' +
       '<div class="saved-story-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>' +
+      starBadge +
       '<div class="saved-story-name">' + escHtml(firstName) + '</div></div>';
   }).join('');
 }
@@ -2118,6 +2186,12 @@ function openEditProfile() {
   document.getElementById('ep-linkedin').value = currentProfile.linkedin || '';
   var wpEl = document.getElementById('ep-workplace');
   if (wpEl) wpEl.value = currentProfile.workplace || '';
+  // Avatar preview
+  var ini = (currentProfile.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+  var avIni = document.getElementById('ep-avatar-initials');
+  var avImg = document.getElementById('ep-avatar-img');
+  if (avIni) avIni.textContent = ini;
+  if (avImg) { if (currentProfile.avatar_url) { avImg.src = currentProfile.avatar_url; avImg.style.display = 'block'; } else { avImg.style.display = 'none'; } }
   // Tag picker
   epSelectedTags = [...(currentProfile.keywords || [])];
   epRenderSelectedTags();
@@ -3197,17 +3271,27 @@ var OB_LIFESTAGE_TAGS = {
   }
 };
 
+var OB_TAGS_INITIAL = 8; // Show 8 tags initially per category
+var _obExpandedCats = {};
+
 function obRenderCategories() {
   var el = document.getElementById('ob-tag-categories');
   if (!el) return;
 
-  // Filter tags by lifestage if selected, otherwise show all
   var filterMap = obLifestage ? OB_LIFESTAGE_TAGS[obLifestage] : null;
 
   el.innerHTML = Object.entries(TAG_CATEGORIES).map(function(entry) {
     var cat = entry[0], info = entry[1];
     var allTags = TAG_DATABASE[cat] || [];
     var tags = filterMap && filterMap[cat] ? filterMap[cat] : allTags;
+    var expanded = _obExpandedCats[cat];
+    var visibleTags = expanded ? tags : tags.slice(0, OB_TAGS_INITIAL);
+    var hasMore = tags.length > OB_TAGS_INITIAL;
+
+    // Move selected tags to front
+    var selected = visibleTags.filter(function(t) { return obSelectedTags.indexOf(t) >= 0; });
+    var unselected = visibleTags.filter(function(t) { return obSelectedTags.indexOf(t) < 0; });
+    var ordered = selected.concat(unselected);
 
     return '<div class="ob-cat-block">' +
       '<div class="ob-cat-header">' +
@@ -3216,14 +3300,16 @@ function obRenderCategories() {
       '<span class="tag-cat-count">' + tags.length + '</span>' +
       '</div>' +
       '<div class="ob-cat-tags">' +
-      tags.map(function(t) {
-        var selected = obSelectedTags.indexOf(t) >= 0;
-        return '<span class="tag-pick' + (selected ? ' selected' : '') + '" ' +
-          'style="border-color:' + info.color + '30;' + (selected ? 'background:' + info.color + '20' : '') + '" ' +
+      ordered.map(function(t) {
+        var sel = obSelectedTags.indexOf(t) >= 0;
+        return '<span class="tag-pick' + (sel ? ' selected' : '') + '" ' +
+          'style="border-color:' + info.color + '30;' + (sel ? 'background:' + info.color + '20' : '') + '" ' +
           'onclick="obTogglePickTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\',\'' + cat + '\',this)">' +
           escHtml(t) + '</span>';
       }).join('') +
       '</div>' +
+      (hasMore ? '<button type="button" class="ob-show-more" onclick="obToggleExpand(\'' + cat + '\')" style="color:' + info.color + '">' +
+        (expanded ? '− Vis færre' : '+ Vis alle ' + tags.length) + '</button>' : '') +
       '<div class="ob-cat-custom">' +
       '<div class="ob-cat-custom-row">' +
       '<input class="ob-cat-custom-input" placeholder="+ Tilføj egen..." ' +
@@ -3234,6 +3320,11 @@ function obRenderCategories() {
       '</div>' +
       '</div>';
   }).join('');
+}
+
+function obToggleExpand(cat) {
+  _obExpandedCats[cat] = !_obExpandedCats[cat];
+  obRenderCategories();
 }
 
 // ── Custom tag creation with dedup + basic filter ──
@@ -3384,12 +3475,22 @@ function epRenderSelectedTags() {
       '<span class="tag-chip-x" onclick="epRemoveTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\')">×</span></span>';
   }).join('');
 }
+var _epExpandedCats = {};
+
 function epRenderCategories() {
   var el = document.getElementById('ep-tag-categories');
   if (!el) return;
   el.innerHTML = Object.entries(TAG_CATEGORIES).map(function(entry) {
     var cat = entry[0], info = entry[1];
     var tags = TAG_DATABASE[cat] || [];
+    var expanded = _epExpandedCats[cat];
+    var visibleTags = expanded ? tags : tags.slice(0, OB_TAGS_INITIAL);
+    var hasMore = tags.length > OB_TAGS_INITIAL;
+
+    var selected = visibleTags.filter(function(t) { return epSelectedTags.indexOf(t) >= 0; });
+    var unselected = visibleTags.filter(function(t) { return epSelectedTags.indexOf(t) < 0; });
+    var ordered = selected.concat(unselected);
+
     return '<div class="ob-cat-block">' +
       '<div class="ob-cat-header">' +
       '<span class="tag-cat-dot" style="background:' + info.color + '"></span>' +
@@ -3397,20 +3498,27 @@ function epRenderCategories() {
       '<span class="tag-cat-count">' + tags.length + '</span>' +
       '</div>' +
       '<div class="ob-cat-tags">' +
-      tags.map(function(t) {
-        var selected = epSelectedTags.indexOf(t) >= 0;
-        return '<span class="tag-pick' + (selected ? ' selected' : '') + '" ' +
-          'style="border-color:' + info.color + '30;' + (selected ? 'background:' + info.color + '20' : '') + '" ' +
+      ordered.map(function(t) {
+        var sel = epSelectedTags.indexOf(t) >= 0;
+        return '<span class="tag-pick' + (sel ? ' selected' : '') + '" ' +
+          'style="border-color:' + info.color + '30;' + (sel ? 'background:' + info.color + '20' : '') + '" ' +
           'onclick="epTogglePickTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\',\'' + cat + '\',this)">' +
           escHtml(t) + '</span>';
       }).join('') +
       '</div>' +
+      (hasMore ? '<button type="button" class="ob-show-more" onclick="epToggleExpand(\'' + cat + '\')" style="color:' + info.color + '">' +
+        (expanded ? '− Vis færre' : '+ Vis alle ' + tags.length) + '</button>' : '') +
       '<div class="ob-cat-custom"><div class="ob-cat-custom-row">' +
       '<input class="ob-cat-custom-input" placeholder="+ Tilføj egen..." ' +
       'onkeydown="epCustomTag(event,\'' + cat + '\',this)" data-cat="' + cat + '">' +
       '<button type="button" class="ob-cat-custom-btn" onclick="epCustomTagBtn(\'' + cat + '\',this)">✓</button>' +
       '</div></div></div>';
   }).join('');
+}
+
+function epToggleExpand(cat) {
+  _epExpandedCats[cat] = !_epExpandedCats[cat];
+  epRenderCategories();
 }
 function epCustomTagBtn(cat, btn) {
   var input = btn.parentElement.querySelector('.ob-cat-custom-input');
