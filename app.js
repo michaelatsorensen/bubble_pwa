@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-09T00:15:00';
-const BUILD_VERSION  = 'v1.2.5';
+const BUILD_TIMESTAMP = '2026-03-09T00:45:00';
+const BUILD_VERSION  = 'v1.2.7';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -142,6 +142,10 @@ function initSupabase() {
 // ══════════════════════════════════════════════════════════
 function goTo(screenId) {
   console.debug('[nav] goTo:', screenId);
+
+  // Force close any lingering sheets/overlays
+  document.querySelectorAll('.person-sheet.open,.person-sheet-overlay.open,.radar-person-sheet.open,.radar-person-overlay.open').forEach(function(el) { el.classList.remove('open'); el.style.transform = ''; });
+
   // Cleanup: unsubscribe when leaving chat screens
   const prev = document.querySelector('.screen.active');
   if (prev) {
@@ -358,6 +362,24 @@ function updateAllAvatars() {
   // Profile avatar
   var myAv = document.getElementById('my-avatar');
   if (myAv) { if (url) myAv.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else myAv.textContent = ini; }
+}
+
+// Full-view avatar overlay
+function viewAvatarFull(el) {
+  var img = el.querySelector('img');
+  if (!img || !img.src) return;
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
+  overlay.onclick = function() { overlay.remove(); };
+  var bigImg = document.createElement('img');
+  bigImg.src = img.src;
+  bigImg.style.cssText = 'max-width:90vw;max-height:80vh;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.5);object-fit:contain';
+  overlay.appendChild(bigImg);
+  var closeBtn = document.createElement('div');
+  closeBtn.textContent = '✕';
+  closeBtn.style.cssText = 'position:absolute;top:1.5rem;right:1.5rem;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);color:white;display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer';
+  overlay.appendChild(closeBtn);
+  document.body.appendChild(overlay);
 }
 
 function updateHomeAvatar() {
@@ -1256,8 +1278,7 @@ function initSwipeClose(sheetEl, closeFn) {
     currentY = e.touches[0].clientY - startY;
     if (currentY < 0) currentY = 0;
     if (currentY > 8) {
-      var tx = isDesktop ? 'translateX(-50%) ' : '';
-      sheetEl.style.transform = tx + 'translateY(' + currentY + 'px)';
+      sheetEl.style.transform = 'translateY(' + currentY + 'px)';
     }
   }, {passive: true});
 
@@ -1589,10 +1610,14 @@ async function openChat(userId, fromScreen) {
     currentChatUser = userId;
     const { data: p } = await sb.from('profiles').select('name,title,avatar_url').eq('id', userId).single();
     currentChatName = p?.name || 'Ukendt';
+    window._chatPartnerAvatar = p?.avatar_url || null;
     document.getElementById('chat-name').textContent = currentChatName;
     document.getElementById('chat-role').textContent = p?.title || '';
     var dmAvatar = document.getElementById('dm-topbar-avatar');
-    if (dmAvatar) dmAvatar.textContent = (currentChatName).split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    if (dmAvatar) {
+      if (p?.avatar_url) { dmAvatar.innerHTML = '<img src="'+p.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+      else { dmAvatar.textContent = (currentChatName).split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); }
+    }
     const backBtn = document.getElementById('dm-back-btn');
     if (backBtn) backBtn.onclick = () => goTo(fromScreen || 'screen-messages');
     goTo('screen-chat');
@@ -1630,11 +1655,18 @@ function dmRenderMsg(m) {
     bubble = `<div class="msg-bubble${sent?' sent':''}" id="dm-bubble-${m.id}">${escHtml(filterChatContent(m.content||''))}</div>`;
   }
 
-  const avatarStyle = `background:linear-gradient(135deg,${sent?'#4C1D95,#A78BFA':'#8B7FFF,#E85D8A'})${sent?'':';cursor:pointer'}`;
+  const myAvUrl = currentProfile?.avatar_url;
+  const theirAvUrl = window._chatPartnerAvatar;
+  const avatarGrad = sent ? 'linear-gradient(135deg,#4C1D95,#A78BFA)' : 'linear-gradient(135deg,#8B7FFF,#E85D8A)';
   const avatarClick = sent ? '' : ` onclick="dmOpenPersonSheet('${m.sender_id}')"`;
 
+  let avatarInner;
+  if (sent && myAvUrl) { avatarInner = '<img src="'+myAvUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+  else if (!sent && theirAvUrl) { avatarInner = '<img src="'+theirAvUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+  else { avatarInner = initials; }
+
   return `<div class="msg-row${sent?' me':''}" data-msg-id="${m.id}">
-    <div class="msg-avatar"${avatarClick} style="${avatarStyle}">${initials}</div>
+    <div class="msg-avatar"${avatarClick} style="background:${avatarGrad};overflow:hidden${sent?'':';cursor:pointer'}">${avatarInner}</div>
     <div class="msg-body">
       <div class="msg-head"><span class="msg-name">${escHtml(name)}</span><span class="msg-time">${time}${edited}</span></div>
       <div class="msg-content">${bubble}${sent && !m.file_url ?`<button class="msg-dots" onclick="dmEditMsg('${m.id}')">⋯</button>`:''}</div>
@@ -2047,7 +2079,7 @@ async function loadSavedContacts() {
 
     if (savedEl) savedEl.innerHTML = saved.map((s, i) => {
       const p = profileMap[s.contact_id];
-      if (!p) return '';
+      if (!p || s.contact_id === currentUser?.id) return '';
       const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const col = colors[i % colors.length];
       const tags = (p.keywords||[]).slice(0,3).map(k => `<span class="tag" style="font-size:0.58rem;padding:0.15rem 0.4rem">${escHtml(k)}</span>`).join('');
@@ -2090,7 +2122,7 @@ function renderSavedStoryBar(saved, profileMap) {
   var colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#7C2D12,#F97316)'];
   list.innerHTML = saved.map(function(s, i) {
     var p = profileMap[s.contact_id];
-    if (!p) return '';
+    if (!p || s.contact_id === currentUser?.id) return '';
     var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     var col = colors[i % colors.length];
     var firstName = (p.name||'?').split(' ')[0];
@@ -4148,8 +4180,12 @@ function bcRenderMsg(m) {
   const nameHtml = escHtml(name);
   const safeTitle = escHtml(p.title||'');
 
+  // Avatar: use photo if available
+  const bcAvUrl = isMe ? currentProfile?.avatar_url : (p.avatar_url || null);
+  const bcAvInner = bcAvUrl ? '<img src="'+bcAvUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : initials;
+
   row.innerHTML =
-    `<div class="msg-avatar" style="background:${color}" onclick="bcOpenPerson('${m.user_id}','${nameHtml}','${safeTitle}','${color}')">${initials}</div>` +
+    `<div class="msg-avatar" style="background:${color};overflow:hidden" onclick="bcOpenPerson('${m.user_id}','${nameHtml}','${safeTitle}','${color}')">${bcAvInner}</div>` +
     `<div class="msg-body">` +
       `<div class="msg-head"><span class="msg-name">${nameHtml}</span><span class="msg-time">${time}${editedTag}</span></div>` +
       `<div class="msg-content">${bubble}<button class="msg-dots" onclick="bcOpenContext(event,this,${isMe},'${m.id}')" aria-label="Mere">⋯</button></div>` +
@@ -4765,7 +4801,8 @@ async function dmOpenPersonSheet(userId) {
 
 
 function psClose() {
-  document.getElementById('person-sheet-el').classList.remove('open');
+  var sheet = document.getElementById('person-sheet-el');
+  if (sheet) { sheet.classList.remove('open'); sheet.style.transform = ''; }
   document.getElementById('ps-bubbleup-btn').style.display = 'flex';
   document.getElementById('ps-bubbleup-confirm').classList.remove('show');
   setTimeout(() => document.getElementById('ps-overlay').classList.remove('open'), 320);

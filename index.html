@@ -519,7 +519,7 @@
     <!-- Avatar + name -->
     <div class="person-info-section">
       <div class="person-avatar-wrap">
-        <div class="person-avatar-ring" id="person-avatar">?</div>
+        <div class="person-avatar-ring" id="person-avatar" onclick="viewAvatarFull(this)" style="cursor:pointer">?</div>
       </div>
       <div style="margin-top:0.6rem">
         <div class="person-display-name" id="person-name">...</div>
@@ -836,7 +836,7 @@
 
   <!-- Profile hero (compact) -->
   <div class="profile-hero" style="flex-shrink:0;padding:0.8rem 1.1rem 0.5rem;display:flex;align-items:center;gap:0.8rem">
-    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:white;box-shadow:0 4px 16px rgba(139,127,255,0.3);border:2px solid rgba(255,255,255,0.08);flex-shrink:0" id="my-avatar">?</div>
+    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:white;box-shadow:0 4px 16px rgba(139,127,255,0.3);border:2px solid rgba(255,255,255,0.08);flex-shrink:0;overflow:hidden;cursor:pointer" id="my-avatar" onclick="viewAvatarFull(this)">?</div>
     <div style="flex:1;min-width:0">
       <div style="font-size:1.05rem;font-weight:800;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-name">...</div>
       <div style="font-size:0.78rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-role">...</div>
