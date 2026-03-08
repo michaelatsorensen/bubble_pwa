@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-09T00:05:00';
-const BUILD_VERSION  = 'v1.2.4';
+const BUILD_TIMESTAMP = '2026-03-09T00:15:00';
+const BUILD_VERSION  = 'v1.2.5';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -1899,6 +1899,7 @@ async function psSaveContact() {
   try {
     const userId = document.getElementById('person-sheet-el')?.dataset?.userId;
     if (!userId) return;
+    if (userId === currentUser.id) { showToast('Du kan ikke gemme dig selv'); return; }
     const { data: existing } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
     const btn = document.getElementById('ps-save-btn');
     if (existing) {
@@ -4722,12 +4723,19 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
   document.getElementById('person-sheet-el').dataset.fromScreen = fromScreen || 'screen-bubble-chat';
   // Check if contact is already saved — update button state
   const saveBtn = document.getElementById('ps-save-btn');
+  const modSection = document.querySelector('.ps-moderation');
+  const isOwnProfile = userId === currentUser?.id;
   if (saveBtn) {
-    saveBtn.innerHTML = icon('bookmark') + ' Gem';
-    sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle().then(({data}) => {
-      if (data) saveBtn.innerHTML = icon('bookmarkFill') + ' Gemt';
-    });
+    if (isOwnProfile) { saveBtn.style.display = 'none'; }
+    else {
+      saveBtn.style.display = '';
+      saveBtn.innerHTML = icon('bookmark') + ' Gem';
+      sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle().then(({data}) => {
+        if (data) saveBtn.innerHTML = icon('bookmarkFill') + ' Gemt';
+      });
+    }
   }
+  if (modSection) modSection.style.display = isOwnProfile ? 'none' : '';
   // Show star rating if contact is saved
   var starRow = document.getElementById('ps-star-row');
   var starsEl = document.getElementById('ps-stars');
