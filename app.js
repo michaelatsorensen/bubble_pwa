@@ -1164,7 +1164,7 @@ function openRadarSheet() {
     if (loadingEl) loadingEl.style.display = 'none';
     if (radarCurrentView === 'map') renderProximityDots(); else renderRadarList();
   }, 120);
-  radarInitSwipeClose(sheet);
+  initSwipeClose(sheet, closeRadarSheet);
 }
 
 function closeRadarSheet() {
@@ -1175,50 +1175,70 @@ function closeRadarSheet() {
   if (overlay) overlay.classList.remove('open');
 }
 
-// Swipe-down-to-close on the radar sheet
-var _radarSwipeCloseInit = false;
-function radarInitSwipeClose(sheet) {
-  if (isDesktop) return; // No swipe-close on desktop
-  if (_radarSwipeCloseInit || !sheet) return;
-  _radarSwipeCloseInit = true;
+// ── Universal swipe-down-to-close for sheets/modals ──
+function initSwipeClose(sheetEl, closeFn) {
+  if (isDesktop || !sheetEl || sheetEl._swipeInit) return;
+  sheetEl._swipeInit = true;
   var startY = 0, currentY = 0, dragging = false;
 
-  sheet.addEventListener('touchstart', function(e) {
-    // Only start drag from the handle area (top 40px) or when list is scrolled to top
-    var listEl = document.getElementById('radar-view-list');
-    var mapEl = document.getElementById('radar-view-map');
-    var scrollEl = (listEl && listEl.style.display !== 'none') ? listEl : null;
+  sheetEl.addEventListener('touchstart', function(e) {
+    // Only from handle area (top 50px) or when scrolled to top
+    var scrollEl = sheetEl.querySelector('.modal-body, [style*="overflow"]');
     var atTop = !scrollEl || scrollEl.scrollTop <= 0;
     var touchY = e.touches[0].clientY;
-    var sheetRect = sheet.getBoundingClientRect();
-    var inHandle = (touchY - sheetRect.top) < 44;
+    var rect = sheetEl.getBoundingClientRect();
+    var inHandle = (touchY - rect.top) < 50;
     if (inHandle || atTop) {
       startY = e.touches[0].clientY;
       currentY = 0;
       dragging = true;
-      sheet.style.transition = 'none';
+      sheetEl.style.transition = 'none';
     }
   }, {passive: true});
 
-  sheet.addEventListener('touchmove', function(e) {
+  sheetEl.addEventListener('touchmove', function(e) {
     if (!dragging) return;
     currentY = e.touches[0].clientY - startY;
-    if (currentY < 0) currentY = 0; // Only allow downward
-    if (currentY > 10) {
-      sheet.style.transform = 'translateY(' + currentY + 'px)';
+    if (currentY < 0) currentY = 0;
+    if (currentY > 8) {
+      sheetEl.style.transform = 'translateY(' + currentY + 'px)';
     }
   }, {passive: true});
 
-  sheet.addEventListener('touchend', function() {
+  sheetEl.addEventListener('touchend', function() {
     if (!dragging) return;
     dragging = false;
-    sheet.style.transition = '';
-    if (currentY > 80) {
-      closeRadarSheet();
+    sheetEl.style.transition = '';
+    if (currentY > 70) {
+      closeFn();
     } else {
-      sheet.style.transform = '';
+      sheetEl.style.transform = '';
     }
     currentY = 0;
+  });
+}
+
+// Init swipe-close on all sheets/modals when they open
+function initAllSwipeClose() {
+  // Person sheet
+  var ps = document.getElementById('person-sheet-el');
+  if (ps) initSwipeClose(ps, psClose);
+  // Radar person sheet
+  var rps = document.getElementById('radar-person-sheet');
+  if (rps) initSwipeClose(rps, closeRadarPerson);
+  // GIF picker
+  var gif = document.getElementById('gif-picker');
+  if (gif) initSwipeClose(gif, closeGifPicker);
+  // Invite sheet
+  var inv = document.getElementById('invite-sheet');
+  if (inv) initSwipeClose(inv, closeInviteModal);
+  // Modals
+  ['modal-edit-profile','modal-create-bubble','modal-edit-bubble','modal-qr','modal-edit-history','modal-live-checkin'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      var sheetInner = el.querySelector('.modal-sheet');
+      if (sheetInner) initSwipeClose(sheetInner, function() { closeModal(id); });
+    }
   });
 }
 
@@ -5559,4 +5579,6 @@ window.addEventListener('load', async () => {
     subscribeToIncoming();
     loadLiveBubbleStatus();
   }
+  // Init swipe-to-close on all sheets/modals
+  initAllSwipeClose();
 });
