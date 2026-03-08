@@ -11,9 +11,80 @@ const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 var hsDefaults = { live: true, saved: true, bubbles: true, notifs: true, radar: true };
 
 // ══════════════════════════════════════════════════════════
-//  GLOBAL ERROR HANDLERS
+//  GLOBAL ERROR HANDLERS + ERROR LOGGING + EMAIL ALERTS
 // ══════════════════════════════════════════════════════════
+var _errorLog = [];
+var ERROR_LOG_MAX = 50;
+
+// ── EmailJS config (fill in your keys from emailjs.com) ──
+var EMAILJS_PUBLIC_KEY  = 'obqyOwjfRAzMEr_MI';
+var EMAILJS_SERVICE_ID  = 'service_Bubble_Bugs';
+var EMAILJS_TEMPLATE_ID = 'template_tqt3igv';
+var _emailjsLoaded = false;
+var _lastErrorEmail = 0;
+var ERROR_EMAIL_COOLDOWN = 60000; // Max 1 email per minut (undgår spam ved kaskade-fejl)
+
+function loadEmailJS() {
+  if (_emailjsLoaded || EMAILJS_PUBLIC_KEY === 'DIN_PUBLIC_KEY') return;
+  var script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+  script.onload = function() {
+    if (window.emailjs) { window.emailjs.init(EMAILJS_PUBLIC_KEY); _emailjsLoaded = true; }
+  };
+  document.head.appendChild(script);
+}
+
+function sendErrorEmail(entry) {
+  if (!_emailjsLoaded || !window.emailjs) return;
+  if (EMAILJS_SERVICE_ID === 'DIN_SERVICE_ID') return;
+  // Rate limit
+  var now = Date.now();
+  if (now - _lastErrorEmail < ERROR_EMAIL_COOLDOWN) return;
+  _lastErrorEmail = now;
+
+  window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+    context: entry.ctx,
+    message: entry.msg,
+    stack: entry.stack || 'N/A',
+    extra: entry.extra ? (typeof entry.extra === 'object' ? JSON.stringify(entry.extra) : entry.extra) : 'N/A',
+    user_id: entry.user || 'anonym',
+    timestamp: entry.ts
+  }).catch(function() { /* silent — don't log email errors to avoid loops */ });
+}
+
+function logError(context, error, extra) {
+  var entry = {
+    ts: new Date().toISOString(),
+    ctx: context,
+    msg: error?.message || String(error),
+    stack: error?.stack?.split('\n').slice(0,3).join(' | ') || '',
+    extra: extra || null,
+    user: currentUser?.id || null
+  };
+  _errorLog.push(entry);
+  if (_errorLog.length > ERROR_LOG_MAX) _errorLog.shift();
+  console.error('[' + context + ']', error, extra || '');
+
+  // Persist to Supabase error_log table
+  if (typeof sb !== 'undefined' && sb && currentUser) {
+    sb.from('error_log').insert({
+      user_id: currentUser.id,
+      context: context,
+      message: entry.msg,
+      stack: entry.stack,
+      extra: typeof extra === 'object' ? JSON.stringify(extra) : extra || null
+    }).then(function(){}).catch(function(){});
+  }
+
+  // Send email alert
+  sendErrorEmail(entry);
+}
+
+// View error log in console: type viewErrorLog() in devtools
+window.viewErrorLog = function() { console.table(_errorLog); return _errorLog; };
+
 window.onerror = function(msg, src, line, col, err) {
+  logError('global', err || msg, { src: src, line: line, col: col });
   const el = document.getElementById('loading-msg');
   if (el) {
     el.textContent = '❌ JS Fejl linje ' + line + ': ' + msg;
@@ -22,16 +93,15 @@ window.onerror = function(msg, src, line, col, err) {
     el.style.maxWidth = '320px';
     el.style.margin = '1rem auto';
   }
-  console.error('Global error:', msg, 'line:', line, err);
   return false;
 };
 window.onunhandledrejection = function(e) {
+  logError('promise', e.reason, null);
   const el = document.getElementById('loading-msg');
   if (el) {
     el.textContent = '❌ Promise fejl: ' + (e.reason?.message || e.reason || 'Ukendt');
     el.style.color = '#E85D8A';
   }
-  console.error('Unhandled rejection:', e.reason);
 };
 
 // ══════════════════════════════════════════════════════════
@@ -57,6 +127,7 @@ function initSupabase() {
   }
   try {
     sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    loadEmailJS(); // Load error email alerting
     return true;
   } catch(e) {
     document.getElementById('loading-msg').textContent = 'Fejl: ' + e.message;
@@ -160,7 +231,7 @@ async function checkAuth() {
   } catch(e) {
     var el = document.getElementById('loading-msg');
     if (el) { el.textContent = 'Fejl: ' + (e.message || 'Ukendt'); el.style.color = '#E85D8A'; }
-    console.error('checkAuth:', e);
+    logError('checkAuth', e);
   }
 }
 
@@ -188,7 +259,7 @@ async function loadCurrentProfile() {
       currentProfile = data;
       updateHomeAvatar();
     }
-  } catch(e) { console.error("loadCurrentProfile:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("loadCurrentProfile", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 function updateHomeAvatar() {
@@ -211,7 +282,7 @@ async function handleLogin() {
     await loadPromotedCustomTags();
     const needsOnboarding = await maybeShowOnboarding();
     if (!needsOnboarding) goTo('screen-home');
-  } catch(e) { console.error("handleLogin:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("handleLogin", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function handleSignup() {
@@ -247,7 +318,7 @@ async function handleSignup() {
     const needsOnboarding = await maybeShowOnboarding();
     if (!needsOnboarding) goTo('screen-home');
     showToast('Velkommen til Bubble! 🫧');
-  } catch(e) { console.error("handleSignup:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("handleSignup", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function handleLogout() {
@@ -258,7 +329,7 @@ async function handleLogout() {
     await sb.auth.signOut();
     currentUser = null; currentProfile = null;
     goTo('screen-auth');
-  } catch(e) { console.error("handleLogout:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("handleLogout", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 function switchToSignup() {
@@ -300,7 +371,7 @@ async function loadHome() {
     await Promise.all(loaders);
     hsApplyToHome();
     showGettingStarted();
-  } catch(e) { console.error("loadHome:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("loadHome", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function loadHomeBubblesCard() {
@@ -311,7 +382,7 @@ async function loadHomeBubblesCard() {
     const count = memberships?.length || 0;
     if (sub) sub.textContent = count > 0 ? `${count} aktiv${count !== 1 ? 'e' : ''} boble${count !== 1 ? 'r' : ''}` : 'Du er ikke i nogen bobler endnu';
     if (badge) { badge.textContent = count; badge.style.display = count > 0 ? 'flex' : 'none'; }
-  } catch(e) { console.error("loadHomeBubblesCard:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("loadHomeBubblesCard", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // loadHomeMessagesCard removed — HTML elements no longer exist
@@ -334,7 +405,7 @@ async function loadHomeNotifCard() {
     const n = count || 0;
     if (sub) sub.textContent = n > 0 ? `${n} nye i dine bobler` : 'Ingen nye notifikationer';
     if (badge) { badge.textContent = n; badge.style.display = n > 0 ? 'flex' : 'none'; }
-  } catch(e) { console.error("loadHomeNotifCard:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("loadHomeNotifCard", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function loadMyBubbles() {
@@ -400,7 +471,7 @@ async function loadMyBubbles() {
         </div>
         <div class="icon-muted">›</div>
       </div>`).join('');
-  } catch(e) { console.error("loadMyBubbles:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("loadMyBubbles", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function updateRadarCount() {
@@ -414,7 +485,7 @@ async function updateRadarCount() {
     const ids = memberships.map(m => m.bubble_id);
     const { count } = await sb.from('bubble_members').select('*', {count:'exact',head:true}).in('bubble_id', ids).neq('user_id', currentUser.id);
     if (rcEl) rcEl.textContent = ` · ${count || 0} profiler synlige i dine bobler`;
-  } catch(e) { console.error("updateRadarCount:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("updateRadarCount", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 function bubbleCard(b, joined) {
@@ -467,7 +538,7 @@ async function loadBubbleUpvotes() {
     var { data: mine } = await sb.from('bubble_upvotes').select('bubble_id').eq('user_id', currentUser.id);
     myUpvotes = {};
     (mine || []).forEach(function(row) { myUpvotes[row.bubble_id] = true; });
-  } catch(e) { console.error('loadBubbleUpvotes:', e); }
+  } catch(e) { logError('loadBubbleUpvotes', e); }
 }
 
 async function toggleBubbleUpvote(bubbleId) {
@@ -514,7 +585,7 @@ async function toggleBubbleUpvote(bubbleId) {
       barBtn.innerHTML = (up ? icon('checkCircle') : icon('rocket')) + ' ' + (up ? 'Anbefalet' : 'Anbefal');
       barBtn.classList.toggle('active', !!up);
     }
-  } catch(e) { console.error('toggleBubbleUpvote:', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('toggleBubbleUpvote', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
 }
 
 async function loadDiscover() {
@@ -536,7 +607,7 @@ async function loadDiscover() {
       return new Date(b.created_at) - new Date(a.created_at);
     });
     renderBubbleList(allBubbles);
-  } catch(e) { console.error("loadDiscover:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("loadDiscover", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 function renderBubbleList(bubbles) {
@@ -567,7 +638,7 @@ async function openBubble(bubbleId, fromScreen) {
   try {
     // Kald openBubbleChat direkte — detail-siden er nu integreret i chat-skærmen
     await openBubbleChat(bubbleId, fromScreen);
-  } catch(e) { console.error("openBubble:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("openBubble", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // loadBubbleMembers removed — integrated into screen-bubble-chat bcLoadMembers
@@ -579,7 +650,7 @@ async function joinBubble(bubbleId) {
     showToast('Du er nu i boblen! 🫧');
     await openBubble(bubbleId);
     loadHome();
-  } catch(e) { console.error("joinBubble:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("joinBubble", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function leaveBubble(bubbleId) {
@@ -595,7 +666,7 @@ async function leaveBubble(bubbleId) {
     await sb.from('bubble_members').delete().eq('bubble_id', bubbleId).eq('user_id', currentUser.id);
     showToast('Du har forladt boblen');
     goTo('screen-home');
-  } catch(e) { console.error("leaveBubble:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("leaveBubble", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -698,7 +769,7 @@ async function openPerson(userId, fromScreen) {
     // Tags section
     var tagsSection = document.getElementById('person-tags-section');
     if (tagsSection) tagsSection.style.display = (p.keywords||[]).length ? 'block' : 'none';
-  } catch(e) { console.error("openPerson:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("openPerson", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function saveContact() {
@@ -710,7 +781,7 @@ async function saveContact() {
     document.getElementById('save-btn').innerHTML = icon('checkCircle') + '<span>Gemt</span>';
     showToast('Kontakt gemt!');
     loadSavedContacts();
-  } catch(e) { console.error("saveContact:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("saveContact", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 let pendingRemoveSavedId = null;
@@ -760,7 +831,7 @@ async function confirmRemoveSaved() {
       loadSavedContacts();
     }
     showToast('Kontakt fjernet');
-  } catch(e) { console.error("confirmRemoveSaved:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("confirmRemoveSaved", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // proposeMeeting / sendMeetingProposal removed — feature shelved
@@ -817,7 +888,7 @@ async function loadProximityMap() {
 
     matchPage = 0; // Reset pagination
     renderProximityDots();
-  } catch (e) { console.error('loadProximityMap:', e); }
+  } catch (e) { logError('loadProximityMap', e); }
 }
 
 // ── RADAR MAP VIEW ──
@@ -1247,7 +1318,7 @@ async function openRadarPerson(userId) {
     saveBtn.dataset.saved = savedCheck ? '1' : '0';
     document.getElementById('radar-person-overlay').classList.add('open');
     setTimeout(function(){ document.getElementById('radar-person-sheet').classList.add('open'); }, 10);
-  } catch(e) { console.error("openRadarPerson:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("openRadarPerson", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 function closeRadarPerson() {
@@ -1263,7 +1334,7 @@ async function rpSaveContact() {
     await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: rpCurrentUserId });
     btn.textContent = 'Gemt \u2713'; btn.dataset.saved = '1';
     showToast('Kontakt gemt!'); loadSavedContacts();
-  } catch(e) { console.error("rpSaveContact:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("rpSaveContact", e); showToast(e.message || "Ukendt fejl"); }
 }
 function rpFullProfile() {
   var uid = rpCurrentUserId; closeRadarPerson(); closeRadarSheet();
@@ -1289,7 +1360,7 @@ async function updateUnreadBadge() {
         b.style.display = 'none';
       }
     });
-  } catch(e) { console.error("updateUnreadBadge:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("updateUnreadBadge", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 let incomingSubscription = null;
@@ -1347,7 +1418,7 @@ async function loadMessages() {
         ${isUnread ? '<div class="live-dot"></div>' : ''}
       </div>`;
     }).join('');
-  } catch(e) { console.error("loadMessages:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("loadMessages", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function openChat(userId, fromScreen) {
@@ -1370,7 +1441,7 @@ async function openChat(userId, fromScreen) {
     await sb.from('messages').update({ read_at: new Date().toISOString() })
       .eq('sender_id', userId).eq('receiver_id', currentUser.id).is('read_at', null);
     await updateUnreadBadge();
-  } catch(e) { console.error("openChat:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("openChat", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 
@@ -1422,7 +1493,7 @@ async function loadChatMessages() {
 
     el.innerHTML = sorted.map(m => dmRenderMsg(m)).join('');
     el.scrollTop = el.scrollHeight;
-  } catch(e) { console.error("loadChatMessages:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("loadChatMessages", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 function subscribeToChat() {
@@ -1555,7 +1626,7 @@ async function convDeleteSelected() {
     });
     showToast(ids.length + (ids.length === 1 ? ' samtale slettet' : ' samtaler slettet'));
     convToggleSelectMode();
-  } catch(e) { console.error('convDeleteSelected:', e); showToast(e.message || 'Fejl ved sletning'); }
+  } catch(e) { logError('convDeleteSelected', e); showToast(e.message || 'Fejl ved sletning'); }
 }
 
 
@@ -1594,7 +1665,7 @@ async function sendMessage() {
       }
       input.focus();
     }
-  } catch(e) { console.error("sendMessage:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("sendMessage", e); showToast(e.message || "Ukendt fejl"); }
   finally { dmSending = false; var sb2 = document.getElementById("chat-send-btn"); if (sb2) { sb2.disabled = false; sb2.style.opacity = ""; } }
 }
 
@@ -1605,7 +1676,7 @@ async function sendDirectMessage(toId, content) {
       receiver_id: toId,
       content
     });
-  } catch(e) { console.error("sendDirectMessage:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("sendDirectMessage", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 function startChat() {
@@ -1655,7 +1726,7 @@ async function dmHandleFile(input) {
       showToast('Fil sendt!');
     }
     input.value = '';
-  } catch(e) { console.error("dmHandleFile:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("dmHandleFile", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1689,7 +1760,7 @@ async function psSaveContact() {
       showToast('Kontakt gemt!');
     }
     loadSavedContacts();
-  } catch(e) { console.error("psSaveContact:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("psSaveContact", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1729,7 +1800,7 @@ async function loadProfile() {
     await loadSavedContacts();
     await loadMyBubbles();
     loadProfileInvitations();
-  } catch(e) { console.error("loadProfile:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("loadProfile", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // Standalone saved contacts loader — called from loadProfile AND after save/remove
@@ -1831,7 +1902,7 @@ async function loadSavedContacts() {
         </div>
       </div>`;
     }).join('');
-  } catch(e) { console.error("loadSavedContacts:", e); }
+  } catch(e) { logError("loadSavedContacts", e); }
 }
 
 // Render saved contacts as story-bar on home screen
@@ -1960,7 +2031,7 @@ async function loadProfileInvitations() {
         </div>
       </div>`;
     }).join('');
-  } catch(e) { console.error("loadProfileInvitations:", e); }
+  } catch(e) { logError("loadProfileInvitations", e); }
 }
 
 async function profAcceptInvite(inviteId, fromUserId) {
@@ -1973,7 +2044,7 @@ async function profAcceptInvite(inviteId, fromUserId) {
       loadProfileInvitations();
       setTimeout(() => openBubbleChat(inv.bubble_id), 800);
     }
-  } catch(e) { console.error("profAcceptInvite:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("profAcceptInvite", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 let pendingDeclineInviteId = null;
@@ -2019,7 +2090,7 @@ async function confirmDeclineInvite() {
       loadProfileInvitations();
     }
     showToast('Invitation afvist');
-  } catch(e) { console.error("confirmDeclineInvite:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("confirmDeclineInvite", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 function openEditProfile() {
@@ -2057,7 +2128,7 @@ async function saveProfile() {
     closeModal('modal-edit-profile');
     loadProfile();
     showToast('Profil gemt! ✅');
-  } catch(e) { console.error("saveProfile:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("saveProfile", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 function toggleAnon() {
@@ -2249,7 +2320,7 @@ async function loadHomeNotifFeed() {
         '<div class="notif-feed-time">' + item.time + '</div>' +
       '</div>';
     }).join('');
-  } catch(e) { console.error('loadHomeNotifFeed:', e); list.innerHTML = '<div class="fs-072 text-muted" style="padding:0.5rem">Kunne ikke hente</div>'; }
+  } catch(e) { logError('loadHomeNotifFeed', e); list.innerHTML = '<div class="fs-072 text-muted" style="padding:0.5rem">Kunne ikke hente</div>'; }
 }
 
 function timeAgo(dateStr) {
@@ -2304,7 +2375,7 @@ async function createBubble() {
     showToast(`"${name}" oprettet! 🫧`);
     loadHome();
     loadDiscover();
-  } catch(e) { console.error("createBubble:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("createBubble", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2425,7 +2496,7 @@ async function requestJoin(bubbleId) {
     if (error && !String(error.message || '').includes('duplicate')) return showToast('Fejl: ' + error.message);
     showToast('Anmodning sendt! Ejeren skal godkende 🔒');
     await openBubble(bubbleId);
-  } catch(e) { console.error("requestJoin:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("requestJoin", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2446,7 +2517,7 @@ async function openEditBubble(bubbleId) {
     ebChips = [...(b.keywords || [])];
     renderChips('eb-chips', ebChips, 'eb-chips-container', 'eb-chip-input');
     openModal('modal-edit-bubble');
-  } catch(e) { console.error("openEditBubble:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("openEditBubble", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function saveEditBubble() {
@@ -2465,7 +2536,7 @@ async function saveEditBubble() {
     closeModal('modal-edit-bubble');
     showToast('Boble opdateret! ✅');
     await openBubble(currentEditBubbleId);
-  } catch(e) { console.error("saveEditBubble:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("saveEditBubble", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2499,7 +2570,7 @@ async function openQRModal(bubbleId) {
     });
 
     openModal('modal-qr');
-  } catch(e) { console.error("openQRModal:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("openQRModal", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 let _jsPdfLoaded = false;
@@ -2661,7 +2732,7 @@ async function checkQRJoin() {
       showToast('Du er checket ind! 🫧');
       await openBubble(joinId, 'screen-home');
     }
-  } catch(e) { console.error("checkQRJoin:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("checkQRJoin", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function checkPendingJoin() {
@@ -2675,7 +2746,7 @@ async function checkPendingJoin() {
       showToast('Du er checket ind! 🫧');
       await openBubble(joinId, 'screen-home');
     }
-  } catch(e) { console.error("checkPendingJoin:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("checkPendingJoin", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 
@@ -2707,7 +2778,7 @@ async function maybeShowOnboarding() {
       return true;
     }
     return false;
-  } catch(e) { console.error("maybeShowOnboarding:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("maybeShowOnboarding", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 
@@ -3378,7 +3449,7 @@ async function saveOnboarding() {
     showToast('Profil oprettet! 🎉');
     goTo('screen-welcome');
     loadHome();
-  } catch(e) { console.error("saveOnboarding:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("saveOnboarding", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -3394,31 +3465,7 @@ async function handleGoogleLogin() {
       }
     });
     if (error) showToast('Google login fejl: ' + error.message);
-  } catch(e) { console.error("handleGoogleLogin:", e); showToast(e.message || "Ukendt fejl"); }
-}
-
-async function handleLinkedInLogin() {
-  try {
-    const { error } = await sb.auth.signInWithOAuth({
-      provider: 'linkedin_oidc',
-      options: {
-        redirectTo: window.location.origin + window.location.pathname
-      }
-    });
-    if (error) showToast('LinkedIn login fejl: ' + error.message);
-  } catch(e) { console.error("handleLinkedInLogin:", e); showToast(e.message || "Ukendt fejl"); }
-}
-
-async function handleFacebookLogin() {
-  try {
-    const { error } = await sb.auth.signInWithOAuth({
-      provider: 'facebook',
-      options: {
-        redirectTo: window.location.origin + window.location.pathname
-      }
-    });
-    if (error) showToast('Facebook login fejl: ' + error.message);
-  } catch(e) { console.error("handleFacebookLogin:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("handleGoogleLogin", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 
@@ -3467,7 +3514,7 @@ async function loadTrendingGifs() {
     var data = await res.json();
     renderGifs(data.results || []);
   } catch(e) {
-    console.error('GIF trending error:', e);
+    logError('GIF trending error', e);
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">Kunne ikke hente GIFs.<br>Tjek din internetforbindelse.</div>';
   }
 }
@@ -3482,7 +3529,7 @@ async function searchGifs(query) {
     var data = await res.json();
     renderGifs(data.results || []);
   } catch(e) {
-    console.error('GIF search error:', e);
+    logError('GIF search error', e);
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">Søgning fejlede</div>';
   }
 }
@@ -3511,27 +3558,27 @@ async function selectGif(idx) {
   var gifUrl = window._gifResults && window._gifResults[idx];
   var mode = gifPickerMode;
   closeGifPicker();
-  if (!gifUrl) return;
+  if (!gifUrl) { logError('selectGif', 'No GIF URL at index ' + idx); return; }
   try {
     if (mode === 'bc') {
-      // Bubble chat — insert as message with GIF URL
+      if (!bcBubbleId) { logError('selectGif', 'No bcBubbleId'); showToast('Fejl: ingen aktiv boble'); return; }
       var { data: msg, error } = await sb.from('bubble_messages').insert({
         bubble_id: bcBubbleId, user_id: currentUser.id,
-        content: null, file_url: gifUrl, file_name: 'gif.gif', file_type: 'image/gif'
+        content: '', file_url: gifUrl, file_name: 'gif.gif', file_type: 'image/gif'
       }).select('id, bubble_id, user_id, content, file_url, file_name, file_size, file_type, edited, created_at').single();
-      if (error) { showToast('Kunne ikke sende GIF'); return; }
+      if (error) { logError('selectGif:bc', error); showToast('GIF fejl: ' + (error.message || 'ukendt')); return; }
       if (msg) {
         msg.profiles = { id: currentUser.id, name: currentProfile?.name || '?' };
         document.getElementById('bc-messages').appendChild(bcRenderMsg(msg));
         bcScrollToBottom();
       }
-    } else {
-      // DM — insert as message with GIF URL
+    } else if (mode === 'dm') {
+      if (!currentChatUser) { logError('selectGif', 'No currentChatUser'); showToast('Fejl: ingen aktiv chat'); return; }
       var { data: msg2, error: err2 } = await sb.from('messages').insert({
         sender_id: currentUser.id, receiver_id: currentChatUser,
-        content: null, file_url: gifUrl, file_name: 'gif.gif', file_type: 'image/gif'
+        content: '', file_url: gifUrl, file_name: 'gif.gif', file_type: 'image/gif'
       }).select().single();
-      if (err2) { showToast('Kunne ikke sende GIF'); return; }
+      if (err2) { logError('selectGif:dm', err2, { receiver: currentChatUser }); showToast('GIF fejl: ' + (err2.message || 'ukendt')); return; }
       if (msg2) {
         var el = document.getElementById('chat-messages');
         if (el && !el.querySelector('[data-msg-id="' + msg2.id + '"]')) {
@@ -3539,8 +3586,11 @@ async function selectGif(idx) {
           el.scrollTop = el.scrollHeight;
         }
       }
+    } else {
+      logError('selectGif', 'Unknown mode: ' + mode);
+      showToast('GIF fejl: ukendt kontekst');
     }
-  } catch(e) { console.error('selectGif:', e); showToast('GIF fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('selectGif', e, { mode: mode }); showToast('GIF fejl: ' + (e.message || 'ukendt')); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -3616,7 +3666,7 @@ async function loadNotifications() {
       html = '<div class="empty-state"><div class="empty-icon">' + icon('bell') + '</div><div class="empty-text">Ingen notifikationer endnu</div></div>';
     }
     list.innerHTML = html;
-  } catch(e) { console.error("loadNotifications:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("loadNotifications", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function acceptBubbleInvite(inviteId, fromUserId) {
@@ -3633,7 +3683,7 @@ async function acceptBubbleInvite(inviteId, fromUserId) {
       // Open the bubble chat
       setTimeout(() => openBubbleChat(inv.bubble_id), 800);
     }
-  } catch(e) { console.error("acceptBubbleInvite:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("acceptBubbleInvite", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function declineBubbleInvite(inviteId) {
@@ -3641,7 +3691,7 @@ async function declineBubbleInvite(inviteId) {
     await sb.from('bubble_invitations').update({status:'declined'}).eq('id', inviteId);
     document.getElementById('invite-' + inviteId)?.remove();
     showToast('Invitation afvist');
-  } catch(e) { console.error("declineBubbleInvite:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("declineBubbleInvite", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -3734,7 +3784,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
       // Badge sættes via real-time subscription når man er på en anden tab
     });
     bcSubscribe();
-  } catch(e) { console.error("openBubbleChat:", e); bcUnsubscribe(); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("openBubbleChat", e); bcUnsubscribe(); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function bcLoadBubbleInfo() {
@@ -3760,7 +3810,7 @@ async function bcLoadBubbleInfo() {
         countEl.textContent = statusText + ' · Medlem ✓';
       }
     }
-  } catch(e) { console.error("bcLoadBubbleInfo:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("bcLoadBubbleInfo", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 function bcSwitchTab(tab) {
@@ -3827,7 +3877,7 @@ async function bcLoadMessages() {
       el.appendChild(bcRenderMsg(m));
     });
     bcScrollToBottom();
-  } catch(e) { console.error("bcLoadMessages:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("bcLoadMessages", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 function bcRenderMsg(m) {
@@ -3986,7 +4036,7 @@ async function bcSendMessage() {
         bcScrollToBottom();
       }
     }
-  } catch(e) { console.error("bcSendMessage:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("bcSendMessage", e); showToast(e.message || "Ukendt fejl"); }
   finally { bcSending = false; var sb3 = document.getElementById("bc-send-btn"); if (sb3) { sb3.disabled = false; sb3.style.opacity = ""; } }
 }
 
@@ -4049,7 +4099,7 @@ async function bcHandleFile(input) {
       showToast('Fil sendt! 📎');
     }
     input.value = '';
-  } catch(e) { console.error("bcHandleFile:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("bcHandleFile", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 function bcOpenContext(e, btn, isMe, msgId) {
@@ -4090,7 +4140,7 @@ async function bcReact(emoji) {
       await sb.from('bubble_message_reactions').insert({ message_id: bcCurrentMsgId, user_id: currentUser.id, emoji });
     }
     await bcLoadReactions(bcCurrentMsgId);
-  } catch(e) { console.error("bcReact:", e); showToast(e.message || "Reaktion fejlede"); }
+  } catch(e) { logError("bcReact", e); showToast(e.message || "Reaktion fejlede"); }
 }
 
 async function bcLoadReactions(msgId) {
@@ -4150,7 +4200,7 @@ async function bcDeleteMessage() {
     await sb.from('bubble_messages').delete().eq('id', bcCurrentMsgId).eq('user_id', currentUser.id);
     document.getElementById('bc-msg-' + bcCurrentMsgId)?.remove();
     showToast('Besked slettet');
-  } catch(e) { console.error("bcDeleteMessage:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("bcDeleteMessage", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function bcShowHistory(msgId) {
@@ -4169,7 +4219,7 @@ async function bcShowHistory(msgId) {
       </div>`;
     }).join('') + `<div style="padding:0.55rem 0"><div style="font-size:0.62rem;color:var(--muted);margin-bottom:0.2rem;font-family:monospace">Nuværende</div><div style="font-size:0.82rem">${escHtml(current?.content||'')}</div></div>`;
     openModal('modal-edit-history');
-  } catch(e) { console.error("bcShowHistory:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("bcShowHistory", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 function bcCreateHistoryModal() {
@@ -4251,7 +4301,7 @@ async function bcLoadMembers() {
       </div>`;
     });
     list.innerHTML = html;
-  } catch(e) { console.error("bcLoadMembers:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("bcLoadMembers", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function bcLoadInfo() {
@@ -4271,7 +4321,7 @@ async function bcLoadInfo() {
         <button class="chat-info-btn primary" data-action="openQRModal" data-id="${b.id}">${icon("qrcode")} Del boble / QR-kode</button>
         <button class="chat-info-btn danger" data-action="leaveBubble" data-id="${b.id}">${icon("logout")} Forlad boblen</button>
       </div>`;
-  } catch(e) { console.error("bcLoadInfo:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("bcLoadInfo", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // Person sheet from chat avatar
@@ -4333,7 +4383,7 @@ async function openInviteModal(bubbleId) {
           '<input type="checkbox" class="invite-check" data-uid="' + p.id + '" onchange="toggleInvite(this)">') +
       '</label>';
     }).join('');
-  } catch(e) { console.error('openInviteModal:', e); list.innerHTML = '<div style="padding:1rem;color:var(--accent2)">Kunne ikke hente kontakter</div>'; }
+  } catch(e) { logError('openInviteModal', e); list.innerHTML = '<div style="padding:1rem;color:var(--accent2)">Kunne ikke hente kontakter</div>'; }
 }
 
 function closeInviteModal() {
@@ -4372,7 +4422,7 @@ async function sendBubbleInvites() {
     if (error) throw error;
     closeInviteModal();
     showToast(inviteSelected.length + ' invitation' + (inviteSelected.length > 1 ? 'er' : '') + ' sendt \u2713');
-  } catch(e) { console.error('sendBubbleInvites:', e); showToast('Kunne ikke sende: ' + (e.message || 'ukendt fejl'));
+  } catch(e) { logError('sendBubbleInvites', e); showToast('Kunne ikke sende: ' + (e.message || 'ukendt fejl'));
     var btn2 = document.getElementById('invite-send-btn');
     if (btn2) { btn2.textContent = 'Send (' + inviteSelected.length + ')'; btn2.disabled = false; btn2.style.opacity = '1'; }
   }
@@ -4431,7 +4481,7 @@ async function dmOpenPersonSheet(userId) {
   try {
     var { data: p } = await sb.from('profiles').select('name,title').eq('id', userId).single();
     bcOpenPerson(userId, p?.name || 'Ukendt', p?.title || '', 'linear-gradient(135deg,#8B7FFF,#E85D8A)', 'screen-chat');
-  } catch(e) { console.error('dmOpenPersonSheet:', e); }
+  } catch(e) { logError('dmOpenPersonSheet', e); }
 }
 
 
@@ -4495,7 +4545,7 @@ async function psConfirmBubbleUp() {
     await sendBubbleUpInvitation(toUserId);
     psClose();
     showToast('🫧 Invitation sendt til ' + name + '!');
-  } catch(e) { console.error("psConfirmBubbleUp:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("psConfirmBubbleUp", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // Bubble-up from screen-person
@@ -4518,7 +4568,7 @@ async function personConfirmBubbleUp() {
     await sendBubbleUpInvitation(currentPerson);
     personCancelBubbleUp();
     showToast('🫧 Invitation sendt til ' + name + '!');
-  } catch(e) { console.error("personConfirmBubbleUp:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("personConfirmBubbleUp", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 async function sendBubbleUpInvitation(toUserId) {
@@ -4545,7 +4595,7 @@ async function sendBubbleUpInvitation(toUserId) {
       from_user_id: currentUser.id,
       to_user_id: toUserId
     });
-  } catch(e) { console.error("sendBubbleUpInvitation:", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("sendBubbleUpInvitation", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 
@@ -4719,7 +4769,7 @@ document.addEventListener('click', (e) => {
 
     try {
       await fn();
-    } catch(e) { console.error('PTR refresh error:', e); }
+    } catch(e) { logError('PTR refresh error', e); }
 
     refreshing = false;
     indicator.classList.remove('refreshing');
@@ -4803,7 +4853,7 @@ async function loadLiveBubbleStatus() {
       idleEl.style.display = 'block';
     }
   } catch (e) {
-    console.error('loadLiveBubbleStatus:', e);
+    logError('loadLiveBubbleStatus', e);
     const card = document.getElementById('live-bubble-card');
     if (card) card.style.display = 'block';
     var a = document.getElementById('live-bubble-active');
@@ -4884,7 +4934,7 @@ async function loadLiveCheckinList() {
       </div>`;
     }).join('');
   } catch (e) {
-    console.error('loadLiveCheckinList:', e);
+    logError('loadLiveCheckinList', e);
     list.innerHTML = '<div class="sub-muted" style="padding:0.5rem 0">Kunne ikke hente steder</div>';
   }
 }
@@ -4923,7 +4973,7 @@ async function liveCheckin(bubbleId) {
     await loadLiveBubbleStatus();
     loadHome();
   } catch (e) {
-    console.error('liveCheckin:', e);
+    logError('liveCheckin', e);
     showToast('Fejl ved check-in: ' + (e.message || 'ukendt'));
   }
 }
@@ -4948,7 +4998,7 @@ async function liveAutoCheckout() {
 
     // Note: this only sets checked_out_at — user remains a member
   } catch (e) {
-    console.error('liveAutoCheckout:', e);
+    logError('liveAutoCheckout', e);
   }
 }
 
@@ -4963,7 +5013,7 @@ async function liveCheckout() {
     showToast('Checked ud 👋');
     await loadLiveBubbleStatus();
   } catch (e) {
-    console.error('liveCheckout:', e);
+    logError('liveCheckout', e);
     showToast('Fejl ved checkout');
   }
 }
@@ -5016,7 +5066,7 @@ async function startLiveCamera() {
     if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; }
     liveQrPreviewLoop();
   } catch(e) {
-    console.error('Camera error:', e);
+    logError('Camera error', e);
     if (status) { status.textContent = e.message || 'Kunne ikke starte kamera'; status.className = 'live-scan-status error'; }
   }
 }
@@ -5146,7 +5196,7 @@ async function liveScanAutoResolve(data) {
     if (fMeta) fMeta.textContent = (bubble.location ? bubble.location : '') + (bubble.type ? ' · ' + bubble.type : '');
     if (found) found.style.display = 'block';
   } catch(e) {
-    console.error('liveScanAutoResolve:', e);
+    logError('liveScanAutoResolve', e);
     if (status) { status.textContent = e.message || 'QR ikke genkendt'; status.className = 'live-scan-status error'; }
     _liveQrPending = false;
     _liveQrFound = null;
@@ -5201,7 +5251,7 @@ async function liveScanConfirmJoin() {
     loadLiveBubbleStatus();
     setTimeout(function() { closeLiveCheckinModal(); }, 2500);
   } catch(e) {
-    console.error('liveScanConfirmJoin:', e);
+    logError('liveScanConfirmJoin', e);
     showToast(e.message || 'Fejl ved check-in');
   }
   _liveQrPending = false;
