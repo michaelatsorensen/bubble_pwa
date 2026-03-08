@@ -1811,25 +1811,24 @@ async function loadSavedContacts() {
       if (!p) return '';
       const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const col = colors[i % colors.length];
-      const tags = (p.keywords||[]).slice(0,4).map(k => `<span class="tag" style="font-size:0.6rem;padding:0.18rem 0.45rem">${escHtml(k)}</span>`).join('');
-      const starCount = starGet(p.id);
-      const starsHtml = starCount > 0 ? '<div class="saved-stars">' + '★'.repeat(starCount) + '</div>' : '';
-      const workplace = p.workplace ? `<div class="saved-workplace">${escHtml(p.workplace)}</div>` : '';
-      return `<div class="saved-card-v2" onclick="bcOpenPerson('${p.id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${col}','screen-profile')">
-        <div class="saved-card-top">
-          <div class="saved-avatar-lg" style="background:${col}">${ini}</div>
-          <div class="saved-card-info">
-            <div class="saved-card-name">${escHtml(p.name||'Ukendt')}</div>
-            <div class="saved-card-title">${escHtml(p.title||'')}</div>
-            ${workplace}
-            ${starsHtml}
+      const tags = (p.keywords||[]).slice(0,3).map(k => `<span class="tag" style="font-size:0.58rem;padding:0.15rem 0.4rem">${escHtml(k)}</span>`).join('');
+      const stars = starRender(p.id);
+      return `<div class="card saved-card" style="padding:0.7rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="bcOpenPerson('${p.id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${col}','screen-profile')">
+        <div class="flex-row-center" style="gap:0.7rem">
+          <div class="saved-avatar-wrap" style="position:relative;flex-shrink:0">
+            <div class="avatar" style="background:${col};width:42px;height:42px;font-size:0.75rem">${ini}</div>
+            ${stars}
           </div>
-          <div class="saved-card-actions" onclick="event.stopPropagation()">
+          <div style="flex:1;min-width:0">
+            <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||'Ukendt')}</div>
+            <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.title||'')}</div>
+            ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.3rem">${tags}</div>` : ''}
+          </div>
+          <div style="display:flex;gap:0.35rem;flex-shrink:0" onclick="event.stopPropagation()">
             <button class="saved-action-btn" onclick="openChat('${p.id}','screen-profile')" title="Send besked">${icon('chat')}</button>
             <button class="saved-action-btn danger" onclick="removeSavedContact('${s.id}',this)" title="Fjern">${icon('x')}</button>
           </div>
         </div>
-        ${tags ? `<div class="saved-card-tags">${tags}</div>` : ''}
       </div>`;
     }).join('');
   } catch(e) { console.error("loadSavedContacts:", e); }

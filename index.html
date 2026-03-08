@@ -828,22 +828,26 @@
     <button class="btn-sm btn-ghost" onclick="openEditProfile()" style="font-size:0.75rem;padding:0.35rem 0.75rem">Rediger</button>
   </div>
 
-  <!-- Profile hero (always visible above tabs) -->
-  <div class="profile-hero" style="flex-shrink:0;padding-top:1rem">
-    <div style="width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);margin:0 auto 0.9rem;display:flex;align-items:center;justify-content:center;font-size:1.7rem;font-weight:800;color:white;box-shadow:0 4px 20px rgba(139,127,255,0.35);border:2px solid rgba(255,255,255,0.08)" id="my-avatar">?</div>
-    <div style="font-size:1.3rem;font-weight:800;margin-bottom:0.2rem;letter-spacing:-0.02em" id="my-name">...</div>
-    <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.85rem" id="my-role">...</div>
-    <div id="my-keywords" style="margin-bottom:0.5rem"></div>
+  <!-- Profile hero (compact) -->
+  <div class="profile-hero" style="flex-shrink:0;padding:0.8rem 1.1rem 0.5rem;display:flex;align-items:center;gap:0.8rem">
+    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:white;box-shadow:0 4px 16px rgba(139,127,255,0.3);border:2px solid rgba(255,255,255,0.08);flex-shrink:0" id="my-avatar">?</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:1.05rem;font-weight:800;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-name">...</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-role">...</div>
+    </div>
+  </div>
+  <div style="padding:0 1.1rem 0.5rem">
+    <div id="my-keywords" style="margin-bottom:0.3rem"></div>
     <!-- Profile completeness nudge -->
-    <div id="profile-nudge" style="display:none;margin:0 1.2rem 0.5rem;padding:0.55rem 0.8rem;background:rgba(245,195,90,0.08);border:1px solid rgba(245,195,90,0.15);border-radius:10px;font-size:0.72rem;display:flex;gap:0.4rem;align-items:center">
+    <div id="profile-nudge" style="display:none;padding:0.5rem 0.7rem;background:rgba(245,195,90,0.08);border:1px solid rgba(245,195,90,0.15);border-radius:10px;font-size:0.72rem;display:flex;gap:0.4rem;align-items:center;margin-bottom:0.3rem">
       <span style="flex-shrink:0">💡</span>
       <span id="profile-nudge-text" style="color:var(--text-secondary)"></span>
       <button onclick="openEditProfile()" style="flex-shrink:0;background:none;border:1px solid rgba(245,195,90,0.25);border-radius:8px;padding:0.2rem 0.5rem;font-size:0.65rem;font-weight:600;color:var(--gold);cursor:pointer;font-family:inherit">Udfyld</button>
     </div>
   </div>
 
-  <!-- Tabs -->
-  <div class="bubble-tabs" style="flex-shrink:0">
+  <!-- Tabs (sticky) -->
+  <div class="bubble-tabs" style="flex-shrink:0;position:sticky;top:0;z-index:5;background:var(--bg)">
     <button class="bubble-tab active" id="prof-tab-saved" onclick="profSwitchTab('saved')">Gemte <span class="bubble-tab-badge" id="saved-count" style="display:none">0</span></button>
     <button class="bubble-tab" id="prof-tab-bubbles" onclick="profSwitchTab('bubbles')">Bobler</button>
     <button class="bubble-tab" id="prof-tab-invites" onclick="profSwitchTab('invites')">Invitationer <span class="bubble-tab-badge" id="invite-count" style="display:none">0</span></button>
