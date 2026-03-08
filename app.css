@@ -1429,3 +1429,34 @@ a.person-action-btn { text-decoration:none; }
 .gif-picker-grid img { width:100%; border-radius:10px; cursor:pointer; transition:transform 0.1s, opacity 0.1s; display:block; background:rgba(255,255,255,0.04); }
 .gif-picker-grid img:active { transform:scale(0.96); opacity:0.8; }
 .gif-picker-powered { text-align:center; font-size:0.55rem; color:var(--muted); padding:0.3rem 0 calc(0.4rem + env(safe-area-inset-bottom,0.3rem)); flex-shrink:0; }
+
+/* ═══ ONBOARDING LIFESTAGE ═══ */
+.ob-lifestage-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem; }
+.ob-lifestage-btn { background:rgba(255,255,255,0.03); border:1px solid var(--glass-border-subtle); border-radius:14px; padding:0.75rem 0.5rem; display:flex; flex-direction:column; align-items:center; gap:0.3rem; cursor:pointer; font-family:'Outfit',sans-serif; transition:all 0.2s; }
+.ob-lifestage-btn .ob-ls-label { font-size:0.72rem; font-weight:600; color:var(--text-secondary); }
+.ob-lifestage-btn:active { transform:scale(0.96); }
+.ob-lifestage-btn.selected { background:rgba(139,127,255,0.12); border-color:rgba(139,127,255,0.35); }
+.ob-lifestage-btn.selected .ob-ls-label { color:var(--accent); font-weight:700; }
+
+/* ═══ ONBOARDING ROLE SUGGESTIONS ═══ */
+.ob-role-suggestions { display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.5rem; }
+.ob-role-chip { border:1px solid var(--glass-border-subtle); background:rgba(255,255,255,0.03); color:var(--text-secondary); border-radius:99px; padding:0.32rem 0.65rem; font-size:0.72rem; font-family:'Outfit',sans-serif; cursor:pointer; transition:all 0.2s; font-weight:500; }
+.ob-role-chip:hover,.ob-role-chip:active { background:rgba(139,127,255,0.1); border-color:rgba(139,127,255,0.25); color:var(--text); }
+.ob-role-chip.active { background:rgba(139,127,255,0.15); border-color:var(--accent); color:var(--accent); font-weight:600; }
+
+/* ═══ ONBOARDING OPEN CATEGORIES ═══ */
+.ob-cat-block { margin-top:0.6rem; padding:0.65rem 0.75rem; border:1px solid var(--glass-border-subtle); border-radius:12px; background:rgba(255,255,255,0.025); }
+.ob-cat-header { display:flex; align-items:center; gap:0.4rem; margin-bottom:0.5rem; }
+.ob-cat-tags { display:flex; flex-wrap:wrap; gap:0.4rem; }
+#ob-tag-categories { display:flex; flex-direction:column; gap:0.2rem; }
+
+/* ═══ ONBOARDING SECTIONS ═══ */
+.ob-section-label { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); margin-top:0.8rem; margin-bottom:0.5rem; padding-bottom:0.35rem; border-bottom:1px solid rgba(139,127,255,0.15); }
+.ob-payoff { font-size:0.7rem; color:var(--text-secondary); line-height:1.45; margin-top:0.25rem; }
+
+/* ═══ ONBOARDING BOOST SECTION ═══ */
+.ob-boost-section { margin-top:1rem; border:1px dashed var(--glass-border-subtle); border-radius:14px; padding:0; overflow:hidden; }
+.ob-boost-toggle { width:100%; background:none; border:none; padding:0.75rem 1rem; display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-family:'Outfit',sans-serif; font-size:0.82rem; font-weight:600; color:var(--text-secondary); transition:color 0.2s; }
+.ob-boost-toggle:hover { color:var(--text); }
+.ob-boost-arrow { font-size:1rem; color:var(--accent); }
+.ob-boost-content { padding:0 1rem 0.75rem; }

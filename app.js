@@ -2722,6 +2722,7 @@ function updateObStrength() {
 
   var score = 0;
   if (name) score += 15;
+  if (obLifestage) score += 5;
   if (title) score += 15;
   if (bio && bio.length > 20) score += 20;
   else if (bio) score += 8;
@@ -2739,6 +2740,89 @@ function updateObStrength() {
   else if (score >= 50) { label.textContent = 'God'; label.style.color = 'var(--accent)'; bar.style.background = 'var(--accent)'; }
   else if (score >= 30) { label.textContent = 'OK'; label.style.color = 'var(--gold)'; bar.style.background = 'var(--gold)'; }
   else { label.textContent = 'Svag'; label.style.color = 'var(--accent2)'; bar.style.background = 'var(--accent2)'; }
+
+  // Actionable hint
+  var hint = document.getElementById('ob-strength-hint');
+  if (hint) {
+    if (!name) hint.textContent = 'Tilføj dit navn for at komme i gang';
+    else if (!title) hint.textContent = 'Vælg en titel — den vises i radaren';
+    else if (tags < 3) hint.textContent = 'Vælg ' + (3 - tags) + ' tags mere for at aktivere matching';
+    else if (tags < 5) hint.textContent = 'Flere tags = bedre matches';
+    else if (!bio) hint.textContent = 'Tilføj en bio under "Gør din profil stærkere"';
+    else if (!linkedin) hint.textContent = 'LinkedIn gør det lettere at connecte videre';
+    else hint.textContent = 'Din profil er klar til at finde de rigtige mennesker!';
+  }
+}
+
+
+// ── Lifestage selector & role suggestions ──
+var OB_LIFESTAGE_ROLES = {
+  student: ['Student','PhD','Researcher','Praktikant','Studentermedhjælper','Teaching Assistant'],
+  employee: ['Developer','Designer','Product Manager','Marketing','Sales','HR','Finance','Operations','Team Lead','Director'],
+  entrepreneur: ['Founder','Co-Founder','CEO','CTO','Iværksætter','Serial Entrepreneur'],
+  freelancer: ['Freelancer','Consultant','Advisor','Coach','Mentor','Selvstændig'],
+  investor: ['Investor','Business Angel','VC','LP','Board Member','Partner'],
+  other: ['Pensionist','Mellem jobs','Karriereskift','Frivillig','Community Builder','Kreativ']
+};
+var obLifestage = null;
+
+
+function obToggleBoost() {
+  var content = document.getElementById('ob-boost-content');
+  var arrow = document.getElementById('ob-boost-arrow');
+  if (!content) return;
+  if (content.style.display === 'none') {
+    content.style.display = 'block';
+    if (arrow) arrow.textContent = '−';
+  } else {
+    content.style.display = 'none';
+    if (arrow) arrow.textContent = '＋';
+  }
+}
+
+function obSelectLifestage(btn) {
+  // Deselect all
+  document.querySelectorAll('.ob-lifestage-btn').forEach(function(b) { b.classList.remove('selected'); });
+  btn.classList.add('selected');
+  obLifestage = btn.dataset.stage;
+
+  // Show role suggestions
+  var roles = OB_LIFESTAGE_ROLES[obLifestage] || [];
+  var container = document.getElementById('ob-role-suggestions');
+  if (container) {
+    container.innerHTML = roles.map(function(r) {
+      return '<button type="button" class="ob-role-chip" onclick="obSetTitle(this)">' + r + '</button>';
+    }).join('');
+  }
+
+  // Auto-add lifestage as first tag if relevant
+  var autoTag = {student:'Student',entrepreneur:'Iværksætter',freelancer:'Freelancer',investor:'Investor'}[obLifestage];
+  if (autoTag && obSelectedTags.indexOf(autoTag) < 0) {
+    obAddTag(autoTag, getTagCategory(autoTag) || 'rolle');
+  }
+
+  updateObStrength();
+}
+
+function obSetTitle(btn) {
+  var input = document.getElementById('ob-title');
+  if (!input) return;
+  input.value = btn.textContent;
+  // Highlight selected
+  document.querySelectorAll('.ob-role-chip').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  updateObStrength();
+}
+
+// ── Apple Login ──
+async function handleAppleLogin() {
+  try {
+    var { error } = await sb.auth.signInWithOAuth({
+      provider: 'apple',
+      options: { redirectTo: window.location.origin }
+    });
+    if (error) showToast('Apple login fejlede: ' + error.message);
+  } catch(e) { showToast('Apple login fejl: ' + (e.message || 'ukendt')); }
 }
 
 function welcomeGo(target) {
@@ -2946,15 +3030,13 @@ function obRenderCategories() {
   el.innerHTML = Object.entries(TAG_CATEGORIES).map(function(entry) {
     var cat = entry[0], info = entry[1];
     var tags = TAG_DATABASE[cat] || [];
-    // Show top 8 popular tags per category
-    var shown = tags.slice(0, 8);
-    return '<div class="tag-cat-section">' +
-      '<div class="tag-cat-header" onclick="obToggleCat(this)" data-expanded="false">' +
+    return '<div class="ob-cat-block">' +
+      '<div class="ob-cat-header">' +
       '<span class="tag-cat-dot" style="background:' + info.color + '"></span>' +
       '<span class="tag-cat-title">' + info.label + '</span>' +
       '<span class="tag-cat-count">' + tags.length + '</span>' +
-      '<span class="tag-cat-arrow">›</span></div>' +
-      '<div class="tag-cat-tags" style="display:none">' +
+      '</div>' +
+      '<div class="ob-cat-tags">' +
       tags.map(function(t) {
         var selected = obSelectedTags.indexOf(t) >= 0;
         return '<span class="tag-pick' + (selected ? ' selected' : '') + '" ' +
@@ -2967,17 +3049,7 @@ function obRenderCategories() {
 }
 
 function obToggleCat(header) {
-  var expanded = header.dataset.expanded === 'true';
-  var tags = header.nextElementSibling;
-  if (expanded) {
-    tags.style.display = 'none';
-    header.dataset.expanded = 'false';
-    header.querySelector('.tag-cat-arrow').style.transform = '';
-  } else {
-    tags.style.display = 'flex';
-    header.dataset.expanded = 'true';
-    header.querySelector('.tag-cat-arrow').style.transform = 'rotate(90deg)';
-  }
+  return; // Categories always open in onboarding
 }
 
 function obTogglePickTag(label, cat, el) {
