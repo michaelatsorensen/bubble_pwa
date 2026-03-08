@@ -1431,9 +1431,11 @@ a.person-action-btn { text-decoration:none; }
 .gif-picker-powered { text-align:center; font-size:0.55rem; color:var(--muted); padding:0.3rem 0 calc(0.4rem + env(safe-area-inset-bottom,0.3rem)); flex-shrink:0; }
 
 /* ═══ ONBOARDING LIFESTAGE ═══ */
-.ob-lifestage-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem; }
-.ob-lifestage-btn { background:rgba(255,255,255,0.03); border:1px solid var(--glass-border-subtle); border-radius:14px; padding:0.75rem 0.5rem; display:flex; flex-direction:column; align-items:center; gap:0.3rem; cursor:pointer; font-family:'Outfit',sans-serif; transition:all 0.2s; }
+.ob-lifestage-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:0.45rem; }
+.ob-lifestage-btn { background:rgba(255,255,255,0.03); border:1px solid var(--glass-border-subtle); border-radius:14px; padding:0.6rem 0.3rem; display:flex; flex-direction:column; align-items:center; gap:0.25rem; cursor:pointer; font-family:'Outfit',sans-serif; transition:all 0.2s; }
 .ob-lifestage-btn .ob-ls-label { font-size:0.72rem; font-weight:600; color:var(--text-secondary); }
+.ob-ls-icon { width:28px; height:28px; display:flex; align-items:center; justify-content:center; }
+.ob-ls-icon svg { width:28px; height:28px; }
 .ob-lifestage-btn:active { transform:scale(0.96); }
 .ob-lifestage-btn.selected { background:rgba(139,127,255,0.12); border-color:rgba(139,127,255,0.35); }
 .ob-lifestage-btn.selected .ob-ls-label { color:var(--accent); font-weight:700; }
@@ -1460,3 +1462,12 @@ a.person-action-btn { text-decoration:none; }
 .ob-boost-toggle:hover { color:var(--text); }
 .ob-boost-arrow { font-size:1rem; color:var(--accent); }
 .ob-boost-content { padding:0 1rem 0.75rem; }
+
+/* ═══ CUSTOM TAG INPUT IN CATEGORIES ═══ */
+.ob-cat-custom { margin-top:0.45rem; padding-top:0.4rem; border-top:1px solid var(--glass-border-subtle); }
+.ob-cat-custom-row { display:flex; gap:0.35rem; align-items:center; }
+.ob-cat-custom-input { flex:1; background:rgba(255,255,255,0.03); border:1px dashed var(--glass-border-subtle); border-radius:8px; padding:0.35rem 0.55rem; font-size:0.72rem; font-family:'Outfit',sans-serif; color:var(--text); outline:none; transition:border-color 0.2s; }
+.ob-cat-custom-input:focus { border-color:var(--accent); border-style:solid; }
+.ob-cat-custom-input::placeholder { color:var(--muted); font-style:italic; }
+.ob-cat-custom-btn { width:32px; height:32px; border-radius:8px; border:none; background:var(--green); color:white; font-size:0.85rem; font-weight:700; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:transform 0.1s, opacity 0.15s; }
+.ob-cat-custom-btn:active { transform:scale(0.9); opacity:0.8; }

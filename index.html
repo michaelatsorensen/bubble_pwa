@@ -144,24 +144,36 @@
       <div class="input-label">Jeg er... *</div>
       <div class="ob-lifestage-grid" id="ob-lifestage-grid">
         <button type="button" class="ob-lifestage-btn" data-stage="student" onclick="obSelectLifestage(this)">
-          <span style="font-size:1.3rem">🎓</span><span class="ob-ls-label">Studerende</span>
+          <span class="ob-ls-icon" style="color:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10l-10-5L2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/><path d="M22 10v6"/></svg></span><span class="ob-ls-label">Studerende</span>
         </button>
         <button type="button" class="ob-lifestage-btn" data-stage="employee" onclick="obSelectLifestage(this)">
-          <span style="font-size:1.3rem">💼</span><span class="ob-ls-label">Ansat</span>
+          <span class="ob-ls-icon" style="color:var(--accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M12 12v.01"/><path d="M2 12h20"/></svg></span><span class="ob-ls-label">Erhverv</span>
         </button>
         <button type="button" class="ob-lifestage-btn" data-stage="entrepreneur" onclick="obSelectLifestage(this)">
-          <span style="font-size:1.3rem">🚀</span><span class="ob-ls-label">Iværksætter</span>
+          <span class="ob-ls-icon" style="color:var(--accent2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.5-2 5-2 5s3.5-.5 5-2c.8-.8 1-2 .4-2.8a2.1 2.1 0 00-3.4-.2z"/><path d="M14.5 2.5c-3 2-5 5.5-5.5 9l3.5 3.5c3.5-.5 7-2.5 9-5.5L14.5 2.5z"/><path d="M14 9a1 1 0 100 2 1 1 0 000-2z" fill="currentColor"/></svg></span><span class="ob-ls-label">Iværksætter</span>
         </button>
         <button type="button" class="ob-lifestage-btn" data-stage="freelancer" onclick="obSelectLifestage(this)">
-          <span style="font-size:1.3rem">✨</span><span class="ob-ls-label">Freelancer</span>
+          <span class="ob-ls-icon" style="color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></span><span class="ob-ls-label">Freelancer</span>
+        </button>
+        <button type="button" class="ob-lifestage-btn" data-stage="public" onclick="obSelectLifestage(this)">
+          <span class="ob-ls-icon" style="color:#A78BFA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/><path d="M10 21v-3h4v3"/></svg></span><span class="ob-ls-label">Offentlig / NGO</span>
+        </button>
+        <button type="button" class="ob-lifestage-btn" data-stage="practical" onclick="obSelectLifestage(this)">
+          <span class="ob-ls-icon" style="color:#F97316"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></span><span class="ob-ls-label">Håndværk & Teknik</span>
         </button>
         <button type="button" class="ob-lifestage-btn" data-stage="investor" onclick="obSelectLifestage(this)">
-          <span style="font-size:1.3rem">📈</span><span class="ob-ls-label">Investor</span>
+          <span class="ob-ls-icon" style="color:var(--gold)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span><span class="ob-ls-label">Investor</span>
         </button>
         <button type="button" class="ob-lifestage-btn" data-stage="other" onclick="obSelectLifestage(this)">
-          <span style="font-size:1.3rem">🌱</span><span class="ob-ls-label">Andet</span>
+          <span class="ob-ls-icon" style="color:var(--accent3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v.01"/><path d="M12 8a2.5 2.5 0 011.13 4.74c-.46.27-.76.72-.87 1.26"/></svg></span><span class="ob-ls-label">Andet</span>
         </button>
       </div>
+    </div>
+
+    <div class="input-group">
+      <div class="input-label">Arbejdsplads / organisation</div>
+      <input class="input" id="ob-workplace" placeholder="f.eks. Danfoss, SDU, Sønderborg Kommune...">
+      <div class="ob-payoff">Hjælper dig med at finde kollegaer og samarbejdspartnere</div>
     </div>
 
     <div class="input-group">
@@ -223,6 +235,7 @@
       <div id="ob-strength-hint" style="font-size:0.65rem;color:var(--muted);margin-top:0.3rem"></div>
     </div>
     <button class="btn-primary" onclick="saveOnboarding()" style="margin-top:0.5rem">Kom i gang →</button>
+    <button type="button" onclick="skipOnboarding()" style="margin-top:0.6rem;margin-bottom:1rem;background:none;border:none;color:var(--muted);font-size:0.78rem;font-family:'Outfit',sans-serif;cursor:pointer;padding:0.5rem;width:100%;text-align:center">Spring over — jeg udfylder senere</button>
   </div>
 </div>
 
@@ -1021,6 +1034,10 @@
       <input class="input" id="ep-name">
     </div>
     <div class="input-group">
+      <div class="input-label">Arbejdsplads / organisation</div>
+      <input class="input" id="ep-workplace" placeholder="f.eks. Danfoss, SDU, Sønderborg Kommune...">
+    </div>
+    <div class="input-group">
       <div class="input-label">Titel / Rolle</div>
       <input class="input" id="ep-title" placeholder="f.eks. Founder · Bubble">
     </div>
@@ -1038,13 +1055,14 @@
       <div id="ep-tag-categories"></div>
     </div>
     <div class="input-group">
-      <div class="input-label">Søger lige nu (dynamisk)</div>
+      <div class="input-label">Søger lige nu</div>
       <div class="chips-container" id="ep-dyn-chips-container" onclick="document.getElementById('ep-dyn-chip-input').focus()">
         <input class="chip-input" id="ep-dyn-chip-input" placeholder="f.eks. Søger investor, Open to coffee..." onkeydown="handleChipInput(event,'ep-dyn-chips')">
+        <button type="button" onclick="addChipFromBtn('ep-dyn-chip-input','ep-dyn-chips')" class="chip-add-btn">+</button>
       </div>
     </div>
     <div class="input-group">
-      <div class="input-label">LinkedIn URL (valgfrit)</div>
+      <div class="input-label">LinkedIn URL</div>
       <input class="input" id="ep-linkedin" placeholder="https://linkedin.com/in/dit-navn" type="url">
     </div>
     <button class="btn-primary" onclick="saveProfile()">Gem profil</button>

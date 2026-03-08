@@ -151,6 +151,7 @@ async function checkAuth() {
         });
       }
       await loadCurrentProfile();
+      await loadPromotedCustomTags();
       const needsOnboarding = await maybeShowOnboarding();
       if (!needsOnboarding) goTo('screen-home');
     } else {
@@ -207,6 +208,7 @@ async function handleLogin() {
     if (error) return showToast('Fejl: ' + error.message);
     currentUser = data.user;
     await loadCurrentProfile();
+    await loadPromotedCustomTags();
     const needsOnboarding = await maybeShowOnboarding();
     if (!needsOnboarding) goTo('screen-home');
   } catch(e) { console.error("handleLogin:", e); showToast(e.message || "Ukendt fejl"); }
@@ -241,6 +243,7 @@ async function handleSignup() {
     }
 
     await loadCurrentProfile();
+    await loadPromotedCustomTags();
     const needsOnboarding = await maybeShowOnboarding();
     if (!needsOnboarding) goTo('screen-home');
     showToast('Velkommen til Bubble! 🫧');
@@ -2024,11 +2027,14 @@ function openEditProfile() {
   document.getElementById('ep-name').value = currentProfile.name || '';
   document.getElementById('ep-title').value = currentProfile.title || '';
   document.getElementById('ep-bio').value = currentProfile.bio || '';
+  document.getElementById('ep-linkedin').value = currentProfile.linkedin || '';
+  var wpEl = document.getElementById('ep-workplace');
+  if (wpEl) wpEl.value = currentProfile.workplace || '';
   // Tag picker
   epSelectedTags = [...(currentProfile.keywords || [])];
   epRenderSelectedTags();
   epRenderCategories();
-  // Dynamic keywords (still chips)
+  // Dynamic keywords
   epDynChips = [...(currentProfile.dynamic_keywords || [])];
   renderChips('ep-dyn-chips', epDynChips, 'ep-dyn-chips-container', 'ep-dyn-chip-input');
   openModal('modal-edit-profile');
@@ -2036,12 +2042,14 @@ function openEditProfile() {
 
 async function saveProfile() {
   try {
-    const name  = document.getElementById('ep-name').value.trim();
-    const title = document.getElementById('ep-title').value.trim();
-    const bio   = document.getElementById('ep-bio').value.trim();
+    const name      = document.getElementById('ep-name').value.trim();
+    const title     = document.getElementById('ep-title').value.trim();
+    const bio       = document.getElementById('ep-bio').value.trim();
+    const linkedin  = (document.getElementById('ep-linkedin')?.value || '').trim();
+    const workplace = (document.getElementById('ep-workplace')?.value || '').trim();
     if (!name) return showToast('Navn er påkrævet');
     const { error } = await sb.from('profiles').upsert({
-      id: currentUser.id, name, title, bio,
+      id: currentUser.id, name, title, bio, linkedin, workplace,
       keywords: epSelectedTags, dynamic_keywords: epDynChips, is_anon: isAnon
     });
     if (error) return showToast('Fejl: ' + error.message);
@@ -2761,11 +2769,35 @@ var OB_LIFESTAGE_ROLES = {
   employee: ['Developer','Designer','Product Manager','Marketing','Sales','HR','Finance','Operations','Team Lead','Director'],
   entrepreneur: ['Founder','Co-Founder','CEO','CTO','Iværksætter','Serial Entrepreneur'],
   freelancer: ['Freelancer','Consultant','Advisor','Coach','Mentor','Selvstændig'],
+  public: ['Sagsbehandler','Kommunaldirektør','Projektleder','Koordinator','Rådgiver','Leder','Analytiker','Socialrådgiver'],
+  practical: ['Håndværker','Tekniker','Sygeplejerske','Mekaniker','Elektriker','Tømrer','Landmand','Operatør','Montør'],
   investor: ['Investor','Business Angel','VC','LP','Board Member','Partner'],
   other: ['Pensionist','Mellem jobs','Karriereskift','Frivillig','Community Builder','Kreativ']
 };
 var obLifestage = null;
 
+
+function skipOnboarding() {
+  // Save minimal profile so user isn't stuck
+  var name = (document.getElementById('ob-name')?.value || '').trim();
+  if (!name && currentProfile?.name) name = currentProfile.name;
+  if (!name && currentUser?.email) name = currentUser.email.split('@')[0];
+  if (!name) name = 'Ny bruger';
+
+  sb.from('profiles').upsert({
+    id: currentUser.id, name: name,
+    title: (document.getElementById('ob-title')?.value || '').trim() || 'Ikke udfyldt',
+    keywords: obSelectedTags.length > 0 ? obSelectedTags : [],
+    dynamic_keywords: [], bio: '', is_anon: false
+  }).then(function() {
+    loadCurrentProfile();
+    showToast('Du kan altid udfylde din profil senere');
+    goTo('screen-home');
+    loadHome();
+  }).catch(function(e) {
+    showToast('Fejl: ' + (e.message || 'ukendt'));
+  });
+}
 
 function obToggleBoost() {
   var content = document.getElementById('ob-boost-content');
@@ -2796,10 +2828,13 @@ function obSelectLifestage(btn) {
   }
 
   // Auto-add lifestage as first tag if relevant
-  var autoTag = {student:'Student',entrepreneur:'Iværksætter',freelancer:'Freelancer',investor:'Investor'}[obLifestage];
+  var autoTag = {student:'Student',entrepreneur:'Iværksætter',freelancer:'Freelancer',investor:'Investor',public:'GovTech',practical:'Håndværk'}[obLifestage];
   if (autoTag && obSelectedTags.indexOf(autoTag) < 0) {
     obAddTag(autoTag, getTagCategory(autoTag) || 'rolle');
   }
+
+  // Re-render categories filtered for this lifestage
+  obRenderCategories();
 
   updateObStrength();
 }
@@ -3024,12 +3059,64 @@ function obRenderSelectedTags() {
   }).join('');
 }
 
+// ── Lifestage → tag filtering ──
+var OB_LIFESTAGE_TAGS = {
+  student: {
+    rolle: ['Student','PhD','Researcher','Praktikant','Studentermedhjælper','Teaching Assistant','Developer','Designer','Data Scientist','Freelancer'],
+    branche: ['Edtech','AI/ML','Healthtech','Cleantech','SaaS','Gaming','Media','Cybersecurity','Biotech','Fintech','NGO','Impact','E-commerce'],
+    kompetence: ['UX/UI Design','Frontend','Backend','Full-Stack','Python','React','Data Analytics','Machine Learning','Research','Innovation','Content Marketing','Social Media','SEO/SEM','Storytelling'],
+    interesse: ['Open Source','AI Ethics','Climate Action','Future of Work','Personal Development','Networking','Community Building','Design Thinking','Lean Startup','Nordic Startups','No-Code','Low-Code','Writing','Podcasting','Diversity & Inclusion','Entrepreneurship']
+  },
+  employee: {
+    rolle: ['Developer','Designer','Product Manager','Project Manager','Team Lead','Director','VP','Engineer','Data Scientist','Sales','Marketing','Growth','HR','Legal','Operations','Consultant'],
+    branche: ['SaaS','Fintech','Healthtech','E-commerce','AI/ML','Cybersecurity','Cloud','Infrastructure','DevTools','Retail','B2B','B2C','Consulting','Agency','Service','Logistik','Media','Energi','Pharma','MedTech','Banking','Finans'],
+    kompetence: ['Product Development','UX/UI Design','Frontend','Backend','Full-Stack','Growth Hacking','SEO/SEM','Sales Strategy','Enterprise Sales','People Ops','Talent Acquisition','DevOps','Security','Architecture','Brand Strategy','PR/Comms','Operations','Analytics','Data Analytics','Machine Learning','Strategy','Facilitation','GDPR','Legal/Compliance'],
+    interesse: ['Leadership','Management','Future of Work','Remote Work','Agile','Personal Development','Networking','Community Building','Design Thinking','Public Speaking','Diversity & Inclusion','Digital Health','AI Ethics','Nordic Startups','Entrepreneurship']
+  },
+  entrepreneur: {
+    rolle: ['Founder','Co-Founder','CEO','CTO','CFO','COO','CMO','CPO','Iværksætter','Serial Entrepreneur','Product Manager','Developer','Designer','Advisor','Mentor'],
+    branche: ['SaaS','Fintech','Healthtech','Edtech','Cleantech','Biotech','E-commerce','AI/ML','Foodtech','Proptech','Marketplace','Platform','B2B','B2C','D2C','Deep Tech','Hardware','Martech','Legaltech','Insurtech','IoT','Robotics'],
+    kompetence: ['Product Development','Fundraising','Pitch Deck','Financial Modeling','Growth Hacking','Sales Strategy','Partnerships','BD','Brand Strategy','Storytelling','Innovation','Strategy','UX/UI Design','Frontend','Backend','People Ops','Talent Acquisition','Operations','Analytics'],
+    interesse: ['Entrepreneurship','Venture Capital','Angel Investing','Lean Startup','Networking','Skalering','Exit Strategy','Nordic Startups','European Tech','Global Markets','Internationalisering','Climate Action','Community Building','Public Speaking','Leadership','Creator Economy']
+  },
+  freelancer: {
+    rolle: ['Freelancer','Consultant','Advisor','Coach','Mentor','Selvstændig','Developer','Designer','Data Scientist','Engineer','Product Manager'],
+    branche: ['SaaS','Consulting','Agency','Service','AI/ML','E-commerce','Media','Healthtech','Fintech','Cleantech','Edtech','B2B','B2C','Martech','Entertainment','Publishing'],
+    kompetence: ['UX/UI Design','Frontend','Backend','Full-Stack','Product Development','Growth Hacking','Content Marketing','Brand Strategy','PR/Comms','Storytelling','SEO/SEM','Sales Strategy','Strategy','Facilitation','Data Analytics','Innovation','Architecture','API Design'],
+    interesse: ['Remote Work','Digital Nomad','Networking','Personal Development','Public Speaking','Writing','Podcasting','Creator Economy','No-Code','Community Building','Design Thinking','Entrepreneurship','Lean Startup','Future of Work','Leadership']
+  },
+  public: {
+    rolle: ['Project Manager','Team Lead','Director','Consultant','Advisor','Researcher','HR','Legal','Operations','Professor','Engineer'],
+    branche: ['NGO','GovTech','Civic Tech','Impact','Sundhed','Energi','Bæredygtighed','Edtech','Cleantech','Mental Health','Pharma','MedTech'],
+    kompetence: ['People Ops','Strategy','Facilitation','Research','Innovation','Legal/Compliance','GDPR','Operations','Brand Strategy','PR/Comms','Sustainability','ESG','Data Analytics','Content Marketing','Storytelling','Talent Acquisition'],
+    interesse: ['Social Impact','Climate Action','Diversity & Inclusion','Smart Cities','Digital Health','Community Building','Future of Work','Public Speaking','Leadership','Management','Nordic Startups','Networking','Personal Development','AI Ethics','Responsible AI']
+  },
+  practical: {
+    rolle: ['Engineer','Team Lead','Freelancer','Operations','Consultant','Project Manager','Selvstændig','Iværksætter'],
+    branche: ['Energi','Logistik','Sundhed','Cleantech','Hardware','Embedded','Agritech','Foodtech','Mobility','Service','Bæredygtighed','Circular Economy','IoT','Robotics'],
+    kompetence: ['Operations','Supply Chain','Procurement','DevOps','Security','Architecture','Sustainability','Innovation','Facilitation','People Ops','Talent Acquisition','Product Development'],
+    interesse: ['Climate Action','Future of Work','Personal Development','Networking','Community Building','Smart Cities','Digital Health','Biohacking','Remote Work','Entrepreneurship','Leadership','Lean Startup']
+  },
+  investor: {
+    rolle: ['Investor','Business Angel','VC','LP','Board Member','Partner','Advisor','Mentor','Director','Founder','Serial Entrepreneur'],
+    branche: ['SaaS','Fintech','Healthtech','Cleantech','Biotech','AI/ML','Deep Tech','Foodtech','Proptech','E-commerce','Crypto','DeFi','SpaceTech','Impact','Hardware','Marketplace','Platform','Edtech'],
+    kompetence: ['Due Diligence','Financial Modeling','Fundraising','Strategy','Partnerships','BD','Sales Strategy','Enterprise Sales','Innovation','ESG','Carbon Accounting','Pitch Deck','Operations'],
+    interesse: ['Venture Capital','Angel Investing','Entrepreneurship','Nordic Startups','European Tech','Global Markets','Exit Strategy','Skalering','Internationalisering','Climate Action','Impact','Leadership','Networking','Community Building','Crowdfunding']
+  }
+};
+
 function obRenderCategories() {
   var el = document.getElementById('ob-tag-categories');
   if (!el) return;
+
+  // Filter tags by lifestage if selected, otherwise show all
+  var filterMap = obLifestage ? OB_LIFESTAGE_TAGS[obLifestage] : null;
+
   el.innerHTML = Object.entries(TAG_CATEGORIES).map(function(entry) {
     var cat = entry[0], info = entry[1];
-    var tags = TAG_DATABASE[cat] || [];
+    var allTags = TAG_DATABASE[cat] || [];
+    var tags = filterMap && filterMap[cat] ? filterMap[cat] : allTags;
+
     return '<div class="ob-cat-block">' +
       '<div class="ob-cat-header">' +
       '<span class="tag-cat-dot" style="background:' + info.color + '"></span>' +
@@ -3044,8 +3131,93 @@ function obRenderCategories() {
           'onclick="obTogglePickTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\',\'' + cat + '\',this)">' +
           escHtml(t) + '</span>';
       }).join('') +
-      '</div></div>';
+      '</div>' +
+      '<div class="ob-cat-custom">' +
+      '<div class="ob-cat-custom-row">' +
+      '<input class="ob-cat-custom-input" placeholder="+ Tilføj egen..." ' +
+      'onkeydown="obCustomTag(event,\'' + cat + '\',this)" ' +
+      'data-cat="' + cat + '">' +
+      '<button type="button" class="ob-cat-custom-btn" onclick="obCustomTagBtn(\'' + cat + '\',this)" title="Tilføj">✓</button>' +
+      '</div>' +
+      '</div>' +
+      '</div>';
   }).join('');
+}
+
+// ── Custom tag creation with dedup + basic filter ──
+var OB_BLOCKED_WORDS = ['fuck','shit','ass','dick','pik','lort','idiot','nazi','hitler'];
+var CUSTOM_TAG_PROMOTE_THRESHOLD = 3;
+
+// Load promoted custom tags (3+ users) into TAG_DATABASE at startup
+async function loadPromotedCustomTags() {
+  try {
+    if (typeof sb === 'undefined') return;
+    var { data } = await sb.from('custom_tags').select('label,category,usage_count')
+      .gte('usage_count', CUSTOM_TAG_PROMOTE_THRESHOLD);
+    if (!data || data.length === 0) return;
+    data.forEach(function(t) {
+      var cat = t.category;
+      if (!TAG_DATABASE[cat]) return;
+      // Don't add duplicates
+      if (TAG_DATABASE[cat].indexOf(t.label) >= 0) return;
+      TAG_DATABASE[cat].push(t.label);
+      ALL_TAGS.push({ label: t.label, category: cat });
+    });
+  } catch(e) { console.warn('loadPromotedCustomTags:', e); }
+}
+
+function obCustomTagBtn(cat, btn) {
+  var input = btn.parentElement.querySelector('.ob-cat-custom-input');
+  if (!input) return;
+  obCustomTag({ key: 'Enter', preventDefault: function(){} }, cat, input);
+}
+
+function obCustomTag(event, cat, input) {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  var val = input.value.trim();
+  if (!val || val.length < 2 || val.length > 40) { input.value = ''; return; }
+
+  // Block inappropriate content
+  var lower = val.toLowerCase();
+  if (OB_BLOCKED_WORDS.some(function(w) { return lower.includes(w); })) {
+    showToast('Det tag er ikke tilladt');
+    input.value = '';
+    return;
+  }
+
+  // Case-insensitive dedup against existing tags (curated + promoted)
+  var exists = ALL_TAGS.find(function(t) { return t.label.toLowerCase() === lower; });
+  if (exists) {
+    obAddTag(exists.label, exists.category);
+    input.value = '';
+    obRenderCategories();
+    return;
+  }
+
+  // New custom tag — add locally for THIS user only (not to TAG_DATABASE)
+  var formatted = val.charAt(0).toUpperCase() + val.slice(1);
+  obAddTag(formatted, cat);
+  input.value = '';
+  obRenderCategories();
+  showToast('Tag tilføjet til din profil');
+
+  // Persist to Supabase: increment usage_count if exists, insert if new
+  if (typeof sb !== 'undefined' && currentUser) {
+    sb.from('custom_tags').select('id,usage_count').eq('label', formatted).maybeSingle()
+      .then(function(res) {
+        if (res.data) {
+          // Tag exists — increment usage count
+          sb.from('custom_tags').update({ usage_count: (res.data.usage_count || 0) + 1 })
+            .eq('id', res.data.id).then(function() {}).catch(function() {});
+        } else {
+          // New tag — insert with count 1
+          sb.from('custom_tags').insert({
+            label: formatted, category: cat, created_by: currentUser.id, usage_count: 1
+          }).then(function() {}).catch(function() {});
+        }
+      }).catch(function() {});
+  }
 }
 
 function obToggleCat(header) {
@@ -3126,13 +3298,13 @@ function epRenderCategories() {
   el.innerHTML = Object.entries(TAG_CATEGORIES).map(function(entry) {
     var cat = entry[0], info = entry[1];
     var tags = TAG_DATABASE[cat] || [];
-    return '<div class="tag-cat-section">' +
-      '<div class="tag-cat-header" onclick="epToggleCat(this)" data-expanded="false">' +
+    return '<div class="ob-cat-block">' +
+      '<div class="ob-cat-header">' +
       '<span class="tag-cat-dot" style="background:' + info.color + '"></span>' +
       '<span class="tag-cat-title">' + info.label + '</span>' +
       '<span class="tag-cat-count">' + tags.length + '</span>' +
-      '<span class="tag-cat-arrow">›</span></div>' +
-      '<div class="tag-cat-tags" style="display:none">' +
+      '</div>' +
+      '<div class="ob-cat-tags">' +
       tags.map(function(t) {
         var selected = epSelectedTags.indexOf(t) >= 0;
         return '<span class="tag-pick' + (selected ? ' selected' : '') + '" ' +
@@ -3140,16 +3312,42 @@ function epRenderCategories() {
           'onclick="epTogglePickTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\',\'' + cat + '\',this)">' +
           escHtml(t) + '</span>';
       }).join('') +
-      '</div></div>';
+      '</div>' +
+      '<div class="ob-cat-custom"><div class="ob-cat-custom-row">' +
+      '<input class="ob-cat-custom-input" placeholder="+ Tilføj egen..." ' +
+      'onkeydown="epCustomTag(event,\'' + cat + '\',this)" data-cat="' + cat + '">' +
+      '<button type="button" class="ob-cat-custom-btn" onclick="epCustomTagBtn(\'' + cat + '\',this)">✓</button>' +
+      '</div></div></div>';
   }).join('');
 }
-function epToggleCat(header) {
-  var expanded = header.dataset.expanded === 'true';
-  var tags = header.nextElementSibling;
-  tags.style.display = expanded ? 'none' : 'flex';
-  header.dataset.expanded = expanded ? 'false' : 'true';
-  header.querySelector('.tag-cat-arrow').style.transform = expanded ? '' : 'rotate(90deg)';
+function epCustomTagBtn(cat, btn) {
+  var input = btn.parentElement.querySelector('.ob-cat-custom-input');
+  if (!input) return;
+  epCustomTag({ key:'Enter', preventDefault:function(){} }, cat, input);
 }
+function epCustomTag(event, cat, input) {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  var val = input.value.trim();
+  if (!val || val.length < 2 || val.length > 40) { input.value = ''; return; }
+  var lower = val.toLowerCase();
+  if (OB_BLOCKED_WORDS.some(function(w) { return lower.includes(w); })) { showToast('Det tag er ikke tilladt'); input.value = ''; return; }
+  var exists = ALL_TAGS.find(function(t) { return t.label.toLowerCase() === lower; });
+  if (exists) { epAddTag(exists.label, exists.category); input.value = ''; epRenderCategories(); return; }
+  var formatted = val.charAt(0).toUpperCase() + val.slice(1);
+  epAddTag(formatted, cat);
+  input.value = '';
+  epRenderCategories();
+  showToast('Tag tilføjet til din profil');
+  if (typeof sb !== 'undefined' && currentUser) {
+    sb.from('custom_tags').select('id,usage_count').eq('label', formatted).maybeSingle()
+      .then(function(res) {
+        if (res.data) { sb.from('custom_tags').update({ usage_count: (res.data.usage_count||0)+1 }).eq('id', res.data.id).then(function(){}).catch(function(){}); }
+        else { sb.from('custom_tags').insert({ label:formatted, category:cat, created_by:currentUser.id, usage_count:1 }).then(function(){}).catch(function(){}); }
+      }).catch(function(){});
+  }
+}
+function epToggleCat(header) { return; }
 function epTogglePickTag(label, cat, el) {
   if (epSelectedTags.indexOf(label) >= 0) {
     epRemoveTag(label);
@@ -3163,23 +3361,23 @@ function epTogglePickTag(label, cat, el) {
 
 async function saveOnboarding() {
   try {
-    const name     = document.getElementById('ob-name').value.trim();
-    const title    = document.getElementById('ob-title').value.trim();
-    const bio      = document.getElementById('ob-bio').value.trim();
-    const linkedin = document.getElementById('ob-linkedin').value.trim();
+    const name      = document.getElementById('ob-name').value.trim();
+    const title     = document.getElementById('ob-title').value.trim();
+    const bio       = document.getElementById('ob-bio').value.trim();
+    const linkedin  = document.getElementById('ob-linkedin').value.trim();
+    const workplace = (document.getElementById('ob-workplace')?.value || '').trim();
     if (!name)            return showToast('Navn er påkrævet');
     if (!title)           return showToast('Titel er påkrævet');
     if (obSelectedTags.length < 3) return showToast('Vælg mindst 3 tags');
     const { error } = await sb.from('profiles').upsert({
-      id: currentUser.id, name, title, bio, linkedin,
+      id: currentUser.id, name, title, bio, linkedin, workplace,
       keywords: obSelectedTags, dynamic_keywords: obDynChips, is_anon: false
     });
     if (error) return showToast('Fejl: ' + error.message);
     await loadCurrentProfile();
     showToast('Profil oprettet! 🎉');
-    // New users see welcome screen, not empty home
     goTo('screen-welcome');
-    loadHome(); // Preload in background
+    loadHome();
   } catch(e) { console.error("saveOnboarding:", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -4382,7 +4580,7 @@ window.addEventListener('load', () => {
   }
 
   // Onboarding strength meter — listen on all fields
-  ['ob-name','ob-title','ob-bio','ob-linkedin'].forEach(function(id) {
+  ['ob-name','ob-title','ob-bio','ob-linkedin','ob-workplace'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('input', updateObStrength);
   });
