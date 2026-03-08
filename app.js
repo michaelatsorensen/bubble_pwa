@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-09T01:50:00';
-const BUILD_VERSION  = 'v1.3.3';
+const BUILD_TIMESTAMP = '2026-03-09T03:10:00';
+const BUILD_VERSION  = 'v1.3.7';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -135,6 +135,63 @@ function initSupabase() {
     document.getElementById('loading-msg').textContent = 'Fejl: ' + e.message;
     return false;
   }
+}
+
+// ══════════════════════════════════════════════════════════
+//  INPUT CONFIRM BUTTONS + KEYBOARD DISMISS
+// ══════════════════════════════════════════════════════════
+function confirmInput(btn) {
+  var input = btn.parentElement.querySelector('input, textarea');
+  if (!input) return;
+  if (input.value.trim()) {
+    btn.classList.add('confirmed');
+    btn.innerHTML = '✓';
+  }
+  input.blur(); // Dismiss keyboard
+}
+
+// Auto-wrap all designated inputs with confirm buttons on boot
+function initInputConfirmButtons() {
+  var ids = [
+    'ob-name','ob-title','ob-workplace','ob-bio','ob-linkedin',
+    'ep-name','ep-title','ep-workplace','ep-bio','ep-linkedin',
+    'cb-name','cb-desc','eb-name','eb-desc'
+  ];
+  ids.forEach(function(id) {
+    var input = document.getElementById(id);
+    if (!input || input.dataset.confirmInit) return;
+    input.dataset.confirmInit = '1';
+    // Wrap in input-wrap if not already
+    if (!input.parentElement.classList.contains('input-wrap')) {
+      var wrap = document.createElement('div');
+      wrap.className = 'input-wrap';
+      input.parentElement.insertBefore(wrap, input);
+      wrap.appendChild(input);
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'input-confirm-btn';
+      btn.innerHTML = '✓';
+      btn.onclick = function() { confirmInput(btn); };
+      wrap.appendChild(btn);
+    }
+    // Reset to grey when input changes
+    input.addEventListener('input', function() {
+      var b = input.parentElement.querySelector('.input-confirm-btn');
+      if (b) b.classList.remove('confirmed');
+    });
+    // Dismiss keyboard on Enter (for single-line inputs)
+    if (input.tagName === 'INPUT') {
+      input.setAttribute('enterkeyhint', 'done');
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          input.blur();
+          var b = input.parentElement.querySelector('.input-confirm-btn');
+          if (b && input.value.trim()) { b.classList.add('confirmed'); b.innerHTML = '✓'; }
+        }
+      });
+    }
+  });
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2409,6 +2466,7 @@ function openEditProfile() {
   epDynChips = [...(currentProfile.dynamic_keywords || [])];
   renderChips('ep-dyn-chips', epDynChips, 'ep-dyn-chips-container', 'ep-dyn-chip-input');
   openModal('modal-edit-profile');
+  setTimeout(initInputConfirmButtons, 50);
 }
 
 async function saveProfile() {
@@ -2654,6 +2712,7 @@ function openCreateBubble() {
   document.getElementById('cb-location').value = '';
   renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
   openModal('modal-create-bubble');
+  setTimeout(initInputConfirmButtons, 50);
 }
 
 async function createBubble() {
@@ -2817,6 +2876,7 @@ async function openEditBubble(bubbleId) {
     ebChips = [...(b.keywords || [])];
     renderChips('eb-chips', ebChips, 'eb-chips-container', 'eb-chip-input');
     openModal('modal-edit-bubble');
+    setTimeout(initInputConfirmButtons, 50);
   } catch(e) { logError("openEditBubble", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -3079,6 +3139,7 @@ async function maybeShowOnboarding() {
       obRenderSelectedTags();
       obRenderCategories();
       goTo('screen-onboarding');
+      setTimeout(initInputConfirmButtons, 50);
       return true;
     }
     return false;
@@ -3140,14 +3201,14 @@ function updateObStrength() {
 
 // ── Lifestage selector & role suggestions ──
 var OB_LIFESTAGE_ROLES = {
-  student: ['Student','PhD','Researcher','Praktikant','Studentermedhjælper','Teaching Assistant'],
-  employee: ['Developer','Designer','Product Manager','Marketing','Sales','HR','Finance','Operations','Team Lead','Director'],
-  entrepreneur: ['Founder','Co-Founder','CEO','CTO','Iværksætter','Serial Entrepreneur'],
-  freelancer: ['Freelancer','Consultant','Advisor','Coach','Mentor','Selvstændig'],
-  public: ['Sagsbehandler','Kommunaldirektør','Projektleder','Koordinator','Rådgiver','Leder','Analytiker','Socialrådgiver'],
-  practical: ['Håndværker','Tekniker','Sygeplejerske','Mekaniker','Elektriker','Tømrer','Landmand','Operatør','Montør'],
-  investor: ['Investor','Business Angel','VC','LP','Board Member','Partner'],
-  other: ['Pensionist','Mellem jobs','Karriereskift','Frivillig','Community Builder','Kreativ']
+  student: ['Student','PhD','Researcher','Praktikant','Studentermedhjælper','Teaching Assistant','Kandidatstuderende','Bachelorstuderende','Stipendiat','Lab Assistant','Tutor','Studenterambassadør'],
+  employee: ['Developer','Designer','Product Manager','Marketing','Sales','HR','Finance','Operations','Team Lead','Director','Project Manager','Data Scientist','Engineer','Analyst','Consultant','Account Manager','Customer Success','DevOps','QA','Scrum Master','UX Researcher','Content Manager','Business Developer','Logistics','Supply Chain'],
+  entrepreneur: ['Founder','Co-Founder','CEO','CTO','CFO','COO','CMO','CPO','Iværksætter','Serial Entrepreneur','Solo Founder','Startup Advisor','Growth Lead','Head of Product','Technical Lead'],
+  freelancer: ['Freelancer','Consultant','Advisor','Coach','Mentor','Selvstændig','Fotograf','Grafiker','Tekstforfatter','Webudvikler','Oversætter','Illustrator','Regnskab','Virtual Assistant','Projektleder'],
+  public: ['Sagsbehandler','Kommunaldirektør','Projektleder','Koordinator','Rådgiver','Leder','Analytiker','Socialrådgiver','Lærer','Pædagog','Sygeplejerske','Læge','Forsker','Jurist','Bibliotekar','Planlægger','Embedsmand'],
+  practical: ['Håndværker','Tekniker','Sygeplejerske','Mekaniker','Elektriker','Tømrer','Landmand','Operatør','Montør','Murer','VVS','Smed','Maler','Gartner','Kok','Bager','Frisør','Chauffør','Lagermedarbejder'],
+  investor: ['Investor','Business Angel','VC','LP','Board Member','Partner','Fund Manager','Family Office','Syndicate Lead','Due Diligence','Portfolio Manager','Impact Investor','Micro VC','Crowdfunding'],
+  other: ['Pensionist','Mellem jobs','Karriereskift','Frivillig','Community Builder','Kreativ','Hjemmegående','Sabbatical','Digital Nomad','Influencer','Kunstner','Musiker','Atlet','Aktivist']
 };
 var obLifestage = null;
 
@@ -3156,7 +3217,7 @@ function skipOnboarding() {
   var name = (document.getElementById('ob-name')?.value || '').trim();
   if (!name && currentProfile?.name) name = currentProfile.name;
   if (!name && currentUser?.email) name = currentUser.email.split('@')[0];
-  if (!name) name = 'Ny bruger';
+  if (!name) { showToast('Skriv dit navn først — det er alt der kræves'); return; }
 
   sb.from('profiles').upsert({
     id: currentUser.id, name: name,
@@ -3172,6 +3233,54 @@ function skipOnboarding() {
   }).catch(function(e) {
     showToast('Fejl: ' + (e.message || 'ukendt'));
   });
+}
+
+var _abortConfirmed = false;
+function abortOnboarding() {
+  if (!_abortConfirmed) {
+    _abortConfirmed = true;
+    // Show confirm overlay
+    var overlay = document.createElement('div');
+    overlay.id = 'abort-confirm-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)';
+    overlay.innerHTML = '<div style="background:rgba(12,12,25,0.95);border:1px solid var(--glass-border);border-radius:20px;padding:1.5rem;max-width:320px;text-align:center;font-family:Outfit,sans-serif">' +
+      '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">Afbryd opsætning?</div>' +
+      '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">Alt du har udfyldt nulstilles og du vender tilbage til login-skærmen.</div>' +
+      '<button onclick="confirmAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid rgba(232,93,138,0.3);background:rgba(232,93,138,0.1);color:var(--accent2);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.4rem">Ja, afbryd og nulstil</button>' +
+      '<button onclick="cancelAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Fortsæt opsætning</button>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    return;
+  }
+}
+
+function cancelAbortOnboarding() {
+  _abortConfirmed = false;
+  var overlay = document.getElementById('abort-confirm-overlay');
+  if (overlay) overlay.remove();
+}
+
+async function confirmAbortOnboarding() {
+  _abortConfirmed = false;
+  var overlay = document.getElementById('abort-confirm-overlay');
+  if (overlay) overlay.remove();
+  try {
+    // Clear onboarding inputs
+    ['ob-name','ob-title','ob-bio','ob-linkedin','ob-workplace'].forEach(function(id) {
+      var el = document.getElementById(id); if (el) el.value = '';
+    });
+    obSelectedTags = [];
+    obDynChips = [];
+    obLifestage = null;
+    // Sign out and go to auth
+    bcUnsubscribeAll();
+    sb.removeAllChannels();
+    await sb.auth.signOut();
+    currentUser = null;
+    currentProfile = null;
+    goTo('screen-auth');
+    showToast('Opsætning afbrudt');
+  } catch(e) { logError('abortOnboarding', e); goTo('screen-auth'); }
 }
 
 function obToggleBoost() {
@@ -3193,13 +3302,20 @@ function obSelectLifestage(btn) {
   btn.classList.add('selected');
   obLifestage = btn.dataset.stage;
 
-  // Show role suggestions
+  // Show role suggestions with show-more
   var roles = OB_LIFESTAGE_ROLES[obLifestage] || [];
   var container = document.getElementById('ob-role-suggestions');
   if (container) {
-    container.innerHTML = roles.map(function(r) {
+    var initialShow = 8;
+    var visibleRoles = roles.slice(0, initialShow);
+    var hiddenRoles = roles.slice(initialShow);
+    container.innerHTML = visibleRoles.map(function(r) {
       return '<button type="button" class="ob-role-chip" onclick="obSetTitle(this)">' + r + '</button>';
-    }).join('');
+    }).join('') +
+    (hiddenRoles.length > 0 ? '<span id="ob-roles-hidden" style="display:none">' + hiddenRoles.map(function(r) {
+      return '<button type="button" class="ob-role-chip" onclick="obSetTitle(this)">' + r + '</button>';
+    }).join('') + '</span>' +
+    '<button type="button" class="ob-show-more" id="ob-roles-toggle" onclick="obToggleRoles()" style="color:var(--accent);margin-top:0.2rem">+ Vis alle ' + roles.length + ' roller</button>' : '');
   }
 
   // Auto-add lifestage as first tag if relevant
@@ -3218,10 +3334,45 @@ function obSetTitle(btn) {
   var input = document.getElementById('ob-title');
   if (!input) return;
   input.value = btn.textContent;
-  // Highlight selected
   document.querySelectorAll('.ob-role-chip').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
+  // Confirm button green
+  var cb = input.parentElement?.querySelector('.input-confirm-btn');
+  if (cb) { cb.classList.add('confirmed'); }
   updateObStrength();
+}
+
+function obToggleRoles() {
+  var hidden = document.getElementById('ob-roles-hidden');
+  var toggle = document.getElementById('ob-roles-toggle');
+  if (!hidden || !toggle) return;
+  if (hidden.style.display === 'none') {
+    hidden.style.display = 'inline';
+    toggle.textContent = '− Vis færre';
+  } else {
+    hidden.style.display = 'none';
+    var roles = OB_LIFESTAGE_ROLES[obLifestage] || [];
+    toggle.textContent = '+ Vis alle ' + roles.length + ' roller';
+  }
+}
+
+// Save custom-typed titles for admin review (fires on save)
+function persistCustomTitle(title) {
+  if (!title || !currentUser) return;
+  // Check if it's a known role
+  var allRoles = Object.values(OB_LIFESTAGE_ROLES).flat();
+  var isKnown = allRoles.some(function(r) { return r.toLowerCase() === title.toLowerCase(); });
+  if (isKnown) return; // Already in suggestions, no need to save
+  // Save as custom tag candidate for admin review
+  sb.from('custom_tags').upsert({
+    label: title, category: 'rolle', created_by: currentUser.id, usage_count: 1
+  }, { onConflict: 'label' }).then(function() {
+    // Increment usage if already exists
+    sb.from('custom_tags').select('id,usage_count').eq('label', title).single().then(function(res) {
+      if (res.data && res.data.usage_count > 1) return;
+      // Already handled by upsert
+    });
+  }).catch(function() {});
 }
 
 // ── Apple Login ──
@@ -3491,6 +3642,8 @@ function obRenderCategories() {
 
   el.innerHTML = Object.entries(TAG_CATEGORIES).map(function(entry) {
     var cat = entry[0], info = entry[1];
+    // Skip "Rolle & Titel" in onboarding — handled by titel input + livsfase suggestions
+    if (cat === 'rolle') return '';
     var allTags = TAG_DATABASE[cat] || [];
     var tags = filterMap && filterMap[cat] ? filterMap[cat] : allTags;
     var expanded = _obExpandedCats[cat];
@@ -3783,6 +3936,7 @@ async function saveOnboarding() {
       keywords: obSelectedTags, dynamic_keywords: obDynChips, is_anon: false
     });
     if (error) return showToast('Fejl: ' + error.message);
+    persistCustomTitle(title);
     await loadCurrentProfile();
     showToast('Profil oprettet! 🎉');
     // Aggressively preload everything so app feels instant
@@ -5803,4 +5957,15 @@ window.addEventListener('load', async () => {
   }
   // Init swipe-to-close on all sheets/modals
   initAllSwipeClose();
+  initInputConfirmButtons();
+
+  // iOS keyboard dismiss: blur active input when tapping outside inputs
+  document.addEventListener('touchstart', function(e) {
+    var active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+      if (e.target !== active && !e.target.closest('.input-wrap') && !e.target.closest('.chips-container') && !e.target.closest('.ob-cat-custom-row') && !e.target.closest('.tag-suggestions')) {
+        active.blur();
+      }
+    }
+  }, { passive: true });
 });

@@ -1520,3 +1520,11 @@ a.person-action-btn { text-decoration:none; }
 
 /* ═══ SAVED STORY BAR STARS ═══ */
 .saved-story-stars { font-size:0.5rem; color:var(--accent); text-align:center; margin-top:-0.1rem; letter-spacing:0.05em; }
+
+/* ═══ INPUT CONFIRM BUTTON ═══ */
+.input-wrap { position:relative; display:flex; align-items:center; }
+.input-wrap .input { flex:1; padding-right:2.8rem; }
+.input-wrap textarea.input { padding-right:2.8rem; }
+.input-confirm-btn { position:absolute; right:0.5rem; top:50%; transform:translateY(-50%); width:28px; height:28px; border-radius:8px; border:none; background:rgba(255,255,255,0.06); color:var(--muted); font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; flex-shrink:0; }
+.input-confirm-btn.confirmed { background:var(--green); color:white; }
+textarea ~ .input-confirm-btn { top:0.7rem; transform:none; }
