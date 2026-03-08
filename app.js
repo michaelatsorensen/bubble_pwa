@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-09T00:45:00';
-const BUILD_VERSION  = 'v1.2.7';
+const BUILD_TIMESTAMP = '2026-03-09T01:15:00';
+const BUILD_VERSION  = 'v1.3.0';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -476,6 +476,93 @@ function switchToSignup() {
 function switchToLogin() {
   document.getElementById('auth-signup').style.display = 'none';
   document.getElementById('auth-login').style.display = 'block';
+}
+
+function showAuthForms() {
+  var splash = document.getElementById('auth-splash');
+  var forms = document.getElementById('auth-forms');
+  if (splash) { splash.style.transition = 'opacity 0.3s'; splash.style.opacity = '0'; setTimeout(function(){ splash.style.display = 'none'; }, 300); }
+  if (forms) { forms.style.display = 'block'; forms.style.opacity = '0'; setTimeout(function(){ forms.style.transition = 'opacity 0.3s'; forms.style.opacity = '1'; }, 50); }
+}
+
+function showTerms() {
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.85);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+  var sheet = document.createElement('div');
+  sheet.style.cssText = 'width:100%;max-width:680px;max-height:85vh;background:rgba(12,12,25,0.95);border-radius:24px 24px 0 0;padding:1.5rem;overflow-y:auto;color:var(--text);font-family:Outfit,sans-serif';
+  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 1rem;cursor:pointer" onclick="this.parentElement.parentElement.remove()"></div>' +
+    '<h2 style="font-size:1.2rem;font-weight:800;margin-bottom:0.8rem">Betingelser & Privatlivspolitik</h2>' +
+    '<div style="font-size:0.78rem;line-height:1.7;color:var(--text-secondary)">' +
+    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">1. Hvad er Bubble?</h3>' +
+    '<p>Bubble er en networking-platform i lukket beta udviklet i Sønderborg, Danmark. Appen forbinder mennesker baseret på professionelle interesser og nærhed.</p>' +
+    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">2. Beta-forbehold</h3>' +
+    '<p>Bubble er i <strong>closed beta</strong>. Det betyder at:</p>' +
+    '<p>• Funktioner kan ændres, tilføjes eller fjernes uden varsel<br>' +
+    '• Der kan forekomme fejl, nedetid og datatab<br>' +
+    '• Vi gør vores bedste, men giver ingen garantier for oppetid eller dataintegritet</p>' +
+    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">3. Dine data (GDPR)</h3>' +
+    '<p>Vi indsamler kun det du selv indtaster:</p>' +
+    '<p>• Navn, email, titel, arbejdsplads, bio, tags, profilbillede<br>' +
+    '• Beskeder du sender i chat og bobler<br>' +
+    '• Hvilke bobler du joiner og kontakter du gemmer</p>' +
+    '<p>Vi sælger <strong>aldrig</strong> dine data til tredjepart. Data opbevares i EU via Supabase (GDPR-compliant hosting).</p>' +
+    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">4. Dine rettigheder</h3>' +
+    '<p>Du kan til enhver tid:</p>' +
+    '<p>• Redigere eller slette din profil<br>' +
+    '• Blokere andre brugere<br>' +
+    '• Anmode om fuld sletning af dine data ved at kontakte os</p>' +
+    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">5. Adfærd</h3>' +
+    '<p>Vi forventer at alle brugere opfører sig respektfuldt. Chikane, spam, hadefuldt indhold eller upassende profilbilleder tolereres ikke og kan resultere i fjernelse fra platformen.</p>' +
+    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">6. Ansvarsfraskrivelse</h3>' +
+    '<p>Bubble leveres "as is" uden garanti. Vi er ikke ansvarlige for:</p>' +
+    '<p>• Tab af data under beta<br>' +
+    '• Handlinger foretaget af andre brugere<br>' +
+    '• Resultat af forbindelser skabt via platformen</p>' +
+    '<p>Brug af Bubble sker på eget ansvar.</p>' +
+    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">7. Kontakt</h3>' +
+    '<p>Spørgsmål? Kontakt os på <strong>hello@bubble.app</strong></p>' +
+    '</div>' +
+    '<button onclick="this.parentElement.parentElement.remove()" style="width:100%;margin-top:1.2rem;padding:0.7rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Luk</button>';
+
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+}
+
+function openFeedback() {
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.85);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+  var sheet = document.createElement('div');
+  sheet.style.cssText = 'width:100%;max-width:680px;background:rgba(12,12,25,0.95);border-radius:24px 24px 0 0;padding:1.5rem;color:var(--text);font-family:Outfit,sans-serif';
+  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 1rem;cursor:pointer" onclick="this.parentElement.parentElement.remove()"></div>' +
+    '<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem">Giv feedback</h2>' +
+    '<p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Vi er i beta — din feedback er guld værd og hjælper os med at bygge det bedste produkt.</p>' +
+    '<textarea id="feedback-text" placeholder="Hvad virker godt? Hvad kan gøres bedre? Har du oplevet fejl?" style="width:100%;height:120px;background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:12px;padding:0.7rem;font-family:Outfit,sans-serif;font-size:0.82rem;color:var(--text);resize:none;outline:none"></textarea>' +
+    '<button onclick="submitFeedback()" style="width:100%;margin-top:0.8rem;padding:0.7rem;border-radius:12px;border:none;background:var(--gradient-accent);color:white;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Send feedback →</button>' +
+    '<button onclick="this.parentElement.parentElement.remove()" style="width:100%;margin-top:0.4rem;padding:0.5rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--muted);font-family:inherit;font-size:0.78rem;cursor:pointer">Annuller</button>';
+
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+  setTimeout(function(){ var ta = document.getElementById('feedback-text'); if(ta) ta.focus(); }, 100);
+}
+
+async function submitFeedback() {
+  var text = document.getElementById('feedback-text')?.value?.trim();
+  if (!text) { showToast('Skriv noget feedback først'); return; }
+  try {
+    await sb.from('reports').insert({
+      reporter_id: currentUser.id,
+      reported_id: null,
+      type: 'feedback',
+      reason: text
+    });
+    logError('USER_FEEDBACK', new Error('Feedback modtaget'), { text: text, user: currentUser.id, name: currentProfile?.name });
+    document.querySelector('[style*="backdrop-filter"]')?.remove();
+    showToast('Tak for din feedback! 💜');
+  } catch(e) { logError('submitFeedback', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2154,6 +2241,8 @@ function profSwitchTab(tab) {
             '<div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>' +
           '</div></div>' +
         '<div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Konto</div>' +
+        '<button onclick="openFeedback()" style="width:100%;padding:0.7rem;background:rgba(139,127,255,0.08);border:1px solid rgba(139,127,255,0.15);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent);cursor:pointer;margin-bottom:0.5rem">💬 Giv feedback</button>' +
+        '<button onclick="showTerms()" style="width:100%;padding:0.7rem;background:none;border:1px solid var(--glass-border);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--text-secondary);cursor:pointer;margin-bottom:0.5rem">Betingelser & Privatlivspolitik</button>' +
         '<button onclick="handleLogout()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(232,93,138,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent2);cursor:pointer">Log ud</button>' +
         '<div style="text-align:center;margin-top:2rem;font-size:0.62rem;color:var(--muted)">Bubble ' + BUILD_VERSION + ' · Build ' + BUILD_TIMESTAMP + '</div>';
       container.parentElement.insertBefore(div, container.nextSibling);
