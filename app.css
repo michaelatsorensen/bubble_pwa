@@ -1471,3 +1471,16 @@ a.person-action-btn { text-decoration:none; }
 .ob-cat-custom-input::placeholder { color:var(--muted); font-style:italic; }
 .ob-cat-custom-btn { width:32px; height:32px; border-radius:8px; border:none; background:var(--green); color:white; font-size:0.85rem; font-weight:700; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:transform 0.1s, opacity 0.15s; }
 .ob-cat-custom-btn:active { transform:scale(0.9); opacity:0.8; }
+
+/* ═══ SAVED CONTACTS V2 ═══ */
+.saved-card-v2 { background:var(--glass-bg); border:1px solid var(--glass-border-subtle); border-radius:16px; padding:1rem 1.1rem; margin-bottom:0.6rem; cursor:pointer; transition:border-color 0.2s, background 0.2s; }
+.saved-card-v2:active { background:rgba(255,255,255,0.06); border-color:var(--glass-border); }
+.saved-card-top { display:flex; align-items:center; gap:0.8rem; }
+.saved-avatar-lg { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.95rem; font-weight:700; color:white; flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,0.25); }
+.saved-card-info { flex:1; min-width:0; }
+.saved-card-name { font-size:0.92rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-0.01em; }
+.saved-card-title { font-size:0.78rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:0.1rem; }
+.saved-workplace { font-size:0.68rem; color:var(--muted); margin-top:0.15rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.saved-stars { font-size:0.65rem; color:var(--accent); margin-top:0.2rem; letter-spacing:0.05em; }
+.saved-card-actions { display:flex; flex-direction:column; gap:0.35rem; flex-shrink:0; }
+.saved-card-tags { display:flex; flex-wrap:wrap; gap:0.25rem; margin-top:0.65rem; padding-top:0.55rem; border-top:1px solid var(--glass-border-subtle); }

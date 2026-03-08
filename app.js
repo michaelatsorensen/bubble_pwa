@@ -348,8 +348,8 @@ async function loadMyBubbles() {
       .select('bubble_id').eq('user_id', currentUser.id);
 
     if (!memberships || memberships.length === 0) {
-      ownedList.innerHTML  = '<div class="sub-muted" style="padding:0.5rem 0">Du har ikke oprettet nogen bobler endnu.</div>';
-      joinedList.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke i nogen bobler endnu.<br>Opdag eller opret en boble!</div></div>';
+      ownedList.innerHTML  = '';
+      joinedList.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke i nogen bobler endnu</div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.82rem;padding:0.6rem 1.5rem">Udforsk bobler →</button></div><div style="margin-top:0.5rem"><button class="btn-secondary" onclick="openCreateBubble()" style="font-size:0.78rem;padding:0.5rem 1.2rem">+ Opret en boble</button></div></div>';
       return;
     }
 
@@ -1788,7 +1788,7 @@ async function loadSavedContacts() {
     // Fetch profiles separately — no FK dependency
     const contactIds = saved.map(s => s.contact_id);
     const { data: profiles, error: profErr } = await sb.from('profiles')
-      .select('id, name, title, keywords').in('id', contactIds);
+      .select('id, name, title, keywords, workplace').in('id', contactIds);
 
     if (profErr) console.error('loadSavedContacts profiles error:', profErr);
     const profileMap = {};
@@ -1811,24 +1811,25 @@ async function loadSavedContacts() {
       if (!p) return '';
       const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const col = colors[i % colors.length];
-      const tags = (p.keywords||[]).slice(0,3).map(k => `<span class="tag" style="font-size:0.58rem;padding:0.15rem 0.4rem">${escHtml(k)}</span>`).join('');
-      const stars = starRender(p.id);
-      return `<div class="card saved-card" style="padding:0.7rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="bcOpenPerson('${p.id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${col}','screen-profile')">
-        <div class="flex-row-center" style="gap:0.7rem">
-          <div class="saved-avatar-wrap" style="position:relative;flex-shrink:0">
-            <div class="avatar" style="background:${col};width:42px;height:42px;font-size:0.75rem">${ini}</div>
-            ${stars}
+      const tags = (p.keywords||[]).slice(0,4).map(k => `<span class="tag" style="font-size:0.6rem;padding:0.18rem 0.45rem">${escHtml(k)}</span>`).join('');
+      const starCount = starGet(p.id);
+      const starsHtml = starCount > 0 ? '<div class="saved-stars">' + '★'.repeat(starCount) + '</div>' : '';
+      const workplace = p.workplace ? `<div class="saved-workplace">${escHtml(p.workplace)}</div>` : '';
+      return `<div class="saved-card-v2" onclick="bcOpenPerson('${p.id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${col}','screen-profile')">
+        <div class="saved-card-top">
+          <div class="saved-avatar-lg" style="background:${col}">${ini}</div>
+          <div class="saved-card-info">
+            <div class="saved-card-name">${escHtml(p.name||'Ukendt')}</div>
+            <div class="saved-card-title">${escHtml(p.title||'')}</div>
+            ${workplace}
+            ${starsHtml}
           </div>
-          <div style="flex:1;min-width:0">
-            <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||'Ukendt')}</div>
-            <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.title||'')}</div>
-            ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.3rem">${tags}</div>` : ''}
-          </div>
-          <div style="display:flex;gap:0.35rem;flex-shrink:0" onclick="event.stopPropagation()">
+          <div class="saved-card-actions" onclick="event.stopPropagation()">
             <button class="saved-action-btn" onclick="openChat('${p.id}','screen-profile')" title="Send besked">${icon('chat')}</button>
             <button class="saved-action-btn danger" onclick="removeSavedContact('${s.id}',this)" title="Fjern">${icon('x')}</button>
           </div>
         </div>
+        ${tags ? `<div class="saved-card-tags">${tags}</div>` : ''}
       </div>`;
     }).join('');
   } catch(e) { console.error("loadSavedContacts:", e); }
