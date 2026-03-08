@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-09T01:30:00';
-const BUILD_VERSION  = 'v1.3.1';
+const BUILD_TIMESTAMP = '2026-03-09T01:50:00';
+const BUILD_VERSION  = 'v1.3.3';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -4656,41 +4656,47 @@ async function bcLoadMembers() {
 
       const liveBadge = m._isLive ? '<span class="live-badge-mini">LIVE</span>' : '';
 
-      html += `<div class="chat-member-row" onclick="bcOpenPerson('${m.user_id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${color}')">
+      html += `<div class="chat-member-row" data-member-uid="${m.user_id}" onclick="bcOpenPerson('${m.user_id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${color}')">
         <div class="chat-member-avatar" style="background:${color}">${initials}${m._isLive ? '<span class="live-dot"></span>' : ''}</div>
         <div style="flex:1;min-width:0"><div class="chat-member-name">${escHtml(p.name||'Ukendt')} ${liveBadge}</div><div class="chat-member-status">${escHtml(p.title||'')}</div></div>
-        ${isOwnerRow ? '<span class="chat-member-role">Ejer</span>' : (isOwner && !isOwnerRow ? '<button class="bc-kick-btn" onclick="event.stopPropagation();bcKickMember(\'' + m.user_id + '\',\'' + escHtml(p.name||'Ukendt').replace(/'/g,'') + '\')" title="Fjern fra boble">' + icon('x') + '</button>' : '')}
+        ${isOwnerRow ? '<span class="chat-member-role">Ejer</span>' : (isOwner && !isOwnerRow ? '<button class="bc-kick-btn" onclick="event.stopPropagation();bcShowKickConfirm(this,\'' + m.user_id + '\',\'' + escHtml(p.name||'Ukendt').replace(/'/g,'') + '\')" title="Fjern fra boble">' + icon('x') + '</button>' : '')}
       </div>`;
     });
     list.innerHTML = html;
   } catch(e) { logError("bcLoadMembers", e); showToast(e.message || "Ukendt fejl"); }
 }
 
-// ── Bubble owner: kick/remove member ──
-var _kickConfirm = null;
-async function bcKickMember(userId, userName) {
+// ── Bubble owner: kick/remove member (inline confirm tray) ──
+function bcShowKickConfirm(btn, userId, userName) {
+  var row = btn.closest('.chat-member-row');
+  if (!row || row.querySelector('.kick-confirm')) return;
+  var confirm = document.createElement('div');
+  confirm.className = 'kick-confirm';
+  confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(232,93,138,0.08);border:1px solid rgba(232,93,138,0.2);border-radius:10px;gap:0.5rem';
+  confirm.onclick = function(e) { e.stopPropagation(); };
+  confirm.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Fjern ' + userName + '?</span>' +
+    '<div style="display:flex;gap:0.3rem">' +
+    '<button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)" onclick="event.stopPropagation();bcConfirmKick(\'' + userId + '\',\'' + userName + '\')">Fjern</button>' +
+    '<button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="event.stopPropagation();bcCancelKick(this)">Annuller</button>' +
+    '</div>';
+  row.appendChild(confirm);
+}
+
+function bcCancelKick(btn) {
+  var confirm = btn.closest('.kick-confirm');
+  if (confirm) confirm.remove();
+}
+
+async function bcConfirmKick(userId, userName) {
   if (!bcBubbleId || !currentUser) return;
-  // Verify ownership
   if (bcBubbleData?.created_by !== currentUser.id) { showToast('Kun ejeren kan fjerne medlemmer'); return; }
-  // Confirm
-  if (_kickConfirm !== userId) {
-    _kickConfirm = userId;
-    showToast('Fjern ' + userName + '? Tryk igen for at bekræfte');
-    setTimeout(function() { _kickConfirm = null; }, 3000);
-    return;
-  }
-  _kickConfirm = null;
   try {
-    // Remove from bubble_members
     var { error } = await sb.from('bubble_members').delete()
       .eq('bubble_id', bcBubbleId).eq('user_id', userId);
     if (error) throw error;
-    // Also remove any live check-in
-    await sb.from('bubble_members').update({ checked_in_at: null, checked_out_at: new Date().toISOString() })
-      .eq('bubble_id', bcBubbleId).eq('user_id', userId);
     showToast(userName + ' er fjernet fra boblen');
-    bcLoadMembers(); // Refresh list
-  } catch(e) { logError('bcKickMember', e, { bubbleId: bcBubbleId, userId: userId }); showToast('Fejl: ' + (e.message || 'ukendt')); }
+    bcLoadMembers();
+  } catch(e) { logError('bcConfirmKick', e, { bubbleId: bcBubbleId, userId: userId }); showToast('Fejl: ' + (e.message || 'ukendt')); }
 }
 
 async function bcLoadInfo() {
