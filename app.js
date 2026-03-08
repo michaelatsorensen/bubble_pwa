@@ -5,6 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
+const BUILD_TIMESTAMP = '2026-03-08T22:45:00';
+const BUILD_VERSION  = 'v1.2.0';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -279,29 +281,72 @@ async function handleAvatarUpload(input) {
   try {
     var file = input.files[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { showToast('Maks 2MB'); input.value = ''; return; }
-    if (!file.type.startsWith('image/')) { showToast('Kun billeder (JPG/PNG)'); input.value = ''; return; }
+
+    // Validate with clear messages
+    var maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      var sizeMB = (file.size / 1024 / 1024).toFixed(1);
+      showToast('Billedet er ' + sizeMB + 'MB — maks 2MB. Prøv et mindre billede.');
+      input.value = '';
+      return;
+    }
+    var allowed = ['image/jpeg','image/png','image/webp'];
+    if (allowed.indexOf(file.type) < 0) {
+      showToast('Format ikke understøttet (' + (file.type || 'ukendt') + '). Brug JPG, PNG eller WebP.');
+      input.value = '';
+      return;
+    }
     showToast('Uploader billede...');
 
-    var path = 'avatars/' + currentUser.id + '/' + Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    var { error: upErr } = await sb.storage.from('bubble-files').upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type });
-    if (upErr) { showToast('Upload fejlede: ' + (upErr.message || 'ukendt')); input.value = ''; return; }
+    // Resize to max 400x400 to save storage and speed
+    var resized = await resizeImage(file, 400);
+
+    var path = 'avatars/' + currentUser.id + '/' + Date.now() + '.jpg';
+    var { error: upErr } = await sb.storage.from('bubble-files').upload(path, resized, { cacheControl: '3600', upsert: true, contentType: 'image/jpeg' });
+    if (upErr) {
+      logError('avatarUpload:storage', upErr, { path: path, size: file.size });
+      showToast('Upload fejlede: ' + (upErr.message || 'Tjek at bubble-files bucket er oprettet'));
+      input.value = '';
+      return;
+    }
 
     var { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
     var avatarUrl = urlData.publicUrl;
 
     var { error: saveErr } = await sb.from('profiles').update({ avatar_url: avatarUrl }).eq('id', currentUser.id);
-    if (saveErr) { showToast('Fejl ved gem: ' + saveErr.message); return; }
+    if (saveErr) {
+      logError('avatarUpload:save', saveErr);
+      showToast('Gem fejl: ' + saveErr.message + ' — kør: ALTER TABLE profiles ADD COLUMN avatar_url text;');
+      return;
+    }
 
     currentProfile.avatar_url = avatarUrl;
-    // Update preview
     var img = document.getElementById('ep-avatar-img');
     if (img) { img.src = avatarUrl; img.style.display = 'block'; }
-    // Update all visible avatars
     updateAllAvatars();
     showToast('Profilbillede opdateret! 📸');
     input.value = '';
   } catch(e) { logError('handleAvatarUpload', e); showToast('Upload fejl: ' + (e.message || 'ukendt')); }
+}
+
+// Resize image to max dimension, returns Blob
+function resizeImage(file, maxDim) {
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() {
+      var w = img.width, h = img.height;
+      if (w <= maxDim && h <= maxDim) { resolve(file); return; }
+      var scale = Math.min(maxDim / w, maxDim / h);
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.round(w * scale);
+      canvas.height = Math.round(h * scale);
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(function(blob) { resolve(blob || file); }, 'image/jpeg', 0.85);
+    };
+    img.onerror = function() { resolve(file); };
+    img.src = URL.createObjectURL(file);
+  });
 }
 
 function updateAllAvatars() {
@@ -2055,7 +2100,7 @@ function profSwitchTab(tab) {
           '</div></div>' +
         '<div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Konto</div>' +
         '<button onclick="handleLogout()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(232,93,138,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent2);cursor:pointer">Log ud</button>' +
-        '<div style="text-align:center;margin-top:2rem;font-size:0.62rem;color:var(--muted)">Bubble v1.0</div>';
+        '<div style="text-align:center;margin-top:2rem;font-size:0.62rem;color:var(--muted)">Bubble ' + BUILD_VERSION + ' · Build ' + BUILD_TIMESTAMP + '</div>';
       container.parentElement.insertBefore(div, container.nextSibling);
     }
   }
