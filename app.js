@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-09T09:45:00';
-const BUILD_VERSION  = 'v1.7.0';
+const BUILD_TIMESTAMP = '2026-03-09T10:20:00';
+const BUILD_VERSION  = 'v1.7.2';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -2605,7 +2605,6 @@ function hsApplyOrder() {
     var item = items.find(function(el) { return el.dataset.hsKey === key; });
     if (item) sorted.push(item);
   });
-  // Add any items not in saved order
   items.forEach(function(el) { if (sorted.indexOf(el) < 0) sorted.push(el); });
   sorted.forEach(function(el) { container.appendChild(el); });
 }
@@ -2616,16 +2615,31 @@ function hsToggleReorder() {
   var btn = document.getElementById('hs-reorder-btn');
   if (!container) return;
 
+  var items = container.querySelectorAll('.hs-sortable');
+
   if (_hsReorderMode) {
     container.classList.add('hs-reorder-mode');
     if (btn) { btn.textContent = 'Færdig ✓'; btn.style.background = 'rgba(16,185,129,0.15)'; btn.style.color = 'var(--green)'; btn.style.borderColor = 'rgba(16,185,129,0.3)'; }
+    // Enable dragging
+    items.forEach(function(item) { item.setAttribute('draggable', 'true'); });
     hsInitDragListeners(container);
   } else {
     container.classList.remove('hs-reorder-mode');
     if (btn) { btn.textContent = 'Flyt ✦'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }
+    // Disable dragging - critical for normal click behavior
+    items.forEach(function(item) {
+      item.removeAttribute('draggable');
+      item.ondragstart = null;
+      item.ondragend = null;
+      item.ondragover = null;
+      item.ondragleave = null;
+      item.ondrop = null;
+      item.ontouchstart = null;
+      item.ontouchmove = null;
+      item.ontouchend = null;
+    });
     // Save order
-    var items = Array.from(container.querySelectorAll('.hs-sortable'));
-    var order = items.map(function(el) { return el.dataset.hsKey; }).filter(Boolean);
+    var order = Array.from(items).map(function(el) { return el.dataset.hsKey; }).filter(Boolean);
     hsSaveOrder(order);
     showToast('Rækkefølge gemt');
   }
@@ -2636,10 +2650,7 @@ function hsInitDragListeners(container) {
   var dragItem = null;
 
   items.forEach(function(item) {
-    item.setAttribute('draggable', 'true');
-
     item.ondragstart = function(e) {
-      if (!_hsReorderMode) return;
       dragItem = item;
       item.classList.add('hs-dragging');
       e.dataTransfer.effectAllowed = 'move';
@@ -2652,7 +2663,7 @@ function hsInitDragListeners(container) {
     };
 
     item.ondragover = function(e) {
-      if (!_hsReorderMode || !dragItem || dragItem === item) return;
+      if (!dragItem || dragItem === item) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       container.querySelectorAll('.hs-drag-over').forEach(function(el) { el.classList.remove('hs-drag-over'); });
@@ -2662,33 +2673,31 @@ function hsInitDragListeners(container) {
     item.ondragleave = function() { item.classList.remove('hs-drag-over'); };
 
     item.ondrop = function(e) {
-      if (!_hsReorderMode || !dragItem || dragItem === item) return;
+      if (!dragItem || dragItem === item) return;
       e.preventDefault();
       item.classList.remove('hs-drag-over');
       container.insertBefore(dragItem, item);
     };
-  });
 
-  // Touch-based reorder for mobile
-  var touchItem = null, touchClone = null, touchStartY = 0;
-
-  items.forEach(function(item) {
+    // Touch-based reorder for mobile
+    var touchStartY = 0;
     item.ontouchstart = function(e) {
-      if (!_hsReorderMode) return;
-      touchItem = item;
       touchStartY = e.touches[0].clientY;
-      item.classList.add('hs-dragging');
+      dragItem = item;
+      setTimeout(function() {
+        if (dragItem === item) item.classList.add('hs-dragging');
+      }, 200);
     };
 
     item.ontouchmove = function(e) {
-      if (!_hsReorderMode || !touchItem) return;
+      if (dragItem !== item) return;
       e.preventDefault();
       var y = e.touches[0].clientY;
       var els = Array.from(container.querySelectorAll('.hs-sortable'));
       container.querySelectorAll('.hs-drag-over').forEach(function(el) { el.classList.remove('hs-drag-over'); });
       for (var i = 0; i < els.length; i++) {
         var rect = els[i].getBoundingClientRect();
-        if (y > rect.top && y < rect.bottom && els[i] !== touchItem) {
+        if (y > rect.top && y < rect.bottom && els[i] !== item) {
           els[i].classList.add('hs-drag-over');
           break;
         }
@@ -2696,14 +2705,14 @@ function hsInitDragListeners(container) {
     };
 
     item.ontouchend = function() {
-      if (!_hsReorderMode || !touchItem) return;
-      touchItem.classList.remove('hs-dragging');
+      if (dragItem !== item) return;
+      item.classList.remove('hs-dragging');
       var target = container.querySelector('.hs-drag-over');
-      if (target && target !== touchItem) {
-        container.insertBefore(touchItem, target);
+      if (target) {
+        container.insertBefore(item, target);
       }
       container.querySelectorAll('.hs-drag-over').forEach(function(el) { el.classList.remove('hs-drag-over'); });
-      touchItem = null;
+      dragItem = null;
     };
   });
 }
