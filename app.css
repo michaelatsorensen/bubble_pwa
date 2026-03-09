@@ -1536,3 +1536,18 @@ textarea ~ .input-confirm-btn { top:0.7rem; transform:none; }
 .profile-tags-collapsed::after { content:''; position:absolute; bottom:0; right:0; width:4rem; height:100%; background:linear-gradient(to right, transparent, var(--bg)); pointer-events:none; }
 .profile-tags-expanded { max-height:none; overflow:visible; }
 .profile-tags-expanded::after { display:none; }
+
+/* ═══ PROGRESSIVE ONBOARDING SECTIONS ═══ */
+.ob-progressive-section { transition:all 0.4s cubic-bezier(0.4,0,0.2,1); }
+.ob-sec-locked { max-height:0; opacity:0; overflow:hidden; margin:0; padding:0; pointer-events:none; }
+.ob-prog-header { display:flex; align-items:flex-start; gap:0.5rem; margin-bottom:0.5rem; }
+.ob-prog-check { width:24px; height:24px; border-radius:50%; border:2px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; font-size:0.65rem; font-weight:700; flex-shrink:0; transition:all 0.3s; color:rgba(255,255,255,0.3); margin-top:0.1rem; }
+.ob-prog-check.done { background:var(--green); border-color:var(--green); color:white; }
+.ob-prog-title { font-size:0.88rem; font-weight:800; }
+.ob-prog-sub { font-size:0.7rem; color:rgba(242,240,255,0.4); line-height:1.4; }
+/* For dig / Andre labels in tag categories */
+.ob-tag-section-label { font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin:0.3rem 0 0.2rem; }
+.ob-tag-section-label.recommended { color:rgba(139,127,255,0.6); }
+.ob-tag-section-label.other { color:rgba(255,255,255,0.2); }
+.tag-pick.other-tag { opacity:0.4; }
+.tag-pick.other-tag.selected { opacity:1; }

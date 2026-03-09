@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-09T06:30:00';
-const BUILD_VERSION  = 'v1.4.3';
+const BUILD_TIMESTAMP = '2026-03-09T07:30:00';
+const BUILD_VERSION  = 'v1.5.1';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -3239,6 +3239,85 @@ var OB_LIFESTAGE_ROLES = {
 };
 var obLifestage = null;
 
+// ── Progressive section unlock ──
+function obCheckProgress() {
+  var name = (document.getElementById('ob-name')?.value || '').trim();
+  var title = (document.getElementById('ob-title')?.value || '').trim();
+  var secADone = name && obLifestage;
+  var secBDone = obSelectedTags.length >= 3;
+
+  // Section B: unlock when name + lifestage
+  var secB = document.getElementById('ob-sec-b');
+  var checkA = document.getElementById('ob-check-a');
+  if (secB) {
+    if (secADone && secB.classList.contains('ob-sec-locked')) {
+      secB.classList.remove('ob-sec-locked');
+      obRenderCategories();
+      setTimeout(function() { secB.scrollIntoView({ behavior:'smooth', block:'start' }); }, 300);
+    } else if (!secADone && !secB.classList.contains('ob-sec-locked')) {
+      secB.classList.add('ob-sec-locked');
+    }
+  }
+  if (checkA) {
+    if (secADone) { checkA.classList.add('done'); checkA.innerHTML = '✓'; }
+    else { checkA.classList.remove('done'); checkA.textContent = '1'; }
+  }
+
+  // Section B check mark
+  if (checkB) {
+    if (secBDone) { checkB.classList.add('done'); checkB.innerHTML = '✓'; }
+    else { checkB.classList.remove('done'); checkB.textContent = '2'; }
+  }
+
+  // People preview: unlock with section B (3+ tags)
+  var secPreview = document.getElementById('ob-sec-preview');
+  if (secPreview) {
+    if (secBDone && secPreview.classList.contains('ob-sec-locked')) {
+      secPreview.classList.remove('ob-sec-locked');
+      obLoadPeoplePreview();
+      setTimeout(function() { secPreview.scrollIntoView({ behavior:'smooth', block:'center' }); }, 300);
+    } else if (!secBDone && !secPreview.classList.contains('ob-sec-locked')) {
+      secPreview.classList.add('ob-sec-locked');
+    }
+  }
+
+  // Section C: unlock after preview (slight delay so user sees people first)
+  var secC = document.getElementById('ob-sec-c');
+  var checkB = document.getElementById('ob-check-b');
+  if (secC) {
+    if (secBDone && secC.classList.contains('ob-sec-locked')) {
+      setTimeout(function() {
+        secC.classList.remove('ob-sec-locked');
+      }, 600);
+    } else if (!secBDone && !secC.classList.contains('ob-sec-locked')) {
+      secC.classList.add('ob-sec-locked');
+    }
+  }
+  if (checkB) {
+    if (secBDone) { checkB.classList.add('done'); checkB.innerHTML = '✓'; }
+    else { checkB.classList.remove('done'); checkB.textContent = '2'; }
+  }
+
+  // Save button: active when name + title + 3 tags
+  var saveBtn = document.getElementById('ob-save-btn');
+  if (saveBtn) {
+    var canSave = name && title && secBDone;
+    saveBtn.style.opacity = canSave ? '1' : '0.3';
+    saveBtn.style.pointerEvents = canSave ? 'auto' : 'none';
+  }
+
+  // Step label
+  var stepLabel = document.getElementById('ob-step-label');
+  if (stepLabel) {
+    var step = secBDone ? 3 : secADone ? 2 : 1;
+    stepLabel.textContent = 'Trin ' + step + ' af 3';
+  }
+
+  // Tag min label
+  obUpdateTagLabel();
+  updateObStrength();
+}
+
 
 function skipOnboarding() {
   var name = (document.getElementById('ob-name')?.value || '').trim();
@@ -3353,7 +3432,7 @@ function obSelectLifestage(btn) {
 
   // Re-render categories filtered for this lifestage
   obRenderCategories();
-
+  obCheckProgress();
   updateObStrength();
 }
 
@@ -3669,46 +3748,105 @@ function obRenderCategories() {
 
   el.innerHTML = Object.entries(TAG_CATEGORIES).map(function(entry) {
     var cat = entry[0], info = entry[1];
-    // Skip "Rolle & Titel" in onboarding — handled by titel input + livsfase suggestions
     if (cat === 'rolle') return '';
     var allTags = TAG_DATABASE[cat] || [];
-    var tags = filterMap && filterMap[cat] ? filterMap[cat] : allTags;
+    var recommended = filterMap && filterMap[cat] ? filterMap[cat] : allTags.slice(0, 8);
+    var otherTags = allTags.filter(function(t) { return recommended.indexOf(t) < 0; });
     var expanded = _obExpandedCats[cat];
-    var visibleTags = expanded ? tags : tags.slice(0, OB_TAGS_INITIAL);
-    var hasMore = tags.length > OB_TAGS_INITIAL;
-
-    // Move selected tags to front
-    var selected = visibleTags.filter(function(t) { return obSelectedTags.indexOf(t) >= 0; });
-    var unselected = visibleTags.filter(function(t) { return obSelectedTags.indexOf(t) < 0; });
-    var ordered = selected.concat(unselected);
+    var visibleOthers = expanded ? otherTags : otherTags.slice(0, 8);
 
     return '<div class="ob-cat-block">' +
       '<div class="ob-cat-header">' +
       '<span class="tag-cat-dot" style="background:' + info.color + '"></span>' +
       '<span class="tag-cat-title">' + info.label + '</span>' +
-      '<span class="tag-cat-count">' + tags.length + '</span>' +
       '</div>' +
+      '<div class="ob-tag-section-label recommended">For dig</div>' +
       '<div class="ob-cat-tags">' +
-      ordered.map(function(t) {
+      recommended.map(function(t) {
         var sel = obSelectedTags.indexOf(t) >= 0;
-        return '<span class="tag-pick' + (sel ? ' selected' : '') + '" ' +
-          'style="border-color:' + info.color + '30;' + (sel ? 'background:' + info.color + '20' : '') + '" ' +
+        return '<span class="tag-pick recommended' + (sel ? ' selected' : '') + '" ' +
+          'style="border-color:' + info.color + '30;' + (sel ? 'background:' + info.color + '20;color:' + info.color : 'color:' + info.color + '99') + '" ' +
           'onclick="obTogglePickTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\',\'' + cat + '\',this)">' +
           escHtml(t) + '</span>';
       }).join('') +
       '</div>' +
-      (hasMore ? '<button type="button" class="ob-show-more" onclick="obToggleExpand(\'' + cat + '\')" style="color:' + info.color + '">' +
-        (expanded ? '− Vis færre' : '+ Vis alle ' + tags.length) + '</button>' : '') +
-      '<div class="ob-cat-custom">' +
-      '<div class="ob-cat-custom-row">' +
-      '<input class="ob-cat-custom-input" placeholder="+ Tilføj egen..." ' +
-      'onkeydown="obCustomTag(event,\'' + cat + '\',this)" ' +
-      'data-cat="' + cat + '">' +
-      '<button type="button" class="ob-cat-custom-btn" onclick="obCustomTagBtn(\'' + cat + '\',this)" title="Tilføj">✓</button>' +
+      (otherTags.length > 0 ? '<div class="ob-tag-section-label other">Andre</div>' +
+      '<div class="ob-cat-tags">' +
+      visibleOthers.map(function(t) {
+        var sel = obSelectedTags.indexOf(t) >= 0;
+        return '<span class="tag-pick other-tag' + (sel ? ' selected' : '') + '" ' +
+          'style="border-color:' + info.color + '20;' + (sel ? 'background:' + info.color + '20;color:' + info.color : 'color:' + info.color + '66') + '" ' +
+          'onclick="obTogglePickTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\',\'' + cat + '\',this)">' +
+          escHtml(t) + '</span>';
+      }).join('') +
       '</div>' +
-      '</div>' +
-      '</div>';
+      (otherTags.length > 8 ? '<button type="button" class="ob-show-more" onclick="obToggleExpand(\'' + cat + '\')" style="color:' + info.color + '">' +
+        (expanded ? '\u2212 Vis f\u00e6rre' : '+ Vis alle ' + otherTags.length + ' andre') + '</button>' : '') : '') +
+      '<div class="ob-cat-custom"><div class="ob-cat-custom-row">' +
+      '<input class="ob-cat-custom-input" placeholder="+ Tilf\u00f8j egen..." onkeydown="obCustomTag(event,\'' + cat + '\',this)" data-cat="' + cat + '">' +
+      '<button type="button" class="ob-cat-custom-btn" onclick="obCustomTagBtn(\'' + cat + '\',this)" title="Tilf\u00f8j">\u2713</button>' +
+      '</div></div></div>';
   }).join('');
+
+  obUpdateTagLabel();
+}
+
+function obUpdateTagLabel() {
+  var label = document.getElementById('ob-tag-min-label');
+  if (!label) return;
+  if (obSelectedTags.length >= 3) {
+    label.textContent = obSelectedTags.length + ' tags valgt \u2713';
+    label.style.color = 'var(--green)';
+  } else {
+    label.textContent = 'V\u00e6lg mindst 3 tags (' + obSelectedTags.length + '/3)';
+    label.style.color = 'var(--muted)';
+  }
+}
+
+// ── People preview in onboarding ──
+var _obPreviewLoaded = false;
+async function obLoadPeoplePreview() {
+  if (_obPreviewLoaded) return;
+  _obPreviewLoaded = true;
+  var el = document.getElementById('ob-people-preview');
+  if (!el) return;
+  try {
+    var { data: profiles } = await sb.from('profiles').select('id,name,title,keywords,avatar_url')
+      .neq('id', currentUser.id).limit(50);
+    if (!profiles || profiles.length === 0) {
+      el.innerHTML = '<div style="text-align:center;padding:0.5rem;font-size:0.72rem;color:var(--muted)">Ingen profiler endnu — du er en af de første! 🚀</div>';
+      return;
+    }
+    // Simple match: count shared tags
+    var myTags = obSelectedTags;
+    var scored = profiles.map(function(p) {
+      var shared = (p.keywords || []).filter(function(t) { return myTags.indexOf(t) >= 0; });
+      return { p: p, shared: shared.length, sharedTags: shared };
+    }).sort(function(a, b) { return b.shared - a.shared; });
+
+    var top = scored.slice(0, 3);
+    var colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)'];
+
+    el.innerHTML = top.map(function(item, i) {
+      var p = item.p;
+      var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var avHtml = p.avatar_url ?
+        '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;border:1.5px solid rgba(255,255,255,0.08)"><img src="'+p.avatar_url+'" style="width:100%;height:100%;object-fit:cover"></div>' :
+        '<div style="width:40px;height:40px;border-radius:50%;background:'+colors[i%3]+';display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;flex-shrink:0">'+ini+'</div>';
+      var sharedText = item.shared > 0 ?
+        '<span style="font-size:0.6rem;color:var(--accent)">' + item.shared + ' fælles interesser</span>' :
+        '<span style="font-size:0.6rem;color:var(--muted)">Ny forbindelse</span>';
+      return '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.03)">' +
+        avHtml +
+        '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:0.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.name||'Ukendt') + '</div>' +
+        '<div style="font-size:0.68rem;color:var(--text-secondary)">' + escHtml(p.title||'') + '</div>' +
+        sharedText +
+        '</div></div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:0.5rem;font-size:0.72rem;color:var(--muted)">Kunne ikke hente profiler</div>';
+  }
 }
 
 function obToggleExpand(cat) {
@@ -3805,6 +3943,7 @@ function obTogglePickTag(label, cat, el) {
     var color = TAG_CATEGORIES[cat]?.color || 'var(--accent)';
     if (el) { el.classList.add('selected'); el.style.background = color + '20'; }
   }
+  obCheckProgress();
 }
 
 // Close suggestions when clicking outside
