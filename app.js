@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-09T08:30:00';
-const BUILD_VERSION  = 'v1.6.2';
+const BUILD_TIMESTAMP = '2026-03-09T09:00:00';
+const BUILD_VERSION  = 'v1.6.3';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -458,22 +458,6 @@ function updateHomeAvatar() {
   var myAv = document.getElementById('my-avatar');
   if (homeAv) { if (url) homeAv.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else homeAv.textContent = ini; }
   if (myAv) { if (url) myAv.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else myAv.textContent = ini; }
-}
-
-function toggleProfileTags() {
-  var kwEl = document.getElementById('my-keywords');
-  var btn = document.getElementById('my-tags-toggle');
-  if (!kwEl || !btn) return;
-  if (kwEl.classList.contains('profile-tags-collapsed')) {
-    kwEl.classList.remove('profile-tags-collapsed');
-    kwEl.classList.add('profile-tags-expanded');
-    btn.textContent = 'Skjul tags ▴';
-  } else {
-    kwEl.classList.remove('profile-tags-expanded');
-    kwEl.classList.add('profile-tags-collapsed');
-    var count = (currentProfile?.keywords || []).length;
-    btn.textContent = count + ' tags · Vis alle ▾';
-  }
 }
 
 async function handleLogin() {
