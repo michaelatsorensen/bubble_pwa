@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-09T09:00:00';
-const BUILD_VERSION  = 'v1.6.3';
+const BUILD_TIMESTAMP = '2026-03-09T09:45:00';
+const BUILD_VERSION  = 'v1.7.0';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -662,7 +662,10 @@ async function loadHome() {
     if (hsp.saved) loaders.push(loadSavedContacts());
     await Promise.all(loaders);
     hsApplyToHome();
+    hsApplyOrder();
     showGettingStarted();
+    var reorderBtn = document.getElementById('hs-reorder-btn');
+    if (reorderBtn) reorderBtn.style.display = 'block';
   } catch(e) { logError("loadHome", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -2563,7 +2566,7 @@ function hsApplyToHome() {
   var prefs = hsGetPrefs();
   var anyVisible = false;
   ['live','saved','bubbles','notifs','radar'].forEach(function(key) {
-    if (key === 'notifs') return; // Handled by hsApplyNotifView
+    if (key === 'notifs') return;
     var els = document.querySelectorAll('[data-hs="' + key + '"]');
     els.forEach(function(el) {
       if (prefs[key]) {
@@ -2576,9 +2579,133 @@ function hsApplyToHome() {
   });
   if (prefs.notifs) anyVisible = true;
   hsApplyNotifView();
-  // Show empty state if nothing visible
   var emptyEl = document.getElementById('home-empty-state');
   if (emptyEl) emptyEl.style.display = anyVisible ? 'none' : 'block';
+}
+
+// ── Home screen reorder ──
+var _hsReorderMode = false;
+
+function hsGetOrder() {
+  try { var o = localStorage.getItem('bubble_hs_order'); return o ? JSON.parse(o) : null; } catch(e) { return null; }
+}
+
+function hsSaveOrder(order) {
+  try { localStorage.setItem('bubble_hs_order', JSON.stringify(order)); } catch(e) {}
+}
+
+function hsApplyOrder() {
+  var container = document.getElementById('hs-reorder-container');
+  if (!container) return;
+  var order = hsGetOrder();
+  if (!order) return;
+  var items = Array.from(container.querySelectorAll('.hs-sortable'));
+  var sorted = [];
+  order.forEach(function(key) {
+    var item = items.find(function(el) { return el.dataset.hsKey === key; });
+    if (item) sorted.push(item);
+  });
+  // Add any items not in saved order
+  items.forEach(function(el) { if (sorted.indexOf(el) < 0) sorted.push(el); });
+  sorted.forEach(function(el) { container.appendChild(el); });
+}
+
+function hsToggleReorder() {
+  _hsReorderMode = !_hsReorderMode;
+  var container = document.getElementById('hs-reorder-container');
+  var btn = document.getElementById('hs-reorder-btn');
+  if (!container) return;
+
+  if (_hsReorderMode) {
+    container.classList.add('hs-reorder-mode');
+    if (btn) { btn.textContent = 'Færdig ✓'; btn.style.background = 'rgba(16,185,129,0.15)'; btn.style.color = 'var(--green)'; btn.style.borderColor = 'rgba(16,185,129,0.3)'; }
+    hsInitDragListeners(container);
+  } else {
+    container.classList.remove('hs-reorder-mode');
+    if (btn) { btn.textContent = 'Flyt ✦'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }
+    // Save order
+    var items = Array.from(container.querySelectorAll('.hs-sortable'));
+    var order = items.map(function(el) { return el.dataset.hsKey; }).filter(Boolean);
+    hsSaveOrder(order);
+    showToast('Rækkefølge gemt');
+  }
+}
+
+function hsInitDragListeners(container) {
+  var items = container.querySelectorAll('.hs-sortable');
+  var dragItem = null;
+
+  items.forEach(function(item) {
+    item.setAttribute('draggable', 'true');
+
+    item.ondragstart = function(e) {
+      if (!_hsReorderMode) return;
+      dragItem = item;
+      item.classList.add('hs-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    };
+
+    item.ondragend = function() {
+      item.classList.remove('hs-dragging');
+      container.querySelectorAll('.hs-drag-over').forEach(function(el) { el.classList.remove('hs-drag-over'); });
+      dragItem = null;
+    };
+
+    item.ondragover = function(e) {
+      if (!_hsReorderMode || !dragItem || dragItem === item) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      container.querySelectorAll('.hs-drag-over').forEach(function(el) { el.classList.remove('hs-drag-over'); });
+      item.classList.add('hs-drag-over');
+    };
+
+    item.ondragleave = function() { item.classList.remove('hs-drag-over'); };
+
+    item.ondrop = function(e) {
+      if (!_hsReorderMode || !dragItem || dragItem === item) return;
+      e.preventDefault();
+      item.classList.remove('hs-drag-over');
+      container.insertBefore(dragItem, item);
+    };
+  });
+
+  // Touch-based reorder for mobile
+  var touchItem = null, touchClone = null, touchStartY = 0;
+
+  items.forEach(function(item) {
+    item.ontouchstart = function(e) {
+      if (!_hsReorderMode) return;
+      touchItem = item;
+      touchStartY = e.touches[0].clientY;
+      item.classList.add('hs-dragging');
+    };
+
+    item.ontouchmove = function(e) {
+      if (!_hsReorderMode || !touchItem) return;
+      e.preventDefault();
+      var y = e.touches[0].clientY;
+      var els = Array.from(container.querySelectorAll('.hs-sortable'));
+      container.querySelectorAll('.hs-drag-over').forEach(function(el) { el.classList.remove('hs-drag-over'); });
+      for (var i = 0; i < els.length; i++) {
+        var rect = els[i].getBoundingClientRect();
+        if (y > rect.top && y < rect.bottom && els[i] !== touchItem) {
+          els[i].classList.add('hs-drag-over');
+          break;
+        }
+      }
+    };
+
+    item.ontouchend = function() {
+      if (!_hsReorderMode || !touchItem) return;
+      touchItem.classList.remove('hs-dragging');
+      var target = container.querySelector('.hs-drag-over');
+      if (target && target !== touchItem) {
+        container.insertBefore(touchItem, target);
+      }
+      container.querySelectorAll('.hs-drag-over').forEach(function(el) { el.classList.remove('hs-drag-over'); });
+      touchItem = null;
+    };
+  });
 }
 
 // Notification view mode: 'card' or 'feed'
@@ -3771,7 +3898,7 @@ function obRenderCategories() {
       visibleOthers.map(function(t) {
         var sel = obSelectedTags.indexOf(t) >= 0;
         return '<span class="tag-pick other-tag' + (sel ? ' selected' : '') + '" ' +
-          'style="border-color:' + info.color + '20;' + (sel ? 'background:' + info.color + '20;color:' + info.color : 'color:' + info.color + '66') + '" ' +
+          'style="border-color:' + info.color + '20;' + (sel ? 'background:' + info.color + '20;color:' + info.color : 'color:' + info.color + '80') + '" ' +
           'onclick="obTogglePickTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\',\'' + cat + '\',this)">' +
           escHtml(t) + '</span>';
       }).join('') +
