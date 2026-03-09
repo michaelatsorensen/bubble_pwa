@@ -117,8 +117,7 @@ textarea.input { min-height:80px; resize:vertical; }
 .chips-container { display:flex; flex-wrap:wrap; gap:0.35rem; background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-sm); padding:0.5rem 0.65rem; min-height:44px; }
 .chip-input { background:none; border:none; color:var(--text); font-family:'Outfit',sans-serif; font-size:0.85rem; outline:none; min-width:80px; flex:1; }
 
-.chip-add-btn { background:none; border:1px solid var(--glass-border); border-radius:6px; color:var(--muted); font-size:0.9rem; padding:0.1rem 0.5rem; cursor:pointer; flex-shrink:0; font-family:inherit; transition:all 0.2s; line-height:1; }
-.chip-add-btn:active { background:rgba(255,255,255,0.08); color:var(--text); }
+
 
 .chip-input::placeholder { color:var(--muted); }
 .chip-remove { cursor:pointer; margin-left:0.3rem; opacity:0.5; }
@@ -1530,12 +1529,6 @@ a.person-action-btn { text-decoration:none; }
 .input-confirm-btn { position:absolute; right:0.5rem; top:50%; transform:translateY(-50%); width:28px; height:28px; border-radius:8px; border:none; background:rgba(255,255,255,0.06); color:var(--muted); font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; flex-shrink:0; }
 .input-confirm-btn.confirmed { background:var(--green); color:white; }
 textarea ~ .input-confirm-btn { top:0.7rem; transform:none; }
-
-/* ═══ PROFILE TAGS COLLAPSE ═══ */
-.profile-tags-collapsed { max-height:1.9rem; overflow:hidden; position:relative; }
-.profile-tags-collapsed::after { content:''; position:absolute; bottom:0; right:0; width:4rem; height:100%; background:linear-gradient(to right, transparent, var(--bg)); pointer-events:none; }
-.profile-tags-expanded { max-height:none; overflow:visible; }
-.profile-tags-expanded::after { display:none; }
 
 /* ═══ PROGRESSIVE ONBOARDING SECTIONS ═══ */
 .ob-progressive-section { transition:all 0.4s cubic-bezier(0.4,0,0.2,1); }

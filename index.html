@@ -366,7 +366,7 @@
   <div class="scroll-area" id="home-scroll">
 
     <!-- Greeting -->
-    <div style="padding:0.5rem 0 1rem">
+    <div style="padding:0.3rem 0 0.6rem">
       <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.3rem;letter-spacing:0.04em;text-transform:uppercase;font-weight:600">Goddag,</div>
       <div style="font-size:1.5rem;font-weight:800;letter-spacing:-0.02em" id="home-greeting-name"><svg class="ico" style="width:1.5rem;height:1.5rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 11V6.5a1.5 1.5 0 013 0V11"/><path d="M12.5 10V5.5a1.5 1.5 0 013 0v5"/><path d="M15.5 11V7.5a1.5 1.5 0 013 0v5.5a7 7 0 01-7 7h-1a7 7 0 01-5.8-3.1L4 15.5a1.5 1.5 0 012.1-2.1L9.5 16"/><path d="M9.5 11V4.5a1.5 1.5 0 00-3 0V12"/></svg></div>
     </div>
@@ -397,7 +397,7 @@
     </div>
 
     <!-- LIVE BUBBLE -->
-    <div id="live-bubble-card" class="live-bubble-card" data-hs="live" style="display:none">
+    <div id="live-bubble-card" class="live-bubble-card" data-hs="live" style="display:none;margin-bottom:0.5rem">
       <!-- State: checked in -->
       <div id="live-bubble-active" style="display:none">
         <div class="live-bubble-header">
@@ -427,19 +427,17 @@
       </div>
     </div>
 
-    <!-- 3 main cards -->
-    <div style="display:flex;flex-direction:column;gap:0.85rem;margin-bottom:1.25rem">
-
     <!-- GEMTE PROFILER (story-bar) -->
-    <div id="saved-profiles-bar" data-hs="saved" style="display:none;padding:0.2rem 0 0.3rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+    <div id="saved-profiles-bar" data-hs="saved" style="display:none;margin-bottom:0.5rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">
         <div style="font-size:0.78rem;font-weight:700;color:var(--text)">Gemte profiler <span id="saved-count-badge" class="saved-count-badge"></span></div>
         <button class="btn-sm btn-ghost" onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('saved')},200)" style="font-size:0.65rem">Se alle</button>
       </div>
       <div class="saved-story-scroll" id="saved-story-list"></div>
     </div>
 
-
+    <!-- Cards -->
+    <div style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:0.5rem">
       <!-- Bobler -->
       <div class="main-nav-card card-bobler" data-hs="bubbles" onclick="goTo('screen-bubbles')">
         <div class="main-nav-icon" style="background:rgba(139,127,255,0.15);color:#A89FFF"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
@@ -473,26 +471,25 @@
         </div>
       </div>
 
-    </div>
-
-    <!-- Radar strip -->
-    <div class="radar-card" data-hs="radar">
-      <div class="live-dot" style="animation:pulse 2s infinite"></div>
-      <div style="flex:1;font-size:0.78rem;color:var(--text-secondary)">
-        <strong style="color:var(--text);font-weight:700">Radar aktiv</strong>
-        <span id="radar-count-home"> · Henter...</span>
+      <!-- Radar strip -->
+      <div class="radar-card" data-hs="radar">
+        <div class="live-dot" style="animation:pulse 2s infinite"></div>
+        <div style="flex:1;font-size:0.78rem;color:var(--text-secondary)">
+          <strong style="color:var(--text);font-weight:700">Radar aktiv</strong>
+          <span id="radar-count-home"> · Henter...</span>
+        </div>
+        <button class="btn-sm btn-ghost" onclick="openRadarSheet()" style="font-size:0.72rem;white-space:nowrap">Kort →</button>
       </div>
-      <button class="btn-sm btn-ghost" onclick="openRadarSheet()" style="font-size:0.72rem;white-space:nowrap">Kort →</button>
-    </div>
 
-    <!-- Feedback -->
-    <div style="margin:0.65rem 0 0;padding:0.7rem 1rem;background:rgba(139,127,255,0.06);border:1px solid rgba(139,127,255,0.12);border-radius:14px;display:flex;align-items:center;gap:0.7rem;cursor:pointer" onclick="openFeedback()">
-      <div style="width:36px;height:36px;border-radius:10px;background:rgba(139,127,255,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
-      <div style="flex:1">
-        <div style="font-size:0.82rem;font-weight:700;color:var(--text)">Giv feedback</div>
-        <div style="font-size:0.68rem;color:var(--text-secondary)">Hjælp os med at gøre Bubble bedre</div>
+      <!-- Feedback -->
+      <div style="padding:0.6rem 0.9rem;background:rgba(139,127,255,0.06);border:1px solid rgba(139,127,255,0.12);border-radius:14px;display:flex;align-items:center;gap:0.7rem;cursor:pointer" onclick="openFeedback()">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(139,127,255,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
+        <div style="flex:1">
+          <div style="font-size:0.82rem;font-weight:700;color:var(--text)">Giv feedback</div>
+          <div style="font-size:0.68rem;color:var(--text-secondary)">Hjælp os med at gøre Bubble bedre</div>
+        </div>
+        <div style="color:var(--muted);font-size:0.9rem">→</div>
       </div>
-      <div style="color:var(--muted);font-size:0.9rem">→</div>
     </div>
 
     <div id="home-empty-state" style="display:none;text-align:center;padding:2.5rem 1rem">

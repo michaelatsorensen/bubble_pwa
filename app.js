@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-09T10:45:00';
-const BUILD_VERSION  = 'v1.7.4';
+const BUILD_TIMESTAMP = '2026-03-09T11:15:00';
+const BUILD_VERSION  = 'v1.7.6';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -338,15 +338,6 @@ async function loadCurrentProfile() {
 }
 
 // ── Avatar helper: returns <img> or initials ──
-function avatarHtml(name, avatarUrl, size, gradient) {
-  size = size || 42;
-  gradient = gradient || 'linear-gradient(135deg,#8B7FFF,#E85D8A)';
-  var ini = (name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-  if (avatarUrl) {
-    return '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="'+avatarUrl+'" style="width:100%;height:100%;object-fit:cover" alt=""></div>';
-  }
-  return '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+gradient+';display:flex;align-items:center;justify-content:center;font-size:'+(size*0.35)+'px;font-weight:700;color:white;flex-shrink:0">'+ini+'</div>';
-}
 
 // ── Avatar upload ──
 async function handleAvatarUpload(input) {
@@ -2161,14 +2152,6 @@ function starSet(contactId, rating) {
   if (rating <= 0) { delete all[contactId]; } else { all[contactId] = Math.min(rating, 3); }
   try { localStorage.setItem('bubble_stars', JSON.stringify(all)); } catch(e) {}
 }
-function starCycle(contactId, el) {
-  var current = starGet(contactId);
-  var next = current >= 3 ? 0 : current + 1;
-  starSet(contactId, next);
-  if (el) el.innerHTML = starRender(contactId);
-  // Re-sort saved contacts
-  loadSavedContacts();
-}
 function starRender(contactId) {
   var r = starGet(contactId);
   if (r === 0) return '';
@@ -3479,15 +3462,6 @@ function persistCustomTitle(title) {
 }
 
 // ── Apple Login ──
-async function handleAppleLogin() {
-  try {
-    var { error } = await sb.auth.signInWithOAuth({
-      provider: 'apple',
-      options: { redirectTo: window.location.origin }
-    });
-    if (error) showToast('Apple login fejlede: ' + error.message);
-  } catch(e) { showToast('Apple login fejl: ' + (e.message || 'ukendt')); }
-}
 
 function welcomeGo(target) {
   localStorage.setItem('bubble_welcomed', '1');
@@ -3621,9 +3595,6 @@ function calcMatchScore(myProfile, theirProfile, sharedBubbleCount) {
 }
 
 // Quick relevance for sorting (0-1 range, used internally)
-function calcRelevance(myProfile, theirProfile, sharedBubbleCount) {
-  return calcMatchScore(myProfile, theirProfile, sharedBubbleCount) / 100;
-}
 
 // ══════════════════════════════════════════════════════════
 //  TAG PICKER SYSTEM
@@ -3967,9 +3938,6 @@ function obCustomTag(event, cat, input) {
   }
 }
 
-function obToggleCat(header) {
-  return; // Categories always open in onboarding
-}
 
 function obTogglePickTag(label, cat, el) {
   if (obSelectedTags.indexOf(label) >= 0) {
@@ -4110,17 +4078,6 @@ function epCustomTag(event, cat, input) {
         if (res.data) { sb.from('custom_tags').update({ usage_count: (res.data.usage_count||0)+1 }).eq('id', res.data.id).then(function(){}).catch(function(){}); }
         else { sb.from('custom_tags').insert({ label:formatted, category:cat, created_by:currentUser.id, usage_count:1 }).then(function(){}).catch(function(){}); }
       }).catch(function(){});
-  }
-}
-function epToggleCat(header) { return; }
-function epTogglePickTag(label, cat, el) {
-  if (epSelectedTags.indexOf(label) >= 0) {
-    epRemoveTag(label);
-    if (el) { el.classList.remove('selected'); el.style.background = ''; }
-  } else {
-    epAddTag(label, cat);
-    var color = TAG_CATEGORIES[cat]?.color || 'var(--accent)';
-    if (el) { el.classList.add('selected'); el.style.background = color + '20'; }
   }
 }
 
@@ -5966,13 +5923,13 @@ async function initBarcodeDetector() {
       if (formats.includes('qr_code')) {
         _barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
         _useNativeDetector = true;
-        console.log('[QR] Using native BarcodeDetector');
+        console.debug('[QR] Using native BarcodeDetector');
         return;
       }
     } catch(e) {}
   }
   _useNativeDetector = false;
-  console.log('[QR] Using jsQR fallback');
+  console.debug('[QR] Using jsQR fallback');
 }
 
 function liveQrPreviewLoop() {
