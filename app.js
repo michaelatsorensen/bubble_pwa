@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-09T08:00:00';
-const BUILD_VERSION  = 'v1.6.0';
+const BUILD_TIMESTAMP = '2026-03-09T08:30:00';
+const BUILD_VERSION  = 'v1.6.2';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -3256,9 +3256,10 @@ function obCheckProgress() {
       secPreview.classList.add('ob-sec-locked');
     }
   }
-  // Live-update preview when tags change (if already loaded)
+  // Live-update preview when tags change (throttled 400ms)
   if (secADone && _obPreviewProfiles && _obPreviewProfiles.length > 0) {
-    obRenderPreviewProfiles();
+    clearTimeout(_obPreviewTimer);
+    _obPreviewTimer = setTimeout(obRenderPreviewProfiles, 400);
   }
 
   // Section B (tags): unlock when name + livsfase
@@ -3817,6 +3818,8 @@ function obUpdateTagLabel() {
 // ── People preview in onboarding ──
 var _obPreviewLoaded = false;
 var _obPreviewProfiles = [];
+var _obPreviewPinned = []; // Pinned top 3 for stability
+var _obPreviewTimer = null;
 var _obPreviewColors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#7C3AED,#A78BFA)'];
 
 async function obLoadPeoplePreview() {
@@ -3826,6 +3829,8 @@ async function obLoadPeoplePreview() {
     var { data: profiles } = await sb.from('profiles').select('id,name,title,keywords,avatar_url')
       .neq('id', currentUser.id).limit(50);
     _obPreviewProfiles = profiles || [];
+    // Pin initial top 3 based on keyword overlap (or random if no tags yet)
+    _obPreviewPinned = _obPreviewProfiles.slice(0, 3).map(function(p) { return p.id; });
     obRenderPreviewProfiles();
   } catch(e) {
     var el = document.getElementById('ob-people-preview');
@@ -3840,27 +3845,53 @@ function obRenderPreviewProfiles() {
     return;
   }
   var myTags = obSelectedTags;
+
+  // Score all profiles
   var scored = _obPreviewProfiles.map(function(p) {
     var shared = (p.keywords || []).filter(function(t) { return myTags.indexOf(t) >= 0; });
     return { p: p, shared: shared.length };
   }).sort(function(a, b) { return b.shared - a.shared; });
 
-  var top = scored.slice(0, 3);
+  // Stable display: keep pinned profiles if they're still in top 6, otherwise swap gradually
+  var topIds = scored.slice(0, 6).map(function(s) { return s.p.id; });
+  var newPinned = [];
+  // Keep existing pinned if still in top 6
+  _obPreviewPinned.forEach(function(id) {
+    if (topIds.indexOf(id) >= 0 && newPinned.length < 3) newPinned.push(id);
+  });
+  // Fill remaining slots from top scored
+  scored.forEach(function(s) {
+    if (newPinned.length < 3 && newPinned.indexOf(s.p.id) < 0) newPinned.push(s.p.id);
+  });
+  _obPreviewPinned = newPinned;
 
-  el.innerHTML = top.map(function(item, i) {
+  // Get pinned profiles with scores, sorted by score
+  var display = _obPreviewPinned.map(function(id) {
+    return scored.find(function(s) { return s.p.id === id; });
+  }).filter(Boolean).sort(function(a, b) { return b.shared - a.shared; });
+
+  el.innerHTML = display.map(function(item, i) {
     var p = item.p;
     var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     var avHtml = p.avatar_url ?
       '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;border:1.5px solid rgba(255,255,255,0.08)"><img src="'+p.avatar_url+'" style="width:100%;height:100%;object-fit:cover"></div>' :
       '<div style="width:40px;height:40px;border-radius:50%;background:'+_obPreviewColors[i%5]+';display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;flex-shrink:0">'+ini+'</div>';
-    var matchPct = item.shared > 0 && myTags.length > 0 ? Math.round((item.shared / Math.max(myTags.length, 1)) * 100) : 0;
+
     var sharedText;
-    if (item.shared > 0) {
-      sharedText = '<span style="font-size:0.6rem;color:var(--green);font-weight:600">' + item.shared + ' fælles · ' + matchPct + '% match</span>';
-    } else {
+    if (myTags.length === 0) {
+      sharedText = '<span style="font-size:0.6rem;color:var(--muted)">Muligt match</span>';
+    } else if (item.shared === 0) {
       sharedText = '<span style="font-size:0.6rem;color:var(--muted)">Ingen fælles tags endnu</span>';
+    } else if (myTags.length < 3) {
+      // Qualitative at low tag count
+      sharedText = '<span style="font-size:0.6rem;color:var(--accent)">' + (item.shared === 1 ? 'Ser lovende ud · 1 fælles' : 'Ser lovende ud · ' + item.shared + ' fælles') + '</span>';
+    } else {
+      // Quantitative at 3+ tags
+      var matchPct = Math.round((item.shared / Math.max(myTags.length, (p.keywords||[]).length, 1)) * 100);
+      matchPct = Math.min(matchPct, 99);
+      sharedText = '<span style="font-size:0.6rem;color:var(--green);font-weight:600">' + matchPct + '% match · ' + item.shared + ' fælles</span>';
     }
-    return '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0;' + (i < 2 ? 'border-bottom:1px solid rgba(255,255,255,0.03)' : '') + '">' +
+    return '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0;transition:opacity 0.3s;' + (i < 2 ? 'border-bottom:1px solid rgba(255,255,255,0.03)' : '') + '">' +
       avHtml +
       '<div style="flex:1;min-width:0">' +
       '<div style="font-size:0.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.name||'Ukendt') + '</div>' +
