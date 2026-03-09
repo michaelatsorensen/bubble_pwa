@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-09T04:20:00';
-const BUILD_VERSION  = 'v1.4.2';
+const BUILD_TIMESTAMP = '2026-03-09T06:30:00';
+const BUILD_VERSION  = 'v1.4.3';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -2151,41 +2151,10 @@ async function loadProfile() {
       else { myAvEl.textContent = initials; }
     }
     document.getElementById('my-name').textContent = currentProfile.name || '...';
-    document.getElementById('my-role').textContent = currentProfile.title || '';
-    var kwEl = document.getElementById('my-keywords');
-    var kws = currentProfile.keywords || [];
-    kwEl.innerHTML = kws.map(k=>`<span class="tag">${escHtml(k)}</span>`).join('');
-    kwEl.className = 'profile-tags-collapsed';
-    var toggleBtn = document.getElementById('my-tags-toggle');
-    if (toggleBtn) {
-      if (kws.length > 8) {
-        toggleBtn.style.display = 'block';
-        toggleBtn.textContent = kws.length + ' tags · Vis alle ▾';
-      } else {
-        toggleBtn.style.display = 'none';
-        kwEl.className = 'profile-tags-expanded';
-      }
-    }
+    document.getElementById('my-role').textContent = (currentProfile.title || '') + (currentProfile.workplace ? ' · ' + currentProfile.workplace : '');
 
     isAnon = currentProfile.is_anon || false;
     updateAnonToggle();
-
-    // Profile completeness nudge
-    var nudge = document.getElementById('profile-nudge');
-    var nudgeText = document.getElementById('profile-nudge-text');
-    if (nudge && nudgeText) {
-      var missing = [];
-      if (!currentProfile.bio) missing.push('en bio');
-      if ((currentProfile.keywords||[]).length < 5) missing.push('flere tags (har ' + (currentProfile.keywords||[]).length + ', anbefalet 5+)');
-      if (!(currentProfile.dynamic_keywords||[]).length) missing.push('"søger nu" tags');
-      if (!currentProfile.linkedin) missing.push('LinkedIn URL');
-      if (missing.length > 0) {
-        nudgeText.textContent = 'Tilføj ' + missing[0] + ' for bedre matches';
-        nudge.style.display = 'flex';
-      } else {
-        nudge.style.display = 'none';
-      }
-    }
 
     await loadSavedContacts();
     await loadMyBubbles();
