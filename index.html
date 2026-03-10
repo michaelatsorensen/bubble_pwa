@@ -90,7 +90,8 @@
     </div>
 
     <button class="btn-primary" onclick="showInterestPicker()" style="width:100%;margin:0 auto">Kom i gang →</button>
-    <div style="font-size:0.6rem;color:var(--muted);margin-top:0.8rem">Closed Beta · Sønderborg 2026</div>
+    <button onclick="showAuthForms()" style="margin-top:0.6rem;background:none;border:none;color:var(--muted);font-size:0.72rem;font-family:'Outfit',sans-serif;cursor:pointer;padding:0.4rem;width:100%;text-align:center">Har allerede en konto? <span style="color:var(--accent);font-weight:600">Log ind</span></button>
+    <div style="font-size:0.6rem;color:var(--muted);margin-top:0.5rem">Closed Beta · Sønderborg 2026</div>
   </div>
 
   <!-- INTEREST PICKER (shown after splash, before auth) -->
@@ -130,8 +131,8 @@
       </div>
     </div>
 
-    <button class="btn-primary" id="interest-continue-btn" onclick="showAuthForms()" style="width:100%;opacity:0.3;pointer-events:none">Fortsæt →</button>
-    <button type="button" onclick="showAuthForms()" style="margin-top:0.5rem;background:none;border:none;color:var(--muted);font-size:0.72rem;font-family:'Outfit',sans-serif;cursor:pointer;padding:0.4rem;width:100%;text-align:center">Spring over</button>
+    <button class="btn-primary" id="interest-continue-btn" onclick="completeInterestPicker()" style="width:100%;opacity:0.3;pointer-events:none">Fortsæt →</button>
+    <button type="button" onclick="completeInterestPicker()" style="margin-top:0.5rem;background:none;border:none;color:var(--muted);font-size:0.72rem;font-family:'Outfit',sans-serif;cursor:pointer;padding:0.4rem;width:100%;text-align:center">Spring over</button>
   </div>
 
   <!-- AUTH FORMS (hidden initially) -->

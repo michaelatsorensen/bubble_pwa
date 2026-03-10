@@ -549,11 +549,25 @@ function showAuthForms() {
   var interests = document.getElementById('auth-interests');
   var forms = document.getElementById('auth-forms');
   if (splash) { splash.style.transition = 'opacity 0.3s'; splash.style.opacity = '0'; setTimeout(function(){ splash.style.display = 'none'; }, 300); }
-  if (interests) { interests.style.display = 'none'; }
+  if (interests) { interests.style.transition = 'opacity 0.3s'; interests.style.opacity = '0'; setTimeout(function(){ interests.style.display = 'none'; }, 300); }
   if (forms) { forms.style.display = 'block'; forms.style.opacity = '0'; setTimeout(function(){ forms.style.transition = 'opacity 0.3s'; forms.style.opacity = '1'; }, 50); }
 }
 
+function completeInterestPicker() {
+  localStorage.setItem('bubble_interests_done', '1');
+  // Also save selected interests for onboarding tag recommendations
+  if (_selectedInterests.length > 0) {
+    localStorage.setItem('bubble_selected_interests', JSON.stringify(_selectedInterests));
+  }
+  showAuthForms();
+}
+
 function showInterestPicker() {
+  // Skip if user has already completed interest picker
+  if (localStorage.getItem('bubble_interests_done')) {
+    showAuthForms();
+    return;
+  }
   var splash = document.getElementById('auth-splash');
   var interests = document.getElementById('auth-interests');
   if (splash) { splash.style.transition = 'opacity 0.3s'; splash.style.opacity = '0'; setTimeout(function(){ splash.style.display = 'none'; }, 300); }
@@ -568,7 +582,9 @@ function showInterestPicker() {
 }
 
 // ── Interest picker state ──
-var _selectedInterests = [];
+var _selectedInterests = (function() {
+  try { var s = localStorage.getItem('bubble_selected_interests'); return s ? JSON.parse(s) : []; } catch(e) { return []; }
+})();
 var _interestTagMap = {
   startup: ['SaaS','Fintech','Founder','Co-Founder','Iværksætter','Lean Startup','Entrepreneurship','Skalering','Marketplace','Platform','Fundraising','Growth Hacking','Startup Økosystem','Iværksætterkultur','Serial Entrepreneur'],
   tech: ['AI/ML','SaaS','Cloud','IoT','Deep Tech','Frontend','Backend','Machine Learning','DevOps','Cybersecurity','Developer','Software Engineer','Data Scientist','Python','React','TypeScript','Robotics','Embedded','Blockchain'],
@@ -860,7 +876,38 @@ async function loadMyBubbles() {
 
     if (!memberships || memberships.length === 0) {
       ownedList.innerHTML  = '';
-      joinedList.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke i nogen bobler endnu</div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.82rem;padding:0.6rem 1.5rem">Udforsk bobler →</button></div><div style="margin-top:0.5rem"><button class="btn-secondary" onclick="openCreateBubble()" style="font-size:0.78rem;padding:0.5rem 1.2rem">+ Opret en boble</button></div></div>';
+      // Show suggested bubbles to join instead of empty state
+      joinedList.innerHTML = '<div class="spinner"></div>';
+      try {
+        var { data: suggestedBubbles } = await sb.from('bubbles').select('*, bubble_members(count)').or('visibility.eq.public,visibility.eq.private,visibility.is.null').order('created_at', {ascending:false}).limit(10);
+        await loadBubbleUpvotes();
+        var suggestions = (suggestedBubbles || []).filter(function(b) { return b.type !== 'live'; }).map(function(b) {
+          return Object.assign({}, b, {
+            member_count: b.bubble_members && b.bubble_members[0] ? b.bubble_members[0].count : 0,
+            type_label: typeLabel(b.type),
+            upvote_count: bubbleUpvotes[b.id] || 0
+          });
+        });
+        if (suggestions.length > 0) {
+          joinedList.innerHTML = '<div class="section-label" style="margin-top:0.5rem">Foreslåede bobler</div>' +
+            '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.5rem">Du er ikke med i nogen bobler endnu — her er nogle du kan joine:</div>' +
+            suggestions.map(function(b) { return bubbleCard(b, false); }).join('');
+        } else {
+          joinedList.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Ingen bobler oprettet endnu</div><div style="margin-top:1rem"><button class="btn-secondary" onclick="openCreateBubble()" style="font-size:0.78rem;padding:0.5rem 1.2rem">+ Opret den første boble</button></div></div>';
+        }
+      } catch(e2) {
+        joinedList.innerHTML = '<div class="sub-muted">Kunne ikke hente forslag</div>';
+      }
+      // Also update profile bubbles tab
+      var profBubblesEl = document.getElementById('profile-bubbles');
+      if (profBubblesEl) {
+        profBubblesEl.innerHTML = '<div style="text-align:center;padding:2rem 1rem">' +
+          '<div style="width:44px;height:44px;margin:0 auto 0.7rem;opacity:0.4;color:var(--accent)">' + ico('bubble') + '</div>' +
+          '<div style="font-size:0.85rem;font-weight:700;margin-bottom:0.25rem">Ingen bobler endnu</div>' +
+          '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.4">Bobler er fællesskaber og events. Udforsk og join din første!</div>' +
+          '<button onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(139,127,255,0.12);color:var(--accent);border:1px solid rgba(139,127,255,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
+          '</div>';
+      }
       return;
     }
 
@@ -3327,6 +3374,29 @@ async function maybeShowOnboarding() {
   } catch(e) { logError("maybeShowOnboarding", e); showToast(e.message || "Ukendt fejl"); }
 }
 
+function reRunOnboarding() {
+  if (!currentProfile || !currentUser) return;
+  // Pre-fill with existing data
+  var obName = document.getElementById('ob-name');
+  var obTitle = document.getElementById('ob-title');
+  var obBio = document.getElementById('ob-bio');
+  var obLinkedin = document.getElementById('ob-linkedin');
+  var obWp = document.getElementById('ob-workplace');
+  if (obName) obName.value = currentProfile.name || '';
+  if (obTitle) obTitle.value = currentProfile.title || '';
+  if (obBio) obBio.value = currentProfile.bio || '';
+  if (obLinkedin) obLinkedin.value = currentProfile.linkedin || '';
+  if (obWp) obWp.value = currentProfile.workplace || '';
+  // Load existing tags
+  obSelectedTags = Array.isArray(currentProfile.keywords) ? [...currentProfile.keywords] : [];
+  obRenderSelectedTags();
+  obRenderCategories();
+  // Reset progress UI
+  obCheckProgress();
+  goTo('screen-onboarding');
+  setTimeout(initInputConfirmButtons, 50);
+}
+
 
 
 
@@ -4263,6 +4333,17 @@ function epAddTag(label, category) {
 function epRemoveTag(label) {
   epSelectedTags = epSelectedTags.filter(function(t) { return t !== label; });
   epRenderSelectedTags();
+  epRenderCategories();
+}
+function epTogglePickTag(label, cat, el) {
+  var idx = epSelectedTags.indexOf(label);
+  if (idx >= 0) {
+    epSelectedTags.splice(idx, 1);
+  } else {
+    epSelectedTags.push(label);
+  }
+  epRenderSelectedTags();
+  epRenderCategories();
 }
 function epRenderSelectedTags() {
   var el = document.getElementById('ep-tag-selected');
@@ -6525,18 +6606,62 @@ async function adminLoadBanned() {
 async function adminLoadStats() {
   var el = document.getElementById('admin-stats');
   if (!el) return;
+  el.innerHTML = '<div class="spinner"></div>';
   try {
     var { count: userCount } = await sb.from('profiles').select('*', { count: 'exact', head: true });
+    var { count: bannedCount } = await sb.from('profiles').select('*', { count: 'exact', head: true }).eq('banned', true);
     var { count: bubbleCount } = await sb.from('bubbles').select('*', { count: 'exact', head: true });
+    var { count: publicBubbles } = await sb.from('bubbles').select('*', { count: 'exact', head: true }).eq('visibility', 'public');
+    var { count: privateBubbles } = await sb.from('bubbles').select('*', { count: 'exact', head: true }).eq('visibility', 'private');
+    var { count: hiddenBubbles } = await sb.from('bubbles').select('*', { count: 'exact', head: true }).eq('visibility', 'hidden');
     var { count: msgCount } = await sb.from('messages').select('*', { count: 'exact', head: true });
     var { count: reportCount } = await sb.from('reports').select('*', { count: 'exact', head: true });
-    var { count: bannedCount } = await sb.from('profiles').select('*', { count: 'exact', head: true }).eq('banned', true);
-    el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem">' +
+    var { count: feedbackCount } = await sb.from('reports').select('*', { count: 'exact', head: true }).eq('type', 'feedback');
+
+    // Live users (checked in within last 4 hours)
+    var liveExpiry = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+    var { count: liveCount } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).gt('last_active', liveExpiry);
+
+    // Members total
+    var { count: membershipCount } = await sb.from('bubble_members').select('*', { count: 'exact', head: true });
+
+    // Profiles with tags
+    var { data: profilesWithTags } = await sb.from('profiles').select('keywords');
+    var taggedCount = 0;
+    var totalTags = 0;
+    if (profilesWithTags) {
+      profilesWithTags.forEach(function(p) {
+        if (p.keywords && p.keywords.length > 0) { taggedCount++; totalTags += p.keywords.length; }
+      });
+    }
+    var avgTags = taggedCount > 0 ? (totalTags / taggedCount).toFixed(1) : '0';
+
+    // Saved contacts count
+    var { count: savedCount } = await sb.from('saved_contacts').select('*', { count: 'exact', head: true });
+
+    el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem">' +
       adminStatCard('Brugere', userCount || 0, '#8B7FFF') +
+      adminStatCard('Live nu', liveCount || 0, '#10B981') +
+      adminStatCard('Bannede', bannedCount || 0, '#E85D8A') +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
       adminStatCard('Bobler', bubbleCount || 0, '#2ECFCF') +
-      adminStatCard('Beskeder', msgCount || 0, '#10B981') +
+      adminStatCard('Offentlige', publicBubbles || 0, '#2ECFCF') +
+      adminStatCard('Private', (privateBubbles||0) + '+' + (hiddenBubbles||0), '#F97316') +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
+      adminStatCard('Beskeder', msgCount || 0, '#8B7FFF') +
       adminStatCard('Rapporter', reportCount || 0, '#E85D8A') +
-      adminStatCard('Bannede', bannedCount || 0, '#F97316') +
+      adminStatCard('Feedback', feedbackCount || 0, '#38BDF8') +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
+      adminStatCard('Medlemskaber', membershipCount || 0, '#2ECFCF') +
+      adminStatCard('Gemte kontakter', savedCount || 0, '#A78BFA') +
+      adminStatCard('Gns. tags', avgTags, '#10B981') +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
+      adminStatCard('Profiler m/ tags', taggedCount + '/' + (userCount||0), '#F5C35A') +
+      adminStatCard('Tags i alt', totalTags, '#F5C35A') +
       '</div>';
   } catch(e) { el.innerHTML = '<div style="color:var(--accent2)">Fejl: ' + escHtml(e.message) + '</div>'; }
 }
