@@ -1206,7 +1206,7 @@ a.person-action-btn { text-decoration:none; }
 .live-scanner-viewport {
   position: relative;
   width: 100%;
-  aspect-ratio: 4/3;
+  aspect-ratio: 5/3;
   border-radius: var(--radius);
   overflow: hidden;
   background: #000;

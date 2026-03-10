@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-10T10:30:00';
-const BUILD_VERSION  = 'v1.9.3';
+const BUILD_TIMESTAMP = '2026-03-10T10:50:00';
+const BUILD_VERSION  = 'v1.9.4';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -2957,7 +2957,11 @@ function openModal(id) { document.getElementById(id).classList.add('open'); }
 // Settings sheet removed — now a tab in profile
 
 
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  // Always stop camera when closing live checkin
+  if (id === 'modal-live-checkin') stopLiveCamera();
+}
 // Close modal on backdrop click
 document.querySelectorAll('.modal-overlay').forEach(el => {
   el.addEventListener('click', (e) => { if (e.target === el) el.classList.remove('open'); });
