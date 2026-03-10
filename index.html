@@ -1037,7 +1037,43 @@
     <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Konto</div>
     <button onclick="handleLogout()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(232,93,138,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent2);cursor:pointer">Log ud</button>
 
-    <div style="text-align:center;margin-top:2rem;margin-bottom:1rem;font-size:0.62rem;color:var(--muted)">Bubble v1.0</div>
+    <!-- ADMIN PANEL (only visible for admin UID) -->
+    <div id="admin-panel" style="display:none">
+      <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem;color:var(--accent2)">🔒 Admin</div>
+
+      <!-- Reported users -->
+      <div style="background:rgba(232,93,138,0.06);border:1px solid rgba(232,93,138,0.15);border-radius:12px;padding:0.8rem;margin-bottom:0.5rem">
+        <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between">
+          Rapporterede brugere
+          <button class="btn-sm btn-ghost" onclick="adminLoadReports()" style="font-size:0.62rem">Opdater</button>
+        </div>
+        <div id="admin-reports-list" style="font-size:0.72rem;color:var(--text-secondary)">Indlæser...</div>
+      </div>
+
+      <!-- User lookup -->
+      <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:12px;padding:0.8rem;margin-bottom:0.5rem">
+        <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem">Søg bruger</div>
+        <input class="input" id="admin-user-search" placeholder="Navn eller email..." oninput="adminSearchUser(this.value)" style="margin-bottom:0.4rem">
+        <div id="admin-search-results"></div>
+      </div>
+
+      <!-- Banned users -->
+      <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:12px;padding:0.8rem;margin-bottom:0.5rem">
+        <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between">
+          Bannede brugere
+          <button class="btn-sm btn-ghost" onclick="adminLoadBanned()" style="font-size:0.62rem">Opdater</button>
+        </div>
+        <div id="admin-banned-list" style="font-size:0.72rem;color:var(--text-secondary)">Indlæser...</div>
+      </div>
+
+      <!-- Stats -->
+      <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:12px;padding:0.8rem">
+        <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem">Platform stats</div>
+        <div id="admin-stats" style="font-size:0.72rem;color:var(--text-secondary)">Indlæser...</div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:2rem;margin-bottom:1rem;font-size:0.62rem;color:var(--muted)" id="version-label">Bubble v1.0</div>
     </div>
 
   </div><!-- /scroll area -->

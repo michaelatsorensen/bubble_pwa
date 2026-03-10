@@ -331,6 +331,13 @@ async function loadCurrentProfile() {
   try {
     const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
     if (data) {
+      // Check if user is banned
+      if (data.banned) {
+        await sb.auth.signOut();
+        showToast('Din konto er blevet suspenderet. Kontakt hello@bubble.app');
+        goTo('screen-auth');
+        return;
+      }
       currentProfile = data;
       updateHomeAvatar();
     }
@@ -634,7 +641,7 @@ async function loadInterestPreview() {
     // Load profiles using anon key (requires RLS policy for anon SELECT)
     if (!sb) initSupabase();
     if (_interestProfiles.length === 0) {
-      var { data } = await sb.from('profiles').select('id,name,title,keywords,avatar_url').limit(50);
+      var { data } = await sb.from('profiles').select('id,name,title,keywords,avatar_url').neq('banned', true).limit(50);
       _interestProfiles = data || [];
     }
 
@@ -1305,7 +1312,7 @@ async function loadProximityMap() {
     var emptyEl = document.getElementById('prox-empty');
     var canvas = document.getElementById('prox-canvas');
     if (!map || !canvas) return;
-    var r1 = await sb.from('profiles').select('id,name,title,keywords,dynamic_keywords,bio,linkedin,is_anon,avatar_url').neq('id', currentUser.id).limit(200);
+    var r1 = await sb.from('profiles').select('id,name,title,keywords,dynamic_keywords,bio,linkedin,is_anon,avatar_url').neq('id', currentUser.id).neq('banned', true).limit(200);
     var allProfiles = r1.data;
     if (!allProfiles || allProfiles.length === 0) { map.style.display = 'none'; if (emptyEl) emptyEl.style.display = 'block'; return; }
     map.style.display = 'block'; if (emptyEl) emptyEl.style.display = 'none';
@@ -2296,6 +2303,19 @@ async function loadProfile() {
     await loadSavedContacts();
     await loadMyBubbles();
     loadProfileInvitations();
+
+    // Admin panel — only for admin UID
+    var adminPanel = document.getElementById('admin-panel');
+    if (adminPanel) {
+      if (currentUser && currentUser.id === ADMIN_UID) {
+        adminPanel.style.display = 'block';
+        adminLoadReports();
+        adminLoadBanned();
+        adminLoadStats();
+      } else {
+        adminPanel.style.display = 'none';
+      }
+    }
   } catch(e) { logError("loadProfile", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -6380,3 +6400,146 @@ window.addEventListener('load', async () => {
     }
   }, { passive: true });
 });
+
+// ══════════════════════════════════════════════════════════
+//  ADMIN PANEL
+// ══════════════════════════════════════════════════════════
+var ADMIN_UID = '0015de9c-c128-477a-8110-2cbb38a625f4';
+
+async function adminLoadReports() {
+  var el = document.getElementById('admin-reports-list');
+  if (!el) return;
+  el.innerHTML = '<div class="spinner"></div>';
+  try {
+    var { data } = await sb.from('reports')
+      .select('id, type, reason, created_at, reporter_id, reported_id, profiles!reports_reporter_id_fkey(name), reported:profiles!reports_reported_id_fkey(name, banned)')
+      .order('created_at', { ascending: false }).limit(20);
+    if (!data || data.length === 0) {
+      el.innerHTML = '<div style="color:var(--muted);padding:0.3rem 0">Ingen rapporter</div>';
+      return;
+    }
+    el.innerHTML = data.map(function(r) {
+      var reporterName = r.profiles ? r.profiles.name : 'Ukendt';
+      var reportedName = r.reported ? r.reported.name : 'Ukendt';
+      var isBanned = r.reported && r.reported.banned;
+      var timeAgo = adminTimeAgo(r.created_at);
+      return '<div style="padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.03)">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<div><span style="font-weight:600">' + escHtml(reportedName) + '</span>' +
+        (isBanned ? ' <span style="font-size:0.55rem;background:rgba(232,93,138,0.2);color:var(--accent2);padding:0.1rem 0.3rem;border-radius:4px">Banned</span>' : '') +
+        '<div style="font-size:0.62rem;color:var(--muted)">' + escHtml(r.type || 'report') + ' · ' + escHtml(r.reason || 'Ingen grund') + ' · ' + timeAgo + '</div>' +
+        '<div style="font-size:0.6rem;color:var(--muted)">Af: ' + escHtml(reporterName) + '</div></div>' +
+        (!isBanned ? '<button class="btn-sm" onclick="adminBanUser(\'' + r.reported_id + '\',\'' + escHtml(reportedName).replace(/'/g,"\\'") + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(232,93,138,0.15);color:var(--accent2);border:1px solid rgba(232,93,138,0.3);border-radius:6px;flex-shrink:0">Ban</button>' :
+        '<button class="btn-sm" onclick="adminUnbanUser(\'' + r.reported_id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(16,185,129,0.15);color:var(--green);border:1px solid rgba(16,185,129,0.3);border-radius:6px;flex-shrink:0">Unban</button>') +
+        '</div></div>';
+    }).join('');
+  } catch(e) { el.innerHTML = '<div style="color:var(--accent2)">Fejl: ' + escHtml(e.message) + '</div>'; }
+}
+
+async function adminLoadBanned() {
+  var el = document.getElementById('admin-banned-list');
+  if (!el) return;
+  el.innerHTML = '<div class="spinner"></div>';
+  try {
+    var { data } = await sb.from('profiles').select('id, name, email, banned').eq('banned', true).order('name');
+    if (!data || data.length === 0) {
+      el.innerHTML = '<div style="color:var(--muted);padding:0.3rem 0">Ingen bannede brugere</div>';
+      return;
+    }
+    el.innerHTML = data.map(function(p) {
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid rgba(255,255,255,0.03)">' +
+        '<div><span style="font-weight:600">' + escHtml(p.name || 'Ukendt') + '</span>' +
+        '<div style="font-size:0.6rem;color:var(--muted)">' + escHtml(p.email || p.id.slice(0,8)) + '</div></div>' +
+        '<button class="btn-sm" onclick="adminUnbanUser(\'' + p.id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(16,185,129,0.15);color:var(--green);border:1px solid rgba(16,185,129,0.3);border-radius:6px">Unban</button>' +
+        '</div>';
+    }).join('');
+  } catch(e) { el.innerHTML = '<div style="color:var(--accent2)">Fejl: ' + escHtml(e.message) + '</div>'; }
+}
+
+async function adminLoadStats() {
+  var el = document.getElementById('admin-stats');
+  if (!el) return;
+  try {
+    var { count: userCount } = await sb.from('profiles').select('*', { count: 'exact', head: true });
+    var { count: bubbleCount } = await sb.from('bubbles').select('*', { count: 'exact', head: true });
+    var { count: msgCount } = await sb.from('messages').select('*', { count: 'exact', head: true });
+    var { count: reportCount } = await sb.from('reports').select('*', { count: 'exact', head: true });
+    var { count: bannedCount } = await sb.from('profiles').select('*', { count: 'exact', head: true }).eq('banned', true);
+    el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem">' +
+      adminStatCard('Brugere', userCount || 0, '#8B7FFF') +
+      adminStatCard('Bobler', bubbleCount || 0, '#2ECFCF') +
+      adminStatCard('Beskeder', msgCount || 0, '#10B981') +
+      adminStatCard('Rapporter', reportCount || 0, '#E85D8A') +
+      adminStatCard('Bannede', bannedCount || 0, '#F97316') +
+      '</div>';
+  } catch(e) { el.innerHTML = '<div style="color:var(--accent2)">Fejl: ' + escHtml(e.message) + '</div>'; }
+}
+
+function adminStatCard(label, count, color) {
+  return '<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:0.4rem 0.6rem;text-align:center">' +
+    '<div style="font-size:1.1rem;font-weight:800;color:' + color + '">' + count + '</div>' +
+    '<div style="font-size:0.6rem;color:var(--muted)">' + label + '</div></div>';
+}
+
+async function adminBanUser(userId, userName) {
+  if (!confirm('Ban ' + (userName || 'denne bruger') + '? De vil ikke kunne bruge appen.')) return;
+  try {
+    await sb.from('profiles').update({ banned: true }).eq('id', userId);
+    showToast(userName + ' er banned');
+    adminLoadReports();
+    adminLoadBanned();
+    adminLoadStats();
+  } catch(e) { showToast('Fejl: ' + e.message); }
+}
+
+async function adminUnbanUser(userId) {
+  try {
+    await sb.from('profiles').update({ banned: false }).eq('id', userId);
+    showToast('Bruger unbanned');
+    adminLoadReports();
+    adminLoadBanned();
+    adminLoadStats();
+  } catch(e) { showToast('Fejl: ' + e.message); }
+}
+
+var _adminSearchTimer = null;
+function adminSearchUser(query) {
+  clearTimeout(_adminSearchTimer);
+  var el = document.getElementById('admin-search-results');
+  if (!el) return;
+  if (!query || query.length < 2) { el.innerHTML = ''; return; }
+  _adminSearchTimer = setTimeout(async function() {
+    try {
+      var { data } = await sb.from('profiles').select('id, name, email, banned, title')
+        .or('name.ilike.%' + query + '%,email.ilike.%' + query + '%')
+        .limit(5);
+      if (!data || data.length === 0) {
+        el.innerHTML = '<div style="font-size:0.68rem;color:var(--muted);padding:0.3rem 0">Ingen resultater</div>';
+        return;
+      }
+      el.innerHTML = data.map(function(p) {
+        var isBanned = p.banned;
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid rgba(255,255,255,0.03)">' +
+          '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:0.75rem;font-weight:600">' + escHtml(p.name || 'Ukendt') +
+          (isBanned ? ' <span style="font-size:0.55rem;background:rgba(232,93,138,0.2);color:var(--accent2);padding:0.1rem 0.3rem;border-radius:4px">Banned</span>' : '') + '</div>' +
+          '<div style="font-size:0.6rem;color:var(--muted)">' + escHtml(p.title || '') + ' · ' + escHtml(p.email || p.id.slice(0,8)) + '</div>' +
+          '</div>' +
+          (!isBanned ?
+            '<button class="btn-sm" onclick="adminBanUser(\'' + p.id + '\',\'' + escHtml(p.name||'').replace(/'/g,"\\'") + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(232,93,138,0.15);color:var(--accent2);border:1px solid rgba(232,93,138,0.3);border-radius:6px;flex-shrink:0">Ban</button>' :
+            '<button class="btn-sm" onclick="adminUnbanUser(\'' + p.id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(16,185,129,0.15);color:var(--green);border:1px solid rgba(16,185,129,0.3);border-radius:6px;flex-shrink:0">Unban</button>') +
+          '</div>';
+      }).join('');
+    } catch(e) { el.innerHTML = '<div style="color:var(--accent2);font-size:0.68rem">Fejl: ' + escHtml(e.message) + '</div>'; }
+  }, 300);
+}
+
+function adminTimeAgo(dateStr) {
+  var diff = Date.now() - new Date(dateStr).getTime();
+  var mins = Math.floor(diff / 60000);
+  if (mins < 60) return mins + ' min siden';
+  var hours = Math.floor(mins / 60);
+  if (hours < 24) return hours + ' timer siden';
+  var days = Math.floor(hours / 24);
+  return days + ' dage siden';
+}
