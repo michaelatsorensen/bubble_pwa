@@ -422,18 +422,18 @@
             <div class="live-bubble-idle-title">Live Bubble</div>
             <div class="live-bubble-idle-sub">Check ind hvor du er — se hvem der er her lige nu</div>
           </div>
-          <div class="live-bubble-idle-arrow">→</div>
+          <div class="live-bubble-idle-arrow">›</div>
         </div>
       </div>
     </div>
 
     <!-- GEMTE PROFILER (story-bar) -->
     <div id="saved-profiles-bar" data-hs="saved" style="display:none;margin-bottom:0.5rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">
-        <div style="font-size:0.78rem;font-weight:700;color:var(--text)">Gemte profiler <span id="saved-count-badge" class="saved-count-badge"></span></div>
-        <button class="btn-sm btn-ghost" onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('saved')},200)" style="font-size:0.65rem">Se alle</button>
+      <div style="font-size:0.78rem;font-weight:700;color:var(--text);margin-bottom:0.4rem">Gemte profiler <span id="saved-count-badge" class="saved-count-badge"></span></div>
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <div class="saved-story-scroll" id="saved-story-list" style="flex:1"></div>
+        <button class="btn-sm btn-ghost" onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('saved')},200)" style="font-size:0.62rem;flex-shrink:0;padding:0.25rem 0.5rem">Se alle</button>
       </div>
-      <div class="saved-story-scroll" id="saved-story-list"></div>
     </div>
 
     <!-- Cards -->
@@ -488,7 +488,7 @@
           <div style="font-size:0.82rem;font-weight:700;color:var(--text)">Giv feedback</div>
           <div style="font-size:0.68rem;color:var(--text-secondary)">Hjælp os med at gøre Bubble bedre</div>
         </div>
-        <div style="color:var(--muted);font-size:0.9rem">→</div>
+        <div class="icon-muted">›</div>
       </div>
     </div>
 
