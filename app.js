@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-10T10:50:00';
-const BUILD_VERSION  = 'v1.9.4';
+const BUILD_TIMESTAMP = '2026-03-10T17:55:00';
+const BUILD_VERSION  = 'v2.0.1';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -563,17 +563,17 @@ function showInterestPicker() {
 // ── Interest picker state ──
 var _selectedInterests = [];
 var _interestTagMap = {
-  startup: ['SaaS','Fintech','Startup','Founder','Co-Founder','Iværksætter','Lean Startup','Entrepreneurship','Skalering'],
-  tech: ['AI','Software','Cloud','IoT','Deep Tech','Frontend','Backend','Data','Machine Learning','DevOps','Cybersecurity'],
-  sustainability: ['Cleantech','Energy','Climate Action','Bæredygtighed','ESG','Sustainability','Green Tech'],
-  leadership: ['Leadership','Strategy','Management','Director','CEO','Project Management','HR','Operations','Consulting'],
-  public: ['GovTech','Offentlig','NGO','Kommune','Socialforvaltning','Uddannelse','Velfærd','Smart Cities'],
-  industry: ['Byggeri','Produktion','Industri','Håndværk','Energi','Teknik','Landbrug','Transport','Installation'],
-  health: ['HealthTech','Sundhed','Wellness','Biotech','Pharma','Velfærdsteknologi','Omsorg'],
-  education: ['EdTech','Research','Academic','Student','PhD','Professor','Forskning','Undervisning'],
-  creative: ['Design','UX/UI Design','Content','Brand Strategy','Storytelling','Medie','Kommunikation','Kunst','Foto'],
-  commerce: ['E-commerce','Retail','Marketing','Sales','Finans','Hotel','Restaurant','Service','Handel'],
-  community: ['Community Building','Networking','Events','Frivillig','Foreningsliv','Sport','Kultur','Fritid']
+  startup: ['SaaS','Fintech','Founder','Co-Founder','Iværksætter','Lean Startup','Entrepreneurship','Skalering','Marketplace','Platform','Fundraising','Growth Hacking','Startup Økosystem','Iværksætterkultur','Serial Entrepreneur'],
+  tech: ['AI/ML','SaaS','Cloud','IoT','Deep Tech','Frontend','Backend','Machine Learning','DevOps','Cybersecurity','Developer','Software Engineer','Data Scientist','Python','React','TypeScript','Robotics','Embedded','Blockchain'],
+  sustainability: ['Cleantech','Energi','Climate Action','Bæredygtighed','ESG','Sustainability','Grøn Omstilling','Carbon Accounting','Vindenergi','Solenergi','Circular Economy','Biodiversitet','Regenerativt Landbrug'],
+  leadership: ['Leadership','Strategy','Management','Director','CEO','Projektledelse','Operations','Consulting','People Ops','Talent Acquisition','Forretningsudvikling','OKR','Intrapreneurship'],
+  public: ['GovTech','NGO','Kommune','Region','Stat','Forening','Socialøkonomi','Frivilligsektor','Velfærdsteknologi','Smart Cities','Social Impact','Civic Tech','Velfærdsinnovation'],
+  industry: ['Byggeri','Produktion','Industri','Energi','Landbrug','Transport','Logistik','Automation','Lean Manufacturing','Byggeledelse','VVS','Elinstallation','Industry 4.0','Cirkulært Byggeri'],
+  health: ['Healthtech','Sundhed','MedTech','Biotech','Pharma','Velfærdsteknologi','Mental Health','Sygeplejerske','Læge','Fysioterapeut','Patientpleje','Digital Health','Sundhedsfremme'],
+  education: ['Edtech','Forskning','Universitet','Student','PhD','Professor','Underviser','Undervisning','E-læring','Research','Pædagogik','Livslang Læring','Faglig Udvikling','Videndeling'],
+  creative: ['UX/UI Design','UX Designer','Designer','Brand Strategy','Storytelling','Content Marketing','Media','Kommunikation','Reklame','Film','Musik','Kultur','Branding','Copywriting','Fotografi','Kunst'],
+  commerce: ['E-commerce','Retail','Sales','Finans','Hotel','Restaurant','Service','Catering','Turisme','Detail','Dagligvarer','Fashion','Banking','Forsikring','Key Account Management','Kundeservice'],
+  community: ['Community Building','Networking','Events','Foreningsliv','Frivilligt Arbejde','Lokalt Engagement','Mentorordninger','Erfa-grupper','Branchenetværk','Frivillig','Work-Life Balance']
 };
 var _interestProfiles = [];
 
@@ -3828,48 +3828,133 @@ function obRenderSelectedTags() {
 // ── Lifestage → tag filtering ──
 var OB_LIFESTAGE_TAGS = {
   student: {
-    rolle: ['Student','PhD','Researcher','Praktikant','Studentermedhjælper','Teaching Assistant','Developer','Designer','Data Scientist','Freelancer'],
-    branche: ['Edtech','AI/ML','Healthtech','Cleantech','SaaS','Gaming','Media','Cybersecurity','Biotech','Fintech','NGO','Impact','E-commerce'],
-    kompetence: ['UX/UI Design','Frontend','Backend','Full-Stack','Python','React','Data Analytics','Machine Learning','Research','Innovation','Content Marketing','Social Media','SEO/SEM','Storytelling'],
-    interesse: ['Open Source','AI Ethics','Climate Action','Future of Work','Personal Development','Networking','Community Building','Design Thinking','Lean Startup','Nordic Startups','No-Code','Low-Code','Writing','Podcasting','Diversity & Inclusion','Entrepreneurship']
+    branche: ['Edtech','AI/ML','Healthtech','Cleantech','SaaS','Gaming','Media','Cybersecurity','Biotech','Fintech','NGO','Forskning','Universitet'],
+    kompetence: ['UX/UI Design','Frontend','Backend','Full-Stack','Python','React','Data Analytics','Machine Learning','Research','Innovation','Content Marketing','Social Media','Undervisning','E-læring'],
+    interesse: ['Open Source','AI Ethics','Climate Action','Future of Work','Personal Development','Networking','Community Building','Design Thinking','Lean Startup','Nordic Startups','No-Code','Low-Code','Writing','Livslang Læring','Faglig Udvikling']
   },
   employee: {
-    rolle: ['Developer','Designer','Product Manager','Project Manager','Team Lead','Director','VP','Engineer','Data Scientist','Sales','Marketing','Growth','HR','Legal','Operations','Consultant'],
-    branche: ['SaaS','Fintech','Healthtech','E-commerce','AI/ML','Cybersecurity','Cloud','Infrastructure','DevTools','Retail','B2B','B2C','Consulting','Agency','Service','Logistik','Media','Energi','Pharma','MedTech','Banking','Finans'],
-    kompetence: ['Product Development','UX/UI Design','Frontend','Backend','Full-Stack','Growth Hacking','SEO/SEM','Sales Strategy','Enterprise Sales','People Ops','Talent Acquisition','DevOps','Security','Architecture','Brand Strategy','PR/Comms','Operations','Analytics','Data Analytics','Machine Learning','Strategy','Facilitation','GDPR','Legal/Compliance'],
-    interesse: ['Leadership','Management','Future of Work','Remote Work','Agile','Personal Development','Networking','Community Building','Design Thinking','Public Speaking','Diversity & Inclusion','Digital Health','AI Ethics','Nordic Startups','Entrepreneurship']
+    branche: ['SaaS','Fintech','Healthtech','E-commerce','AI/ML','Cybersecurity','Cloud','Infrastructure','DevTools','Retail','B2B','B2C','Consulting','Agency','Service','Logistik','Media','Energi','Pharma','Banking','Finans','Produktion'],
+    kompetence: ['Product Development','UX/UI Design','Frontend','Backend','Full-Stack','Growth Hacking','SEO/SEM','Sales Strategy','Enterprise Sales','People Ops','Talent Acquisition','DevOps','Security','Architecture','Brand Strategy','PR/Comms','Operations','Analytics','Data Analytics','Machine Learning','Strategy','Facilitation','GDPR','Projektledelse'],
+    interesse: ['Leadership','Management','Future of Work','Remote Work','Agile','Personal Development','Networking','Community Building','Design Thinking','Public Speaking','Diversity & Inclusion','Digital Health','AI Ethics','Intrapreneurship','Work-Life Balance','Faglig Udvikling']
   },
   entrepreneur: {
-    rolle: ['Founder','Co-Founder','CEO','CTO','CFO','COO','CMO','CPO','Iværksætter','Serial Entrepreneur','Product Manager','Developer','Designer','Advisor','Mentor'],
-    branche: ['SaaS','Fintech','Healthtech','Edtech','Cleantech','Biotech','E-commerce','AI/ML','Foodtech','Proptech','Marketplace','Platform','B2B','B2C','D2C','Deep Tech','Hardware','Martech','Legaltech','Insurtech','IoT','Robotics'],
-    kompetence: ['Product Development','Fundraising','Pitch Deck','Financial Modeling','Growth Hacking','Sales Strategy','Partnerships','BD','Brand Strategy','Storytelling','Innovation','Strategy','UX/UI Design','Frontend','Backend','People Ops','Talent Acquisition','Operations','Analytics'],
-    interesse: ['Entrepreneurship','Venture Capital','Angel Investing','Lean Startup','Networking','Skalering','Exit Strategy','Nordic Startups','European Tech','Global Markets','Internationalisering','Climate Action','Community Building','Public Speaking','Leadership','Creator Economy']
+    branche: ['SaaS','Fintech','Healthtech','Edtech','Cleantech','Biotech','E-commerce','AI/ML','Foodtech','Proptech','Marketplace','Platform','B2B','B2C','D2C','Deep Tech','Hardware','IoT','Robotics','Abonnement'],
+    kompetence: ['Product Development','Fundraising','Pitch Deck','Financial Modeling','Growth Hacking','Sales Strategy','Partnerships','BD','Brand Strategy','Storytelling','Innovation','Strategy','UX/UI Design','Frontend','Backend','People Ops','Forretningsudvikling','Prototyping'],
+    interesse: ['Entrepreneurship','Venture Capital','Angel Investing','Lean Startup','Networking','Skalering','Exit Strategy','Nordic Startups','European Tech','Global Markets','Internationalisering','Climate Action','Community Building','Public Speaking','Leadership','Creator Economy','Iværksætterkultur','Startup Økosystem']
   },
   freelancer: {
-    rolle: ['Freelancer','Consultant','Advisor','Coach','Mentor','Selvstændig','Developer','Designer','Data Scientist','Engineer','Product Manager'],
-    branche: ['SaaS','Consulting','Agency','Service','AI/ML','E-commerce','Media','Healthtech','Fintech','Cleantech','Edtech','B2B','B2C','Martech','Entertainment','Publishing'],
-    kompetence: ['UX/UI Design','Frontend','Backend','Full-Stack','Product Development','Growth Hacking','Content Marketing','Brand Strategy','PR/Comms','Storytelling','SEO/SEM','Sales Strategy','Strategy','Facilitation','Data Analytics','Innovation','Architecture','API Design'],
-    interesse: ['Remote Work','Digital Nomad','Networking','Personal Development','Public Speaking','Writing','Podcasting','Creator Economy','No-Code','Community Building','Design Thinking','Entrepreneurship','Lean Startup','Future of Work','Leadership']
+    branche: ['SaaS','Consulting','Agency','Service','AI/ML','E-commerce','Media','Healthtech','Fintech','Cleantech','Edtech','B2B','B2C','Martech','Entertainment','Publishing','Kommunikation','PR','Reklame'],
+    kompetence: ['UX/UI Design','Frontend','Backend','Full-Stack','Product Development','Growth Hacking','Content Marketing','Brand Strategy','PR/Comms','Storytelling','SEO/SEM','Sales Strategy','Strategy','Facilitation','Data Analytics','Innovation','Branding','Copywriting','Coaching'],
+    interesse: ['Remote Work','Digital Nomad','Networking','Personal Development','Public Speaking','Writing','Podcasting','Creator Economy','No-Code','Community Building','Design Thinking','Entrepreneurship','Lean Startup','Future of Work','Work-Life Balance','Selvledelse']
   },
   public: {
-    rolle: ['Project Manager','Team Lead','Director','Consultant','Advisor','Researcher','HR','Legal','Operations','Professor','Engineer'],
-    branche: ['NGO','GovTech','Civic Tech','Impact','Sundhed','Energi','Bæredygtighed','Edtech','Cleantech','Mental Health','Pharma','MedTech'],
-    kompetence: ['People Ops','Strategy','Facilitation','Research','Innovation','Legal/Compliance','GDPR','Operations','Brand Strategy','PR/Comms','Sustainability','ESG','Data Analytics','Content Marketing','Storytelling','Talent Acquisition'],
-    interesse: ['Social Impact','Climate Action','Diversity & Inclusion','Smart Cities','Digital Health','Community Building','Future of Work','Public Speaking','Leadership','Management','Nordic Startups','Networking','Personal Development','AI Ethics','Responsible AI']
+    branche: ['NGO','GovTech','Civic Tech','Impact','Sundhed','Energi','Bæredygtighed','Edtech','Cleantech','Velfærdsteknologi','Kommune','Region','Stat','Forening','Socialøkonomi','Frivilligsektor'],
+    kompetence: ['People Ops','Strategy','Facilitation','Research','Innovation','Legal/Compliance','GDPR','Operations','Brand Strategy','PR/Comms','Sustainability','ESG','Data Analytics','Projektledelse','Udbudsret','Krisekommunikation','Undervisning'],
+    interesse: ['Social Impact','Climate Action','Diversity & Inclusion','Smart Cities','Digital Health','Community Building','Future of Work','Public Speaking','Leadership','Management','Velfærdsinnovation','Lokalt Engagement','Patientinddragelse','Tilgængelighed']
   },
   practical: {
-    rolle: ['Engineer','Team Lead','Freelancer','Operations','Consultant','Project Manager','Selvstændig','Iværksætter'],
-    branche: ['Energi','Logistik','Sundhed','Cleantech','Hardware','Embedded','Agritech','Foodtech','Mobility','Service','Bæredygtighed','Circular Economy','IoT','Robotics'],
-    kompetence: ['Operations','Supply Chain','Procurement','DevOps','Security','Architecture','Sustainability','Innovation','Facilitation','People Ops','Talent Acquisition','Product Development'],
-    interesse: ['Climate Action','Future of Work','Personal Development','Networking','Community Building','Smart Cities','Digital Health','Biohacking','Remote Work','Entrepreneurship','Leadership','Lean Startup']
+    branche: ['Byggeri','Anlæg','Renovering','Energi','Logistik','Cleantech','Hardware','Embedded','Agritech','Foodtech','Mobility','Service','Produktion','Industri','Automation','Transport','Landbrug'],
+    kompetence: ['Operations','Supply Chain','Procurement','Lean Manufacturing','Kvalitetsstyring','Vedligeholdelse','Byggeledelse','Tilbudskalkulation','Tegning/CAD','Energiinstallation','Elinstallation','VVS','Projektledelse','Innovation','Sustainability'],
+    interesse: ['Climate Action','Industry 4.0','Automation','Cirkulært Byggeri','Energirenovering','Bygningskultur','Grøn Omstilling','Entrepreneurship','Networking','Personal Development','Community Building','Lean Startup']
   },
   investor: {
-    rolle: ['Investor','Business Angel','VC','LP','Board Member','Partner','Advisor','Mentor','Director','Founder','Serial Entrepreneur'],
-    branche: ['SaaS','Fintech','Healthtech','Cleantech','Biotech','AI/ML','Deep Tech','Foodtech','Proptech','E-commerce','Crypto','DeFi','SpaceTech','Impact','Hardware','Marketplace','Platform','Edtech'],
-    kompetence: ['Due Diligence','Financial Modeling','Fundraising','Strategy','Partnerships','BD','Sales Strategy','Enterprise Sales','Innovation','ESG','Carbon Accounting','Pitch Deck','Operations'],
-    interesse: ['Venture Capital','Angel Investing','Entrepreneurship','Nordic Startups','European Tech','Global Markets','Exit Strategy','Skalering','Internationalisering','Climate Action','Impact','Leadership','Networking','Community Building','Crowdfunding']
+    branche: ['SaaS','Fintech','Healthtech','Cleantech','Biotech','AI/ML','Deep Tech','Foodtech','Proptech','E-commerce','Crypto','DeFi','SpaceTech','Impact','Hardware','Marketplace','Platform','Edtech','Kapitalforvaltning','Investering'],
+    kompetence: ['Due Diligence','Financial Modeling','Fundraising','Strategy','Partnerships','BD','Sales Strategy','Enterprise Sales','Innovation','ESG','Carbon Accounting','Pitch Deck','Operations','Forretningsudvikling','Markedsanalyse'],
+    interesse: ['Venture Capital','Angel Investing','Entrepreneurship','Nordic Startups','European Tech','Global Markets','Exit Strategy','Skalering','Internationalisering','Climate Action','Leadership','Networking','Community Building','Crowdfunding','Startup Økosystem']
   }
 };
+
+// ── Interest → tag boosting for onboarding ──
+var OB_INTEREST_TAGS = {
+  startup: {
+    branche: ['SaaS','Fintech','E-commerce','Marketplace','Platform','B2C','D2C','B2B','Abonnement'],
+    kompetence: ['Fundraising','Growth Hacking','Product Development','Pitch Deck','Financial Modeling','Sales Strategy','Innovation','BD','Forretningsudvikling','Prototyping'],
+    interesse: ['Entrepreneurship','Lean Startup','Venture Capital','Angel Investing','Skalering','Nordic Startups','Exit Strategy','Creator Economy','Iværksætterkultur','Startup Økosystem','Crowdfunding']
+  },
+  tech: {
+    branche: ['AI/ML','SaaS','Cybersecurity','Cloud','DevTools','IoT','Deep Tech','Robotics','Embedded','Infrastructure','Blockchain'],
+    kompetence: ['Frontend','Backend','Full-Stack','Python','React','DevOps','Machine Learning','Architecture','API Design','Data Analytics','Security','TypeScript','Cloud Architecture','System Design','Data Engineering'],
+    interesse: ['Open Source','AI Ethics','Responsible AI','AI Safety','No-Code','Low-Code','Maker Culture','Digital Transformation','Automation']
+  },
+  sustainability: {
+    branche: ['Cleantech','Energi','Bæredygtighed','Circular Economy','Vindenergi','Solenergi','Grøn Omstilling','Affaldshåndtering','Vandteknologi','Carbon Capture','Impact','Agritech','Økologi'],
+    kompetence: ['Sustainability','ESG','Carbon Accounting','LCA','Miljøledelse','Energioptimering','Grøn Certificering','Innovation','Research','Strategy'],
+    interesse: ['Climate Action','Social Impact','Grøn Omstilling','Regenerativt Landbrug','Biodiversitet','Havmiljø','Cirkulært Byggeri','Energirenovering']
+  },
+  leadership: {
+    branche: ['Consulting','B2B','Service','Banking','Finans','Kapitalforvaltning','Rekruttering'],
+    kompetence: ['Strategy','People Ops','Talent Acquisition','Operations','Facilitation','Sales Strategy','Enterprise Sales','Brand Strategy','PR/Comms','Forretningsudvikling','Markedsanalyse','Org Design','Medarbejderudvikling','Coaching','Mentoring','Projektledelse'],
+    interesse: ['Leadership','Management','Future of Work','Public Speaking','Personal Development','Networking','Agile','OKR','Intrapreneurship','Selvledelse','Work-Life Balance','Erfa-grupper']
+  },
+  public: {
+    branche: ['GovTech','Civic Tech','NGO','Impact','Kommune','Region','Stat','Forening','Socialøkonomi','Frivilligsektor','Sundhed','Velfærdsteknologi'],
+    kompetence: ['Legal/Compliance','GDPR','Research','Facilitation','People Ops','Strategy','Operations','Sustainability','Udbudsret','Persondataret','Kontraktret','Projektledelse','Krisekommunikation'],
+    interesse: ['Social Impact','Smart Cities','Digital Health','Diversity & Inclusion','AI Ethics','Community Building','Velfærdsinnovation','Patientinddragelse','Tilgængelighed','Lokalt Engagement']
+  },
+  industry: {
+    branche: ['Byggeri','Anlæg','Renovering','Boligbyggeri','Produktion','Industri','Automation','Hardware','Energi','Transport','Logistik','Shipping','Mobility','Lager','Embedded','IoT','Robotics'],
+    kompetence: ['Operations','Supply Chain','Procurement','Lagerstyring','Lean Manufacturing','Six Sigma','Kvalitetsstyring','ISO','Produktionsplanlægning','Vedligeholdelse','Byggeledelse','Tilbudskalkulation','Tegning/CAD','3D-modellering','BIM','Energiinstallation','Elinstallation','VVS','Projektledelse'],
+    interesse: ['Industry 4.0','Automation','Climate Action','Smart Cities','Lean Startup','Cirkulært Byggeri','Energirenovering','Bygningskultur','Grøn Omstilling']
+  },
+  health: {
+    branche: ['Healthtech','MedTech','Pharma','Biotech','Mental Health','Sundhed','Velfærdsteknologi','Tandpleje','Genoptræning'],
+    kompetence: ['Research','Data Analytics','Innovation','Product Development','GDPR','Legal/Compliance','Klinisk Arbejde','Patientpleje','Medicinhåndtering','Rehabilitering','Tværfagligt Samarbejde','Dokumentation'],
+    interesse: ['Digital Health','Biohacking','AI Ethics','Social Impact','Personal Development','Community Building','Patientinddragelse','Velfærdsinnovation','Sundhedsfremme']
+  },
+  education: {
+    branche: ['Edtech','Forskning','Universitet','Efteruddannelse','Erhvervsskole','AI/ML','Biotech','Impact','NGO'],
+    kompetence: ['Research','Machine Learning','Data Analytics','Innovation','Content Marketing','Storytelling','Facilitation','Undervisning','Kursusudvikling','E-læring','Pædagogik','Didaktik','Vejledning','Design Thinking','User Research'],
+    interesse: ['Open Source','AI Ethics','Future of Work','Writing','Personal Development','Podcasting','Community Building','Design Thinking','Livslang Læring','Faglig Udvikling','Videndeling','Tværfaglighed','Forskning & Udvikling']
+  },
+  creative: {
+    branche: ['Media','Agency','Entertainment','Publishing','Martech','E-commerce','Reklame','Film','Musik','Kultur','Kommunikation','PR','Gaming'],
+    kompetence: ['UX/UI Design','Brand Strategy','Content Marketing','Storytelling','SEO/SEM','Social Media','PR/Comms','Frontend','Innovation','Branding','Copywriting','Influencer Marketing','Eventplanlægning','Prototyping','3D-modellering'],
+    interesse: ['Design Thinking','Creator Economy','Writing','Podcasting','Public Speaking','Community Building','No-Code','Fotografi','Musik','Kunst','Håndarbejde','Maker Culture']
+  },
+  commerce: {
+    branche: ['E-commerce','Retail','Fintech','B2C','Marketplace','Service','Logistik','Banking','Finans','Foodtech','Detail','Dagligvarer','Abonnement','D2C','Fashion','Restaurant','Hotel','Turisme','Catering','Forsikring'],
+    kompetence: ['Sales Strategy','Enterprise Sales','Growth Hacking','SEO/SEM','Analytics','Operations','Supply Chain','Financial Modeling','Partnerships','Key Account Management','Forhandling','Kundeservice','Pipeline Management','CRM','Budgettering','Regnskab'],
+    interesse: ['Networking','Entrepreneurship','Skalering','Global Markets','Internationalisering','Nordic Startups','Branchenetværk','Madkultur','Gastronomi','Fødevaresikkerhed']
+  },
+  community: {
+    branche: ['NGO','Impact','Media','Entertainment','Service','Forening','Socialøkonomi','Frivilligsektor','Kultur','Turisme'],
+    kompetence: ['Facilitation','Content Marketing','Social Media','Storytelling','PR/Comms','People Ops','Eventplanlægning','Coaching','Mentoring','Intern Kommunikation','Employer Branding'],
+    interesse: ['Community Building','Networking','Diversity & Inclusion','Personal Development','Public Speaking','Writing','Podcasting','Design Thinking','Future of Work','Remote Work','Foreningsliv','Frivilligt Arbejde','Lokalt Engagement','Mentorordninger','Erfa-grupper','Branchenetværk','Events','Work-Life Balance']
+  }
+};
+
+
+function obGetRecommendedTags(cat) {
+  var allTags = TAG_DATABASE[cat] || [];
+  if (cat === 'rolle') return allTags.slice(0, 8);
+
+  // Start with lifestage-based recommendations
+  var lifestageRecs = (obLifestage && OB_LIFESTAGE_TAGS[obLifestage]) ? OB_LIFESTAGE_TAGS[obLifestage][cat] || [] : [];
+
+  // Add interest-based recommendations
+  var interestRecs = [];
+  if (_selectedInterests && _selectedInterests.length > 0) {
+    _selectedInterests.forEach(function(key) {
+      var map = OB_INTEREST_TAGS[key];
+      if (map && map[cat]) {
+        map[cat].forEach(function(t) {
+          if (interestRecs.indexOf(t) < 0 && allTags.indexOf(t) >= 0) interestRecs.push(t);
+        });
+      }
+    });
+  }
+
+  // Merge: interest tags first (highest relevance), then lifestage, deduplicated
+  var merged = [];
+  interestRecs.forEach(function(t) { if (merged.indexOf(t) < 0) merged.push(t); });
+  lifestageRecs.forEach(function(t) { if (merged.indexOf(t) < 0) merged.push(t); });
+
+  // If still empty, fall back to first 8
+  if (merged.length === 0) return allTags.slice(0, 8);
+
+  // Cap at 12 to keep it scannable
+  return merged.slice(0, 12);
+}
 
 var OB_TAGS_INITIAL = 8; // Show 8 tags initially per category
 var _obExpandedCats = {};
@@ -3878,13 +3963,11 @@ function obRenderCategories() {
   var el = document.getElementById('ob-tag-categories');
   if (!el) return;
 
-  var filterMap = obLifestage ? OB_LIFESTAGE_TAGS[obLifestage] : null;
-
   el.innerHTML = Object.entries(TAG_CATEGORIES).map(function(entry) {
     var cat = entry[0], info = entry[1];
     if (cat === 'rolle') return '';
     var allTags = TAG_DATABASE[cat] || [];
-    var recommended = filterMap && filterMap[cat] ? filterMap[cat] : allTags.slice(0, 8);
+    var recommended = obGetRecommendedTags(cat);
     var otherTags = allTags.filter(function(t) { return recommended.indexOf(t) < 0; });
     var expanded = _obExpandedCats[cat];
     var visibleOthers = expanded ? otherTags : otherTags.slice(0, 8);
