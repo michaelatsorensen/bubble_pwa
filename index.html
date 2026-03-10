@@ -89,8 +89,49 @@
       </div>
     </div>
 
-    <button class="btn-primary" onclick="showAuthForms()" style="width:100%;margin:0 auto">Kom i gang →</button>
+    <button class="btn-primary" onclick="showInterestPicker()" style="width:100%;margin:0 auto">Kom i gang →</button>
     <div style="font-size:0.6rem;color:var(--muted);margin-top:0.8rem">Closed Beta · Sønderborg 2026</div>
+  </div>
+
+  <!-- INTEREST PICKER (shown after splash, before auth) -->
+  <div id="auth-interests" style="display:none;padding:1.5rem 1.2rem 1rem;overflow-y:auto">
+    <div style="text-align:center;margin-bottom:1rem">
+      <div style="font-size:1.2rem;font-weight:800;margin-bottom:0.3rem">Hvad interesserer dig?</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary)">Vælg 3 emner — vi viser dig relevante mennesker</div>
+    </div>
+
+    <div class="interest-grid" id="interest-grid">
+      <button type="button" class="interest-btn" data-interest="startup" onclick="toggleInterest(this)"><span class="interest-ico" style="color:var(--accent2)"></span><span class="interest-label">Startup & Iværksætteri</span></button>
+      <button type="button" class="interest-btn" data-interest="tech" onclick="toggleInterest(this)"><span class="interest-ico" style="color:var(--accent)"></span><span class="interest-label">Teknologi & Digitalisering</span></button>
+      <button type="button" class="interest-btn" data-interest="sustainability" onclick="toggleInterest(this)"><span class="interest-ico" style="color:var(--green)"></span><span class="interest-label">Bæredygtighed & Energi</span></button>
+      <button type="button" class="interest-btn" data-interest="leadership" onclick="toggleInterest(this)"><span class="interest-ico" style="color:var(--gold)"></span><span class="interest-label">Ledelse & Strategi</span></button>
+      <button type="button" class="interest-btn" data-interest="public" onclick="toggleInterest(this)"><span class="interest-ico" style="color:#A78BFA"></span><span class="interest-label">Offentlig & NGO</span></button>
+      <button type="button" class="interest-btn" data-interest="industry" onclick="toggleInterest(this)"><span class="interest-ico" style="color:#F97316"></span><span class="interest-label">Industri & Håndværk</span></button>
+      <button type="button" class="interest-btn" data-interest="health" onclick="toggleInterest(this)"><span class="interest-ico" style="color:var(--accent2)"></span><span class="interest-label">Sundhed & Omsorg</span></button>
+      <button type="button" class="interest-btn" data-interest="education" onclick="toggleInterest(this)"><span class="interest-ico" style="color:var(--blue)"></span><span class="interest-label">Uddannelse & Forskning</span></button>
+      <button type="button" class="interest-btn" data-interest="creative" onclick="toggleInterest(this)"><span class="interest-ico" style="color:var(--accent3)"></span><span class="interest-label">Kreativ & Medie</span></button>
+      <button type="button" class="interest-btn" data-interest="commerce" onclick="toggleInterest(this)"><span class="interest-ico" style="color:var(--text-secondary)"></span><span class="interest-label">Handel & Service</span></button>
+      <button type="button" class="interest-btn" data-interest="community" onclick="toggleInterest(this)"><span class="interest-ico" style="color:var(--accent3)"></span><span class="interest-label">Fællesskab & Fritid</span></button>
+    </div>
+
+    <div id="interest-count" style="text-align:center;font-size:0.68rem;color:var(--muted);margin:0.6rem 0 0.4rem">Vælg 3 emner (0/3)</div>
+
+    <!-- People preview (shows after 3 selected) -->
+    <div id="interest-preview" style="display:none;margin-bottom:0.8rem">
+      <div style="background:linear-gradient(135deg,rgba(139,127,255,0.08),rgba(232,93,138,0.04));border:1px solid rgba(139,127,255,0.15);border-radius:16px;padding:1rem">
+        <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.1rem">
+          <span style="font-size:1rem">👋</span>
+          <span style="font-size:0.85rem;font-weight:800">Folk du kunne møde</span>
+          <span style="font-size:0.55rem;color:var(--muted);background:rgba(255,255,255,0.05);padding:0.15rem 0.4rem;border-radius:99px;margin-left:auto">Preview</span>
+        </div>
+        <div style="font-size:0.65rem;color:var(--text-secondary);margin-bottom:0.5rem">Baseret på dine 3 interesser</div>
+        <div id="interest-people" style="display:flex;flex-direction:column;gap:0.15rem"></div>
+        <div style="margin-top:0.6rem;font-size:0.72rem;color:var(--green);font-weight:600;text-align:center">Opret profil for at connecte →</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="interest-continue-btn" onclick="showAuthForms()" style="width:100%;opacity:0.3;pointer-events:none">Fortsæt →</button>
+    <button type="button" onclick="showAuthForms()" style="margin-top:0.5rem;background:none;border:none;color:var(--muted);font-size:0.72rem;font-family:'Outfit',sans-serif;cursor:pointer;padding:0.4rem;width:100%;text-align:center">Spring over</button>
   </div>
 
   <!-- AUTH FORMS (hidden initially) -->

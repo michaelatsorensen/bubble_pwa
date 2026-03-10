@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-10T09:05:00';
-const BUILD_VERSION  = 'v1.8.0';
+const BUILD_TIMESTAMP = '2026-03-10T10:30:00';
+const BUILD_VERSION  = 'v1.9.3';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 
@@ -539,9 +539,143 @@ function switchToLogin() {
 
 function showAuthForms() {
   var splash = document.getElementById('auth-splash');
+  var interests = document.getElementById('auth-interests');
   var forms = document.getElementById('auth-forms');
   if (splash) { splash.style.transition = 'opacity 0.3s'; splash.style.opacity = '0'; setTimeout(function(){ splash.style.display = 'none'; }, 300); }
+  if (interests) { interests.style.display = 'none'; }
   if (forms) { forms.style.display = 'block'; forms.style.opacity = '0'; setTimeout(function(){ forms.style.transition = 'opacity 0.3s'; forms.style.opacity = '1'; }, 50); }
+}
+
+function showInterestPicker() {
+  var splash = document.getElementById('auth-splash');
+  var interests = document.getElementById('auth-interests');
+  if (splash) { splash.style.transition = 'opacity 0.3s'; splash.style.opacity = '0'; setTimeout(function(){ splash.style.display = 'none'; }, 300); }
+  if (interests) { interests.style.display = 'block'; interests.style.opacity = '0'; setTimeout(function(){ interests.style.transition = 'opacity 0.3s'; interests.style.opacity = '1'; }, 50); }
+  // Populate SVG icons
+  var iconMap = { startup:'rocket', tech:'cpu', sustainability:'leaf', leadership:'crown', public:'building', industry:'wrench', health:'heart', education:'graduation', creative:'palette', commerce:'briefcase', community:'globe' };
+  document.querySelectorAll('.interest-btn').forEach(function(btn) {
+    var key = btn.dataset.interest;
+    var icoEl = btn.querySelector('.interest-ico');
+    if (icoEl && iconMap[key]) icoEl.innerHTML = ico(iconMap[key]);
+  });
+}
+
+// ── Interest picker state ──
+var _selectedInterests = [];
+var _interestTagMap = {
+  startup: ['SaaS','Fintech','Startup','Founder','Co-Founder','Iværksætter','Lean Startup','Entrepreneurship','Skalering'],
+  tech: ['AI','Software','Cloud','IoT','Deep Tech','Frontend','Backend','Data','Machine Learning','DevOps','Cybersecurity'],
+  sustainability: ['Cleantech','Energy','Climate Action','Bæredygtighed','ESG','Sustainability','Green Tech'],
+  leadership: ['Leadership','Strategy','Management','Director','CEO','Project Management','HR','Operations','Consulting'],
+  public: ['GovTech','Offentlig','NGO','Kommune','Socialforvaltning','Uddannelse','Velfærd','Smart Cities'],
+  industry: ['Byggeri','Produktion','Industri','Håndværk','Energi','Teknik','Landbrug','Transport','Installation'],
+  health: ['HealthTech','Sundhed','Wellness','Biotech','Pharma','Velfærdsteknologi','Omsorg'],
+  education: ['EdTech','Research','Academic','Student','PhD','Professor','Forskning','Undervisning'],
+  creative: ['Design','UX/UI Design','Content','Brand Strategy','Storytelling','Medie','Kommunikation','Kunst','Foto'],
+  commerce: ['E-commerce','Retail','Marketing','Sales','Finans','Hotel','Restaurant','Service','Handel'],
+  community: ['Community Building','Networking','Events','Frivillig','Foreningsliv','Sport','Kultur','Fritid']
+};
+var _interestProfiles = [];
+
+function toggleInterest(btn) {
+  var interest = btn.dataset.interest;
+  var idx = _selectedInterests.indexOf(interest);
+  if (idx >= 0) {
+    _selectedInterests.splice(idx, 1);
+    btn.classList.remove('selected');
+  } else if (_selectedInterests.length < 3) {
+    _selectedInterests.push(interest);
+    btn.classList.add('selected');
+  } else {
+    return; // Max 3
+  }
+
+  // Update count label
+  var label = document.getElementById('interest-count');
+  if (label) {
+    if (_selectedInterests.length >= 3) {
+      label.textContent = '3 valgt ✓';
+      label.style.color = 'var(--green)';
+    } else {
+      label.textContent = 'Vælg 3 emner (' + _selectedInterests.length + '/3)';
+      label.style.color = 'var(--muted)';
+    }
+  }
+
+  // Enable/disable continue button
+  var btn2 = document.getElementById('interest-continue-btn');
+  if (btn2) {
+    btn2.style.opacity = _selectedInterests.length >= 3 ? '1' : '0.3';
+    btn2.style.pointerEvents = _selectedInterests.length >= 3 ? 'auto' : 'none';
+  }
+
+  // Load preview when 3 selected
+  if (_selectedInterests.length >= 3) {
+    loadInterestPreview();
+  } else {
+    var preview = document.getElementById('interest-preview');
+    if (preview) preview.style.display = 'none';
+  }
+}
+
+async function loadInterestPreview() {
+  var preview = document.getElementById('interest-preview');
+  var el = document.getElementById('interest-people');
+  if (!preview || !el) return;
+
+  // Collect all tags from selected interests
+  var matchTags = [];
+  _selectedInterests.forEach(function(key) {
+    var tags = _interestTagMap[key] || [];
+    tags.forEach(function(t) { if (matchTags.indexOf(t) < 0) matchTags.push(t); });
+  });
+
+  try {
+    // Load profiles using anon key (requires RLS policy for anon SELECT)
+    if (!sb) initSupabase();
+    if (_interestProfiles.length === 0) {
+      var { data } = await sb.from('profiles').select('id,name,title,keywords,avatar_url').limit(50);
+      _interestProfiles = data || [];
+    }
+
+    if (_interestProfiles.length === 0) {
+      el.innerHTML = '<div style="text-align:center;padding:0.5rem;font-size:0.72rem;color:var(--muted)">Vær en af de første på Bubble! 🚀</div>';
+      preview.style.display = 'block';
+      return;
+    }
+
+    // Score profiles
+    var scored = _interestProfiles.map(function(p) {
+      var shared = (p.keywords || []).filter(function(t) { return matchTags.indexOf(t) >= 0; });
+      return { p: p, shared: shared.length };
+    }).sort(function(a, b) { return b.shared - a.shared; });
+
+    var top = scored.slice(0, 3);
+    var colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)'];
+
+    el.innerHTML = top.map(function(item, i) {
+      var p = item.p;
+      var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var avHtml = p.avatar_url ?
+        '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;border:1.5px solid rgba(255,255,255,0.08)"><img src="'+p.avatar_url+'" style="width:100%;height:100%;object-fit:cover"></div>' :
+        '<div style="width:40px;height:40px;border-radius:50%;background:'+colors[i%3]+';display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;flex-shrink:0">'+ini+'</div>';
+      var sharedText = item.shared > 0 ?
+        '<span style="font-size:0.6rem;color:var(--accent)">' + item.shared + ' fælles interesser</span>' :
+        '<span style="font-size:0.6rem;color:var(--muted)">Muligt match</span>';
+      return '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0;' + (i < 2 ? 'border-bottom:1px solid rgba(255,255,255,0.03)' : '') + '">' +
+        avHtml +
+        '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:0.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.name||'Ukendt') + '</div>' +
+        '<div style="font-size:0.68rem;color:var(--text-secondary)">' + escHtml(p.title||'') + '</div>' +
+        sharedText +
+        '</div></div>';
+    }).join('');
+
+    preview.style.display = 'block';
+  } catch(e) {
+    // Silently fail - preview is optional
+    preview.style.display = 'none';
+  }
 }
 
 function showTerms() {
@@ -664,7 +798,21 @@ async function loadHomeBubblesCard() {
     const { data: memberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
     const count = memberships?.length || 0;
     if (sub) sub.textContent = count > 0 ? `${count} aktiv${count !== 1 ? 'e' : ''} boble${count !== 1 ? 'r' : ''}` : 'Du er ikke i nogen bobler endnu';
-    if (badge) { badge.textContent = count; badge.style.display = count > 0 ? 'flex' : 'none'; }
+    // Badge: show count of unseen new members (since last viewed)
+    if (badge) {
+      var lastSeen = localStorage.getItem('bubble_bubbles_seen') || '2000-01-01';
+      if (count > 0) {
+        var ids = memberships.map(function(m) { return m.bubble_id; });
+        var { count: newCount } = await sb.from('bubble_members')
+          .select('*', {count:'exact',head:true})
+          .in('bubble_id', ids).neq('user_id', currentUser.id).gt('joined_at', lastSeen);
+        var n = newCount || 0;
+        badge.textContent = n;
+        badge.style.display = n > 0 ? 'flex' : 'none';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
   } catch(e) { logError("loadHomeBubblesCard", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -674,17 +822,17 @@ async function loadHomeNotifCard() {
   try {
     const sub = document.getElementById('home-notif-sub');
     const badge = document.getElementById('home-notif-badge');
-    // Count new bubble members since last 7 days
-    const since = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+    var lastSeen = localStorage.getItem('bubble_notifs_seen') || '2000-01-01';
     const { data: memberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
     if (!memberships || memberships.length === 0) {
       if (sub) sub.textContent = 'Ingen notifikationer';
+      if (badge) badge.style.display = 'none';
       return;
     }
     const ids = memberships.map(m => m.bubble_id);
     const { count } = await sb.from('bubble_members')
       .select('*', {count:'exact',head:true})
-      .in('bubble_id', ids).neq('user_id', currentUser.id).gte('joined_at', since);
+      .in('bubble_id', ids).neq('user_id', currentUser.id).gt('joined_at', lastSeen);
     const n = count || 0;
     if (sub) sub.textContent = n > 0 ? `${n} nye i dine bobler` : 'Ingen nye notifikationer';
     if (badge) { badge.textContent = n; badge.style.display = n > 0 ? 'flex' : 'none'; }
@@ -693,6 +841,8 @@ async function loadHomeNotifCard() {
 
 async function loadMyBubbles() {
   try {
+    // Mark bubbles as seen — clears badge on home screen
+    localStorage.setItem('bubble_bubbles_seen', new Date().toISOString());
     const ownedList  = document.getElementById('my-owned-bubbles-list');
     const joinedList = document.getElementById('my-bubbles-list');
     ownedList.innerHTML  = '<div class="spinner"></div>';
@@ -745,15 +895,27 @@ async function loadMyBubbles() {
     }
 
     // Profile bubbles
-    document.getElementById('profile-bubbles').innerHTML = bubbles.map(b =>
-      `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}" style="padding:0.85rem 1.1rem">
-        <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};flex-shrink:0">${bubbleEmoji(b.type)}</div>
-        <div style="flex:1;min-width:0">
-          <div class="fw-600 fs-09">${escHtml(b.name)}</div>
-          <div class="fs-075 text-muted">${b.created_by === currentUser.id ? icon('crown') + ' Ejer' : 'Aktiv'}${b.location ? ' · ' + escHtml(b.location) : ''}</div>
-        </div>
-        <div class="icon-muted">›</div>
-      </div>`).join('');
+    var profBubblesEl = document.getElementById('profile-bubbles');
+    if (profBubblesEl) {
+      if (bubbles.length === 0) {
+        profBubblesEl.innerHTML = '<div style="text-align:center;padding:2rem 1rem">' +
+          '<div style="width:44px;height:44px;margin:0 auto 0.7rem;opacity:0.4;color:var(--accent)">' + ico('bubble') + '</div>' +
+          '<div style="font-size:0.85rem;font-weight:700;margin-bottom:0.25rem">Ingen bobler endnu</div>' +
+          '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.4">Bobler er fællesskaber og events. Udforsk og join din første!</div>' +
+          '<button onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(139,127,255,0.12);color:var(--accent);border:1px solid rgba(139,127,255,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
+          '</div>';
+      } else {
+        profBubblesEl.innerHTML = bubbles.map(b =>
+          `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}" style="padding:0.85rem 1.1rem">
+            <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};flex-shrink:0">${bubbleEmoji(b.type)}</div>
+            <div style="flex:1;min-width:0">
+              <div class="fw-600 fs-09">${escHtml(b.name)}</div>
+              <div class="fs-075 text-muted">${b.created_by === currentUser.id ? icon('crown') + ' Ejer' : 'Aktiv'}${b.location ? ' · ' + escHtml(b.location) : ''}</div>
+            </div>
+            <div class="icon-muted">›</div>
+          </div>`).join('');
+      }
+    }
   } catch(e) { logError("loadMyBubbles", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -4269,6 +4431,8 @@ async function selectGif(idx) {
 // ══════════════════════════════════════════════════════════
 async function loadNotifications() {
   try {
+    // Mark notifications as seen — clears badge on home screen
+    localStorage.setItem('bubble_notifs_seen', new Date().toISOString());
     const list = document.getElementById('notifications-list');
     if (!list) return;
     list.innerHTML = '<div class="spinner"></div>';

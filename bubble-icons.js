@@ -10,13 +10,13 @@ const _s = 'xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" s
 const ICONS = {
   bubble: `<svg ${_s}><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg>`,
 
-  home: `<svg ${_s}><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5v9a1.5 1.5 0 001.5 1.5H10v-5a2 2 0 014 0v5h3.5a1.5 1.5 0 001.5-1.5v-9"/></svg>`,
+  home: `<svg ${_s}><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg>`,
 
   search: `<svg ${_s}><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg>`,
 
   chat: `<svg ${_s}><path d="M21 12c0 4.4-4 8-9 8a10.2 10.2 0 01-3.8-.7L3 21l1.9-3.7A7.8 7.8 0 013 12c0-4.4 4-8 9-8s9 3.6 9 8z"/><circle cx="9" cy="12" r=".75" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r=".75" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".75" fill="currentColor" stroke="none"/></svg>`,
 
-  user: `<svg ${_s}><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0114 0"/></svg>`,
+  user: `<svg ${_s}><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg>`,
 
   bell: `<svg ${_s}><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>`,
 
@@ -76,13 +76,13 @@ const ICONS = {
 
   crown: `<svg ${_s}><path d="M3.5 17l2-9L10 12l2-8 2 8 4.5-4 2 9H3.5z"/><rect x="3.5" y="17" width="17" height="2.5" rx="1"/></svg>`,
 
-  users: `<svg ${_s}><circle cx="9" cy="7.5" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0113 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M21.5 20a4.5 4.5 0 00-5-4.5"/></svg>`,
+  users: `<svg ${_s}><circle cx="9" cy="8" r="3"/><path d="M3.5 19.5a5.5 5.5 0 0111 0"/><circle cx="17" cy="9.5" r="2.5"/><path d="M21 19.5a4 4 0 00-4.5-4"/></svg>`,
 
   'user-plus': `<svg ${_s}><circle cx="9" cy="7" r="4"/><path d="M3 21a6 6 0 0112 0"/><path d="M19 8v6M22 11h-6"/></svg>`,
 
   target: `<svg ${_s}><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>`,
 
-  qrcode: `<svg ${_s}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3.5" height="3.5"/><path d="M21 14h-3v3.5M14 21h3.5v-3.5M21 21h-3.5"/></svg>`,
+  qrcode: `<svg ${_s}><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="3.5" height="3.5"/><path d="M20 14h-2.5v3M14 20h3v-3M20 20h-3"/></svg>`,
 
   link: `<svg ${_s}><path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.7-1.7"/></svg>`,
 
@@ -90,7 +90,7 @@ const ICONS = {
 
   reply: `<svg ${_s}><path d="M9 17l-5-5 5-5"/><path d="M4 12h12a4 4 0 010 8h-1.5"/></svg>`,
 
-  wave: `<svg ${_s}><path d="M6.5 12.5V8a1.5 1.5 0 013 0v4.5"/><path d="M9.5 9V6.5a1.5 1.5 0 013 0V11"/><path d="M12.5 9.5V7.5a1.5 1.5 0 013 0v4"/><path d="M15.5 10.5V9a1.5 1.5 0 013 0v5c0 3.5-2.5 6.5-6 6.5h-1c-3 0-5.5-2.5-5.5-5.5v-2.5"/></svg>`,
+  wave: `<svg ${_s}><path d="M7.5 12.5V8.5a1.5 1.5 0 013 0v4"/><path d="M10.5 9.5V7a1.5 1.5 0 013 0v4"/><path d="M13.5 10V8a1.5 1.5 0 013 0v4"/><path d="M16.5 11V9.5a1.5 1.5 0 013 0v4.5c0 3.5-2.5 6-5.5 6h-1c-3 0-5.5-2.5-5.5-5.5v-2"/></svg>`,
 
   file: `<svg ${_s}><path d="M14 2.5H6.5a2 2 0 00-2 2v15a2 2 0 002 2h11a2 2 0 002-2V8L14 2.5z"/><path d="M14 2.5V8h5.5"/></svg>`,
 
@@ -103,6 +103,16 @@ const ICONS = {
   heart: `<svg ${_s}><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>`,
 
   share: `<svg ${_s}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>`,
+
+  graduation: `<svg ${_s}><path d="M22 10l-10-5L2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/><path d="M22 10v6"/></svg>`,
+
+  leaf: `<svg ${_s}><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 018 20c4 0 8.5-3 10-8"/><path d="M2 12s5-2 10-2c4 0 7-2 9-6"/></svg>`,
+
+  briefcase: `<svg ${_s}><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M12 12v.01"/><path d="M2 12h20"/></svg>`,
+
+  wrench: `<svg ${_s}><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>`,
+
+  palette: `<svg ${_s}><circle cx="13.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="10.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="8.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="6.5" cy="12" r="1.5" fill="currentColor" stroke="none"/><path d="M12 2a10 10 0 000 20c1.1 0 2-.9 2-2v-.5c0-.5-.2-1-.5-1.4-.3-.3-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4a6 6 0 005.6-6A10 10 0 0012 2z"/></svg>`,
 };
 
 function ico(name) { return ICONS[name] || ''; }
