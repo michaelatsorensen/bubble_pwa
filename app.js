@@ -5,11 +5,11 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-10T18:45:00';
-const BUILD_VERSION  = 'v2.3.1';
+const BUILD_TIMESTAMP = '2026-03-10T19:40:00';
+const BUILD_VERSION  = 'v2.3.3';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
-const GIPHY_API_KEY = "dc6zaTOxFJmzC"; // Giphy public beta key — replace with production key before launch
+const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
 
 var hsDefaults = { live: true, saved: true, bubbles: true, notifs: true, radar: true };
 
@@ -6691,37 +6691,54 @@ async function adminLoadStats() {
     var { count: savedCount } = await sb.from('saved_contacts').select('*', { count: 'exact', head: true });
 
     el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem">' +
-      adminStatCard('Brugere', userCount || 0, '#8B7FFF') +
-      adminStatCard('Live nu', liveCount || 0, '#10B981') +
-      adminStatCard('Bannede', bannedCount || 0, '#E85D8A') +
+      adminStatCard('Brugere', userCount || 0, '#8B7FFF', 'Antal registrerede profiler i Bubble. Inkluderer alle der har oprettet en konto.') +
+      adminStatCard('Live nu', liveCount || 0, '#10B981', 'Brugere der er checked ind i en Live Bubble inden for de sidste 4 timer.') +
+      adminStatCard('Bannede', bannedCount || 0, '#E85D8A', 'Brugere der er banned via admin panel. De kan ikke logge ind og er usynlige på radar.') +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
-      adminStatCard('Bobler', bubbleCount || 0, '#2ECFCF') +
-      adminStatCard('Offentlige', publicBubbles || 0, '#2ECFCF') +
-      adminStatCard('Private', (privateBubbles||0) + '+' + (hiddenBubbles||0), '#F97316') +
+      adminStatCard('Bobler', bubbleCount || 0, '#2ECFCF', 'Samlet antal bobler (offentlige + private + skjulte). Inkluderer alle typer.') +
+      adminStatCard('Offentlige', publicBubbles || 0, '#2ECFCF', 'Bobler synlige for alle på Opdag-skærmen. Alle kan joine dem.') +
+      adminStatCard('Private', (privateBubbles||0) + '+' + (hiddenBubbles||0), '#F97316', 'Private + skjulte bobler. Private kræver invitation. Skjulte er usynlige i Opdag men kan joines via direkte link.') +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
-      adminStatCard('Beskeder', msgCount || 0, '#8B7FFF') +
-      adminStatCard('Rapporter', reportCount || 0, '#E85D8A') +
-      adminStatCard('Feedback', feedbackCount || 0, '#38BDF8') +
+      adminStatCard('Beskeder', msgCount || 0, '#8B7FFF', 'Samlet antal direkte beskeder (DMs) sendt mellem brugere. Inkluderer tekst, GIFs og filer.') +
+      adminStatCard('Rapporter', reportCount || 0, '#E85D8A', 'Antal brugerrapporter modtaget. Se detaljer i Rapporterede brugere ovenfor.') +
+      adminStatCard('Feedback', feedbackCount || 0, '#38BDF8', 'Antal feedback-beskeder sendt via Giv Feedback knappen på hjem-skærmen.') +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
-      adminStatCard('Medlemskaber', membershipCount || 0, '#2ECFCF') +
-      adminStatCard('Gemte kontakter', savedCount || 0, '#A78BFA') +
-      adminStatCard('Gns. tags', avgTags, '#10B981') +
+      adminStatCard('Medlemskaber', membershipCount || 0, '#2ECFCF', 'Samlet antal boble-medlemskaber. Én bruger i 3 bobler = 3 medlemskaber. Viser engagement — jo højere ratio pr. bruger, jo mere aktive er de.') +
+      adminStatCard('Gemte kontakter', savedCount || 0, '#A78BFA', 'Antal gange en bruger har gemt en andens profil. Viser hvor meget networking der sker.') +
+      adminStatCard('Gns. tags', avgTags, '#10B981', 'Gennemsnitligt antal tags per profil der har tags. Højere = bedre matchkvalitet på radar.') +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
-      adminStatCard('Profiler m/ tags', taggedCount + '/' + (userCount||0), '#F5C35A') +
-      adminStatCard('Tags i alt', totalTags, '#F5C35A') +
+      adminStatCard('Profiler m/ tags', taggedCount + '/' + (userCount||0), '#F5C35A', 'Hvor mange profiler der har mindst 1 tag vs. totalt antal brugere. Profiler uden tags matcher dårligt på radar.') +
+      adminStatCard('Tags i alt', totalTags, '#F5C35A', 'Samlet antal tags på tværs af alle profiler. Divideret med profiler m/ tags = gennemsnittet.') +
       '</div>';
   } catch(e) { el.innerHTML = '<div style="color:var(--accent2)">Fejl: ' + escHtml(e.message) + '</div>'; }
   } catch(e) { logError("adminLoadStats", e); }
 }
 
-function adminStatCard(label, count, color) {
-  return '<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:0.4rem 0.6rem;text-align:center">' +
+function adminStatCard(label, count, color, info) {
+  var infoAttr = info ? ' onclick="adminShowInfo(this,\'' + escHtml(info).replace(/'/g,"\\'") + '\')" style="cursor:pointer"' : '';
+  return '<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:0.4rem 0.6rem;text-align:center;position:relative"' + infoAttr + '>' +
+    (info ? '<div style="position:absolute;top:0.2rem;right:0.3rem;font-size:0.5rem;color:rgba(255,255,255,0.15)">ⓘ</div>' : '') +
     '<div style="font-size:1.1rem;font-weight:800;color:' + color + '">' + count + '</div>' +
     '<div style="font-size:0.6rem;color:var(--muted)">' + label + '</div></div>';
+}
+
+function adminShowInfo(el, text) {
+  // Remove any existing info tray
+  var existing = document.querySelector('.admin-info-tray');
+  if (existing) existing.remove();
+  // Create tray below the card
+  var tray = document.createElement('div');
+  tray.className = 'admin-info-tray';
+  tray.innerHTML = '<div style="font-size:0.68rem;color:var(--text-secondary);line-height:1.4">' + text + '</div>' +
+    '<button onclick="this.parentElement.remove()" style="position:absolute;top:0.3rem;right:0.4rem;background:none;border:none;color:var(--muted);font-size:0.7rem;cursor:pointer;font-family:inherit">✕</button>';
+  tray.style.cssText = 'position:relative;background:rgba(139,127,255,0.08);border:1px solid rgba(139,127,255,0.15);border-radius:8px;padding:0.5rem 0.7rem;margin-top:0.3rem;animation:fadeIn 0.2s ease';
+  // Insert after the stat grid row
+  var parent = el.parentElement;
+  if (parent) parent.insertAdjacentElement('afterend', tray);
 }
 
 async function adminBanUser(userId, userName) {
