@@ -391,12 +391,7 @@ textarea.input { min-height:80px; resize:vertical; }
   text-align: center;
 }
 
-/* Radar strip on home */
-.radar-card {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
+/* radar-card: flex layout merged into main rule */
 
 /* select elements */
 select.input {
@@ -427,13 +422,7 @@ button { font-family: 'Outfit', sans-serif; }
    FIXES ROUND 2: Visual issues from screenshot
    ════════════════════════════════════════════════════════════ */
 
-/* FIX 1: Bottom nav buttons — remove browser default white bg */
-.nav-item {
-  background: none !important;
-  border: none !important;
-  -webkit-appearance: none;
-  appearance: none;
-}
+/* nav-item: browser defaults reset merged into main rule */
 
 /* FIX 2: ALL buttons reset — no browser defaults anywhere */
 button {
@@ -1553,3 +1542,7 @@ textarea ~ .input-confirm-btn { top:0.7rem; transform:none; }
 .interest-ico svg { width:22px; height:22px; }
 .interest-label { font-size:0.68rem; font-weight:600; color:var(--text-secondary); line-height:1.2; }
 .interest-btn.selected .interest-label { color:var(--accent); }
+
+/* Message action buttons */
+.msg-actions { display:inline-flex; gap:0.15rem; margin-left:0.3rem; vertical-align:middle; }
+.msg-actions .msg-dots { font-size:0.7rem; padding:0.1rem 0.25rem; }

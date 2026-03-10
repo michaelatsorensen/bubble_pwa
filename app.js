@@ -5,10 +5,11 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-10T17:55:00';
-const BUILD_VERSION  = 'v2.0.1';
+const BUILD_TIMESTAMP = '2026-03-10T18:45:00';
+const BUILD_VERSION  = 'v2.3.1';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
+const GIPHY_API_KEY = "dc6zaTOxFJmzC"; // Giphy public beta key — replace with production key before launch
 
 var hsDefaults = { live: true, saved: true, bubbles: true, notifs: true, radar: true };
 
@@ -642,6 +643,7 @@ function toggleInterest(btn) {
 }
 
 async function loadInterestPreview() {
+  try {
   var preview = document.getElementById('interest-preview');
   var el = document.getElementById('interest-people');
   if (!preview || !el) return;
@@ -699,6 +701,7 @@ async function loadInterestPreview() {
     // Silently fail - preview is optional
     preview.style.display = 'none';
   }
+  } catch(e) { logError("loadInterestPreview", e); }
 }
 
 function showTerms() {
@@ -1153,6 +1156,7 @@ async function joinBubble(bubbleId) {
 }
 
 async function leaveBubble(bubbleId) {
+  try {
   // Show confirmation first
   if (!_leaveBubbleConfirmed) {
     _leaveBubbleConfirmed = bubbleId;
@@ -1166,6 +1170,7 @@ async function leaveBubble(bubbleId) {
     showToast('Du har forladt boblen');
     goTo('screen-home');
   } catch(e) { logError("leaveBubble", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("leaveBubble", e); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1319,6 +1324,7 @@ function cancelRemoveSaved(btn) {
 }
 
 async function confirmRemoveSaved() {
+  try {
   if (!pendingRemoveSavedId) return;
   const savedId = pendingRemoveSavedId;
   const btn = pendingRemoveBtn;
@@ -1337,6 +1343,7 @@ async function confirmRemoveSaved() {
     }
     showToast('Kontakt fjernet');
   } catch(e) { logError("confirmRemoveSaved", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("confirmRemoveSaved", e); }
 }
 
 // proposeMeeting / sendMeetingProposal removed — feature shelved
@@ -2033,11 +2040,11 @@ function dmRenderMsg(m) {
   else if (!sent && theirAvUrl) { avatarInner = '<img src="'+theirAvUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
   else { avatarInner = initials; }
 
-  return `<div class="msg-row${sent?' me':''}" data-msg-id="${m.id}">
+  return `<div class="msg-row${sent?' me':''}" id="dm-msg-${m.id}" data-msg-id="${m.id}">
     <div class="msg-avatar"${avatarClick} style="background:${avatarGrad};overflow:hidden${sent?'':';cursor:pointer'}">${avatarInner}</div>
     <div class="msg-body">
       <div class="msg-head"><span class="msg-name">${escHtml(name)}</span><span class="msg-time">${time}${edited}</span></div>
-      <div class="msg-content">${bubble}${sent && !m.file_url ?`<button class="msg-dots" onclick="dmEditMsg('${m.id}')">⋯</button>`:''}</div>
+      <div class="msg-content">${bubble}${sent && !m.file_url ?`<span class="msg-actions"><button class="msg-dots" onclick="dmEditMsg('${m.id}')" title="Rediger">✎</button><button class="msg-dots" onclick="dmDeleteMsg('${m.id}')" title="Slet" style="color:var(--accent2)">✕</button></span>`:''}</div>
     </div>
   </div>`;
 }
@@ -2086,6 +2093,16 @@ function dmEditMsg(msgId) {
   const input = document.getElementById('chat-input');
   input.value = bubble.textContent;
   input.focus();
+}
+
+async function dmDeleteMsg(msgId) {
+  try {
+    if (!confirm('Slet denne besked?')) return;
+    await sb.from('messages').delete().eq('id', msgId).eq('sender_id', currentUser.id);
+    var el = document.getElementById('dm-msg-' + msgId);
+    if (el) el.remove();
+    showToast('Besked slettet');
+  } catch(e) { logError("dmDeleteMsg", e); showToast('Kunne ikke slette besked'); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2165,6 +2182,7 @@ function convUpdateSelectCount() {
 
 var _convDeleteConfirmed = false;
 async function convDeleteSelected() {
+  try {
   if (convSelectedIds.length === 0) return;
   if (!_convDeleteConfirmed) {
     _convDeleteConfirmed = true;
@@ -2189,12 +2207,14 @@ async function convDeleteSelected() {
     showToast(ids.length + (ids.length === 1 ? ' samtale slettet' : ' samtaler slettet'));
     convToggleSelectMode();
   } catch(e) { logError('convDeleteSelected', e); showToast(e.message || 'Fejl ved sletning'); }
+  } catch(e) { logError("convDeleteSelected", e); }
 }
 
 
 
 let dmSending = false;
 async function sendMessage() {
+  try {
   if (dmSending) return;
   dmSending = true;
   var sendBtn = document.getElementById("chat-send-btn");
@@ -2230,6 +2250,7 @@ async function sendMessage() {
     }
   } catch(e) { logError("sendMessage", e); showToast(e.message || "Ukendt fejl"); }
   finally { dmSending = false; var sb2 = document.getElementById("chat-send-btn"); if (sb2) { sb2.disabled = false; sb2.style.opacity = ""; } }
+  } catch(e) { logError("sendMessage", e); }
 }
 
 async function sendDirectMessage(toId, content) {
@@ -2636,6 +2657,7 @@ function cancelDeclineInvite(btn) {
 }
 
 async function confirmDeclineInvite() {
+  try {
   if (!pendingDeclineInviteId) return;
   const inviteId = pendingDeclineInviteId;
   pendingDeclineInviteId = null;
@@ -2653,6 +2675,7 @@ async function confirmDeclineInvite() {
     }
     showToast('Invitation afvist');
   } catch(e) { logError("confirmDeclineInvite", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("confirmDeclineInvite", e); }
 }
 
 function openEditProfile() {
@@ -3163,6 +3186,7 @@ async function openQRModal(bubbleId) {
 
 let _jsPdfLoaded = false;
 async function loadJsPdf() {
+  try {
   if (_jsPdfLoaded) return;
   await new Promise((resolve, reject) => {
     const s = document.createElement('script');
@@ -3172,6 +3196,7 @@ async function loadJsPdf() {
     document.head.appendChild(s);
   });
   _jsPdfLoaded = true;
+  } catch(e) { logError("loadJsPdf", e); }
 }
 
 async function downloadQRPdf() {
@@ -3603,6 +3628,7 @@ function cancelAbortOnboarding() {
 }
 
 async function confirmAbortOnboarding() {
+  try {
   _abortConfirmed = false;
   var overlay = document.getElementById('abort-confirm-overlay');
   if (overlay) overlay.remove();
@@ -3623,6 +3649,7 @@ async function confirmAbortOnboarding() {
     goTo('screen-auth');
     showToast('Opsætning afbrudt');
   } catch(e) { logError('abortOnboarding', e); goTo('screen-auth'); }
+  } catch(e) { logError("confirmAbortOnboarding", e); }
 }
 
 function obToggleBoost() {
@@ -4592,33 +4619,37 @@ function gifSearchDebounce() {
 }
 
 async function loadTrendingGifs() {
+  try {
   var grid = document.getElementById('gif-grid');
   if (!grid) return;
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem"><div class="spinner"></div></div>';
   try {
-    var res = await fetch('https://g.tenor.com/v1/trending?key=LIVDSRZULELA&limit=20&media_filter=minimal&contentfilter=medium');
+    var res = await fetch('https://api.giphy.com/v1/gifs/trending?api_key=' + GIPHY_API_KEY + '&limit=20&rating=pg');
     if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
-    renderGifs(data.results || []);
+    renderGifs(data.data || []);
   } catch(e) {
     logError('GIF trending error', e);
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">Kunne ikke hente GIFs.<br>Tjek din internetforbindelse.</div>';
   }
+  } catch(e) { logError("loadTrendingGifs", e); }
 }
 
 async function searchGifs(query) {
+  try {
   var grid = document.getElementById('gif-grid');
   if (!grid) return;
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem"><div class="spinner"></div></div>';
   try {
-    var res = await fetch('https://g.tenor.com/v1/search?q=' + encodeURIComponent(query) + '&key=LIVDSRZULELA&limit=20&media_filter=minimal&contentfilter=medium');
+    var res = await fetch('https://api.giphy.com/v1/gifs/search?api_key=' + GIPHY_API_KEY + '&q=' + encodeURIComponent(query) + '&limit=20&rating=pg');
     if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
-    renderGifs(data.results || []);
+    renderGifs(data.data || []);
   } catch(e) {
     logError('GIF search error', e);
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">Søgning fejlede</div>';
   }
+  } catch(e) { logError("searchGifs", e); }
 }
 
 function renderGifs(results) {
@@ -4628,13 +4659,10 @@ function renderGifs(results) {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">Ingen GIFs fundet</div>';
     return;
   }
-  // Store GIF data and use index-based selection to avoid URL escaping issues
   window._gifResults = [];
   grid.innerHTML = results.map(function(r, idx) {
-    var media = r.media && r.media[0];
-    if (!media) return '';
-    var preview = media.tinygif?.url || media.nanogif?.url || '';
-    var full = media.gif?.url || media.mediumgif?.url || preview;
+    var preview = r.images?.fixed_width_small?.url || r.images?.preview_gif?.url || '';
+    var full = r.images?.original?.url || r.images?.fixed_width?.url || preview;
     if (!preview) return '';
     window._gifResults[idx] = full;
     return '<img src="' + preview + '" alt="GIF" loading="lazy" onclick="selectGif(' + idx + ')">';
@@ -4642,6 +4670,7 @@ function renderGifs(results) {
 }
 
 async function selectGif(idx) {
+  try {
   var gifUrl = window._gifResults && window._gifResults[idx];
   var mode = gifPickerMode;
   closeGifPicker();
@@ -4678,6 +4707,7 @@ async function selectGif(idx) {
       showToast('GIF fejl: ukendt kontekst');
     }
   } catch(e) { logError('selectGif', e, { mode: mode }); showToast('GIF fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError("selectGif", e); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -5025,10 +5055,12 @@ function bcScrollToBottom() {
 var _profileCache = {};
 
 async function getCachedProfile(userId) {
+  try {
   if (_profileCache[userId]) return _profileCache[userId];
   var { data: p } = await sb.from('profiles').select('name,title,avatar_url').eq('id', userId).single();
   if (p) _profileCache[userId] = p;
   return p || {};
+  } catch(e) { logError("getCachedProfile", e); }
 }
 
 function bcSubscribe() {
@@ -5072,6 +5104,7 @@ function bcSubscribe() {
 
 let bcSending = false;
 async function bcSendMessage() {
+  try {
   if (bcSending) return;
   bcSending = true;
   var sendBtn = document.getElementById("bc-send-btn");
@@ -5131,6 +5164,7 @@ async function bcSendMessage() {
     }
   } catch(e) { logError("bcSendMessage", e); showToast(e.message || "Ukendt fejl"); }
   finally { bcSending = false; var sb3 = document.getElementById("bc-send-btn"); if (sb3) { sb3.disabled = false; sb3.style.opacity = ""; } }
+  } catch(e) { logError("bcSendMessage", e); }
 }
 
 async function bcHandleFile(input) {
@@ -5257,8 +5291,10 @@ async function bcLoadReactions(msgId) {
 }
 
 async function bcToggleReaction(msgId, emoji) {
+  try {
   bcCurrentMsgId = msgId;
   await bcReact(emoji);
+  } catch(e) { logError("bcToggleReaction", e); }
 }
 
 function bcCloseContext() {
@@ -5460,6 +5496,7 @@ var inviteBubbleId = null;
 var inviteSelected = [];
 
 async function openInviteModal(bubbleId) {
+  try {
   inviteBubbleId = bubbleId;
   inviteSelected = [];
   var overlay = document.getElementById('invite-overlay');
@@ -5511,6 +5548,7 @@ async function openInviteModal(bubbleId) {
       '</label>';
     }).join('');
   } catch(e) { logError('openInviteModal', e); list.innerHTML = '<div style="padding:1rem;color:var(--accent2)">Kunne ikke hente kontakter</div>'; }
+  } catch(e) { logError("openInviteModal", e); }
 }
 
 function closeInviteModal() {
@@ -5654,6 +5692,7 @@ function isBlocked(userId) {
 
 var _blockConfirm = null;
 async function psBlockUser() {
+  try {
   var userId = document.getElementById('person-sheet-el')?.dataset?.userId;
   var userName = document.getElementById('person-sheet-el')?.dataset?.userName || 'bruger';
   if (!userId || !currentUser) return;
@@ -5679,10 +5718,12 @@ async function psBlockUser() {
     if (typeof loadProximityMap === 'function') loadProximityMap();
     if (typeof loadSavedContacts === 'function') loadSavedContacts();
   } catch(e) { logError('psBlockUser', e, { blocked: userId }); showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError("psBlockUser", e); }
 }
 
 var _reportConfirm = null;
 async function psReportUser() {
+  try {
   var userId = document.getElementById('person-sheet-el')?.dataset?.userId;
   var userName = document.getElementById('person-sheet-el')?.dataset?.userName || 'bruger';
   if (!userId || !currentUser) return;
@@ -5705,6 +5746,7 @@ async function psReportUser() {
     logError('USER_REPORT', new Error('Bruger rapporteret: ' + userName), { reported_id: userId, reporter_id: currentUser.id });
     showToast('Tak — ' + userName + ' er rapporteret. Vi kigger på det.');
   } catch(e) { logError('psReportUser', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError("psReportUser", e); }
 }
 
 // Report a specific message
@@ -6289,6 +6331,7 @@ var _liveQrFound = null;
 
 
 async function startLiveCamera() {
+  try {
   var video = document.getElementById('live-qr-video');
   if (!video) return;
   var status = document.getElementById('live-scan-status');
@@ -6319,6 +6362,7 @@ async function startLiveCamera() {
     logError('Camera error', e);
     if (status) { status.textContent = e.message || 'Kunne ikke starte kamera'; status.className = 'live-scan-status error'; }
   }
+  } catch(e) { logError("startLiveCamera", e); }
 }
 
 function stopLiveCamera() {
@@ -6405,6 +6449,7 @@ var _liveQrPending = false;
 var _liveQrResolvedBubble = null;
 
 async function liveScanAutoResolve(data) {
+  try {
   _liveQrPending = true;
   var status = document.getElementById('live-scan-status');
   if (status) { status.textContent = 'QR fundet — henter info...'; status.className = 'live-scan-status found'; }
@@ -6456,6 +6501,7 @@ async function liveScanAutoResolve(data) {
       liveQrPreviewLoop();
     }, 2000);
   }
+  } catch(e) { logError("liveScanAutoResolve", e); }
 }
 
 async function liveScanConfirmJoin() {
@@ -6554,6 +6600,7 @@ window.addEventListener('load', async () => {
 var ADMIN_UID = '0015de9c-c128-477a-8110-2cbb38a625f4';
 
 async function adminLoadReports() {
+  try {
   var el = document.getElementById('admin-reports-list');
   if (!el) return;
   el.innerHTML = '<div class="spinner"></div>';
@@ -6581,9 +6628,11 @@ async function adminLoadReports() {
         '</div></div>';
     }).join('');
   } catch(e) { el.innerHTML = '<div style="color:var(--accent2)">Fejl: ' + escHtml(e.message) + '</div>'; }
+  } catch(e) { logError("adminLoadReports", e); }
 }
 
 async function adminLoadBanned() {
+  try {
   var el = document.getElementById('admin-banned-list');
   if (!el) return;
   el.innerHTML = '<div class="spinner"></div>';
@@ -6601,9 +6650,11 @@ async function adminLoadBanned() {
         '</div>';
     }).join('');
   } catch(e) { el.innerHTML = '<div style="color:var(--accent2)">Fejl: ' + escHtml(e.message) + '</div>'; }
+  } catch(e) { logError("adminLoadBanned", e); }
 }
 
 async function adminLoadStats() {
+  try {
   var el = document.getElementById('admin-stats');
   if (!el) return;
   el.innerHTML = '<div class="spinner"></div>';
@@ -6664,6 +6715,7 @@ async function adminLoadStats() {
       adminStatCard('Tags i alt', totalTags, '#F5C35A') +
       '</div>';
   } catch(e) { el.innerHTML = '<div style="color:var(--accent2)">Fejl: ' + escHtml(e.message) + '</div>'; }
+  } catch(e) { logError("adminLoadStats", e); }
 }
 
 function adminStatCard(label, count, color) {
