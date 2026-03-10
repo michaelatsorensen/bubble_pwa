@@ -4279,37 +4279,103 @@ function epRenderSelectedTags() {
 }
 var _epExpandedCats = {};
 
+function epGetRecommendedTags(cat) {
+  var allTags = TAG_DATABASE[cat] || [];
+  if (cat === 'rolle') return allTags.slice(0, 8);
+
+  // Infer user's interests from their existing tags
+  var userTags = currentProfile ? (currentProfile.keywords || []) : [];
+  var inferredInterests = [];
+  if (userTags.length > 0) {
+    Object.keys(OB_INTEREST_TAGS).forEach(function(interestKey) {
+      var map = OB_INTEREST_TAGS[interestKey];
+      var score = 0;
+      ['branche','kompetence','interesse'].forEach(function(c) {
+        if (map[c]) {
+          map[c].forEach(function(t) {
+            if (userTags.indexOf(t) >= 0) score++;
+          });
+        }
+      });
+      if (score >= 1) inferredInterests.push(interestKey);
+    });
+  }
+
+  // Also use pre-auth interests if available
+  if (_selectedInterests && _selectedInterests.length > 0) {
+    _selectedInterests.forEach(function(key) {
+      if (inferredInterests.indexOf(key) < 0) inferredInterests.push(key);
+    });
+  }
+
+  // Collect recommended tags from inferred interests
+  var recs = [];
+  inferredInterests.forEach(function(key) {
+    var map = OB_INTEREST_TAGS[key];
+    if (map && map[cat]) {
+      map[cat].forEach(function(t) {
+        if (recs.indexOf(t) < 0 && allTags.indexOf(t) >= 0) recs.push(t);
+      });
+    }
+  });
+
+  // Add lifestage tags if we can infer it
+  if (currentProfile && currentProfile.lifestage) {
+    var lsTags = OB_LIFESTAGE_TAGS[currentProfile.lifestage];
+    if (lsTags && lsTags[cat]) {
+      lsTags[cat].forEach(function(t) {
+        if (recs.indexOf(t) < 0 && allTags.indexOf(t) >= 0) recs.push(t);
+      });
+    }
+  }
+
+  // Put user's already-selected tags at top
+  var selected = epSelectedTags.filter(function(t) { return allTags.indexOf(t) >= 0 && recs.indexOf(t) < 0; });
+  var merged = selected.concat(recs);
+
+  if (merged.length === 0) return allTags.slice(0, 12);
+  return merged.slice(0, 16);
+}
+
 function epRenderCategories() {
   var el = document.getElementById('ep-tag-categories');
   if (!el) return;
   el.innerHTML = Object.entries(TAG_CATEGORIES).map(function(entry) {
     var cat = entry[0], info = entry[1];
-    var tags = TAG_DATABASE[cat] || [];
+    if (cat === 'rolle') return '';
+    var allTags = TAG_DATABASE[cat] || [];
+    var recommended = epGetRecommendedTags(cat);
+    var otherTags = allTags.filter(function(t) { return recommended.indexOf(t) < 0; });
     var expanded = _epExpandedCats[cat];
-    var visibleTags = expanded ? tags : tags.slice(0, OB_TAGS_INITIAL);
-    var hasMore = tags.length > OB_TAGS_INITIAL;
-
-    var selected = visibleTags.filter(function(t) { return epSelectedTags.indexOf(t) >= 0; });
-    var unselected = visibleTags.filter(function(t) { return epSelectedTags.indexOf(t) < 0; });
-    var ordered = selected.concat(unselected);
+    var visibleOthers = expanded ? otherTags : otherTags.slice(0, 8);
 
     return '<div class="ob-cat-block">' +
       '<div class="ob-cat-header">' +
       '<span class="tag-cat-dot" style="background:' + info.color + '"></span>' +
       '<span class="tag-cat-title">' + info.label + '</span>' +
-      '<span class="tag-cat-count">' + tags.length + '</span>' +
       '</div>' +
+      '<div class="ob-tag-section-label recommended">For dig</div>' +
       '<div class="ob-cat-tags">' +
-      ordered.map(function(t) {
+      recommended.map(function(t) {
         var sel = epSelectedTags.indexOf(t) >= 0;
-        return '<span class="tag-pick' + (sel ? ' selected' : '') + '" ' +
-          'style="border-color:' + info.color + '30;' + (sel ? 'background:' + info.color + '20' : '') + '" ' +
+        return '<span class="tag-pick recommended' + (sel ? ' selected' : '') + '" ' +
+          'style="border-color:' + info.color + '30;' + (sel ? 'background:' + info.color + '20;color:' + info.color : 'color:' + info.color + '99') + '" ' +
           'onclick="epTogglePickTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\',\'' + cat + '\',this)">' +
           escHtml(t) + '</span>';
       }).join('') +
       '</div>' +
-      (hasMore ? '<button type="button" class="ob-show-more" onclick="epToggleExpand(\'' + cat + '\')" style="color:' + info.color + '">' +
-        (expanded ? '− Vis færre' : '+ Vis alle ' + tags.length) + '</button>' : '') +
+      (otherTags.length > 0 ? '<div class="ob-tag-section-label other">Andre</div>' +
+      '<div class="ob-cat-tags">' +
+      visibleOthers.map(function(t) {
+        var sel = epSelectedTags.indexOf(t) >= 0;
+        return '<span class="tag-pick other-tag' + (sel ? ' selected' : '') + '" ' +
+          'style="border-color:' + info.color + '20;' + (sel ? 'background:' + info.color + '20;color:' + info.color : 'color:' + info.color + '80') + '" ' +
+          'onclick="epTogglePickTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\',\'' + cat + '\',this)">' +
+          escHtml(t) + '</span>';
+      }).join('') +
+      '</div>' +
+      (otherTags.length > 8 ? '<button type="button" class="ob-show-more" onclick="epToggleExpand(\'' + cat + '\')" style="color:' + info.color + '">' +
+        (expanded ? '− Vis færre' : '+ Vis alle ' + otherTags.length + ' andre') + '</button>' : '') : '') +
       '<div class="ob-cat-custom"><div class="ob-cat-custom-row">' +
       '<input class="ob-cat-custom-input" placeholder="+ Tilføj egen..." ' +
       'onkeydown="epCustomTag(event,\'' + cat + '\',this)" data-cat="' + cat + '">' +
