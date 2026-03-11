@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-11T11:00:00';
-const BUILD_VERSION  = 'v2.9.1';
+const BUILD_TIMESTAMP = '2026-03-11T15:00:00';
+const BUILD_VERSION  = 'v3.1.0';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -252,15 +252,8 @@ function goTo(screenId) {
   const globalNav = document.getElementById('global-nav');
   const activeIdx = navMap[screenId];
   if (globalNav) {
-    // Hide nav in chat screens, show everywhere else
     var hideNav = screenId === 'screen-chat' || screenId === 'screen-bubble-chat';
-    if (hideNav) {
-      globalNav.style.visibility = 'hidden';
-      globalNav.style.pointerEvents = 'none';
-    } else {
-      globalNav.style.visibility = 'visible';
-      globalNav.style.pointerEvents = 'auto';
-    }
+    globalNav.classList.toggle('nav-hidden', hideNav);
     if (activeIdx !== undefined && activeIdx >= 0) {
       globalNav.querySelectorAll('.nav-item').forEach((btn, i) => {
         btn.classList.toggle('active', i === activeIdx);
@@ -1040,15 +1033,15 @@ async function bbLoadLivePanel() {
         avatarHtml = '<div style="display:flex;align-items:center;margin-right:0.4rem">' + avs + '</div>';
       }
 
-      return '<div class="card flex-row-center" style="padding:0.85rem 1.1rem;margin-bottom:0.4rem" onclick="liveCheckin(\'' + b.id + '\')">' +
-        '<div class="bubble-icon" style="background:' + (isEvent ? 'rgba(232,93,138,0.15)' : 'rgba(46,207,207,0.15)') + ';flex-shrink:0">' +
-        '<span style="color:' + (isEvent ? '#E85D8A' : '#2ECFCF') + '">' + ico(isEvent ? 'calendar' : 'pin') + '</span></div>' +
+      return '<div class="card flex-row-center" style="padding:0.85rem 1.1rem;margin-bottom:0.4rem;cursor:pointer" onclick="openBubble(\'' + b.id + '\')">' +
+        '<div class="bubble-icon" style="background:' + (isEvent ? 'rgba(232,93,138,0.15)' : 'rgba(46,207,207,0.15)') + ';color:' + (isEvent ? '#E85D8A' : '#2ECFCF') + '">' + ico(isEvent ? 'calendar' : 'pin') + '</div>' +
         '<div style="flex:1;min-width:0">' +
         '<div class="fw-600 fs-09">' + escHtml(b.name) + '</div>' +
-        '<div class="fs-075 text-muted">' + (isEvent ? 'Event' : 'Sted') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div>' +
+        '<div class="fs-075 text-muted">' + (isEvent ? 'Event' : 'Sted') + (b.location ? ' \u00B7 ' + escHtml(b.location) : '') + '</div>' +
         '</div>' +
-        (cnt > 0 ? avatarHtml + '<div style="display:flex;align-items:center;gap:0.3rem"><div class="live-dot" style="width:6px;height:6px"></div><span class="fs-075 fw-600">' + cnt + '</span></div>' :
-        '<div class="fs-072" style="color:var(--accent3)">Check ind →</div>') +
+        avatarHtml +
+        (cnt > 0 ? '<div style="display:flex;align-items:center;gap:0.3rem"><div class="live-dot" style="width:6px;height:6px"></div><span class="fs-075 fw-600">' + cnt + '</span></div>' : '') +
+        '<button onclick="event.stopPropagation();liveCheckin(\'' + b.id + '\')" style="font-size:0.62rem;padding:0.25rem 0.5rem;background:rgba(46,207,207,0.1);color:var(--accent3);border:1px solid rgba(46,207,207,0.2);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0;margin-left:0.3rem">Check ind</button>' +
         '</div>';
     }).join('');
   } catch(e) {
@@ -1123,7 +1116,7 @@ async function loadMyBubbles() {
       ownedList.innerHTML = owned.map(b => {
         const visIcon = b.visibility === 'private' ? icon('lock') : b.visibility === 'hidden' ? icon('eye') : icon('globe');
         return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}">
-          <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)}">${bubbleEmoji(b.type)}</div>
+          <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};color:${bubbleColor(b.type, 0.9)}">${bubbleEmoji(b.type)}</div>
           <div style="flex:1">
             <div class="fw-600 fs-09">${escHtml(b.name)}</div>
             <div class="fs-075 text-muted">${visIcon} ${b.type_label||b.type}${b.location ? ' · '+escHtml(b.location) : ''}</div>
@@ -1212,7 +1205,7 @@ function bubbleCard(b, joined) {
   var ups = b.upvote_count || bubbleUpvotes[b.id] || 0;
   var upLabel = ups > 0 ? `<div class="fs-065" style="color:var(--accent);display:flex;align-items:center;gap:0.15rem">${icon('rocket')}<span style="font-weight:700">${ups}</span></div>` : '';
   return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}">
-    <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)}">${bubbleIcon(b.type)}</div>
+    <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};color:${bubbleColor(b.type, 0.9)}">${bubbleEmoji(b.type)}</div>
     <div style="flex:1">
       <div class="fw-600 fs-09">${escHtml(b.name)}</div>
       <div class="fs-075 text-muted">${escHtml(b.type_label || b.type)} ${b.location ? '· ' + escHtml(b.location) : ''}</div>
@@ -2672,13 +2665,14 @@ async function loadSavedContacts() {
     });
 
     if (savedEl) savedEl.innerHTML = saved.map((s, i) => {
-      const p = profileMap[s.contact_id];
-      if (!p || s.contact_id === currentUser?.id) return '';
+      const p = profileMap[s.contact_id] || {};
+      if (s.contact_id === currentUser?.id) return '';
       const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const col = colors[i % colors.length];
       const tags = (p.keywords||[]).slice(0,3).map(k => `<span class="tag" style="font-size:0.58rem;padding:0.15rem 0.4rem">${escHtml(k)}</span>`).join('');
-      const stars = starRender(p.id);
-      return `<div class="card saved-card" style="padding:0.7rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="bcOpenPerson('${p.id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${col}','screen-profile')">
+      const stars = starRender(s.contact_id);
+      const pid = p.id || s.contact_id;
+      return `<div class="card saved-card" style="padding:0.7rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="bcOpenPerson('${pid}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${col}','screen-profile')">
         <div class="flex-row-center" style="gap:0.7rem">
           <div class="saved-avatar-wrap" style="position:relative;flex-shrink:0">
             ${p.avatar_url ? '<div class="avatar" style="width:42px;height:42px;overflow:hidden;border-radius:50%"><img src="'+p.avatar_url+'" style="width:100%;height:100%;object-fit:cover"></div>' : '<div class="avatar" style="background:'+col+';width:42px;height:42px;font-size:0.75rem">'+ini+'</div>'}
@@ -2690,7 +2684,7 @@ async function loadSavedContacts() {
             ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.3rem">${tags}</div>` : ''}
           </div>
           <div style="display:flex;gap:0.35rem;flex-shrink:0" onclick="event.stopPropagation()">
-            <button class="saved-action-btn" onclick="openChat('${p.id}','screen-profile')" title="Send besked">${icon('chat')}</button>
+            <button class="saved-action-btn" onclick="openChat('${pid}','screen-profile')" title="Send besked">${icon('chat')}</button>
             <button class="saved-action-btn danger" onclick="removeSavedContact('${s.id}',this)" title="Fjern">${icon('x')}</button>
           </div>
         </div>
@@ -2716,16 +2710,17 @@ function renderSavedStoryBar(saved, profileMap) {
   var colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#7C2D12,#F97316)'];
   list.innerHTML = saved.map(function(s, i) {
     var p = profileMap[s.contact_id];
-    if (!p || s.contact_id === currentUser?.id) return '';
-    var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    if (s.contact_id === currentUser?.id) return '';
+    var name = p ? p.name : '?';
+    var ini = (name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     var col = colors[i % colors.length];
-    var firstName = (p.name||'?').split(' ')[0];
+    var firstName = (name||'?').split(' ')[0];
     var starCount = starGet(s.contact_id);
     var starBadge = starCount > 0 ? '<span class="star-badge">' + '★'.repeat(starCount) + '</span>' : '';
-    var storyAvatar = p.avatar_url ?
+    var storyAvatar = (p && p.avatar_url) ?
       '<div class="saved-story-avatar" style="overflow:hidden;position:relative"><img src="' + p.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' + starBadge + '</div>' :
       '<div class="saved-story-avatar" style="background:' + col + ';position:relative">' + escHtml(ini) + starBadge + '</div>';
-    return '<div class="saved-story-item" onclick="openPerson(\'' + p.id + '\',\'screen-home\')">' +
+    return '<div class="saved-story-item" onclick="openPerson(\'' + s.contact_id + '\',\'screen-home\')">' +
       storyAvatar +
       '<div class="saved-story-name">' + escHtml(firstName) + '</div></div>';
   }).join('');
@@ -3295,19 +3290,23 @@ function showToast(msg, duration) {
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function bubbleEmoji(type) {
-  return { event:ico('rocket'), local:ico('pin'), theme:ico('cpu'), company:ico('building'), live:ico('pin') }[type] || ico('bubble');
+  var t = (type || '').toLowerCase();
+  return { event:ico('rocket'), local:ico('pin'), lokal:ico('pin'), theme:ico('cpu'), tema:ico('cpu'), company:ico('building'), virksomhed:ico('building'), live:ico('pin'), standard:ico('bubble') }[t] || ico('bubble');
 }
 function bubbleIcon(type) {
-  return { event:icon('rocket'), local:icon('pin'), theme:icon('cpu'), company:icon('building'), live:icon('pin') }[type] || icon('bubble');
+  var t = (type || '').toLowerCase();
+  return { event:icon('rocket'), local:icon('pin'), lokal:icon('pin'), theme:icon('cpu'), tema:icon('cpu'), company:icon('building'), virksomhed:icon('building'), live:icon('pin'), standard:icon('bubble') }[t] || icon('bubble');
 }
 
 function bubbleColor(type, alpha) {
-  const map = { event:`rgba(108,99,255,${alpha})`, local:`rgba(67,232,176,${alpha})`, theme:`rgba(255,179,71,${alpha})`, company:`rgba(255,101,132,${alpha})`, live:`rgba(46,207,207,${alpha})` };
-  return map[type] || `rgba(108,99,255,${alpha})`;
+  var t = (type || '').toLowerCase();
+  const map = { event:`rgba(108,99,255,${alpha})`, local:`rgba(67,232,176,${alpha})`, lokal:`rgba(67,232,176,${alpha})`, theme:`rgba(255,179,71,${alpha})`, tema:`rgba(255,179,71,${alpha})`, company:`rgba(255,101,132,${alpha})`, virksomhed:`rgba(255,101,132,${alpha})`, live:`rgba(46,207,207,${alpha})`, standard:`rgba(139,127,255,${alpha})` };
+  return map[t] || `rgba(139,127,255,${alpha})`;
 }
 
 function typeLabel(type) {
-  return { event:'Event', local:'Lokal', theme:'Tema', company:'Virksomhed', live:'Live' }[type] || type;
+  var t = (type || '').toLowerCase();
+  return { event:'Event', local:'Lokal', lokal:'Lokal', theme:'Tema', tema:'Tema', company:'Virksomhed', virksomhed:'Virksomhed', live:'Live', standard:'Standard' }[t] || type;
 }
 
 // Clock removed — iPhone shows native status bar
@@ -6616,13 +6615,15 @@ async function loadLiveCheckinList() {
         avatarHtml = '<div style="display:flex;align-items:center;margin-right:0.3rem">' + avatars + '</div>';
       }
 
-      return '<div class="live-checkin-item" onclick="liveCheckin(\'' + b.id + '\')">' +
+      return '<div class="live-checkin-item">' +
         '<div class="live-checkin-icon" style="' + (isEvent ? 'background:rgba(232,93,138,0.12);color:#E85D8A' : '') + '">' + ico(isEvent ? 'calendar' : 'pin') + '</div>' +
-        '<div style="flex:1;min-width:0">' +
+        '<div style="flex:1;min-width:0;cursor:pointer" onclick="closeLiveCheckinModal();openBubble(\'' + b.id + '\')">' +
         '<div class="fw-600 fs-085">' + escHtml(b.name) + '</div>' +
         '<div class="fs-072 text-muted">' + typeLabel + (b.location ? ' \u00B7 ' + escHtml(b.location) : '') + '</div>' +
         '</div>' +
-        (cnt > 0 ? avatarHtml + '<div class="live-checkin-count"><div class="live-dot" style="width:6px;height:6px;margin:0"></div> ' + cnt + '</div>' : '<div class="fs-072" style="color:var(--accent3)">Check ind</div>') +
+        avatarHtml +
+        (cnt > 0 ? '<div class="live-checkin-count" style="margin-right:0.4rem"><div class="live-dot" style="width:6px;height:6px;margin:0"></div> ' + cnt + '</div>' : '') +
+        '<button onclick="liveCheckin(\'' + b.id + '\')" style="font-size:0.65rem;padding:0.3rem 0.6rem;background:rgba(46,207,207,0.1);color:var(--accent3);border:1px solid rgba(46,207,207,0.2);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0">Check ind</button>' +
         '</div>';
     }).join('');
   } catch (e) {
@@ -7008,25 +7009,68 @@ window.addEventListener('load', async () => {
     }
   }, { passive: true });
 
-  // Force consistent nav bar height on all viewport changes
-  var navEl = document.getElementById('global-nav');
-  if (navEl) {
-    function fixNav() {
-      navEl.style.position = 'fixed';
-      navEl.style.bottom = '0';
-      navEl.style.left = '0';
-      navEl.style.right = '0';
-    }
-    fixNav();
-    window.addEventListener('resize', fixNav);
-    window.addEventListener('orientationchange', fixNav);
-    // Also fix after scroll (mobile URL bar changes)
-    var scrollFixTimer;
-    window.addEventListener('scroll', function() {
-      clearTimeout(scrollFixTimer);
-      scrollFixTimer = setTimeout(fixNav, 100);
-    }, { passive: true });
-  }
+  // Nav bar is handled purely by CSS #global-nav rule
+
+  // ── Rubber band elastic overscroll for scroll areas ──
+  (function initRubberBand() {
+    if (isDesktop) return;
+
+    var RESISTANCE = 3.5;    // Higher = harder to pull
+    var BOUNCE_MS = 400;     // Spring-back duration
+    var BOUNCE_EASE = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+
+    document.querySelectorAll('.scroll-area').forEach(function(scrollEl) {
+      var startY = 0;
+      var startScroll = 0;
+      var pulling = false;
+      var direction = 0; // 1 = overscroll top, -1 = overscroll bottom
+      var content = scrollEl.firstElementChild || scrollEl;
+
+      scrollEl.addEventListener('touchstart', function(e) {
+        startY = e.touches[0].clientY;
+        startScroll = scrollEl.scrollTop;
+        pulling = true;
+        direction = 0;
+        content.style.transition = 'none';
+      }, { passive: true });
+
+      scrollEl.addEventListener('touchmove', function(e) {
+        if (!pulling) return;
+        var dy = e.touches[0].clientY - startY;
+        var atTop = scrollEl.scrollTop <= 0;
+        var atBottom = scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 1;
+
+        if (atTop && dy > 0) {
+          direction = 1;
+          var pull = dy / RESISTANCE;
+          content.style.transform = 'translate3d(0,' + pull + 'px,0)';
+        } else if (atBottom && dy < 0) {
+          direction = -1;
+          var pull = dy / RESISTANCE;
+          content.style.transform = 'translate3d(0,' + pull + 'px,0)';
+        } else {
+          direction = 0;
+          content.style.transform = '';
+        }
+      }, { passive: true });
+
+      function snapBack() {
+        pulling = false;
+        if (direction !== 0) {
+          content.style.transition = 'transform ' + BOUNCE_MS + 'ms ' + BOUNCE_EASE;
+          content.style.transform = 'translate3d(0,0,0)';
+          setTimeout(function() {
+            content.style.transition = '';
+            content.style.transform = '';
+          }, BOUNCE_MS + 10);
+        }
+        direction = 0;
+      }
+
+      scrollEl.addEventListener('touchend', snapBack, { passive: true });
+      scrollEl.addEventListener('touchcancel', snapBack, { passive: true });
+    });
+  })();
 });
 
 // ══════════════════════════════════════════════════════════
