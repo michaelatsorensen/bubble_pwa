@@ -75,7 +75,7 @@ body {
 .topbar-title { font-size:1rem; font-weight:800; letter-spacing:-0.03em; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.25; }
 
 /* ── SCROLL AREA ── */
-.scroll-area { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:1rem 1.1rem 4rem; overscroll-behavior-x:none; }
+.scroll-area { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:1rem 1.1rem calc(4rem + env(safe-area-inset-bottom, 0px)); overscroll-behavior-x:none; }
 
 /* ── BOTTOM NAV ── */
 /* Nav bar — single source of truth */
@@ -86,8 +86,9 @@ body {
   gap:0;
   height:56px !important;
   min-height:56px !important;
-  max-height:56px !important;
+  max-height:none !important;
   padding:6px 0.8rem 0;
+  padding-bottom:env(safe-area-inset-bottom, 0px);
   position:fixed;
   bottom:0;
   left:0;
@@ -99,9 +100,9 @@ body {
   border-top:1px solid rgba(255,255,255,0.04);
   transform:translate3d(0,0,0);
   -webkit-transform:translate3d(0,0,0);
-  box-sizing:border-box;
+  box-sizing:content-box;
   margin:0;
-  overflow:hidden;
+  overflow:visible;
 }
 #global-nav.nav-hidden {
   visibility:hidden;
