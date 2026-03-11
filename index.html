@@ -469,6 +469,9 @@
           </div>
           <div class="live-bubble-idle-arrow">›</div>
         </div>
+        <div style="padding:0.3rem 0.85rem 0.1rem;display:flex;justify-content:flex-end">
+          <button onclick="event.stopPropagation();openQuickLiveBubble()" style="font-size:0.62rem;padding:0.2rem 0.55rem;background:none;border:1px solid rgba(46,207,207,0.2);border-radius:8px;color:var(--accent3);cursor:pointer;font-family:inherit;font-weight:600">+ Opret live event</button>
+        </div>
       </div>
     </div>
 
@@ -558,7 +561,7 @@
     <button class="btn-sm btn-ghost" onclick="openCreateBubble()" style="font-size:0.75rem;padding:0.35rem 0.75rem">+ Ny</button>
   </div>
   <!-- Tabs -->
-  <div class="bubble-tabs" style="flex-shrink:0;position:sticky;top:0;z-index:5;background:var(--bg);padding:0 1.1rem">
+  <div class="bubble-tabs" style="flex-shrink:0;position:sticky;top:0;z-index:5;background:var(--bg);margin:0.4rem 1.1rem 0;padding:3px">
     <button class="bubble-tab active" id="bb-tab-network" onclick="bbSwitchTab('network')">Netværk</button>
     <button class="bubble-tab" id="bb-tab-live" onclick="bbSwitchTab('live')">Live</button>
   </div>
@@ -573,12 +576,9 @@
     </div>
     <!-- Live bubbles panel -->
     <div id="bb-panel-live" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
-        <div style="display:flex;align-items:center;gap:0.5rem">
-          <div class="live-dot" style="width:8px;height:8px"></div>
-          <div style="font-size:0.78rem;font-weight:700">Events & steder</div>
-        </div>
-        <button class="btn-sm btn-ghost" onclick="openQuickLiveBubble()" style="font-size:0.68rem;padding:0.25rem 0.6rem;color:var(--accent3);border-color:rgba(46,207,207,0.2)">+ Hurtig live</button>
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+        <div class="live-dot" style="width:8px;height:8px"></div>
+        <div style="font-size:0.78rem;font-weight:700">Events & steder</div>
       </div>
       <div style="font-size:0.68rem;color:var(--text-secondary);margin-bottom:0.6rem">Check ind på et fysisk sted eller event for at se hvem der er der lige nu.</div>
       <div id="bb-live-list"><div class="spinner"></div></div>

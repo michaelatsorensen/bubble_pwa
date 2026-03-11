@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-11T08:30:00';
-const BUILD_VERSION  = 'v2.6.2';
+const BUILD_TIMESTAMP = '2026-03-11T09:00:00';
+const BUILD_VERSION  = 'v2.7.0';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -6612,13 +6612,11 @@ async function liveCheckin(bubbleId) {
       .maybeSingle();
 
     if (existing) {
-      // Re-check-in
       await sb.from('bubble_members').update({
         checked_in_at: new Date().toISOString(),
         checked_out_at: null
       }).eq('id', existing.id);
     } else {
-      // New member + check-in
       await sb.from('bubble_members').insert({
         bubble_id: bubbleId,
         user_id: currentUser.id,
@@ -6626,10 +6624,20 @@ async function liveCheckin(bubbleId) {
       });
     }
 
-    closeLiveCheckinModal();
-    showToast('📍 Du er checked ind!');
-    await loadLiveBubbleStatus();
-    loadHome();
+    // 3. Instant UI: show confirmed state in checkin sheet
+    var scanConfirmed = document.getElementById('live-scan-confirmed');
+    if (scanConfirmed) {
+      scanConfirmed.style.display = 'flex';
+      var nameEl = document.getElementById('live-scan-confirmed-name');
+      if (nameEl) nameEl.textContent = 'Checked ind!';
+      var metaEl = document.getElementById('live-scan-confirmed-meta');
+      if (metaEl) metaEl.innerHTML = '<button onclick="closeLiveCheckinModal();openBubble(\'' + bubbleId + '\')" style="margin-top:0.3rem;font-size:0.72rem;padding:0.35rem 0.8rem;background:rgba(46,207,207,0.12);color:var(--accent3);border:1px solid rgba(46,207,207,0.25);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Se hvem der er her \u2192</button>';
+    }
+
+    showToast('\uD83D\uDCCD Du er checked ind!');
+
+    // 4. Refresh home card in background (non-blocking)
+    loadLiveBubbleStatus();
   } catch (e) {
     logError('liveCheckin', e);
     showToast('Fejl ved check-in: ' + (e.message || 'ukendt'));
