@@ -265,7 +265,13 @@ function goTo(screenId) {
   // Load data for screen
   if (screenId === 'screen-home') loadHome();
   if (screenId === 'screen-bubbles') loadMyBubbles();
-  if (screenId === 'screen-notifications') loadNotifications();
+  if (screenId === 'screen-notifications') {
+    loadNotifications();
+    // Clear nav badge
+    var nb = document.getElementById('notif-nav-badge');
+    if (nb) nb.style.display = 'none';
+    localStorage.setItem('bubble_notifs_seen', new Date().toISOString());
+  }
   if (screenId === 'screen-discover') loadDiscover();
   if (screenId === 'screen-messages') loadMessages();
   if (screenId === 'screen-profile') loadProfile();
@@ -2149,6 +2155,41 @@ async function updateUnreadBadge() {
       }
     });
   } catch(e) { logError("updateUnreadBadge", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+// ── Notification nav badge (invites + unread notifs) ──
+async function updateNotifNavBadge() {
+  try {
+    var badge = document.getElementById('notif-nav-badge');
+    if (!badge || !currentUser) return;
+    var total = 0;
+
+    // Count pending invitations
+    var { count: invCount } = await sb.from('bubble_invitations')
+      .select('*', { count: 'exact', head: true })
+      .eq('to_user_id', currentUser.id)
+      .eq('status', 'pending');
+    total += invCount || 0;
+
+    // Count unseen bubble activity (new members since last view)
+    var lastSeen = localStorage.getItem('bubble_notifs_seen') || '2000-01-01';
+    var { data: memberships } = await sb.from('bubble_members')
+      .select('bubble_id').eq('user_id', currentUser.id);
+    if (memberships && memberships.length > 0) {
+      var ids = memberships.map(function(m) { return m.bubble_id; });
+      var { count: newMembers } = await sb.from('bubble_members')
+        .select('*', { count: 'exact', head: true })
+        .in('bubble_id', ids).neq('user_id', currentUser.id).gt('joined_at', lastSeen);
+      total += newMembers || 0;
+    }
+
+    if (total > 0) {
+      badge.textContent = total > 9 ? '9+' : total;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch(e) { logError('updateNotifNavBadge', e); }
 }
 
 let incomingSubscription = null;
@@ -7023,6 +7064,7 @@ window.addEventListener('load', async () => {
   await checkPendingJoin();
   if (currentUser) {
     updateUnreadBadge();
+    updateNotifNavBadge();
     subscribeToIncoming();
     loadLiveBubbleStatus();
     // Init push notifications
