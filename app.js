@@ -265,13 +265,7 @@ function goTo(screenId) {
   // Load data for screen
   if (screenId === 'screen-home') loadHome();
   if (screenId === 'screen-bubbles') loadMyBubbles();
-  if (screenId === 'screen-notifications') {
-    loadNotifications();
-    // Clear nav badge
-    var nb = document.getElementById('notif-nav-badge');
-    if (nb) nb.style.display = 'none';
-    localStorage.setItem('bubble_notifs_seen', new Date().toISOString());
-  }
+  if (screenId === 'screen-notifications') loadNotifications();
   if (screenId === 'screen-discover') loadDiscover();
   if (screenId === 'screen-messages') loadMessages();
   if (screenId === 'screen-profile') loadProfile();
@@ -2157,41 +2151,6 @@ async function updateUnreadBadge() {
   } catch(e) { logError("updateUnreadBadge", e); showToast(e.message || "Ukendt fejl"); }
 }
 
-// ── Notification nav badge (invites + unread notifs) ──
-async function updateNotifNavBadge() {
-  try {
-    var badge = document.getElementById('notif-nav-badge');
-    if (!badge || !currentUser) return;
-    var total = 0;
-
-    // Count pending invitations
-    var { count: invCount } = await sb.from('bubble_invitations')
-      .select('*', { count: 'exact', head: true })
-      .eq('to_user_id', currentUser.id)
-      .eq('status', 'pending');
-    total += invCount || 0;
-
-    // Count unseen bubble activity (new members since last view)
-    var lastSeen = localStorage.getItem('bubble_notifs_seen') || '2000-01-01';
-    var { data: memberships } = await sb.from('bubble_members')
-      .select('bubble_id').eq('user_id', currentUser.id);
-    if (memberships && memberships.length > 0) {
-      var ids = memberships.map(function(m) { return m.bubble_id; });
-      var { count: newMembers } = await sb.from('bubble_members')
-        .select('*', { count: 'exact', head: true })
-        .in('bubble_id', ids).neq('user_id', currentUser.id).gt('joined_at', lastSeen);
-      total += newMembers || 0;
-    }
-
-    if (total > 0) {
-      badge.textContent = total > 9 ? '9+' : total;
-      badge.style.display = 'flex';
-    } else {
-      badge.style.display = 'none';
-    }
-  } catch(e) { logError('updateNotifNavBadge', e); }
-}
-
 let incomingSubscription = null;
 function subscribeToIncoming() {
   if (incomingSubscription) { incomingSubscription.unsubscribe(); incomingSubscription = null; }
@@ -2218,16 +2177,17 @@ async function loadMessages() {
       return;
     }
 
-    // Get unique conversation partners
-    const seen = new Set();
-    const partners = [];
+    // Get unique conversation partners — keep newest message per partner
+    const partnerMap = new Map();
     for (const m of convs) {
       const partnerId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
-      if (!seen.has(partnerId) && !isBlocked(partnerId)) {
-        seen.add(partnerId);
-        partners.push({ partnerId, lastMsg: m });
+      if (partnerId === currentUser.id) continue; // skip self-messages
+      if (isBlocked(partnerId)) continue;
+      if (!partnerMap.has(partnerId)) {
+        partnerMap.set(partnerId, { partnerId, lastMsg: m });
       }
     }
+    const partners = Array.from(partnerMap.values());
 
     // Load partner profiles
     const pIds = partners.map(p => p.partnerId);
@@ -2317,7 +2277,7 @@ function dmRenderMsg(m) {
     <div class="msg-avatar"${avatarClick} style="background:${avatarGrad};overflow:hidden${sent?'':';cursor:pointer'}">${avatarInner}</div>
     <div class="msg-body">
       <div class="msg-head"><span class="msg-name">${escHtml(name)}</span><span class="msg-time">${time}${edited}</span></div>
-      <div class="msg-content">${bubble}${sent && !m.file_url ?`<span class="msg-actions"><button class="msg-dots" onclick="dmEditMsg('${m.id}')" title="Rediger">✎</button><button class="msg-dots" onclick="dmDeleteMsg('${m.id}')" title="Slet" style="color:var(--accent2)">✕</button></span>`:''}</div>
+      <div class="msg-content">${bubble}${sent && !m.file_url ? `<span class="msg-actions"><button class="msg-dots" onpointerdown="event.stopPropagation()" onclick="dmOpenMsgMenu(event,'${m.id}')" title="Mere">⋯</button></span>` : ''}</div>
     </div>
   </div>`;
 }
@@ -2356,6 +2316,37 @@ function subscribeToChat() {
       sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', m.id);
       updateUnreadBadge();
     }).subscribe();
+}
+
+// ── DM message context menu (⋯) ──
+function dmOpenMsgMenu(e, msgId) {
+  e.stopPropagation();
+  // Remove any existing menu
+  var existing = document.getElementById('dm-msg-menu');
+  if (existing) { existing.remove(); if (existing.dataset.msgId === msgId) return; }
+
+  var btn = e.currentTarget;
+  var rect = btn.getBoundingClientRect();
+
+  var menu = document.createElement('div');
+  menu.id = 'dm-msg-menu';
+  menu.dataset.msgId = msgId;
+  menu.style.cssText = `position:fixed;z-index:9999;background:var(--glass-bg-strong);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);border-radius:12px;padding:0.35rem 0;min-width:130px;box-shadow:0 8px 32px rgba(0,0,0,0.4);right:${Math.max(8, window.innerWidth - rect.right + rect.width/2 - 65)}px;top:${rect.bottom + 6}px`;
+
+  menu.innerHTML = `
+    <button onclick="dmEditMsg('${msgId}');document.getElementById('dm-msg-menu')?.remove()" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.55rem 1rem;background:none;border:none;color:var(--text);font-size:0.82rem;cursor:pointer;text-align:left">✎ Rediger</button>
+    <div style="height:1px;background:var(--glass-border);margin:0.2rem 0"></div>
+    <button onclick="dmDeleteMsg('${msgId}');document.getElementById('dm-msg-menu')?.remove()" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.55rem 1rem;background:none;border:none;color:var(--accent2);font-size:0.82rem;cursor:pointer;text-align:left">✕ Slet</button>
+  `;
+
+  document.body.appendChild(menu);
+
+  // Close on outside tap
+  setTimeout(() => {
+    document.addEventListener('pointerdown', function closeMenu(ev) {
+      if (!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('pointerdown', closeMenu); }
+    });
+  }, 50);
 }
 
 let dmEditingId = null;
@@ -7064,7 +7055,6 @@ window.addEventListener('load', async () => {
   await checkPendingJoin();
   if (currentUser) {
     updateUnreadBadge();
-    updateNotifNavBadge();
     subscribeToIncoming();
     loadLiveBubbleStatus();
     // Init push notifications
