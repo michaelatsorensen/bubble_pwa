@@ -1260,7 +1260,7 @@
      MODAL: LIVE CHECK-IN
 ════════════════════════════════════════ -->
 <div class="modal-overlay" id="modal-live-checkin" onclick="if(event.target===this)closeModal('modal-live-checkin')">
-  <div class="modal-sheet" style="max-height:calc(100dvh - 2rem);overflow-y:auto">
+  <div class="modal-sheet" style="max-height:80vh;overflow-y:auto">
     <div class="modal-handle"></div>
     <div class="modal-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="ico" style="color:#2ECFCF"><path d="M12 21.5c-3.5-3.5-6.5-7-6.5-10.5a6.5 6.5 0 0113 0c0 3.5-3 7-6.5 10.5z"/><circle cx="12" cy="11" r="2.5"/></svg> Live Check-in</div>
 
@@ -1277,6 +1277,11 @@
       <div class="live-scanner-line"></div>
     </div>
     <div id="live-scan-status" class="live-scan-status">Peg kameraet mod en Bubble QR-kode</div>
+
+    <!-- Create button right under scanner -->
+    <div style="display:flex;justify-content:center;margin:0.4rem 0 0.2rem">
+      <button onclick="openCreateLiveModal()" style="font-size:0.68rem;padding:0.3rem 0.8rem;background:none;border:1px solid rgba(46,207,207,0.2);border-radius:8px;color:var(--accent3);cursor:pointer;font-family:inherit;font-weight:600">+ Opret nyt event</button>
+    </div>
 
     <!-- Confirmation after scan (replaces status) -->
     <div id="live-scan-found" class="live-scan-found-card" style="display:none">
@@ -1309,25 +1314,26 @@
     </div>
     <div id="live-checkin-list" style="margin-top:0.4rem;margin-bottom:0.5rem"><div class="spinner"></div></div>
 
-    <div style="display:flex;gap:0.4rem">
-      <button class="btn-secondary" onclick="closeLiveCheckinModal()" style="flex:1">Luk</button>
-      <button onclick="showQuickLiveForm()" style="flex:1;font-size:0.75rem;padding:0.55rem 0.8rem;background:rgba(46,207,207,0.1);color:var(--accent3);border:1px solid rgba(46,207,207,0.2);border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;font-weight:600">+ Opret event</button>
-    </div>
+    <button class="btn-secondary" onclick="closeLiveCheckinModal()" style="width:100%">Luk</button>
+  </div>
+</div>
 
-    <!-- Inline create form (hidden by default) -->
-    <div id="quick-live-form" style="display:none;margin-top:0.6rem">
-      <div style="font-size:0.82rem;font-weight:700;margin-bottom:0.4rem">Nyt live event</div>
-      <div class="input-group" style="margin-bottom:0.4rem">
-        <input class="input" id="ql-name" placeholder="Navn på event eller sted" style="font-size:0.82rem">
-      </div>
-      <div class="input-group" style="margin-bottom:0.5rem">
-        <input class="input" id="ql-location" placeholder="Lokation (valgfrit)" style="font-size:0.82rem">
-      </div>
-      <div style="display:flex;gap:0.4rem">
-        <button onclick="submitQuickLive()" style="flex:1;font-size:0.78rem;padding:0.5rem;background:var(--accent3);color:var(--bg);border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;font-weight:700">Opret & check ind</button>
-        <button onclick="hideQuickLiveForm()" style="flex:0 0 auto;font-size:0.75rem;padding:0.5rem 0.8rem;background:none;border:1px solid var(--glass-border);border-radius:var(--radius-sm);color:var(--muted);cursor:pointer;font-family:inherit">Annuller</button>
-      </div>
+<!-- MODAL: CREATE LIVE EVENT -->
+<div class="modal-overlay" id="modal-create-live" onclick="if(event.target===this)closeModal('modal-create-live')">
+  <div class="modal-sheet" style="max-height:60vh">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="text-align:left">Nyt live event</div>
+    <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.8rem">Opret et event eller sted og check ind med det samme.</div>
+    <div class="input-group" style="margin-bottom:0.5rem">
+      <div class="input-label">Navn</div>
+      <input class="input" id="ql-name" placeholder="F.eks. Startup Friday, Netværk hos Alsion...">
     </div>
+    <div class="input-group" style="margin-bottom:0.8rem">
+      <div class="input-label">Lokation <span style="color:var(--muted);font-weight:400">(valgfrit)</span></div>
+      <input class="input" id="ql-location" placeholder="F.eks. Alsion, Sønderborg">
+    </div>
+    <button onclick="submitQuickLive()" style="width:100%;font-size:0.82rem;padding:0.6rem;background:var(--accent3);color:var(--bg);border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;font-weight:700;margin-bottom:0.4rem">Opret & check ind</button>
+    <button class="btn-secondary" onclick="closeModal('modal-create-live')" style="width:100%">Annuller</button>
   </div>
 </div>
 

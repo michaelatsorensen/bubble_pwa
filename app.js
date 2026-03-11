@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-11T09:30:00';
-const BUILD_VERSION  = 'v2.7.1';
+const BUILD_TIMESTAMP = '2026-03-11T10:15:00';
+const BUILD_VERSION  = 'v2.8.0';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -870,21 +870,17 @@ async function loadHomeNotifCard() {
 }
 
 // ── Bubbles screen tabs ──
-function showQuickLiveForm() {
-  var form = document.getElementById('quick-live-form');
-  if (form) {
-    form.style.display = 'block';
-    var nameInput = document.getElementById('ql-name');
-    if (nameInput) { nameInput.value = ''; nameInput.focus(); }
-    var locInput = document.getElementById('ql-location');
-    if (locInput) locInput.value = '';
-  }
+function openCreateLiveModal() {
+  var nameInput = document.getElementById('ql-name');
+  var locInput = document.getElementById('ql-location');
+  if (nameInput) nameInput.value = '';
+  if (locInput) locInput.value = '';
+  openModal('modal-create-live');
+  setTimeout(function() { if (nameInput) nameInput.focus(); }, 300);
 }
 
-function hideQuickLiveForm() {
-  var form = document.getElementById('quick-live-form');
-  if (form) form.style.display = 'none';
-}
+function showQuickLiveForm() { openCreateLiveModal(); }
+function hideQuickLiveForm() { closeModal('modal-create-live'); }
 
 async function submitQuickLive() {
   var name = (document.getElementById('ql-name')?.value || '').trim();
@@ -907,9 +903,8 @@ async function submitQuickLive() {
       joined_at: new Date().toISOString(),
       checked_in_at: new Date().toISOString()
     });
-    hideQuickLiveForm();
-    showToast('\uD83D\uDCCD ' + name + ' oprettet!');
-    // Show confirmed state
+    closeModal('modal-create-live');
+    // Show confirmed state in checkin sheet
     var scanConfirmed = document.getElementById('live-scan-confirmed');
     if (scanConfirmed) {
       scanConfirmed.style.display = 'flex';
@@ -918,13 +913,14 @@ async function submitQuickLive() {
       var metaEl = document.getElementById('live-scan-confirmed-meta');
       if (metaEl) metaEl.innerHTML = '<button onclick="closeLiveCheckinModal();openBubble(\'' + bubble.id + '\')" style="margin-top:0.3rem;font-size:0.72rem;padding:0.35rem 0.8rem;background:rgba(46,207,207,0.12);color:var(--accent3);border:1px solid rgba(46,207,207,0.25);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Se hvem der er her \u2192</button>';
     }
+    showToast('\uD83D\uDCCD ' + name + ' oprettet!');
     loadLiveBubbleStatus();
     loadLiveCheckinList();
   } catch(e) { logError('submitQuickLive', e); showToast('Kunne ikke oprette'); }
 }
 
 async function openQuickLiveBubble() {
-  showQuickLiveForm();
+  openCreateLiveModal();
 }
 
 function bbSwitchTab(tab) {
@@ -7005,6 +7001,26 @@ window.addEventListener('load', async () => {
       }
     }
   }, { passive: true });
+
+  // Force consistent nav bar height on all viewport changes
+  var navEl = document.getElementById('global-nav');
+  if (navEl) {
+    function fixNav() {
+      navEl.style.position = 'fixed';
+      navEl.style.bottom = '0';
+      navEl.style.left = '0';
+      navEl.style.right = '0';
+    }
+    fixNav();
+    window.addEventListener('resize', fixNav);
+    window.addEventListener('orientationchange', fixNav);
+    // Also fix after scroll (mobile URL bar changes)
+    var scrollFixTimer;
+    window.addEventListener('scroll', function() {
+      clearTimeout(scrollFixTimer);
+      scrollFixTimer = setTimeout(fixNav, 100);
+    }, { passive: true });
+  }
 });
 
 // ══════════════════════════════════════════════════════════

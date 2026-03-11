@@ -78,7 +78,10 @@ body {
 .scroll-area { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:1rem 1.1rem 4rem; overscroll-behavior-x:none; }
 
 /* ── BOTTOM NAV ── */
-.bottom-nav { display:flex; justify-content:space-around; align-items:center; gap:0; padding:0.35rem 0.8rem; padding-bottom:max(0.35rem, env(safe-area-inset-bottom,0px)); position:fixed; bottom:0; left:0; right:0; z-index:50; background:rgba(6,6,15,0.92); backdrop-filter:blur(30px) saturate(180%); -webkit-backdrop-filter:blur(30px) saturate(180%); border-top:1px solid var(--glass-border-subtle); transform:translateZ(0); }
+.bottom-nav { display:flex; justify-content:space-around; align-items:center; gap:0; height:48px; padding:0 0.8rem; position:fixed; bottom:0; left:0; right:0; z-index:50; background:rgba(6,6,15,0.95); -webkit-backdrop-filter:blur(30px) saturate(180%); backdrop-filter:blur(30px) saturate(180%); border-top:1px solid var(--glass-border-subtle); transform:translate3d(0,0,0); -webkit-transform:translate3d(0,0,0); }
+@supports(padding-bottom: env(safe-area-inset-bottom)) {
+  .bottom-nav { height:calc(48px + env(safe-area-inset-bottom,0px)); padding-bottom:env(safe-area-inset-bottom,0px); }
+}
 .nav-item { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.05rem; font-size:0.55rem; font-weight:600; letter-spacing:0.02em; color:var(--muted); cursor:pointer; position:relative; transition:color 0.2s; padding:0.1rem 0; border:none; background:none; flex:1; min-width:0; -webkit-tap-highlight-color:transparent; line-height:1; }
 .nav-item.active { color:var(--accent); }
 .nav-icon { display:flex; align-items:center; justify-content:center; width:1.2rem; height:1.2rem; line-height:0; }
@@ -1023,8 +1026,8 @@ a.person-action-btn { text-decoration:none; }
   font-size: 1rem; color: var(--muted); font-weight: 600; flex-shrink: 0;
 }
 .live-checkin-item {
-  display: flex; align-items: center; gap: 0.6rem;
-  padding: 0.6rem 0.5rem; border-radius: var(--radius-sm);
+  display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.7rem 0.85rem; border-radius: var(--radius-sm);
   background: var(--glass-bg); border: 1px solid var(--glass-border-subtle);
   margin-bottom: 0.35rem; cursor: pointer; transition: all 0.2s;
 }
