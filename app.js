@@ -211,6 +211,7 @@ function initInputConfirmButtons() {
 // ══════════════════════════════════════════════════════════
 function goTo(screenId) {
   console.debug('[nav] goTo:', screenId);
+  trackEvent('screen_view', { screen: screenId });
 
   // Force close any lingering sheets/overlays
   document.querySelectorAll('.person-sheet.open,.person-sheet-overlay.open,.radar-person-sheet.open,.radar-person-overlay.open').forEach(function(el) { el.classList.remove('open'); el.style.transform = ''; });
@@ -1379,6 +1380,7 @@ async function joinBubble(bubbleId) {
     showToast('Du er nu i boblen! 🫧');
     await openBubble(bubbleId);
     loadHome();
+    trackEvent('bubble_joined', { bubble_id: bubbleId });
   } catch(e) { logError("joinBubble", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -1521,6 +1523,7 @@ async function saveContact() {
     await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: currentPerson });
     document.getElementById('save-btn').innerHTML = icon('checkCircle') + '<span>Gemt</span>';
     showToast('Kontakt gemt!');
+    trackEvent('contact_saved', { contact_id: currentPerson });
     loadSavedContacts();
   } catch(e) { logError("saveContact", e); showToast(e.message || "Ukendt fejl"); }
 }
@@ -2474,6 +2477,7 @@ async function sendMessage() {
           el.insertAdjacentHTML('beforeend', dmRenderMsg(newMsg));
           el.scrollTop = el.scrollHeight;
         }
+        trackEvent('message_sent', { type: 'dm' });
       }
       input.focus();
     }
@@ -2584,6 +2588,7 @@ async function loadProfile() {
   try {
     if (!currentProfile) await loadCurrentProfile();
     if (!currentProfile) return;
+    updatePushButtonState();
 
     const initials = (currentProfile.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     var myAvEl = document.getElementById('my-avatar');
@@ -4779,7 +4784,7 @@ async function saveOnboarding() {
     persistCustomTitle(title);
     await loadCurrentProfile();
     showToast('Profil oprettet! 🎉');
-    // Aggressively preload everything so app feels instant
+    trackEvent('onboarding_complete');
     preloadAllData();
     goTo('screen-welcome');
   } catch(e) { logError("saveOnboarding", e); showToast(e.message || "Ukendt fejl"); }
@@ -6700,6 +6705,7 @@ async function liveCheckin(bubbleId) {
     }
 
     showToast('\uD83D\uDCCD ' + (bubbleName || 'Checked ind!'));
+    trackEvent('live_checkin', { bubble_id: bubbleId, bubble_name: bubbleName });
 
     // 4. Refresh home card in background (non-blocking)
     loadLiveBubbleStatus();
@@ -7017,6 +7023,10 @@ window.addEventListener('load', async () => {
     updateUnreadBadge();
     subscribeToIncoming();
     loadLiveBubbleStatus();
+    // Init push notifications
+    initPushNotifications();
+    // Track app open
+    trackEvent('app_open');
   }
   // Init swipe-to-close on all sheets/modals
   initAllSwipeClose();
@@ -7106,6 +7116,186 @@ window.addEventListener('load', async () => {
       scrollEl.addEventListener('touchcancel', snapBack, { passive: true });
     });
   })();
+});
+
+// ══════════════════════════════════════════════════════════
+//  PUSH NOTIFICATIONS
+// ══════════════════════════════════════════════════════════
+
+async function initPushNotifications() {
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      console.debug('Push not supported');
+      return;
+    }
+
+    // Register service worker
+    var registration = await navigator.serviceWorker.register('./sw.js');
+    console.debug('SW registered:', registration.scope);
+
+    // Check if already subscribed
+    var subscription = await registration.pushManager.getSubscription();
+    if (subscription) {
+      // Already subscribed — save to DB in case it changed
+      await savePushSubscription(subscription);
+      return;
+    }
+
+    // Don't auto-prompt — wait for user action
+    // The prompt will be shown via requestPushPermission()
+  } catch(e) {
+    logError('initPushNotifications', e);
+  }
+}
+
+async function requestPushPermission() {
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      showToast('Push-notifikationer er ikke understøttet på denne enhed');
+      return false;
+    }
+
+    var permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      showToast('Notifikationer er ikke tilladt');
+      return false;
+    }
+
+    var registration = await navigator.serviceWorker.ready;
+
+    // Subscribe to push
+    // NOTE: Replace this VAPID key with your own from https://web-push-codelab.glitch.me/
+    var VAPID_PUBLIC_KEY = 'BH1bjuFEH_rjDqiwRgT59P55QHttJfEUhOWnIqMobE_YbFS6sQUYajtlFlTJ0dkm1drf0Y-zRUBYaW0WwopzOdA';
+
+    var subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+
+    await savePushSubscription(subscription);
+    showToast('Notifikationer aktiveret!');
+    trackEvent('push_enabled');
+    return true;
+  } catch(e) {
+    logError('requestPushPermission', e);
+    showToast('Kunne ikke aktivere notifikationer');
+    return false;
+  }
+}
+
+async function savePushSubscription(subscription) {
+  try {
+    var sub = subscription.toJSON();
+    await sb.from('push_subscriptions').upsert({
+      user_id: currentUser.id,
+      endpoint: sub.endpoint,
+      p256dh: sub.keys?.p256dh || '',
+      auth: sub.keys?.auth || '',
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
+  } catch(e) {
+    logError('savePushSubscription', e);
+  }
+}
+
+async function togglePushNotifications() {
+  var btn = document.getElementById('push-toggle-btn');
+  if (!btn) return;
+
+  // Check if already subscribed
+  if ('serviceWorker' in navigator && 'PushManager' in window) {
+    var reg = await navigator.serviceWorker.ready;
+    var sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      // Unsubscribe
+      await sub.unsubscribe();
+      await sb.from('push_subscriptions').delete().eq('user_id', currentUser.id);
+      btn.textContent = 'Aktivér';
+      btn.style.color = '';
+      showToast('Notifikationer deaktiveret');
+      trackEvent('push_disabled');
+      return;
+    }
+  }
+
+  // Subscribe
+  var success = await requestPushPermission();
+  if (success) {
+    btn.textContent = 'Deaktivér';
+    btn.style.color = 'var(--green)';
+  }
+}
+
+// Update push button state on settings load
+async function updatePushButtonState() {
+  var btn = document.getElementById('push-toggle-btn');
+  if (!btn) return;
+  try {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      var reg = await navigator.serviceWorker.ready;
+      var sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        btn.textContent = 'Deaktivér';
+        btn.style.color = 'var(--green)';
+        return;
+      }
+    }
+    btn.textContent = 'Aktivér';
+    btn.style.color = '';
+  } catch(e) {}
+}
+
+function urlBase64ToUint8Array(base64String) {
+  var padding = '='.repeat((4 - base64String.length % 4) % 4);
+  var base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  var rawData = atob(base64);
+  var arr = new Uint8Array(rawData.length);
+  for (var i = 0; i < rawData.length; ++i) arr[i] = rawData.charCodeAt(i);
+  return arr;
+}
+
+// ══════════════════════════════════════════════════════════
+//  ANALYTICS
+// ══════════════════════════════════════════════════════════
+
+var _analyticsQueue = [];
+var _analyticsFlushTimer = null;
+
+function trackEvent(event, data) {
+  if (!currentUser) return;
+  _analyticsQueue.push({
+    user_id: currentUser.id,
+    event: event,
+    data: data ? JSON.stringify(data) : null,
+    screen: document.querySelector('.screen.active')?.id || '',
+    timestamp: new Date().toISOString()
+  });
+
+  // Debounce flush — batch writes every 3 seconds
+  clearTimeout(_analyticsFlushTimer);
+  _analyticsFlushTimer = setTimeout(flushAnalytics, 3000);
+}
+
+async function flushAnalytics() {
+  if (_analyticsQueue.length === 0) return;
+  var batch = _analyticsQueue.splice(0);
+  try {
+    await sb.from('analytics').insert(batch);
+  } catch(e) {
+    // Silent fail — analytics should never break the app
+    console.debug('Analytics flush failed:', e.message);
+  }
+}
+
+// Flush on page unload
+window.addEventListener('beforeunload', function() {
+  if (_analyticsQueue.length > 0) {
+    // Use sendBeacon for reliable delivery
+    try {
+      var payload = JSON.stringify(_analyticsQueue);
+      navigator.sendBeacon(SUPABASE_URL + '/rest/v1/analytics', payload);
+    } catch(e) {}
+  }
 });
 
 // ══════════════════════════════════════════════════════════
