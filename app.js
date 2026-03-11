@@ -1457,7 +1457,10 @@ async function openPerson(userId, fromScreen) {
     const score = calcMatchScore(currentProfile || {}, p, sharedCount);
     document.getElementById('person-match-label').textContent = `Match: ${score}%`;
 
-    document.getElementById('person-tags').innerHTML = (p.keywords||[]).map(k => `<span class="tag">${escHtml(k)}</span>`).join('');
+    // Hide full tags section — only show in edit profile
+    var tagsSection = document.getElementById('person-tags-section');
+    if (tagsSection) tagsSection.style.display = 'none';
+
     document.getElementById('person-bio').textContent = p.bio || '';
     var bioSection = document.getElementById('person-bio-section');
     if (bioSection) bioSection.style.display = p.bio ? 'block' : 'none';
@@ -1472,11 +1475,17 @@ async function openPerson(userId, fromScreen) {
       liBtn.style.display = 'none';
     }
 
+    // Shared interests (overlap only — not full tag list)
     const overlapEl = document.getElementById('person-overlap');
     if (overlap.length) {
-      overlapEl.innerHTML = overlap.map(k => `<span class="tag mint">${icon("check")} ${escHtml(k)}</span>`).join('');
+      overlapEl.innerHTML = '<div class="section-label" style="margin-bottom:0.3rem">Fælles interesser · ' + overlap.length + '</div>' +
+        overlap.slice(0, 12).map(k => {
+          var original = (p.keywords || []).find(function(t) { return t.toLowerCase() === k; }) || k;
+          return '<span class="tag mint">' + icon("check") + ' ' + escHtml(original) + '</span>';
+        }).join('') +
+        (overlap.length > 12 ? '<span class="tag" style="opacity:0.5">+' + (overlap.length - 12) + ' mere</span>' : '');
     } else {
-      overlapEl.innerHTML = '<span class="fs-085 text-muted">Ingen direkte overlap fundet</span>';
+      overlapEl.innerHTML = '<span class="fs-085 text-muted">Ingen fælles interesser fundet</span>';
     }
 
     const dynEl = document.getElementById('person-dynamic-keywords');
@@ -1501,9 +1510,6 @@ async function openPerson(userId, fromScreen) {
         starSection.style.display = 'none';
       }
     }
-    // Tags section
-    var tagsSection = document.getElementById('person-tags-section');
-    if (tagsSection) tagsSection.style.display = (p.keywords||[]).length ? 'block' : 'none';
   } catch(e) { logError("openPerson", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -2080,13 +2086,12 @@ async function openRadarPerson(userId) {
     document.getElementById('rp-match').textContent = score + '%';
     document.getElementById('rp-bio').textContent = p.bio || '';
     document.getElementById('rp-bio').style.display = p.bio ? 'block' : 'none';
-    document.getElementById('rp-tags').innerHTML = (p.keywords||[]).map(function(k){
-      var isOv = overlap.indexOf(k.toLowerCase()) >= 0;
-      return '<span class="tag' + (isOv ? ' mint' : '') + '">' + escHtml(k) + '</span>';
-    }).join('');
+    document.getElementById('rp-tags').innerHTML = '';
+    document.getElementById('rp-tags').style.display = 'none';
     if (overlap.length > 0) {
-      document.getElementById('rp-overlap').innerHTML = '<div style="font-size:0.68rem;color:var(--muted);margin-bottom:0.3rem;font-weight:600">F\u00e6lles interesser</div>' +
-        overlap.map(function(k){ return '<span class="tag mint">' + icon('check') + ' ' + escHtml(k) + '</span>'; }).join('');
+      document.getElementById('rp-overlap').innerHTML = '<div style="font-size:0.68rem;color:var(--muted);margin-bottom:0.3rem;font-weight:600">F\u00e6lles interesser \u00B7 ' + overlap.length + '</div>' +
+        overlap.slice(0, 8).map(function(k){ return '<span class="tag mint">' + icon('check') + ' ' + escHtml(k) + '</span>'; }).join('') +
+        (overlap.length > 8 ? '<span class="tag" style="opacity:0.5">+' + (overlap.length - 8) + ' mere</span>' : '');
       document.getElementById('rp-overlap').style.display = 'block';
     } else { document.getElementById('rp-overlap').style.display = 'none'; }
     var liBtn = document.getElementById('rp-linkedin-btn');
