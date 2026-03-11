@@ -546,12 +546,6 @@
 
   
     
-  <div class="bottom-nav">
-    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
-    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
-    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
-    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
-  </div>
 </div>
 
 <!-- ════════════════════════════════════════
@@ -579,19 +573,16 @@
     </div>
     <!-- Live bubbles panel -->
     <div id="bb-panel-live" style="display:none">
-      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
-        <div class="live-dot" style="width:8px;height:8px"></div>
-        <div style="font-size:0.78rem;font-weight:700">Events & steder</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <div class="live-dot" style="width:8px;height:8px"></div>
+          <div style="font-size:0.78rem;font-weight:700">Events & steder</div>
+        </div>
+        <button class="btn-sm btn-ghost" onclick="openQuickLiveBubble()" style="font-size:0.68rem;padding:0.25rem 0.6rem;color:var(--accent3);border-color:rgba(46,207,207,0.2)">+ Hurtig live</button>
       </div>
       <div style="font-size:0.68rem;color:var(--text-secondary);margin-bottom:0.6rem">Check ind på et fysisk sted eller event for at se hvem der er der lige nu.</div>
       <div id="bb-live-list"><div class="spinner"></div></div>
     </div>
-  </div>
-  <div class="bottom-nav">
-    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
-    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
-    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
-    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
   </div>
 </div>
 
@@ -605,12 +596,6 @@
   </div>
   <div class="scroll-area">
     <div id="notifications-list"><div class="spinner"></div></div>
-  </div>
-  <div class="bottom-nav">
-    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
-    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
-    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
-    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
   </div>
 </div>
 
@@ -626,12 +611,6 @@
     <input class="input" type="search" placeholder="Søg bobler..." id="bubble-search" oninput="filterBubbles()" style="margin-bottom:1rem">
     <div class="section-label">Alle bobler</div>
     <div id="all-bubbles-list"><div class="spinner"></div></div>
-  </div>
-  <div class="bottom-nav">
-    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
-    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
-    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
-    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
   </div>
 </div>
 
@@ -790,12 +769,6 @@
   </div>
 
   <!-- Bottom nav -->
-  <div class="bottom-nav">
-    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
-    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
-    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
-    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
-  </div>
 </div>
 
 <!-- Person sheet (boble-chat avatar tap) -->
@@ -926,12 +899,6 @@
   </div>
   <div class="scroll-area">
     <div id="conversations-list"><div class="spinner"></div></div>
-  </div>
-  <div class="bottom-nav">
-    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
-    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
-    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
-    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
   </div>
 </div>
 
@@ -1096,12 +1063,6 @@
 
   </div><!-- /scroll area -->
 
-  <div class="bottom-nav">
-    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
-    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
-    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
-    <button class="nav-item"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
-  </div>
 </div>
 
 <!-- ════════════════════════════════════════
@@ -1369,5 +1330,11 @@
   </div>
 </div>
 
+<div class="bottom-nav" id="global-nav">
+    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
+    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></span>Opdag</button>
+    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
+    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
+  </div>
 </body>
 </html>

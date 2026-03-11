@@ -78,7 +78,10 @@ body {
 .scroll-area { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:1rem 1.1rem 4rem; overscroll-behavior-x:none; }
 
 /* ── BOTTOM NAV ── */
-.bottom-nav { display:flex; justify-content:space-around; gap:0; padding:0.45rem 0.8rem; padding-bottom:calc(0.3rem + env(safe-area-inset-bottom,0px)); position:fixed; bottom:0; left:0; right:0; z-index:50; background:rgba(6,6,15,0.92); backdrop-filter:blur(30px) saturate(180%); -webkit-backdrop-filter:blur(30px) saturate(180%); border-top:1px solid var(--glass-border-subtle); }
+.bottom-nav { display:flex; justify-content:space-around; align-items:center; gap:0; padding:0.35rem 0.8rem 0.35rem; position:fixed; bottom:0; left:0; right:0; z-index:50; background:rgba(6,6,15,0.92); backdrop-filter:blur(30px) saturate(180%); -webkit-backdrop-filter:blur(30px) saturate(180%); border-top:1px solid var(--glass-border-subtle); }
+@supports(padding-bottom: env(safe-area-inset-bottom)) {
+  .bottom-nav { padding-bottom:calc(0.35rem + env(safe-area-inset-bottom,0px)); }
+}
 .nav-item { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.05rem; font-size:0.55rem; font-weight:600; letter-spacing:0.02em; color:var(--muted); cursor:pointer; position:relative; transition:color 0.2s; padding:0.1rem 0; border:none; background:none; flex:1; min-width:0; -webkit-tap-highlight-color:transparent; line-height:1; }
 .nav-item.active { color:var(--accent); }
 .nav-icon { display:flex; align-items:center; justify-content:center; width:1.2rem; height:1.2rem; line-height:0; }
@@ -503,12 +506,12 @@ button {
 
 /* FIX 7: Bubble tabs — bigger */
 .bubble-tabs {
-  margin: 0.6rem 1rem 0;
-  padding: 4px; gap: 3px;
+  margin: 0.4rem 1.1rem 0;
+  padding: 3px; gap: 2px;
 }
 .bubble-tab {
-  padding: 0.5rem 0.3rem;
-  font-size: 0.78rem;
+  padding: 0.45rem 0.3rem;
+  font-size: 0.75rem;
 }
 
 /* FIX 8: Chat section labels — bigger */
