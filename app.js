@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-11T15:45:00';
-const BUILD_VERSION  = 'v3.2.0';
+const BUILD_TIMESTAMP = '2026-03-11T16:15:00';
+const BUILD_VERSION  = 'v3.3.0';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -1163,14 +1163,32 @@ async function updateRadarCount() {
 function bubbleCard(b, joined) {
   var ups = b.upvote_count || bubbleUpvotes[b.id] || 0;
   var upLabel = ups > 0 ? `<div class="fs-065" style="color:var(--accent);display:flex;align-items:center;gap:0.15rem">${icon('rocket')}<span style="font-weight:700">${ups}</span></div>` : '';
+
+  // Contact avatars (from Discover)
+  var contactHtml = '';
+  var contacts = b._contacts || [];
+  if (contacts.length > 0) {
+    var avColors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)'];
+    var avs = contacts.map(function(c, i) {
+      var ini = (c.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var ml = i > 0 ? 'margin-left:-5px;' : '';
+      if (c.avatar_url) return '<div style="width:20px;height:20px;border-radius:50%;overflow:hidden;border:1.5px solid var(--bg);' + ml + 'position:relative;z-index:' + (3-i) + '"><img src="' + c.avatar_url + '" style="width:100%;height:100%;object-fit:cover"></div>';
+      return '<div style="width:20px;height:20px;border-radius:50%;background:' + avColors[i%3] + ';display:flex;align-items:center;justify-content:center;font-size:0.4rem;font-weight:700;color:white;border:1.5px solid var(--bg);' + ml + 'position:relative;z-index:' + (3-i) + '">' + ini + '</div>';
+    }).join('');
+    contactHtml = '<div style="display:flex;align-items:center;gap:0.25rem;margin-top:0.2rem"><div style="display:flex;align-items:center">' + avs + '</div><span class="fs-065 text-muted">' + contacts.length + ' kontakt' + (contacts.length > 1 ? 'er' : '') + '</span></div>';
+  }
+
+  var memberLabel = (b.member_count || 0) > 0 ? '<div class="fw-700">' + b.member_count + '</div>' : '';
+
   return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}">
     <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};color:${bubbleColor(b.type, 0.9)}">${bubbleEmoji(b.type)}</div>
-    <div style="flex:1">
+    <div style="flex:1;min-width:0">
       <div class="fw-600 fs-09">${escHtml(b.name)}</div>
       <div class="fs-075 text-muted">${escHtml(b.type_label || b.type)} ${b.location ? '· ' + escHtml(b.location) : ''}</div>
+      ${contactHtml}
     </div>
     <div class="flex-col-end" style="align-items:flex-end;gap:0.15rem">
-      <div class="fw-700">${b.member_count || ''}</div>
+      ${memberLabel}
       ${upLabel}
       ${joined ? '<div class="live-dot"></div>' : '<div class="fs-09" style="color:var(--accent)">+</div>'}
     </div>
@@ -1268,9 +1286,13 @@ async function loadDiscover() {
 
     // Get user's memberships to filter them out
     var myBubbleIds = [];
+    var mySavedIds = [];
     if (currentUser) {
       var { data: myMemberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
       myBubbleIds = (myMemberships || []).map(function(m) { return m.bubble_id; });
+      // Get saved contacts
+      var { data: mySaved } = await sb.from('saved_contacts').select('contact_id').eq('user_id', currentUser.id);
+      mySavedIds = (mySaved || []).map(function(s) { return s.contact_id; });
     }
 
     const { data: bubbles } = await sb.from('bubbles').select('*, bubble_members(count)').or('visibility.eq.public,visibility.eq.private,visibility.is.null').order('created_at', {ascending:false});
@@ -1282,6 +1304,31 @@ async function loadDiscover() {
       type_label: typeLabel(b.type),
       upvote_count: bubbleUpvotes[b.id] || 0
     }));
+
+    // Fetch contact members for each bubble
+    var discoverBubbleIds = allBubbles.map(function(b) { return b.id; });
+    var contactMemberMap = {}; // bubble_id -> [{name, avatar_url}]
+    if (mySavedIds.length > 0 && discoverBubbleIds.length > 0) {
+      var { data: contactMembers } = await sb.from('bubble_members')
+        .select('bubble_id, user_id')
+        .in('bubble_id', discoverBubbleIds)
+        .in('user_id', mySavedIds);
+      if (contactMembers && contactMembers.length > 0) {
+        var contactUserIds = [...new Set(contactMembers.map(function(m) { return m.user_id; }))];
+        var { data: contactProfiles } = await sb.from('profiles').select('id, name, avatar_url').in('id', contactUserIds);
+        var cpMap = {};
+        (contactProfiles || []).forEach(function(p) { cpMap[p.id] = p; });
+        contactMembers.forEach(function(m) {
+          if (!contactMemberMap[m.bubble_id]) contactMemberMap[m.bubble_id] = [];
+          var cp = cpMap[m.user_id];
+          if (cp && contactMemberMap[m.bubble_id].length < 3) contactMemberMap[m.bubble_id].push(cp);
+        });
+      }
+    }
+
+    // Attach contact info to bubbles
+    allBubbles.forEach(function(b) { b._contacts = contactMemberMap[b.id] || []; });
+
     // Sort: upvotes first, then member count, then date
     allBubbles.sort(function(a, b) {
       if (b.upvote_count !== a.upvote_count) return b.upvote_count - a.upvote_count;
@@ -1923,10 +1970,6 @@ function renderRadarList() {
     var theirKw = (p.keywords || []).map(function(k){ return k.toLowerCase(); });
     var overlap = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; });
     var matchPct = p.matchScore || Math.min(Math.round(p.relevance * 85 + 10), 99);
-    var tags = (p.keywords || []).slice(0, 3).map(function(k){
-      var isOv = overlap.indexOf(k.toLowerCase()) >= 0;
-      return '<span class="tag' + (isOv ? ' mint' : '') + '" style="font-size:0.58rem;padding:0.15rem 0.4rem">' + escHtml(k) + '</span>';
-    }).join('');
     var bubbleInfo = p.sharedBubbles > 0 ? '<span class="fs-065 text-muted">' + p.sharedBubbles + ' f\u00e6lles boble' + (p.sharedBubbles > 1 ? 'r' : '') + '</span>' : '';
     return '<div class="radar-list-card" data-uid="' + p.id + '" data-name="' + escHtml(name) + '" style="--card-delay:' + (i * 40) + 'ms">' +
       '<div class="flex-row-center" style="gap:0.7rem">' +
@@ -1938,6 +1981,7 @@ function renderRadarList() {
         (isA ? '' : '<div class="radar-list-match">' + matchPct + '%</div>') +
         '<button class="radar-list-remove" onclick="event.stopPropagation();radarConfirmRemove(\'' + p.id + '\',\'' + escHtml(name).replace(/'/g,'') + '\')" title="Fjern">' + icon('x') + '</button>' +
       '</div>' +
+      (bubbleInfo ? '<div style="padding-left:3.2rem;margin-top:0.15rem">' + bubbleInfo + '</div>' : '') +
     '</div>';
   }).join('');
 }
@@ -2641,7 +2685,6 @@ async function loadSavedContacts() {
       if (s.contact_id === currentUser?.id) return '';
       const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const col = colors[i % colors.length];
-      const tags = (p.keywords||[]).slice(0,3).map(k => `<span class="tag" style="font-size:0.58rem;padding:0.15rem 0.4rem">${escHtml(k)}</span>`).join('');
       const stars = starRender(s.contact_id);
       const pid = p.id || s.contact_id;
       return `<div class="card saved-card" style="padding:0.7rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="bcOpenPerson('${pid}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${col}','screen-profile')">
@@ -2653,7 +2696,6 @@ async function loadSavedContacts() {
           <div style="flex:1;min-width:0">
             <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||'Ukendt')}</div>
             <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.title||'')}</div>
-            ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.3rem">${tags}</div>` : ''}
           </div>
           <div style="display:flex;gap:0.35rem;flex-shrink:0" onclick="event.stopPropagation()">
             <button class="saved-action-btn" onclick="openChat('${pid}','screen-profile')" title="Send besked">${icon('chat')}</button>
