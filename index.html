@@ -1002,6 +1002,15 @@
       <div class="settings-toggle" id="hs-toggle-radar" onclick="hsToggle('radar')" data-on="true"><div class="settings-toggle-knob"></div></div>
     </div>
 
+    <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Notifikationer</div>
+    <div class="settings-row">
+      <div style="flex:1">
+        <div style="font-size:0.85rem;font-weight:600">Push-notifikationer</div>
+        <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:0.1rem">Få besked når nogen sender dig en besked eller gemmer din profil</div>
+      </div>
+      <button class="btn-sm btn-ghost" id="push-toggle-btn" onclick="togglePushNotifications()" style="font-size:0.72rem;padding:0.3rem 0.7rem">Aktivér</button>
+    </div>
+
     <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Synlighed</div>
     <div class="settings-row">
       <div style="flex:1">
@@ -1055,7 +1064,7 @@
       </div>
     </div>
 
-    <div style="text-align:center;margin-top:2rem;margin-bottom:1rem;font-size:0.62rem;color:var(--muted)" id="version-label">Bubble v1.0</div>
+    <div style="text-align:center;margin-top:2rem;margin-bottom:1rem;font-size:0.62rem;color:var(--muted)" id="version-label"></div>
     </div>
 
   </div><!-- /scroll area -->

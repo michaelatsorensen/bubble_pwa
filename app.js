@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-11T16:15:00';
-const BUILD_VERSION  = 'v3.3.0';
+const BUILD_TIMESTAMP = '2026-03-11T20:45:00';
+const BUILD_VERSION  = 'v3.5.0';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -2589,6 +2589,8 @@ async function loadProfile() {
     if (!currentProfile) await loadCurrentProfile();
     if (!currentProfile) return;
     updatePushButtonState();
+    var vLabel = document.getElementById('version-label');
+    if (vLabel) vLabel.textContent = 'Bubble ' + BUILD_VERSION + ' · Build ' + BUILD_TIMESTAMP;
 
     const initials = (currentProfile.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     var myAvEl = document.getElementById('my-avatar');
