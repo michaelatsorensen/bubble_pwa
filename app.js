@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-11T15:00:00';
-const BUILD_VERSION  = 'v3.1.3';
+const BUILD_TIMESTAMP = '2026-03-11T15:45:00';
+const BUILD_VERSION  = 'v3.2.0';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -910,7 +910,10 @@ async function submitQuickLive() {
       var nameEl = document.getElementById('live-scan-confirmed-name');
       if (nameEl) nameEl.textContent = 'Checked ind \u2014 ' + name + '!';
       var metaEl = document.getElementById('live-scan-confirmed-meta');
-      if (metaEl) metaEl.innerHTML = '<button onclick="closeLiveCheckinModal();openBubble(\'' + bubble.id + '\')" style="margin-top:0.3rem;font-size:0.72rem;padding:0.35rem 0.8rem;background:rgba(46,207,207,0.12);color:var(--accent3);border:1px solid rgba(46,207,207,0.25);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Se hvem der er her \u2192</button>';
+      if (metaEl) metaEl.innerHTML = '<div style="display:flex;gap:0.3rem;margin-top:0.4rem">' +
+        '<button onclick="closeLiveCheckinModal();openBubble(\'' + bubble.id + '\')" style="flex:1;font-size:0.72rem;padding:0.35rem 0.8rem;background:rgba(46,207,207,0.12);color:var(--accent3);border:1px solid rgba(46,207,207,0.25);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Se hvem der er her \u2192</button>' +
+        '<button onclick="liveCheckout();closeLiveCheckinModal()" style="font-size:0.72rem;padding:0.35rem 0.6rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Check ud</button>' +
+        '</div>';
     }
     showToast('\uD83D\uDCCD ' + name + ' oprettet!');
     loadLiveBubbleStatus();
@@ -1064,29 +1067,7 @@ async function loadMyBubbles() {
 
     if (!memberships || memberships.length === 0) {
       ownedList.innerHTML  = '';
-      // Show suggested bubbles to join instead of empty state
-      joinedList.innerHTML = '<div class="spinner"></div>';
-      try {
-        var { data: suggestedBubbles } = await sb.from('bubbles').select('*, bubble_members(count)').or('visibility.eq.public,visibility.eq.private,visibility.is.null').order('created_at', {ascending:false}).limit(10);
-        await loadBubbleUpvotes();
-        var suggestions = (suggestedBubbles || []).filter(function(b) { return b.type !== 'live'; }).map(function(b) {
-          return Object.assign({}, b, {
-            member_count: b.bubble_members && b.bubble_members[0] ? b.bubble_members[0].count : 0,
-            type_label: typeLabel(b.type),
-            upvote_count: bubbleUpvotes[b.id] || 0
-          });
-        });
-        if (suggestions.length > 0) {
-          joinedList.innerHTML = '<div class="section-label" style="margin-top:0.5rem">Foreslåede bobler</div>' +
-            '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.5rem">Du er ikke med i nogen bobler endnu — her er nogle du kan joine:</div>' +
-            suggestions.map(function(b) { return bubbleCard(b, false); }).join('');
-        } else {
-          joinedList.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Ingen bobler oprettet endnu</div><div style="margin-top:1rem"><button class="btn-secondary" onclick="openCreateBubble()" style="font-size:0.78rem;padding:0.5rem 1.2rem">+ Opret den første boble</button></div></div>';
-        }
-      } catch(e2) {
-        joinedList.innerHTML = '<div class="sub-muted">Kunne ikke hente forslag</div>';
-      }
-      // Also update profile bubbles tab
+      joinedList.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke med i nogen bobler endnu</div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.82rem;padding:0.6rem 1.5rem">Opdag bobler →</button></div><div style="margin-top:0.5rem"><button class="btn-secondary" onclick="openCreateBubble()" style="font-size:0.78rem;padding:0.5rem 1.2rem">+ Opret en boble</button></div></div>';
       var profBubblesEl = document.getElementById('profile-bubbles');
       if (profBubblesEl) {
         profBubblesEl.innerHTML = '<div style="text-align:center;padding:2rem 1rem">' +
@@ -1136,31 +1117,9 @@ async function loadMyBubbles() {
       joinedList.innerHTML = joined.map(b => bubbleCard(b, true)).join('');
     }
 
-    // Suggested bubbles (not already member of)
+    // Suggested bubbles removed — discovery belongs in Opdag screen
     var sugEl = document.getElementById('suggested-bubbles-list');
-    if (sugEl) {
-      try {
-        var { data: allPublic } = await sb.from('bubbles').select('*, bubble_members(count)')
-          .or('visibility.eq.public,visibility.eq.private,visibility.is.null')
-          .order('created_at', {ascending:false}).limit(20);
-        await loadBubbleUpvotes();
-        var suggestions = (allPublic || []).filter(function(b) {
-          return b.type !== 'live' && ids.indexOf(b.id) < 0;
-        }).map(function(b) {
-          return Object.assign({}, b, {
-            member_count: b.bubble_members && b.bubble_members[0] ? b.bubble_members[0].count : 0,
-            type_label: typeLabel(b.type),
-            upvote_count: bubbleUpvotes[b.id] || 0
-          });
-        });
-        if (suggestions.length > 0) {
-          sugEl.innerHTML = '<div class="section-label" style="margin-top:0.5rem">Foreslåede bobler</div>' +
-            suggestions.map(function(b) { return bubbleCard(b, false); }).join('');
-        } else {
-          sugEl.innerHTML = '';
-        }
-      } catch(e2) { sugEl.innerHTML = ''; }
-    }
+    if (sugEl) sugEl.innerHTML = '';
 
     // Profile bubbles
     var profBubblesEl = document.getElementById('profile-bubbles');
@@ -1306,8 +1265,18 @@ async function loadDiscover() {
     const list = document.getElementById('all-bubbles-list');
     list.innerHTML = '<div class="spinner"></div>';
     await loadBubbleUpvotes();
+
+    // Get user's memberships to filter them out
+    var myBubbleIds = [];
+    if (currentUser) {
+      var { data: myMemberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+      myBubbleIds = (myMemberships || []).map(function(m) { return m.bubble_id; });
+    }
+
     const { data: bubbles } = await sb.from('bubbles').select('*, bubble_members(count)').or('visibility.eq.public,visibility.eq.private,visibility.is.null').order('created_at', {ascending:false});
-    allBubbles = (bubbles || []).filter(b => b.type !== 'live').map(b => ({
+    allBubbles = (bubbles || []).filter(function(b) {
+      return b.type !== 'live' && myBubbleIds.indexOf(b.id) < 0;
+    }).map(b => ({
       ...b,
       member_count: b.bubble_members?.[0]?.count || 0,
       type_label: typeLabel(b.type),
@@ -2624,7 +2593,7 @@ async function loadSavedContacts() {
     const savedEl = document.getElementById('saved-contacts');
 
     // Fetch saved contacts — chronological (newest first)
-    const { data: saved, error: savedErr } = await sb.from('saved_contacts')
+    const { data: savedRaw, error: savedErr } = await sb.from('saved_contacts')
       .select('id, contact_id, created_at')
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false });
@@ -2632,7 +2601,7 @@ async function loadSavedContacts() {
     if (savedErr) { console.error('loadSavedContacts query error:', savedErr); return; }
 
     // Filter out self
-    if (saved) saved = saved.filter(function(s) { return s.contact_id !== currentUser?.id; });
+    var saved = (savedRaw || []).filter(function(s) { return s.contact_id !== currentUser.id; });
 
     const countEl = document.getElementById('saved-count');
     if (countEl) {
@@ -6677,7 +6646,10 @@ async function liveCheckin(bubbleId) {
       var nameEl = document.getElementById('live-scan-confirmed-name');
       if (nameEl) nameEl.textContent = 'Checked ind' + (bubbleName ? ' — ' + bubbleName : '') + '!';
       var metaEl = document.getElementById('live-scan-confirmed-meta');
-      if (metaEl) metaEl.innerHTML = '<button onclick="closeLiveCheckinModal();openBubble(\'' + bubbleId + '\')" style="margin-top:0.3rem;font-size:0.72rem;padding:0.35rem 0.8rem;background:rgba(46,207,207,0.12);color:var(--accent3);border:1px solid rgba(46,207,207,0.25);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Se hvem der er her \u2192</button>';
+      if (metaEl) metaEl.innerHTML = '<div style="display:flex;gap:0.3rem;margin-top:0.4rem">' +
+        '<button onclick="closeLiveCheckinModal();openBubble(\'' + bubbleId + '\')" style="flex:1;font-size:0.72rem;padding:0.35rem 0.8rem;background:rgba(46,207,207,0.12);color:var(--accent3);border:1px solid rgba(46,207,207,0.25);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Se hvem der er her \u2192</button>' +
+        '<button onclick="liveCheckout();closeLiveCheckinModal()" style="font-size:0.72rem;padding:0.35rem 0.6rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Check ud</button>' +
+        '</div>';
     }
 
     showToast('\uD83D\uDCCD ' + (bubbleName || 'Checked ind!'));
