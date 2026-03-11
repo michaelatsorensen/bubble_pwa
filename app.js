@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-11T15:00:00';
-const BUILD_VERSION  = 'v3.1.0';
+const BUILD_TIMESTAMP = '2026-03-11T15:15:00';
+const BUILD_VERSION  = 'v3.1.1';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -2631,6 +2631,9 @@ async function loadSavedContacts() {
 
     if (savedErr) { console.error('loadSavedContacts query error:', savedErr); return; }
 
+    // Filter out self
+    if (saved) saved = saved.filter(function(s) { return s.contact_id !== currentUser?.id; });
+
     const countEl = document.getElementById('saved-count');
     if (countEl) {
       if (saved?.length) { countEl.textContent = saved.length; countEl.style.display = 'inline-flex'; }
@@ -2699,6 +2702,7 @@ function renderSavedStoryBar(saved, profileMap) {
   var list = document.getElementById('saved-story-list');
   var badge = document.getElementById('saved-count-badge');
   if (!bar || !list) return;
+  if (saved) saved = saved.filter(function(s) { return s.contact_id !== currentUser?.id; });
   if (!saved || saved.length === 0) { bar.style.display = 'none'; return; }
   bar.style.display = 'block';
   if (badge) badge.textContent = saved.length;
