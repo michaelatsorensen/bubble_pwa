@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-11T20:45:00';
-const BUILD_VERSION  = 'v3.5.0';
+const BUILD_TIMESTAMP = '2026-03-11T22:30:00';
+const BUILD_VERSION  = 'v3.6.0';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -846,7 +846,25 @@ async function loadHomeBubblesCard() {
   } catch(e) { logError("loadHomeBubblesCard", e); showToast(e.message || "Ukendt fejl"); }
 }
 
-// loadHomeMessagesCard removed — HTML elements no longer exist
+// ── Notification nav badge ──
+async function updateNotifNavBadge() {
+  try {
+    var badge = document.getElementById('home-notif-badge');
+    if (!badge || !currentUser) return;
+    var lastSeen = localStorage.getItem('bubble_notifs_seen') || '2000-01-01';
+    // Count pending invitations + new saves since last seen
+    var { count: invCount } = await sb.from('bubble_invitations')
+      .select('*', { count: 'exact', head: true })
+      .eq('to_user_id', currentUser.id)
+      .eq('status', 'pending');
+    var { count: saveCount } = await sb.from('saved_contacts')
+      .select('*', { count: 'exact', head: true })
+      .eq('contact_id', currentUser.id)
+      .gt('created_at', lastSeen);
+    var n = (invCount || 0) + (saveCount || 0);
+    if (badge) { badge.textContent = n > 9 ? '9+' : n; badge.style.display = n > 0 ? 'flex' : 'none'; }
+  } catch(e) { /* silent */ }
+}
 
 async function loadHomeNotifCard() {
   try {
@@ -2361,12 +2379,29 @@ function dmEditMsg(msgId) {
 
 async function dmDeleteMsg(msgId) {
   try {
-    if (!confirm('Slet denne besked?')) return;
+    var el = document.getElementById('dm-msg-' + msgId);
+    if (!el) return;
+    // Use inline confirm tray instead of window.confirm()
+    if (el.querySelector('.dm-delete-confirm')) return; // already showing
+    var tray = document.createElement('div');
+    tray.className = 'dm-delete-confirm';
+    tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0.5rem;margin-top:0.25rem;background:rgba(232,93,138,0.08);border:1px solid rgba(232,93,138,0.2);border-radius:8px;gap:0.4rem';
+    tray.innerHTML = '<span style="font-size:0.7rem;color:var(--text-secondary)">Slet besked?</span>' +
+      '<div style="display:flex;gap:0.25rem">' +
+      '<button style="font-size:0.68rem;padding:0.2rem 0.55rem;background:rgba(232,93,138,0.15);color:var(--accent2);border:1px solid rgba(232,93,138,0.3);border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600" onclick="dmConfirmDelete(\'' + msgId + '\')">Slet</button>' +
+      '<button style="font-size:0.68rem;padding:0.2rem 0.55rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:6px;cursor:pointer;font-family:inherit" onclick="this.closest(\'.dm-delete-confirm\').remove()">Annuller</button>' +
+      '</div>';
+    el.appendChild(tray);
+  } catch(e) { logError("dmDeleteMsg", e); showToast('Kunne ikke slette besked'); }
+}
+
+async function dmConfirmDelete(msgId) {
+  try {
     await sb.from('messages').delete().eq('id', msgId).eq('sender_id', currentUser.id);
     var el = document.getElementById('dm-msg-' + msgId);
     if (el) el.remove();
     showToast('Besked slettet');
-  } catch(e) { logError("dmDeleteMsg", e); showToast('Kunne ikke slette besked'); }
+  } catch(e) { logError("dmConfirmDelete", e); showToast('Kunne ikke slette besked'); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -3140,11 +3175,11 @@ async function loadHomeNotifFeed() {
         var name = inv.profiles ? inv.profiles.name : 'Nogen';
         var bname = inv.bubbles ? inv.bubbles.name : 'en boble';
         var isNew = inv.status === 'pending';
-        var ago = timeAgo(inv.created_at);
         items.push({
           html: '<strong>' + escHtml(name) + '</strong> inviterede dig til <strong>' + escHtml(bname) + '</strong>',
-          time: ago,
-          isNew: isNew
+          time: timeAgo(inv.created_at),
+          isNew: isNew,
+          date: new Date(inv.created_at).getTime()
         });
       });
     }
@@ -3166,13 +3201,16 @@ async function loadHomeNotifFeed() {
           items.push({
             html: '<strong>' + escHtml(name) + '</strong> joined <strong>' + escHtml(bname) + '</strong>',
             time: timeAgo(j.created_at),
-            isNew: false
+            isNew: false,
+            date: new Date(j.created_at).getTime()
           });
         });
       }
     }
 
-    // Sort by time (most recent first) — use original date for sort
+    // Sort by date (most recent first)
+    items.sort(function(a, b) { return b.date - a.date; });
+
     if (items.length === 0) {
       list.innerHTML = '<div class="fs-072 text-muted" style="text-align:center;padding:0.8rem">Ingen notifikationer endnu</div>';
       return;
@@ -4552,6 +4590,7 @@ function obCustomTag(event, cat, input) {
     obAddTag(exists.label, exists.category);
     input.value = '';
     obRenderCategories();
+    obCheckProgress();
     return;
   }
 
@@ -4560,6 +4599,7 @@ function obCustomTag(event, cat, input) {
   obAddTag(formatted, cat);
   input.value = '';
   obRenderCategories();
+  obCheckProgress();
   showToast('Tag tilføjet til din profil');
 
   // Persist to Supabase: increment usage_count if exists, insert if new
@@ -5087,7 +5127,7 @@ async function loadNotifications() {
         var avatarHtml = p.avatar_url ?
           '<div class="notif-avatar" style="overflow:hidden"><img src="' + p.avatar_url + '" style="width:100%;height:100%;object-fit:cover"></div>' :
           '<div class="notif-avatar" style="background:linear-gradient(135deg,#10B981,#065F46)">' + initials + '</div>';
-        html += '<div class="notif-card" onclick="openPersonSheet(\'' + s.user_id + '\')" style="cursor:pointer">' +
+        html += '<div class="notif-card" onclick="openPerson(\'' + s.user_id + '\',\'screen-notifications\')" style="cursor:pointer">' +
           '<div class="notif-header">' + avatarHtml +
           '<div>' +
           '<div class="notif-title">' + icon("bookmark") + ' Nogen gemte din profil</div>' +
@@ -5473,13 +5513,17 @@ function bcSubscribe() {
         const bubbleEl = document.getElementById('bc-bubble-' + m.id);
         if (bubbleEl) {
           bubbleEl.textContent = m.content || '';
-          const meta = bubbleEl.closest('.chat-msg-group')?.querySelector('.chat-msg-meta');
-          if (meta && !meta.querySelector('.chat-msg-edited')) {
+          // msg-head is sibling of msg-content inside msg-body
+          const msgBody = bubbleEl.closest('.msg-body');
+          const msgHead = msgBody?.querySelector('.msg-head');
+          if (msgHead && !msgHead.querySelector('.msg-edited')) {
             const e = document.createElement('span');
-            e.className = 'chat-msg-edited';
-            e.textContent = '(redigeret)';
-            e.onclick = () => bcShowHistory(m.id);
-            meta.appendChild(e);
+            e.className = 'msg-edited';
+            e.style.cssText = 'font-size:0.6rem;color:var(--muted);margin-left:0.3rem;cursor:pointer';
+            e.textContent = 'redigeret';
+            const id = m.id;
+            e.onclick = () => bcShowHistory(id);
+            msgHead.appendChild(e);
           }
         }
       })
@@ -5510,14 +5554,16 @@ async function bcSendMessage() {
       const bubbleEl = document.getElementById('bc-bubble-' + bcEditingId);
       if (bubbleEl) {
         bubbleEl.textContent = text;
-        const meta = bubbleEl.closest('.chat-msg-group')?.querySelector('.chat-msg-meta');
-        if (meta && !meta.querySelector('.chat-msg-edited')) {
+        const msgBody = bubbleEl.closest('.msg-body');
+        const msgHead = msgBody?.querySelector('.msg-head');
+        if (msgHead && !msgHead.querySelector('.msg-edited')) {
           const e = document.createElement('span');
-          e.className = 'chat-msg-edited';
+          e.className = 'msg-edited';
+          e.style.cssText = 'font-size:0.6rem;color:var(--muted);margin-left:0.3rem;cursor:pointer';
           const id = bcEditingId;
-          e.textContent = '(redigeret)';
+          e.textContent = 'redigeret';
           e.onclick = () => bcShowHistory(id);
-          meta.appendChild(e);
+          msgHead.appendChild(e);
         }
       }
       bcCancelEdit();
@@ -5621,7 +5667,7 @@ function bcOpenContext(e, btn, isMe, msgId) {
   // Show history if message was edited
   const bubble = document.getElementById('bc-bubble-' + msgId);
   const msgGroup = document.getElementById('bc-msg-' + msgId);
-  const wasEdited = msgGroup?.querySelector('.chat-msg-edited');
+  const wasEdited = msgGroup?.querySelector('.msg-edited, .chat-msg-edited');
   document.getElementById('bc-ctx-history').style.display = wasEdited ? 'flex' : 'none';
   const menu = document.getElementById('bc-context-menu');
   menu.style.display = 'block';
@@ -6249,6 +6295,15 @@ async function personConfirmBubbleUp() {
 
 async function sendBubbleUpInvitation(toUserId) {
   try {
+    // Dedup: check if a pending invitation already exists between these two users
+    var { data: existing } = await sb.from('bubble_invitations')
+      .select('id')
+      .eq('from_user_id', currentUser.id)
+      .eq('to_user_id', toUserId)
+      .eq('status', 'pending')
+      .maybeSingle();
+    if (existing) { showToast('Du har allerede sendt en invitation til denne person'); return; }
+
     // Create a hidden private bubble first
     const myName = currentProfile?.name || 'Min boble';
     const theirName = (document.getElementById('person-name')?.textContent || document.getElementById('ps-name')?.textContent || '');
@@ -7055,8 +7110,10 @@ window.addEventListener('load', async () => {
   await checkPendingJoin();
   if (currentUser) {
     updateUnreadBadge();
+    updateNotifNavBadge();
     subscribeToIncoming();
     loadLiveBubbleStatus();
+    preloadAllData();
     // Init push notifications
     initPushNotifications();
     // Track app open
@@ -7323,12 +7380,10 @@ async function flushAnalytics() {
 
 // Flush on page unload
 window.addEventListener('beforeunload', function() {
+  // Flush any remaining analytics via normal SDK call
+  // (sendBeacon without auth headers would get 401 from Supabase)
   if (_analyticsQueue.length > 0) {
-    // Use sendBeacon for reliable delivery
-    try {
-      var payload = JSON.stringify(_analyticsQueue);
-      navigator.sendBeacon(SUPABASE_URL + '/rest/v1/analytics', payload);
-    } catch(e) {}
+    flushAnalytics().catch(function() {});
   }
 });
 
@@ -7479,15 +7534,57 @@ function adminShowInfo(el, text) {
   if (parent) parent.insertAdjacentElement('afterend', tray);
 }
 
+var _pendingBanUserId = null;
+var _pendingBanUserName = null;
+
 async function adminBanUser(userId, userName) {
-  if (!confirm('Ban ' + (userName || 'denne bruger') + '? De vil ikke kunne bruge appen.')) return;
+  // First click: show confirmation tray in the result row
+  if (_pendingBanUserId !== userId) {
+    _pendingBanUserId = userId;
+    _pendingBanUserName = userName;
+    // Find the button and show confirm inline
+    var allBtns = document.querySelectorAll('[onclick*="adminBanUser(\'' + userId + '\'"]');
+    allBtns.forEach(function(btn) {
+      var row = btn.closest('div[style*="padding"]') || btn.parentElement;
+      if (row && !row.querySelector('.admin-ban-confirm')) {
+        var tray = document.createElement('div');
+        tray.className = 'admin-ban-confirm';
+        tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0.5rem;margin-top:0.3rem;background:rgba(232,93,138,0.08);border:1px solid rgba(232,93,138,0.2);border-radius:8px;gap:0.4rem';
+        tray.innerHTML = '<span style="font-size:0.68rem;color:var(--text-secondary)">Ban ' + escHtml(userName||'bruger') + '?</span>' +
+          '<div style="display:flex;gap:0.25rem">' +
+          '<button style="font-size:0.65rem;padding:0.2rem 0.5rem;background:rgba(232,93,138,0.15);color:var(--accent2);border:1px solid rgba(232,93,138,0.3);border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600" onclick="adminConfirmBan()">Ban</button>' +
+          '<button style="font-size:0.65rem;padding:0.2rem 0.5rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:6px;cursor:pointer;font-family:inherit" onclick="adminCancelBan(this)">Annuller</button>' +
+          '</div>';
+        row.appendChild(tray);
+      }
+    });
+    setTimeout(function() { _pendingBanUserId = null; document.querySelectorAll('.admin-ban-confirm').forEach(function(t) { t.remove(); }); }, 5000);
+    return;
+  }
+  await adminConfirmBan();
+}
+
+async function adminConfirmBan() {
+  var userId = _pendingBanUserId;
+  var userName = _pendingBanUserName;
+  _pendingBanUserId = null;
+  _pendingBanUserName = null;
+  document.querySelectorAll('.admin-ban-confirm').forEach(function(t) { t.remove(); });
+  if (!userId) return;
   try {
     await sb.from('profiles').update({ banned: true }).eq('id', userId);
-    showToast(userName + ' er banned');
+    showToast((userName||'Bruger') + ' er banned');
     adminLoadReports();
     adminLoadBanned();
     adminLoadStats();
   } catch(e) { showToast('Fejl: ' + e.message); }
+}
+
+function adminCancelBan(btn) {
+  _pendingBanUserId = null;
+  _pendingBanUserName = null;
+  var tray = btn.closest('.admin-ban-confirm');
+  if (tray) tray.remove();
 }
 
 async function adminUnbanUser(userId) {
