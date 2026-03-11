@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-11T15:15:00';
-const BUILD_VERSION  = 'v3.1.1';
+const BUILD_TIMESTAMP = '2026-03-11T15:25:00';
+const BUILD_VERSION  = 'v3.1.2';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -7019,23 +7019,37 @@ window.addEventListener('load', async () => {
   (function initRubberBand() {
     if (isDesktop) return;
 
-    var RESISTANCE = 3.5;    // Higher = harder to pull
-    var BOUNCE_MS = 400;     // Spring-back duration
+    var RESISTANCE = 3.5;
+    var BOUNCE_MS = 400;
     var BOUNCE_EASE = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
 
     document.querySelectorAll('.scroll-area').forEach(function(scrollEl) {
       var startY = 0;
-      var startScroll = 0;
       var pulling = false;
-      var direction = 0; // 1 = overscroll top, -1 = overscroll bottom
-      var content = scrollEl.firstElementChild || scrollEl;
+      var direction = 0;
+
+      // Apply transform to ALL direct children simultaneously
+      function setTransform(value, transition) {
+        var children = scrollEl.children;
+        for (var i = 0; i < children.length; i++) {
+          children[i].style.transition = transition || 'none';
+          children[i].style.transform = value;
+        }
+      }
+
+      function clearTransform() {
+        var children = scrollEl.children;
+        for (var i = 0; i < children.length; i++) {
+          children[i].style.transition = '';
+          children[i].style.transform = '';
+        }
+      }
 
       scrollEl.addEventListener('touchstart', function(e) {
         startY = e.touches[0].clientY;
-        startScroll = scrollEl.scrollTop;
         pulling = true;
         direction = 0;
-        content.style.transition = 'none';
+        setTransform('', 'none');
       }, { passive: true });
 
       scrollEl.addEventListener('touchmove', function(e) {
@@ -7047,26 +7061,24 @@ window.addEventListener('load', async () => {
         if (atTop && dy > 0) {
           direction = 1;
           var pull = dy / RESISTANCE;
-          content.style.transform = 'translate3d(0,' + pull + 'px,0)';
+          setTransform('translate3d(0,' + pull + 'px,0)');
         } else if (atBottom && dy < 0) {
           direction = -1;
           var pull = dy / RESISTANCE;
-          content.style.transform = 'translate3d(0,' + pull + 'px,0)';
+          setTransform('translate3d(0,' + pull + 'px,0)');
         } else {
-          direction = 0;
-          content.style.transform = '';
+          if (direction !== 0) {
+            direction = 0;
+            clearTransform();
+          }
         }
       }, { passive: true });
 
       function snapBack() {
         pulling = false;
         if (direction !== 0) {
-          content.style.transition = 'transform ' + BOUNCE_MS + 'ms ' + BOUNCE_EASE;
-          content.style.transform = 'translate3d(0,0,0)';
-          setTimeout(function() {
-            content.style.transition = '';
-            content.style.transform = '';
-          }, BOUNCE_MS + 10);
+          setTransform('translate3d(0,0,0)', 'transform ' + BOUNCE_MS + 'ms ' + BOUNCE_EASE);
+          setTimeout(clearTransform, BOUNCE_MS + 10);
         }
         direction = 0;
       }
