@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-11T09:00:00';
-const BUILD_VERSION  = 'v2.7.0';
+const BUILD_TIMESTAMP = '2026-03-11T09:30:00';
+const BUILD_VERSION  = 'v2.7.1';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -870,29 +870,61 @@ async function loadHomeNotifCard() {
 }
 
 // ── Bubbles screen tabs ──
-async function openQuickLiveBubble() {
-  var name = prompt('Navn på event/sted:');
-  if (!name || !name.trim()) return;
-  var location = prompt('Lokation (valgfrit):') || '';
+function showQuickLiveForm() {
+  var form = document.getElementById('quick-live-form');
+  if (form) {
+    form.style.display = 'block';
+    var nameInput = document.getElementById('ql-name');
+    if (nameInput) { nameInput.value = ''; nameInput.focus(); }
+    var locInput = document.getElementById('ql-location');
+    if (locInput) locInput.value = '';
+  }
+}
+
+function hideQuickLiveForm() {
+  var form = document.getElementById('quick-live-form');
+  if (form) form.style.display = 'none';
+}
+
+async function submitQuickLive() {
+  var name = (document.getElementById('ql-name')?.value || '').trim();
+  if (!name) { showToast('Giv dit event et navn'); return; }
+  var location = (document.getElementById('ql-location')?.value || '').trim();
   try {
     showToast('Opretter...');
     var { data: bubble, error } = await sb.from('bubbles').insert({
-      name: name.trim(),
+      name: name,
       type: 'event',
       visibility: 'public',
-      location: location.trim(),
+      location: location,
       created_by: currentUser.id
     }).select().single();
     if (error) { showToast('Fejl: ' + error.message); return; }
-    // Auto-join
+    // Auto-join + check-in
     await sb.from('bubble_members').upsert({
       user_id: currentUser.id,
       bubble_id: bubble.id,
-      joined_at: new Date().toISOString()
+      joined_at: new Date().toISOString(),
+      checked_in_at: new Date().toISOString()
     });
-    showToast(name.trim() + ' oprettet!');
-    bbLoadLivePanel();
-  } catch(e) { logError('openQuickLiveBubble', e); showToast('Kunne ikke oprette'); }
+    hideQuickLiveForm();
+    showToast('\uD83D\uDCCD ' + name + ' oprettet!');
+    // Show confirmed state
+    var scanConfirmed = document.getElementById('live-scan-confirmed');
+    if (scanConfirmed) {
+      scanConfirmed.style.display = 'flex';
+      var nameEl = document.getElementById('live-scan-confirmed-name');
+      if (nameEl) nameEl.textContent = 'Checked ind \u2014 ' + name + '!';
+      var metaEl = document.getElementById('live-scan-confirmed-meta');
+      if (metaEl) metaEl.innerHTML = '<button onclick="closeLiveCheckinModal();openBubble(\'' + bubble.id + '\')" style="margin-top:0.3rem;font-size:0.72rem;padding:0.35rem 0.8rem;background:rgba(46,207,207,0.12);color:var(--accent3);border:1px solid rgba(46,207,207,0.25);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Se hvem der er her \u2192</button>';
+    }
+    loadLiveBubbleStatus();
+    loadLiveCheckinList();
+  } catch(e) { logError('submitQuickLive', e); showToast('Kunne ikke oprette'); }
+}
+
+async function openQuickLiveBubble() {
+  showQuickLiveForm();
 }
 
 function bbSwitchTab(tab) {
@@ -6624,17 +6656,24 @@ async function liveCheckin(bubbleId) {
       });
     }
 
-    // 3. Instant UI: show confirmed state in checkin sheet
+    // 3. Get bubble name for display
+    var bubbleName = '';
+    try {
+      var { data: bData } = await sb.from('bubbles').select('name, location').eq('id', bubbleId).single();
+      if (bData) bubbleName = bData.name;
+    } catch(e2) {}
+
+    // 4. Instant UI: show confirmed state in checkin sheet
     var scanConfirmed = document.getElementById('live-scan-confirmed');
     if (scanConfirmed) {
       scanConfirmed.style.display = 'flex';
       var nameEl = document.getElementById('live-scan-confirmed-name');
-      if (nameEl) nameEl.textContent = 'Checked ind!';
+      if (nameEl) nameEl.textContent = 'Checked ind' + (bubbleName ? ' — ' + bubbleName : '') + '!';
       var metaEl = document.getElementById('live-scan-confirmed-meta');
       if (metaEl) metaEl.innerHTML = '<button onclick="closeLiveCheckinModal();openBubble(\'' + bubbleId + '\')" style="margin-top:0.3rem;font-size:0.72rem;padding:0.35rem 0.8rem;background:rgba(46,207,207,0.12);color:var(--accent3);border:1px solid rgba(46,207,207,0.25);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Se hvem der er her \u2192</button>';
     }
 
-    showToast('\uD83D\uDCCD Du er checked ind!');
+    showToast('\uD83D\uDCCD ' + (bubbleName || 'Checked ind!'));
 
     // 4. Refresh home card in background (non-blocking)
     loadLiveBubbleStatus();

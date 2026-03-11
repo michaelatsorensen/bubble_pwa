@@ -469,9 +469,6 @@
           </div>
           <div class="live-bubble-idle-arrow">›</div>
         </div>
-        <div style="padding:0.3rem 0.85rem 0.1rem;display:flex;justify-content:flex-end">
-          <button onclick="event.stopPropagation();openQuickLiveBubble()" style="font-size:0.62rem;padding:0.2rem 0.55rem;background:none;border:1px solid rgba(46,207,207,0.2);border-radius:8px;color:var(--accent3);cursor:pointer;font-family:inherit;font-weight:600">+ Opret live event</button>
-        </div>
       </div>
     </div>
 
@@ -1312,7 +1309,25 @@
     </div>
     <div id="live-checkin-list" style="margin-top:0.4rem;margin-bottom:0.5rem"><div class="spinner"></div></div>
 
-    <button class="btn-secondary" onclick="closeLiveCheckinModal()">Luk</button>
+    <div style="display:flex;gap:0.4rem">
+      <button class="btn-secondary" onclick="closeLiveCheckinModal()" style="flex:1">Luk</button>
+      <button onclick="showQuickLiveForm()" style="flex:1;font-size:0.75rem;padding:0.55rem 0.8rem;background:rgba(46,207,207,0.1);color:var(--accent3);border:1px solid rgba(46,207,207,0.2);border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;font-weight:600">+ Opret event</button>
+    </div>
+
+    <!-- Inline create form (hidden by default) -->
+    <div id="quick-live-form" style="display:none;margin-top:0.6rem">
+      <div style="font-size:0.82rem;font-weight:700;margin-bottom:0.4rem">Nyt live event</div>
+      <div class="input-group" style="margin-bottom:0.4rem">
+        <input class="input" id="ql-name" placeholder="Navn på event eller sted" style="font-size:0.82rem">
+      </div>
+      <div class="input-group" style="margin-bottom:0.5rem">
+        <input class="input" id="ql-location" placeholder="Lokation (valgfrit)" style="font-size:0.82rem">
+      </div>
+      <div style="display:flex;gap:0.4rem">
+        <button onclick="submitQuickLive()" style="flex:1;font-size:0.78rem;padding:0.5rem;background:var(--accent3);color:var(--bg);border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;font-weight:700">Opret & check ind</button>
+        <button onclick="hideQuickLiveForm()" style="flex:0 0 auto;font-size:0.75rem;padding:0.5rem 0.8rem;background:none;border:1px solid var(--glass-border);border-radius:var(--radius-sm);color:var(--muted);cursor:pointer;font-family:inherit">Annuller</button>
+      </div>
+    </div>
   </div>
 </div>
 
