@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-10T19:40:00';
-const BUILD_VERSION  = 'v2.3.3';
+const BUILD_TIMESTAMP = '2026-03-10T21:30:00';
+const BUILD_VERSION  = 'v2.5.2';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -243,9 +243,9 @@ function goTo(screenId) {
 
   // Update bottom nav active state
   const navMap = {
-    'screen-home': 0, 'screen-bubbles': 0,
+    'screen-home': 0, 'screen-bubbles': 0, 'screen-bubble-chat': 0,
     'screen-discover': 1,
-    'screen-messages': 2, 'screen-chat': 2, 'screen-bubble-chat': 2,
+    'screen-messages': 2, 'screen-chat': 2,
     'screen-profile': 3,
     'screen-notifications': -1, 'screen-person': -1
   };
@@ -865,6 +865,135 @@ async function loadHomeNotifCard() {
   } catch(e) { logError("loadHomeNotifCard", e); showToast(e.message || "Ukendt fejl"); }
 }
 
+// ── Bubbles screen tabs ──
+function bbSwitchTab(tab) {
+  var networkPanel = document.getElementById('bb-panel-network');
+  var livePanel = document.getElementById('bb-panel-live');
+  var networkTab = document.getElementById('bb-tab-network');
+  var liveTab = document.getElementById('bb-tab-live');
+  if (tab === 'live') {
+    if (networkPanel) networkPanel.style.display = 'none';
+    if (livePanel) livePanel.style.display = 'block';
+    if (networkTab) networkTab.classList.remove('active');
+    if (liveTab) liveTab.classList.add('active');
+    bbLoadLivePanel();
+  } else {
+    if (networkPanel) networkPanel.style.display = 'block';
+    if (livePanel) livePanel.style.display = 'none';
+    if (networkTab) networkTab.classList.add('active');
+    if (liveTab) liveTab.classList.remove('active');
+  }
+}
+
+async function bbLoadLivePanel() {
+  var list = document.getElementById('bb-live-list');
+  if (!list) return;
+  list.innerHTML = '<div class="spinner"></div>';
+  try {
+    // Show location-based and event bubbles
+    var { data: placeBubbles } = await sb.from('bubbles')
+      .select('id, name, location, type, created_at')
+      .or('type.eq.live,type.eq.event')
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    // Also get bubbles with locations
+    var { data: locBubbles } = await sb.from('bubbles')
+      .select('id, name, location, type, created_at')
+      .not('location', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    // Merge and deduplicate
+    var allMap = {};
+    (placeBubbles || []).forEach(function(b) { allMap[b.id] = b; });
+    (locBubbles || []).forEach(function(b) { if (b.location && b.location.trim()) allMap[b.id] = b; });
+    var filtered = Object.values(allMap);
+
+    if (filtered.length === 0) {
+      list.innerHTML = '<div style="text-align:center;padding:2rem 1rem">' +
+        '<div style="width:44px;height:44px;margin:0 auto 0.7rem;opacity:0.4;color:var(--accent3)">' + ico('pin') + '</div>' +
+        '<div style="font-size:0.85rem;font-weight:700;margin-bottom:0.25rem">Ingen events eller steder endnu</div>' +
+        '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.4">Opret en event-boble med lokation, eller scan en QR-kode for at checke ind.</div>' +
+        '<button onclick="openCreateBubble()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(46,207,207,0.12);color:var(--accent3);border:1px solid rgba(46,207,207,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">+ Opret event</button>' +
+        '</div>';
+      return;
+    }
+
+    // Get active check-in counts
+    var bubbleIds = filtered.map(function(b) { return b.id; });
+    var expireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 60 * 60 * 1000).toISOString();
+    var { data: activeMembers } = await sb.from('bubble_members')
+      .select('bubble_id, user_id')
+      .in('bubble_id', bubbleIds)
+      .not('checked_in_at', 'is', null)
+      .is('checked_out_at', null)
+      .gte('checked_in_at', expireCutoff);
+
+    var countMap = {};
+    var memberMap = {};
+    (activeMembers || []).forEach(function(m) {
+      countMap[m.bubble_id] = (countMap[m.bubble_id] || 0) + 1;
+      if (!memberMap[m.bubble_id]) memberMap[m.bubble_id] = [];
+      if (memberMap[m.bubble_id].length < 3) memberMap[m.bubble_id].push(m.user_id);
+    });
+
+    // Fetch avatar data
+    var allUserIds = [];
+    Object.values(memberMap).forEach(function(ids) {
+      ids.forEach(function(id) { if (allUserIds.indexOf(id) < 0) allUserIds.push(id); });
+    });
+    var profileMap = {};
+    if (allUserIds.length > 0) {
+      var { data: profiles } = await sb.from('profiles').select('id, name, avatar_url').in('id', allUserIds);
+      (profiles || []).forEach(function(p) { profileMap[p.id] = p; });
+    }
+
+    var avColors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)'];
+
+    // Sort: active first, events first, then date
+    filtered.sort(function(a, b) {
+      var aActive = countMap[a.id] || 0;
+      var bActive = countMap[b.id] || 0;
+      if (bActive !== aActive) return bActive - aActive;
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    list.innerHTML = filtered.map(function(b) {
+      var cnt = countMap[b.id] || 0;
+      var isEvent = b.type === 'event' || b.type === 'live';
+
+      // Avatar preview
+      var avatarHtml = '';
+      if (cnt > 0 && memberMap[b.id]) {
+        var avs = memberMap[b.id].map(function(uid, i) {
+          var p = profileMap[uid];
+          if (!p) return '';
+          var ini = (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+          var ml = i > 0 ? 'margin-left:-6px;' : '';
+          if (p.avatar_url) return '<div style="width:24px;height:24px;border-radius:50%;overflow:hidden;border:1.5px solid var(--bg);' + ml + 'position:relative;z-index:' + (3-i) + '"><img src="' + p.avatar_url + '" style="width:100%;height:100%;object-fit:cover"></div>';
+          return '<div style="width:24px;height:24px;border-radius:50%;background:' + avColors[i%3] + ';display:flex;align-items:center;justify-content:center;font-size:0.5rem;font-weight:700;color:white;border:1.5px solid var(--bg);' + ml + 'position:relative;z-index:' + (3-i) + '">' + ini + '</div>';
+        }).join('');
+        avatarHtml = '<div style="display:flex;align-items:center;margin-right:0.4rem">' + avs + '</div>';
+      }
+
+      return '<div class="card flex-row-center" style="padding:0.85rem 1.1rem;margin-bottom:0.4rem" onclick="liveCheckin(\'' + b.id + '\')">' +
+        '<div class="bubble-icon" style="background:' + (isEvent ? 'rgba(232,93,138,0.15)' : 'rgba(46,207,207,0.15)') + ';flex-shrink:0">' +
+        '<span style="color:' + (isEvent ? '#E85D8A' : '#2ECFCF') + '">' + ico(isEvent ? 'calendar' : 'pin') + '</span></div>' +
+        '<div style="flex:1;min-width:0">' +
+        '<div class="fw-600 fs-09">' + escHtml(b.name) + '</div>' +
+        '<div class="fs-075 text-muted">' + (isEvent ? 'Event' : 'Sted') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div>' +
+        '</div>' +
+        (cnt > 0 ? avatarHtml + '<div style="display:flex;align-items:center;gap:0.3rem"><div class="live-dot" style="width:6px;height:6px"></div><span class="fs-075 fw-600">' + cnt + '</span></div>' :
+        '<div class="fs-072" style="color:var(--accent3)">Check ind →</div>') +
+        '</div>';
+    }).join('');
+  } catch(e) {
+    logError('bbLoadLivePanel', e);
+    list.innerHTML = '<div class="sub-muted">Kunne ikke hente steder</div>';
+  }
+}
+
 async function loadMyBubbles() {
   try {
     // Mark bubbles as seen — clears badge on home screen
@@ -949,6 +1078,32 @@ async function loadMyBubbles() {
       joinedList.innerHTML = '<div class="sub-muted" style="padding:0.5rem 0">Du er ikke medlem af andres bobler endnu.</div>';
     } else {
       joinedList.innerHTML = joined.map(b => bubbleCard(b, true)).join('');
+    }
+
+    // Suggested bubbles (not already member of)
+    var sugEl = document.getElementById('suggested-bubbles-list');
+    if (sugEl) {
+      try {
+        var { data: allPublic } = await sb.from('bubbles').select('*, bubble_members(count)')
+          .or('visibility.eq.public,visibility.eq.private,visibility.is.null')
+          .order('created_at', {ascending:false}).limit(20);
+        await loadBubbleUpvotes();
+        var suggestions = (allPublic || []).filter(function(b) {
+          return b.type !== 'live' && ids.indexOf(b.id) < 0;
+        }).map(function(b) {
+          return Object.assign({}, b, {
+            member_count: b.bubble_members && b.bubble_members[0] ? b.bubble_members[0].count : 0,
+            type_label: typeLabel(b.type),
+            upvote_count: bubbleUpvotes[b.id] || 0
+          });
+        });
+        if (suggestions.length > 0) {
+          sugEl.innerHTML = '<div class="section-label" style="margin-top:0.5rem">Foreslåede bobler</div>' +
+            suggestions.map(function(b) { return bubbleCard(b, false); }).join('');
+        } else {
+          sugEl.innerHTML = '';
+        }
+      } catch(e2) { sugEl.innerHTML = ''; }
     }
 
     // Profile bubbles
@@ -6156,16 +6311,47 @@ async function loadLiveBubbleStatus() {
 }
 
 function openLiveCheckin() {
+  _liveListExpanded = false;
   loadLiveCheckinList();
   openModal('modal-live-checkin');
   // Reset scanner state
+  var scanner = document.getElementById('live-scanner-viewport');
+  if (scanner) scanner.style.display = '';
   var confirmed = document.getElementById('live-scan-confirmed');
   if (confirmed) confirmed.style.display = 'none';
   var found = document.getElementById('live-scan-found');
   if (found) found.style.display = 'none';
   var status = document.getElementById('live-scan-status');
-  if (status) { status.textContent = 'Starter kamera...'; status.className = 'live-scan-status'; }
+  if (status) { status.textContent = 'Starter kamera...'; status.className = 'live-scan-status'; status.style.display = ''; }
+  var toggle = document.getElementById('live-list-toggle');
+  if (toggle) toggle.textContent = 'Vis mere \u2191';
   startLiveCamera();
+}
+
+var _liveListExpanded = false;
+function liveToggleListView() {
+  _liveListExpanded = !_liveListExpanded;
+  var scanner = document.getElementById('live-scanner-viewport');
+  var status = document.getElementById('live-scan-status');
+  var found = document.getElementById('live-scan-found');
+  var confirmed = document.getElementById('live-scan-confirmed');
+  var toggle = document.getElementById('live-list-toggle');
+
+  if (_liveListExpanded) {
+    // Collapse scanner, expand list
+    if (scanner) scanner.style.display = 'none';
+    if (status) status.style.display = 'none';
+    if (found) found.style.display = 'none';
+    if (confirmed) confirmed.style.display = 'none';
+    if (toggle) toggle.textContent = 'Vis scanner ↓';
+    stopLiveCamera();
+  } else {
+    // Restore scanner
+    if (scanner) scanner.style.display = '';
+    if (status) status.style.display = '';
+    if (toggle) toggle.textContent = 'Vis mere ↑';
+    startLiveCamera();
+  }
 }
 
 function closeLiveCheckinModal() {
@@ -6177,53 +6363,96 @@ async function loadLiveCheckinList() {
   const list = document.getElementById('live-checkin-list');
   list.innerHTML = '<div class="spinner"></div>';
   try {
-    const expireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 60 * 60 * 1000).toISOString();
-
-    // Get all live bubbles with recent activity
-    const { data: liveBubbles } = await sb.from('bubbles')
-      .select('id, name, location, created_at')
-      .eq('type', 'live')
+    // Only show bubbles with a location OR type live/event — these are physical places
+    var { data: placeBubbles } = await sb.from('bubbles')
+      .select('id, name, location, type, created_at')
+      .or('type.eq.live,type.eq.event,location.neq.')
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(30);
 
-    if (!liveBubbles || liveBubbles.length === 0) {
-      list.innerHTML = '<div class="sub-muted" style="padding:0.5rem 0;text-align:center">Ingen aktive steder. Opret det første!</div>';
+    // Fallback: if the .neq. filter doesn't work, filter client-side
+    var filtered = (placeBubbles || []).filter(function(b) {
+      return b.type === 'live' || b.type === 'event' || (b.location && b.location.trim().length > 0);
+    });
+
+    if (filtered.length === 0) {
+      list.innerHTML = '<div style="text-align:center;padding:1rem 0">' +
+        '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.3rem">Ingen steder i n\u00E6rheden</div>' +
+        '<div style="font-size:0.68rem;color:var(--text-secondary);margin-bottom:0.6rem">Scan en QR-kode ovenfor, eller opdag bobler med lokationer</div>' +
+        '<button onclick="closeModal(\'modal-live-checkin\');goTo(\'screen-discover\');loadDiscover()" style="font-size:0.75rem;padding:0.45rem 1rem;background:rgba(139,127,255,0.12);color:var(--accent);border:1px solid rgba(139,127,255,0.25);border-radius:10px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler \u2192</button>' +
+        '</div>';
       return;
     }
 
-    // Get active member counts for each
-    const bubbleIds = liveBubbles.map(b => b.id);
-    const { data: activeMembers } = await sb.from('bubble_members')
-      .select('bubble_id')
+    // Get active check-in counts AND user IDs for avatar preview
+    var bubbleIds = filtered.map(function(b) { return b.id; });
+    var expireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 60 * 60 * 1000).toISOString();
+    var { data: activeMembers } = await sb.from('bubble_members')
+      .select('bubble_id, user_id')
       .in('bubble_id', bubbleIds)
       .not('checked_in_at', 'is', null)
       .is('checked_out_at', null)
       .gte('checked_in_at', expireCutoff);
 
-    const countMap = {};
-    (activeMembers || []).forEach(m => {
+    var countMap = {};
+    var memberMap = {}; // bubble_id -> [user_ids]
+    (activeMembers || []).forEach(function(m) {
       countMap[m.bubble_id] = (countMap[m.bubble_id] || 0) + 1;
+      if (!memberMap[m.bubble_id]) memberMap[m.bubble_id] = [];
+      if (memberMap[m.bubble_id].length < 3) memberMap[m.bubble_id].push(m.user_id);
     });
 
-    // Filter to only show bubbles with active members OR created recently (last 24h)
-    const recentCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const filtered = liveBubbles.filter(b => (countMap[b.id] || 0) > 0 || b.created_at > recentCutoff);
-
-    if (filtered.length === 0) {
-      list.innerHTML = '<div class="sub-muted" style="padding:0.5rem 0;text-align:center">Ingen aktive steder lige nu. Opret det første!</div>';
-      return;
+    // Fetch profiles for avatar previews (max 3 per bubble, deduplicated)
+    var allUserIds = [];
+    Object.values(memberMap).forEach(function(ids) {
+      ids.forEach(function(id) { if (allUserIds.indexOf(id) < 0) allUserIds.push(id); });
+    });
+    var profileMap = {};
+    if (allUserIds.length > 0) {
+      var { data: profiles } = await sb.from('profiles').select('id, name, avatar_url').in('id', allUserIds);
+      (profiles || []).forEach(function(p) { profileMap[p.id] = p; });
     }
 
-    list.innerHTML = filtered.map(b => {
-      const cnt = countMap[b.id] || 0;
-      return `<div class="live-checkin-item" onclick="liveCheckin('${b.id}')">
-        <div class="live-checkin-icon">${ico('pin')}</div>
-        <div style="flex:1;min-width:0">
-          <div class="fw-600 fs-085">${escHtml(b.name)}</div>
-          <div class="fs-072 text-muted">${escHtml(b.location || '')}</div>
-        </div>
-        ${cnt > 0 ? '<div class="live-checkin-count"><div class="live-dot" style="width:6px;height:6px;margin:0"></div> ' + cnt + '</div>' : '<div class="fs-072 text-muted">0 her</div>'}
-      </div>`;
+    // Sort: active check-ins first, then events, then by date
+    filtered.sort(function(a, b) {
+      var aActive = countMap[a.id] || 0;
+      var bActive = countMap[b.id] || 0;
+      if (bActive !== aActive) return bActive - aActive;
+      var aIsEvent = (a.type === 'event' || a.type === 'live') ? 1 : 0;
+      var bIsEvent = (b.type === 'event' || b.type === 'live') ? 1 : 0;
+      if (bIsEvent !== aIsEvent) return bIsEvent - aIsEvent;
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    var colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)'];
+    list.innerHTML = filtered.map(function(b) {
+      var cnt = countMap[b.id] || 0;
+      var isEvent = b.type === 'event' || b.type === 'live';
+      var typeLabel = isEvent ? 'Event' : 'Lokalt sted';
+
+      // Build avatar preview HTML
+      var avatarHtml = '';
+      if (cnt > 0 && memberMap[b.id]) {
+        var avatars = memberMap[b.id].map(function(uid, i) {
+          var p = profileMap[uid];
+          if (!p) return '';
+          var ini = (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+          if (p.avatar_url) {
+            return '<div style="width:22px;height:22px;border-radius:50%;overflow:hidden;border:1.5px solid var(--bg);margin-left:' + (i > 0 ? '-6px' : '0') + ';position:relative;z-index:' + (3-i) + '"><img src="' + p.avatar_url + '" style="width:100%;height:100%;object-fit:cover"></div>';
+          }
+          return '<div style="width:22px;height:22px;border-radius:50%;background:' + colors[i%3] + ';display:flex;align-items:center;justify-content:center;font-size:0.45rem;font-weight:700;color:white;border:1.5px solid var(--bg);margin-left:' + (i > 0 ? '-6px' : '0') + ';position:relative;z-index:' + (3-i) + '">' + ini + '</div>';
+        }).join('');
+        avatarHtml = '<div style="display:flex;align-items:center;margin-right:0.3rem">' + avatars + '</div>';
+      }
+
+      return '<div class="live-checkin-item" onclick="liveCheckin(\'' + b.id + '\')">' +
+        '<div class="live-checkin-icon" style="' + (isEvent ? 'background:rgba(232,93,138,0.12);color:#E85D8A' : '') + '">' + ico(isEvent ? 'calendar' : 'pin') + '</div>' +
+        '<div style="flex:1;min-width:0">' +
+        '<div class="fw-600 fs-085">' + escHtml(b.name) + '</div>' +
+        '<div class="fs-072 text-muted">' + typeLabel + (b.location ? ' \u00B7 ' + escHtml(b.location) : '') + '</div>' +
+        '</div>' +
+        (cnt > 0 ? avatarHtml + '<div class="live-checkin-count"><div class="live-dot" style="width:6px;height:6px;margin:0"></div> ' + cnt + '</div>' : '<div class="fs-072" style="color:var(--accent3)">Check ind</div>') +
+        '</div>';
     }).join('');
   } catch (e) {
     logError('loadLiveCheckinList', e);

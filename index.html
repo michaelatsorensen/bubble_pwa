@@ -563,11 +563,29 @@
     <div class="topbar-title">Bobler</div>
     <button class="btn-sm btn-ghost" onclick="openCreateBubble()" style="font-size:0.75rem;padding:0.35rem 0.75rem">+ Ny</button>
   </div>
-  <div class="scroll-area">
-    <div class="section-label" style="margin-top:0.25rem">Mine bobler</div>
-    <div id="my-owned-bubbles-list"><div class="spinner"></div></div>
-    <div class="section-label">Bobler jeg er med i</div>
-    <div id="my-bubbles-list"><div class="spinner"></div></div>
+  <!-- Tabs -->
+  <div class="bubble-tabs" style="flex-shrink:0;position:sticky;top:0;z-index:5;background:var(--bg);padding:0 1.1rem">
+    <button class="bubble-tab active" id="bb-tab-network" onclick="bbSwitchTab('network')">Netværk</button>
+    <button class="bubble-tab" id="bb-tab-live" onclick="bbSwitchTab('live')">Live</button>
+  </div>
+  <div class="scroll-area" style="padding-top:0.5rem">
+    <!-- Network bubbles panel -->
+    <div id="bb-panel-network">
+      <div class="section-label" style="margin-top:0.25rem">Mine bobler</div>
+      <div id="my-owned-bubbles-list"><div class="spinner"></div></div>
+      <div class="section-label">Bobler jeg er med i</div>
+      <div id="my-bubbles-list"><div class="spinner"></div></div>
+      <div id="suggested-bubbles-list"></div>
+    </div>
+    <!-- Live bubbles panel -->
+    <div id="bb-panel-live" style="display:none">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+        <div class="live-dot" style="width:8px;height:8px"></div>
+        <div style="font-size:0.78rem;font-weight:700">Events & steder</div>
+      </div>
+      <div style="font-size:0.68rem;color:var(--text-secondary);margin-bottom:0.6rem">Check ind på et fysisk sted eller event for at se hvem der er der lige nu.</div>
+      <div id="bb-live-list"><div class="spinner"></div></div>
+    </div>
   </div>
   <div class="bottom-nav">
     <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
@@ -993,10 +1011,6 @@
     <div id="prof-panel-settings" style="display:none;flex-direction:column;flex:1;padding:0.75rem 1.1rem 8rem">
 
       <div class="section-label" style="margin-bottom:0.25rem">Hjem-skærm</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
-        <div class="fs-068 text-muted" id="hs-preview-text">Viser: ...</div>
-        <button class="btn-sm btn-ghost" onclick="hsReset()" style="font-size:0.62rem;padding:0.2rem 0.5rem">Nulstil</button>
-      </div>
     <div class="settings-row" style="border-bottom:1px solid var(--glass-border-subtle)">
       <div style="font-size:0.82rem;font-weight:600">Live Bubble</div>
       <div class="settings-toggle" id="hs-toggle-live" onclick="hsToggle('live')" data-on="true"><div class="settings-toggle-knob"></div></div>
@@ -1327,9 +1341,15 @@
 
     <div class="divider" style="margin:0.6rem 0"></div>
 
-    <!-- Existing live bubbles as fallback -->
-    <div class="section-label">📍 Steder i nærheden</div>
-    <div id="live-checkin-list" style="margin-bottom:0.5rem"><div class="spinner"></div></div>
+    <!-- Location-based bubbles for check-in -->
+    <div onclick="liveToggleListView()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:0.2rem 0">
+      <div>
+        <div class="section-label" style="margin:0">📍 Events & steder</div>
+        <div style="font-size:0.65rem;color:var(--text-secondary);margin-top:0.15rem">Check ind på et fysisk sted eller event</div>
+      </div>
+      <div id="live-list-toggle" style="font-size:0.65rem;color:var(--accent);font-weight:600">Vis mere ↑</div>
+    </div>
+    <div id="live-checkin-list" style="margin-top:0.4rem;margin-bottom:0.5rem"><div class="spinner"></div></div>
 
     <button class="btn-secondary" onclick="closeLiveCheckinModal()">Luk</button>
   </div>
