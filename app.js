@@ -5,8 +5,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-11T10:15:00';
-const BUILD_VERSION  = 'v2.8.0';
+const BUILD_TIMESTAMP = '2026-03-11T10:45:00';
+const BUILD_VERSION  = 'v2.9.0';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -254,7 +254,13 @@ function goTo(screenId) {
   if (globalNav) {
     // Hide nav in chat screens, show everywhere else
     var hideNav = screenId === 'screen-chat' || screenId === 'screen-bubble-chat';
-    globalNav.style.display = hideNav ? 'none' : 'flex';
+    if (hideNav) {
+      globalNav.style.visibility = 'hidden';
+      globalNav.style.pointerEvents = 'none';
+    } else {
+      globalNav.style.visibility = 'visible';
+      globalNav.style.pointerEvents = 'auto';
+    }
     if (activeIdx !== undefined && activeIdx >= 0) {
       globalNav.querySelectorAll('.nav-item').forEach((btn, i) => {
         btn.classList.toggle('active', i === activeIdx);

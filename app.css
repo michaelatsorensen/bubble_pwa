@@ -78,10 +78,7 @@ body {
 .scroll-area { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:1rem 1.1rem 4rem; overscroll-behavior-x:none; }
 
 /* ── BOTTOM NAV ── */
-.bottom-nav { display:flex; justify-content:space-around; align-items:center; gap:0; height:48px; padding:0 0.8rem; position:fixed; bottom:0; left:0; right:0; z-index:50; background:rgba(6,6,15,0.95); -webkit-backdrop-filter:blur(30px) saturate(180%); backdrop-filter:blur(30px) saturate(180%); border-top:1px solid var(--glass-border-subtle); transform:translate3d(0,0,0); -webkit-transform:translate3d(0,0,0); }
-@supports(padding-bottom: env(safe-area-inset-bottom)) {
-  .bottom-nav { height:calc(48px + env(safe-area-inset-bottom,0px)); padding-bottom:env(safe-area-inset-bottom,0px); }
-}
+/* bottom-nav: styles are inline on #global-nav for consistency */
 .nav-item { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.05rem; font-size:0.55rem; font-weight:600; letter-spacing:0.02em; color:var(--muted); cursor:pointer; position:relative; transition:color 0.2s; padding:0.1rem 0; border:none; background:none; flex:1; min-width:0; -webkit-tap-highlight-color:transparent; line-height:1; }
 .nav-item.active { color:var(--accent); }
 .nav-icon { display:flex; align-items:center; justify-content:center; width:1.2rem; height:1.2rem; line-height:0; }
@@ -91,9 +88,10 @@ body {
 /* ── CARDS ── */
 .card { background:var(--glass-bg); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:0.85rem 1.1rem; margin-bottom:0.5rem; cursor:pointer; transition:all 0.2s; box-shadow:var(--glass-inset); }
 .card:hover, .card:active { background:var(--glass-bg-hover); border-color:var(--glass-border); }
-.main-nav-card, .card-bobler, .card-beskeder, .card-notif { background:var(--glass-bg); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:0.85rem 1.1rem; cursor:pointer; transition:all 0.2s; box-shadow:var(--glass-inset); position:relative; overflow:visible; }
+.main-nav-card, .card-bobler, .card-beskeder, .card-notif { background:var(--glass-bg); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:0.85rem 1.1rem; cursor:pointer; transition:all 0.2s; box-shadow:var(--glass-inset); position:relative; overflow:visible; display:flex; align-items:center; gap:0.85rem; }
 .main-nav-card:hover, .card-bobler:hover, .card-beskeder:hover, .card-notif:hover { background:var(--glass-bg-hover); border-color:var(--glass-border); }
-.radar-card { background:linear-gradient(135deg,rgba(139,127,255,0.1),rgba(232,93,138,0.06)); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border:1px solid rgba(139,127,255,0.2); border-radius:var(--radius); padding:0.85rem 1.1rem; box-shadow:var(--glass-inset); display:flex; align-items:center; gap:0.85rem; }
+.main-nav-card:active { transform:scale(0.985); }
+.radar-card { background:linear-gradient(135deg,rgba(139,127,255,0.06),rgba(46,207,207,0.04)); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border:1px solid rgba(139,127,255,0.12); border-radius:var(--radius); padding:0.85rem 1.1rem; box-shadow:var(--glass-inset); display:flex; align-items:center; gap:0.85rem; }
 .radar-card .live-dot { width:8px; height:8px; flex-shrink:0; margin:0; position:static; }
 
 /* ── BUTTONS ── */
@@ -377,9 +375,7 @@ textarea.input { min-height:80px; resize:vertical; }
 }
 
 /* Main nav cards need flex layout */
-.main-nav-card, .card-bobler, .card-beskeder, .card-notif {
-  display: flex; align-items: center; gap: 0.85rem;
-}
+/* Card flex layout merged into main .main-nav-card rule */
 
 /* Screens that need centering */
 #screen-loading {
@@ -941,6 +937,8 @@ a.person-action-btn { text-decoration:none; }
 .live-bubble-card {
   border-radius: var(--radius);
   overflow: hidden;
+  border: 1px solid var(--glass-border-subtle);
+  box-shadow: var(--glass-inset);
 }
 .live-bubble-header {
   display: flex; align-items: center; gap: 0.75rem;
@@ -1141,7 +1139,7 @@ a.person-action-btn { text-decoration:none; }
   }
 
   /* Fixed elements: use width + left/right calc to center within 680px */
-  .bottom-nav {
+  #global-nav {
     width: 680px;
     left: 0 !important;
     right: 0 !important;
