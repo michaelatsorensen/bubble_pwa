@@ -24,6 +24,7 @@
   --accent-soft: rgba(139,127,255,0.15);
   --accent2: #E85D8A;
   --accent3: #2ECFCF;
+  --green: #10B981;
   --gold: #F5C35A;
   --gradient-primary: linear-gradient(135deg, rgba(139,127,255,0.7), rgba(232,93,138,0.5));
   --gradient-accent: linear-gradient(135deg, var(--accent), var(--accent2));

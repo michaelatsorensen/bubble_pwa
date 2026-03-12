@@ -2,7 +2,7 @@
 //  BUBBLE SERVICE WORKER v3.6.7
 // ══════════════════════════════════════
 
-const CACHE_NAME = 'bubble-v3.6.7';
+const CACHE_NAME = 'bubble-v3.7.0';
 const CACHE_URLS = [
   './', './index.html', './app.js', './app.css',
   './bubble-icons.js', './tag-data.js'
