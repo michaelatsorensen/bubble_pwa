@@ -267,8 +267,21 @@ function goTo(screenId) {
   if (screenId === 'screen-bubbles') loadMyBubbles();
   if (screenId === 'screen-notifications') loadNotifications();
   if (screenId === 'screen-discover') loadDiscover();
-  if (screenId === 'screen-messages') loadMessages();
+  if (screenId === 'screen-messages') { loadMessages(); dmBadgeClear(); }
   if (screenId === 'screen-profile') loadProfile();
+
+  // Radar polling: start when on home/radar, stop when leaving
+  if (screenId === 'screen-home') {
+    rtStartRadarPolling();
+  } else {
+    rtStopRadarPolling();
+  }
+
+  // Clear notif badge when entering notifications
+  if (screenId === 'screen-notifications') {
+    notifBadgeSet(0);
+    localStorage.setItem('bubble_notifs_seen', new Date().toISOString());
+  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2169,15 +2182,198 @@ async function updateUnreadBadge() {
   } catch(e) { logError("updateUnreadBadge", e); showToast(e.message || "Ukendt fejl"); }
 }
 
-let incomingSubscription = null;
-function subscribeToIncoming() {
-  if (incomingSubscription) { incomingSubscription.unsubscribe(); incomingSubscription = null; }
-  incomingSubscription = sb.channel('incoming-messages')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages',
-      filter: `receiver_id=eq.${currentUser.id}` }, () => {
-      updateUnreadBadge();
-    }).subscribe();
+// ══════════════════════════════════════════════════════════
+//  GLOBAL REALTIME HUB
+//  Alle live opdateringer samlet ét sted.
+//  Kanal 1: messages       → nav badge + conv liste preview
+//  Kanal 2: bubble_members → live-boble kort + bc-members
+//  Kanal 3: invitations    → notif badge + notif-skærm
+//  Kanal 4: saved_contacts → notif badge
+// ══════════════════════════════════════════════════════════
+
+var _globalRtChannels = [];
+var _radarRefreshTimer = null;
+var _radarScreenActive = false;
+
+// ── Helpers: instant badge manipulation (no DB query needed) ──
+function dmBadgeGet() {
+  var el = document.querySelector('.msg-unread-badge');
+  return el ? (parseInt(el.textContent) || 0) : 0;
 }
+function dmBadgeSet(n) {
+  document.querySelectorAll('.msg-unread-badge').forEach(function(b) {
+    if (n > 0) { b.textContent = n > 9 ? '9+' : String(n); b.style.display = 'flex'; }
+    else { b.style.display = 'none'; }
+  });
+}
+function dmBadgeIncrement() { dmBadgeSet(dmBadgeGet() + 1); }
+function dmBadgeClear()     { dmBadgeSet(0); }
+
+function notifBadgeGet() {
+  var el = document.getElementById('home-notif-badge');
+  return el ? (parseInt(el.textContent) || 0) : 0;
+}
+function notifBadgeSet(n) {
+  var el = document.getElementById('home-notif-badge');
+  if (!el) return;
+  if (n > 0) { el.textContent = n > 9 ? '9+' : String(n); el.style.display = 'flex'; }
+  else { el.style.display = 'none'; }
+}
+function notifBadgeIncrement() { notifBadgeSet(notifBadgeGet() + 1); }
+
+// ── Conversations list: update preview row without full reload ──
+function rtUpdateConversationPreview(msg) {
+  var list = document.getElementById('conversations-list');
+  if (!list) return;
+  var partnerId = msg.sender_id === currentUser.id ? msg.receiver_id : msg.sender_id;
+  var row = list.querySelector('[data-conv-id="' + partnerId + '"]');
+  if (row) {
+    // Update preview text + unread dot
+    var preview = row.querySelector('.fs-078');
+    if (preview) preview.textContent = msg.content || '';
+    var isUnread = msg.receiver_id === currentUser.id && !msg.read_at;
+    if (isUnread && !row.querySelector('.live-dot')) {
+      var dot = document.createElement('div');
+      dot.className = 'live-dot';
+      row.appendChild(dot);
+      row.querySelector('.fw-600, .fw-700')?.classList.replace('fw-600', 'fw-700');
+    }
+    // Move row to top
+    list.prepend(row);
+  } else {
+    // New conversation — reload list
+    if (document.getElementById('screen-messages')?.classList.contains('active')) {
+      loadMessages();
+    }
+  }
+}
+
+// ── Live bubble card: fast update on check-in/out ──
+function rtHandleMemberChange(payload) {
+  var m = payload.new || payload.old;
+  if (!m) return;
+
+  // If it's MY check-in/out → refresh live card
+  if (m.user_id === currentUser.id) {
+    loadLiveBubbleStatus();
+    // Also update home screen if active
+    if (document.getElementById('screen-home')?.classList.contains('active')) {
+      loadHomeBubblesCard();
+    }
+    return;
+  }
+
+  // If bc chat is open for this bubble → reload members tab silently
+  if (bcBubbleId && m.bubble_id === bcBubbleId) {
+    // Only reload if members tab is visible
+    var membersPanel = document.getElementById('bc-members-list');
+    if (membersPanel && membersPanel.closest('.bc-panel')?.style.display !== 'none') {
+      bcLoadMembers();
+    }
+    // Update live member count on home card
+    var countEl = document.getElementById('live-bubble-count');
+    if (countEl && currentLiveBubble && currentLiveBubble.bubble_id === m.bubble_id) {
+      loadLiveBubbleStatus();
+    }
+  }
+
+  // If it's in MY current live bubble → update member count on card
+  if (currentLiveBubble && m.bubble_id === currentLiveBubble.bubble_id) {
+    loadLiveBubbleStatus();
+  }
+}
+
+// ── Radar: soft refresh when screen is active ──
+function rtStartRadarPolling() {
+  _radarScreenActive = true;
+  rtStopRadarPolling();
+  _radarRefreshTimer = setInterval(function() {
+    if (!_radarScreenActive) { rtStopRadarPolling(); return; }
+    // Only refresh if app is in foreground
+    if (!document.hidden) {
+      console.debug('[rt] radar soft refresh');
+      loadProximityMap(); // silent re-fetch af radar
+    }
+  }, 20000); // every 20s
+}
+function rtStopRadarPolling() {
+  _radarScreenActive = false;
+  if (_radarRefreshTimer) { clearInterval(_radarRefreshTimer); _radarRefreshTimer = null; }
+}
+
+// ── Main init ──
+function initGlobalRealtime() {
+  // Clean up previous channels
+  _globalRtChannels.forEach(function(ch) { try { ch.unsubscribe(); } catch(e) {} });
+  _globalRtChannels = [];
+
+  // ── Kanal 1: Indkommende beskeder ──
+  var chMessages = sb.channel('rt-messages-' + currentUser.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages',
+      filter: 'receiver_id=eq.' + currentUser.id }, function(payload) {
+      var m = payload.new;
+      if (!m) return;
+
+      // Nav badge: instant increment (no DB roundtrip)
+      var messagesScreenActive = document.getElementById('screen-messages')?.classList.contains('active');
+      var chatScreenActive = document.getElementById('screen-chat')?.classList.contains('active');
+      var chatIsOpenWithSender = chatScreenActive && currentChatUser === m.sender_id;
+
+      if (!chatIsOpenWithSender) {
+        dmBadgeIncrement();
+      }
+
+      // Update conversations preview instantly
+      rtUpdateConversationPreview(m);
+
+      // If messages screen is open → update list
+      if (messagesScreenActive) loadMessages();
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages',
+      filter: 'sender_id=eq.' + currentUser.id }, function(payload) {
+      var m = payload.new;
+      // read_at just got set → update ✓✓ in open DM
+      if (m && m.read_at) dmUpdateReceipts([m.id]);
+    })
+    .subscribe();
+  _globalRtChannels.push(chMessages);
+
+  // ── Kanal 2: Boble-medlemmer (check-in/ud/join) ──
+  var chMembers = sb.channel('rt-members-' + currentUser.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bubble_members' },
+      function(payload) { rtHandleMemberChange(payload); })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'bubble_members' },
+      function(payload) { rtHandleMemberChange(payload); })
+    .subscribe();
+  _globalRtChannels.push(chMembers);
+
+  // ── Kanal 3: Invitationer ──
+  var chInvites = sb.channel('rt-invites-' + currentUser.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bubble_invitations',
+      filter: 'to_user_id=eq.' + currentUser.id }, function() {
+      notifBadgeIncrement();
+      if (document.getElementById('screen-notifications')?.classList.contains('active')) {
+        loadNotifications();
+      }
+    })
+    .subscribe();
+  _globalRtChannels.push(chInvites);
+
+  // ── Kanal 4: Gemte kontakter (nogen gemte dig) ──
+  var chSaved = sb.channel('rt-saved-' + currentUser.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'saved_contacts',
+      filter: 'contact_id=eq.' + currentUser.id }, function() {
+      notifBadgeIncrement();
+      if (document.getElementById('screen-notifications')?.classList.contains('active')) {
+        loadNotifications();
+      }
+    })
+    .subscribe();
+  _globalRtChannels.push(chSaved);
+}
+
+// Legacy alias — some code still calls this
+function subscribeToIncoming() { initGlobalRealtime(); }
 
 async function loadMessages() {
   try {
@@ -5376,7 +5572,8 @@ function dmUnsubscribe() {
   if (chatSubscription) { chatSubscription.unsubscribe(); chatSubscription = null; }
 }
 function incomingUnsubscribe() {
-  if (incomingSubscription) { incomingSubscription.unsubscribe(); incomingSubscription = null; }
+  _globalRtChannels.forEach(function(ch) { try { ch.unsubscribe(); } catch(e) {} });
+  _globalRtChannels = [];
 }
 function bcUnsubscribeAll() {
   bcUnsubscribe();
@@ -5610,7 +5807,6 @@ async function getCachedProfile(userId) {
 
 function bcSubscribe() {
   if (!currentUser || !bcBubbleId) { console.warn('bcSubscribe: missing user or bubbleId'); return; }
-  console.debug('[bc] bcSubscribe, bubble:', bcBubbleId);
   if (bcSubscription) bcSubscription.unsubscribe();
   bcSubscription = sb.channel('bc-' + bcBubbleId)
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_messages', filter:`bubble_id=eq.${bcBubbleId}`},
@@ -5634,7 +5830,6 @@ function bcSubscribe() {
         const bubbleEl = document.getElementById('bc-bubble-' + m.id);
         if (bubbleEl) {
           bubbleEl.textContent = m.content || '';
-          // msg-head is sibling of msg-content inside msg-body
           const msgBody = bubbleEl.closest('.msg-body');
           const msgHead = msgBody?.querySelector('.msg-head');
           if (msgHead && !msgHead.querySelector('.msg-edited')) {
@@ -5648,6 +5843,11 @@ function bcSubscribe() {
           }
         }
       })
+    // ── Realtime: member joins + check-in/out → opdater members-tab øjeblikkeligt ──
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
+      () => { bcLoadMembers(); })
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
+      () => { bcLoadMembers(); })
     .subscribe();
 }
 
@@ -7487,12 +7687,10 @@ window.addEventListener('load', async () => {
   if (currentUser) {
     updateUnreadBadge();
     updateNotifNavBadge();
-    subscribeToIncoming();
+    initGlobalRealtime();
     loadLiveBubbleStatus();
     preloadAllData();
-    // Init push notifications
     initPushNotifications();
-    // Track app open
     trackEvent('app_open');
   }
   // Init swipe-to-close on all sheets/modals
