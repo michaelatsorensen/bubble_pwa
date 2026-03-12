@@ -2338,11 +2338,13 @@ function initGlobalRealtime() {
     .subscribe();
   _globalRtChannels.push(chMessages);
 
-  // ── Kanal 2: Boble-medlemmer (check-in/ud/join) ──
+  // ── Kanal 2: Boble-medlemmer — filter på user_id så RLS virker ──
   var chMembers = sb.channel('rt-members-' + currentUser.id)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bubble_members' },
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bubble_members',
+      filter: 'user_id=eq.' + currentUser.id },
       function(payload) { rtHandleMemberChange(payload); })
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'bubble_members' },
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'bubble_members',
+      filter: 'user_id=eq.' + currentUser.id },
       function(payload) { rtHandleMemberChange(payload); })
     .subscribe();
   _globalRtChannels.push(chMembers);
@@ -7732,6 +7734,23 @@ function liveScanReset() {
 
 //  APP BOOT
 // ══════════════════════════════════════════════════════════
+// ── Lyt på navigation-beskeder fra Service Worker (push klik) ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', function(event) {
+    var msg = event.data;
+    if (!msg || msg.type !== 'PUSH_NAVIGATE') return;
+    var d = msg.data || {};
+    var t = d.type || '';
+    if ((t === 'new_message' || t === 'message') && d.sender_id) {
+      // Åbn chat direkte med afsender
+      if (currentUser) openChat(d.sender_id, 'screen-messages');
+    } else if (t === 'new_invite' || t === 'invitation' || t === 'saved_contact') {
+      goTo('screen-notifications');
+      loadNotifications();
+    }
+  });
+}
+
 window.addEventListener('load', async () => {
   await checkAuth();
   await checkQRJoin();

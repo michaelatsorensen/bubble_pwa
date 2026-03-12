@@ -1,113 +1,99 @@
 // ══════════════════════════════════════
-//  BUBBLE SERVICE WORKER
-//  Push notifications + basic offline cache
+//  BUBBLE SERVICE WORKER v3.6.7
 // ══════════════════════════════════════
 
-const CACHE_NAME = 'bubble-v3';
+const CACHE_NAME = 'bubble-v3.6.7';
 const CACHE_URLS = [
-  './',
-  './index.html',
-  './app.js',
-  './app.css',
-  './bubble-icons.js',
-  './tag-data.js',
-  './manifest.json'
+  './', './index.html', './app.js', './app.css',
+  './bubble-icons.js', './tag-data.js'
 ];
 
-// ── Install: cache core files ──
 self.addEventListener('install', function(event) {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(CACHE_URLS);
-    })
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(CACHE_URLS)));
   self.skipWaiting();
 });
 
-// ── Activate: clean old caches ──
 self.addEventListener('activate', function(event) {
   event.waitUntil(
-    caches.keys().then(function(keys) {
-      return Promise.all(
-        keys.filter(function(k) { return k !== CACHE_NAME; })
-            .map(function(k) { return caches.delete(k); })
-      );
-    })
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
   );
   self.clients.claim();
 });
 
-// ── Fetch: network-first with cache fallback ──
 self.addEventListener('fetch', function(event) {
-  // Skip non-GET and API requests
   if (event.request.method !== 'GET') return;
   if (event.request.url.includes('supabase.co')) return;
-  if (event.request.url.includes('api.giphy.com')) return;
+  if (event.request.url.includes('tenor.com')) return;
 
   event.respondWith(
-    fetch(event.request).then(function(response) {
-      // Cache successful responses
-      if (response.ok) {
-        var clone = response.clone();
-        caches.open(CACHE_NAME).then(function(cache) {
-          cache.put(event.request, clone);
-        });
-      }
-      return response;
-    }).catch(function() {
-      return caches.match(event.request);
-    })
+    fetch(event.request).then(function(res) {
+      if (res.ok) caches.open(CACHE_NAME).then(c => c.put(event.request, res.clone()));
+      return res;
+    }).catch(() => caches.match(event.request))
   );
 });
 
-// ── Push: show notification ──
+// ── Push: vis notifikation ──
 self.addEventListener('push', function(event) {
-  var data = { title: 'Bubble', body: 'Du har en ny notifikation', icon: './bubble-icon-192.png', badge: './bubble-icon-192.png', tag: 'bubble-notif' };
+  var title    = 'Bubble 🫧';
+  var body     = 'Du har en ny notifikation';
+  var tag      = 'bubble-notif';
+  var icon     = './bubble-icon-180.png';   // ✅ eksisterer
+  var badge    = './bubble-favicon-32.png'; // ✅ eksisterer
+  var notifData = {};
 
   try {
     if (event.data) {
-      var payload = event.data.json();
-      data.title = payload.title || data.title;
-      data.body = payload.body || data.body;
-      data.tag = payload.tag || data.tag;
-      data.data = payload.data || {};
+      var p    = event.data.json();
+      title    = p.title  || title;
+      body     = p.body   || body;
+      tag      = p.tag    || tag;
+      icon     = p.icon   || icon;
+      badge    = p.badge  || badge;
+      notifData = p.data  || {};
     }
   } catch(e) {
-    if (event.data) data.body = event.data.text();
+    try { if (event.data) body = event.data.text(); } catch(_) {}
   }
 
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: data.icon,
-      badge: data.badge,
-      tag: data.tag,
-      data: data.data,
-      vibrate: [100, 50, 100],
-      actions: [
-        { action: 'open', title: 'Åbn' },
-        { action: 'dismiss', title: 'Luk' }
-      ]
+    self.registration.showNotification(title, {
+      body, icon, badge, tag,
+      data:     notifData,
+      vibrate:  [100, 50, 100],
+      renotify: true
     })
   );
 });
 
-// ── Notification click: open app ──
+// ── Klik på notifikation → naviger i app ──
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
-
   if (event.action === 'dismiss') return;
 
+  var d    = event.notification.data || {};
+  var type = d.type || '';
+  var url  = './';
+
+  if (type === 'new_message' || type === 'message') {
+    url = d.sender_id ? './?push=chat&uid=' + d.sender_id : './?push=messages';
+  } else if (type === 'new_invite' || type === 'invitation' || type === 'saved_contact') {
+    url = './?push=notifications';
+  }
+
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
-      // Focus existing window if open
-      for (var i = 0; i < clientList.length; i++) {
-        if (clientList[i].url.includes('index.html') && 'focus' in clientList[i]) {
-          return clientList[i].focus();
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(list) {
+      for (var i = 0; i < list.length; i++) {
+        if ('focus' in list[i]) {
+          list[i].focus();
+          // Send besked til app om navigation
+          list[i].postMessage({ type: 'PUSH_NAVIGATE', url: url, data: d });
+          return;
         }
       }
-      // Otherwise open new window
-      return clients.openWindow('./index.html');
+      return clients.openWindow(url);
     })
   );
 });
