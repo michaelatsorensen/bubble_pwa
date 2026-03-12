@@ -131,16 +131,22 @@ async function loadLiveCheckinList() {
   const list = document.getElementById('live-checkin-list');
   list.innerHTML = '<div class="spinner"></div>';
   try {
+    // Get user's memberships to check access for hidden bubbles
+    var { data: myMemberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+    var myBubbleIds = (myMemberships || []).map(function(m) { return m.bubble_id; });
+
     // Only show bubbles with a location OR type live/event — these are physical places
     var { data: placeBubbles } = await sb.from('bubbles')
-      .select('id, name, location, type, created_at')
+      .select('id, name, location, type, visibility, created_at')
       .or('type.eq.live,type.eq.event,location.neq.')
       .order('created_at', { ascending: false })
       .limit(30);
 
-    // Fallback: if the .neq. filter doesn't work, filter client-side
+    // Filter: remove hidden bubbles unless user is a member
     var filtered = (placeBubbles || []).filter(function(b) {
-      return b.type === 'live' || b.type === 'event' || (b.location && b.location.trim().length > 0);
+      if (!(b.type === 'live' || b.type === 'event' || (b.location && b.location.trim().length > 0))) return false;
+      if (b.visibility === 'hidden' && myBubbleIds.indexOf(b.id) < 0) return false;
+      return true;
     });
 
     if (filtered.length === 0) {
@@ -213,6 +219,14 @@ async function loadLiveCheckinList() {
         avatarHtml = '<div style="display:flex;align-items:center;margin-right:0.3rem">' + avatars + '</div>';
       }
 
+      var isMember = myBubbleIds.indexOf(b.id) >= 0;
+      var checkinBtn = '';
+      if (isMember || b.visibility === 'public' || !b.visibility) {
+        checkinBtn = '<button onclick="liveCheckin(\'' + b.id + '\')" style="font-size:0.65rem;padding:0.3rem 0.6rem;background:rgba(46,207,207,0.1);color:var(--accent3);border:1px solid rgba(46,207,207,0.2);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0">Check ind</button>';
+      } else if (b.visibility === 'private') {
+        checkinBtn = '<button onclick="requestJoin(\'' + b.id + '\')" style="font-size:0.65rem;padding:0.3rem 0.6rem;background:rgba(139,127,255,0.1);color:var(--accent);border:1px solid rgba(139,127,255,0.2);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0">' + ico('lock') + ' Anmod</button>';
+      }
+
       return '<div class="live-checkin-item">' +
         '<div class="live-checkin-icon" style="' + (isEvent ? 'background:rgba(232,93,138,0.12);color:#E85D8A' : '') + '">' + ico(isEvent ? 'calendar' : 'pin') + '</div>' +
         '<div style="flex:1;min-width:0;cursor:pointer" onclick="closeLiveCheckinModal();openBubble(\'' + b.id + '\')">' +
@@ -221,7 +235,7 @@ async function loadLiveCheckinList() {
         '</div>' +
         avatarHtml +
         (cnt > 0 ? '<div class="live-checkin-count" style="margin-right:0.4rem"><div class="live-dot" style="width:6px;height:6px;margin:0"></div> ' + cnt + '</div>' : '') +
-        '<button onclick="liveCheckin(\'' + b.id + '\')" style="font-size:0.65rem;padding:0.3rem 0.6rem;background:rgba(46,207,207,0.1);color:var(--accent3);border:1px solid rgba(46,207,207,0.2);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0">Check ind</button>' +
+        checkinBtn +
         '</div>';
     }).join('');
   } catch (e) {
@@ -233,6 +247,22 @@ async function loadLiveCheckinList() {
 async function liveCheckin(bubbleId) {
   try {
     showToast('Checker ind...');
+
+    // 0. Check visibility — hidden/private bubbles require membership
+    var { data: bCheck } = await sb.from('bubbles').select('visibility').eq('id', bubbleId).single();
+    if (bCheck && (bCheck.visibility === 'hidden' || bCheck.visibility === 'private')) {
+      var { data: memCheck } = await sb.from('bubble_members')
+        .select('id').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle();
+      if (!memCheck) {
+        if (bCheck.visibility === 'hidden') {
+          showToast('Denne boble kræver en invitation');
+        } else {
+          showToast('Denne boble kræver godkendelse');
+          requestJoin(bubbleId);
+        }
+        return;
+      }
+    }
 
     // 1. Auto-checkout from any current live bubble
     await liveAutoCheckout();

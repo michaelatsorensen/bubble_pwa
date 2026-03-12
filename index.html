@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Bubble">
 <meta name="theme-color" content="#06060F">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=2">
+<link rel="manifest" href="manifest.json?v=375">
 <link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=2">
 <link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=2">
 <link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=2">
@@ -16,27 +16,27 @@
 <link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=2">
 <link rel="apple-touch-icon" href="bubble-icon-180.png?v=2">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=373">
+<link rel="stylesheet" href="app.css?v=375">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=373" defer></script>
-<script src="tag-data.js?v=373" defer></script>
-<script src="b-config.js?v=373" defer></script>
-<script src="b-utils.js?v=373" defer></script>
-<script src="b-navigation.js?v=373" defer></script>
-<script src="b-auth.js?v=373" defer></script>
-<script src="b-home.js?v=373" defer></script>
-<script src="b-bubbles.js?v=373" defer></script>
-<script src="b-profile.js?v=373" defer></script>
-<script src="b-radar.js?v=373" defer></script>
-<script src="b-messages.js?v=373" defer></script>
-<script src="b-realtime.js?v=373" defer></script>
-<script src="b-onboarding.js?v=373" defer></script>
-<script src="b-chat.js?v=373" defer></script>
-<script src="b-notifications.js?v=373" defer></script>
-<script src="b-live.js?v=373" defer></script>
-<script src="b-admin.js?v=373" defer></script>
-<script src="b-boot.js?v=373" defer></script>
+<script src="bubble-icons.js?v=375" defer></script>
+<script src="tag-data.js?v=375" defer></script>
+<script src="b-config.js?v=375" defer></script>
+<script src="b-utils.js?v=375" defer></script>
+<script src="b-navigation.js?v=375" defer></script>
+<script src="b-auth.js?v=375" defer></script>
+<script src="b-home.js?v=375" defer></script>
+<script src="b-bubbles.js?v=375" defer></script>
+<script src="b-profile.js?v=375" defer></script>
+<script src="b-radar.js?v=375" defer></script>
+<script src="b-messages.js?v=375" defer></script>
+<script src="b-realtime.js?v=375" defer></script>
+<script src="b-onboarding.js?v=375" defer></script>
+<script src="b-chat.js?v=375" defer></script>
+<script src="b-notifications.js?v=375" defer></script>
+<script src="b-live.js?v=375" defer></script>
+<script src="b-admin.js?v=375" defer></script>
+<script src="b-boot.js?v=375" defer></script>
   
 
 </head>
@@ -749,8 +749,8 @@
         <span class="chat-edit-cancel" onclick="bcCancelEdit()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17M7 7l10 10"/></svg></span>
       </div>
       <div class="chat-composer-row">
-        <input type="file" id="bc-file-input" style="display:none" onchange="bcHandleFile(this)">
-        <button class="chat-attach-btn" onclick="document.getElementById('bc-file-input').click()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1l-9.2 9.2a5.5 5.5 0 01-7.8-7.8l9.2-9.2a3.7 3.7 0 015.2 5.2l-9.2 9.2a1.8 1.8 0 01-2.6-2.6l8.5-8.4"/></svg></button>
+        <input type="file" id="bc-file-input" style="display:none" accept="image/*,video/*,.pdf,.doc,.docx" onchange="bcHandleFile(this)">
+        <button class="chat-attach-btn" onclick="var f=document.getElementById('bc-file-input');f.value='';f.click()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1l-9.2 9.2a5.5 5.5 0 01-7.8-7.8l9.2-9.2a3.7 3.7 0 015.2 5.2l-9.2 9.2a1.8 1.8 0 01-2.6-2.6l8.5-8.4"/></svg></button>
         <button class="chat-gif-btn" onclick="toggleGifPicker('bc')">GIF</button>
         <input class="chat-composer-input" id="bc-input" placeholder="Skriv en besked...">
         <button class="chat-send-btn" id="bc-send-btn" ontouchstart="event.preventDefault()" ontouchend="event.preventDefault();bcSendMessage()" onclick="if(!('ontouchstart' in window))bcSendMessage()">→</button>
@@ -934,8 +934,8 @@
     </div>
     <div class="chat-composer">
       <div class="chat-composer-row">
-        <input type="file" id="dm-file-input" style="display:none">
-        <button class="chat-attach-btn" onclick="document.getElementById('dm-file-input').click()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1l-9.2 9.2a5.5 5.5 0 01-7.8-7.8l9.2-9.2a3.7 3.7 0 015.2 5.2l-9.2 9.2a1.8 1.8 0 01-2.6-2.6l8.5-8.4"/></svg></button>
+        <input type="file" id="dm-file-input" style="display:none" accept="image/*,video/*,.pdf,.doc,.docx" onchange="dmHandleFile(this)">
+        <button class="chat-attach-btn" onclick="var f=document.getElementById('dm-file-input');f.value='';f.click()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1l-9.2 9.2a5.5 5.5 0 01-7.8-7.8l9.2-9.2a3.7 3.7 0 015.2 5.2l-9.2 9.2a1.8 1.8 0 01-2.6-2.6l8.5-8.4"/></svg></button>
         <button class="chat-gif-btn" onclick="toggleGifPicker('dm')">GIF</button>
         <input class="chat-composer-input" id="chat-input" placeholder="Skriv en besked..." oninput="dmOnInput()">
         <button class="chat-send-btn" id="chat-send-btn" ontouchstart="event.preventDefault()" ontouchend="event.preventDefault();sendMessage()" onclick="if(!('ontouchstart' in window))sendMessage()">→</button>

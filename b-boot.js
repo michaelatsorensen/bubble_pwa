@@ -47,10 +47,7 @@ window.addEventListener('load', () => {
     }, { passive: false });
   }
 
-  const dmFileInput = document.getElementById('dm-file-input');
-  if (dmFileInput) {
-    dmFileInput.addEventListener('change', () => dmHandleFile(dmFileInput));
-  }
+  // DM file input: handled via inline onchange in HTML (more reliable on iOS PWA)
 
   // Onboarding strength meter — listen on all fields
   ['ob-name','ob-title','ob-bio','ob-linkedin','ob-workplace'].forEach(function(id) {

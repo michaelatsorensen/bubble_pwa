@@ -183,25 +183,33 @@ async function bbLoadLivePanel() {
   if (!list) return;
   list.innerHTML = '<div class="spinner"></div>';
   try {
+    // Get user's memberships for access check
+    var { data: myMem } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+    var myBIds = (myMem || []).map(function(m) { return m.bubble_id; });
+
     // Show location-based and event bubbles
     var { data: placeBubbles } = await sb.from('bubbles')
-      .select('id, name, location, type, created_at')
+      .select('id, name, location, type, visibility, created_at')
       .or('type.eq.live,type.eq.event')
       .order('created_at', { ascending: false })
       .limit(30);
 
     // Also get bubbles with locations
     var { data: locBubbles } = await sb.from('bubbles')
-      .select('id, name, location, type, created_at')
+      .select('id, name, location, type, visibility, created_at')
       .not('location', 'is', null)
       .order('created_at', { ascending: false })
       .limit(30);
 
-    // Merge and deduplicate
+    // Merge, deduplicate, and filter hidden
     var allMap = {};
     (placeBubbles || []).forEach(function(b) { allMap[b.id] = b; });
     (locBubbles || []).forEach(function(b) { if (b.location && b.location.trim()) allMap[b.id] = b; });
-    var filtered = Object.values(allMap);
+    var filtered = Object.values(allMap).filter(function(b) {
+      // Hidden bubbles only visible to members
+      if (b.visibility === 'hidden' && myBIds.indexOf(b.id) < 0) return false;
+      return true;
+    });
 
     if (filtered.length === 0) {
       list.innerHTML = '<div style="text-align:center;padding:2rem 1rem">' +
