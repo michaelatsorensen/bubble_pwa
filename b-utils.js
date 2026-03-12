@@ -1,0 +1,209 @@
+// ══════════════════════════════════════════════════════════
+//  BUBBLE — UTILITIES (helpers, toast, modals, chips)
+//  Auto-split from app.js · v3.7.0
+// ══════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════
+//  INPUT CONFIRM BUTTONS + KEYBOARD DISMISS
+// ══════════════════════════════════════════════════════════
+function confirmInput(btn) {
+  var input = btn.parentElement.querySelector('input, textarea');
+  if (!input) return;
+  if (input.value.trim()) {
+    btn.classList.add('confirmed');
+    btn.innerHTML = '✓';
+  }
+  input.blur(); // Dismiss keyboard
+}
+
+// Auto-wrap all designated inputs with confirm buttons on boot
+function initInputConfirmButtons() {
+  // All text inputs that get a confirm ✓ button
+  var ids = [
+    'ob-name','ob-title','ob-workplace','ob-bio','ob-linkedin',
+    'ep-name','ep-title','ep-workplace','ep-bio','ep-linkedin',
+    'cb-name','cb-desc','cb-location',
+    'eb-name','eb-desc','eb-location',
+    'login-email','login-password',
+    'signup-name','signup-email','signup-password','signup-title'
+  ];
+  ids.forEach(function(id) {
+    var input = document.getElementById(id);
+    if (!input || input.dataset.confirmInit) return;
+    input.dataset.confirmInit = '1';
+    // Wrap in input-wrap if not already
+    if (!input.parentElement.classList.contains('input-wrap')) {
+      var wrap = document.createElement('div');
+      wrap.className = 'input-wrap';
+      input.parentElement.insertBefore(wrap, input);
+      wrap.appendChild(input);
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'input-confirm-btn';
+      btn.innerHTML = '✓';
+      btn.onclick = function() { confirmInput(btn); };
+      wrap.appendChild(btn);
+    }
+    // Reset to grey when input changes
+    input.addEventListener('input', function() {
+      var b = input.parentElement.querySelector('.input-confirm-btn');
+      if (b) b.classList.remove('confirmed');
+    });
+    // Dismiss keyboard on Enter (for single-line inputs)
+    if (input.tagName === 'INPUT') {
+      input.setAttribute('enterkeyhint', 'done');
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          input.blur();
+          var b = input.parentElement.querySelector('.input-confirm-btn');
+          if (b && input.value.trim()) { b.classList.add('confirmed'); b.innerHTML = '✓'; }
+        }
+      });
+    }
+  });
+
+  // Also set enterkeyhint on ALL remaining inputs (chips, search, chat)
+  document.querySelectorAll('input:not([enterkeyhint])').forEach(function(inp) {
+    if (inp.type !== 'file' && inp.type !== 'hidden') {
+      inp.setAttribute('enterkeyhint', 'done');
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  CHIP INPUT
+// ══════════════════════════════════════════════════════════
+function handleChipInput(e, arrayName) {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    const val = e.target.value.trim().replace(/,/g,'');
+    if (!val) { e.target.blur(); return; }
+    const arr = arrayName === 'cb-chips' ? cbChips : arrayName === 'ep-chips' ? epChips : arrayName === 'eb-chips' ? ebChips : arrayName === 'ob-chips' ? obChips : arrayName === 'ob-dyn-chips' ? obDynChips : arrayName === 'ep-dyn-chips' ? epDynChips : epDynChips;
+    const containerId = arrayName === 'cb-chips' ? 'cb-chips-container' : arrayName === 'ep-chips' ? 'ep-chips-container' : arrayName === 'eb-chips' ? 'eb-chips-container' : arrayName === 'ob-chips' ? 'ob-chips-container' : arrayName === 'ob-dyn-chips' ? 'ob-dyn-chips-container' : arrayName === 'ep-dyn-chips' ? 'ep-dyn-chips-container' : 'ep-dyn-chips-container';
+    const inputId = arrayName === 'cb-chips' ? 'cb-chip-input' : arrayName === 'ep-chips' ? 'ep-chip-input' : arrayName === 'eb-chips' ? 'eb-chip-input' : arrayName === 'ob-chips' ? 'ob-chip-input' : arrayName === 'ob-dyn-chips' ? 'ob-dyn-chip-input' : arrayName === 'ep-dyn-chips' ? 'ep-dyn-chip-input' : 'ep-dyn-chip-input';
+    if (!arr.includes(val)) arr.push(val);
+    e.target.value = '';
+    renderChips(arrayName, arr, containerId, inputId);
+    flashConfirmBtn(e.target);
+  }
+}
+
+function addChipFromBtn(inputId, arrayName) {
+  var inp = document.getElementById(inputId);
+  if (!inp) return;
+  var val = inp.value.trim().replace(/,/g,'');
+  if (!val) { inp.blur(); return; }
+  var arr = arrayName === 'cb-chips' ? cbChips : arrayName === 'ep-chips' ? epChips : arrayName === 'eb-chips' ? ebChips : arrayName === 'ob-chips' ? obChips : arrayName === 'ob-dyn-chips' ? obDynChips : arrayName === 'ep-dyn-chips' ? epDynChips : epDynChips;
+  var containerId = arrayName === 'cb-chips' ? 'cb-chips-container' : arrayName === 'ep-chips' ? 'ep-chips-container' : arrayName === 'eb-chips' ? 'eb-chips-container' : arrayName === 'ob-chips' ? 'ob-chips-container' : arrayName === 'ob-dyn-chips' ? 'ob-dyn-chips-container' : arrayName === 'ep-dyn-chips' ? 'ep-dyn-chips-container' : 'ep-dyn-chips-container';
+  if (!arr.includes(val)) arr.push(val);
+  inp.value = '';
+  renderChips(arrayName, arr, containerId, inputId);
+  // Flash the ✓ button green
+  var btn = inp.parentElement?.querySelector('.ob-cat-custom-btn');
+  if (btn) { btn.style.background = '#10B981'; setTimeout(function(){ btn.style.background = ''; }, 600); }
+}
+
+// Flash green on any nearby confirm button
+function flashConfirmBtn(input) {
+  var btn = input?.parentElement?.querySelector('.ob-cat-custom-btn, .input-confirm-btn');
+  if (btn) {
+    btn.classList.add('confirmed');
+    setTimeout(function() { btn.classList.remove('confirmed'); }, 800);
+  }
+}
+
+
+function renderChips(arrayName, arr, containerId, inputId) {
+  const container = document.getElementById(containerId);
+  const oldInput = document.getElementById(inputId);
+  container.innerHTML = '';
+  arr.forEach((chip, i) => {
+    const span = document.createElement('div');
+    span.className = 'chip';
+    span.innerHTML = `${escHtml(chip)} <span class="chip-remove" onclick="removeChip('${arrayName}',${i},'${containerId}','${inputId}')">×</span>`;
+    container.appendChild(span);
+  });
+  const input = document.createElement('input');
+  input.className = 'chip-input';
+  input.id = inputId;
+  input.placeholder = arr.length ? '' : oldInput?.placeholder || 'Tilføj...';
+  input.onkeydown = (e) => handleChipInput(e, arrayName);
+  container.appendChild(input);
+}
+
+function removeChip(arrayName, index, containerId, inputId) {
+  const arr = arrayName === 'cb-chips' ? cbChips : arrayName === 'ep-chips' ? epChips : arrayName === 'eb-chips' ? ebChips : arrayName === 'ob-chips' ? obChips : arrayName === 'ob-dyn-chips' ? obDynChips : arrayName === 'ep-dyn-chips' ? epDynChips : epDynChips;
+  arr.splice(index, 1);
+  renderChips(arrayName, arr, containerId, inputId);
+}
+
+
+// ══════════════════════════════════════════════════════════
+//  MODAL HELPERS
+// ══════════════════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+
+// Settings sheet removed — now a tab in profile
+
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  // Always stop camera when closing live checkin
+  if (id === 'modal-live-checkin') stopLiveCamera();
+}
+// Close modal on backdrop click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', (e) => { if (e.target === el) el.classList.remove('open'); });
+});
+
+
+// ══════════════════════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg, duration) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  const isError = /^(Fejl|❌|⚠️)/.test(msg);
+  const ms = duration || (isError ? 4500 : 2500);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+
+// ══════════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════════
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// Safe avatar <img> tag — escapes URL to prevent XSS
+function safeAvatarImg(url, style) {
+  if (!url) return '';
+  return '<img src="' + escHtml(url) + '" style="' + (style || 'width:100%;height:100%;object-fit:cover') + '">';
+}
+
+function bubbleEmoji(type) {
+  var t = (type || '').toLowerCase();
+  return { event:ico('rocket'), local:ico('pin'), lokal:ico('pin'), theme:ico('cpu'), tema:ico('cpu'), company:ico('building'), virksomhed:ico('building'), live:ico('pin'), standard:ico('bubble') }[t] || ico('bubble');
+}
+function bubbleIcon(type) {
+  var t = (type || '').toLowerCase();
+  return { event:icon('rocket'), local:icon('pin'), lokal:icon('pin'), theme:icon('cpu'), tema:icon('cpu'), company:icon('building'), virksomhed:icon('building'), live:icon('pin'), standard:icon('bubble') }[t] || icon('bubble');
+}
+
+function bubbleColor(type, alpha) {
+  var t = (type || '').toLowerCase();
+  const map = { event:`rgba(108,99,255,${alpha})`, local:`rgba(67,232,176,${alpha})`, lokal:`rgba(67,232,176,${alpha})`, theme:`rgba(255,179,71,${alpha})`, tema:`rgba(255,179,71,${alpha})`, company:`rgba(255,101,132,${alpha})`, virksomhed:`rgba(255,101,132,${alpha})`, live:`rgba(46,207,207,${alpha})`, standard:`rgba(139,127,255,${alpha})` };
+  return map[t] || `rgba(139,127,255,${alpha})`;
+}
+
+function typeLabel(type) {
+  var t = (type || '').toLowerCase();
+  return { event:'Event', local:'Lokal', lokal:'Lokal', theme:'Tema', tema:'Tema', company:'Virksomhed', virksomhed:'Virksomhed', live:'Live', standard:'Standard' }[t] || type;
+}
+
+// Clock removed — iPhone shows native status bar
+
+

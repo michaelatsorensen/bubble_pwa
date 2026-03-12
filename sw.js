@@ -2,10 +2,16 @@
 //  BUBBLE SERVICE WORKER v3.6.7
 // ══════════════════════════════════════
 
-const CACHE_NAME = 'bubble-v3.7.0';
+const CACHE_NAME = 'bubble-v3.7.1';
 const CACHE_URLS = [
-  './', './index.html', './app.js', './app.css',
-  './bubble-icons.js', './tag-data.js'
+  './', './index.html', './app.css',
+  './bubble-icons.js', './tag-data.js',
+  './b-config.js', './b-utils.js', './b-navigation.js',
+  './b-auth.js', './b-home.js', './b-bubbles.js',
+  './b-profile.js', './b-radar.js', './b-messages.js',
+  './b-realtime.js', './b-onboarding.js', './b-chat.js',
+  './b-notifications.js', './b-live.js', './b-admin.js',
+  './b-boot.js'
 ];
 
 self.addEventListener('install', function(event) {

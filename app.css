@@ -107,8 +107,14 @@ body {
   overflow: visible;
 }
 #global-nav.nav-hidden {
-  visibility: hidden;
+  transform: translate3d(0,100%,0) !important;
+  -webkit-transform: translate3d(0,100%,0) !important;
   pointer-events: none;
+  transition: transform 0.25s ease;
+}
+/* Animate nav bar in/out */
+#global-nav {
+  transition: transform 0.25s ease;
 }
 .nav-item {
   display: flex;
