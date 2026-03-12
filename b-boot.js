@@ -281,7 +281,7 @@ window.addEventListener('load', async () => {
     updateNotifNavBadge();
     initGlobalRealtime();
     loadLiveBubbleStatus();
-    preloadAllData();
+    // preloadAllData() already called by checkAuth → no double call
     initPushNotifications();
     trackEvent('app_open');
   }

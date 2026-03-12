@@ -200,6 +200,7 @@ function subscribeToIncoming() { initGlobalRealtime(); }
 
 async function loadMessages() {
   try {
+    var myNav = _navVersion;
     const list = document.getElementById('conversations-list');
     list.innerHTML = '<div class="spinner"></div>';
 
@@ -208,6 +209,8 @@ async function loadMessages() {
       .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
       .order('created_at', {ascending:false})
       .limit(200);
+
+    if (_navVersion !== myNav) return;
 
     if (!convs || convs.length === 0) {
       list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">Ingen beskeder endnu</div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-home\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">Find folk på radaren →</button></div></div>';
@@ -229,6 +232,7 @@ async function loadMessages() {
     // Load partner profiles
     const pIds = partners.map(p => p.partnerId);
     const { data: profiles } = await sb.from('profiles').select('id,name,title,avatar_url').in('id', pIds);
+    if (_navVersion !== myNav) return;
     const profileMap = Object.fromEntries((profiles||[]).map(p=>[p.id,p]));
 
     list.innerHTML = partners.map(({ partnerId, lastMsg }) => {

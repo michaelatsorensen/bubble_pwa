@@ -289,6 +289,7 @@ async function bbLoadLivePanel() {
 
 async function loadMyBubbles() {
   try {
+    var myNav = _navVersion;
     // Mark bubbles as seen — clears badge on home screen
     localStorage.setItem('bubble_bubbles_seen', new Date().toISOString());
     const ownedList  = document.getElementById('my-owned-bubbles-list');
@@ -298,6 +299,7 @@ async function loadMyBubbles() {
 
     const { data: memberships } = await sb.from('bubble_members')
       .select('bubble_id').eq('user_id', currentUser.id);
+    if (_navVersion !== myNav) return;
 
     if (!memberships || memberships.length === 0) {
       ownedList.innerHTML  = '';
@@ -316,10 +318,17 @@ async function loadMyBubbles() {
 
     const ids = memberships.map(m => m.bubble_id);
     const { data: bubbles } = await sb.from('bubbles').select('*').in('id', ids);
+    if (_navVersion !== myNav) return;
     if (!bubbles || bubbles.length === 0) {
       ownedList.innerHTML = joinedList.innerHTML = '';
       return;
     }
+
+    // Enrich all bubbles with saved contact avatars
+    var savedIds = await getSavedContactIds();
+    var contactMap = await fetchContactAvatarsForBubbles(ids, savedIds);
+    if (_navVersion !== myNav) return;
+    bubbles.forEach(function(b) { b._contacts = contactMap[b.id] || []; });
 
     const owned  = bubbles.filter(b => b.created_by === currentUser.id);
     const joined = bubbles.filter(b => b.created_by !== currentUser.id);
@@ -330,11 +339,25 @@ async function loadMyBubbles() {
     } else {
       ownedList.innerHTML = owned.map(b => {
         const visIcon = b.visibility === 'private' ? icon('lock') : b.visibility === 'hidden' ? icon('eye') : icon('globe');
+        // Render contact avatars inline (same logic as bubbleCard)
+        var cHtml = '';
+        var cs = b._contacts || [];
+        if (cs.length > 0) {
+          var avCols = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)'];
+          var avs = cs.map(function(c, i) {
+            var ini = (c.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+            var ml = i > 0 ? 'margin-left:-5px;' : '';
+            if (c.avatar_url) return '<div style="width:20px;height:20px;border-radius:50%;overflow:hidden;border:1.5px solid var(--bg);' + ml + 'position:relative;z-index:' + (3-i) + '"><img src="' + escHtml(c.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
+            return '<div style="width:20px;height:20px;border-radius:50%;background:' + avCols[i%3] + ';display:flex;align-items:center;justify-content:center;font-size:0.4rem;font-weight:700;color:white;border:1.5px solid var(--bg);' + ml + 'position:relative;z-index:' + (3-i) + '">' + ini + '</div>';
+          }).join('');
+          cHtml = '<div style="display:flex;align-items:center;gap:0.25rem;margin-top:0.2rem"><div style="display:flex;align-items:center">' + avs + '</div><span class="fs-065 text-muted">' + cs.length + ' kontakt' + (cs.length > 1 ? 'er' : '') + '</span></div>';
+        }
         return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}">
           <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};color:${bubbleColor(b.type, 0.9)}">${bubbleEmoji(b.type)}</div>
           <div style="flex:1">
             <div class="fw-600 fs-09">${escHtml(b.name)}</div>
             <div class="fs-075 text-muted">${visIcon} ${b.type_label||b.type}${b.location ? ' · '+escHtml(b.location) : ''}</div>
+            ${cHtml}
           </div>
           <div style="display:flex;gap:0.4rem;align-items:center">
             <button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" onclick="event.stopPropagation()" style="font-size:0.8rem;padding:0.3rem 0.5rem">${icon("edit")}</button>
@@ -366,15 +389,30 @@ async function loadMyBubbles() {
           '<button onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(139,127,255,0.12);color:var(--accent);border:1px solid rgba(139,127,255,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
           '</div>';
       } else {
-        profBubblesEl.innerHTML = bubbles.map(b =>
-          `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}" style="padding:0.85rem 1.1rem">
-            <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};flex-shrink:0">${bubbleEmoji(b.type)}</div>
-            <div style="flex:1;min-width:0">
-              <div class="fw-600 fs-09">${escHtml(b.name)}</div>
-              <div class="fs-075 text-muted">${b.created_by === currentUser.id ? icon('crown') + ' Ejer' : 'Aktiv'}${b.location ? ' · ' + escHtml(b.location) : ''}</div>
-            </div>
-            <div class="icon-muted">›</div>
-          </div>`).join('');
+        profBubblesEl.innerHTML = bubbles.map(function(b) {
+          // Contact avatars
+          var cHtml = '';
+          var cs = b._contacts || [];
+          if (cs.length > 0) {
+            var avCols = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)'];
+            var avs = cs.map(function(c, i) {
+              var ini = (c.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+              var ml = i > 0 ? 'margin-left:-5px;' : '';
+              if (c.avatar_url) return '<div style="width:20px;height:20px;border-radius:50%;overflow:hidden;border:1.5px solid var(--bg);' + ml + 'position:relative;z-index:' + (3-i) + '"><img src="' + escHtml(c.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
+              return '<div style="width:20px;height:20px;border-radius:50%;background:' + avCols[i%3] + ';display:flex;align-items:center;justify-content:center;font-size:0.4rem;font-weight:700;color:white;border:1.5px solid var(--bg);' + ml + 'position:relative;z-index:' + (3-i) + '">' + ini + '</div>';
+            }).join('');
+            cHtml = '<div style="display:flex;align-items:center;gap:0.25rem;margin-top:0.2rem"><div style="display:flex;align-items:center">' + avs + '</div><span class="fs-065 text-muted">' + cs.length + ' kontakt' + (cs.length > 1 ? 'er' : '') + '</span></div>';
+          }
+          return '<div class="card flex-row-center" data-action="openBubble" data-id="' + b.id + '" style="padding:0.85rem 1.1rem">' +
+            '<div class="bubble-icon" style="background:' + bubbleColor(b.type, 0.15) + ';flex-shrink:0">' + bubbleEmoji(b.type) + '</div>' +
+            '<div style="flex:1;min-width:0">' +
+              '<div class="fw-600 fs-09">' + escHtml(b.name) + '</div>' +
+              '<div class="fs-075 text-muted">' + (b.created_by === currentUser.id ? icon('crown') + ' Ejer' : 'Aktiv') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div>' +
+              cHtml +
+            '</div>' +
+            '<div class="icon-muted">›</div>' +
+          '</div>';
+        }).join('');
       }
     }
   } catch(e) { logError("loadMyBubbles", e); showToast(e.message || "Ukendt fejl"); }

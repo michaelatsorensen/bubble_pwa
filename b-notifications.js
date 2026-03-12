@@ -8,185 +8,194 @@
 // ══════════════════════════════════════════════════════════
 async function loadNotifications() {
   try {
-    // Mark notifications as seen — clears badge on home screen
+    var myNav = _navVersion;
     localStorage.setItem('bubble_notifs_seen', new Date().toISOString());
     const list = document.getElementById('notifications-list');
     if (!list) return;
     list.innerHTML = '<div class="spinner"></div>';
 
-    let html = '';
     var since30d = new Date(Date.now() - 30*24*60*60*1000).toISOString();
     var since7d = new Date(Date.now() - 7*24*60*60*1000).toISOString();
 
-    // ── 1. Pending bubble invitations ──
-    var { data: invites } = await sb.from('bubble_invitations')
-      .select('id, from_user_id, bubble_id, created_at, profiles!bubble_invitations_from_user_id_fkey(name,title), bubbles(name)')
-      .eq('to_user_id', currentUser.id)
-      .eq('status', 'pending')
-      .order('created_at', {ascending:false});
+    // Run all 5 sections in parallel — each returns an HTML string
+    var [inviteHtml, dmHtml, savedByHtml, liveHtml, newMemberHtml] = await Promise.all([
+      _notifInvites(),
+      _notifUnreadDMs(since7d),
+      _notifSavedBy(since30d),
+      _notifLiveContacts(),
+      _notifNewMembers(since30d)
+    ]);
 
-    if (invites && invites.length > 0) {
-      invites.forEach(function(inv) {
-        var p = inv.profiles || {};
-        var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-        html += '<div class="notif-card invite" id="invite-' + inv.id + '">' +
-          '<div class="notif-header">' +
-          '<div class="notif-avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">' + initials + '</div>' +
-          '<div>' +
-          '<div class="notif-title">' + icon("bubble") + ' Invitation til boble</div>' +
-          '<div class="notif-sub">' + escHtml(p.name||'Nogen') + ' inviterer dig til ' + escHtml(inv.bubbles?.name||'en boble') + '</div>' +
-          '</div></div>' +
-          '<div class="notif-actions">' +
-          '<button class="notif-btn accept" onclick="acceptBubbleInvite(\'' + inv.id + '\',\'' + inv.from_user_id + '\')">Accepter</button>' +
-          '<button class="notif-btn decline" onclick="declineBubbleInvite(\'' + inv.id + '\')">Afvis</button>' +
-          '</div></div>';
-      });
-    }
+    if (_navVersion !== myNav) return; // screen changed during load
 
-    // ── 2. Unread DMs (last 7 days) ──
-    var { data: unreadDMs } = await sb.from('messages')
-      .select('id, sender_id, content, file_url, created_at')
-      .eq('receiver_id', currentUser.id)
-      .is('read_at', null)
-      .gte('created_at', since7d)
-      .order('created_at', {ascending:false})
-      .limit(10);
-
-    if (unreadDMs && unreadDMs.length > 0) {
-      var dmSenderIds = [...new Set(unreadDMs.map(function(m){return m.sender_id;}))];
-      var { data: dmProfiles } = await sb.from('profiles').select('id,name,avatar_url').in('id', dmSenderIds);
-      var dmPMap = {};
-      (dmProfiles||[]).forEach(function(p) { dmPMap[p.id] = p; });
-
-      // Group by sender
-      var dmBySender = {};
-      unreadDMs.forEach(function(m) {
-        if (!dmBySender[m.sender_id]) dmBySender[m.sender_id] = { count: 0, latest: m };
-        dmBySender[m.sender_id].count++;
-      });
-
-      Object.keys(dmBySender).forEach(function(sid) {
-        var d = dmBySender[sid];
-        var p = dmPMap[sid] || {};
-        var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-        var time = new Date(d.latest.created_at).toLocaleDateString('da-DK', {day:'numeric',month:'short'});
-        var preview = d.latest.file_url ? 'Sendte et billede' : (d.latest.content || '').slice(0, 40);
-        var avatarHtml = p.avatar_url ?
-          '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
-          '<div class="notif-avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">' + initials + '</div>';
-        html += '<div class="notif-card" onclick="openChat(\'' + sid + '\')" style="cursor:pointer">' +
-          '<div class="notif-header">' + avatarHtml +
-          '<div>' +
-          '<div class="notif-title">' + icon("chat") + ' ' + escHtml(p.name||'Ukendt') + (d.count > 1 ? ' (' + d.count + ' beskeder)' : '') + '</div>' +
-          '<div class="notif-sub">' + escHtml(preview) + ' · ' + time + '</div>' +
-          '</div></div></div>';
-      });
-    }
-
-    // ── 3. Someone saved your profile (last 30 days) ──
-    var { data: savedBy } = await sb.from('saved_contacts')
-      .select('user_id, created_at')
-      .eq('contact_id', currentUser.id)
-      .gte('created_at', since30d)
-      .order('created_at', {ascending:false})
-      .limit(10);
-
-    if (savedBy && savedBy.length > 0) {
-      var saverIds = savedBy.map(function(s){return s.user_id;});
-      var { data: saverProfiles } = await sb.from('profiles').select('id,name,avatar_url').in('id', saverIds);
-      var sPMap = {};
-      (saverProfiles||[]).forEach(function(p) { sPMap[p.id] = p; });
-
-      savedBy.forEach(function(s) {
-        var p = sPMap[s.user_id] || {};
-        var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-        var time = new Date(s.created_at).toLocaleDateString('da-DK', {day:'numeric',month:'short'});
-        var avatarHtml = p.avatar_url ?
-          '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
-          '<div class="notif-avatar" style="background:linear-gradient(135deg,#10B981,#065F46)">' + initials + '</div>';
-        html += '<div class="notif-card" onclick="openPerson(\'' + s.user_id + '\',\'screen-notifications\')" style="cursor:pointer">' +
-          '<div class="notif-header">' + avatarHtml +
-          '<div>' +
-          '<div class="notif-title">' + icon("bookmark") + ' Nogen gemte din profil</div>' +
-          '<div class="notif-sub">' + escHtml(p.name||'Ukendt') + ' · ' + time + '</div>' +
-          '</div></div></div>';
-      });
-    }
-
-    // ── 4. Live check-ins from saved contacts (last 4 hours) ──
-    var { data: mySaved } = await sb.from('saved_contacts').select('contact_id').eq('user_id', currentUser.id);
-    if (mySaved && mySaved.length > 0) {
-      var savedIds = mySaved.map(function(s){return s.contact_id;});
-      var liveCutoff = new Date(Date.now() - 4*60*60*1000).toISOString();
-      var { data: liveContacts } = await sb.from('bubble_members')
-        .select('user_id, bubble_id, checked_in_at, bubbles(name,location)')
-        .in('user_id', savedIds)
-        .not('checked_in_at', 'is', null)
-        .is('checked_out_at', null)
-        .gte('checked_in_at', liveCutoff)
-        .order('checked_in_at', {ascending:false})
-        .limit(10);
-
-      if (liveContacts && liveContacts.length > 0) {
-        var liveUserIds = [...new Set(liveContacts.map(function(m){return m.user_id;}))];
-        var { data: liveProfiles } = await sb.from('profiles').select('id,name,avatar_url').in('id', liveUserIds);
-        var lPMap = {};
-        (liveProfiles||[]).forEach(function(p) { lPMap[p.id] = p; });
-
-        liveContacts.forEach(function(m) {
-          var p = lPMap[m.user_id] || {};
-          var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-          var bName = m.bubbles?.name || '';
-          var bLoc = m.bubbles?.location || '';
-          var avatarHtml = p.avatar_url ?
-            '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
-            '<div class="notif-avatar" style="background:linear-gradient(135deg,#2ECFCF,#065F46)">' + initials + '</div>';
-          html += '<div class="notif-card">' +
-            '<div class="notif-header">' + avatarHtml +
-            '<div>' +
-            '<div class="notif-title"><span style="color:var(--accent3)">' + icon("pin") + '</span> ' + escHtml(p.name||'Ukendt') + ' er live</div>' +
-            '<div class="notif-sub">' + escHtml(bName) + (bLoc ? ' · ' + escHtml(bLoc) : '') + '</div>' +
-            '</div></div></div>';
-        });
-      }
-    }
-
-    // ── 5. New members in my bubbles (last 30 days) ──
-    var { data: myMemberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
-    if (myMemberships && myMemberships.length > 0) {
-      var myBubbleIds = myMemberships.map(function(m){return m.bubble_id;});
-      var { data: newMembers } = await sb.from('bubble_members')
-        .select('user_id, joined_at, bubble_id, bubbles(name)')
-        .in('bubble_id', myBubbleIds).neq('user_id', currentUser.id)
-        .gte('joined_at', since30d).order('joined_at', {ascending:false}).limit(20);
-
-      if (newMembers && newMembers.length > 0) {
-        var memberUserIds = [...new Set(newMembers.map(function(m){return m.user_id;}))];
-        var { data: memberProfiles } = await sb.from('profiles').select('id,name,avatar_url').in('id', memberUserIds);
-        var mPMap = {};
-        (memberProfiles||[]).forEach(function(p) { mPMap[p.id] = p; });
-        newMembers.forEach(function(m) {
-          var p = mPMap[m.user_id] || {};
-          var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-          var time = new Date(m.joined_at).toLocaleDateString('da-DK', {day:'numeric',month:'short'});
-          var avatarHtml = p.avatar_url ?
-            '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
-            '<div class="notif-avatar" style="background:linear-gradient(135deg,#2ECFCF,#8B7FFF)">' + initials + '</div>';
-          html += '<div class="notif-card">' +
-            '<div class="notif-header">' + avatarHtml +
-            '<div>' +
-            '<div class="notif-title">' + escHtml(p.name||'Ukendt') + ' joined</div>' +
-            '<div class="notif-sub">' + escHtml(m.bubbles?.name||'') + ' · ' + time + '</div>' +
-            '</div></div></div>';
-        });
-      }
-    }
-
+    var html = inviteHtml + dmHtml + savedByHtml + liveHtml + newMemberHtml;
     if (!html) {
       html = '<div class="empty-state"><div class="empty-icon">' + icon('bell') + '</div><div class="empty-text">Ingen notifikationer endnu</div></div>';
     }
     list.innerHTML = html;
   } catch(e) { logError("loadNotifications", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+// ── Notification sub-loaders (parallelized) ──
+async function _notifInvites() {
+  try {
+    var { data: invites } = await sb.from('bubble_invitations')
+      .select('id, from_user_id, bubble_id, created_at, profiles!bubble_invitations_from_user_id_fkey(name,title), bubbles(name)')
+      .eq('to_user_id', currentUser.id)
+      .eq('status', 'pending')
+      .order('created_at', {ascending:false});
+    if (!invites || invites.length === 0) return '';
+    return invites.map(function(inv) {
+      var p = inv.profiles || {};
+      var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      return '<div class="notif-card invite" id="invite-' + inv.id + '">' +
+        '<div class="notif-header">' +
+        '<div class="notif-avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">' + initials + '</div>' +
+        '<div>' +
+        '<div class="notif-title">' + icon("bubble") + ' Invitation til boble</div>' +
+        '<div class="notif-sub">' + escHtml(p.name||'Nogen') + ' inviterer dig til ' + escHtml(inv.bubbles?.name||'en boble') + '</div>' +
+        '</div></div>' +
+        '<div class="notif-actions">' +
+        '<button class="notif-btn accept" onclick="acceptBubbleInvite(\'' + inv.id + '\',\'' + inv.from_user_id + '\')">Accepter</button>' +
+        '<button class="notif-btn decline" onclick="declineBubbleInvite(\'' + inv.id + '\')">Afvis</button>' +
+        '</div></div>';
+    }).join('');
+  } catch(e) { logError('_notifInvites', e); return ''; }
+}
+
+async function _notifUnreadDMs(since) {
+  try {
+    var { data: unreadDMs } = await sb.from('messages')
+      .select('id, sender_id, content, file_url, created_at')
+      .eq('receiver_id', currentUser.id)
+      .is('read_at', null)
+      .gte('created_at', since)
+      .order('created_at', {ascending:false})
+      .limit(10);
+    if (!unreadDMs || unreadDMs.length === 0) return '';
+    var dmSenderIds = [...new Set(unreadDMs.map(function(m){return m.sender_id;}))];
+    var { data: dmProfiles } = await sb.from('profiles').select('id,name,avatar_url').in('id', dmSenderIds);
+    var dmPMap = {};
+    (dmProfiles||[]).forEach(function(p) { dmPMap[p.id] = p; });
+    var dmBySender = {};
+    unreadDMs.forEach(function(m) {
+      if (!dmBySender[m.sender_id]) dmBySender[m.sender_id] = { count: 0, latest: m };
+      dmBySender[m.sender_id].count++;
+    });
+    return Object.keys(dmBySender).map(function(sid) {
+      var d = dmBySender[sid];
+      var p = dmPMap[sid] || {};
+      var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var time = new Date(d.latest.created_at).toLocaleDateString('da-DK', {day:'numeric',month:'short'});
+      var preview = d.latest.file_url ? 'Sendte et billede' : (d.latest.content || '').slice(0, 40);
+      var avatarHtml = p.avatar_url ?
+        '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
+        '<div class="notif-avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">' + initials + '</div>';
+      return '<div class="notif-card" onclick="openChat(\'' + sid + '\')" style="cursor:pointer">' +
+        '<div class="notif-header">' + avatarHtml +
+        '<div>' +
+        '<div class="notif-title">' + icon("chat") + ' ' + escHtml(p.name||'Ukendt') + (d.count > 1 ? ' (' + d.count + ' beskeder)' : '') + '</div>' +
+        '<div class="notif-sub">' + escHtml(preview) + ' · ' + time + '</div>' +
+        '</div></div></div>';
+    }).join('');
+  } catch(e) { logError('_notifUnreadDMs', e); return ''; }
+}
+
+async function _notifSavedBy(since) {
+  try {
+    var { data: savedBy } = await sb.from('saved_contacts')
+      .select('user_id, created_at')
+      .eq('contact_id', currentUser.id)
+      .gte('created_at', since)
+      .order('created_at', {ascending:false})
+      .limit(10);
+    if (!savedBy || savedBy.length === 0) return '';
+    var saverIds = savedBy.map(function(s){return s.user_id;});
+    var { data: saverProfiles } = await sb.from('profiles').select('id,name,avatar_url').in('id', saverIds);
+    var sPMap = {};
+    (saverProfiles||[]).forEach(function(p) { sPMap[p.id] = p; });
+    return savedBy.map(function(s) {
+      var p = sPMap[s.user_id] || {};
+      var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var time = new Date(s.created_at).toLocaleDateString('da-DK', {day:'numeric',month:'short'});
+      var avatarHtml = p.avatar_url ?
+        '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
+        '<div class="notif-avatar" style="background:linear-gradient(135deg,#10B981,#065F46)">' + initials + '</div>';
+      return '<div class="notif-card" onclick="openPerson(\'' + s.user_id + '\',\'screen-notifications\')" style="cursor:pointer">' +
+        '<div class="notif-header">' + avatarHtml +
+        '<div>' +
+        '<div class="notif-title">' + icon("bookmark") + ' Nogen gemte din profil</div>' +
+        '<div class="notif-sub">' + escHtml(p.name||'Ukendt') + ' · ' + time + '</div>' +
+        '</div></div></div>';
+    }).join('');
+  } catch(e) { logError('_notifSavedBy', e); return ''; }
+}
+
+async function _notifLiveContacts() {
+  try {
+    var savedIds = await getSavedContactIds();
+    if (savedIds.length === 0) return '';
+    var liveCutoff = new Date(Date.now() - 4*60*60*1000).toISOString();
+    var { data: liveContacts } = await sb.from('bubble_members')
+      .select('user_id, bubble_id, checked_in_at, bubbles(name,location)')
+      .in('user_id', savedIds)
+      .not('checked_in_at', 'is', null)
+      .is('checked_out_at', null)
+      .gte('checked_in_at', liveCutoff)
+      .order('checked_in_at', {ascending:false})
+      .limit(10);
+    if (!liveContacts || liveContacts.length === 0) return '';
+    var liveUserIds = [...new Set(liveContacts.map(function(m){return m.user_id;}))];
+    var { data: liveProfiles } = await sb.from('profiles').select('id,name,avatar_url').in('id', liveUserIds);
+    var lPMap = {};
+    (liveProfiles||[]).forEach(function(p) { lPMap[p.id] = p; });
+    return liveContacts.map(function(m) {
+      var p = lPMap[m.user_id] || {};
+      var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var bName = m.bubbles?.name || '';
+      var bLoc = m.bubbles?.location || '';
+      var avatarHtml = p.avatar_url ?
+        '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
+        '<div class="notif-avatar" style="background:linear-gradient(135deg,#2ECFCF,#065F46)">' + initials + '</div>';
+      return '<div class="notif-card">' +
+        '<div class="notif-header">' + avatarHtml +
+        '<div>' +
+        '<div class="notif-title"><span style="color:var(--accent3)">' + icon("pin") + '</span> ' + escHtml(p.name||'Ukendt') + ' er live</div>' +
+        '<div class="notif-sub">' + escHtml(bName) + (bLoc ? ' · ' + escHtml(bLoc) : '') + '</div>' +
+        '</div></div></div>';
+    }).join('');
+  } catch(e) { logError('_notifLiveContacts', e); return ''; }
+}
+
+async function _notifNewMembers(since) {
+  try {
+    var { data: myMemberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+    if (!myMemberships || myMemberships.length === 0) return '';
+    var myBubbleIds = myMemberships.map(function(m){return m.bubble_id;});
+    var { data: newMembers } = await sb.from('bubble_members')
+      .select('user_id, joined_at, bubble_id, bubbles(name)')
+      .in('bubble_id', myBubbleIds).neq('user_id', currentUser.id)
+      .gte('joined_at', since).order('joined_at', {ascending:false}).limit(20);
+    if (!newMembers || newMembers.length === 0) return '';
+    var memberUserIds = [...new Set(newMembers.map(function(m){return m.user_id;}))];
+    var { data: memberProfiles } = await sb.from('profiles').select('id,name,avatar_url').in('id', memberUserIds);
+    var mPMap = {};
+    (memberProfiles||[]).forEach(function(p) { mPMap[p.id] = p; });
+    return newMembers.map(function(m) {
+      var p = mPMap[m.user_id] || {};
+      var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var time = new Date(m.joined_at).toLocaleDateString('da-DK', {day:'numeric',month:'short'});
+      var avatarHtml = p.avatar_url ?
+        '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
+        '<div class="notif-avatar" style="background:linear-gradient(135deg,#2ECFCF,#8B7FFF)">' + initials + '</div>';
+      return '<div class="notif-card">' +
+        '<div class="notif-header">' + avatarHtml +
+        '<div>' +
+        '<div class="notif-title">' + escHtml(p.name||'Ukendt') + ' joined</div>' +
+        '<div class="notif-sub">' + escHtml(m.bubbles?.name||'') + ' · ' + time + '</div>' +
+        '</div></div></div>';
+    }).join('');
+  } catch(e) { logError('_notifNewMembers', e); return ''; }
 }
 
 async function acceptBubbleInvite(inviteId, fromUserId) {

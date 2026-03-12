@@ -206,4 +206,40 @@ function typeLabel(type) {
 
 // Clock removed — iPhone shows native status bar
 
+// ── Shared: saved contact IDs (cached per session) ──
+var _savedContactIds = null;
+var _savedContactIdsTs = 0;
+async function getSavedContactIds(forceRefresh) {
+  // Cache for 30 seconds
+  if (!forceRefresh && _savedContactIds && (Date.now() - _savedContactIdsTs < 30000)) return _savedContactIds;
+  if (!currentUser) return [];
+  var { data } = await sb.from('saved_contacts').select('contact_id').eq('user_id', currentUser.id);
+  _savedContactIds = (data || []).map(function(s) { return s.contact_id; });
+  _savedContactIdsTs = Date.now();
+  return _savedContactIds;
+}
+function clearSavedContactIdsCache() { _savedContactIds = null; }
 
+// ── Shared: enrich bubbles with saved contact avatars ──
+// Takes array of bubble IDs + saved contact IDs → returns { bubbleId: [{name, avatar_url}] }
+async function fetchContactAvatarsForBubbles(bubbleIds, savedIds) {
+  var contactMap = {};
+  if (!savedIds || savedIds.length === 0 || !bubbleIds || bubbleIds.length === 0) return contactMap;
+  try {
+    var { data: members } = await sb.from('bubble_members')
+      .select('bubble_id, user_id')
+      .in('bubble_id', bubbleIds)
+      .in('user_id', savedIds);
+    if (!members || members.length === 0) return contactMap;
+    var userIds = [...new Set(members.map(function(m) { return m.user_id; }))];
+    var { data: profiles } = await sb.from('profiles').select('id, name, avatar_url').in('id', userIds);
+    var pMap = {};
+    (profiles || []).forEach(function(p) { pMap[p.id] = p; });
+    members.forEach(function(m) {
+      if (!contactMap[m.bubble_id]) contactMap[m.bubble_id] = [];
+      var p = pMap[m.user_id];
+      if (p && contactMap[m.bubble_id].length < 3) contactMap[m.bubble_id].push(p);
+    });
+  } catch(e) { logError('fetchContactAvatarsForBubbles', e); }
+  return contactMap;
+}

@@ -8,6 +8,8 @@
 // ══════════════════════════════════════════════════════════
 function goTo(screenId) {
   console.debug('[nav] goTo:', screenId);
+  _navVersion++;
+  _activeScreen = screenId;
   trackEvent('screen_view', { screen: screenId });
 
   // Force close any lingering sheets/overlays

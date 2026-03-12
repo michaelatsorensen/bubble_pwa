@@ -88,22 +88,27 @@ async function toggleBubbleUpvote(bubbleId) {
 
 async function loadDiscover() {
   try {
+    var myNav = _navVersion;
     const list = document.getElementById('all-bubbles-list');
     list.innerHTML = '<div class="spinner"></div>';
     await loadBubbleUpvotes();
+    if (_navVersion !== myNav) return; // screen changed — abort
 
-    // Get user's memberships to filter them out
+    // Get user's memberships + saved contacts in parallel
     var myBubbleIds = [];
     var mySavedIds = [];
     if (currentUser) {
-      var { data: myMemberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
-      myBubbleIds = (myMemberships || []).map(function(m) { return m.bubble_id; });
-      // Get saved contacts
-      var { data: mySaved } = await sb.from('saved_contacts').select('contact_id').eq('user_id', currentUser.id);
-      mySavedIds = (mySaved || []).map(function(s) { return s.contact_id; });
+      var [membRes, savedRes] = await Promise.all([
+        sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id),
+        sb.from('saved_contacts').select('contact_id').eq('user_id', currentUser.id)
+      ]);
+      myBubbleIds = (membRes.data || []).map(function(m) { return m.bubble_id; });
+      mySavedIds = (savedRes.data || []).map(function(s) { return s.contact_id; });
     }
+    if (_navVersion !== myNav) return;
 
     const { data: bubbles } = await sb.from('bubbles').select('*, bubble_members(count)').or('visibility.eq.public,visibility.eq.private,visibility.is.null').order('created_at', {ascending:false});
+    if (_navVersion !== myNav) return;
     allBubbles = (bubbles || []).filter(function(b) {
       return b.type !== 'live' && myBubbleIds.indexOf(b.id) < 0;
     }).map(b => ({
@@ -113,26 +118,10 @@ async function loadDiscover() {
       upvote_count: bubbleUpvotes[b.id] || 0
     }));
 
-    // Fetch contact members for each bubble
+    // Enrich with saved contact avatars (shared helper)
     var discoverBubbleIds = allBubbles.map(function(b) { return b.id; });
-    var contactMemberMap = {}; // bubble_id -> [{name, avatar_url}]
-    if (mySavedIds.length > 0 && discoverBubbleIds.length > 0) {
-      var { data: contactMembers } = await sb.from('bubble_members')
-        .select('bubble_id, user_id')
-        .in('bubble_id', discoverBubbleIds)
-        .in('user_id', mySavedIds);
-      if (contactMembers && contactMembers.length > 0) {
-        var contactUserIds = [...new Set(contactMembers.map(function(m) { return m.user_id; }))];
-        var { data: contactProfiles } = await sb.from('profiles').select('id, name, avatar_url').in('id', contactUserIds);
-        var cpMap = {};
-        (contactProfiles || []).forEach(function(p) { cpMap[p.id] = p; });
-        contactMembers.forEach(function(m) {
-          if (!contactMemberMap[m.bubble_id]) contactMemberMap[m.bubble_id] = [];
-          var cp = cpMap[m.user_id];
-          if (cp && contactMemberMap[m.bubble_id].length < 3) contactMemberMap[m.bubble_id].push(cp);
-        });
-      }
-    }
+    var contactMemberMap = await fetchContactAvatarsForBubbles(discoverBubbleIds, mySavedIds);
+    if (_navVersion !== myNav) return;
 
     // Attach contact info to bubbles
     allBubbles.forEach(function(b) { b._contacts = contactMemberMap[b.id] || []; });

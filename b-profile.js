@@ -11,9 +11,10 @@ async function openPerson(userId, fromScreen) {
     const backBtn = document.getElementById('person-back-btn');
     backBtn.onclick = () => goTo(fromScreen || 'screen-home');
     goTo('screen-person');
+    var myNav = _navVersion;
 
     const { data: p } = await sb.from('profiles').select('*').eq('id', userId).single();
-    if (!p) return;
+    if (!p || _navVersion !== myNav) return;
 
     const initials = p.is_anon ? '?' : (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     var personAvEl = document.getElementById('person-avatar');
@@ -588,9 +589,7 @@ async function loadProfile() {
     isAnon = currentProfile.is_anon || false;
     updateAnonToggle();
 
-    await loadSavedContacts();
-    await loadMyBubbles();
-    loadProfileInvitations();
+    await Promise.all([loadSavedContacts(), loadMyBubbles(), loadProfileInvitations()]);
 
     // Admin panel — only for admin UID
     var adminPanel = document.getElementById('admin-panel');
@@ -631,6 +630,7 @@ function starRender(contactId) {
 
 async function loadSavedContacts() {
   try {
+    clearSavedContactIdsCache(); // Invalidate shared cache
     const savedEl = document.getElementById('saved-contacts');
 
     // Fetch saved contacts — chronological (newest first)

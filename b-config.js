@@ -10,8 +10,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-12T16:00:00';
-const BUILD_VERSION  = 'v3.7.2';
+const BUILD_TIMESTAMP = '2026-03-12T17:00:00';
+const BUILD_VERSION  = 'v3.7.3';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -142,4 +142,9 @@ function initSupabase() {
     return false;
   }
 }
+
+// ── Navigation version counter (request cancellation) ──
+// Incremented on every goTo(). Async loaders check this to abort stale renders.
+var _navVersion = 0;
+var _activeScreen = null;
 
