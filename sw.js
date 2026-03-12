@@ -17,7 +17,14 @@ self.addEventListener('activate', function(event) {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    ).then(function() {
+      // Fortæl alle åbne vinduer at ny version er klar
+      return self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    }).then(function(clients) {
+      clients.forEach(function(client) {
+        client.postMessage({ type: 'SW_UPDATED', version: CACHE_NAME });
+      });
+    })
   );
   self.clients.claim();
 });

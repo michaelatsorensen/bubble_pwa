@@ -7734,21 +7734,51 @@ function liveScanReset() {
 
 //  APP BOOT
 // ══════════════════════════════════════════════════════════
-// ── Lyt på navigation-beskeder fra Service Worker (push klik) ──
+// ── Lyt på beskeder fra Service Worker ──
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', function(event) {
     var msg = event.data;
-    if (!msg || msg.type !== 'PUSH_NAVIGATE') return;
-    var d = msg.data || {};
-    var t = d.type || '';
-    if ((t === 'new_message' || t === 'message') && d.sender_id) {
-      // Åbn chat direkte med afsender
-      if (currentUser) openChat(d.sender_id, 'screen-messages');
-    } else if (t === 'new_invite' || t === 'invitation' || t === 'saved_contact') {
-      goTo('screen-notifications');
-      loadNotifications();
+    if (!msg) return;
+
+    // Ny app-version tilgængelig
+    if (msg.type === 'SW_UPDATED') {
+      showUpdateBanner();
+      return;
+    }
+
+    // Push-notifikation klik → naviger
+    if (msg.type === 'PUSH_NAVIGATE') {
+      var d = msg.data || {};
+      var t = d.type || '';
+      if ((t === 'new_message' || t === 'message') && d.sender_id) {
+        if (currentUser) openChat(d.sender_id, 'screen-messages');
+      } else if (t === 'new_invite' || t === 'invitation' || t === 'saved_contact') {
+        goTo('screen-notifications');
+        loadNotifications();
+      }
     }
   });
+
+  // Tjek også ved app-start om SW har en opdatering klar
+  navigator.serviceWorker.ready.then(function(reg) {
+    reg.update(); // Trigger SW update check
+  });
+}
+
+function showUpdateBanner() {
+  if (document.getElementById('update-banner')) return; // allerede vist
+  var banner = document.createElement('div');
+  banner.id = 'update-banner';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;'
+    + 'background:linear-gradient(135deg,var(--accent),var(--accent2));'
+    + 'color:#fff;display:flex;align-items:center;justify-content:space-between;'
+    + 'padding:0.6rem 1rem;font-size:0.82rem;font-weight:600;font-family:inherit;'
+    + 'box-shadow:0 2px 16px rgba(0,0,0,0.4);gap:0.75rem;';
+  banner.innerHTML = '<span>🆕 Ny version af Bubble er klar</span>'
+    + '<button onclick="window.location.reload()" style="background:rgba(255,255,255,0.25);border:none;'
+    + 'color:#fff;padding:0.35rem 0.9rem;border-radius:99px;font-weight:700;font-size:0.8rem;'
+    + 'font-family:inherit;cursor:pointer;white-space:nowrap;">Opdatér nu</button>';
+  document.body.prepend(banner);
 }
 
 window.addEventListener('load', async () => {
@@ -7884,16 +7914,83 @@ async function initPushNotifications() {
   }
 }
 
+function showAddToHomescreenSheet() {
+  var existing = document.getElementById('add-homescreen-sheet');
+  if (existing) existing.remove();
+  var sheet = document.createElement('div');
+  sheet.id = 'add-homescreen-sheet';
+  sheet.className = 'modal-overlay';
+  sheet.style.cssText = 'display:flex;align-items:flex-end';
+  sheet.innerHTML = '<div class="modal-sheet" style="padding-bottom:max(1.5rem,env(safe-area-inset-bottom))">'
+    + '<div class="modal-handle"></div>'
+    + '<div style="font-size:1.5rem;text-align:center;margin-bottom:0.5rem">📲</div>'
+    + '<div class="modal-title" style="text-align:center">Tilføj Bubble til hjemmeskærmen</div>'
+    + '<p style="color:var(--muted);font-size:0.85rem;margin:0.5rem 0 1rem;text-align:center;line-height:1.5">På iPhone kræver push-notifikationer at Bubble er installeret som app. Det tager 10 sekunder.</p>'
+    + '<ol style="color:var(--text);font-size:0.85rem;line-height:2;padding-left:1.25rem;margin-bottom:1.25rem">'
+    + '<li>Tryk på <strong>Del-ikonet</strong> nederst i Safari (' + String.fromCodePoint(0x1F4E4) + ')</li>'
+    + '<li>Vælg <strong>"Føj til hjemmeskærm"</strong></li>'
+    + '<li>Tryk <strong>Tilføj</strong> øverst til højre</li>'
+    + '<li>Åbn Bubble fra hjemmeskærmen og aktivér notifikationer</li>'
+    + '</ol>'
+    + '<button class="btn-primary" onclick="document.getElementById('add-homescreen-sheet').remove()">Forstået</button>'
+    + '</div>';
+  sheet.onclick = function(e) { if (e.target === sheet) sheet.remove(); };
+  document.body.appendChild(sheet);
+}
+
+function showPushBlockedSheet() {
+  var isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+  var isAndroid = /Android/.test(navigator.userAgent);
+  var steps = '';
+  if (isIOS) {
+    steps = '<li>Gå til <strong>Indstillinger → Safari</strong></li><li>Tryk på <strong>Avanceret → Websteder → Notifikationer</strong></li><li>Find Bubble og sæt til <strong>Tillad</strong></li>';
+  } else if (isAndroid) {
+    steps = '<li>Gå til <strong>Indstillinger → Apps → din browser</strong></li><li>Tryk på <strong>Notifikationer → Webstedsnotifikationer</strong></li><li>Find Bubble og aktivér</li>';
+  } else {
+    steps = '<li>Klik på <strong>hængelåsikonet</strong> i adresselinjen</li><li>Find <strong>Notifikationer</strong> og sæt til Tillad</li><li>Genindlæs siden</li>';
+  }
+  var existing = document.getElementById('push-blocked-sheet');
+  if (existing) existing.remove();
+  var sheet = document.createElement('div');
+  sheet.id = 'push-blocked-sheet';
+  sheet.className = 'modal-overlay';
+  sheet.style.cssText = 'display:flex;align-items:flex-end';
+  sheet.innerHTML = '<div class="modal-sheet" style="padding-bottom:max(1.5rem,env(safe-area-inset-bottom))">'
+    + '<div class="modal-handle"></div>'
+    + '<div style="font-size:1.5rem;text-align:center;margin-bottom:0.5rem">🔔</div>'
+    + '<div class="modal-title" style="text-align:center">Notifikationer er blokeret</div>'
+    + '<p style="color:var(--muted);font-size:0.85rem;margin:0.5rem 0 1rem;text-align:center;line-height:1.5">Du har tidligere afvist notifikationer. Din browser tillader ikke at vi spørger igen — du skal slå det til manuelt.</p>'
+    + '<ol style="color:var(--text);font-size:0.85rem;line-height:1.8;padding-left:1.25rem;margin-bottom:1.25rem">' + steps + '</ol>'
+    + '<button class="btn-primary" onclick="document.getElementById(\'push-blocked-sheet\').remove()">Forstået</button>'
+    + '</div>';
+  sheet.onclick = function(e) { if (e.target === sheet) sheet.remove(); };
+  document.body.appendChild(sheet);
+}
+
 async function requestPushPermission() {
   try {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      showToast('Push-notifikationer er ikke understøttet på denne enhed');
+      showToast('Push-notifikationer understøttes ikke på denne enhed');
+      return false;
+    }
+
+    // iOS kræver at appen er installeret som PWA for push
+    var isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+    var isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    if (isIOS && !isStandalone) {
+      showAddToHomescreenSheet();
+      return false;
+    }
+
+    // Tjek om allerede blokeret — browser spørger ikke igen
+    if (Notification.permission === 'denied') {
+      showPushBlockedSheet();
       return false;
     }
 
     var permission = await Notification.requestPermission();
     if (permission !== 'granted') {
-      showToast('Notifikationer er ikke tilladt');
+      showPushBlockedSheet();
       return false;
     }
 
