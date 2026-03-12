@@ -2250,9 +2250,18 @@ async function openChat(userId, fromScreen) {
     await loadChatMessages();
     subscribeToChat();
 
-    // Mark messages as read
-    await sb.from('messages').update({ read_at: new Date().toISOString() })
-      .eq('sender_id', userId).eq('receiver_id', currentUser.id).is('read_at', null);
+    // Mark messages as read + update ✓✓ on sender's side
+    var { data: unread } = await sb.from('messages')
+      .select('id').eq('sender_id', userId).eq('receiver_id', currentUser.id).is('read_at', null);
+    if (unread && unread.length > 0) {
+      var unreadIds = unread.map(function(m) { return m.id; });
+      await sb.from('messages').update({ read_at: new Date().toISOString() })
+        .in('id', unreadIds);
+      // Notify sender that their messages were read
+      if (chatSubscription) {
+        try { chatSubscription.send({ type: 'broadcast', event: 'read_receipt', payload: { msgIds: unreadIds } }); } catch(e) {}
+      }
+    }
     await updateUnreadBadge();
   } catch(e) { logError("openChat", e); showToast(e.message || "Ukendt fejl"); }
 }
@@ -2266,6 +2275,16 @@ function dmRenderMsg(m) {
   const initials = sent ? myInit : theirInit;
   const name = sent ? (currentProfile?.name||'Mig') : (currentChatName||'?');
   const edited = m.edited ? ' <span class="msg-edited">redigeret</span>' : '';
+
+  // Read receipt: ✓ sent, ✓✓ read (teal)
+  let receipt = '';
+  if (sent && !m.file_url) {
+    if (m.read_at) {
+      receipt = `<span class="msg-receipt read" id="dm-receipt-${m.id}" title="Læst ${new Date(m.read_at).toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'})}">✓✓</span>`;
+    } else {
+      receipt = `<span class="msg-receipt" id="dm-receipt-${m.id}" title="Sendt">✓</span>`;
+    }
+  }
 
   let bubble = '';
   if (m.file_url) {
@@ -2294,7 +2313,33 @@ function dmRenderMsg(m) {
   return `<div class="msg-row${sent?' me':''}" id="dm-msg-${m.id}" data-msg-id="${m.id}">
     <div class="msg-avatar"${avatarClick} style="background:${avatarGrad};overflow:hidden${sent?'':';cursor:pointer'}">${avatarInner}</div>
     <div class="msg-body">
-      <div class="msg-head"><span class="msg-name">${escHtml(name)}</span><span class="msg-time">${time}${edited}</span></div>
+      <div class="msg-head"><span class="msg-name">${escHtml(name)}</span><span class="msg-time">${time}${edited}${receipt}</span></div>
+      <div class="msg-content">${bubble}${sent && !m.file_url ? `<span class="msg-actions"><button class="msg-dots" onpointerdown="event.stopPropagation()" onclick="dmOpenMsgMenu(event,'${m.id}')" title="Mere">⋯</button></span>` : ''}</div>
+    </div>
+  </div>`;
+}
+
+async function loadChatMessages() {
+  if (m.file_url) {
+    const ext = m.file_name?.split('.').pop()?.toLowerCase() || '';
+    const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext) || (m.file_type||'').startsWith('image/');
+    if (isImg) {
+      bubble = `<a href="${m.file_url}" target="_blank"><img class="msg-img" src="${m.file_url}" alt="${escHtml(m.file_name||'')}"></a>`;
+    } else {
+      const sz = m.file_size ? (m.file_size < 1048576 ? Math.round(m.file_size/1024)+'KB' : (m.file_size/1048576).toFixed(1)+'MB') : '';
+      bubble = `<a class="msg-file" href="${m.file_url}" target="_blank">${icon('clip')} ${escHtml(m.file_name||'Fil')} <span class="msg-file-sz">${sz}</span></a>`;
+    }
+  } else {
+    bubble = `<div class="msg-bubble${sent?' sent':''}" id="dm-bubble-${m.id}">${escHtml(filterChatContent(m.content||''))}</div>`;
+  }
+
+  const myAvUrl = currentProfile?.avatar_url;
+  const theirAvUrl = window._chatPartnerAvatar;
+  const avatarGrad = sent ? 'linear-gradient(135deg,#4C1D95,#A78BFA)' : 'linear-gradient(135deg,#8B7FFF,#E85D8A)';
+  return `<div class="msg-row${sent?' me':''}" id="dm-msg-${m.id}" data-msg-id="${m.id}">
+    <div class="msg-avatar"${avatarClick} style="background:${avatarGrad};overflow:hidden${sent?'':';cursor:pointer'}">${avatarInner}</div>
+    <div class="msg-body">
+      <div class="msg-head"><span class="msg-name">${escHtml(name)}</span><span class="msg-time">${time}${edited}${receipt}</span></div>
       <div class="msg-content">${bubble}${sent && !m.file_url ? `<span class="msg-actions"><button class="msg-dots" onpointerdown="event.stopPropagation()" onclick="dmOpenMsgMenu(event,'${m.id}')" title="Mere">⋯</button></span>` : ''}</div>
     </div>
   </div>`;
@@ -2316,24 +2361,96 @@ async function loadChatMessages() {
   } catch(e) { logError("loadChatMessages", e); showToast(e.message || "Ukendt fejl"); }
 }
 
+// ── DM Realtime: Broadcast for instant delivery + typing indicator ──
+var _dmTypingTimer = null;
+
+function dmChannelName() {
+  var ids = [currentUser.id, currentChatUser].sort();
+  return 'dm-' + ids[0] + '-' + ids[1];
+}
+
+function dmShowTyping(name) {
+  var el = document.getElementById('dm-typing-indicator');
+  var nameEl = document.getElementById('dm-typing-name');
+  if (!el || !nameEl) return;
+  nameEl.textContent = name + ' skriver';
+  el.style.display = 'block';
+  clearTimeout(_dmTypingTimer);
+  _dmTypingTimer = setTimeout(function() { if (el) el.style.display = 'none'; }, 3000);
+}
+
+function dmHideTyping() {
+  clearTimeout(_dmTypingTimer);
+  var el = document.getElementById('dm-typing-indicator');
+  if (el) el.style.display = 'none';
+}
+
+var _dmBroadcastTypingTimer = null;
+function dmOnInput() {
+  if (!chatSubscription) return;
+  clearTimeout(_dmBroadcastTypingTimer);
+  _dmBroadcastTypingTimer = setTimeout(function() {
+    try {
+      chatSubscription.send({ type: 'broadcast', event: 'typing',
+        payload: { userId: currentUser.id, name: currentProfile?.name || 'Nogen' } });
+    } catch(e) {}
+  }, 300);
+}
+
+function dmUpdateReceipts(msgIds) {
+  (msgIds || []).forEach(function(id) {
+    var el = document.getElementById('dm-receipt-' + id);
+    if (el && !el.classList.contains('read')) {
+      el.classList.add('read'); el.textContent = '✓✓'; el.title = 'Læst';
+    }
+  });
+}
+
 function subscribeToChat() {
-  console.debug('[dm] subscribeToChat, user:', currentChatUser);
-  if (chatSubscription) { chatSubscription.unsubscribe(); chatSubscription = null; }
-  chatSubscription = sb.channel('chat-' + currentChatUser)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages',
-      filter: `receiver_id=eq.${currentUser.id}` }, (payload) => {
-      const m = payload.new;
+  if (chatSubscription) { try { chatSubscription.unsubscribe(); } catch(e) {} chatSubscription = null; }
+
+  chatSubscription = sb.channel(dmChannelName(), { config: { broadcast: { self: false } } })
+    // Instant new message via Broadcast
+    .on('broadcast', { event: 'new_message' }, function(payload) {
+      var m = payload.payload;
       if (!m) return;
-      if (m.sender_id !== currentChatUser) return;
-      const el = document.getElementById('chat-messages');
-      if (!el) return;
-      if (el.querySelector('[data-msg-id="' + m.id + '"]')) return;
+      if (m.sender_id !== currentChatUser && m.receiver_id !== currentChatUser) return;
+      var el = document.getElementById('chat-messages');
+      if (!el || el.querySelector('[data-msg-id="' + m.id + '"]')) return;
+      dmHideTyping();
       el.insertAdjacentHTML('beforeend', dmRenderMsg(m));
       el.scrollTop = el.scrollHeight;
-      // Mark as read immediately since chat is open
-      sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', m.id);
+      if (m.receiver_id === currentUser.id) {
+        sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', m.id).then(function() {});
+        updateUnreadBadge();
+        try { chatSubscription.send({ type: 'broadcast', event: 'read_receipt', payload: { msgIds: [m.id] } }); } catch(e) {}
+      }
+    })
+    // Typing indicator
+    .on('broadcast', { event: 'typing' }, function(payload) {
+      var p = payload.payload;
+      if (!p || p.userId === currentUser.id) return;
+      dmShowTyping(p.name || 'Den anden');
+    })
+    // Read receipt feedback to sender
+    .on('broadcast', { event: 'read_receipt' }, function(payload) {
+      var p = payload.payload;
+      if (p && p.msgIds) dmUpdateReceipts(p.msgIds);
+    })
+    // Fallback: Postgres Changes (covers edge cases like push notifications)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages',
+      filter: 'receiver_id=eq.' + currentUser.id }, function(payload) {
+      var m = payload.new;
+      if (!m || m.sender_id !== currentChatUser) return;
+      var el = document.getElementById('chat-messages');
+      if (!el || el.querySelector('[data-msg-id="' + m.id + '"]')) return;
+      dmHideTyping();
+      el.insertAdjacentHTML('beforeend', dmRenderMsg(m));
+      el.scrollTop = el.scrollHeight;
+      sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', m.id).then(function() {});
       updateUnreadBadge();
-    }).subscribe();
+    })
+    .subscribe();
 }
 
 // ── DM message context menu (⋯) ──
@@ -2543,6 +2660,10 @@ async function sendMessage() {
         if (el && !el.querySelector('[data-msg-id="' + newMsg.id + '"]')) {
           el.insertAdjacentHTML('beforeend', dmRenderMsg(newMsg));
           el.scrollTop = el.scrollHeight;
+        }
+        // Broadcast to recipient for instant delivery
+        if (chatSubscription) {
+          try { chatSubscription.send({ type: 'broadcast', event: 'new_message', payload: newMsg }); } catch(e) {}
         }
         trackEvent('message_sent', { type: 'dm' });
       }
