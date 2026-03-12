@@ -730,8 +730,8 @@ function renderSavedStoryBar(saved, profileMap) {
     var starCount = starGet(s.contact_id);
     var starBadge = starCount > 0 ? '<span class="star-badge">' + '★'.repeat(starCount) + '</span>' : '';
     var storyAvatar = (p && p.avatar_url) ?
-      '<div class="saved-story-avatar" style="overflow:hidden;position:relative"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' + starBadge + '</div>' :
-      '<div class="saved-story-avatar" style="background:' + col + ';position:relative">' + escHtml(ini) + starBadge + '</div>';
+      '<div style="position:relative"><div class="saved-story-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>' + starBadge + '</div>' :
+      '<div style="position:relative"><div class="saved-story-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>' + starBadge + '</div>';
     return '<div class="saved-story-item" onclick="openPerson(\'' + s.contact_id + '\',\'screen-home\')">' +
       storyAvatar +
       '<div class="saved-story-name">' + escHtml(firstName) + '</div></div>';

@@ -1442,7 +1442,7 @@ a.person-action-btn { text-decoration:none; }
 .ps-star.empty { color:var(--border); }
 
 /* Saved contacts card redesign */
-.star-badge { position:absolute; bottom:-3px; right:-3px; background:rgba(139,127,255,0.9); color:white; font-size:0.42rem; padding:1px 3px; border-radius:6px; line-height:1; letter-spacing:1px; border:1.5px solid var(--bg); pointer-events:none; }
+.star-badge { position:absolute; bottom:-3px; right:-3px; background:rgba(139,127,255,0.9); color:white; font-size:0.42rem; padding:1px 3px; border-radius:6px; line-height:1; letter-spacing:1px; border:1.5px solid var(--bg); pointer-events:none; z-index:5; }
 .saved-action-btn { display:flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:10px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.04); color:var(--text-secondary); cursor:pointer; transition:all 0.15s; padding:0; }
 .saved-action-btn .ico { width:1rem; height:1rem; }
 .saved-action-btn:active { transform:scale(0.93); background:rgba(255,255,255,0.08); }
@@ -1622,3 +1622,18 @@ textarea ~ .input-confirm-btn { top:0.7rem; transform:none; }
 /* Read receipt checkmarks */
 .msg-receipt { font-size: 0.6rem; margin-left: 0.25rem; color: var(--muted); }
 .msg-receipt.read { color: var(--accent3); }
+
+/* ── LANDSCAPE LOCK — show rotate message ── */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  #app-root > *:not(.landscape-lock) { display:none !important; }
+  .landscape-lock { display:flex !important; }
+}
+.landscape-lock {
+  display:none;
+  position:fixed;inset:0;z-index:999999;
+  background:var(--bg);
+  flex-direction:column;align-items:center;justify-content:center;gap:1rem;
+  color:var(--text);font-family:'Outfit',sans-serif;text-align:center;padding:2rem;
+}
+.landscape-lock-icon { font-size:3rem;animation:rotateBounce 2s ease infinite; }
+@keyframes rotateBounce { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(-25deg)} 75%{transform:rotate(25deg)} }

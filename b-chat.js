@@ -530,12 +530,11 @@ async function bcHandleFile(input) {
     const { data: newMsg, error: msgErr } = await sb.from('bubble_messages').insert({
       bubble_id: bcBubbleId,
       user_id: currentUser.id,
-      content: null,
+      content: '',
       file_url: urlData.publicUrl,
       file_name: file.name,
-      file_size: file.size,
       file_type: file.type
-    }).select('id, bubble_id, user_id, content, file_url, file_name, file_size, file_type, edited, created_at').single();
+    }).select('id, bubble_id, user_id, content, file_url, file_name, file_type, edited, created_at').single();
 
     if (msgErr) {
       console.error('File message insert error:', msgErr);

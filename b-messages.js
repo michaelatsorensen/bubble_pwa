@@ -213,14 +213,13 @@ async function dmHandleFile(input) {
     const { data: newMsg, error } = await sb.from('messages').insert({
       sender_id: currentUser.id,
       receiver_id: currentChatUser,
-      content: null,
+      content: '',
       file_url: urlData.publicUrl,
       file_name: file.name,
-      file_size: file.size,
       file_type: file.type
     }).select().single();
 
-    if (error) { showToast('Besked fejlede'); input.value = ''; return; }
+    if (error) { logError('dmHandleFile:insert', error); showToast('Besked fejlede: ' + (error.message || 'ukendt')); input.value = ''; return; }
     if (newMsg) {
       const el = document.getElementById('chat-messages');
       if (el && !el.querySelector('[data-msg-id="' + newMsg.id + '"]')) {
