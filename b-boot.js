@@ -246,18 +246,29 @@ if ('serviceWorker' in navigator) {
 }
 
 function showUpdateBanner() {
-  if (document.getElementById('update-banner')) return; // allerede vist
+  if (document.getElementById('update-banner')) return;
   var banner = document.createElement('div');
   banner.id = 'update-banner';
   banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;'
-    + 'background:linear-gradient(135deg,var(--accent),var(--accent2));'
-    + 'color:#fff;display:flex;align-items:center;justify-content:space-between;'
-    + 'padding:0.6rem 1rem;font-size:0.82rem;font-weight:600;font-family:inherit;'
-    + 'box-shadow:0 2px 16px rgba(0,0,0,0.4);gap:0.75rem;';
-  banner.innerHTML = '<span>🆕 Ny version af Bubble er klar</span>'
-    + '<button onclick="window.location.reload()" style="background:rgba(255,255,255,0.25);border:none;'
-    + 'color:#fff;padding:0.35rem 0.9rem;border-radius:99px;font-weight:700;font-size:0.8rem;'
-    + 'font-family:inherit;cursor:pointer;white-space:nowrap;">Opdatér nu</button>';
+    + 'padding-top:env(safe-area-inset-top,0px);'
+    + 'background:rgba(12,12,25,0.92);'
+    + 'backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);'
+    + 'border-bottom:1px solid rgba(139,127,255,0.25);'
+    + 'box-shadow:0 4px 24px rgba(0,0,0,0.4);';
+  banner.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;'
+    + 'padding:0.55rem 1rem;gap:0.75rem;font-family:inherit">'
+    + '<div style="display:flex;align-items:center;gap:0.5rem;min-width:0">'
+    + '<div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.75rem">✦</div>'
+    + '<span style="font-size:0.78rem;font-weight:600;color:var(--text)">Ny version klar</span>'
+    + '</div>'
+    + '<div style="display:flex;gap:0.4rem;flex-shrink:0">'
+    + '<button onclick="window.location.reload()" style="background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;'
+    + 'color:#fff;padding:0.35rem 0.85rem;border-radius:99px;font-weight:700;font-size:0.72rem;'
+    + 'font-family:inherit;cursor:pointer;white-space:nowrap">Opdatér</button>'
+    + '<button onclick="this.closest(\'#update-banner\').remove()" style="background:none;border:1px solid var(--glass-border);'
+    + 'color:var(--muted);padding:0.35rem 0.6rem;border-radius:99px;font-size:0.72rem;'
+    + 'font-family:inherit;cursor:pointer">Senere</button>'
+    + '</div></div>';
   document.body.prepend(banner);
 }
 
