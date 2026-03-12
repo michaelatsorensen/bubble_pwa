@@ -5904,20 +5904,275 @@ async function bcLoadInfo() {
     const b = bcBubbleData;
     if (!b) return;
     const tags = (b.keywords||[]).map(k=>`<span class="tag">${escHtml(k)}</span>`).join('');
+    const isOwner = currentUser && b.created_by === currentUser.id;
+
+    // Member count
+    const { count: memberCount } = await sb.from('bubble_members')
+      .select('*', { count: 'exact', head: true }).eq('bubble_id', b.id);
+
     list.innerHTML = `
       <div class="chat-info-block"><div class="chat-info-label">Beskrivelse</div><div class="chat-info-val">${escHtml(b.description||'Ingen beskrivelse')}</div></div>
       <div class="chat-info-block"><div class="chat-info-label">Interesser</div><div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.4rem">${tags||'–'}</div></div>
       <div class="chat-info-block"><div class="chat-info-label">Boble-type</div><div class="chat-info-val">${typeLabel(b.type)}</div></div>
       <div class="chat-info-block"><div class="chat-info-label">Sted</div><div class="chat-info-val">${escHtml(b.location||'Ikke angivet')}</div></div>
+      <div class="chat-info-block"><div class="chat-info-label">Medlemmer</div><div class="chat-info-val">${memberCount || 0} personer</div></div>
       <div>
         <button class="${myUpvotes[b.id] ? 'chat-info-btn success' : 'chat-info-btn primary'}" id="bc-recommend-btn" onclick="toggleBubbleUpvote('${b.id}')">${myUpvotes[b.id] ? icon('checkCircle') + ' Anbefalet' : icon('rocket') + ' Anbefal denne boble'}</button>
         <button class="chat-info-btn primary" data-action="openQRModal" data-id="${b.id}">${icon("qrcode")} Del boble / QR-kode</button>
+        ${isOwner ? `<button class="chat-info-btn primary" onclick="downloadMembersPdf('${b.id}')" style="background:rgba(139,127,255,0.12);border-color:rgba(139,127,255,0.3);color:var(--accent)">${icon('users')} Download deltagerliste (PDF)</button>` : ''}
         <button class="chat-info-btn danger" data-action="leaveBubble" data-id="${b.id}">${icon("logout")} Forlad boblen</button>
       </div>`;
   } catch(e) { logError("bcLoadInfo", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // Person sheet from chat avatar
+
+// ══════════════════════════════════════════════════════════
+//  DELTAGER PDF — boble-ejer eksport
+// ══════════════════════════════════════════════════════════
+async function downloadMembersPdf(bubbleId) {
+  try {
+    showToast('Henter deltagerliste...');
+    await loadJsPdf();
+    const { jsPDF } = window.jspdf;
+
+    // ── Fetch data ──
+    const { data: b } = await sb.from('bubbles').select('*').eq('id', bubbleId).single();
+    if (!b) { showToast('Kunne ikke hente boble-data'); return; }
+
+    const { data: members } = await sb.from('bubble_members')
+      .select('user_id, joined_at, checked_in_at, checked_out_at')
+      .eq('bubble_id', bubbleId)
+      .order('checked_in_at', { ascending: true, nullsFirst: false });
+
+    if (!members || members.length === 0) { showToast('Ingen deltagere endnu'); return; }
+
+    const userIds = members.map(m => m.user_id);
+    const { data: profiles } = await sb.from('profiles')
+      .select('id, name, title, workplace').in('id', userIds);
+    const profileMap = {};
+    (profiles || []).forEach(p => { profileMap[p.id] = p; });
+
+    // ── Compute stats ──
+    const checkedIn = members.filter(m => m.checked_in_at);
+    const totalMembers = members.length;
+    const totalCheckedIn = checkedIn.length;
+
+    function fmtTime(iso) {
+      if (!iso) return '–';
+      return new Date(iso).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
+    }
+    function fmtDate(iso) {
+      if (!iso) return '–';
+      return new Date(iso).toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+    function fmtDuration(inIso, outIso) {
+      if (!inIso) return '–';
+      var end = outIso ? new Date(outIso) : new Date();
+      var mins = Math.round((end - new Date(inIso)) / 60000);
+      if (mins < 1) return '< 1 min';
+      if (mins < 60) return mins + ' min';
+      return Math.floor(mins / 60) + 't ' + (mins % 60) + 'min';
+    }
+
+    // ── Build PDF ──
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pw = 210, ph = 297;
+    const ml = 14, mr = 14, contentW = pw - ml - mr;
+
+    // Dark header bar
+    doc.setFillColor(10, 10, 20);
+    doc.rect(0, 0, pw, ph, 'F');
+
+    // Top accent gradient bar
+    doc.setFillColor(108, 99, 255);
+    doc.rect(0, 0, pw, 6, 'F');
+
+    // Bubble logo text
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(139, 127, 255);
+    doc.text('bubble', ml, 16);
+
+    // Report label top right
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(90, 90, 110);
+    var today = new Date().toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric' });
+    doc.text('Genereret ' + today, pw - mr, 16, { align: 'right' });
+
+    // Divider
+    doc.setDrawColor(40, 40, 60);
+    doc.setLineWidth(0.3);
+    doc.line(ml, 20, pw - mr, 20);
+
+    // Bubble name
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(230, 230, 245);
+    doc.text(b.name, ml, 33);
+
+    // Meta line
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 130);
+    var metaParts = [typeLabel(b.type)];
+    if (b.location) metaParts.push(b.location);
+    if (b.description) metaParts.push(b.description.slice(0, 60) + (b.description.length > 60 ? '...' : ''));
+    doc.text(metaParts.join('  ·  '), ml, 40);
+
+    // ── Summary boxes ──
+    var boxY = 46;
+    var boxH = 16;
+    var boxes = [
+      { label: 'Tilmeldte', val: String(totalMembers), color: [108, 99, 255] },
+      { label: 'Check-in', val: String(totalCheckedIn), color: [46, 207, 207] },
+      { label: 'Fremmøde', val: totalMembers > 0 ? Math.round(totalCheckedIn / totalMembers * 100) + '%' : '–', color: [16, 185, 129] }
+    ];
+    var boxW = (contentW - 6) / 3;
+    boxes.forEach(function(box, i) {
+      var bx = ml + i * (boxW + 3);
+      doc.setFillColor(box.color[0], box.color[1], box.color[2], 0.12);
+      // Simulate transparency with a dark fill
+      doc.setFillColor(20, 20, 35);
+      doc.roundedRect(bx, boxY, boxW, boxH, 2, 2, 'F');
+      doc.setDrawColor(box.color[0], box.color[1], box.color[2]);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(bx, boxY, boxW, boxH, 2, 2, 'S');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(box.color[0], box.color[1], box.color[2]);
+      doc.text(box.val, bx + boxW / 2, boxY + 9, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(110, 110, 140);
+      doc.text(box.label, bx + boxW / 2, boxY + 14, { align: 'center' });
+    });
+
+    // ── Table header ──
+    var tableY = boxY + boxH + 8;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(110, 110, 140);
+
+    // Column widths (sum = contentW = 182)
+    var cols = [
+      { label: 'NAVN',         x: ml,      w: 44 },
+      { label: 'TITEL',        x: ml + 44, w: 38 },
+      { label: 'VIRKSOMHED',   x: ml + 82, w: 36 },
+      { label: 'CHECK-IN',     x: ml + 118,w: 22 },
+      { label: 'CHECK-OUT',    x: ml + 140,w: 22 },
+      { label: 'VARIGHED',     x: ml + 162,w: 20 }
+    ];
+
+    cols.forEach(function(col) {
+      doc.text(col.label, col.x, tableY);
+    });
+
+    // Header underline
+    doc.setDrawColor(50, 50, 70);
+    doc.setLineWidth(0.3);
+    doc.line(ml, tableY + 2, pw - mr, tableY + 2);
+
+    // ── Table rows ──
+    var rowY = tableY + 7;
+    var rowH = 7.5;
+    var rowCount = 0;
+
+    // Sort: checked-in first (by check-in time), then members without check-in
+    var sorted = [...members].sort(function(a, b) {
+      if (a.checked_in_at && !b.checked_in_at) return -1;
+      if (!a.checked_in_at && b.checked_in_at) return 1;
+      if (a.checked_in_at && b.checked_in_at) return new Date(a.checked_in_at) - new Date(b.checked_in_at);
+      return new Date(a.joined_at) - new Date(b.joined_at);
+    });
+
+    sorted.forEach(function(m, i) {
+      // New page if needed
+      if (rowY + rowH > ph - 18) {
+        doc.addPage();
+        doc.setFillColor(10, 10, 20);
+        doc.rect(0, 0, pw, ph, 'F');
+        doc.setFillColor(108, 99, 255);
+        doc.rect(0, 0, pw, 3, 'F');
+        rowY = 14;
+        // Repeat column headers
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(110, 110, 140);
+        cols.forEach(function(col) { doc.text(col.label, col.x, rowY); });
+        doc.setDrawColor(50, 50, 70);
+        doc.line(ml, rowY + 2, pw - mr, rowY + 2);
+        rowY += 7;
+      }
+
+      var p = profileMap[m.user_id] || {};
+      var isCheckedIn = !!m.checked_in_at;
+
+      // Alternating row bg
+      if (i % 2 === 0) {
+        doc.setFillColor(18, 18, 30);
+        doc.rect(ml - 1, rowY - 5, contentW + 2, rowH, 'F');
+      }
+
+      // Live indicator dot
+      var isLive = m.checked_in_at && !m.checked_out_at;
+      if (isLive) {
+        doc.setFillColor(46, 207, 207);
+        doc.circle(ml - 4, rowY - 2, 1.2, 'F');
+      }
+
+      function truncate(str, maxLen) {
+        if (!str) return '–';
+        return str.length > maxLen ? str.slice(0, maxLen - 1) + '…' : str;
+      }
+
+      doc.setFont('helvetica', isCheckedIn ? 'bold' : 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(isCheckedIn ? 220 : 150, isCheckedIn ? 220 : 150, isCheckedIn ? 235 : 170);
+      doc.text(truncate(p.name || 'Ukendt', 22), cols[0].x, rowY);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(130, 130, 155);
+      doc.text(truncate(p.title || '', 20), cols[1].x, rowY);
+      doc.text(truncate(p.workplace || '', 18), cols[2].x, rowY);
+
+      doc.setTextColor(isCheckedIn ? 46 : 80, isCheckedIn ? 207 : 80, isCheckedIn ? 207 : 100);
+      doc.text(fmtTime(m.checked_in_at), cols[3].x, rowY);
+
+      doc.setTextColor(130, 130, 155);
+      doc.text(fmtTime(m.checked_out_at), cols[4].x, rowY);
+      doc.text(fmtDuration(m.checked_in_at, m.checked_out_at), cols[5].x, rowY);
+
+      rowY += rowH;
+      rowCount++;
+    });
+
+    // ── Footer ──
+    var footerY = ph - 10;
+    doc.setDrawColor(40, 40, 60);
+    doc.setLineWidth(0.3);
+    doc.line(ml, footerY - 4, pw - mr, footerY - 4);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(70, 70, 90);
+    doc.text('Genereret af Bubble · bubble.app', ml, footerY);
+    doc.text('Side 1 af ' + doc.getNumberOfPages(), pw - mr, footerY, { align: 'right' });
+
+    // Bottom accent bar
+    doc.setFillColor(108, 99, 255);
+    doc.rect(0, ph - 3, pw, 3, 'F');
+
+    // ── Save ──
+    var safeName = b.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    var dateStr = new Date().toISOString().slice(0, 10);
+    doc.save('deltagerliste-' + safeName + '-' + dateStr + '.pdf');
+    showToast('PDF downloadet! 📋');
+    trackEvent('members_pdf_export', { bubble_id: bubbleId, member_count: totalMembers });
+
+  } catch(e) { logError('downloadMembersPdf', e); showToast('PDF fejl: ' + (e.message || 'ukendt')); }
+}
 
 // ══════════════════════════════════════════════════════════
 //  BUBBLE INVITE SYSTEM
@@ -7289,6 +7544,21 @@ async function savePushSubscription(subscription) {
   }
 }
 
+function setPushBtnActive(btn) {
+  if (!btn) return;
+  btn.textContent = '🔔 Aktiveret';
+  btn.style.background = 'rgba(46,207,207,0.15)';
+  btn.style.borderColor = 'rgba(46,207,207,0.5)';
+  btn.style.color = 'var(--accent3)';
+}
+function setPushBtnInactive(btn) {
+  if (!btn) return;
+  btn.textContent = 'Aktivér';
+  btn.style.background = 'rgba(255,255,255,0.05)';
+  btn.style.borderColor = 'var(--glass-border)';
+  btn.style.color = 'var(--muted)';
+}
+
 async function togglePushNotifications() {
   var btn = document.getElementById('push-toggle-btn');
   if (!btn) return;
@@ -7301,8 +7571,7 @@ async function togglePushNotifications() {
       // Unsubscribe
       await sub.unsubscribe();
       await sb.from('push_subscriptions').delete().eq('user_id', currentUser.id);
-      btn.textContent = 'Aktivér';
-      btn.style.color = '';
+      setPushBtnInactive(btn);
       showToast('Notifikationer deaktiveret');
       trackEvent('push_disabled');
       return;
@@ -7312,8 +7581,7 @@ async function togglePushNotifications() {
   // Subscribe
   var success = await requestPushPermission();
   if (success) {
-    btn.textContent = 'Deaktivér';
-    btn.style.color = 'var(--green)';
+    setPushBtnActive(btn);
   }
 }
 
@@ -7325,15 +7593,10 @@ async function updatePushButtonState() {
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       var reg = await navigator.serviceWorker.ready;
       var sub = await reg.pushManager.getSubscription();
-      if (sub) {
-        btn.textContent = 'Deaktivér';
-        btn.style.color = 'var(--green)';
-        return;
-      }
+      if (sub) { setPushBtnActive(btn); return; }
     }
-    btn.textContent = 'Aktivér';
-    btn.style.color = '';
-  } catch(e) {}
+    setPushBtnInactive(btn);
+  } catch(e) { setPushBtnInactive(btn); }
 }
 
 function urlBase64ToUint8Array(base64String) {
