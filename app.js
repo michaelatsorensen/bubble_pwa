@@ -3574,7 +3574,59 @@ function openCreateBubble() {
   document.getElementById('cb-location').value = '';
   renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
   openModal('modal-create-bubble');
-  setTimeout(initInputConfirmButtons, 50);
+  setTimeout(function() {
+    initInputConfirmButtons();
+    cbRenderPillSelect('cb-type', [
+      { value: 'event',   icon: 'rocket',   label: 'Event' },
+      { value: 'local',   icon: 'pin',      label: 'Lokal' },
+      { value: 'theme',   icon: 'target',   label: 'Tematiseret' },
+      { value: 'company', icon: 'building', label: 'Virksomhed' }
+    ]);
+    cbRenderPillSelect('cb-visibility', [
+      { value: 'public',  icon: 'globe', label: 'Offentlig' },
+      { value: 'private', icon: 'lock',  label: 'Privat' },
+      { value: 'hidden',  icon: 'eye',   label: 'Skjult' }
+    ]);
+  }, 50);
+}
+
+function cbRenderPillSelect(selectId, options) {
+  var select = document.getElementById(selectId);
+  if (!select) return;
+  var existingPills = document.getElementById(selectId + '-pills');
+  if (existingPills) existingPills.remove();
+  var current = select.value;
+  var wrap = document.createElement('div');
+  wrap.id = selectId + '-pills';
+  wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.25rem';
+  options.forEach(function(opt) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    var isActive = opt.value === current;
+    btn.style.cssText = 'display:flex;align-items:center;gap:0.35rem;padding:0.4rem 0.75rem;border-radius:99px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.15s;border:1.5px solid ' + (isActive ? 'rgba(139,127,255,0.5)' : 'var(--glass-border)') + ';background:' + (isActive ? 'rgba(139,127,255,0.12)' : 'rgba(255,255,255,0.04)') + ';color:' + (isActive ? 'var(--accent)' : 'var(--muted)');
+    var ico = document.createElement('span');
+    ico.style.cssText = 'width:0.85rem;height:0.85rem;display:flex;align-items:center;justify-content:center';
+    ico.innerHTML = ICONS[opt.icon] || '';
+    var lbl = document.createElement('span');
+    lbl.textContent = opt.label;
+    btn.appendChild(ico);
+    btn.appendChild(lbl);
+    btn.onclick = function() {
+      select.value = opt.value;
+      wrap.querySelectorAll('button').forEach(function(b) {
+        b.style.borderColor = 'var(--glass-border)';
+        b.style.background = 'rgba(255,255,255,0.04)';
+        b.style.color = 'var(--muted)';
+      });
+      btn.style.borderColor = 'rgba(139,127,255,0.5)';
+      btn.style.background = 'rgba(139,127,255,0.12)';
+      btn.style.color = 'var(--accent)';
+    };
+    wrap.appendChild(btn);
+  });
+  // Hide native select, insert pills after it
+  select.style.display = 'none';
+  select.parentNode.insertBefore(wrap, select.nextSibling);
 }
 
 async function createBubble() {
@@ -7865,14 +7917,14 @@ async function savePushSubscription(subscription) {
 
 function setPushBtnActive(btn) {
   if (!btn) return;
-  btn.textContent = '🔔 Aktiveret';
+  btn.innerHTML = icon('bell') + ' Aktiveret';
   btn.style.background = 'rgba(46,207,207,0.15)';
   btn.style.borderColor = 'rgba(46,207,207,0.5)';
   btn.style.color = 'var(--accent3)';
 }
 function setPushBtnInactive(btn) {
   if (!btn) return;
-  btn.textContent = 'Aktivér';
+  btn.innerHTML = icon('bell') + ' Aktivér';
   btn.style.background = 'rgba(255,255,255,0.05)';
   btn.style.borderColor = 'var(--glass-border)';
   btn.style.color = 'var(--muted)';
