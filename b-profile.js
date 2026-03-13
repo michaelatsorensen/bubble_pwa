@@ -603,7 +603,7 @@ async function loadProfile() {
         adminPanel.style.display = 'none';
       }
     }
-  } catch(e) { logError("loadProfile", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("loadProfile", e); showToast('Kunne ikke hente profil — tjek forbindelsen'); }
 }
 
 // Standalone saved contacts loader — called from loadProfile AND after save/remove

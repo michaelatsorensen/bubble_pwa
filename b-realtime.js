@@ -249,7 +249,7 @@ async function loadMessages() {
         ${isUnread ? '<div class="live-dot"></div>' : ''}
       </div>`;
     }).join('');
-  } catch(e) { logError("loadMessages", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("loadMessages", e); showRetryState('conversations-list', 'loadMessages', 'Kunne ikke hente beskeder'); }
 }
 
 async function openChat(userId, fromScreen) {

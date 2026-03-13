@@ -33,7 +33,7 @@ async function loadHome() {
     await Promise.all(loaders);
     hsApplyToHome();
     showGettingStarted();
-  } catch(e) { logError("loadHome", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("loadHome", e); /* Individual cards handle their own errors */ }
 }
 
 async function loadHomeBubblesCard() {
@@ -423,7 +423,7 @@ async function loadMyBubbles() {
         }).join('');
       }
     }
-  } catch(e) { logError("loadMyBubbles", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("loadMyBubbles", e); showRetryState('my-bubbles-list', 'loadMyBubbles', 'Kunne ikke hente bobler'); }
 }
 
 async function updateRadarCount() {

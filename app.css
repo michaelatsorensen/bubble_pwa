@@ -1771,3 +1771,66 @@ textarea ~ .input-confirm-btn { top:0.7rem; transform:none; }
 /* Loading screen: no transition animation */
 #screen-loading.active { animation:none; }
 #screen-auth.active { animation:none; }
+
+/* ── RETRY STATE ── */
+.retry-state { text-align:center; padding:2rem 1rem; }
+.retry-state .btn-sm { margin-top:0.3rem; }
+
+/* ── CHAT + MENU (Messenger-style) ── */
+.chat-plus-btn {
+  width:34px;height:34px;border-radius:50%;
+  background:var(--glass-bg-strong);border:1px solid var(--glass-border);
+  color:var(--accent);font-size:1.3rem;font-weight:300;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;transition:all 0.2s;
+  font-family:'Outfit',sans-serif;
+}
+.chat-plus-btn:active { transform:scale(0.9); background:rgba(139,127,255,0.15); }
+.chat-plus-btn.open { transform:rotate(45deg); color:var(--accent2); }
+
+.chat-plus-menu {
+  display:none;position:absolute;bottom:calc(100% + 6px);left:0.5rem;
+  background:rgba(18,18,35,0.96);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--glass-border);border-radius:14px;
+  padding:0.35rem;min-width:140px;z-index:20;
+  box-shadow:0 -8px 32px rgba(0,0,0,0.5);
+  animation:chatMenuIn 0.2s cubic-bezier(0.16,1,0.3,1) both;
+}
+.chat-plus-menu.open { display:flex; flex-direction:column; }
+@keyframes chatMenuIn {
+  from { opacity:0; transform:translateY(8px) scale(0.95); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+.chat-plus-menu button {
+  display:flex;align-items:center;gap:0.5rem;
+  padding:0.55rem 0.75rem;border:none;background:none;
+  color:var(--text);font-size:0.78rem;font-weight:600;font-family:'Outfit',sans-serif;
+  cursor:pointer;border-radius:10px;transition:background 0.15s;
+  white-space:nowrap;
+}
+.chat-plus-menu button:active { background:rgba(139,127,255,0.12); }
+.chat-menu-icon { font-size:0.9rem;width:1.4rem;text-align:center; }
+
+/* ── DARK KEYBOARD HINT + INTEGRATED COMPOSER ── */
+.chat-composer-input {
+  color-scheme:dark;
+  -webkit-appearance:none;
+  background:rgba(255,255,255,0.06) !important;
+  border-color:rgba(255,255,255,0.08) !important;
+}
+.chat-composer-input:focus {
+  background:rgba(255,255,255,0.08) !important;
+  border-color:var(--accent) !important;
+}
+.chat-composer {
+  position:relative; /* anchor for plus menu */
+}
+
+/* ── DARK KEYBOARD — all inputs ── */
+.input, .chip-input, textarea.input,
+.gif-picker-search, input[type="search"],
+input[type="email"], input[type="password"],
+input[type="text"], input[type="url"],
+input[type="range"] {
+  color-scheme: dark;
+}

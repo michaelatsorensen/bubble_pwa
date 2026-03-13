@@ -250,3 +250,54 @@ function visibilityBadge(visibility) {
   if (visibility === 'private') return '<span class="fs-065" style="color:var(--accent);display:inline-flex;align-items:center;gap:0.15rem">' + ico('lock') + ' Privat</span>';
   return '<span class="fs-065" style="color:var(--green);display:inline-flex;align-items:center;gap:0.15rem">' + ico('globe') + ' Åben</span>';
 }
+
+// ── Retry state: show inline error with retry button ──
+function showRetryState(elementId, retryFnName, message) {
+  var el = document.getElementById(elementId);
+  if (!el) return;
+  el.innerHTML = '<div class="retry-state">' +
+    '<div style="width:36px;height:36px;margin:0 auto 0.5rem;opacity:0.4;color:var(--accent2)">' + ico('warn') + '</div>' +
+    '<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:0.6rem">' + escHtml(message) + '</div>' +
+    '<button onclick="' + retryFnName + '()" class="btn-sm btn-ghost" style="font-size:0.72rem;padding:0.35rem 1rem">Prøv igen</button>' +
+    '</div>';
+}
+
+// ── Empty state: show message with optional CTA ──
+function showEmptyState(elementId, iconName, message, ctaText, ctaAction) {
+  var el = document.getElementById(elementId);
+  if (!el) return;
+  var cta = ctaText ? '<div style="margin-top:0.8rem"><button onclick="' + ctaAction + '" class="btn-sm btn-accent" style="font-size:0.72rem;padding:0.4rem 1.2rem">' + escHtml(ctaText) + '</button></div>' : '';
+  el.innerHTML = '<div class="empty-state" style="padding:1.5rem 0">' +
+    '<div class="empty-icon">' + icon(iconName) + '</div>' +
+    '<div class="empty-text">' + message + '</div>' +
+    cta + '</div>';
+}
+
+// ── Chat + menu toggle (Messenger-style) ──
+function toggleChatMenu(mode) {
+  var menu = document.getElementById(mode + '-plus-menu');
+  var btn = menu?.previousElementSibling;
+  if (!menu) return;
+  var isOpen = menu.classList.contains('open');
+  // Close all menus first
+  document.querySelectorAll('.chat-plus-menu.open').forEach(function(m) { m.classList.remove('open'); });
+  document.querySelectorAll('.chat-plus-btn.open').forEach(function(b) { b.classList.remove('open'); });
+  if (!isOpen) {
+    menu.classList.add('open');
+    if (btn) btn.classList.add('open');
+    // Close on outside tap
+    setTimeout(function() {
+      document.addEventListener('click', _closeChatMenuOutside, { once: true });
+    }, 10);
+  }
+}
+function closeChatMenu(mode) {
+  var menu = document.getElementById(mode + '-plus-menu');
+  if (menu) menu.classList.remove('open');
+  document.querySelectorAll('.chat-plus-btn.open').forEach(function(b) { b.classList.remove('open'); });
+}
+function _closeChatMenuOutside(e) {
+  if (e.target.closest('.chat-plus-menu') || e.target.closest('.chat-plus-btn')) return;
+  document.querySelectorAll('.chat-plus-menu.open').forEach(function(m) { m.classList.remove('open'); });
+  document.querySelectorAll('.chat-plus-btn.open').forEach(function(b) { b.classList.remove('open'); });
+}

@@ -133,7 +133,7 @@ async function loadDiscover() {
       return new Date(b.created_at) - new Date(a.created_at);
     });
     renderBubbleList(allBubbles);
-  } catch(e) { logError("loadDiscover", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("loadDiscover", e); showRetryState('all-bubbles-list', 'loadDiscover', 'Kunne ikke hente bobler — tjek din forbindelse'); }
 }
 
 function renderBubbleList(bubbles) {
@@ -153,7 +153,11 @@ function filterBubbles() {
     const filtered = q ? allBubbles.filter(b =>
       b.name.toLowerCase().includes(q) || (b.keywords || []).some(k => k.toLowerCase().includes(q))
     ) : allBubbles;
-    renderBubbleList(filtered);
+    if (q && filtered.length === 0) {
+      document.getElementById('all-bubbles-list').innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('search') + '</div><div class="empty-text">Ingen bobler matcher "' + escHtml(q) + '"</div></div>';
+    } else {
+      renderBubbleList(filtered);
+    }
   }, 150);
 }
 
