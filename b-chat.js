@@ -181,6 +181,12 @@ async function openBubbleChat(bubbleId, fromScreen) {
 
     document.getElementById('bc-emoji').innerHTML = bubbleEmoji(b.type);
     document.getElementById('bc-name').textContent = b.name;
+    // Hero gradient based on bubble type
+    var _heroGrads = {'event':'linear-gradient(135deg,#E85D8A,#8B7FFF)','live':'linear-gradient(135deg,#2ECFCF,#8B7FFF)','local':'linear-gradient(135deg,#10B981,#065F46)','topic':'linear-gradient(135deg,#8B7FFF,#4C1D95)','company':'linear-gradient(135deg,#1E3A8A,#7C3AED)'};
+    var hg = document.getElementById('bc-hero-gradient');
+    var hi = document.getElementById('bc-hero-icon');
+    if (hg) hg.style.background = _heroGrads[b.type] || _heroGrads['topic'];
+    if (hi) hi.innerHTML = bubbleEmoji(b.type);
 
     const { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bubbleId);
     document.getElementById('bc-members-count').textContent = (count||0) + ' medlemmer';
@@ -236,6 +242,11 @@ async function bcLoadBubbleInfo() {
     bcBubbleData = b;
     document.getElementById('bc-emoji').innerHTML = bubbleEmoji(b.type);
     document.getElementById('bc-name').textContent = b.name;
+    var _heroGrads2 = {'event':'linear-gradient(135deg,#E85D8A,#8B7FFF)','live':'linear-gradient(135deg,#2ECFCF,#8B7FFF)','local':'linear-gradient(135deg,#10B981,#065F46)','topic':'linear-gradient(135deg,#8B7FFF,#4C1D95)','company':'linear-gradient(135deg,#1E3A8A,#7C3AED)'};
+    var hg2 = document.getElementById('bc-hero-gradient');
+    var hi2 = document.getElementById('bc-hero-icon');
+    if (hg2) hg2.style.background = _heroGrads2[b.type] || _heroGrads2['topic'];
+    if (hi2) hi2.innerHTML = bubbleEmoji(b.type);
     const { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bcBubbleId);
     // Check my LIVE status
     var statusText = (count||0) + ' medlemmer';
@@ -282,7 +293,7 @@ function bcSwitchTab(tab) {
 async function bcLoadMessages() {
   try {
     const el = document.getElementById('bc-messages');
-    el.innerHTML = '<div class="spinner"></div>';
+    el.innerHTML = skelMessages(6);
 
     // Hent beskeder uden profiles join — henter profiler separat
     const { data: msgs, error: msgErr } = await sb.from('bubble_messages')
@@ -694,7 +705,7 @@ function bcCreateHistoryModal() {
 async function bcLoadMembers() {
   try {
     const list = document.getElementById('bc-members-list');
-    list.innerHTML = '<div class="spinner"></div>';
+    list.innerHTML = skelCards(4);
 
     const expireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 60 * 60 * 1000).toISOString();
 

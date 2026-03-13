@@ -202,7 +202,7 @@ async function loadMessages() {
   try {
     var myNav = _navVersion;
     const list = document.getElementById('conversations-list');
-    list.innerHTML = '<div class="spinner"></div>';
+    list.innerHTML = skelCards(5);
 
     const { data: convs } = await sb.from('messages')
       .select('*')
@@ -217,11 +217,10 @@ async function loadMessages() {
       return;
     }
 
-    // Get unique conversation partners — keep newest message per partner
     const partnerMap = new Map();
     for (const m of convs) {
       const partnerId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
-      if (partnerId === currentUser.id) continue; // skip self-messages
+      if (partnerId === currentUser.id) continue;
       if (isBlocked(partnerId)) continue;
       if (!partnerMap.has(partnerId)) {
         partnerMap.set(partnerId, { partnerId, lastMsg: m });
@@ -229,7 +228,6 @@ async function loadMessages() {
     }
     const partners = Array.from(partnerMap.values());
 
-    // Load partner profiles
     const pIds = partners.map(p => p.partnerId);
     const { data: profiles } = await sb.from('profiles').select('id,name,title,avatar_url').in('id', pIds);
     if (_navVersion !== myNav) return;
@@ -239,15 +237,20 @@ async function loadMessages() {
       const p = profileMap[partnerId] || {};
       const initials = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const isUnread = lastMsg.receiver_id === currentUser.id && !lastMsg.read_at;
-      const convAvatar = p.avatar_url ? '<div class="avatar" style="width:42px;height:42px;overflow:hidden;border-radius:50%"><img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover"></div>' : '<div class="avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">'+initials+'</div>';
-      return `<div class="card flex-row-center" data-action="openChat" data-id="${partnerId}" data-conv-id="${partnerId}">
-        ${convAvatar}
-        <div style="flex:1">
-          <div class="${isUnread?'fw-700':'fw-600'} fs-09">${escHtml(p.name||'Ukendt')}</div>
-          <div class="fs-078 text-muted text-truncate">${escHtml(lastMsg.content||'')}</div>
-        </div>
-        ${isUnread ? '<div class="live-dot"></div>' : ''}
-      </div>`;
+      const preview = lastMsg.file_url ? '📎 Billede' : escHtml((lastMsg.content||'').slice(0,50));
+      const time = timeAgo(lastMsg.created_at);
+      const convAvatar = p.avatar_url ?
+        '<div class="avatar" style="width:44px;height:44px;overflow:hidden;border-radius:50%"><img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover"></div>' :
+        '<div class="avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A);width:44px;height:44px">'+initials+'</div>';
+      return '<div class="card conv-card' + (isUnread ? ' unread' : '') + '" data-action="openChat" data-id="' + partnerId + '" data-conv-id="' + partnerId + '">' +
+        '<div class="flex-row-center" style="gap:0.75rem">' + convAvatar +
+        '<div style="flex:1;min-width:0">' +
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:0.5rem">' +
+        '<div class="conv-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.name||'Ukendt') + '</div>' +
+        '<div class="conv-time">' + time + '</div></div>' +
+        '<div class="conv-preview" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;margin-top:0.1rem">' + preview + '</div>' +
+        '</div>' + (isUnread ? '<div class="conv-unread-dot"></div>' : '') +
+        '</div></div>';
     }).join('');
   } catch(e) { logError("loadMessages", e); showRetryState('conversations-list', 'loadMessages', 'Kunne ikke hente beskeder'); }
 }

@@ -129,7 +129,7 @@ function closeLiveCheckinModal() {
 
 async function loadLiveCheckinList() {
   const list = document.getElementById('live-checkin-list');
-  list.innerHTML = '<div class="spinner"></div>';
+  list.innerHTML = skelCards(3);
   try {
     // Get user's memberships to check access for hidden bubbles
     var { data: myMemberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);

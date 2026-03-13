@@ -136,7 +136,7 @@ async function saveContact() {
     if (existing) { showToast('Allerede gemt'); return; }
     await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: currentPerson });
     document.getElementById('save-btn').innerHTML = icon('checkCircle') + '<span>Gemt</span>';
-    showToast('Kontakt gemt!');
+    showSuccessToast('Kontakt gemt');
     trackEvent('contact_saved', { contact_id: currentPerson });
     loadSavedContacts();
   } catch(e) { logError("saveContact", e); showToast(e.message || "Ukendt fejl"); }
@@ -573,7 +573,7 @@ async function psSaveContact() {
           return '<div class="ps-star empty" onclick="psSetStar(\'' + userId + '\',' + n + ')">\u2605</div>';
         }).join('');
       }
-      showToast('Kontakt gemt!');
+      showSuccessToast('Kontakt gemt');
     }
     loadSavedContacts();
   } catch(e) { logError("psSaveContact", e); showToast(e.message || "Ukendt fejl"); }
@@ -789,7 +789,7 @@ async function loadProfileInvitations() {
   try {
     const list = document.getElementById('profile-invitations');
     if (!list) return;
-    list.innerHTML = '<div class="spinner"></div>';
+    list.innerHTML = skelCards(3);
 
     // Fetch pending invitations — newest first
     const { data: invites, error: invErr } = await sb.from('bubble_invitations')
@@ -957,7 +957,7 @@ async function saveProfile() {
     await loadCurrentProfile();
     closeModal('modal-edit-profile');
     loadProfile();
-    showToast('Profil gemt! ✅');
+    showSuccessToast('Profil gemt');
   } catch(e) { logError("saveProfile", e); showToast(e.message || "Ukendt fejl"); }
 }
 

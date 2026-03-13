@@ -90,7 +90,7 @@ async function loadDiscover() {
   try {
     var myNav = _navVersion;
     const list = document.getElementById('all-bubbles-list');
-    list.innerHTML = '<div class="spinner"></div>';
+    list.innerHTML = skelCards(4);
     await loadBubbleUpvotes();
     if (_navVersion !== myNav) return; // screen changed — abort
 
@@ -178,7 +178,7 @@ async function joinBubble(bubbleId) {
   try {
     const { error } = await sb.from('bubble_members').insert({ bubble_id: bubbleId, user_id: currentUser.id });
     if (error && !String(error.message || '').includes('duplicate')) return showToast('Fejl ved joining');
-    showToast('Du er nu i boblen! 🫧');
+    showSuccessToast('Du er nu i boblen');
     await openBubble(bubbleId);
     loadHome();
     trackEvent('bubble_joined', { bubble_id: bubbleId });
@@ -364,7 +364,7 @@ async function saveEditBubble() {
     }).eq('id', currentEditBubbleId);
     if (error) return showToast('Fejl: ' + error.message);
     closeModal('modal-edit-bubble');
-    showToast('Boble opdateret! ✅');
+    showSuccessToast('Boble opdateret');
     // Reload bubble data in-place (preserves back navigation)
     await bcLoadBubbleInfo();
     await bcLoadMembers();
@@ -563,7 +563,7 @@ async function checkQRJoin() {
       .insert({ bubble_id: joinId, user_id: session.user.id });
 
     if (!error || String(error.message || '').includes('duplicate')) {
-      showToast('Du er checket ind! 🫧');
+      showSuccessToast('Du er checket ind');
       await openBubble(joinId, 'screen-home');
     }
   } catch(e) { logError("checkQRJoin", e); showToast(e.message || "Ukendt fejl"); }
@@ -577,7 +577,7 @@ async function checkPendingJoin() {
     const { error } = await sb.from('bubble_members')
       .insert({ bubble_id: joinId, user_id: currentUser.id });
     if (!error || String(error.message || '').includes('duplicate')) {
-      showToast('Du er checket ind! 🫧');
+      showSuccessToast('Du er checket ind');
       await openBubble(joinId, 'screen-home');
     }
   } catch(e) { logError("checkPendingJoin", e); showToast(e.message || "Ukendt fejl"); }

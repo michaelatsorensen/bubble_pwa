@@ -269,7 +269,7 @@ async function handleSignup() {
       loadLiveBubbleStatus();
       initPushNotifications();
     }
-    showToast('Velkommen til Bubble! 🫧');
+    showSuccessToast('Velkommen til Bubble');
   } catch(e) { logError("handleSignup", e); showToast(e.message || "Ukendt fejl"); }
 }
 

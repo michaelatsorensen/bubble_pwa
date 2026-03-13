@@ -301,3 +301,60 @@ function _closeChatMenuOutside(e) {
   document.querySelectorAll('.chat-plus-menu.open').forEach(function(m) { m.classList.remove('open'); });
   document.querySelectorAll('.chat-plus-btn.open').forEach(function(b) { b.classList.remove('open'); });
 }
+
+// ── Skeleton loading states ──
+function skelCards(count) {
+  var html = '';
+  for (var i = 0; i < count; i++) {
+    html += '<div class="skel-card">' +
+      '<div class="skel skel-circle" style="width:40px;height:40px;flex-shrink:0"></div>' +
+      '<div style="flex:1">' +
+      '<div class="skel" style="width:' + (50 + Math.random()*30) + '%;height:12px;margin-bottom:6px"></div>' +
+      '<div class="skel" style="width:' + (30 + Math.random()*40) + '%;height:10px"></div>' +
+      '</div></div>';
+  }
+  return html;
+}
+
+function skelMessages(count) {
+  var html = '';
+  for (var i = 0; i < count; i++) {
+    var isMe = i % 3 === 0;
+    html += '<div class="skel-row" style="justify-content:' + (isMe ? 'flex-end' : 'flex-start') + '">' +
+      (isMe ? '' : '<div class="skel skel-circle" style="width:28px;height:28px;flex-shrink:0"></div>') +
+      '<div class="skel" style="width:' + (80 + Math.random()*120) + 'px;height:32px;border-radius:16px"></div>' +
+      '</div>';
+  }
+  return html;
+}
+
+// ── Success feedback ──
+function showSuccessPulse(element) {
+  if (!element) return;
+  element.classList.add('success-pulse');
+  setTimeout(function() { element.classList.remove('success-pulse'); }, 500);
+}
+
+// ── Time ago helper (for conversations) ──
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  var diff = Date.now() - new Date(dateStr).getTime();
+  var mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'nu';
+  if (mins < 60) return mins + ' min';
+  var hours = Math.floor(mins / 60);
+  if (hours < 24) return hours + ' t';
+  var days = Math.floor(hours / 24);
+  if (days < 7) return days + ' d';
+  return new Date(dateStr).toLocaleDateString('da-DK', { day:'numeric', month:'short' });
+}
+
+// ── Enhanced success toast with check animation ──
+function showSuccessToast(message) {
+  var toast = document.getElementById('toast');
+  if (!toast) { showToast(message); return; }
+  toast.innerHTML = '<span class="check-pop" style="display:inline-block;margin-right:0.3rem">✓</span> ' + escHtml(message);
+  toast.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2500);
+}

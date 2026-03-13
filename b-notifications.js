@@ -12,7 +12,7 @@ async function loadNotifications() {
     localStorage.setItem('bubble_notifs_seen', new Date().toISOString());
     const list = document.getElementById('notifications-list');
     if (!list) return;
-    list.innerHTML = '<div class="spinner"></div>';
+    list.innerHTML = skelCards(4);
 
     var since30d = new Date(Date.now() - 30*24*60*60*1000).toISOString();
     var since7d = new Date(Date.now() - 7*24*60*60*1000).toISOString();

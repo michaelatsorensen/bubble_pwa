@@ -181,7 +181,7 @@ function bbSwitchTab(tab) {
 async function bbLoadLivePanel() {
   var list = document.getElementById('bb-live-list');
   if (!list) return;
-  list.innerHTML = '<div class="spinner"></div>';
+  list.innerHTML = skelCards(3);
   try {
     // Get user's memberships for access check
     var { data: myMem } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
@@ -302,8 +302,8 @@ async function loadMyBubbles() {
     localStorage.setItem('bubble_bubbles_seen', new Date().toISOString());
     const ownedList  = document.getElementById('my-owned-bubbles-list');
     const joinedList = document.getElementById('my-bubbles-list');
-    ownedList.innerHTML  = '<div class="spinner"></div>';
-    joinedList.innerHTML = '<div class="spinner"></div>';
+    ownedList.innerHTML = skelCards(2);
+    joinedList.innerHTML = skelCards(2);
 
     const { data: memberships } = await sb.from('bubble_members')
       .select('bubble_id').eq('user_id', currentUser.id);

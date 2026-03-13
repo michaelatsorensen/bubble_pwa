@@ -1834,3 +1834,64 @@ input[type="text"], input[type="url"],
 input[type="range"] {
   color-scheme: dark;
 }
+
+/* ── SKELETON LOADING STATES ── */
+@keyframes shimmer {
+  0% { background-position:-200% 0; }
+  100% { background-position:200% 0; }
+}
+.skel {
+  background:linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.5s ease infinite;
+  border-radius:8px;
+}
+.skel-circle { border-radius:50%; }
+.skel-card {
+  display:flex;align-items:center;gap:0.85rem;
+  padding:0.85rem 1.1rem;margin-bottom:0.5rem;
+  background:var(--glass-bg);border:1px solid var(--glass-border-subtle);
+  border-radius:var(--radius);
+}
+.skel-row { display:flex;align-items:center;gap:0.7rem;padding:0.6rem 0; }
+
+/* ── SUCCESS PULSE ANIMATION ── */
+@keyframes successPulse {
+  0% { transform:scale(1); }
+  50% { transform:scale(1.15); }
+  100% { transform:scale(1); }
+}
+@keyframes checkPop {
+  0% { transform:scale(0) rotate(-45deg); opacity:0; }
+  50% { transform:scale(1.2) rotate(0deg); opacity:1; }
+  100% { transform:scale(1) rotate(0deg); opacity:1; }
+}
+.success-pulse { animation:successPulse 0.4s ease; }
+.check-pop { animation:checkPop 0.35s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* ── CONVERSATION LIST POLISH ── */
+.conv-card { position:relative; }
+.conv-card.unread .conv-name { font-weight:800; color:var(--text); }
+.conv-card.unread .conv-preview { color:var(--text-secondary); font-weight:600; }
+.conv-card:not(.unread) .conv-name { font-weight:600; color:var(--text-secondary); }
+.conv-card:not(.unread) .conv-preview { color:var(--muted); }
+.conv-time { font-size:0.6rem; color:var(--muted); white-space:nowrap; }
+.conv-unread-dot { width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0; }
+
+/* ── BUBBLE HERO HEADER ── */
+.bc-hero {
+  position:relative;height:80px;flex-shrink:0;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+.bc-hero-gradient {
+  position:absolute;inset:0;opacity:0.35;
+}
+.bc-hero-icon {
+  position:relative;z-index:1;
+  width:44px;height:44px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.3);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border-radius:14px;border:1px solid rgba(255,255,255,0.1);
+  color:white;
+}
+.bc-hero-icon .ico { width:24px;height:24px; }

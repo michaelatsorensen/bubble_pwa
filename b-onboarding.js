@@ -1085,7 +1085,7 @@ async function saveOnboarding() {
     if (error) return showToast('Fejl: ' + error.message);
     persistCustomTitle(title);
     await loadCurrentProfile();
-    showToast('Profil oprettet! 🎉');
+    showSuccessToast('Profil oprettet');
     trackEvent('onboarding_complete');
     preloadAllData();
     initGlobalRealtime();
