@@ -210,7 +210,7 @@ async function acceptBubbleInvite(inviteId, fromUserId) {
       showToast('🫧 Du er nu med i boblen!');
       loadNotifications();
       // Open the bubble chat
-      setTimeout(() => openBubbleChat(inv.bubble_id), 800);
+      setTimeout(() => openBubbleChat(inv.bubble_id, 'screen-notifications'), 800);
     }
   } catch(e) { logError("acceptBubbleInvite", e); showToast(e.message || "Ukendt fejl"); }
 }

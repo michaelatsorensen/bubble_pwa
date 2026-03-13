@@ -164,7 +164,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
   try {
     bcBubbleId = bubbleId;
     const backBtn = document.getElementById('bc-back-btn');
-    backBtn.onclick = () => goTo(fromScreen || 'screen-bubbles');
+    backBtn.onclick = () => goTo(fromScreen || _activeScreen || 'screen-home');
     goTo('screen-bubble-chat');
 
     // Land altid på Medlemmer-tab
@@ -172,7 +172,11 @@ async function openBubbleChat(bubbleId, fromScreen) {
 
     // Hent boble-info og vis metadata + actions i topbar
     const { data: b } = await sb.from('bubbles').select('*').eq('id', bubbleId).single();
-    if (!b) return;
+    if (!b) {
+      showToast('Denne boble eksisterer ikke længere');
+      goTo(fromScreen || _activeScreen || 'screen-home');
+      return;
+    }
     bcBubbleData = b;
 
     document.getElementById('bc-emoji').innerHTML = bubbleEmoji(b.type);
@@ -184,7 +188,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
     // Vis actions i topbar baseret på membership
     await loadBubbleUpvotes();
     const { data: myMembership } = await sb.from('bubble_members')
-      .select('id').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).single();
+      .select('id').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle();
 
     const actionArea = document.getElementById('bc-action-btns');
     const isOwner = b.created_by === currentUser.id;

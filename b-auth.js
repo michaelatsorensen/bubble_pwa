@@ -23,7 +23,7 @@ async function checkAuth() {
     if (session) {
       currentUser = session.user;
       // Ensure profile row exists (Google users may not have one)
-      const { data: existingProfile } = await sb.from('profiles').select('id').eq('id', session.user.id).single();
+      const { data: existingProfile } = await sb.from('profiles').select('id').eq('id', session.user.id).maybeSingle();
       if (!existingProfile) {
         const meta = session.user.user_metadata || {};
         await sb.from('profiles').upsert({
@@ -36,7 +36,15 @@ async function checkAuth() {
       await loadPromotedCustomTags();
       await loadBlockedUsers();
       const needsOnboarding = await maybeShowOnboarding();
-      if (!needsOnboarding) { goTo('screen-home'); preloadAllData(); }
+      if (!needsOnboarding) {
+        goTo('screen-home');
+        preloadAllData();
+        initGlobalRealtime();
+        updateUnreadBadge();
+        updateNotifNavBadge();
+        loadLiveBubbleStatus();
+        initPushNotifications();
+      }
     } else {
       goTo('screen-auth');
     }
@@ -50,7 +58,7 @@ async function checkAuth() {
 function setupAuthListener() {
   sb.auth.onAuthStateChange((event, session) => {
     console.debug('[auth] state change:', event);
-    if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
+    if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
       // User signed out (possibly in another tab)
       bcUnsubscribeAll();
       currentUser = null;
@@ -208,7 +216,15 @@ async function handleLogin() {
     await loadPromotedCustomTags();
     await loadBlockedUsers();
     const needsOnboarding = await maybeShowOnboarding();
-    if (!needsOnboarding) { goTo('screen-home'); preloadAllData(); }
+    if (!needsOnboarding) {
+      goTo('screen-home');
+      preloadAllData();
+      initGlobalRealtime();
+      updateUnreadBadge();
+      updateNotifNavBadge();
+      loadLiveBubbleStatus();
+      initPushNotifications();
+    }
   } catch(e) { logError("handleLogin", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -242,9 +258,17 @@ async function handleSignup() {
 
     await loadCurrentProfile();
     await loadPromotedCustomTags();
-      await loadBlockedUsers();
+    await loadBlockedUsers();
     const needsOnboarding = await maybeShowOnboarding();
-    if (!needsOnboarding) goTo('screen-home');
+    if (!needsOnboarding) {
+      goTo('screen-home');
+      preloadAllData();
+      initGlobalRealtime();
+      updateUnreadBadge();
+      updateNotifNavBadge();
+      loadLiveBubbleStatus();
+      initPushNotifications();
+    }
     showToast('Velkommen til Bubble! 🫧');
   } catch(e) { logError("handleSignup", e); showToast(e.message || "Ukendt fejl"); }
 }

@@ -237,6 +237,11 @@ function skipOnboarding() {
     showToast('Du kan altid udfylde din profil senere');
     goTo('screen-home');
     preloadAllData();
+    initGlobalRealtime();
+    updateUnreadBadge();
+    updateNotifNavBadge();
+    loadLiveBubbleStatus();
+    initPushNotifications();
   }).catch(function(e) {
     showToast('Fejl: ' + (e.message || 'ukendt'));
   });
@@ -377,7 +382,7 @@ function persistCustomTitle(title) {
     label: title, category: 'rolle', created_by: currentUser.id, usage_count: 1
   }, { onConflict: 'label' }).then(function() {
     // Increment usage if already exists
-    sb.from('custom_tags').select('id,usage_count').eq('label', title).single().then(function(res) {
+    sb.from('custom_tags').select('id,usage_count').eq('label', title).maybeSingle().then(function(res) {
       if (res.data && res.data.usage_count > 1) return;
       // Already handled by upsert
     });
@@ -1083,6 +1088,11 @@ async function saveOnboarding() {
     showToast('Profil oprettet! 🎉');
     trackEvent('onboarding_complete');
     preloadAllData();
+    initGlobalRealtime();
+    updateUnreadBadge();
+    updateNotifNavBadge();
+    loadLiveBubbleStatus();
+    initPushNotifications();
     goTo('screen-welcome');
   } catch(e) { logError("saveOnboarding", e); showToast(e.message || "Ukendt fejl"); }
 }

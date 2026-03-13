@@ -190,23 +190,34 @@ async function leaveBubble(bubbleId) {
   var bar = document.getElementById('bc-action-bar');
   if (!bar) return;
   if (bar.querySelector('.leave-confirm')) return; // already showing
+  // Save original content for restore on cancel
+  var originalHtml = bar.innerHTML;
   var tray = document.createElement('div');
   tray.className = 'leave-confirm';
   tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;background:rgba(232,93,138,0.08);border:1px solid rgba(232,93,138,0.2);border-radius:10px;gap:0.5rem;width:100%';
   tray.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Forlad boblen?</span>' +
     '<div style="display:flex;gap:0.3rem">' +
     '<button style="font-size:0.7rem;padding:0.25rem 0.6rem;background:rgba(232,93,138,0.15);color:var(--accent2);border:1px solid rgba(232,93,138,0.3);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600" onclick="confirmLeaveBubble(\'' + bubbleId + '\')">Forlad</button>' +
-    '<button style="font-size:0.7rem;padding:0.25rem 0.6rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit" onclick="this.closest(\'.leave-confirm\').remove()">Annuller</button>' +
+    '<button style="font-size:0.7rem;padding:0.25rem 0.6rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit" onclick="cancelLeaveBubble()">Annuller</button>' +
     '</div>';
+  bar.dataset.originalHtml = originalHtml;
   bar.innerHTML = '';
   bar.appendChild(tray);
+}
+
+function cancelLeaveBubble() {
+  var bar = document.getElementById('bc-action-bar');
+  if (bar && bar.dataset.originalHtml) {
+    bar.innerHTML = bar.dataset.originalHtml;
+    delete bar.dataset.originalHtml;
+  }
 }
 
 async function confirmLeaveBubble(bubbleId) {
   try {
     await sb.from('bubble_members').delete().eq('bubble_id', bubbleId).eq('user_id', currentUser.id);
     showToast('Du har forladt boblen');
-    // Navigate back to where user came from (stored in back button onclick)
+    // Navigate back using stored fromScreen
     var backBtn = document.getElementById('bc-back-btn');
     if (backBtn) { backBtn.click(); } else { goTo(_activeScreen || 'screen-home'); }
   } catch(e) { logError("confirmLeaveBubble", e); showToast(e.message || "Ukendt fejl"); }

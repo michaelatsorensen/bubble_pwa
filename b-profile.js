@@ -14,7 +14,20 @@ async function openPerson(userId, fromScreen) {
     var myNav = _navVersion;
 
     const { data: p } = await sb.from('profiles').select('*').eq('id', userId).single();
-    if (!p || _navVersion !== myNav) return;
+    if (!p || _navVersion !== myNav) {
+      // Profile doesn't exist or was deleted
+      if (!p && _navVersion === myNav) {
+        var personAvEl = document.getElementById('person-avatar');
+        if (personAvEl) personAvEl.textContent = '?';
+        document.getElementById('person-name').textContent = 'Profil ikke tilgængelig';
+        document.getElementById('person-role').textContent = 'Denne profil eksisterer ikke længere';
+        document.getElementById('person-overlap').innerHTML = '';
+        var bioS = document.getElementById('person-bio-section'); if (bioS) bioS.style.display = 'none';
+        var tagS = document.getElementById('person-tags-section'); if (tagS) tagS.style.display = 'none';
+        document.getElementById('person-dynamic-keywords').innerHTML = '';
+      }
+      return;
+    }
 
     const initials = p.is_anon ? '?' : (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     var personAvEl = document.getElementById('person-avatar');

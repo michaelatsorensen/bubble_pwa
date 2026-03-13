@@ -274,12 +274,7 @@ window.addEventListener('load', async () => {
   await checkQRJoin();
   await checkPendingJoin();
   if (currentUser) {
-    updateUnreadBadge();
-    updateNotifNavBadge();
-    initGlobalRealtime();
-    loadLiveBubbleStatus();
-    // preloadAllData() already called by checkAuth → no double call
-    initPushNotifications();
+    // Realtime, badges, preload etc. already initialized by checkAuth/handleLogin/handleSignup
     trackEvent('app_open');
   }
   // Init swipe-to-close on all sheets/modals

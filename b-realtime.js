@@ -343,32 +343,6 @@ function dmRenderMsg(m) {
 }
 
 async function loadChatMessages() {
-  if (m.file_url) {
-    const ext = m.file_name?.split('.').pop()?.toLowerCase() || '';
-    const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext) || (m.file_type||'').startsWith('image/');
-    if (isImg) {
-      bubble = `<a href="${m.file_url}" target="_blank"><img class="msg-img" src="${m.file_url}" alt="${escHtml(m.file_name||'')}"></a>`;
-    } else {
-      const sz = m.file_size ? (m.file_size < 1048576 ? Math.round(m.file_size/1024)+'KB' : (m.file_size/1048576).toFixed(1)+'MB') : '';
-      bubble = `<a class="msg-file" href="${m.file_url}" target="_blank">${icon('clip')} ${escHtml(m.file_name||'Fil')} <span class="msg-file-sz">${sz}</span></a>`;
-    }
-  } else {
-    bubble = `<div class="msg-bubble${sent?' sent':''}" id="dm-bubble-${m.id}">${escHtml(filterChatContent(m.content||''))}</div>`;
-  }
-
-  const myAvUrl = currentProfile?.avatar_url;
-  const theirAvUrl = window._chatPartnerAvatar;
-  const avatarGrad = sent ? 'linear-gradient(135deg,#4C1D95,#A78BFA)' : 'linear-gradient(135deg,#8B7FFF,#E85D8A)';
-  return `<div class="msg-row${sent?' me':''}" id="dm-msg-${m.id}" data-msg-id="${m.id}">
-    <div class="msg-avatar"${avatarClick} style="background:${avatarGrad};overflow:hidden${sent?'':';cursor:pointer'}">${avatarInner}</div>
-    <div class="msg-body">
-      <div class="msg-head"><span class="msg-name">${escHtml(name)}</span><span class="msg-time">${time}${edited}${receipt}</span></div>
-      <div class="msg-content">${bubble}${sent && !m.file_url ? `<span class="msg-actions"><button class="msg-dots" onpointerdown="event.stopPropagation()" onclick="dmOpenMsgMenu(event,'${m.id}')" title="Mere">⋯</button></span>` : ''}</div>
-    </div>
-  </div>`;
-}
-
-async function loadChatMessages() {
   try {
     const el = document.getElementById('chat-messages');
     const { data: msgs } = await sb.from('messages')
