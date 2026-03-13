@@ -116,7 +116,6 @@ function radarResetDismissed() { radarDismissed = []; renderRadarList(); }
 //  RADAR: TOP-DROP PERSON SHEET
 // ══════════════════════════════════════════════════════════
 var rpCurrentUserId = null;
-var _leaveBubbleConfirmed = null;
 
 async function openRadarPerson(userId) {
   rpCurrentUserId = userId;

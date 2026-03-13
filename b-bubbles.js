@@ -162,7 +162,8 @@ function filterBubbles() {
 // ══════════════════════════════════════════════════════════
 async function openBubble(bubbleId, fromScreen) {
   try {
-    // Kald openBubbleChat direkte — detail-siden er nu integreret i chat-skærmen
+    // Auto-detect current screen if not provided
+    if (!fromScreen) fromScreen = _activeScreen || 'screen-home';
     await openBubbleChat(bubbleId, fromScreen);
   } catch(e) { logError("openBubble", e); showToast(e.message || "Ukendt fejl"); }
 }
@@ -181,19 +182,30 @@ async function joinBubble(bubbleId) {
 }
 
 async function leaveBubble(bubbleId) {
-  // Show confirmation first
-  if (!_leaveBubbleConfirmed) {
-    _leaveBubbleConfirmed = bubbleId;
-    showToast('Tryk igen for at bekræfte');
-    setTimeout(function() { _leaveBubbleConfirmed = null; }, 3000);
-    return;
-  }
-  _leaveBubbleConfirmed = null;
+  // Show inline confirm tray in the action bar area
+  var bar = document.getElementById('bc-action-bar');
+  if (!bar) return;
+  if (bar.querySelector('.leave-confirm')) return; // already showing
+  var tray = document.createElement('div');
+  tray.className = 'leave-confirm';
+  tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;background:rgba(232,93,138,0.08);border:1px solid rgba(232,93,138,0.2);border-radius:10px;gap:0.5rem;width:100%';
+  tray.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Forlad boblen?</span>' +
+    '<div style="display:flex;gap:0.3rem">' +
+    '<button style="font-size:0.7rem;padding:0.25rem 0.6rem;background:rgba(232,93,138,0.15);color:var(--accent2);border:1px solid rgba(232,93,138,0.3);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600" onclick="confirmLeaveBubble(\'' + bubbleId + '\')">Forlad</button>' +
+    '<button style="font-size:0.7rem;padding:0.25rem 0.6rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit" onclick="this.closest(\'.leave-confirm\').remove()">Annuller</button>' +
+    '</div>';
+  bar.innerHTML = '';
+  bar.appendChild(tray);
+}
+
+async function confirmLeaveBubble(bubbleId) {
   try {
     await sb.from('bubble_members').delete().eq('bubble_id', bubbleId).eq('user_id', currentUser.id);
     showToast('Du har forladt boblen');
-    goTo('screen-home');
-  } catch(e) { logError("leaveBubble", e); showToast(e.message || "Ukendt fejl"); }
+    // Navigate back to where user came from (stored in back button onclick)
+    var backBtn = document.getElementById('bc-back-btn');
+    if (backBtn) { backBtn.click(); } else { goTo(_activeScreen || 'screen-home'); }
+  } catch(e) { logError("confirmLeaveBubble", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -338,7 +350,9 @@ async function saveEditBubble() {
     if (error) return showToast('Fejl: ' + error.message);
     closeModal('modal-edit-bubble');
     showToast('Boble opdateret! ✅');
-    await openBubble(currentEditBubbleId);
+    // Reload bubble data in-place (preserves back navigation)
+    await bcLoadBubbleInfo();
+    await bcLoadMembers();
   } catch(e) { logError("saveEditBubble", e); showToast(e.message || "Ukendt fejl"); }
 }
 

@@ -415,7 +415,7 @@ async function loadMyBubbles() {
             '<div class="bubble-icon" style="background:' + bubbleColor(b.type, 0.15) + ';flex-shrink:0">' + bubbleEmoji(b.type) + '</div>' +
             '<div style="flex:1;min-width:0">' +
               '<div class="fw-600 fs-09">' + escHtml(b.name) + '</div>' +
-              '<div class="fs-075 text-muted">' + (b.created_by === currentUser.id ? icon('crown') + ' Ejer' : 'Aktiv') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div>' +
+              '<div class="fs-075 text-muted">' + (b.created_by === currentUser.id ? icon('crown') + ' Ejer' : 'Aktiv') + ' · ' + visibilityBadge(b.visibility) + (b.location ? ' · ' + escHtml(b.location) : '') + '</div>' +
               cHtml +
             '</div>' +
             '<div class="icon-muted">›</div>' +
@@ -458,13 +458,14 @@ function bubbleCard(b, joined) {
     contactHtml = '<div style="display:flex;align-items:center;gap:0.25rem;margin-top:0.2rem"><div style="display:flex;align-items:center">' + avs + '</div><span class="fs-065 text-muted">' + contacts.length + ' kontakt' + (contacts.length > 1 ? 'er' : '') + '</span></div>';
   }
 
-  var memberLabel = (b.member_count || 0) > 0 ? '<div class="fw-700">' + b.member_count + '</div>' : '';
+  var memberLabel = (b.member_count || 0) > 0 ? '<div class="fw-700" style="font-size:0.75rem">' + ico('users') + ' ' + b.member_count + '</div>' : '';
+  var visBadge = visibilityBadge(b.visibility);
 
   return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}">
     <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};color:${bubbleColor(b.type, 0.9)}">${bubbleEmoji(b.type)}</div>
     <div style="flex:1;min-width:0">
       <div class="fw-600 fs-09">${escHtml(b.name)}</div>
-      <div class="fs-075 text-muted">${escHtml(b.type_label || b.type)} ${b.location ? '· ' + escHtml(b.location) : ''}</div>
+      <div class="fs-075 text-muted">${escHtml(b.type_label || b.type)} ${b.location ? '· ' + escHtml(b.location) : ''} · ${visBadge}</div>
       ${contactHtml}
     </div>
     <div class="flex-col-end" style="align-items:flex-end;gap:0.15rem">

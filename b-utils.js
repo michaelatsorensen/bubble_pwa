@@ -243,3 +243,10 @@ async function fetchContactAvatarsForBubbles(bubbleIds, savedIds) {
   } catch(e) { logError('fetchContactAvatarsForBubbles', e); }
   return contactMap;
 }
+
+// ── Visibility label + icon for bubbles ──
+function visibilityBadge(visibility) {
+  if (visibility === 'hidden') return '<span class="fs-065" style="color:var(--muted);display:inline-flex;align-items:center;gap:0.15rem">' + ico('eye') + ' Skjult</span>';
+  if (visibility === 'private') return '<span class="fs-065" style="color:var(--accent);display:inline-flex;align-items:center;gap:0.15rem">' + ico('lock') + ' Privat</span>';
+  return '<span class="fs-065" style="color:var(--green);display:inline-flex;align-items:center;gap:0.15rem">' + ico('globe') + ' Åben</span>';
+}
