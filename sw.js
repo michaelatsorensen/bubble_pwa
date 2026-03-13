@@ -1,8 +1,9 @@
 // ══════════════════════════════════════
-//  BUBBLE SERVICE WORKER v3.6.7
+//  BUBBLE SERVICE WORKER
 // ══════════════════════════════════════
+// Version managed by CACHE_NAME below
 
-const CACHE_NAME = 'bubble-v3.7.9';
+const CACHE_NAME = 'bubble-v3.8.0';
 const CACHE_URLS = [
   './', './index.html', './app.css',
   './bubble-icons.js', './tag-data.js',
@@ -38,7 +39,7 @@ self.addEventListener('activate', function(event) {
 self.addEventListener('fetch', function(event) {
   if (event.request.method !== 'GET') return;
   if (event.request.url.includes('supabase.co')) return;
-  if (event.request.url.includes('tenor.com')) return;
+  if (event.request.url.includes('giphy.com')) return;
 
   event.respondWith(
     fetch(event.request).then(function(res) {

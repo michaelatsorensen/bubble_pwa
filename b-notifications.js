@@ -91,7 +91,7 @@ async function _notifUnreadDMs(since) {
       var avatarHtml = p.avatar_url ?
         '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
         '<div class="notif-avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A)">' + initials + '</div>';
-      return '<div class="notif-card" onclick="openChat(\'' + sid + '\')" style="cursor:pointer">' +
+      return '<div class="notif-card" onclick="openChat(\'' + sid + '\',\'screen-notifications\')" style="cursor:pointer">' +
         '<div class="notif-header">' + avatarHtml +
         '<div>' +
         '<div class="notif-title">' + icon("chat") + ' ' + escHtml(p.name||'Ukendt') + (d.count > 1 ? ' (' + d.count + ' beskeder)' : '') + '</div>' +

@@ -154,7 +154,7 @@ async function sendMessage() {
         receiver_id: currentChatUser,
         content
       }).select().single();
-      if (error) { console.error('sendMessage insert:', error); input.value = content; return; }
+      if (error) { logError('sendMessage:insert', error); showToast('Besked fejlede: ' + (error.message || 'ukendt')); input.value = content; return; }
       if (newMsg) {
         const el = document.getElementById('chat-messages');
         if (el && !el.querySelector('[data-msg-id="' + newMsg.id + '"]')) {
