@@ -1637,3 +1637,137 @@ textarea ~ .input-confirm-btn { top:0.7rem; transform:none; }
 }
 .landscape-lock-icon { font-size:3rem;animation:rotateBounce 2s ease infinite; }
 @keyframes rotateBounce { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(-25deg)} 75%{transform:rotate(25deg)} }
+
+/* ═══════════════════════════════════════════════════════════
+   POLISH LAYER — Transitions, Typography, Touch Feedback
+   v3.8 · Adds professional feel without changing layout
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── 1. SCREEN TRANSITIONS ── */
+/* Screens fade + slide up subtly when becoming active */
+.screen.active {
+  animation: screenIn 0.25s ease-out both;
+}
+@keyframes screenIn {
+  from { opacity:0; transform:translateY(8px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+/* Sheets/modals slide up from bottom */
+.person-sheet.open,
+.radar-person-sheet.open,
+.invite-sheet.open {
+  animation: sheetIn 0.3s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes sheetIn {
+  from { transform:translateY(100%); }
+  to   { transform:translateY(0); }
+}
+/* Modal overlays fade in */
+.modal-overlay.open {
+  animation: overlayIn 0.2s ease both;
+}
+@keyframes overlayIn {
+  from { opacity:0; }
+  to   { opacity:1; }
+}
+/* Cards stagger in (used via inline style --i) */
+@keyframes cardIn {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ── 2. TYPOGRAPHY SCALE ── */
+/* Define the canonical type scale as CSS variables */
+:root {
+  --fs-2xs: 0.55rem;  /* badges, tiny labels */
+  --fs-xs:  0.62rem;  /* metadata, timestamps */
+  --fs-sm:  0.72rem;  /* secondary text, subtitles */
+  --fs-base:0.82rem;  /* body text, buttons */
+  --fs-md:  0.95rem;  /* card titles, nav items */
+  --fs-lg:  1.1rem;   /* screen headers */
+  --fs-xl:  1.3rem;   /* feature titles */
+  --fs-2xl: 1.8rem;   /* splash/hero */
+
+  /* Spacing scale (multiples of 4px) */
+  --sp-1: 0.25rem;  /* 4px */
+  --sp-2: 0.5rem;   /* 8px */
+  --sp-3: 0.75rem;  /* 12px */
+  --sp-4: 1rem;     /* 16px */
+  --sp-5: 1.25rem;  /* 20px */
+  --sp-6: 1.5rem;   /* 24px */
+}
+/* Missing utility classes used in JS */
+.fs-072 { font-size:0.72rem; }
+
+/* ── 3. TOUCH FEEDBACK ── */
+/* Cards: subtle press effect */
+.card:active,
+.main-nav-card:active,
+.notif-card:active,
+.saved-card:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+/* Buttons: quick press effect */
+.btn-primary:active,
+.btn-secondary:active,
+.btn-sm:active,
+.btn-accent:active,
+.btn-ghost:active,
+.bc-bar-btn:active,
+.person-action-btn:active,
+.person-sheet-btn:active,
+.bubble-tab:active,
+.saved-action-btn:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}
+/* Nav items: subtle tap */
+.nav-item:active {
+  transform: scale(0.9);
+  transition: transform 0.1s ease;
+}
+/* Inline action buttons in cards */
+.saved-action-btn:active,
+.chat-attach-btn:active,
+.chat-gif-btn:active {
+  transform: scale(0.9);
+  opacity: 0.7;
+  transition: all 0.1s ease;
+}
+/* Story bar avatars */
+.saved-story-item:active .saved-story-avatar {
+  transform: scale(0.92);
+  transition: transform 0.1s ease;
+}
+/* Home dashboard cards */
+.main-nav-card:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+/* Radar list cards */
+.radar-list-card:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+/* Chat message context (long press feel) */
+.chat-msg-group:active {
+  background: rgba(255,255,255,0.03);
+  transition: background 0.15s ease;
+}
+/* Live checkin items */
+.live-checkin-item:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+/* Interest/role chips in onboarding */
+.ob-role-chip:active,
+.interest-btn:active,
+.ob-cat-item:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}
+
+/* Loading screen: no transition animation */
+#screen-loading.active { animation:none; }
+#screen-auth.active { animation:none; }
