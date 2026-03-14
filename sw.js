@@ -3,7 +3,7 @@
 // ══════════════════════════════════════
 // Version managed by CACHE_NAME below
 
-const CACHE_NAME = 'bubble-v3.9.3';
+const CACHE_NAME = 'bubble-v3.9.4';
 const CACHE_URLS = [
   './', './index.html', './app.css',
   './bubble-icons.js', './tag-data.js',
@@ -12,7 +12,9 @@ const CACHE_URLS = [
   './b-profile.js', './b-radar.js', './b-messages.js',
   './b-realtime.js', './b-onboarding.js', './b-chat.js',
   './b-notifications.js', './b-live.js', './b-admin.js',
-  './b-boot.js'
+  './b-boot.js',
+  './bubble-logo-topbar.png',
+  './bubble-logo-splash.png'
 ];
 
 self.addEventListener('install', function(event) {

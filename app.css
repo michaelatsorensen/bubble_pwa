@@ -1896,13 +1896,4 @@ input[type="range"] {
 }
 .bc-hero-icon .ico { width:24px;height:24px; }
 
-/* ── SCROLL FADE — content fades at edges ── */
-.scroll-fade {
-  -webkit-mask-image: linear-gradient(to bottom, transparent, black 20px, black calc(100% - 16px), transparent);
-  mask-image: linear-gradient(to bottom, transparent, black 20px, black calc(100% - 16px), transparent);
-}
-.chat-members-list,
-.chat-scroll {
-  -webkit-mask-image: linear-gradient(to bottom, transparent, black 16px, black calc(100% - 12px), transparent);
-  mask-image: linear-gradient(to bottom, transparent, black 16px, black calc(100% - 12px), transparent);
-}
+/* ── SCROLL FADE — disabled, needs refinement ── */
