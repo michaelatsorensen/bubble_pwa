@@ -250,7 +250,7 @@ async function bbLoadLivePanel() {
       (profiles || []).forEach(function(p) { profileMap[p.id] = p; });
     }
 
-    var avColors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)'];
+    var avColors = ['linear-gradient(135deg,#3AAA88,#2A7A90)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1A5A6A,#1A7A7A)'];
 
     // Sort: active first, events first, then date
     filtered.sort(function(a, b) {
@@ -279,7 +279,7 @@ async function bbLoadLivePanel() {
       }
 
       return '<div class="card flex-row-center" style="padding:0.85rem 1.1rem;margin-bottom:0.4rem;cursor:pointer" onclick="openBubble(\'' + b.id + '\')">' +
-        '<div class="bubble-icon" style="background:' + (isEvent ? 'rgba(232,93,138,0.15)' : 'rgba(46,207,207,0.15)') + ';color:' + (isEvent ? '#E85D8A' : '#2ECFCF') + '">' + ico(isEvent ? 'calendar' : 'pin') + '</div>' +
+        '<div class="bubble-icon" style="background:' + (isEvent ? 'rgba(26,122,138,0.15)' : 'rgba(46,207,207,0.15)') + ';color:' + (isEvent ? '#1A7A8A' : '#2ECFCF') + '">' + ico(isEvent ? 'calendar' : 'pin') + '</div>' +
         '<div style="flex:1;min-width:0">' +
         '<div class="fw-600 fs-09">' + escHtml(b.name) + '</div>' +
         '<div class="fs-075 text-muted">' + (isEvent ? 'Event' : 'Sted') + (b.location ? ' \u00B7 ' + escHtml(b.location) : '') + '</div>' +
@@ -318,7 +318,7 @@ async function loadMyBubbles() {
           '<div style="width:44px;height:44px;margin:0 auto 0.7rem;opacity:0.4;color:var(--accent)">' + ico('bubble') + '</div>' +
           '<div style="font-size:0.85rem;font-weight:700;margin-bottom:0.25rem">Ingen bobler endnu</div>' +
           '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.4">Bobler er fællesskaber og events. Udforsk og join din første!</div>' +
-          '<button onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(139,127,255,0.12);color:var(--accent);border:1px solid rgba(139,127,255,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
+          '<button onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(46,158,142,0.12);color:var(--accent);border:1px solid rgba(46,158,142,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
           '</div>';
       }
       return;
@@ -351,7 +351,7 @@ async function loadMyBubbles() {
         var cHtml = '';
         var cs = b._contacts || [];
         if (cs.length > 0) {
-          var avCols = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)'];
+          var avCols = ['linear-gradient(135deg,#3AAA88,#2A7A90)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1A5A6A,#1A7A7A)'];
           var avs = cs.map(function(c, i) {
             var ini = (c.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
             var ml = i > 0 ? 'margin-left:-5px;' : '';
@@ -394,7 +394,7 @@ async function loadMyBubbles() {
           '<div style="width:44px;height:44px;margin:0 auto 0.7rem;opacity:0.4;color:var(--accent)">' + ico('bubble') + '</div>' +
           '<div style="font-size:0.85rem;font-weight:700;margin-bottom:0.25rem">Ingen bobler endnu</div>' +
           '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.4">Bobler er fællesskaber og events. Udforsk og join din første!</div>' +
-          '<button onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(139,127,255,0.12);color:var(--accent);border:1px solid rgba(139,127,255,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
+          '<button onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(46,158,142,0.12);color:var(--accent);border:1px solid rgba(46,158,142,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
           '</div>';
       } else {
         profBubblesEl.innerHTML = bubbles.map(function(b) {
@@ -402,7 +402,7 @@ async function loadMyBubbles() {
           var cHtml = '';
           var cs = b._contacts || [];
           if (cs.length > 0) {
-            var avCols = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)'];
+            var avCols = ['linear-gradient(135deg,#3AAA88,#2A7A90)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1A5A6A,#1A7A7A)'];
             var avs = cs.map(function(c, i) {
               var ini = (c.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
               var ml = i > 0 ? 'margin-left:-5px;' : '';
@@ -456,7 +456,7 @@ function bubbleCard(b, joined) {
   var contactHtml = '';
   var contacts = b._contacts || [];
   if (contacts.length > 0) {
-    var avColors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)'];
+    var avColors = ['linear-gradient(135deg,#3AAA88,#2A7A90)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1A5A6A,#1A7A7A)'];
     var avs = contacts.map(function(c, i) {
       var ini = (c.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var ml = i > 0 ? 'margin-left:-5px;' : '';

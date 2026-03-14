@@ -153,7 +153,7 @@ async function loadLiveCheckinList() {
       list.innerHTML = '<div style="text-align:center;padding:1rem 0">' +
         '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.3rem">Ingen steder i n\u00E6rheden</div>' +
         '<div style="font-size:0.68rem;color:var(--text-secondary);margin-bottom:0.6rem">Scan en QR-kode ovenfor, eller opdag bobler med lokationer</div>' +
-        '<button onclick="closeModal(\'modal-live-checkin\');goTo(\'screen-discover\');loadDiscover()" style="font-size:0.75rem;padding:0.45rem 1rem;background:rgba(139,127,255,0.12);color:var(--accent);border:1px solid rgba(139,127,255,0.25);border-radius:10px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler \u2192</button>' +
+        '<button onclick="closeModal(\'modal-live-checkin\');goTo(\'screen-discover\');loadDiscover()" style="font-size:0.75rem;padding:0.45rem 1rem;background:rgba(46,158,142,0.12);color:var(--accent);border:1px solid rgba(46,158,142,0.25);border-radius:10px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler \u2192</button>' +
         '</div>';
       return;
     }
@@ -198,7 +198,7 @@ async function loadLiveCheckinList() {
       return new Date(b.created_at) - new Date(a.created_at);
     });
 
-    var colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)'];
+    var colors = ['linear-gradient(135deg,#3AAA88,#2A7A90)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1A5A6A,#1A7A7A)'];
     list.innerHTML = filtered.map(function(b) {
       var cnt = countMap[b.id] || 0;
       var isEvent = b.type === 'event' || b.type === 'live';
@@ -224,11 +224,11 @@ async function loadLiveCheckinList() {
       if (isMember || b.visibility === 'public' || !b.visibility) {
         checkinBtn = '<button onclick="liveCheckin(\'' + b.id + '\')" style="font-size:0.65rem;padding:0.3rem 0.6rem;background:rgba(46,207,207,0.1);color:var(--accent3);border:1px solid rgba(46,207,207,0.2);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0">Check ind</button>';
       } else if (b.visibility === 'private') {
-        checkinBtn = '<button onclick="requestJoin(\'' + b.id + '\')" style="font-size:0.65rem;padding:0.3rem 0.6rem;background:rgba(139,127,255,0.1);color:var(--accent);border:1px solid rgba(139,127,255,0.2);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0">' + ico('lock') + ' Anmod</button>';
+        checkinBtn = '<button onclick="requestJoin(\'' + b.id + '\')" style="font-size:0.65rem;padding:0.3rem 0.6rem;background:rgba(46,158,142,0.1);color:var(--accent);border:1px solid rgba(46,158,142,0.2);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0">' + ico('lock') + ' Anmod</button>';
       }
 
       return '<div class="live-checkin-item">' +
-        '<div class="live-checkin-icon" style="' + (isEvent ? 'background:rgba(232,93,138,0.12);color:#E85D8A' : '') + '">' + ico(isEvent ? 'calendar' : 'pin') + '</div>' +
+        '<div class="live-checkin-icon" style="' + (isEvent ? 'background:rgba(26,122,138,0.12);color:#1A7A8A' : '') + '">' + ico(isEvent ? 'calendar' : 'pin') + '</div>' +
         '<div style="flex:1;min-width:0;cursor:pointer" onclick="closeLiveCheckinModal();openBubble(\'' + b.id + '\')">' +
         '<div class="fw-600 fs-085">' + escHtml(b.name) + '</div>' +
         '<div class="fs-072 text-muted">' + typeLabel + (b.location ? ' \u00B7 ' + escHtml(b.location) : '') + '</div>' +

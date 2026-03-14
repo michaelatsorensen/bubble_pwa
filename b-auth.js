@@ -50,7 +50,7 @@ async function checkAuth() {
     }
   } catch(e) {
     var el = document.getElementById('loading-msg');
-    if (el) { el.textContent = 'Fejl: ' + (e.message || 'Ukendt'); el.style.color = '#E85D8A'; }
+    if (el) { el.textContent = 'Fejl: ' + (e.message || 'Ukendt'); el.style.color = '#1A7A8A'; }
     logError('checkAuth', e);
   }
 }
@@ -436,7 +436,7 @@ async function loadInterestPreview() {
     }).sort(function(a, b) { return b.shared - a.shared; });
 
     var top = scored.slice(0, 3);
-    var colors = ['linear-gradient(135deg,#8B7FFF,#E85D8A)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1E3A8A,#7C3AED)'];
+    var colors = ['linear-gradient(135deg,#3AAA88,#2A7A90)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1A5A6A,#1A7A7A)'];
 
     el.innerHTML = top.map(function(item, i) {
       var p = item.p;

@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#06060F">
 <meta name="color-scheme" content="dark">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=394">
+<link rel="manifest" href="manifest.json?v=395">
 <link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=2">
 <link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=2">
 <link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=2">
@@ -17,27 +17,27 @@
 <link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=2">
 <link rel="apple-touch-icon" href="bubble-icon-180.png?v=2">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=394">
+<link rel="stylesheet" href="app.css?v=395">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=394" defer></script>
-<script src="tag-data.js?v=394" defer></script>
-<script src="b-config.js?v=394" defer></script>
-<script src="b-utils.js?v=394" defer></script>
-<script src="b-navigation.js?v=394" defer></script>
-<script src="b-auth.js?v=394" defer></script>
-<script src="b-home.js?v=394" defer></script>
-<script src="b-bubbles.js?v=394" defer></script>
-<script src="b-profile.js?v=394" defer></script>
-<script src="b-radar.js?v=394" defer></script>
-<script src="b-messages.js?v=394" defer></script>
-<script src="b-realtime.js?v=394" defer></script>
-<script src="b-onboarding.js?v=394" defer></script>
-<script src="b-chat.js?v=394" defer></script>
-<script src="b-notifications.js?v=394" defer></script>
-<script src="b-live.js?v=394" defer></script>
-<script src="b-admin.js?v=394" defer></script>
-<script src="b-boot.js?v=394" defer></script>
+<script src="bubble-icons.js?v=395" defer></script>
+<script src="tag-data.js?v=395" defer></script>
+<script src="b-config.js?v=395" defer></script>
+<script src="b-utils.js?v=395" defer></script>
+<script src="b-navigation.js?v=395" defer></script>
+<script src="b-auth.js?v=395" defer></script>
+<script src="b-home.js?v=395" defer></script>
+<script src="b-bubbles.js?v=395" defer></script>
+<script src="b-profile.js?v=395" defer></script>
+<script src="b-radar.js?v=395" defer></script>
+<script src="b-messages.js?v=395" defer></script>
+<script src="b-realtime.js?v=395" defer></script>
+<script src="b-onboarding.js?v=395" defer></script>
+<script src="b-chat.js?v=395" defer></script>
+<script src="b-notifications.js?v=395" defer></script>
+<script src="b-live.js?v=395" defer></script>
+<script src="b-admin.js?v=395" defer></script>
+<script src="b-boot.js?v=395" defer></script>
   
 
 </head>
@@ -98,7 +98,7 @@
 
     <div style="display:flex;flex-direction:column;gap:0.6rem;margin:0 auto 1.8rem;text-align:left">
       <div style="display:flex;gap:0.6rem;align-items:center">
-        <div style="width:32px;height:32px;border-radius:10px;background:rgba(139,127,255,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+        <div style="width:32px;height:32px;border-radius:10px;background:rgba(46,158,142,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
         <div style="font-size:0.78rem;color:var(--text-secondary)"><strong style="color:var(--text)">Smart Radar</strong> — find folk der matcher dine interesser</div>
       </div>
       <div style="display:flex;gap:0.6rem;align-items:center">
@@ -128,7 +128,7 @@
       <button type="button" class="interest-btn" data-interest="tech" onclick="toggleInterest(this)"><span class="interest-ico" style="color:var(--accent)"></span><span class="interest-label">Teknologi & Digitalisering</span></button>
       <button type="button" class="interest-btn" data-interest="sustainability" onclick="toggleInterest(this)"><span class="interest-ico" style="color:var(--green)"></span><span class="interest-label">Bæredygtighed & Energi</span></button>
       <button type="button" class="interest-btn" data-interest="leadership" onclick="toggleInterest(this)"><span class="interest-ico" style="color:var(--gold)"></span><span class="interest-label">Ledelse & Strategi</span></button>
-      <button type="button" class="interest-btn" data-interest="public" onclick="toggleInterest(this)"><span class="interest-ico" style="color:#A78BFA"></span><span class="interest-label">Offentlig & NGO</span></button>
+      <button type="button" class="interest-btn" data-interest="public" onclick="toggleInterest(this)"><span class="interest-ico" style="color:#4ABEAE"></span><span class="interest-label">Offentlig & NGO</span></button>
       <button type="button" class="interest-btn" data-interest="industry" onclick="toggleInterest(this)"><span class="interest-ico" style="color:#F97316"></span><span class="interest-label">Industri & Håndværk</span></button>
       <button type="button" class="interest-btn" data-interest="health" onclick="toggleInterest(this)"><span class="interest-ico" style="color:var(--accent2)"></span><span class="interest-label">Sundhed & Omsorg</span></button>
       <button type="button" class="interest-btn" data-interest="education" onclick="toggleInterest(this)"><span class="interest-ico" style="color:var(--blue)"></span><span class="interest-label">Uddannelse & Forskning</span></button>
@@ -141,7 +141,7 @@
 
     <!-- People preview (shows after 3 selected) -->
     <div id="interest-preview" style="display:none;margin-bottom:0.8rem">
-      <div style="background:linear-gradient(135deg,rgba(139,127,255,0.08),rgba(232,93,138,0.04));border:1px solid rgba(139,127,255,0.15);border-radius:16px;padding:1rem">
+      <div style="background:linear-gradient(135deg,rgba(46,158,142,0.08),rgba(232,93,138,0.04));border:1px solid rgba(46,158,142,0.15);border-radius:16px;padding:1rem">
         <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.1rem">
           <span style="font-size:1rem">👋</span>
           <span style="font-size:0.85rem;font-weight:800">Folk du kunne møde</span>
@@ -161,7 +161,7 @@
   <div id="auth-forms" style="display:none;text-align:center;padding:0 1.2rem">
     <div style="margin-bottom:1.5rem">
       <div style="width:40px;height:40px;margin:0 auto 0.5rem;color:var(--accent)"><svg class="ico" style="width:40px;height:40px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
-      <div style="font-size:1.8rem;font-weight:900;letter-spacing:-0.05em;background:linear-gradient(135deg,#A89FFF 0%,#8B7FFF 40%,#FF6B9D 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.2rem">bubble</div>
+      <div style="font-size:1.8rem;font-weight:900;letter-spacing:-0.05em;background:linear-gradient(135deg,#5CBFB2 0%,#2E9E8E 40%,#3A9EAE 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.2rem">bubble</div>
       <div style="font-size:0.82rem;color:var(--muted)">Network Radar for Business</div>
     </div>
 
@@ -258,7 +258,7 @@
             <span class="ob-ls-icon" style="color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></span><span class="ob-ls-label">Freelancer</span>
           </button>
           <button type="button" class="ob-lifestage-btn" data-stage="public" onclick="obSelectLifestage(this)">
-            <span class="ob-ls-icon" style="color:#A78BFA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/><path d="M10 21v-3h4v3"/></svg></span><span class="ob-ls-label">Offentlig / NGO</span>
+            <span class="ob-ls-icon" style="color:#4ABEAE"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/><path d="M10 21v-3h4v3"/></svg></span><span class="ob-ls-label">Offentlig / NGO</span>
           </button>
           <button type="button" class="ob-lifestage-btn" data-stage="practical" onclick="obSelectLifestage(this)">
             <span class="ob-ls-icon" style="color:#F97316"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></span><span class="ob-ls-label">Håndværk & Teknik</span>
@@ -289,7 +289,7 @@
     <!-- ═══ PEOPLE PREVIEW (shows after name + livsfase, updates live) ═══ -->
     <div class="ob-progressive-section ob-sec-locked" id="ob-sec-preview">
       <div style="height:1px;background:rgba(255,255,255,0.04);margin:0.4rem 0 0.8rem"></div>
-      <div style="background:linear-gradient(135deg,rgba(139,127,255,0.08),rgba(232,93,138,0.04));border:1px solid rgba(139,127,255,0.15);border-radius:16px;padding:1rem">
+      <div style="background:linear-gradient(135deg,rgba(46,158,142,0.08),rgba(232,93,138,0.04));border:1px solid rgba(46,158,142,0.15);border-radius:16px;padding:1rem">
         <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.1rem">
           <span style="font-size:1rem">👋</span>
           <span style="font-size:0.85rem;font-weight:800">Folk du kunne møde</span>
@@ -388,7 +388,7 @@
     <div style="display:flex;flex-direction:column;gap:0.8rem;max-width:380px;margin:0 auto;width:100%">
       <!-- Step 1 -->
       <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer" onclick="welcomeGo('discover')">
-        <div style="width:44px;height:44px;border-radius:12px;background:rgba(139,127,255,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></div>
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(46,158,142,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></div>
         <div style="flex:1">
           <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem">Udforsk bobler</div>
           <div style="font-size:0.78rem;color:var(--text-secondary)">Find communities, events og netværk</div>
@@ -424,7 +424,7 @@
   <div class="topbar">
     <img src="bubble-logo-topbar.png" alt="bubble" class="topbar-logo" onclick="goTo('screen-home')" style="cursor:pointer;height:22px;width:auto">
     <div style="flex:1"></div>
-    <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;border:1.5px solid rgba(255,255,255,0.1)" id="home-avatar" onclick="goTo('screen-profile')">?</div>
+    <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#2E9E8E,#1A7A8A);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;border:1.5px solid rgba(255,255,255,0.1)" id="home-avatar" onclick="goTo('screen-profile')">?</div>
   </div>
 
   <div class="scroll-area" id="home-scroll">
@@ -437,12 +437,12 @@
 
     <!-- GETTING STARTED (dismissible) -->
     <div id="home-getting-started" style="display:none;margin-bottom:0.8rem">
-      <div style="background:linear-gradient(135deg,rgba(139,127,255,0.1),rgba(232,93,138,0.06));border:1px solid rgba(139,127,255,0.2);border-radius:16px;padding:1rem 1.1rem;position:relative">
+      <div style="background:linear-gradient(135deg,rgba(46,158,142,0.1),rgba(232,93,138,0.06));border:1px solid rgba(46,158,142,0.2);border-radius:16px;padding:1rem 1.1rem;position:relative">
         <button onclick="dismissGettingStarted()" style="position:absolute;top:0.6rem;right:0.7rem;background:none;border:none;color:var(--muted);font-size:0.9rem;cursor:pointer;padding:0.2rem;font-family:inherit">✕</button>
         <div style="font-size:0.85rem;font-weight:700;margin-bottom:0.6rem">Kom godt i gang</div>
         <div style="display:flex;flex-direction:column;gap:0.45rem" id="gs-steps">
           <div class="gs-step" onclick="goTo('screen-discover');loadDiscover()" style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem;border-radius:10px;background:rgba(255,255,255,0.03);cursor:pointer">
-            <div style="width:28px;height:28px;border-radius:8px;background:rgba(139,127,255,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent);font-size:0.85rem;font-weight:800">1</div>
+            <div style="width:28px;height:28px;border-radius:8px;background:rgba(46,158,142,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent);font-size:0.85rem;font-weight:800">1</div>
             <div style="flex:1"><div style="font-size:0.78rem;font-weight:600">Udforsk & join en boble</div><div style="font-size:0.65rem;color:var(--text-secondary)">Tryk her for at se bobler du kan joine</div></div>
             <div style="color:var(--muted);font-size:0.85rem">→</div>
           </div>
@@ -505,7 +505,7 @@
 
       <!-- Bobler -->
       <div class="main-nav-card card-bobler" data-hs="bubbles" onclick="goTo('screen-bubbles')">
-        <div class="main-nav-icon" style="background:rgba(139,127,255,0.15);color:#A89FFF"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
+        <div class="main-nav-icon" style="background:rgba(46,158,142,0.15);color:#5CBFB2"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
         <div style="flex:1">
           <div class="section-title">Bobler</div>
           <div class="sub-muted" id="home-bubbles-sub">Henter...</div>
@@ -548,7 +548,7 @@
 
       <!-- Feedback -->
       <div class="main-nav-card" onclick="openFeedback()">
-        <div class="main-nav-icon" style="background:rgba(139,127,255,0.12);color:var(--accent)"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
+        <div class="main-nav-icon" style="background:rgba(46,158,142,0.12);color:var(--accent)"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
         <div style="flex:1">
           <div class="section-title">Giv feedback</div>
           <div class="sub-muted">Hjælp os med at gøre Bubble bedre</div>
@@ -561,7 +561,7 @@
       <div style="width:48px;height:48px;margin:0 auto 0.8rem;opacity:0.5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:var(--accent)"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
       <div style="font-size:0.88rem;font-weight:700;margin-bottom:0.3rem">Din hjem-skærm er tom</div>
       <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:1.2rem;line-height:1.45">Vælg hvad du vil se her under indstillinger</div>
-      <button onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('settings')},200)" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(139,127,255,0.12);color:var(--accent);border:1px solid rgba(139,127,255,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:all 0.2s">Åbn indstillinger</button>
+      <button onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('settings')},200)" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(46,158,142,0.12);color:var(--accent);border:1px solid rgba(46,158,142,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:all 0.2s">Åbn indstillinger</button>
     </div>
 
   </div>
@@ -939,7 +939,7 @@
   <div class="topbar">
     <button class="back-btn" id="dm-back-btn" onclick="goTo('screen-messages')">←</button>
     <div style="flex:1;min-width:0;display:flex;align-items:center;gap:0.5rem;cursor:pointer" id="dm-topbar-profile" onclick="dmOpenPersonSheet(currentChatUser)">
-      <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:white;flex-shrink:0" id="dm-topbar-avatar">?</div>
+      <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#2E9E8E,#1A7A8A);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:white;flex-shrink:0" id="dm-topbar-avatar">?</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:0.85rem;font-weight:700;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chat-name">...</div>
         <div style="font-size:0.62rem;color:var(--text-secondary)" id="chat-role">...</div>
@@ -982,7 +982,7 @@
 
     <!-- Profile hero (compact, left-aligned) -->
     <div class="profile-hero" style="flex-shrink:0;padding:0.6rem 1.1rem 0.4rem;display:flex;align-items:center;gap:0.8rem">
-      <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:white;box-shadow:0 4px 16px rgba(139,127,255,0.3);border:2px solid rgba(255,255,255,0.08);flex-shrink:0;overflow:hidden;cursor:pointer" id="my-avatar" onclick="viewAvatarFull(this)">?</div>
+      <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#2E9E8E,#1A7A8A);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:white;box-shadow:0 4px 16px rgba(46,158,142,0.3);border:2px solid rgba(255,255,255,0.08);flex-shrink:0;overflow:hidden;cursor:pointer" id="my-avatar" onclick="viewAvatarFull(this)">?</div>
       <div style="flex:1;min-width:0;text-align:left">
         <div style="font-size:1rem;font-weight:800;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-name">...</div>
         <div style="font-size:0.75rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-role">...</div>
@@ -1064,7 +1064,7 @@
     </div>
 
     <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Profil</div>
-    <button onclick="reRunOnboarding()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(139,127,255,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent);cursor:pointer">Kør profilopsætning igen</button>
+    <button onclick="reRunOnboarding()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(46,158,142,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent);cursor:pointer">Kør profilopsætning igen</button>
 
     <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Konto</div>
     <button onclick="handleLogout()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(232,93,138,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent2);cursor:pointer">Log ud</button>
@@ -1217,7 +1217,7 @@
     <div class="modal-title">Rediger profil</div>
     <!-- Avatar upload -->
     <div style="display:flex;align-items:center;gap:1rem;margin:0.5rem 0 1.2rem;padding:0.8rem;background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:14px">
-      <div id="ep-avatar-preview" style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#8B7FFF,#E85D8A);display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:white;flex-shrink:0;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 4px 12px rgba(0,0,0,0.2)" onclick="document.getElementById('ep-avatar-input').click()">
+      <div id="ep-avatar-preview" style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#2E9E8E,#1A7A8A);display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:white;flex-shrink:0;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 4px 12px rgba(0,0,0,0.2)" onclick="document.getElementById('ep-avatar-input').click()">
         <span id="ep-avatar-initials">?</span>
         <img id="ep-avatar-img" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;display:none">
       </div>

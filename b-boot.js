@@ -250,7 +250,7 @@ function showUpdateBanner() {
     + 'padding-top:env(safe-area-inset-top,0px);'
     + 'background:rgba(12,12,25,0.92);'
     + 'backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);'
-    + 'border-bottom:1px solid rgba(139,127,255,0.25);'
+    + 'border-bottom:1px solid rgba(46,158,142,0.25);'
     + 'box-shadow:0 4px 24px rgba(0,0,0,0.4);';
   banner.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;'
     + 'padding:0.55rem 1rem;gap:0.75rem;font-family:inherit">'

@@ -194,10 +194,10 @@ async function leaveBubble(bubbleId) {
   var originalHtml = bar.innerHTML;
   var tray = document.createElement('div');
   tray.className = 'leave-confirm';
-  tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;background:rgba(232,93,138,0.08);border:1px solid rgba(232,93,138,0.2);border-radius:10px;gap:0.5rem;width:100%';
+  tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:10px;gap:0.5rem;width:100%';
   tray.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Forlad boblen?</span>' +
     '<div style="display:flex;gap:0.3rem">' +
-    '<button style="font-size:0.7rem;padding:0.25rem 0.6rem;background:rgba(232,93,138,0.15);color:var(--accent2);border:1px solid rgba(232,93,138,0.3);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600" onclick="confirmLeaveBubble(\'' + bubbleId + '\')">Forlad</button>' +
+    '<button style="font-size:0.7rem;padding:0.25rem 0.6rem;background:rgba(26,122,138,0.15);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600" onclick="confirmLeaveBubble(\'' + bubbleId + '\')">Forlad</button>' +
     '<button style="font-size:0.7rem;padding:0.25rem 0.6rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit" onclick="cancelLeaveBubble()">Annuller</button>' +
     '</div>';
   bar.dataset.originalHtml = originalHtml;
@@ -264,7 +264,7 @@ function cbRenderPillSelect(selectId, options) {
     var btn = document.createElement('button');
     btn.type = 'button';
     var isActive = opt.value === current;
-    btn.style.cssText = 'display:flex;align-items:center;gap:0.35rem;padding:0.4rem 0.75rem;border-radius:99px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.15s;border:1.5px solid ' + (isActive ? 'rgba(139,127,255,0.5)' : 'var(--glass-border)') + ';background:' + (isActive ? 'rgba(139,127,255,0.12)' : 'rgba(255,255,255,0.04)') + ';color:' + (isActive ? 'var(--accent)' : 'var(--muted)');
+    btn.style.cssText = 'display:flex;align-items:center;gap:0.35rem;padding:0.4rem 0.75rem;border-radius:99px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.15s;border:1.5px solid ' + (isActive ? 'rgba(46,158,142,0.5)' : 'var(--glass-border)') + ';background:' + (isActive ? 'rgba(46,158,142,0.12)' : 'rgba(255,255,255,0.04)') + ';color:' + (isActive ? 'var(--accent)' : 'var(--muted)');
     var ico = document.createElement('span');
     ico.style.cssText = 'width:0.85rem;height:0.85rem;display:flex;align-items:center;justify-content:center';
     ico.innerHTML = ICONS[opt.icon] || '';
@@ -279,8 +279,8 @@ function cbRenderPillSelect(selectId, options) {
         b.style.background = 'rgba(255,255,255,0.04)';
         b.style.color = 'var(--muted)';
       });
-      btn.style.borderColor = 'rgba(139,127,255,0.5)';
-      btn.style.background = 'rgba(139,127,255,0.12)';
+      btn.style.borderColor = 'rgba(46,158,142,0.5)';
+      btn.style.background = 'rgba(46,158,142,0.12)';
       btn.style.color = 'var(--accent)';
     };
     wrap.appendChild(btn);
@@ -873,7 +873,7 @@ async function openInviteModal(bubbleId) {
     }
     // Sort by star rating
     available.sort(function(a, b) { return (starGet(b.id) || 0) - (starGet(a.id) || 0); });
-    var colors = proxColors || ['linear-gradient(135deg,#8B7FFF,#E85D8A)'];
+    var colors = proxColors || ['linear-gradient(135deg,#3AAA88,#2A7A90)'];
     list.innerHTML = available.map(function(p, i) {
       var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var col = colors[i % colors.length];
@@ -1003,7 +1003,7 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
 async function dmOpenPersonSheet(userId) {
   try {
     var { data: p } = await sb.from('profiles').select('name,title,avatar_url').eq('id', userId).single();
-    bcOpenPerson(userId, p?.name || 'Ukendt', p?.title || '', 'linear-gradient(135deg,#8B7FFF,#E85D8A)', 'screen-chat');
+    bcOpenPerson(userId, p?.name || 'Ukendt', p?.title || '', 'linear-gradient(135deg,#3AAA88,#2A7A90)', 'screen-chat');
   } catch(e) { logError('dmOpenPersonSheet', e); }
 }
 

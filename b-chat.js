@@ -182,7 +182,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
     document.getElementById('bc-emoji').innerHTML = bubbleEmoji(b.type);
     document.getElementById('bc-name').textContent = b.name;
     // Hero gradient based on bubble type
-    var _heroGrads = {'event':'linear-gradient(135deg,#E85D8A,#8B7FFF)','live':'linear-gradient(135deg,#2ECFCF,#8B7FFF)','local':'linear-gradient(135deg,#10B981,#065F46)','topic':'linear-gradient(135deg,#8B7FFF,#4C1D95)','company':'linear-gradient(135deg,#1E3A8A,#7C3AED)'};
+    var _heroGrads = {'event':'linear-gradient(135deg,#2A7A90,#3AAA88)','live':'linear-gradient(135deg,#2ECFCF,#2E9E8E)','local':'linear-gradient(135deg,#10B981,#065F46)','topic':'linear-gradient(135deg,#2E9E8E,#164E4E)','company':'linear-gradient(135deg,#1A5A6A,#1A7A7A)'};
     var hg = document.getElementById('bc-hero-gradient');
     var hi = document.getElementById('bc-hero-icon');
     if (hg) hg.style.background = _heroGrads[b.type] || _heroGrads['topic'];
@@ -247,7 +247,7 @@ async function bcLoadBubbleInfo() {
     bcBubbleData = b;
     document.getElementById('bc-emoji').innerHTML = bubbleEmoji(b.type);
     document.getElementById('bc-name').textContent = b.name;
-    var _heroGrads2 = {'event':'linear-gradient(135deg,#E85D8A,#8B7FFF)','live':'linear-gradient(135deg,#2ECFCF,#8B7FFF)','local':'linear-gradient(135deg,#10B981,#065F46)','topic':'linear-gradient(135deg,#8B7FFF,#4C1D95)','company':'linear-gradient(135deg,#1E3A8A,#7C3AED)'};
+    var _heroGrads2 = {'event':'linear-gradient(135deg,#2A7A90,#3AAA88)','live':'linear-gradient(135deg,#2ECFCF,#2E9E8E)','local':'linear-gradient(135deg,#10B981,#065F46)','topic':'linear-gradient(135deg,#2E9E8E,#164E4E)','company':'linear-gradient(135deg,#1A5A6A,#1A7A7A)'};
     var hg2 = document.getElementById('bc-hero-gradient');
     var hi2 = document.getElementById('bc-hero-icon');
     if (hg2) hg2.style.background = _heroGrads2[b.type] || _heroGrads2['topic'];
@@ -348,7 +348,7 @@ function bcRenderMsg(m) {
   const name = p.name || '?';
   const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   const time = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'});
-  const gradients = ['linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#7C2D12,#F97316)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#4C1D95,#A78BFA)','linear-gradient(135deg,#0C4A6E,#38BDF8)'];
+  const gradients = ['linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#7C2D12,#F97316)','linear-gradient(135deg,#1A5A6A,#1A7A7A)','linear-gradient(135deg,#164E4E,#4ABEAE)','linear-gradient(135deg,#0C4A6E,#38BDF8)'];
   const color = gradients[Math.abs(name.charCodeAt(0)) % gradients.length];
 
   const row = document.createElement('div');
@@ -743,7 +743,7 @@ async function bcLoadMembers() {
         new Date(m.checked_in_at).getTime() > (now - LIVE_EXPIRE_HOURS * 3600000);
     });
 
-    const colors = ['linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#7C2D12,#F97316)','linear-gradient(135deg,#1E3A8A,#7C3AED)','linear-gradient(135deg,#4C1D95,#A78BFA)','linear-gradient(135deg,#0C4A6E,#38BDF8)'];
+    const colors = ['linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#7C2D12,#F97316)','linear-gradient(135deg,#1A5A6A,#1A7A7A)','linear-gradient(135deg,#164E4E,#4ABEAE)','linear-gradient(135deg,#0C4A6E,#38BDF8)'];
     const ownerId = bcBubbleData?.created_by;
     const isOwner = currentUser && ownerId === currentUser.id;
 
@@ -793,11 +793,11 @@ function bcShowKickConfirm(btn, userId, userName) {
   if (!row || row.querySelector('.kick-confirm')) return;
   var confirm = document.createElement('div');
   confirm.className = 'kick-confirm';
-  confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(232,93,138,0.08);border:1px solid rgba(232,93,138,0.2);border-radius:10px;gap:0.5rem';
+  confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:10px;gap:0.5rem';
   confirm.onclick = function(e) { e.stopPropagation(); };
   confirm.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Fjern ' + userName + '?</span>' +
     '<div style="display:flex;gap:0.3rem">' +
-    '<button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(232,93,138,0.3)" onclick="event.stopPropagation();bcConfirmKick(\'' + userId + '\',\'' + userName + '\')">Fjern</button>' +
+    '<button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="event.stopPropagation();bcConfirmKick(\'' + userId + '\',\'' + userName + '\')">Fjern</button>' +
     '<button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="event.stopPropagation();bcCancelKick(this)">Annuller</button>' +
     '</div>';
   row.appendChild(confirm);
@@ -845,7 +845,7 @@ async function bcLoadInfo() {
       <div>
         <button class="${myUpvotes[b.id] ? 'chat-info-btn success' : 'chat-info-btn primary'}" id="bc-recommend-btn" onclick="toggleBubbleUpvote('${b.id}')">${myUpvotes[b.id] ? icon('checkCircle') + ' Anbefalet' : icon('rocket') + ' Anbefal denne boble'}</button>
         <button class="chat-info-btn primary" data-action="openQRModal" data-id="${b.id}">${icon("qrcode")} Del boble / QR-kode</button>
-        ${isOwner ? `<button class="chat-info-btn primary" onclick="downloadMembersPdf('${b.id}')" style="background:rgba(139,127,255,0.12);border-color:rgba(139,127,255,0.3);color:var(--accent)">${icon('users')} Download deltagerliste (PDF)</button>` : ''}
+        ${isOwner ? `<button class="chat-info-btn primary" onclick="downloadMembersPdf('${b.id}')" style="background:rgba(46,158,142,0.12);border-color:rgba(46,158,142,0.3);color:var(--accent)">${icon('users')} Download deltagerliste (PDF)</button>` : ''}
         <button class="chat-info-btn danger" data-action="leaveBubble" data-id="${b.id}">${icon("logout")} Forlad boblen</button>
       </div>`;
   } catch(e) { logError("bcLoadInfo", e); showToast(e.message || "Ukendt fejl"); }

@@ -241,7 +241,7 @@ async function loadMessages() {
       const time = timeAgo(lastMsg.created_at);
       const convAvatar = p.avatar_url ?
         '<div class="avatar" style="width:44px;height:44px;overflow:hidden;border-radius:50%"><img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover"></div>' :
-        '<div class="avatar" style="background:linear-gradient(135deg,#8B7FFF,#E85D8A);width:44px;height:44px">'+initials+'</div>';
+        '<div class="avatar" style="background:linear-gradient(135deg,#3AAA88,#2A7A90);width:44px;height:44px">'+initials+'</div>';
       return '<div class="card conv-card' + (isUnread ? ' unread' : '') + '" data-action="openChat" data-id="' + partnerId + '" data-conv-id="' + partnerId + '">' +
         '<div class="flex-row-center" style="gap:0.75rem">' + convAvatar +
         '<div style="flex:1;min-width:0">' +
@@ -328,7 +328,7 @@ function dmRenderMsg(m) {
 
   const myAvUrl = currentProfile?.avatar_url;
   const theirAvUrl = window._chatPartnerAvatar;
-  const avatarGrad = sent ? 'linear-gradient(135deg,#4C1D95,#A78BFA)' : 'linear-gradient(135deg,#8B7FFF,#E85D8A)';
+  const avatarGrad = sent ? 'linear-gradient(135deg,#164E4E,#4ABEAE)' : 'linear-gradient(135deg,#3AAA88,#2A7A90)';
   const avatarClick = sent ? '' : ` onclick="dmOpenPersonSheet('${m.sender_id}')"`;
 
   let avatarInner;
@@ -504,10 +504,10 @@ async function dmDeleteMsg(msgId) {
     if (el.querySelector('.dm-delete-confirm')) return; // already showing
     var tray = document.createElement('div');
     tray.className = 'dm-delete-confirm';
-    tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0.5rem;margin-top:0.25rem;background:rgba(232,93,138,0.08);border:1px solid rgba(232,93,138,0.2);border-radius:8px;gap:0.4rem';
+    tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0.5rem;margin-top:0.25rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:8px;gap:0.4rem';
     tray.innerHTML = '<span style="font-size:0.7rem;color:var(--text-secondary)">Slet besked?</span>' +
       '<div style="display:flex;gap:0.25rem">' +
-      '<button style="font-size:0.68rem;padding:0.2rem 0.55rem;background:rgba(232,93,138,0.15);color:var(--accent2);border:1px solid rgba(232,93,138,0.3);border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600" onclick="dmConfirmDelete(\'' + msgId + '\')">Slet</button>' +
+      '<button style="font-size:0.68rem;padding:0.2rem 0.55rem;background:rgba(26,122,138,0.15);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600" onclick="dmConfirmDelete(\'' + msgId + '\')">Slet</button>' +
       '<button style="font-size:0.68rem;padding:0.2rem 0.55rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:6px;cursor:pointer;font-family:inherit" onclick="this.closest(\'.dm-delete-confirm\').remove()">Annuller</button>' +
       '</div>';
     el.appendChild(tray);
