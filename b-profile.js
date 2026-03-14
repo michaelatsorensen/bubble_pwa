@@ -452,13 +452,19 @@ function openRadarSheet() {
       btn.style.color = 'var(--muted)';
     }
   }
-  // Show loading state then render
+  // Show loading state then fetch fresh data
   var loadingEl = document.getElementById('prox-empty');
   if (loadingEl) { loadingEl.style.display = 'block'; loadingEl.textContent = 'Finder relevante personer…'; }
-  setTimeout(function(){
+  // Always reload fresh data — loadProximityMap handles rendering
+  loadProximityMap().then(function() {
     if (loadingEl) loadingEl.style.display = 'none';
+    // Ensure list view also renders if active
+    if (radarCurrentView === 'list') renderRadarList();
+  }).catch(function() {
+    if (loadingEl) loadingEl.style.display = 'none';
+    // Fallback: render from cache if fetch fails
     if (radarCurrentView === 'map') renderProximityDots(); else renderRadarList();
-  }, 120);
+  });
   initSwipeClose(sheet, closeRadarSheet);
 }
 

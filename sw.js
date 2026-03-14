@@ -3,7 +3,7 @@
 // ══════════════════════════════════════
 // Version managed by CACHE_NAME below
 
-const CACHE_NAME = 'bubble-v3.8.8';
+const CACHE_NAME = 'bubble-v3.9.1';
 const CACHE_URLS = [
   './', './index.html', './app.css',
   './bubble-icons.js', './tag-data.js',
@@ -41,11 +41,17 @@ self.addEventListener('fetch', function(event) {
   if (event.request.url.includes('supabase.co')) return;
   if (event.request.url.includes('giphy.com')) return;
 
+  // Strip querystring for local assets so cache keys match precache
+  var requestUrl = event.request.url;
+  var isLocal = requestUrl.startsWith(self.location.origin);
+  var cacheKey = isLocal ? requestUrl.split('?')[0] : requestUrl;
+  var cacheRequest = isLocal ? new Request(cacheKey) : event.request;
+
   event.respondWith(
     fetch(event.request).then(function(res) {
-      if (res.ok) caches.open(CACHE_NAME).then(c => c.put(event.request, res.clone()));
+      if (res.ok) caches.open(CACHE_NAME).then(function(c) { c.put(cacheRequest, res.clone()); });
       return res;
-    }).catch(() => caches.match(event.request))
+    }).catch(function() { return caches.match(cacheRequest); })
   );
 });
 

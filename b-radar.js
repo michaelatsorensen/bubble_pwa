@@ -193,7 +193,14 @@ async function rpSaveContact() {
     if (btn.dataset.saved === '1') { showToast('Allerede gemt'); return; }
     await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: rpCurrentUserId });
     btn.textContent = 'Gemt \u2713'; btn.dataset.saved = '1';
-    showToast('Kontakt gemt!'); loadSavedContacts();
+    showSuccessToast('Kontakt gemt');
+    loadSavedContacts();
+    clearSavedContactIdsCache();
+    // Remove from radar cache + re-render immediately
+    var savedId = rpCurrentUserId;
+    proxAllProfiles = proxAllProfiles.filter(function(p) { return p.id !== savedId; });
+    closeRadarPerson();
+    if (radarCurrentView === 'map') renderProximityDots(); else renderRadarList();
   } catch(e) { logError("rpSaveContact", e); showToast(e.message || "Ukendt fejl"); }
 }
 function rpFullProfile() {

@@ -106,16 +106,15 @@ function rtHandleMemberChange(payload) {
 
 // ── Radar: soft refresh when screen is active ──
 function rtStartRadarPolling() {
-  _radarScreenActive = true;
-  rtStopRadarPolling();
+  rtStopRadarPolling(); // clear old interval first
+  _radarScreenActive = true; // set flag AFTER stop (stop resets it)
   _radarRefreshTimer = setInterval(function() {
     if (!_radarScreenActive) { rtStopRadarPolling(); return; }
-    // Only refresh if app is in foreground
     if (!document.hidden) {
       console.debug('[rt] radar soft refresh');
-      loadProximityMap(); // silent re-fetch af radar
+      loadProximityMap();
     }
-  }, 20000); // every 20s
+  }, 20000);
 }
 function rtStopRadarPolling() {
   _radarScreenActive = false;
@@ -141,7 +140,8 @@ function initGlobalRealtime() {
       var chatIsOpenWithSender = chatScreenActive && currentChatUser === m.sender_id;
 
       if (!chatIsOpenWithSender) {
-        dmBadgeIncrement();
+        // Invalidate → recount from DB (handles missed events, drift)
+        updateUnreadBadge();
       }
 
       // Update conversations preview instantly
@@ -174,7 +174,7 @@ function initGlobalRealtime() {
   var chInvites = sb.channel('rt-invites-' + currentUser.id)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bubble_invitations',
       filter: 'to_user_id=eq.' + currentUser.id }, function() {
-      notifBadgeIncrement();
+      updateNotifNavBadge(); // recount from DB
       if (document.getElementById('screen-notifications')?.classList.contains('active')) {
         loadNotifications();
       }
@@ -186,7 +186,7 @@ function initGlobalRealtime() {
   var chSaved = sb.channel('rt-saved-' + currentUser.id)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'saved_contacts',
       filter: 'contact_id=eq.' + currentUser.id }, function() {
-      notifBadgeIncrement();
+      updateNotifNavBadge(); // recount from DB
       if (document.getElementById('screen-notifications')?.classList.contains('active')) {
         loadNotifications();
       }
@@ -285,7 +285,7 @@ async function openChat(userId, fromScreen) {
         .in('id', unreadIds);
       // Notify sender that their messages were read
       if (chatSubscription) {
-        try { chatSubscription.send({ type: 'broadcast', event: 'read_receipt', payload: { msgIds: unreadIds } }); } catch(e) {}
+        try { chatSubscription.send({ type: 'broadcast', event: 'read_receipt', payload: { msgIds: unreadIds } }); } catch(e) { logError("dm:read_receipt_broadcast", e); }
       }
     }
     await updateUnreadBadge();
@@ -393,7 +393,7 @@ function dmOnInput() {
     try {
       chatSubscription.send({ type: 'broadcast', event: 'typing',
         payload: { userId: currentUser.id, name: currentProfile?.name || 'Nogen' } });
-    } catch(e) {}
+    } catch(e) { /* typing is fire-and-forget, log silently */ if (window._debugRt) console.warn('typing broadcast:', e); }
   }, 300);
 }
 
@@ -421,9 +421,10 @@ function subscribeToChat() {
       el.insertAdjacentHTML('beforeend', dmRenderMsg(m));
       el.scrollTop = el.scrollHeight;
       if (m.receiver_id === currentUser.id) {
-        sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', m.id).then(function() {});
+        sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', m.id)
+          .then(function(res) { if (res.error) logError('dm:read_at_broadcast', res.error); });
         updateUnreadBadge();
-        try { chatSubscription.send({ type: 'broadcast', event: 'read_receipt', payload: { msgIds: [m.id] } }); } catch(e) {}
+        try { chatSubscription.send({ type: 'broadcast', event: 'read_receipt', payload: { msgIds: [m.id] } }); } catch(e) { logError("dm:inline_read_receipt", e); }
       }
     })
     // Typing indicator
@@ -447,7 +448,8 @@ function subscribeToChat() {
       dmHideTyping();
       el.insertAdjacentHTML('beforeend', dmRenderMsg(m));
       el.scrollTop = el.scrollHeight;
-      sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', m.id).then(function() {});
+      sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', m.id)
+        .then(function(res) { if (res.error) logError('dm:read_at_changes', res.error); });
       updateUnreadBadge();
     })
     .subscribe();

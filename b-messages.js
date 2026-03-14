@@ -163,7 +163,7 @@ async function sendMessage() {
         }
         // Broadcast to recipient for instant delivery
         if (chatSubscription) {
-          try { chatSubscription.send({ type: 'broadcast', event: 'new_message', payload: newMsg }); } catch(e) {}
+          try { chatSubscription.send({ type: 'broadcast', event: 'new_message', payload: newMsg }); } catch(e) { logError("dm:new_message_broadcast", e); }
         }
         trackEvent('message_sent', { type: 'dm' });
       }
@@ -208,13 +208,15 @@ async function dmHandleFile(input) {
     });
     if (uploadErr) { showToast('Upload fejlede: ' + (uploadErr.message || 'ukendt')); input.value = ''; return; }
 
-    const { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
+    // Use signed URL for privacy — DM files should not be publicly accessible
+    const { data: urlData, error: urlErr } = await sb.storage.from('bubble-files').createSignedUrl(path, 604800); // 7 days
+    if (urlErr || !urlData?.signedUrl) { showToast('Kunne ikke generere fil-link'); input.value = ''; return; }
 
     const { data: newMsg, error } = await sb.from('messages').insert({
       sender_id: currentUser.id,
       receiver_id: currentChatUser,
       content: '',
-      file_url: urlData.publicUrl,
+      file_url: urlData.signedUrl,
       file_name: file.name,
       file_type: file.type
     }).select().single();

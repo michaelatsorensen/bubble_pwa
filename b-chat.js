@@ -188,8 +188,13 @@ async function openBubbleChat(bubbleId, fromScreen) {
     if (hg) hg.style.background = _heroGrads[b.type] || _heroGrads['topic'];
     if (hi) hi.innerHTML = bubbleEmoji(b.type);
 
-    const { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bubbleId);
-    document.getElementById('bc-members-count').textContent = (count||0) + ' medlemmer';
+    // Use denormalized count if available, fallback to query
+    var memberCount = b.member_count;
+    if (memberCount == null) {
+      var { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bubbleId);
+      memberCount = count || 0;
+    }
+    document.getElementById('bc-members-count').textContent = memberCount + ' medlemmer';
 
     // Vis actions i topbar baseret på membership
     await loadBubbleUpvotes();
@@ -247,9 +252,13 @@ async function bcLoadBubbleInfo() {
     var hi2 = document.getElementById('bc-hero-icon');
     if (hg2) hg2.style.background = _heroGrads2[b.type] || _heroGrads2['topic'];
     if (hi2) hi2.innerHTML = bubbleEmoji(b.type);
-    const { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bcBubbleId);
+    var memberCount2 = b.member_count;
+    if (memberCount2 == null) {
+      var { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bcBubbleId);
+      memberCount2 = count || 0;
+    }
     // Check my LIVE status
-    var statusText = (count||0) + ' medlemmer';
+    var statusText = memberCount2 + ' medlemmer';
     var { data: myM } = await sb.from('bubble_members').select('checked_in_at,checked_out_at').eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id).maybeSingle();
     var isLive = myM && myM.checked_in_at && !myM.checked_out_at && (Date.now() - new Date(myM.checked_in_at).getTime() < 6*3600000);
     var countEl = document.getElementById('bc-members-count');
@@ -540,13 +549,15 @@ async function bcHandleFile(input) {
       return;
     }
 
-    const { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
+    // Use signed URL for privacy
+    const { data: urlData, error: urlErr } = await sb.storage.from('bubble-files').createSignedUrl(path, 604800); // 7 days
+    if (urlErr || !urlData?.signedUrl) { showToast('Kunne ikke generere fil-link'); input.value = ''; return; }
 
     const { data: newMsg, error: msgErr } = await sb.from('bubble_messages').insert({
       bubble_id: bcBubbleId,
       user_id: currentUser.id,
       content: '',
-      file_url: urlData.publicUrl,
+      file_url: urlData.signedUrl,
       file_name: file.name,
       file_type: file.type
     }).select('id, bubble_id, user_id, content, file_url, file_name, file_type, edited, created_at').single();
@@ -818,16 +829,19 @@ async function bcLoadInfo() {
     const tags = (b.keywords||[]).map(k=>`<span class="tag">${escHtml(k)}</span>`).join('');
     const isOwner = currentUser && b.created_by === currentUser.id;
 
-    // Member count
-    const { count: memberCount } = await sb.from('bubble_members')
-      .select('*', { count: 'exact', head: true }).eq('bubble_id', b.id);
+    // Member count — use denormalized if available
+    var memberCount3 = b.member_count;
+    if (memberCount3 == null) {
+      var { count: mc } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', b.id);
+      memberCount3 = mc || 0;
+    }
 
     list.innerHTML = `
       <div class="chat-info-block"><div class="chat-info-label">Beskrivelse</div><div class="chat-info-val">${escHtml(b.description||'Ingen beskrivelse')}</div></div>
       <div class="chat-info-block"><div class="chat-info-label">Interesser</div><div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.4rem">${tags||'–'}</div></div>
       <div class="chat-info-block"><div class="chat-info-label">Boble-type</div><div class="chat-info-val">${typeLabel(b.type)}</div></div>
       <div class="chat-info-block"><div class="chat-info-label">Sted</div><div class="chat-info-val">${escHtml(b.location||'Ikke angivet')}</div></div>
-      <div class="chat-info-block"><div class="chat-info-label">Medlemmer</div><div class="chat-info-val">${memberCount || 0} personer</div></div>
+      <div class="chat-info-block"><div class="chat-info-label">Medlemmer</div><div class="chat-info-val">${memberCount3 || 0} personer</div></div>
       <div>
         <button class="${myUpvotes[b.id] ? 'chat-info-btn success' : 'chat-info-btn primary'}" id="bc-recommend-btn" onclick="toggleBubbleUpvote('${b.id}')">${myUpvotes[b.id] ? icon('checkCircle') + ' Anbefalet' : icon('rocket') + ' Anbefal denne boble'}</button>
         <button class="chat-info-btn primary" data-action="openQRModal" data-id="${b.id}">${icon("qrcode")} Del boble / QR-kode</button>

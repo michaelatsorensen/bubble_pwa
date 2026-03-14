@@ -435,9 +435,17 @@ async function updateRadarCount() {
       return;
     }
     const ids = memberships.map(m => m.bubble_id);
-    const { count } = await sb.from('bubble_members').select('*', {count:'exact',head:true}).in('bubble_id', ids).neq('user_id', currentUser.id);
-    if (rcEl) rcEl.textContent = ` · ${count || 0} profiler synlige i dine bobler`;
-  } catch(e) { logError("updateRadarCount", e); showToast(e.message || "Ukendt fejl"); }
+    // Use denormalized member_count if available, fallback to count query
+    const { data: myBubbles } = await sb.from('bubbles').select('member_count').in('id', ids);
+    var total = 0;
+    if (myBubbles && myBubbles[0]?.member_count != null) {
+      total = myBubbles.reduce(function(sum, b) { return sum + (b.member_count || 0); }, 0) - memberships.length; // subtract self from each
+    } else {
+      var { count } = await sb.from('bubble_members').select('*', {count:'exact',head:true}).in('bubble_id', ids).neq('user_id', currentUser.id);
+      total = count || 0;
+    }
+    if (rcEl) rcEl.textContent = ' · ' + total + ' profiler synlige i dine bobler';
+  } catch(e) { logError("updateRadarCount", e); }
 }
 
 function bubbleCard(b, joined) {

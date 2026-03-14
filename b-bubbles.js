@@ -113,7 +113,7 @@ async function loadDiscover() {
       return b.type !== 'live' && myBubbleIds.indexOf(b.id) < 0;
     }).map(b => ({
       ...b,
-      member_count: b.bubble_members?.[0]?.count || 0,
+      member_count: b.member_count ?? b.bubble_members?.[0]?.count ?? 0,
       type_label: typeLabel(b.type),
       upvote_count: bubbleUpvotes[b.id] || 0
     }));
