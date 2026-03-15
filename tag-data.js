@@ -4,10 +4,10 @@
 //  Expanded to cover all 11 interest areas × 7 lifestages
 // ══════════════════════════════════════════════════════════
 const TAG_CATEGORIES = {
-  rolle:      { label: 'Rolle & Titel', icon: 'user', color: '#2E9E8E' },
-  branche:    { label: 'Branche',       icon: 'building', color: '#1A7A8A' },
-  kompetence: { label: 'Kompetencer',   icon: 'cpu', color: '#10B981' },
-  interesse:  { label: 'Interesser',    icon: 'rocket', color: '#38BDF8' },
+  rolle:      { label: 'Rolle & Titel', icon: 'user', color: '#7C5CFC' },
+  branche:    { label: 'Branche',       icon: 'building', color: '#6B8BFF' },
+  kompetence: { label: 'Kompetencer',   icon: 'cpu', color: '#1A9E8E' },
+  interesse:  { label: 'Interesser',    icon: 'rocket', color: '#6B8BFF' },
 };
 
 const TAG_DATABASE = {

@@ -209,6 +209,185 @@ document.addEventListener('click', (e) => {
 })();
 
 
+// ══════════════════════════════════════════════════════════
+//  QR ANON ROUTING — preview profile without login
+// ══════════════════════════════════════════════════════════
+async function checkQRAnonPreview() {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var profileId = params.get('profile');
+    var joinId = params.get('join');
+    
+    // Only show anon preview if NOT logged in
+    var { data: { session } } = await sb.auth.getSession();
+    if (session) return false; // Let normal flow handle it
+    
+    if (profileId) {
+      // QR profile preview: show profile without login
+      sessionStorage.setItem('pending_contact', profileId);
+      await loadQRProfilePreview(profileId);
+      return true;
+    }
+    if (joinId) {
+      // QR bubble join: save for after signup
+      sessionStorage.setItem('pending_join', joinId);
+      await loadQRProfilePreview(null, joinId);
+      return true;
+    }
+    return false;
+  } catch(e) {
+    logError('checkQRAnonPreview', e);
+    return false;
+  }
+}
+
+async function loadQRProfilePreview(userId, bubbleId) {
+  try {
+    if (!sb) initSupabase();
+    
+    if (userId) {
+      var { data: profile } = await sb.from('profiles')
+        .select('id,name,title,keywords,avatar_url')
+        .eq('id', userId)
+        .maybeSingle();
+      
+      if (profile) {
+        var nameEl = document.getElementById('qr-preview-name');
+        var titleEl = document.getElementById('qr-preview-title');
+        var tagsEl = document.getElementById('qr-preview-tags');
+        var avatarEl = document.getElementById('qr-preview-avatar');
+        
+        if (nameEl) nameEl.textContent = profile.name || 'Bubble-bruger';
+        if (titleEl) titleEl.textContent = profile.title || '';
+        if (tagsEl && profile.keywords) {
+          tagsEl.innerHTML = (profile.keywords || []).slice(0, 4).map(function(t) {
+            return '<span class="tag">' + escHtml(t) + '</span>';
+          }).join('');
+        }
+        if (avatarEl) {
+          if (profile.avatar_url) {
+            avatarEl.innerHTML = '<img src="' + escHtml(profile.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+          } else {
+            avatarEl.textContent = (profile.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+          }
+        }
+        
+        // Load network count
+        var { count } = await sb.from('saved_contacts')
+          .select('*', { count: 'exact', head: true })
+          .or('user_id.eq.' + userId + ',contact_id.eq.' + userId);
+        var netEl = document.getElementById('qr-preview-network-count');
+        if (netEl) netEl.textContent = count || 0;
+        
+        // Load bubbles
+        var { data: memberships } = await sb.from('bubble_members')
+          .select('bubble_id, bubbles(name,type)')
+          .eq('user_id', userId)
+          .limit(5);
+        var bubblesEl = document.getElementById('qr-preview-bubbles');
+        if (bubblesEl && memberships && memberships.length > 0) {
+          bubblesEl.innerHTML = memberships.map(function(m) {
+            var b = m.bubbles || {};
+            var isLive = b.type === 'live' || b.type === 'event';
+            return '<div class="qr-context-chip">' +
+              '<div class="qr-context-dot" style="background:' + (isLive ? 'var(--green)' : 'var(--accent)') + '"></div>' +
+              escHtml(b.name || '...') +
+              (isLive ? ' · <strong style="color:var(--green)">Live</strong>' : '') +
+              '</div>';
+          }).join('');
+        }
+        
+        var labelEl = document.getElementById('qr-preview-context-label');
+        if (labelEl && profile.name) {
+          labelEl.textContent = (profile.name.split(' ')[0]) + ' er aktiv i';
+        }
+      }
+      goTo('screen-qr-preview');
+    } else {
+      // Bubble join without profile - show teaser
+      goTo('screen-qr-teaser');
+    }
+    // Clean URL
+    window.history.replaceState({}, document.title, window.location.pathname);
+  } catch(e) {
+    logError('loadQRProfilePreview', e);
+    goTo('screen-auth');
+  }
+}
+
+function qrPreviewSignup() {
+  goTo('screen-qr-teaser');
+  setTimeout(function() { goTo('screen-auth'); showAuthForms(); }, 800);
+}
+
+function qrTeaserSignup() {
+  goTo('screen-auth');
+  showAuthForms();
+}
+
+// ══════════════════════════════════════════════════════════
+//  SOCIAL PROOF SCREEN (opsøgende flow)
+// ══════════════════════════════════════════════════════════
+async function loadSocialProofScreen() {
+  try {
+    if (!sb) initSupabase();
+    var { count } = await sb.from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .neq('banned', true);
+    var el = document.getElementById('sp-total-count');
+    if (el) el.textContent = count || 0;
+    
+    // Only show screen if enough users (threshold)
+    if (count && count >= 20) {
+      goTo('screen-social-proof');
+      return true;
+    }
+    return false;
+  } catch(e) {
+    logError('loadSocialProofScreen', e);
+    return false;
+  }
+}
+
+function spFilter(cat, el) {
+  // UI only for now — toggle active state
+  var bar = document.getElementById('sp-filters');
+  if (bar) bar.querySelectorAll('.sp-filter-chip').forEach(function(c) { c.classList.remove('active'); });
+  if (el) el.classList.add('active');
+}
+
+function spContinueToSignup() {
+  goTo('screen-auth');
+  showAuthForms();
+}
+
+// ══════════════════════════════════════════════════════════
+//  PENDING CONTACT — auto-save QR owner after signup
+// ══════════════════════════════════════════════════════════
+async function checkPendingContact() {
+  try {
+    if (!currentUser) return;
+    var contactId = sessionStorage.getItem('pending_contact');
+    if (!contactId || contactId === currentUser.id) {
+      sessionStorage.removeItem('pending_contact');
+      return;
+    }
+    // Auto-save the contact
+    var { error } = await sb.from('saved_contacts').upsert({
+      user_id: currentUser.id,
+      contact_id: contactId
+    });
+    sessionStorage.removeItem('pending_contact');
+    if (!error) {
+      showToast('Kontakt gemt fra QR-scan! ✓');
+      trackEvent('qr_contact_saved', { contact_id: contactId });
+    }
+  } catch(e) {
+    logError('checkPendingContact', e);
+    sessionStorage.removeItem('pending_contact');
+  }
+}
+
 //  APP BOOT
 // ══════════════════════════════════════════════════════════
 // ── Lyt på beskeder fra Service Worker ──
@@ -250,7 +429,7 @@ function showUpdateBanner() {
     + 'padding-top:env(safe-area-inset-top,0px);'
     + 'background:rgba(12,12,25,0.92);'
     + 'backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);'
-    + 'border-bottom:1px solid rgba(46,158,142,0.25);'
+    + 'border-bottom:1px solid rgba(124,92,252,0.25);'
     + 'box-shadow:0 4px 24px rgba(0,0,0,0.4);';
   banner.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;'
     + 'padding:0.55rem 1rem;gap:0.75rem;font-family:inherit">'
@@ -270,9 +449,18 @@ function showUpdateBanner() {
 }
 
 window.addEventListener('load', async () => {
+  // Check QR anon preview BEFORE auth (shows profile without login)
+  if (initSupabase()) {
+    var isAnon = await checkQRAnonPreview();
+    if (isAnon) {
+      initAllSwipeClose();
+      return; // Don't run normal auth flow
+    }
+  }
   await checkAuth();
   await checkQRJoin();
   await checkPendingJoin();
+  await checkPendingContact();
   if (currentUser) {
     // Realtime, badges, preload etc. already initialized by checkAuth/handleLogin/handleSignup
     trackEvent('app_open');

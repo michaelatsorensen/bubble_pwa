@@ -5,13 +5,34 @@
   "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#06060F",
-  "theme_color": "#06060F",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
   "icons": [
-    { "src": "bubble-icon-152.png", "sizes": "152x152", "type": "image/png" },
-    { "src": "bubble-icon-167.png", "sizes": "167x167", "type": "image/png" },
-    { "src": "bubble-icon-180.png", "sizes": "180x180", "type": "image/png" },
-    { "src": "bubble-icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "bubble-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "bubble-icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "bubble-icon-167.png",
+      "sizes": "167x167",
+      "type": "image/png"
+    },
+    {
+      "src": "bubble-icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "bubble-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "bubble-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }

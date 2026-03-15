@@ -47,12 +47,13 @@ function goTo(screenId) {
     'screen-discover': 1,
     'screen-messages': 2, 'screen-chat': -1,
     'screen-profile': 3,
-    'screen-notifications': -1, 'screen-person': -1
+    'screen-notifications': -1, 'screen-person': -1,
+    'screen-qr-preview': -1, 'screen-qr-teaser': -1, 'screen-social-proof': -1
   };
   const globalNav = document.getElementById('global-nav');
   const activeIdx = navMap[screenId];
   if (globalNav) {
-    var hideNav = screenId === 'screen-chat' || screenId === 'screen-bubble-chat';
+    var hideNav = screenId === 'screen-chat' || screenId === 'screen-bubble-chat' || screenId === 'screen-qr-preview' || screenId === 'screen-qr-teaser' || screenId === 'screen-social-proof';
     globalNav.classList.toggle('nav-hidden', hideNav);
     if (activeIdx !== undefined && activeIdx >= 0) {
       globalNav.querySelectorAll('.nav-item').forEach((btn, i) => {

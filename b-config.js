@@ -10,8 +10,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-14T11:00:00';
-const BUILD_VERSION  = 'v3.9.5';
+const BUILD_TIMESTAMP = '2026-03-15T13:00:00';
+const BUILD_VERSION  = 'v4.0.0';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -96,7 +96,7 @@ window.onerror = function(msg, src, line, col, err) {
   const el = document.getElementById('loading-msg');
   if (el) {
     el.textContent = '❌ JS Fejl linje ' + line + ': ' + msg;
-    el.style.color = '#1A7A8A';
+    el.style.color = '#D06070';
     el.style.fontSize = '0.75rem';
     el.style.maxWidth = '320px';
     el.style.margin = '1rem auto';
@@ -108,7 +108,7 @@ window.onunhandledrejection = function(e) {
   const el = document.getElementById('loading-msg');
   if (el) {
     el.textContent = '❌ Promise fejl: ' + (e.reason?.message || e.reason || 'Ukendt');
-    el.style.color = '#1A7A8A';
+    el.style.color = '#D06070';
   }
 };
 
@@ -130,7 +130,7 @@ let isAnon = false;
 function initSupabase() {
   if (SUPABASE_URL === "DIN_SUPABASE_URL_HER") {
     document.getElementById('loading-msg').textContent = '⚠️ Indsæt dine Supabase-nøgler i filen';
-    document.getElementById('loading-msg').style.color = '#1A7A8A';
+    document.getElementById('loading-msg').style.color = '#6B8BFF';
     return false;
   }
   try {

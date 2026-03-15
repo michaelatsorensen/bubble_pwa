@@ -96,7 +96,7 @@ function updateObStrength() {
   var label = document.getElementById('ob-strength-label');
   if (!bar || !label) return;
   bar.style.width = score + '%';
-  if (score >= 80) { label.textContent = 'Stærk'; label.style.color = '#10B981'; bar.style.background = '#10B981'; }
+  if (score >= 80) { label.textContent = 'Stærk'; label.style.color = '#1A9E8E'; bar.style.background = '#1A9E8E'; }
   else if (score >= 50) { label.textContent = 'God'; label.style.color = 'var(--accent)'; bar.style.background = 'var(--accent)'; }
   else if (score >= 30) { label.textContent = 'OK'; label.style.color = 'var(--gold)'; bar.style.background = 'var(--gold)'; }
   else { label.textContent = 'Svag'; label.style.color = 'var(--accent2)'; bar.style.background = 'var(--accent2)'; }
@@ -255,7 +255,7 @@ function abortOnboarding() {
     var overlay = document.createElement('div');
     overlay.id = 'abort-confirm-overlay';
     overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)';
-    overlay.innerHTML = '<div style="background:rgba(12,12,25,0.95);border:1px solid var(--glass-border);border-radius:20px;padding:1.5rem;max-width:320px;text-align:center;font-family:Outfit,sans-serif">' +
+    overlay.innerHTML = '<div style="background:rgba(12,12,25,0.95);border:1px solid var(--glass-border);border-radius:20px;padding:1.5rem;max-width:320px;text-align:center;font-family:Figtree,sans-serif">' +
       '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">Afbryd opsætning?</div>' +
       '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">Alt du har udfyldt nulstilles og du vender tilbage til login-skærmen.</div>' +
       '<button onclick="confirmAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid rgba(26,122,138,0.3);background:rgba(26,122,138,0.1);color:var(--accent2);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.4rem">Ja, afbryd og nulstil</button>' +
@@ -418,6 +418,72 @@ function dismissGettingStarted() {
   localStorage.setItem('bubble_gs_dismissed', '1');
   var el = document.getElementById('home-getting-started');
   if (el) { el.style.transition = 'opacity 0.3s, transform 0.3s'; el.style.opacity = '0'; el.style.transform = 'translateY(-10px)'; setTimeout(function() { el.style.display = 'none'; }, 300); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  PROGRESSIVE ONBOARDING (v4.0)
+// ══════════════════════════════════════════════════════════
+function showProgressiveOnboarding() {
+  if (!currentProfile) return;
+  var container = document.getElementById('home-progressive-onboarding');
+  var cardsEl = document.getElementById('gs-v4-cards');
+  if (!container || !cardsEl) return;
+
+  // Load progress from localStorage
+  var progress = {};
+  try { progress = JSON.parse(localStorage.getItem('bubble_gs_progress') || '{}'); } catch(e) {}
+
+  // Check current profile state
+  var hasPhoto = !!currentProfile.avatar_url;
+  var hasTitle = !!(currentProfile.title && currentProfile.workplace);
+  var hasTags = (currentProfile.keywords || []).length >= 3;
+  var hasJoined = false;
+
+  // Auto-mark completed steps
+  if (hasTags) progress.tags = true;
+  if (hasTitle) progress.title = true;
+  if (hasPhoto) progress.photo = true;
+
+  var steps = [
+    { key: 'tags', ico: '🏷️', color: 'var(--green)', softColor: 'rgba(26,158,142,0.08)', title: 'Vælg interesser', sub: 'Aktiverer matching', done: !!progress.tags },
+    { key: 'title', ico: '💼', color: 'var(--accent)', softColor: 'rgba(124,92,252,0.06)', title: 'Tilføj titel & arbejdsplads', sub: 'Unlock 5+ flere matches', done: !!progress.title },
+    { key: 'photo', ico: '📸', color: '#6B8BFF', softColor: 'rgba(107,139,255,0.06)', title: 'Tilføj profilbillede', sub: '3x flere kontakter', done: !!progress.photo },
+    { key: 'bubble', ico: '🫧', color: '#E879A8', softColor: 'rgba(232,121,168,0.06)', title: 'Join din første boble', sub: 'Åbn for endnu flere profiler', done: !!progress.bubble }
+  ];
+
+  // Count completed
+  var doneCount = steps.filter(function(s) { return s.done; }).length;
+
+  // Hide if all done
+  if (doneCount >= steps.length) {
+    container.style.display = 'none';
+    return;
+  }
+
+  // Save progress
+  try { localStorage.setItem('bubble_gs_progress', JSON.stringify(progress)); } catch(e) {}
+
+  // Render cards
+  var firstIncomplete = true;
+  cardsEl.innerHTML = steps.map(function(s) {
+    var highlight = !s.done && firstIncomplete;
+    if (highlight) firstIncomplete = false;
+    var action = '';
+    if (!s.done) {
+      if (s.key === 'tags') action = 'onclick="reRunOnboarding()"';
+      else if (s.key === 'title') action = 'onclick="goTo(\'screen-profile\');setTimeout(function(){profSwitchTab(\'edit\')},200)"';
+      else if (s.key === 'photo') action = 'onclick="goTo(\'screen-profile\');setTimeout(function(){profSwitchTab(\'edit\')},200)"';
+      else if (s.key === 'bubble') action = 'onclick="goTo(\'screen-discover\')"';
+    }
+    return '<div class="gs-v4-card' + (s.done ? ' done' : '') + (highlight ? ' highlight' : '') + '" ' + action + '>' +
+      '<div class="gs-v4-icon" style="background:' + s.softColor + ';color:' + s.color + '">' + (s.done ? '✓' : s.ico) + '</div>' +
+      '<div class="gs-v4-text"><div class="gs-v4-title"' + (s.done ? ' style="color:var(--green)"' : '') + '>' + s.title + '</div>' +
+      '<div class="gs-v4-sub">' + (s.done ? 'Fuldført' : s.sub) + '</div></div>' +
+      '<div class="gs-v4-check' + (s.done ? ' done' : '') + '">' + (s.done ? '✓' : '') + '</div>' +
+      '</div>';
+  }).join('');
+
+  container.style.display = 'block';
 }
 
 
@@ -684,7 +750,7 @@ var _obPreviewLoaded = false;
 var _obPreviewProfiles = [];
 var _obPreviewPinned = []; // Pinned top 3 for stability
 var _obPreviewTimer = null;
-var _obPreviewColors = ['linear-gradient(135deg,#3AAA88,#2A7A90)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1A5A6A,#1A7A7A)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#1A7A7A,#4ABEAE)'];
+var _obPreviewColors = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#C06098,#E879A8)','linear-gradient(135deg,#7C3AED,#4ABEAE)'];
 
 async function obLoadPeoplePreview() {
   if (_obPreviewLoaded) return;

@@ -241,7 +241,7 @@ async function loadMessages() {
       const time = timeAgo(lastMsg.created_at);
       const convAvatar = p.avatar_url ?
         '<div class="avatar" style="width:44px;height:44px;overflow:hidden;border-radius:50%"><img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover"></div>' :
-        '<div class="avatar" style="background:linear-gradient(135deg,#3AAA88,#2A7A90);width:44px;height:44px">'+initials+'</div>';
+        '<div class="avatar" style="background:linear-gradient(135deg,#6B8BFF,#8B5CF6);width:44px;height:44px">'+initials+'</div>';
       return '<div class="card conv-card' + (isUnread ? ' unread' : '') + '" data-action="openChat" data-id="' + partnerId + '" data-conv-id="' + partnerId + '">' +
         '<div class="flex-row-center" style="gap:0.75rem">' + convAvatar +
         '<div style="flex:1;min-width:0">' +
@@ -328,7 +328,7 @@ function dmRenderMsg(m) {
 
   const myAvUrl = currentProfile?.avatar_url;
   const theirAvUrl = window._chatPartnerAvatar;
-  const avatarGrad = sent ? 'linear-gradient(135deg,#164E4E,#4ABEAE)' : 'linear-gradient(135deg,#3AAA88,#2A7A90)';
+  const avatarGrad = sent ? 'linear-gradient(135deg,#164E4E,#4ABEAE)' : 'linear-gradient(135deg,#2ECFCF,#3AAFDF)';
   const avatarClick = sent ? '' : ` onclick="dmOpenPersonSheet('${m.sender_id}')"`;
 
   let avatarInner;

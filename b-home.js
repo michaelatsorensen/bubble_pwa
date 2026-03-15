@@ -33,6 +33,7 @@ async function loadHome() {
     await Promise.all(loaders);
     hsApplyToHome();
     showGettingStarted();
+    showProgressiveOnboarding();
   } catch(e) { logError("loadHome", e); /* Individual cards handle their own errors */ }
 }
 
@@ -250,7 +251,7 @@ async function bbLoadLivePanel() {
       (profiles || []).forEach(function(p) { profileMap[p.id] = p; });
     }
 
-    var avColors = ['linear-gradient(135deg,#3AAA88,#2A7A90)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1A5A6A,#1A7A7A)'];
+    var avColors = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)'];
 
     // Sort: active first, events first, then date
     filtered.sort(function(a, b) {
@@ -279,7 +280,7 @@ async function bbLoadLivePanel() {
       }
 
       return '<div class="card flex-row-center" style="padding:0.85rem 1.1rem;margin-bottom:0.4rem;cursor:pointer" onclick="openBubble(\'' + b.id + '\')">' +
-        '<div class="bubble-icon" style="background:' + (isEvent ? 'rgba(26,122,138,0.15)' : 'rgba(46,207,207,0.15)') + ';color:' + (isEvent ? '#1A7A8A' : '#2ECFCF') + '">' + ico(isEvent ? 'calendar' : 'pin') + '</div>' +
+        '<div class="bubble-icon" style="background:' + (isEvent ? 'rgba(26,122,138,0.15)' : 'rgba(46,207,207,0.15)') + ';color:' + (isEvent ? '#6B8BFF' : '#2ECFCF') + '">' + ico(isEvent ? 'calendar' : 'pin') + '</div>' +
         '<div style="flex:1;min-width:0">' +
         '<div class="fw-600 fs-09">' + escHtml(b.name) + '</div>' +
         '<div class="fs-075 text-muted">' + (isEvent ? 'Event' : 'Sted') + (b.location ? ' \u00B7 ' + escHtml(b.location) : '') + '</div>' +
@@ -318,7 +319,7 @@ async function loadMyBubbles() {
           '<div style="width:44px;height:44px;margin:0 auto 0.7rem;opacity:0.4;color:var(--accent)">' + ico('bubble') + '</div>' +
           '<div style="font-size:0.85rem;font-weight:700;margin-bottom:0.25rem">Ingen bobler endnu</div>' +
           '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.4">Bobler er fællesskaber og events. Udforsk og join din første!</div>' +
-          '<button onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(46,158,142,0.12);color:var(--accent);border:1px solid rgba(46,158,142,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
+          '<button onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(124,92,252,0.12);color:var(--accent);border:1px solid rgba(124,92,252,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
           '</div>';
       }
       return;
@@ -351,7 +352,7 @@ async function loadMyBubbles() {
         var cHtml = '';
         var cs = b._contacts || [];
         if (cs.length > 0) {
-          var avCols = ['linear-gradient(135deg,#3AAA88,#2A7A90)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1A5A6A,#1A7A7A)'];
+          var avCols = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)'];
           var avs = cs.map(function(c, i) {
             var ini = (c.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
             var ml = i > 0 ? 'margin-left:-5px;' : '';
@@ -394,7 +395,7 @@ async function loadMyBubbles() {
           '<div style="width:44px;height:44px;margin:0 auto 0.7rem;opacity:0.4;color:var(--accent)">' + ico('bubble') + '</div>' +
           '<div style="font-size:0.85rem;font-weight:700;margin-bottom:0.25rem">Ingen bobler endnu</div>' +
           '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.4">Bobler er fællesskaber og events. Udforsk og join din første!</div>' +
-          '<button onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(46,158,142,0.12);color:var(--accent);border:1px solid rgba(46,158,142,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
+          '<button onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(124,92,252,0.12);color:var(--accent);border:1px solid rgba(124,92,252,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
           '</div>';
       } else {
         profBubblesEl.innerHTML = bubbles.map(function(b) {
@@ -402,7 +403,7 @@ async function loadMyBubbles() {
           var cHtml = '';
           var cs = b._contacts || [];
           if (cs.length > 0) {
-            var avCols = ['linear-gradient(135deg,#3AAA88,#2A7A90)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1A5A6A,#1A7A7A)'];
+            var avCols = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)'];
             var avs = cs.map(function(c, i) {
               var ini = (c.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
               var ml = i > 0 ? 'margin-left:-5px;' : '';
@@ -431,7 +432,7 @@ async function updateRadarCount() {
     const { data: memberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
     const rcEl = document.getElementById('radar-count-home');
     if (!memberships || memberships.length === 0) {
-      if (rcEl) rcEl.textContent = ' · Join en boble for at se matches';
+      if (rcEl) rcEl.textContent = 'Join en boble for at se matches';
       return;
     }
     const ids = memberships.map(m => m.bubble_id);
@@ -439,12 +440,30 @@ async function updateRadarCount() {
     const { data: myBubbles } = await sb.from('bubbles').select('member_count').in('id', ids);
     var total = 0;
     if (myBubbles && myBubbles[0]?.member_count != null) {
-      total = myBubbles.reduce(function(sum, b) { return sum + (b.member_count || 0); }, 0) - memberships.length; // subtract self from each
+      total = myBubbles.reduce(function(sum, b) { return sum + (b.member_count || 0); }, 0) - memberships.length;
     } else {
       var { count } = await sb.from('bubble_members').select('*', {count:'exact',head:true}).in('bubble_id', ids).neq('user_id', currentUser.id);
       total = count || 0;
     }
-    if (rcEl) rcEl.textContent = ' · ' + total + ' profiler synlige i dine bobler';
+    if (rcEl) rcEl.textContent = total + ' profiler synlige i dine bobler';
+
+    // Load preview avatars for radar card
+    var previewEl = document.getElementById('radar-preview-avatars');
+    if (previewEl && total > 0) {
+      var { data: previewProfiles } = await sb.from('bubble_members')
+        .select('user_id, profiles(name, avatar_url)')
+        .in('bubble_id', ids).neq('user_id', currentUser.id)
+        .limit(5);
+      if (previewProfiles && previewProfiles.length > 0) {
+        var avColors = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#C06098,#E879A8)','linear-gradient(135deg,#2ECFCF,#6B8BFF)'];
+        previewEl.innerHTML = previewProfiles.map(function(m, i) {
+          var p = m.profiles || {};
+          var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+          if (p.avatar_url) return '<div class="avatar" style="background:' + avColors[i%5] + ';overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
+          return '<div class="avatar" style="background:' + avColors[i%5] + '">' + ini + '</div>';
+        }).join('') + (total > 5 ? '<div class="avatar" style="background:var(--glass-bg);color:var(--text-secondary);font-size:0.5rem;border:1px solid var(--glass-border-subtle)">+' + (total - 5) + '</div>' : '');
+      }
+    }
   } catch(e) { logError("updateRadarCount", e); }
 }
 
@@ -456,7 +475,7 @@ function bubbleCard(b, joined) {
   var contactHtml = '';
   var contacts = b._contacts || [];
   if (contacts.length > 0) {
-    var avColors = ['linear-gradient(135deg,#3AAA88,#2A7A90)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1A5A6A,#1A7A7A)'];
+    var avColors = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)'];
     var avs = contacts.map(function(c, i) {
       var ini = (c.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var ml = i > 0 ? 'margin-left:-5px;' : '';

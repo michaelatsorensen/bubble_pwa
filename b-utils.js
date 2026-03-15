@@ -101,7 +101,7 @@ function addChipFromBtn(inputId, arrayName) {
   renderChips(arrayName, arr, containerId, inputId);
   // Flash the ✓ button green
   var btn = inp.parentElement?.querySelector('.ob-cat-custom-btn');
-  if (btn) { btn.style.background = '#10B981'; setTimeout(function(){ btn.style.background = ''; }, 600); }
+  if (btn) { btn.style.background = '#1A9E8E'; setTimeout(function(){ btn.style.background = ''; }, 600); }
 }
 
 // Flash green on any nearby confirm button
@@ -195,8 +195,8 @@ function bubbleIcon(type) {
 
 function bubbleColor(type, alpha) {
   var t = (type || '').toLowerCase();
-  const map = { event:`rgba(108,99,255,${alpha})`, local:`rgba(67,232,176,${alpha})`, lokal:`rgba(67,232,176,${alpha})`, theme:`rgba(255,179,71,${alpha})`, tema:`rgba(255,179,71,${alpha})`, company:`rgba(255,101,132,${alpha})`, virksomhed:`rgba(255,101,132,${alpha})`, live:`rgba(46,207,207,${alpha})`, standard:`rgba(46,158,142,${alpha})` };
-  return map[t] || `rgba(46,158,142,${alpha})`;
+  const map = { event:`rgba(108,99,255,${alpha})`, local:`rgba(67,232,176,${alpha})`, lokal:`rgba(67,232,176,${alpha})`, theme:`rgba(255,179,71,${alpha})`, tema:`rgba(255,179,71,${alpha})`, company:`rgba(255,101,132,${alpha})`, virksomhed:`rgba(255,101,132,${alpha})`, live:`rgba(46,207,207,${alpha})`, standard:`rgba(124,92,252,${alpha})` };
+  return map[t] || `rgba(124,92,252,${alpha})`;
 }
 
 function typeLabel(type) {

@@ -202,7 +202,7 @@ async function confirmRemoveSaved() {
 var proxVisible = true;
 var proxRange = 5;
 var proxAllProfiles = [];
-var proxColors = ['linear-gradient(135deg,#2E9E8E,#5CBFB2)','linear-gradient(135deg,#2A7A90,#4ABEAE)','linear-gradient(135deg,#2ECFCF,#2E9E8E)','linear-gradient(135deg,#4ABEAE,#2A7A90)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1A5A6A,#1A7A7A)','linear-gradient(135deg,#0C4A6E,#38BDF8)'];
+var proxColors = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#5B8AFF,#7B6BEF)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#C06098,#E879A8)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#C06098,#E879A8)'];
 // Radar (map): relevance labels + thresholds — "who matches me?"
 var proxRangeLabels = ['Nær match','Gode matches','Alle matches','Udvidet','Alle'];
 var proxThresholds  = [0.6, 0.35, 0.15, 0.05, 0];
@@ -355,9 +355,9 @@ function drawProxRings(canvas) {
   // Ring 5: 0-20% (outer edge)
   var centerR = 0.10; // Your avatar zone
   var zones = [
-    { r: centerR, fill: 'rgba(46,158,142,0.15)' },   // YOU — center
-    { r: 0.26, fill: 'rgba(46,158,142,0.08)' },       // 80-100% — inner purple
-    { r: 0.42, fill: 'rgba(16,185,129,0.05)' },        // 60-80% — green
+    { r: centerR, fill: 'rgba(124,92,252,0.15)' },   // YOU — center
+    { r: 0.26, fill: 'rgba(124,92,252,0.08)' },       // 80-100% — inner purple
+    { r: 0.42, fill: 'rgba(26,158,142,0.05)' },        // 60-80% — green
     { r: 0.58, fill: 'rgba(46,207,207,0.04)' },        // 40-60% — teal
     { r: 0.74, fill: 'rgba(26,122,138,0.03)' },        // 20-40% — pink
     { r: 0.90, fill: 'rgba(255,255,255,0.02)' },       // 0-20% — faint
@@ -379,8 +379,8 @@ function drawProxRings(canvas) {
   }
   // Subtle center glow
   var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, zones[0].r * maxR);
-  g.addColorStop(0, 'rgba(46,158,142,0.08)');
-  g.addColorStop(1, 'rgba(46,158,142,0)');
+  g.addColorStop(0, 'rgba(124,92,252,0.08)');
+  g.addColorStop(1, 'rgba(124,92,252,0)');
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.arc(cx, cy, zones[0].r * maxR, 0, Math.PI * 2);
@@ -409,14 +409,14 @@ function toggleProximityVisibility() {
   var d = document.getElementById('prox-toggle-dot');
   var l = document.getElementById('prox-toggle-label');
   var c = document.getElementById('prox-center');
-  if (d) d.style.background = proxVisible ? '#10B981' : 'var(--muted)';
+  if (d) d.style.background = proxVisible ? '#1A9E8E' : 'var(--muted)';
   if (l) l.textContent = proxVisible ? 'Synlig' : 'Skjult';
   // Restyle the whole button for clear on/off state
   if (btn) {
     if (proxVisible) {
-      btn.style.background = 'rgba(16,185,129,0.12)';
-      btn.style.borderColor = 'rgba(16,185,129,0.3)';
-      btn.style.color = '#10B981';
+      btn.style.background = 'rgba(26,158,142,0.12)';
+      btn.style.borderColor = 'rgba(26,158,142,0.3)';
+      btn.style.color = '#1A9E8E';
     } else {
       btn.style.background = 'rgba(255,255,255,0.04)';
       btn.style.borderColor = 'rgba(255,255,255,0.08)';
@@ -439,13 +439,13 @@ function openRadarSheet() {
   var btn = document.getElementById('prox-toggle');
   var d = document.getElementById('prox-toggle-dot');
   var l = document.getElementById('prox-toggle-label');
-  if (d) d.style.background = proxVisible ? '#10B981' : 'var(--muted)';
+  if (d) d.style.background = proxVisible ? '#1A9E8E' : 'var(--muted)';
   if (l) l.textContent = proxVisible ? 'Synlig' : 'Skjult';
   if (btn) {
     if (proxVisible) {
-      btn.style.background = 'rgba(16,185,129,0.12)';
-      btn.style.borderColor = 'rgba(16,185,129,0.3)';
-      btn.style.color = '#10B981';
+      btn.style.background = 'rgba(26,158,142,0.12)';
+      btn.style.borderColor = 'rgba(26,158,142,0.3)';
+      btn.style.color = '#1A9E8E';
     } else {
       btn.style.background = 'rgba(255,255,255,0.04)';
       btn.style.borderColor = 'rgba(255,255,255,0.08)';
@@ -687,7 +687,7 @@ async function loadSavedContacts() {
     // Update home screen story bar
     renderSavedStoryBar(saved, profileMap);
 
-    const colors = ['linear-gradient(135deg,#3AAA88,#2A7A90)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1A5A6A,#1A7A7A)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#7C2D12,#F97316)'];
+    const colors = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#C06098,#E879A8)','linear-gradient(135deg,#2ECFCF,#6B8BFF)'];
 
     // Sort by star rating (highest first), then by date
     saved.sort(function(a, b) {
@@ -738,7 +738,7 @@ function renderSavedStoryBar(saved, profileMap) {
     var sa = starGet(a.contact_id), sb2 = starGet(b.contact_id);
     return sb2 - sa;
   });
-  var colors = ['linear-gradient(135deg,#3AAA88,#2A7A90)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1A5A6A,#1A7A7A)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#7C2D12,#F97316)'];
+  var colors = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#C06098,#E879A8)','linear-gradient(135deg,#2ECFCF,#6B8BFF)'];
   list.innerHTML = saved.map(function(s, i) {
     var p = profileMap[s.contact_id];
     if (s.contact_id === currentUser?.id) return '';
@@ -774,7 +774,7 @@ function profSwitchTab(tab) {
             '<div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>' +
           '</div></div>' +
         '<div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Konto</div>' +
-        '<button onclick="openFeedback()" style="width:100%;padding:0.7rem;background:rgba(46,158,142,0.08);border:1px solid rgba(46,158,142,0.15);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent);cursor:pointer;margin-bottom:0.5rem">💬 Giv feedback</button>' +
+        '<button onclick="openFeedback()" style="width:100%;padding:0.7rem;background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.15);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent);cursor:pointer;margin-bottom:0.5rem">💬 Giv feedback</button>' +
         '<button onclick="showTerms()" style="width:100%;padding:0.7rem;background:none;border:1px solid var(--glass-border);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--text-secondary);cursor:pointer;margin-bottom:0.5rem">Betingelser & Privatlivspolitik</button>' +
         '<button onclick="handleLogout()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(26,122,138,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent2);cursor:pointer">Log ud</button>' +
         '<div style="text-align:center;margin-top:2rem;font-size:0.62rem;color:var(--muted)">Bubble ' + BUILD_VERSION + ' · Build ' + BUILD_TIMESTAMP + '</div>';
@@ -832,7 +832,7 @@ async function loadProfileInvitations() {
       (bubbles || []).forEach(b => { bubbleMap[b.id] = b; });
     }
 
-    const colors = ['linear-gradient(135deg,#3AAA88,#2A7A90)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1A5A6A,#1A7A7A)','linear-gradient(135deg,#0C4A6E,#38BDF8)','linear-gradient(135deg,#7C2D12,#F97316)'];
+    const colors = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#C06098,#E879A8)','linear-gradient(135deg,#2ECFCF,#6B8BFF)'];
 
     list.innerHTML = invites.map((inv, i) => {
       const p = profileMap[inv.from_user_id] || {};

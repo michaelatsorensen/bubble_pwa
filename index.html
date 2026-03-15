@@ -6,39 +6,101 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Bubble">
-<meta name="theme-color" content="#06060F">
-<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=395">
+<link rel="manifest" href="manifest.json?v=400">
 <link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=2">
 <link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=2">
 <link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=2">
 <link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=2">
 <link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=2">
 <link rel="apple-touch-icon" href="bubble-icon-180.png?v=2">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=395">
+
+<link rel="stylesheet" href="app.css?v=400">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=395" defer></script>
-<script src="tag-data.js?v=395" defer></script>
-<script src="b-config.js?v=395" defer></script>
-<script src="b-utils.js?v=395" defer></script>
-<script src="b-navigation.js?v=395" defer></script>
-<script src="b-auth.js?v=395" defer></script>
-<script src="b-home.js?v=395" defer></script>
-<script src="b-bubbles.js?v=395" defer></script>
-<script src="b-profile.js?v=395" defer></script>
-<script src="b-radar.js?v=395" defer></script>
-<script src="b-messages.js?v=395" defer></script>
-<script src="b-realtime.js?v=395" defer></script>
-<script src="b-onboarding.js?v=395" defer></script>
-<script src="b-chat.js?v=395" defer></script>
-<script src="b-notifications.js?v=395" defer></script>
-<script src="b-live.js?v=395" defer></script>
-<script src="b-admin.js?v=395" defer></script>
-<script src="b-boot.js?v=395" defer></script>
+<script src="bubble-icons.js?v=400" defer></script>
+<script src="tag-data.js?v=400" defer></script>
+<script src="b-config.js?v=400" defer></script>
+<script src="b-utils.js?v=400" defer></script>
+<script src="b-navigation.js?v=400" defer></script>
+<script src="b-auth.js?v=400" defer></script>
+<script src="b-home.js?v=400" defer></script>
+<script src="b-bubbles.js?v=400" defer></script>
+<script src="b-profile.js?v=400" defer></script>
+<script src="b-radar.js?v=400" defer></script>
+<script src="b-messages.js?v=400" defer></script>
+<script src="b-realtime.js?v=400" defer></script>
+<script src="b-onboarding.js?v=400" defer></script>
+<script src="b-chat.js?v=400" defer></script>
+<script src="b-notifications.js?v=400" defer></script>
+<script src="b-live.js?v=400" defer></script>
+<script src="b-admin.js?v=400" defer></script>
+<script src="b-boot.js?v=400" defer></script>
   
+
+
+<style>
+/* ═══ V4.0 — Quick Actions ═══ */
+.quick-actions { display:flex; gap:0.45rem; padding:0 0 0.5rem; overflow-x:auto; }
+.qa-btn { display:flex; flex-direction:column; align-items:center; gap:0.3rem; padding:0.65rem 0.5rem; min-width:72px; border-radius:var(--radius-sm); background:var(--glass-bg); border:1px solid var(--glass-border-subtle); cursor:pointer; transition:all 0.15s; flex:1; }
+.qa-btn:active { transform:scale(0.95); }
+.qa-ico { width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:0.85rem; }
+.qa-label { font-size:0.6rem; font-weight:600; color:var(--text-secondary); text-align:center; line-height:1.2; }
+
+/* ═══ V4.0 — Radar Card Gradient ═══ */
+.radar-card-v4 { background:linear-gradient(135deg,rgba(46,207,207,0.08),rgba(107,139,255,0.06),rgba(139,92,246,0.05)); border:1.5px solid rgba(124,92,252,0.12); border-radius:var(--radius); padding:1rem 1.1rem; cursor:pointer; transition:all 0.2s; box-shadow:0 2px 12px rgba(124,92,252,0.06); }
+.radar-card-v4:active { transform:scale(0.98); }
+.radar-dots-row { display:flex; gap:-4px; margin-top:0.4rem; }
+.radar-dots-row .avatar { width:24px; height:24px; font-size:0.5rem; margin-left:-6px; border:2px solid var(--bg); }
+.radar-dots-row .avatar:first-child { margin-left:0; }
+
+/* ═══ V4.0 — QR Topbar Button ═══ */
+.qr-topbar-btn { position:relative; width:34px; height:34px; border-radius:50%; background:var(--glass-bg); border:1px solid var(--glass-border-subtle); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-secondary); transition:all 0.15s; }
+.qr-topbar-btn:active { transform:scale(0.9); }
+.qr-topbar-btn .qr-pulse { position:absolute; top:2px; right:2px; width:8px; height:8px; border-radius:50%; background:var(--accent); border:2px solid var(--bg); animation:pulse 2s infinite; }
+
+/* ═══ V4.0 — QR Preview Screen ═══ */
+.qr-profile-hero { text-align:center; padding:2rem 1.5rem 1rem; }
+.qr-profile-avatar { width:80px; height:80px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:800; color:white; background:linear-gradient(135deg,#6B8BFF,#8B5CF6); box-shadow:0 4px 24px rgba(124,92,252,0.2); }
+.qr-profile-name { font-size:1.25rem; font-weight:800; color:var(--text); margin-top:0.75rem; letter-spacing:-0.02em; }
+.qr-profile-title { font-size:0.82rem; color:var(--text-secondary); margin-top:0.15rem; }
+.qr-profile-tags { display:flex; gap:0.3rem; justify-content:center; flex-wrap:wrap; margin-top:0.6rem; }
+.qr-context-bar { display:flex; gap:0.4rem; padding:0.6rem 1.2rem; overflow-x:auto; }
+.qr-context-chip { display:flex; align-items:center; gap:0.35rem; padding:0.35rem 0.7rem; border-radius:20px; background:var(--glass-bg); border:1px solid var(--glass-border-subtle); font-size:0.68rem; font-weight:600; color:var(--text-secondary); flex-shrink:0; }
+.qr-context-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.qr-social-proof { text-align:center; padding:1rem; margin:0.5rem 1.2rem; border-radius:var(--radius); background:var(--glass-bg); border:1px solid var(--glass-border-subtle); }
+.qr-sp-number { font-size:1.8rem; font-weight:900; background:linear-gradient(135deg,#2ECFCF,#6B8BFF,#8B5CF6,#E879A8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+
+/* ═══ V4.0 — Blurred cards ═══ */
+.blur-card { filter:blur(3px); opacity:0.6; pointer-events:none; }
+.cta-bottom-overlay { position:sticky; bottom:0; left:0; right:0; padding:0.75rem 1.2rem calc(0.75rem + env(safe-area-inset-bottom,0px)); background:linear-gradient(to top,var(--bg) 60%,transparent); z-index:10; }
+
+/* ═══ V4.0 — Progressive Onboarding ═══ */
+.gs-v4-card { display:flex; align-items:center; gap:0.75rem; padding:0.85rem 1rem; margin:0 0 0.4rem; border-radius:var(--radius); background:var(--glass-bg); border:1px solid var(--glass-border-subtle); cursor:pointer; transition:all 0.15s; }
+.gs-v4-card:active { transform:scale(0.98); }
+.gs-v4-card.highlight { border:1.5px solid rgba(124,92,252,0.15); }
+.gs-v4-card.done { opacity:0.6; }
+.gs-v4-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+.gs-v4-text { flex:1; }
+.gs-v4-title { font-size:0.82rem; font-weight:700; color:var(--text); }
+.gs-v4-sub { font-size:0.68rem; color:var(--text-secondary); margin-top:0.05rem; }
+.gs-v4-check { width:20px; height:20px; border-radius:50%; border:2px solid var(--glass-border); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:0.6rem; }
+.gs-v4-check.done { background:linear-gradient(135deg,#2ECFCF,#6B8BFF,#8B5CF6); border:none; color:white; }
+
+/* ═══ V4.0 — Social Proof Screen ═══ */
+.sp-filter-bar { display:flex; gap:0.35rem; padding:0.4rem 1.2rem; overflow-x:auto; }
+.sp-filter-chip { padding:0.35rem 0.75rem; border-radius:20px; font-size:0.68rem; font-weight:600; font-family:var(--font); border:1px solid var(--glass-border-subtle); background:var(--glass-bg); color:var(--text-muted); cursor:pointer; flex-shrink:0; transition:all 0.2s; }
+.sp-filter-chip.active { background:linear-gradient(135deg,#2ECFCF,#6B8BFF,#8B5CF6); color:#fff; border-color:transparent; }
+.anon-card { background:var(--glass-bg); border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:0.6rem 0.85rem; margin:0 1.2rem 0.35rem; display:flex; align-items:center; gap:0.6rem; }
+.anon-name-bar { width:80px; height:10px; border-radius:4px; background:var(--glass-border); }
+.anon-title-bar { width:120px; height:8px; border-radius:4px; background:var(--glass-border-subtle); margin-top:0.2rem; }
+
+/* ═══ V4.0 — Home Avatar ═══ */
+.home-avatar { width:34px; height:34px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; color:white; overflow:hidden; flex-shrink:0; }
+.home-avatar img { width:100%; height:100%; object-fit:cover; }
+</style>
 
 </head>
 <body id="app-root">
@@ -98,21 +160,21 @@
 
     <div style="display:flex;flex-direction:column;gap:0.6rem;margin:0 auto 1.8rem;text-align:left">
       <div style="display:flex;gap:0.6rem;align-items:center">
-        <div style="width:32px;height:32px;border-radius:10px;background:rgba(46,158,142,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+        <div style="width:32px;height:32px;border-radius:10px;background:rgba(124,92,252,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
         <div style="font-size:0.78rem;color:var(--text-secondary)"><strong style="color:var(--text)">Smart Radar</strong> — find folk der matcher dine interesser</div>
       </div>
       <div style="display:flex;gap:0.6rem;align-items:center">
-        <div style="width:32px;height:32px;border-radius:10px;background:rgba(232,93,138,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent2)"><svg class="ico" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9.5" cy="9.5" r="5" opacity="0.8"/><circle cx="15" cy="13" r="4" opacity="0.6"/></svg></div>
+        <div style="width:32px;height:32px;border-radius:10px;background:rgba(232,121,168,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent2)"><svg class="ico" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9.5" cy="9.5" r="5" opacity="0.8"/><circle cx="15" cy="13" r="4" opacity="0.6"/></svg></div>
         <div style="font-size:0.78rem;color:var(--text-secondary)"><strong style="color:var(--text)">Bobler</strong> — join communities og events omkring dig</div>
       </div>
       <div style="display:flex;gap:0.6rem;align-items:center">
-        <div style="width:32px;height:32px;border-radius:10px;background:rgba(16,185,129,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green)"><svg class="ico" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11.5c0 4-3.6 7-8 7l-4.4 2.1 1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
+        <div style="width:32px;height:32px;border-radius:10px;background:rgba(26,158,142,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green)"><svg class="ico" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11.5c0 4-3.6 7-8 7l-4.4 2.1 1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
         <div style="font-size:0.78rem;color:var(--text-secondary)"><strong style="color:var(--text)">Chat</strong> — connect direkte med folk du vil møde</div>
       </div>
     </div>
 
     <button class="btn-primary" onclick="showInterestPicker()" style="width:100%;margin:0 auto">Kom i gang →</button>
-    <button onclick="showAuthForms()" style="margin-top:0.6rem;background:none;border:none;color:var(--muted);font-size:0.72rem;font-family:'Outfit',sans-serif;cursor:pointer;padding:0.4rem;width:100%;text-align:center">Har allerede en konto? <span style="color:var(--accent);font-weight:600">Log ind</span></button>
+    <button onclick="showAuthForms()" style="margin-top:0.6rem;background:none;border:none;color:var(--muted);font-size:0.72rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.4rem;width:100%;text-align:center">Har allerede en konto? <span style="color:var(--accent);font-weight:600">Log ind</span></button>
     <div style="font-size:0.6rem;color:var(--muted);margin-top:0.5rem">Closed Beta · Sønderborg 2026</div>
   </div>
 
@@ -141,7 +203,7 @@
 
     <!-- People preview (shows after 3 selected) -->
     <div id="interest-preview" style="display:none;margin-bottom:0.8rem">
-      <div style="background:linear-gradient(135deg,rgba(46,158,142,0.08),rgba(232,93,138,0.04));border:1px solid rgba(46,158,142,0.15);border-radius:16px;padding:1rem">
+      <div style="background:linear-gradient(135deg,rgba(124,92,252,0.08),rgba(232,121,168,0.04));border:1px solid rgba(124,92,252,0.15);border-radius:16px;padding:1rem">
         <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.1rem">
           <span style="font-size:1rem">👋</span>
           <span style="font-size:0.85rem;font-weight:800">Folk du kunne møde</span>
@@ -154,14 +216,14 @@
     </div>
 
     <button class="btn-primary" id="interest-continue-btn" onclick="completeInterestPicker()" style="width:100%;opacity:0.3;pointer-events:none">Fortsæt →</button>
-    <button type="button" onclick="completeInterestPicker()" style="margin-top:0.5rem;background:none;border:none;color:var(--muted);font-size:0.72rem;font-family:'Outfit',sans-serif;cursor:pointer;padding:0.4rem;width:100%;text-align:center">Spring over</button>
+    <button type="button" onclick="completeInterestPicker()" style="margin-top:0.5rem;background:none;border:none;color:var(--muted);font-size:0.72rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.4rem;width:100%;text-align:center">Spring over</button>
   </div>
 
   <!-- AUTH FORMS (hidden initially) -->
   <div id="auth-forms" style="display:none;text-align:center;padding:0 1.2rem">
     <div style="margin-bottom:1.5rem">
       <div style="width:40px;height:40px;margin:0 auto 0.5rem;color:var(--accent)"><svg class="ico" style="width:40px;height:40px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
-      <div style="font-size:1.8rem;font-weight:900;letter-spacing:-0.05em;background:linear-gradient(135deg,#5CBFB2 0%,#2E9E8E 40%,#3A9EAE 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.2rem">bubble</div>
+      <div style="font-size:1.8rem;font-weight:900;letter-spacing:-0.05em;background:linear-gradient(135deg,#2ECFCF,#6B8BFF,#8B5CF6,#E879A8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.2rem">bubble</div>
       <div style="font-size:0.82rem;color:var(--muted)">Network Radar for Business</div>
     </div>
 
@@ -175,7 +237,7 @@
       <input class="input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
     </div>
     <button class="btn-primary" onclick="handleLogin()">Log ind</button>
-    <button type="button" onclick="handleForgotPassword()" style="background:none;border:none;color:var(--accent);font-size:0.75rem;font-family:'Outfit',sans-serif;cursor:pointer;padding:0.3rem 0;margin-top:0.15rem">Glemt adgangskode?</button>
+    <button type="button" onclick="handleForgotPassword()" style="background:none;border:none;color:var(--accent);font-size:0.75rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.3rem 0;margin-top:0.15rem">Glemt adgangskode?</button>
     <div style="display:flex;align-items:center;gap:0.75rem;margin:0.5rem 0">
       <div class="divider"></div>
       <div style="font-size:0.75rem;color:var(--muted)">eller</div>
@@ -288,8 +350,8 @@
 
     <!-- ═══ PEOPLE PREVIEW (shows after name + livsfase, updates live) ═══ -->
     <div class="ob-progressive-section ob-sec-locked" id="ob-sec-preview">
-      <div style="height:1px;background:rgba(255,255,255,0.04);margin:0.4rem 0 0.8rem"></div>
-      <div style="background:linear-gradient(135deg,rgba(46,158,142,0.08),rgba(232,93,138,0.04));border:1px solid rgba(46,158,142,0.15);border-radius:16px;padding:1rem">
+      <div style="height:1px;background:rgba(124,92,252,0.04);margin:0.4rem 0 0.8rem"></div>
+      <div style="background:linear-gradient(135deg,rgba(124,92,252,0.08),rgba(232,121,168,0.04));border:1px solid rgba(124,92,252,0.15);border-radius:16px;padding:1rem">
         <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.1rem">
           <span style="font-size:1rem">👋</span>
           <span style="font-size:0.85rem;font-weight:800">Folk du kunne møde</span>
@@ -305,7 +367,7 @@
 
     <!-- ═══ SECTION B: Tags (locked) ═══ -->
     <div class="ob-progressive-section ob-sec-locked" id="ob-sec-b">
-      <div style="height:1px;background:rgba(255,255,255,0.04);margin:0.4rem 0 0.8rem"></div>
+      <div style="height:1px;background:rgba(124,92,252,0.04);margin:0.4rem 0 0.8rem"></div>
       <div class="ob-prog-header">
         <div class="ob-prog-check" id="ob-check-b">2</div>
         <div>
@@ -328,7 +390,7 @@
 
     <!-- ═══ SECTION C: Intent + Boost (locked) ═══ -->
     <div class="ob-progressive-section ob-sec-locked" id="ob-sec-c">
-      <div style="height:1px;background:rgba(255,255,255,0.04);margin:0.4rem 0 0.8rem"></div>
+      <div style="height:1px;background:rgba(124,92,252,0.04);margin:0.4rem 0 0.8rem"></div>
       <div class="ob-prog-header">
         <div class="ob-prog-check" id="ob-check-c">3</div>
         <div>
@@ -364,14 +426,14 @@
     </div>
 
     <!-- Strength meter -->
-    <div id="ob-strength" style="margin:0.8rem 0 0.3rem;padding:0.6rem 0.8rem;background:rgba(255,255,255,0.03);border-radius:10px">
+    <div id="ob-strength" style="margin:0.8rem 0 0.3rem;padding:0.6rem 0.8rem;background:rgba(124,92,252,0.03);border-radius:10px">
       <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem"><span style="font-size:0.72rem;font-weight:600">Profil-styrke</span><span id="ob-strength-label" style="font-size:0.72rem;font-weight:700;color:var(--muted)">Svag</span></div>
       <div style="height:4px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden"><div id="ob-strength-bar" style="height:100%;width:10%;border-radius:99px;background:var(--accent2);transition:all 0.4s"></div></div>
       <div id="ob-strength-hint" style="font-size:0.65rem;color:var(--muted);margin-top:0.3rem"></div>
     </div>
     <button class="btn-primary" id="ob-save-btn" onclick="saveOnboarding()" style="margin-top:0.5rem;opacity:0.3;pointer-events:none">Kom i gang →</button>
-    <button type="button" onclick="skipOnboarding()" style="margin-top:0.6rem;background:none;border:1px solid var(--glass-border);border-radius:12px;color:var(--text-secondary);font-size:0.78rem;font-family:'Outfit',sans-serif;cursor:pointer;padding:0.55rem;width:100%;text-align:center;font-weight:600">Spring over — jeg udfylder senere</button>
-    <button type="button" onclick="abortOnboarding()" style="margin-top:1.5rem;margin-bottom:1rem;background:none;border:none;color:var(--accent2);font-size:0.7rem;font-family:'Outfit',sans-serif;cursor:pointer;padding:0.5rem;width:100%;text-align:center;opacity:0.6">Afbryd og nulstil</button>
+    <button type="button" onclick="skipOnboarding()" style="margin-top:0.6rem;background:none;border:1px solid var(--glass-border);border-radius:12px;color:var(--text-secondary);font-size:0.78rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.55rem;width:100%;text-align:center;font-weight:600">Spring over — jeg udfylder senere</button>
+    <button type="button" onclick="abortOnboarding()" style="margin-top:1.5rem;margin-bottom:1rem;background:none;border:none;color:var(--accent2);font-size:0.7rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.5rem;width:100%;text-align:center;opacity:0.6">Afbryd og nulstil</button>
   </div>
 </div>
 
@@ -388,7 +450,7 @@
     <div style="display:flex;flex-direction:column;gap:0.8rem;max-width:380px;margin:0 auto;width:100%">
       <!-- Step 1 -->
       <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer" onclick="welcomeGo('discover')">
-        <div style="width:44px;height:44px;border-radius:12px;background:rgba(46,158,142,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></div>
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(124,92,252,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></div>
         <div style="flex:1">
           <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem">Udforsk bobler</div>
           <div style="font-size:0.78rem;color:var(--text-secondary)">Find communities, events og netværk</div>
@@ -397,7 +459,7 @@
       </div>
       <!-- Step 2 -->
       <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer" onclick="welcomeGo('radar')">
-        <div style="width:44px;height:44px;border-radius:12px;background:rgba(232,93,138,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent2)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div>
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(232,121,168,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent2)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div>
         <div style="flex:1">
           <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem">Se hvem der er her</div>
           <div style="font-size:0.78rem;color:var(--text-secondary)">Radaren viser profiler og match-%</div>
@@ -406,13 +468,105 @@
       </div>
       <!-- Step 3 -->
       <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer" onclick="welcomeGo('home')">
-        <div style="width:44px;height:44px;border-radius:12px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5v9a1.5 1.5 0 001.5 1.5H10v-5a2 2 0 014 0v5h3.5a1.5 1.5 0 001.5-1.5v-9"/></svg></div>
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(26,158,142,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5v9a1.5 1.5 0 001.5 1.5H10v-5a2 2 0 014 0v5h3.5a1.5 1.5 0 001.5-1.5v-9"/></svg></div>
         <div style="flex:1">
           <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem">Gå til hjem</div>
           <div style="font-size:0.78rem;color:var(--text-secondary)">Dit dashboard med bobler, radar og mere</div>
         </div>
         <div style="color:var(--muted);font-size:1.1rem">→</div>
       </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SCREEN: QR PROFILE PREVIEW (anon)
+════════════════════════════════════════ -->
+<div class="screen" id="screen-qr-preview">
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px)">
+    <div class="qr-profile-hero">
+      <div class="qr-profile-avatar" id="qr-preview-avatar">?</div>
+      <div class="qr-profile-name" id="qr-preview-name">...</div>
+      <div class="qr-profile-title" id="qr-preview-title"></div>
+      <div class="qr-profile-tags" id="qr-preview-tags"></div>
+    </div>
+
+    <div style="height:1px;background:var(--glass-border-subtle);margin:0 1.5rem"></div>
+
+    <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);padding:0.75rem 1.2rem 0.35rem" id="qr-preview-context-label">Aktiv i</div>
+    <div class="qr-context-bar" id="qr-preview-bubbles"></div>
+
+    <div class="qr-social-proof" id="qr-preview-social">
+      <div class="qr-sp-number" id="qr-preview-network-count">0</div>
+      <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.15rem">professionelle i netværket</div>
+    </div>
+
+    <div style="padding:1rem 1.2rem 2rem">
+      <button class="btn-primary" onclick="qrPreviewSignup()">Gem kontakt & se netværket →</button>
+      <div style="text-align:center;margin-top:0.5rem;font-size:0.68rem;color:var(--muted)">Gratis · 10 sekunder</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: QR RADAR TEASER (anon)
+════════════════════════════════════════ -->
+<div class="screen" id="screen-qr-teaser">
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px);position:relative">
+    <div style="text-align:center;padding:1.2rem 1.2rem 0.5rem">
+      <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Hvem er i nærheden?</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.2rem" id="qr-teaser-count">Matches fundet i dit område</div>
+    </div>
+
+    <!-- Blurred profile list -->
+    <div style="padding:0.5rem 0">
+      <div class="card blur-card" style="margin:0 1.2rem 0.35rem"><div style="display:flex;align-items:center;gap:0.6rem"><div class="avatar" style="width:36px;height:36px;background:linear-gradient(135deg,#2ECFCF,#3AAFDF)">MJ</div><div><div style="font-size:0.82rem;font-weight:600">Mikkel Jensen</div><div style="font-size:0.68rem;color:var(--text-secondary)">CTO · TechVentures</div></div></div></div>
+      <div class="card blur-card" style="margin:0 1.2rem 0.35rem"><div style="display:flex;align-items:center;gap:0.6rem"><div class="avatar" style="width:36px;height:36px;background:linear-gradient(135deg,#C06098,#E879A8)">AS</div><div><div style="font-size:0.82rem;font-weight:600">Anna Svendsen</div><div style="font-size:0.68rem;color:var(--text-secondary)">Product Lead · Pleo</div></div></div></div>
+      <div class="card blur-card" style="margin:0 1.2rem 0.35rem"><div style="display:flex;align-items:center;gap:0.6rem"><div class="avatar" style="width:36px;height:36px;background:linear-gradient(135deg,#8B5CF6,#A855F7)">KP</div><div><div style="font-size:0.82rem;font-weight:600">Klaus Petersen</div><div style="font-size:0.68rem;color:var(--text-secondary)">Investor · Nordic Ventures</div></div></div></div>
+      <div class="card blur-card" style="margin:0 1.2rem 0.35rem;opacity:0.3"><div style="display:flex;align-items:center;gap:0.6rem"><div class="avatar" style="width:36px;height:36px;background:linear-gradient(135deg,#6B8BFF,#8B5CF6)">TB</div><div><div style="font-size:0.82rem;font-weight:600">Thomas Berg</div><div style="font-size:0.68rem;color:var(--text-secondary)">Designer · Creative Labs</div></div></div></div>
+    </div>
+
+    <div style="height:80px"></div>
+    <div class="cta-bottom-overlay">
+      <button class="btn-primary" onclick="qrTeaserSignup()">Opret gratis profil & se matches →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: SOCIAL PROOF (opsøgende flow)
+════════════════════════════════════════ -->
+<div class="screen" id="screen-social-proof">
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px);position:relative">
+    <div style="text-align:center;padding:1.2rem 1.2rem 0.6rem">
+      <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Se hvem der er her</div>
+    </div>
+
+    <div class="qr-social-proof" style="margin:0 1.2rem 0.6rem">
+      <div class="qr-sp-number" id="sp-total-count">0</div>
+      <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.15rem">professionelle bruger Bubble i Danmark</div>
+    </div>
+
+    <div class="sp-filter-bar" id="sp-filters">
+      <div class="sp-filter-chip active" onclick="spFilter('all',this)">Alle</div>
+      <div class="sp-filter-chip" onclick="spFilter('tech',this)">Tech</div>
+      <div class="sp-filter-chip" onclick="spFilter('founders',this)">Founders</div>
+      <div class="sp-filter-chip" onclick="spFilter('design',this)">Design</div>
+      <div class="sp-filter-chip" onclick="spFilter('marketing',this)">Marketing</div>
+    </div>
+
+    <div id="sp-profile-list" style="padding:0.5rem 0">
+      <div class="anon-card"><div class="avatar" style="width:32px;height:32px;background:linear-gradient(135deg,#2ECFCF,#3AAFDF);font-size:0.6rem">?</div><div><div style="display:flex;align-items:center;gap:0.35rem"><div class="anon-name-bar"></div><span class="tag" style="font-size:0.55rem;padding:0.1rem 0.35rem">Startups</span></div><div class="anon-title-bar"></div></div></div>
+      <div class="anon-card"><div class="avatar" style="width:32px;height:32px;background:linear-gradient(135deg,#8B5CF6,#A855F7);font-size:0.6rem">?</div><div><div style="display:flex;align-items:center;gap:0.35rem"><div class="anon-name-bar" style="width:65px"></div><span class="tag" style="font-size:0.55rem;padding:0.1rem 0.35rem">Tech</span><span class="tag" style="font-size:0.55rem;padding:0.1rem 0.35rem">AI</span></div><div class="anon-title-bar" style="width:100px"></div></div></div>
+      <div class="anon-card"><div class="avatar" style="width:32px;height:32px;background:linear-gradient(135deg,#6B8BFF,#8B5CF6);font-size:0.6rem">?</div><div><div style="display:flex;align-items:center;gap:0.35rem"><div class="anon-name-bar" style="width:90px"></div><span class="tag" style="font-size:0.55rem;padding:0.1rem 0.35rem">Investor</span></div><div class="anon-title-bar" style="width:140px"></div></div></div>
+      <div class="anon-card" style="opacity:0.4"><div class="avatar" style="width:32px;height:32px;background:linear-gradient(135deg,#C06098,#E879A8);font-size:0.6rem">?</div><div><div class="anon-name-bar" style="width:70px"></div><div class="anon-title-bar" style="width:110px"></div></div></div>
+    </div>
+
+    <div style="height:70px"></div>
+    <div class="cta-bottom-overlay">
+      <button class="btn-primary" onclick="spContinueToSignup()">Opret profil & se navne →</button>
+      <div style="text-align:center;margin-top:0.35rem;font-size:0.62rem;color:var(--muted)">Gratis · ingen kreditkort</div>
     </div>
   </div>
 </div>
@@ -424,7 +578,11 @@
   <div class="topbar">
     <img src="bubble-logo-topbar.png" alt="bubble" class="topbar-logo" onclick="goTo('screen-home')" style="cursor:pointer;height:22px;width:auto">
     <div style="flex:1"></div>
-    <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#2E9E8E,#1A7A8A);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;border:1.5px solid rgba(255,255,255,0.1)" id="home-avatar" onclick="goTo('screen-profile')">?</div>
+    <button class="qr-topbar-btn" onclick="openMyQR()" title="Min QR-kode">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="3.5" height="3.5"/><path d="M20 14h-2.5v3M14 20h3v-3M20 20h-3"/></svg>
+      <div class="qr-pulse"></div>
+    </button>
+    <div class="home-avatar" id="home-avatar" onclick="goTo('screen-profile')" style="background:linear-gradient(135deg,#6B8BFF,#8B5CF6)">?</div>
   </div>
 
   <div class="scroll-area" id="home-scroll">
@@ -435,24 +593,45 @@
       <div style="font-size:1.5rem;font-weight:800;letter-spacing:-0.02em" id="home-greeting-name"><svg class="ico" style="width:1.5rem;height:1.5rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 11V6.5a1.5 1.5 0 013 0V11"/><path d="M12.5 10V5.5a1.5 1.5 0 013 0v5"/><path d="M15.5 11V7.5a1.5 1.5 0 013 0v5.5a7 7 0 01-7 7h-1a7 7 0 01-5.8-3.1L4 15.5a1.5 1.5 0 012.1-2.1L9.5 16"/><path d="M9.5 11V4.5a1.5 1.5 0 00-3 0V12"/></svg></div>
     </div>
 
+
+    <!-- QUICK ACTIONS -->
+    <div class="quick-actions">
+      <button class="qa-btn" onclick="openLiveCheckin()">
+        <div class="qa-ico" style="background:rgba(46,207,207,0.1);color:#2ECFCF">📍</div>
+        <div class="qa-label">Check ind</div>
+      </button>
+      <button class="qa-btn" onclick="goTo('screen-discover')">
+        <div class="qa-ico" style="background:rgba(107,139,255,0.1);color:#6B8BFF">🔍</div>
+        <div class="qa-label">Opdag</div>
+      </button>
+      <button class="qa-btn" onclick="goTo('screen-bubbles');showQuickLiveForm()">
+        <div class="qa-ico" style="background:rgba(139,92,246,0.1);color:#8B5CF6">＋</div>
+        <div class="qa-label">Opret boble</div>
+      </button>
+      <button class="qa-btn" onclick="openMyQR()">
+        <div class="qa-ico" style="background:rgba(232,121,168,0.1);color:#E879A8">👤</div>
+        <div class="qa-label">Del profil</div>
+      </button>
+    </div>
+
     <!-- GETTING STARTED (dismissible) -->
     <div id="home-getting-started" style="display:none;margin-bottom:0.8rem">
-      <div style="background:linear-gradient(135deg,rgba(46,158,142,0.1),rgba(232,93,138,0.06));border:1px solid rgba(46,158,142,0.2);border-radius:16px;padding:1rem 1.1rem;position:relative">
+      <div style="background:linear-gradient(135deg,rgba(46,207,207,0.06),rgba(107,139,255,0.06),rgba(124,92,252,0.04));border:1px solid rgba(124,92,252,0.12);border-radius:16px;padding:1rem 1.1rem;position:relative">
         <button onclick="dismissGettingStarted()" style="position:absolute;top:0.6rem;right:0.7rem;background:none;border:none;color:var(--muted);font-size:0.9rem;cursor:pointer;padding:0.2rem;font-family:inherit">✕</button>
         <div style="font-size:0.85rem;font-weight:700;margin-bottom:0.6rem">Kom godt i gang</div>
         <div style="display:flex;flex-direction:column;gap:0.45rem" id="gs-steps">
-          <div class="gs-step" onclick="goTo('screen-discover');loadDiscover()" style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem;border-radius:10px;background:rgba(255,255,255,0.03);cursor:pointer">
-            <div style="width:28px;height:28px;border-radius:8px;background:rgba(46,158,142,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent);font-size:0.85rem;font-weight:800">1</div>
+          <div class="gs-step" onclick="goTo('screen-discover');loadDiscover()" style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem;border-radius:10px;background:rgba(124,92,252,0.03);cursor:pointer">
+            <div style="width:28px;height:28px;border-radius:8px;background:rgba(124,92,252,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent);font-size:0.85rem;font-weight:800">1</div>
             <div style="flex:1"><div style="font-size:0.78rem;font-weight:600">Udforsk & join en boble</div><div style="font-size:0.65rem;color:var(--text-secondary)">Tryk her for at se bobler du kan joine</div></div>
             <div style="color:var(--muted);font-size:0.85rem">→</div>
           </div>
-          <div class="gs-step" onclick="openRadarSheet()" style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem;border-radius:10px;background:rgba(255,255,255,0.03);cursor:pointer">
-            <div style="width:28px;height:28px;border-radius:8px;background:rgba(232,93,138,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent2);font-size:0.85rem;font-weight:800">2</div>
+          <div class="gs-step" onclick="openRadarSheet()" style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem;border-radius:10px;background:rgba(124,92,252,0.03);cursor:pointer">
+            <div style="width:28px;height:28px;border-radius:8px;background:rgba(232,121,168,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent2);font-size:0.85rem;font-weight:800">2</div>
             <div style="flex:1"><div style="font-size:0.78rem;font-weight:600">Åbn radaren</div><div style="font-size:0.65rem;color:var(--text-secondary)">Se hvem der er i nærheden og match-%</div></div>
             <div style="color:var(--muted);font-size:0.85rem">→</div>
           </div>
-          <div class="gs-step" onclick="goTo('screen-profile');profSwitchTab('saved')" style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem;border-radius:10px;background:rgba(255,255,255,0.03);cursor:pointer">
-            <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#10B981;font-size:0.85rem;font-weight:800">3</div>
+          <div class="gs-step" onclick="goTo('screen-profile');profSwitchTab('saved')" style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem;border-radius:10px;background:rgba(124,92,252,0.03);cursor:pointer">
+            <div style="width:28px;height:28px;border-radius:8px;background:rgba(26,158,142,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E;font-size:0.85rem;font-weight:800">3</div>
             <div style="flex:1"><div style="font-size:0.78rem;font-weight:600">Gem en profil</div><div style="font-size:0.65rem;color:var(--text-secondary)">Tryk Gem på en person du vil huske</div></div>
             <div style="color:var(--muted);font-size:0.85rem">→</div>
           </div>
@@ -505,7 +684,7 @@
 
       <!-- Bobler -->
       <div class="main-nav-card card-bobler" data-hs="bubbles" onclick="goTo('screen-bubbles')">
-        <div class="main-nav-icon" style="background:rgba(46,158,142,0.15);color:#5CBFB2"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
+        <div class="main-nav-icon" style="background:rgba(124,92,252,0.15);color:#9B8AFF"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
         <div style="flex:1">
           <div class="section-title">Bobler</div>
           <div class="sub-muted" id="home-bubbles-sub">Henter...</div>
@@ -536,19 +715,29 @@
         </div>
       </div>
 
-      <!-- Radar strip -->
-      <div class="radar-card" data-hs="radar">
-        <div class="live-dot" style="animation:pulse 2s infinite"></div>
-        <div style="flex:1;font-size:0.78rem;color:var(--text-secondary)">
-          <strong style="color:var(--text);font-weight:700">Radar aktiv</strong>
-          <span id="radar-count-home"> · Henter...</span>
+      <!-- Radar card (v4) -->
+      <div class="radar-card-v4" data-hs="radar" onclick="openRadarSheet()">
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#2ECFCF,#6B8BFF,#8B5CF6);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="white"/></svg></div>
+          <div style="flex:1">
+            <div style="font-size:0.88rem;font-weight:700;color:var(--text)">Radar</div>
+            <div style="font-size:0.72rem;color:var(--text-secondary)" id="radar-count-home">Henter matches...</div>
+          </div>
+          <div style="color:var(--accent);font-size:0.78rem;font-weight:600">Se →</div>
         </div>
-        <button class="btn-sm btn-ghost" onclick="openRadarSheet()" style="font-size:0.72rem;white-space:nowrap">Kort →</button>
+        <div class="radar-dots-row" id="radar-preview-avatars"></div>
+      </div>
+
+
+      <!-- Progressive onboarding (v4) -->
+      <div id="home-progressive-onboarding" style="display:none">
+        <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent);padding:0.75rem 0 0.35rem">Styrk din profil</div>
+        <div id="gs-v4-cards"></div>
       </div>
 
       <!-- Feedback -->
       <div class="main-nav-card" onclick="openFeedback()">
-        <div class="main-nav-icon" style="background:rgba(46,158,142,0.12);color:var(--accent)"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
+        <div class="main-nav-icon" style="background:rgba(124,92,252,0.12);color:var(--accent)"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
         <div style="flex:1">
           <div class="section-title">Giv feedback</div>
           <div class="sub-muted">Hjælp os med at gøre Bubble bedre</div>
@@ -561,7 +750,7 @@
       <div style="width:48px;height:48px;margin:0 auto 0.8rem;opacity:0.5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:var(--accent)"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
       <div style="font-size:0.88rem;font-weight:700;margin-bottom:0.3rem">Din hjem-skærm er tom</div>
       <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:1.2rem;line-height:1.45">Vælg hvad du vil se her under indstillinger</div>
-      <button onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('settings')},200)" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(46,158,142,0.12);color:var(--accent);border:1px solid rgba(46,158,142,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:all 0.2s">Åbn indstillinger</button>
+      <button onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('settings')},200)" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(124,92,252,0.12);color:var(--accent);border:1px solid rgba(124,92,252,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:all 0.2s">Åbn indstillinger</button>
     </div>
 
   </div>
@@ -660,7 +849,7 @@
       <div style="margin-top:0.6rem">
         <div class="person-display-name" id="person-name">...</div>
         <div class="person-display-title" id="person-role">...</div>
-        <div id="person-live-badge" style="display:none;font-size:0.68rem;color:#10B981;margin-top:0.25rem"></div>
+        <div id="person-live-badge" style="display:none;font-size:0.68rem;color:#1A9E8E;margin-top:0.25rem"></div>
       </div>
     </div>
     <!-- Action bar -->
@@ -875,7 +1064,7 @@
       <div class="prox-center" id="prox-center">DU</div>
     </div>
     <!-- Show more / shuffle button -->
-    <button id="radar-show-more" onclick="radarShowMore()" style="display:none;margin:0.5rem auto;padding:0.45rem 1.2rem;font-size:0.72rem;font-weight:600;font-family:inherit;border-radius:10px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.04);color:var(--text-secondary);cursor:pointer;align-items:center;gap:0.3rem;justify-content:center">Vis nye profiler ↻</button>
+    <button id="radar-show-more" onclick="radarShowMore()" style="display:none;margin:0.5rem auto;padding:0.45rem 1.2rem;font-size:0.72rem;font-weight:600;font-family:inherit;border-radius:10px;border:1px solid var(--glass-border);background:rgba(124,92,252,0.04);color:var(--text-secondary);cursor:pointer;align-items:center;gap:0.3rem;justify-content:center">Vis nye profiler ↻</button>
   </div>
   <div id="radar-view-list" style="display:none;max-height:calc(100dvh - 12rem);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:1rem">
     <div id="radar-list-content"></div>
@@ -893,7 +1082,7 @@
       <div style="flex:1;min-width:0">
         <div class="radar-person-name" id="rp-name">...</div>
         <div class="radar-person-sub" id="rp-sub">...</div>
-      <div id="rp-live-badge" style="display:none;font-size:0.68rem;color:#10B981;margin-top:0.25rem"></div>
+      <div id="rp-live-badge" style="display:none;font-size:0.68rem;color:#1A9E8E;margin-top:0.25rem"></div>
       </div>
       <div class="radar-person-match" id="rp-match"></div>
       <button class="radar-person-close" onclick="closeRadarPerson()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M17 7L7 17M7 7l10 10"/></svg></button>
@@ -923,7 +1112,7 @@
   <div class="dm-select-toolbar" id="conv-select-toolbar" style="display:none;flex-shrink:0">
     <span id="conv-select-count" style="font-size:0.78rem;font-weight:600">0 valgt</span>
     <div style="display:flex;gap:0.4rem">
-      <button class="btn-sm" id="conv-delete-btn" onclick="convDeleteSelected()" style="font-size:0.72rem;padding:0.3rem 0.6rem;background:rgba(232,93,138,0.15);color:var(--accent2);border:1px solid rgba(232,93,138,0.3);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600" disabled>Slet</button>
+      <button class="btn-sm" id="conv-delete-btn" onclick="convDeleteSelected()" style="font-size:0.72rem;padding:0.3rem 0.6rem;background:rgba(232,121,168,0.15);color:var(--accent2);border:1px solid rgba(232,121,168,0.3);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600" disabled>Slet</button>
       <button class="btn-sm btn-ghost" onclick="convSelectAll()" style="font-size:0.72rem;padding:0.3rem 0.6rem">Vælg alle</button>
     </div>
   </div>
@@ -939,7 +1128,7 @@
   <div class="topbar">
     <button class="back-btn" id="dm-back-btn" onclick="goTo('screen-messages')">←</button>
     <div style="flex:1;min-width:0;display:flex;align-items:center;gap:0.5rem;cursor:pointer" id="dm-topbar-profile" onclick="dmOpenPersonSheet(currentChatUser)">
-      <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#2E9E8E,#1A7A8A);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:white;flex-shrink:0" id="dm-topbar-avatar">?</div>
+      <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#2ECFCF,#6B8BFF,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:white;flex-shrink:0" id="dm-topbar-avatar">?</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:0.85rem;font-weight:700;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chat-name">...</div>
         <div style="font-size:0.62rem;color:var(--text-secondary)" id="chat-role">...</div>
@@ -982,7 +1171,7 @@
 
     <!-- Profile hero (compact, left-aligned) -->
     <div class="profile-hero" style="flex-shrink:0;padding:0.6rem 1.1rem 0.4rem;display:flex;align-items:center;gap:0.8rem">
-      <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#2E9E8E,#1A7A8A);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:white;box-shadow:0 4px 16px rgba(46,158,142,0.3);border:2px solid rgba(255,255,255,0.08);flex-shrink:0;overflow:hidden;cursor:pointer" id="my-avatar" onclick="viewAvatarFull(this)">?</div>
+      <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#2ECFCF,#6B8BFF,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:white;box-shadow:0 4px 16px rgba(124,92,252,0.3);border:2px solid rgba(255,255,255,0.08);flex-shrink:0;overflow:hidden;cursor:pointer" id="my-avatar" onclick="viewAvatarFull(this)">?</div>
       <div style="flex:1;min-width:0;text-align:left">
         <div style="font-size:1rem;font-weight:800;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-name">...</div>
         <div style="font-size:0.75rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-role">...</div>
@@ -1064,17 +1253,17 @@
     </div>
 
     <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Profil</div>
-    <button onclick="reRunOnboarding()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(46,158,142,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent);cursor:pointer">Kør profilopsætning igen</button>
+    <button onclick="reRunOnboarding()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(124,92,252,0.12);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent);cursor:pointer">Kør profilopsætning igen</button>
 
     <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Konto</div>
-    <button onclick="handleLogout()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(232,93,138,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent2);cursor:pointer">Log ud</button>
+    <button onclick="handleLogout()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(232,121,168,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent2);cursor:pointer">Log ud</button>
 
     <!-- ADMIN PANEL (only visible for admin UID) -->
     <div id="admin-panel" style="display:none">
       <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem;color:var(--accent2)">🔒 Admin</div>
 
       <!-- Reported users -->
-      <div style="background:rgba(232,93,138,0.06);border:1px solid rgba(232,93,138,0.15);border-radius:12px;padding:0.8rem;margin-bottom:0.5rem">
+      <div style="background:rgba(232,121,168,0.06);border:1px solid rgba(232,121,168,0.15);border-radius:12px;padding:0.8rem;margin-bottom:0.5rem">
         <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between">
           Rapporterede brugere
           <button class="btn-sm btn-ghost" onclick="adminLoadReports()" style="font-size:0.62rem">Opdater</button>
@@ -1217,7 +1406,7 @@
     <div class="modal-title">Rediger profil</div>
     <!-- Avatar upload -->
     <div style="display:flex;align-items:center;gap:1rem;margin:0.5rem 0 1.2rem;padding:0.8rem;background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:14px">
-      <div id="ep-avatar-preview" style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#2E9E8E,#1A7A8A);display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:white;flex-shrink:0;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 4px 12px rgba(0,0,0,0.2)" onclick="document.getElementById('ep-avatar-input').click()">
+      <div id="ep-avatar-preview" style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#2ECFCF,#6B8BFF,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:white;flex-shrink:0;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 4px 12px rgba(0,0,0,0.2)" onclick="document.getElementById('ep-avatar-input').click()">
         <span id="ep-avatar-initials">?</span>
         <img id="ep-avatar-img" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;display:none">
       </div>

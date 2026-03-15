@@ -33,7 +33,7 @@ async function adminLoadReports() {
         '<div style="font-size:0.62rem;color:var(--muted)">' + escHtml(r.type || 'report') + ' · ' + escHtml(r.reason || 'Ingen grund') + ' · ' + timeAgo + '</div>' +
         '<div style="font-size:0.6rem;color:var(--muted)">Af: ' + escHtml(reporterName) + '</div></div>' +
         (!isBanned ? '<button class="btn-sm" onclick="adminBanUser(\'' + r.reported_id + '\',\'' + escHtml(reportedName).replace(/'/g,"\\'") + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,122,138,0.15);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:6px;flex-shrink:0">Ban</button>' :
-        '<button class="btn-sm" onclick="adminUnbanUser(\'' + r.reported_id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(16,185,129,0.15);color:var(--green);border:1px solid rgba(16,185,129,0.3);border-radius:6px;flex-shrink:0">Unban</button>') +
+        '<button class="btn-sm" onclick="adminUnbanUser(\'' + r.reported_id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,158,142,0.15);color:var(--green);border:1px solid rgba(26,158,142,0.3);border-radius:6px;flex-shrink:0">Unban</button>') +
         '</div></div>';
     }).join('');
   } catch(e) { el.innerHTML = '<div style="color:var(--accent2)">Fejl: ' + escHtml(e.message) + '</div>'; }
@@ -55,7 +55,7 @@ async function adminLoadBanned() {
       return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid rgba(255,255,255,0.03)">' +
         '<div><span style="font-weight:600">' + escHtml(p.name || 'Ukendt') + '</span>' +
         '<div style="font-size:0.6rem;color:var(--muted)">' + escHtml(p.email || p.id.slice(0,8)) + '</div></div>' +
-        '<button class="btn-sm" onclick="adminUnbanUser(\'' + p.id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(16,185,129,0.15);color:var(--green);border:1px solid rgba(16,185,129,0.3);border-radius:6px">Unban</button>' +
+        '<button class="btn-sm" onclick="adminUnbanUser(\'' + p.id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,158,142,0.15);color:var(--green);border:1px solid rgba(26,158,142,0.3);border-radius:6px">Unban</button>' +
         '</div>';
     }).join('');
   } catch(e) { el.innerHTML = '<div style="color:var(--accent2)">Fejl: ' + escHtml(e.message) + '</div>'; }
@@ -100,24 +100,24 @@ async function adminLoadStats() {
     var { count: savedCount } = await sb.from('saved_contacts').select('*', { count: 'exact', head: true });
 
     el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem">' +
-      adminStatCard('Brugere', userCount || 0, '#2E9E8E', 'Antal registrerede profiler i Bubble. Inkluderer alle der har oprettet en konto.') +
-      adminStatCard('Live nu', liveCount || 0, '#10B981', 'Brugere der er checked ind i en Live Bubble inden for de sidste 4 timer.') +
-      adminStatCard('Bannede', bannedCount || 0, '#1A7A8A', 'Brugere der er banned via admin panel. De kan ikke logge ind og er usynlige på radar.') +
+      adminStatCard('Brugere', userCount || 0, '#7C5CFC', 'Antal registrerede profiler i Bubble. Inkluderer alle der har oprettet en konto.') +
+      adminStatCard('Live nu', liveCount || 0, '#1A9E8E', 'Brugere der er checked ind i en Live Bubble inden for de sidste 4 timer.') +
+      adminStatCard('Bannede', bannedCount || 0, '#6B8BFF', 'Brugere der er banned via admin panel. De kan ikke logge ind og er usynlige på radar.') +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
       adminStatCard('Bobler', bubbleCount || 0, '#2ECFCF', 'Samlet antal bobler (offentlige + private + skjulte). Inkluderer alle typer.') +
       adminStatCard('Offentlige', publicBubbles || 0, '#2ECFCF', 'Bobler synlige for alle på Opdag-skærmen. Alle kan joine dem.') +
-      adminStatCard('Private', (privateBubbles||0) + '+' + (hiddenBubbles||0), '#F97316', 'Private + skjulte bobler. Private kræver invitation. Skjulte er usynlige i Opdag men kan joines via direkte link.') +
+      adminStatCard('Private', (privateBubbles||0) + '+' + (hiddenBubbles||0), '#E879A8', 'Private + skjulte bobler. Private kræver invitation. Skjulte er usynlige i Opdag men kan joines via direkte link.') +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
-      adminStatCard('Beskeder', msgCount || 0, '#2E9E8E', 'Samlet antal direkte beskeder (DMs) sendt mellem brugere. Inkluderer tekst, GIFs og filer.') +
-      adminStatCard('Rapporter', reportCount || 0, '#1A7A8A', 'Antal brugerrapporter modtaget. Se detaljer i Rapporterede brugere ovenfor.') +
-      adminStatCard('Feedback', feedbackCount || 0, '#38BDF8', 'Antal feedback-beskeder sendt via Giv Feedback knappen på hjem-skærmen.') +
+      adminStatCard('Beskeder', msgCount || 0, '#7C5CFC', 'Samlet antal direkte beskeder (DMs) sendt mellem brugere. Inkluderer tekst, GIFs og filer.') +
+      adminStatCard('Rapporter', reportCount || 0, '#6B8BFF', 'Antal brugerrapporter modtaget. Se detaljer i Rapporterede brugere ovenfor.') +
+      adminStatCard('Feedback', feedbackCount || 0, '#6B8BFF', 'Antal feedback-beskeder sendt via Giv Feedback knappen på hjem-skærmen.') +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
       adminStatCard('Medlemskaber', membershipCount || 0, '#2ECFCF', 'Samlet antal boble-medlemskaber. Én bruger i 3 bobler = 3 medlemskaber. Viser engagement — jo højere ratio pr. bruger, jo mere aktive er de.') +
       adminStatCard('Gemte kontakter', savedCount || 0, '#4ABEAE', 'Antal gange en bruger har gemt en andens profil. Viser hvor meget networking der sker.') +
-      adminStatCard('Gns. tags', avgTags, '#10B981', 'Gennemsnitligt antal tags per profil der har tags. Højere = bedre matchkvalitet på radar.') +
+      adminStatCard('Gns. tags', avgTags, '#1A9E8E', 'Gennemsnitligt antal tags per profil der har tags. Højere = bedre matchkvalitet på radar.') +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
       adminStatCard('Profiler m/ tags', taggedCount + '/' + (userCount||0), '#F5C35A', 'Hvor mange profiler der har mindst 1 tag vs. totalt antal brugere. Profiler uden tags matcher dårligt på radar.') +
@@ -144,7 +144,7 @@ function adminShowInfo(el, text) {
   tray.className = 'admin-info-tray';
   tray.innerHTML = '<div style="font-size:0.68rem;color:var(--text-secondary);line-height:1.4">' + text + '</div>' +
     '<button onclick="this.parentElement.remove()" style="position:absolute;top:0.3rem;right:0.4rem;background:none;border:none;color:var(--muted);font-size:0.7rem;cursor:pointer;font-family:inherit">✕</button>';
-  tray.style.cssText = 'position:relative;background:rgba(46,158,142,0.08);border:1px solid rgba(46,158,142,0.15);border-radius:8px;padding:0.5rem 0.7rem;margin-top:0.3rem;animation:fadeIn 0.2s ease';
+  tray.style.cssText = 'position:relative;background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.15);border-radius:8px;padding:0.5rem 0.7rem;margin-top:0.3rem;animation:fadeIn 0.2s ease';
   // Insert after the stat grid row
   var parent = el.parentElement;
   if (parent) parent.insertAdjacentElement('afterend', tray);
@@ -238,7 +238,7 @@ function adminSearchUser(query) {
           '</div>' +
           (!isBanned ?
             '<button class="btn-sm" onclick="adminBanUser(\'' + p.id + '\',\'' + escHtml(p.name||'').replace(/'/g,"\\'") + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,122,138,0.15);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:6px;flex-shrink:0">Ban</button>' :
-            '<button class="btn-sm" onclick="adminUnbanUser(\'' + p.id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(16,185,129,0.15);color:var(--green);border:1px solid rgba(16,185,129,0.3);border-radius:6px;flex-shrink:0">Unban</button>') +
+            '<button class="btn-sm" onclick="adminUnbanUser(\'' + p.id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,158,142,0.15);color:var(--green);border:1px solid rgba(26,158,142,0.3);border-radius:6px;flex-shrink:0">Unban</button>') +
           '</div>';
       }).join('');
     } catch(e) { el.innerHTML = '<div style="color:var(--accent2);font-size:0.68rem">Fejl: ' + escHtml(e.message) + '</div>'; }

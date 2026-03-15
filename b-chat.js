@@ -182,7 +182,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
     document.getElementById('bc-emoji').innerHTML = bubbleEmoji(b.type);
     document.getElementById('bc-name').textContent = b.name;
     // Hero gradient based on bubble type
-    var _heroGrads = {'event':'linear-gradient(135deg,#2A7A90,#3AAA88)','live':'linear-gradient(135deg,#2ECFCF,#2E9E8E)','local':'linear-gradient(135deg,#10B981,#065F46)','topic':'linear-gradient(135deg,#2E9E8E,#164E4E)','company':'linear-gradient(135deg,#1A5A6A,#1A7A7A)'};
+    var _heroGrads = {'event':'linear-gradient(135deg,#8B5CF6,#6B8BFF)','live':'linear-gradient(135deg,#8B5CF6,#A855F7)','local':'linear-gradient(135deg,#1A9E8E,#4338CA)','topic':'linear-gradient(135deg,#7C5CFC,#164E4E)','company':'linear-gradient(135deg,#8B5CF6,#A855F7)'};
     var hg = document.getElementById('bc-hero-gradient');
     var hi = document.getElementById('bc-hero-icon');
     if (hg) hg.style.background = _heroGrads[b.type] || _heroGrads['topic'];
@@ -247,7 +247,7 @@ async function bcLoadBubbleInfo() {
     bcBubbleData = b;
     document.getElementById('bc-emoji').innerHTML = bubbleEmoji(b.type);
     document.getElementById('bc-name').textContent = b.name;
-    var _heroGrads2 = {'event':'linear-gradient(135deg,#2A7A90,#3AAA88)','live':'linear-gradient(135deg,#2ECFCF,#2E9E8E)','local':'linear-gradient(135deg,#10B981,#065F46)','topic':'linear-gradient(135deg,#2E9E8E,#164E4E)','company':'linear-gradient(135deg,#1A5A6A,#1A7A7A)'};
+    var _heroGrads2 = {'event':'linear-gradient(135deg,#8B5CF6,#6B8BFF)','live':'linear-gradient(135deg,#8B5CF6,#A855F7)','local':'linear-gradient(135deg,#1A9E8E,#4338CA)','topic':'linear-gradient(135deg,#7C5CFC,#164E4E)','company':'linear-gradient(135deg,#8B5CF6,#A855F7)'};
     var hg2 = document.getElementById('bc-hero-gradient');
     var hi2 = document.getElementById('bc-hero-icon');
     if (hg2) hg2.style.background = _heroGrads2[b.type] || _heroGrads2['topic'];
@@ -267,7 +267,7 @@ async function bcLoadBubbleInfo() {
         var expiry = new Date(new Date(myM.checked_in_at).getTime() + 6*3600000);
         var hh = expiry.getHours().toString().padStart(2,'0');
         var mm = expiry.getMinutes().toString().padStart(2,'0');
-        countEl.innerHTML = statusText + ' · <span style="color:#10B981">LIVE</span> <span style="opacity:0.6">udl. ' + hh + ':' + mm + '</span>';
+        countEl.innerHTML = statusText + ' · <span style="color:#1A9E8E">LIVE</span> <span style="opacity:0.6">udl. ' + hh + ':' + mm + '</span>';
       } else {
         countEl.textContent = statusText + ' · Medlem ✓';
       }
@@ -348,7 +348,7 @@ function bcRenderMsg(m) {
   const name = p.name || '?';
   const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   const time = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'});
-  const gradients = ['linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#7C2D12,#F97316)','linear-gradient(135deg,#1A5A6A,#1A7A7A)','linear-gradient(135deg,#164E4E,#4ABEAE)','linear-gradient(135deg,#0C4A6E,#38BDF8)'];
+  const gradients = ['linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#2ECFCF,#6B8BFF)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#164E4E,#4ABEAE)','linear-gradient(135deg,#C06098,#E879A8)'];
   const color = gradients[Math.abs(name.charCodeAt(0)) % gradients.length];
 
   const row = document.createElement('div');
@@ -743,7 +743,7 @@ async function bcLoadMembers() {
         new Date(m.checked_in_at).getTime() > (now - LIVE_EXPIRE_HOURS * 3600000);
     });
 
-    const colors = ['linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#7C2D12,#F97316)','linear-gradient(135deg,#1A5A6A,#1A7A7A)','linear-gradient(135deg,#164E4E,#4ABEAE)','linear-gradient(135deg,#0C4A6E,#38BDF8)'];
+    const colors = ['linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#2ECFCF,#6B8BFF)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#164E4E,#4ABEAE)','linear-gradient(135deg,#C06098,#E879A8)'];
     const ownerId = bcBubbleData?.created_by;
     const isOwner = currentUser && ownerId === currentUser.id;
 
@@ -845,7 +845,7 @@ async function bcLoadInfo() {
       <div>
         <button class="${myUpvotes[b.id] ? 'chat-info-btn success' : 'chat-info-btn primary'}" id="bc-recommend-btn" onclick="toggleBubbleUpvote('${b.id}')">${myUpvotes[b.id] ? icon('checkCircle') + ' Anbefalet' : icon('rocket') + ' Anbefal denne boble'}</button>
         <button class="chat-info-btn primary" data-action="openQRModal" data-id="${b.id}">${icon("qrcode")} Del boble / QR-kode</button>
-        ${isOwner ? `<button class="chat-info-btn primary" onclick="downloadMembersPdf('${b.id}')" style="background:rgba(46,158,142,0.12);border-color:rgba(46,158,142,0.3);color:var(--accent)">${icon('users')} Download deltagerliste (PDF)</button>` : ''}
+        ${isOwner ? `<button class="chat-info-btn primary" onclick="downloadMembersPdf('${b.id}')" style="background:rgba(124,92,252,0.12);border-color:rgba(124,92,252,0.3);color:var(--accent)">${icon('users')} Download deltagerliste (PDF)</button>` : ''}
         <button class="chat-info-btn danger" data-action="leaveBubble" data-id="${b.id}">${icon("logout")} Forlad boblen</button>
       </div>`;
   } catch(e) { logError("bcLoadInfo", e); showToast(e.message || "Ukendt fejl"); }

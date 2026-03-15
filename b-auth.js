@@ -50,7 +50,7 @@ async function checkAuth() {
     }
   } catch(e) {
     var el = document.getElementById('loading-msg');
-    if (el) { el.textContent = 'Fejl: ' + (e.message || 'Ukendt'); el.style.color = '#1A7A8A'; }
+    if (el) { el.textContent = 'Fejl: ' + (e.message || 'Ukendt'); el.style.color = '#6B8BFF'; }
     logError('checkAuth', e);
   }
 }
@@ -329,6 +329,18 @@ function showInterestPicker() {
     showAuthForms();
     return;
   }
+  // Try social proof screen first (opsøgende flow)
+  loadSocialProofScreen().then(function(shown) {
+    if (!shown) {
+      // Not enough users for social proof — go to interest picker
+      showInterestPickerDirect();
+    }
+  }).catch(function() {
+    showInterestPickerDirect();
+  });
+}
+
+function showInterestPickerDirect() {
   var splash = document.getElementById('auth-splash');
   var interests = document.getElementById('auth-interests');
   if (splash) { splash.style.transition = 'opacity 0.3s'; splash.style.opacity = '0'; setTimeout(function(){ splash.style.display = 'none'; }, 300); }
@@ -436,7 +448,7 @@ async function loadInterestPreview() {
     }).sort(function(a, b) { return b.shared - a.shared; });
 
     var top = scored.slice(0, 3);
-    var colors = ['linear-gradient(135deg,#3AAA88,#2A7A90)','linear-gradient(135deg,#065F46,#10B981)','linear-gradient(135deg,#1A5A6A,#1A7A7A)'];
+    var colors = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)'];
 
     el.innerHTML = top.map(function(item, i) {
       var p = item.p;
@@ -470,7 +482,7 @@ function showTerms() {
   overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
 
   var sheet = document.createElement('div');
-  sheet.style.cssText = 'width:100%;max-width:680px;max-height:85vh;background:rgba(12,12,25,0.95);border-radius:24px 24px 0 0;padding:1.5rem;overflow-y:auto;color:var(--text);font-family:Outfit,sans-serif';
+  sheet.style.cssText = 'width:100%;max-width:680px;max-height:85vh;background:rgba(12,12,25,0.95);border-radius:24px 24px 0 0;padding:1.5rem;overflow-y:auto;color:var(--text);font-family:Figtree,sans-serif';
   sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 1rem;cursor:pointer" onclick="this.parentElement.parentElement.remove()"></div>' +
     '<h2 style="font-size:1.2rem;font-weight:800;margin-bottom:0.8rem">Betingelser & Privatlivspolitik</h2>' +
     '<div style="font-size:0.78rem;line-height:1.7;color:var(--text-secondary)">' +
@@ -515,11 +527,11 @@ function openFeedback() {
   overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
 
   var sheet = document.createElement('div');
-  sheet.style.cssText = 'width:100%;max-width:680px;background:rgba(12,12,25,0.95);border-radius:24px 24px 0 0;padding:1.5rem;color:var(--text);font-family:Outfit,sans-serif';
+  sheet.style.cssText = 'width:100%;max-width:680px;background:rgba(12,12,25,0.95);border-radius:24px 24px 0 0;padding:1.5rem;color:var(--text);font-family:Figtree,sans-serif';
   sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 1rem;cursor:pointer" onclick="this.parentElement.parentElement.remove()"></div>' +
     '<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem">Giv feedback</h2>' +
     '<p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Vi er i beta — din feedback er guld værd og hjælper os med at bygge det bedste produkt.</p>' +
-    '<textarea id="feedback-text" placeholder="Hvad virker godt? Hvad kan gøres bedre? Har du oplevet fejl?" style="width:100%;height:120px;background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:12px;padding:0.7rem;font-family:Outfit,sans-serif;font-size:0.82rem;color:var(--text);resize:none;outline:none"></textarea>' +
+    '<textarea id="feedback-text" placeholder="Hvad virker godt? Hvad kan gøres bedre? Har du oplevet fejl?" style="width:100%;height:120px;background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:12px;padding:0.7rem;font-family:Figtree,sans-serif;font-size:0.82rem;color:var(--text);resize:none;outline:none"></textarea>' +
     '<button onclick="submitFeedback()" style="width:100%;margin-top:0.8rem;padding:0.7rem;border-radius:12px;border:none;background:var(--gradient-accent);color:white;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Send feedback →</button>' +
     '<button onclick="this.parentElement.parentElement.remove()" style="width:100%;margin-top:0.4rem;padding:0.5rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--muted);font-family:inherit;font-size:0.78rem;cursor:pointer">Annuller</button>';
 
@@ -561,5 +573,43 @@ async function handleGoogleLogin() {
   } catch(e) { logError("handleGoogleLogin", e); showToast(e.message || "Ukendt fejl"); }
 }
 
-
+// ══════════════════════════════════════════════════════════
+//  PERSONAL QR CODE
+// ══════════════════════════════════════════════════════════
+function openMyQR() {
+  if (!currentUser || !currentProfile) { showToast('Log ind først'); return; }
+  var url = window.location.origin + window.location.pathname + '?profile=' + currentUser.id;
+  
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(30,27,46,0.25);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+  
+  var sheet = document.createElement('div');
+  sheet.style.cssText = 'width:100%;max-width:680px;background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);border-radius:24px 24px 0 0;padding:1.5rem;text-align:center;color:var(--text);font-family:Figtree,sans-serif';
+  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.12);margin:0 auto 1rem;cursor:pointer" onclick="this.parentElement.parentElement.remove()"></div>' +
+    '<div style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem">Min QR-kode</div>' +
+    '<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Andre kan scanne den for at se din profil</div>' +
+    '<div id="my-qr-container" style="display:flex;justify-content:center;margin-bottom:1rem"></div>' +
+    '<div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem;word-break:break-all">' + url + '</div>' +
+    '<button onclick="navigator.clipboard.writeText(\'' + url + '\');this.textContent=\'Kopieret! ✓\';setTimeout(()=>this.textContent=\'Kopiér link\',2000)" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-bg);color:var(--text);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Kopiér link</button>' +
+    '<button onclick="if(navigator.share)navigator.share({title:\'Bubble\',url:\'' + url + '\'}).catch(()=>{});else{navigator.clipboard.writeText(\'' + url + '\');showToast(\'Link kopieret\')}" style="width:100%;margin-top:0.4rem;padding:0.7rem;border-radius:12px;border:none;background:linear-gradient(135deg,#2ECFCF,#6B8BFF,#8B5CF6);color:white;font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer">Del profil →</button>';
+  
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+  
+  // Generate QR code
+  setTimeout(function() {
+    var container = document.getElementById('my-qr-container');
+    if (container && typeof QRCode !== 'undefined') {
+      new QRCode(container, {
+        text: url,
+        width: 180,
+        height: 180,
+        colorDark: '#1E1B2E',
+        colorLight: '#FFFFFF',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+  }, 100);
+}
 
