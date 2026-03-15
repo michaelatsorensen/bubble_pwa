@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=400">
+<link rel="manifest" href="manifest.json?v=410">
 <link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=2">
 <link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=2">
 <link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=2">
@@ -17,27 +17,27 @@
 <link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=2">
 <link rel="apple-touch-icon" href="bubble-icon-180.png?v=2">
 
-<link rel="stylesheet" href="app.css?v=400">
+<link rel="stylesheet" href="app.css?v=410">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=400" defer></script>
-<script src="tag-data.js?v=400" defer></script>
-<script src="b-config.js?v=400" defer></script>
-<script src="b-utils.js?v=400" defer></script>
-<script src="b-navigation.js?v=400" defer></script>
-<script src="b-auth.js?v=400" defer></script>
-<script src="b-home.js?v=400" defer></script>
-<script src="b-bubbles.js?v=400" defer></script>
-<script src="b-profile.js?v=400" defer></script>
-<script src="b-radar.js?v=400" defer></script>
-<script src="b-messages.js?v=400" defer></script>
-<script src="b-realtime.js?v=400" defer></script>
-<script src="b-onboarding.js?v=400" defer></script>
-<script src="b-chat.js?v=400" defer></script>
-<script src="b-notifications.js?v=400" defer></script>
-<script src="b-live.js?v=400" defer></script>
-<script src="b-admin.js?v=400" defer></script>
-<script src="b-boot.js?v=400" defer></script>
+<script src="bubble-icons.js?v=410" defer></script>
+<script src="tag-data.js?v=410" defer></script>
+<script src="b-config.js?v=410" defer></script>
+<script src="b-utils.js?v=410" defer></script>
+<script src="b-navigation.js?v=410" defer></script>
+<script src="b-auth.js?v=410" defer></script>
+<script src="b-home.js?v=410" defer></script>
+<script src="b-bubbles.js?v=410" defer></script>
+<script src="b-profile.js?v=410" defer></script>
+<script src="b-radar.js?v=410" defer></script>
+<script src="b-messages.js?v=410" defer></script>
+<script src="b-realtime.js?v=410" defer></script>
+<script src="b-onboarding.js?v=410" defer></script>
+<script src="b-chat.js?v=410" defer></script>
+<script src="b-notifications.js?v=410" defer></script>
+<script src="b-live.js?v=410" defer></script>
+<script src="b-admin.js?v=410" defer></script>
+<script src="b-boot.js?v=410" defer></script>
   
 
 
@@ -567,53 +567,69 @@
 
 
 <!-- ════════════════════════════════════════
-     SCREEN: GUEST CHECK-IN (no login needed)
+     SCREEN: EVENT LANDING (teaser → signup)
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-guest-checkin">
   <div class="screen-inner-scroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px)">
-    <div style="text-align:center;padding:2rem 1.5rem 1rem">
-      <div style="font-size:1.8rem;font-weight:900;letter-spacing:-0.04em;background:linear-gradient(135deg,#2ECFCF,#6B8BFF,#8B5CF6,#E879A8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.5rem">bubble</div>
-      <div style="font-size:1.1rem;font-weight:800;color:var(--text)" id="guest-event-name">Event</div>
-      <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.2rem" id="guest-event-meta"></div>
+    <div style="text-align:center;padding:2.5rem 1.5rem 1rem">
+      <div style="font-size:1.8rem;font-weight:900;letter-spacing:-0.04em;background:linear-gradient(135deg,#2ECFCF,#6B8BFF,#8B5CF6,#E879A8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.6rem">bubble</div>
+      <div style="font-size:1.25rem;font-weight:800;color:var(--text);line-height:1.3" id="guest-event-name">Event</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.25rem" id="guest-event-meta"></div>
     </div>
 
-    <!-- Step 1: Name input -->
-    <div id="guest-step-name" style="padding:0 1.5rem">
+    <!-- Social proof: attendee count + blurred profiles -->
+    <div style="padding:0 1.5rem;margin-bottom:1rem">
+      <div style="text-align:center;margin-bottom:0.6rem">
+        <div id="event-attendee-count" style="font-size:0.82rem;font-weight:700;color:var(--accent)"></div>
+      </div>
+      <div id="event-blurred-profiles" style="display:flex;flex-direction:column;gap:0.35rem"></div>
+    </div>
+
+    <!-- Primary CTA: Sign up -->
+    <div style="padding:0 1.5rem">
       <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:1.2rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">
-        <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:0.6rem">Få din QR-kode på 10 sekunder</div>
-        <div class="input-group" style="margin-bottom:0.75rem">
-          <div class="input-label">Dit navn</div>
-          <input class="input" id="guest-name" placeholder="Dit fulde navn" autocomplete="name" style="font-size:1rem;padding:0.75rem 1rem">
+        <div style="font-size:0.92rem;font-weight:700;color:var(--text);margin-bottom:0.15rem">Opret profil under 1 minut</div>
+        <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.8rem;line-height:1.4">Se hvem der er her, match med relevante personer og start samtaler</div>
+        <button class="btn-primary" onclick="eventSignupGoogle()" style="font-size:0.92rem;padding:0.8rem;display:flex;align-items:center;justify-content:center;gap:0.5rem">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          Fortsæt med Google
+        </button>
+        <div style="display:flex;align-items:center;gap:0.6rem;margin:0.6rem 0">
+          <div style="flex:1;height:1px;background:var(--glass-border-subtle)"></div>
+          <span style="font-size:0.68rem;color:var(--muted)">eller</span>
+          <div style="flex:1;height:1px;background:var(--glass-border-subtle)"></div>
         </div>
-        <div class="input-group" style="margin-bottom:0.75rem">
-          <div class="input-label">Titel / rolle <span style="color:var(--muted);font-weight:400">(valgfrit)</span></div>
-          <input class="input" id="guest-title" placeholder="f.eks. Developer, Student..." autocomplete="organization-title">
-        </div>
-        <button class="btn-primary" onclick="createGuestQR()" style="font-size:0.92rem;padding:0.8rem">Få min QR-kode →</button>
-        <div style="text-align:center;margin-top:0.5rem;font-size:0.68rem;color:var(--muted)">Ingen login. Ingen password. Du kan opgradere senere.</div>
+        <button class="btn-secondary" onclick="eventSignupEmail()" style="font-size:0.82rem;padding:0.65rem">Opret med email</button>
       </div>
 
-      <div style="text-align:center;padding:1.5rem 0">
-        <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.4rem">Har du allerede Bubble?</div>
-        <button onclick="goTo('screen-auth');showAuthForms()" style="font-size:0.78rem;color:var(--accent);font-weight:600;background:none;border:none;font-family:inherit;cursor:pointer">Log ind her →</button>
+      <div style="text-align:center;padding:1.2rem 0">
+        <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.3rem">Har du allerede Bubble?</div>
+        <button onclick="eventLoginExisting()" style="font-size:0.78rem;color:var(--accent);font-weight:600;background:none;border:none;font-family:inherit;cursor:pointer">Log ind her →</button>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- Step 2: QR display (hidden until created) -->
-    <div id="guest-step-qr" style="display:none;padding:0 1.5rem;text-align:center">
-      <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:1.5rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">
-        <div style="font-size:0.85rem;font-weight:700;color:var(--green);margin-bottom:0.2rem">✓ Din QR er klar!</div>
-        <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem">Vis den til arrangøren for at blive scannet ind</div>
-        <div id="guest-qr-container" style="display:flex;justify-content:center;margin-bottom:1rem"></div>
-        <div style="font-size:1rem;font-weight:800;color:var(--text)" id="guest-qr-name"></div>
-        <div style="font-size:0.78rem;color:var(--text-secondary)" id="guest-qr-title"></div>
+<!-- ════════════════════════════════════════
+     SCREEN: EVENT READY — show QR after signup
+════════════════════════════════════════ -->
+<div class="screen" id="screen-event-ready">
+  <div class="screen-inner-scroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px)">
+    <div style="text-align:center;padding:2rem 1.5rem 0.5rem">
+      <div style="font-size:2rem;margin-bottom:0.3rem">✓</div>
+      <div style="font-size:1.2rem;font-weight:800;color:var(--text)">Du er klar!</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.2rem" id="event-ready-meta">Vis din QR-kode til arrangøren</div>
+    </div>
+
+    <div style="padding:0 1.5rem;text-align:center">
+      <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:1.5rem;box-shadow:0 1px 3px rgba(30,27,46,0.06);margin-bottom:0.75rem">
+        <div id="event-ready-qr" style="display:flex;justify-content:center;margin-bottom:1rem"></div>
+        <div style="font-size:1.05rem;font-weight:800;color:var(--text)" id="event-ready-name"></div>
+        <div style="font-size:0.78rem;color:var(--text-secondary)" id="event-ready-role"></div>
       </div>
 
-      <div style="background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.12);border-radius:var(--radius);padding:1rem;margin-top:0.75rem">
-        <div style="font-size:0.82rem;font-weight:700;color:var(--text);margin-bottom:0.3rem">Vil du have fuld adgang?</div>
-        <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.6rem">Opret profil for at se andre deltagere, matche og chatte</div>
-        <button class="btn-primary" onclick="guestUpgradeToFull()" style="font-size:0.82rem;padding:0.6rem">Opret fuld profil →</button>
-      </div>
+      <button class="btn-primary" onclick="eventReadyGoToEvent()" style="font-size:0.88rem;padding:0.75rem">Se hvem der er her →</button>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:0.5rem">Du kan også få vist din QR fra Profil-fanen</div>
     </div>
   </div>
 </div>

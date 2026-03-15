@@ -389,23 +389,24 @@ async function checkPendingContact() {
 }
 
 // ══════════════════════════════════════════════════════════
-//  GUEST CHECK-IN FLOW — instant QR without signup
+//  EVENT LANDING FLOW — teaser → signup → onboarding → QR
 // ══════════════════════════════════════════════════════════
+var _eventBubble = null;
+
 async function checkGuestEventRoute() {
   try {
     var params = new URLSearchParams(window.location.search);
     var eventId = params.get('event');
     if (!eventId) return false;
     
-    // Don't show guest flow if already logged in
+    // Already logged in → just join
     var { data: { session } } = await sb.auth.getSession();
     if (session) {
-      // Logged-in user → just join/checkin to this bubble
       sessionStorage.setItem('pending_join', eventId);
       return false;
     }
     
-    // Load bubble info
+    // Resolve bubble
     var bubble = null;
     var { data: b } = await sb.from('bubbles')
       .select('id, name, type, location')
@@ -415,7 +416,6 @@ async function checkGuestEventRoute() {
     if (b) bubble = b;
     
     if (!bubble) {
-      // Try UUID match
       var uuidMatch = eventId.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
       if (uuidMatch) {
         var { data: b2 } = await sb.from('bubbles').select('id, name, type, location').eq('id', uuidMatch[0]).maybeSingle();
@@ -423,17 +423,20 @@ async function checkGuestEventRoute() {
       }
     }
     
-    if (!bubble) {
-      showToast('Event ikke fundet');
-      return false;
-    }
+    if (!bubble) { showToast('Event ikke fundet'); return false; }
     
-    // Show guest check-in screen
-    _guestEventBubble = bubble;
+    _eventBubble = bubble;
+    sessionStorage.setItem('pending_join', bubble.id);
+    sessionStorage.setItem('event_flow', 'true');
+    
+    // Populate teaser screen
     var nameEl = document.getElementById('guest-event-name');
     var metaEl = document.getElementById('guest-event-meta');
     if (nameEl) nameEl.textContent = bubble.name;
-    if (metaEl) metaEl.textContent = (bubble.location || '') + (bubble.location && bubble.type ? ' · ' : '') + (bubble.type === 'event' ? 'Live Event' : bubble.type || '');
+    if (metaEl) metaEl.textContent = (bubble.location ? bubble.location + ' · ' : '') + (bubble.type === 'event' || bubble.type === 'live' ? 'Live Event' : 'Netværk');
+    
+    // Load social proof: attendee count + blurred profiles
+    loadEventSocialProof(bubble.id);
     
     goTo('screen-guest-checkin');
     window.history.replaceState({}, document.title, window.location.pathname);
@@ -444,85 +447,114 @@ async function checkGuestEventRoute() {
   }
 }
 
-var _guestEventBubble = null;
-
-async function createGuestQR() {
-  var name = (document.getElementById('guest-name')?.value || '').trim();
-  if (!name) { showToast('Indtast dit navn'); return; }
-  var title = (document.getElementById('guest-title')?.value || '').trim();
-  
-  if (!_guestEventBubble) { showToast('Intet event valgt'); return; }
-  
+async function loadEventSocialProof(bubbleId) {
   try {
-    showToast('Opretter QR...');
+    var { count } = await sb.from('bubble_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('bubble_id', bubbleId);
     
-    // Insert guest record into guest_checkins table
-    var guestId = crypto.randomUUID ? crypto.randomUUID() : 'g-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
-    var { error } = await sb.from('guest_checkins').insert({
-      id: guestId,
-      bubble_id: _guestEventBubble.id,
-      name: name,
-      title: title || null,
-      created_at: new Date().toISOString()
-    });
-    
-    if (error) {
-      logError('createGuestQR:insert', error);
-      showToast('Fejl — prøv at oprette en fuld profil i stedet');
-      return;
+    var countEl = document.getElementById('event-attendee-count');
+    if (countEl && count > 0) {
+      countEl.textContent = count + ' deltager' + (count !== 1 ? 'e' : '') + ' er allerede her';
+    } else if (countEl) {
+      countEl.textContent = 'Vær den første!';
     }
     
-    // Generate QR code
-    var qrUrl = window.location.origin + window.location.pathname + '?guest=' + guestId + '&bubble=' + _guestEventBubble.id;
+    // Load blurred profile cards (max 4)
+    if (count > 0) {
+      var { data: members } = await sb.from('bubble_members')
+        .select('profiles(name, title, workplace, keywords)')
+        .eq('bubble_id', bubbleId)
+        .limit(4);
+      
+      var container = document.getElementById('event-blurred-profiles');
+      if (container && members) {
+        var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)'];
+        container.innerHTML = members.map(function(m, i) {
+          var p = m.profiles || {};
+          var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+          var tags = (p.keywords || []).slice(0,2).map(function(k) { return '<span style="font-size:0.58rem;padding:0.1rem 0.4rem;background:rgba(124,92,252,0.06);color:var(--accent);border-radius:99px">' + escHtml(k) + '</span>'; }).join('');
+          return '<div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:0.7rem 0.9rem;display:flex;align-items:center;gap:0.6rem;box-shadow:0 1px 3px rgba(30,27,46,0.06);filter:blur(' + (i > 1 ? '3px' : '0px') + ');opacity:' + (i > 2 ? '0.5' : '1') + '">' +
+            '<div style="width:36px;height:36px;border-radius:50%;background:' + avColors[i] + ';display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>' +
+            '<div style="flex:1;min-width:0"><div style="font-size:0.8rem;font-weight:600;color:var(--text)">' + escHtml(p.name || 'Deltager') + '</div>' +
+            '<div style="font-size:0.68rem;color:var(--text-secondary)">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
+            (tags ? '<div style="display:flex;gap:0.2rem;margin-top:0.2rem">' + tags + '</div>' : '') +
+            '</div></div>';
+        }).join('') +
+        (count > 4 ? '<div style="text-align:center;font-size:0.72rem;color:var(--accent);font-weight:600;padding:0.4rem 0">+ ' + (count - 4) + ' flere deltagere</div>' : '');
+      }
+    }
+  } catch(e) { logError('loadEventSocialProof', e); }
+}
+
+// ── Event signup actions ──
+function eventSignupGoogle() {
+  sessionStorage.setItem('event_flow', 'true');
+  goTo('screen-auth');
+  showAuthForms();
+  setTimeout(function() { if (typeof googleSignIn === 'function') googleSignIn(); }, 200);
+}
+
+function eventSignupEmail() {
+  sessionStorage.setItem('event_flow', 'true');
+  goTo('screen-auth');
+  showAuthForms();
+  setTimeout(function() { if (typeof switchToSignup === 'function') switchToSignup(); }, 200);
+}
+
+function eventLoginExisting() {
+  sessionStorage.setItem('event_flow', 'true');
+  goTo('screen-auth');
+  showAuthForms();
+}
+
+// ── Show QR after signup + onboarding ──
+async function showEventReadyQR() {
+  try {
+    if (!currentUser || !currentProfile) return;
     
-    // Show QR step
-    document.getElementById('guest-step-name').style.display = 'none';
-    document.getElementById('guest-step-qr').style.display = 'block';
-    document.getElementById('guest-qr-name').textContent = name;
-    document.getElementById('guest-qr-title').textContent = title || _guestEventBubble.name;
+    goTo('screen-event-ready');
     
-    // Save for potential upgrade
-    sessionStorage.setItem('guest_id', guestId);
-    sessionStorage.setItem('guest_name', name);
-    sessionStorage.setItem('guest_title', title || '');
-    sessionStorage.setItem('pending_join', _guestEventBubble.id);
+    var nameEl = document.getElementById('event-ready-name');
+    var roleEl = document.getElementById('event-ready-role');
+    if (nameEl) nameEl.textContent = currentProfile.name || '';
+    if (roleEl) roleEl.textContent = (currentProfile.title || '') + (currentProfile.workplace ? ' · ' + currentProfile.workplace : '');
     
-    // Render QR
+    var metaEl = document.getElementById('event-ready-meta');
+    if (metaEl && _eventBubble) metaEl.textContent = 'Vis din QR-kode til arrangøren ved ' + _eventBubble.name;
+    
+    // Generate personal QR (profile URL)
+    var qrUrl = window.location.origin + window.location.pathname + '?qr=' + currentUser.id;
+    
     setTimeout(function() {
-      var container = document.getElementById('guest-qr-container');
+      var container = document.getElementById('event-ready-qr');
       if (container && typeof QRCode !== 'undefined') {
         container.innerHTML = '';
         new QRCode(container, {
           text: qrUrl,
-          width: 200,
-          height: 200,
+          width: 220,
+          height: 220,
           colorDark: '#1E1B2E',
           colorLight: '#FFFFFF',
           correctLevel: QRCode.CorrectLevel.M
         });
       }
-    }, 100);
+    }, 200);
     
-    trackEvent('guest_qr_created', { bubble_id: _guestEventBubble.id });
-  } catch(e) {
-    logError('createGuestQR', e);
-    showToast('Fejl: ' + (e.message || 'ukendt'));
-  }
+    trackEvent('event_qr_shown', { bubble_id: sessionStorage.getItem('pending_join') || '' });
+  } catch(e) { logError('showEventReadyQR', e); }
 }
 
-function guestUpgradeToFull() {
-  // Pre-fill signup with guest info
-  var name = sessionStorage.getItem('guest_name') || '';
-  var title = sessionStorage.getItem('guest_title') || '';
-  goTo('screen-auth');
-  showAuthForms();
-  setTimeout(function() {
-    switchToSignup();
-    var nameEl = document.getElementById('signup-name');
-    var titleEl = document.getElementById('signup-title');
-    if (nameEl && name) nameEl.value = name;
-    if (titleEl && title) titleEl.value = title;
-  }, 200);
+function eventReadyGoToEvent() {
+  var bubbleId = sessionStorage.getItem('pending_join');
+  if (bubbleId) {
+    goTo('screen-home');
+    loadHome();
+    setTimeout(function() { openBubble(bubbleId, 'screen-home'); }, 500);
+  } else {
+    goTo('screen-home');
+    loadHome();
+  }
 }
 
 // ══════════════════════════════════════════════════════════

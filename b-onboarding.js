@@ -226,9 +226,14 @@ function skipOnboarding() {
   if (!name && currentUser?.email) name = currentUser.email.split('@')[0];
   if (!name) { showToast('Skriv dit navn først — det er alt der kræves'); return; }
 
+  // Event flow requires full profile
+  var isEventFlow = sessionStorage.getItem('event_flow');
+  if (isEventFlow) { showToast('Udfyld navn, virksomhed og titel for at deltage i eventet'); return; }
+
   sb.from('profiles').upsert({
     id: currentUser.id, name: name,
     title: (document.getElementById('ob-title')?.value || '').trim() || 'Ikke udfyldt',
+    workplace: (document.getElementById('ob-workplace')?.value || '').trim() || '',
     keywords: obSelectedTags.length > 0 ? obSelectedTags : ['Ny bruger'],
     dynamic_keywords: [], bio: '', is_anon: false,
     onboarding_skipped: true
@@ -1130,6 +1135,7 @@ async function saveOnboarding() {
     const workplace = (document.getElementById('ob-workplace')?.value || '').trim();
     if (!name)            return showToast('Navn er påkrævet');
     if (!title)           return showToast('Titel er påkrævet');
+    if (!workplace)       return showToast('Virksomhed er påkrævet');
     if (obSelectedTags.length < 3) return showToast('Vælg mindst 3 tags');
     const { error } = await sb.from('profiles').upsert({
       id: currentUser.id, name, title, bio, linkedin, workplace,
@@ -1146,7 +1152,15 @@ async function saveOnboarding() {
     updateNotifNavBadge();
     loadLiveBubbleStatus();
     initPushNotifications();
-    goTo('screen-welcome');
+    // If coming from event flow → auto-join + show QR
+    var isEventFlow = sessionStorage.getItem('event_flow');
+    if (isEventFlow) {
+      sessionStorage.removeItem('event_flow');
+      await checkPendingJoin();
+      showEventReadyQR();
+    } else {
+      goTo('screen-welcome');
+    }
   } catch(e) { logError("saveOnboarding", e); showToast(e.message || "Ukendt fejl"); }
 }
 
