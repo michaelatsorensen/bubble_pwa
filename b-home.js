@@ -537,7 +537,7 @@ async function loadTopMatches() {
         return '<span style="font-size:0.58rem;padding:0.1rem 0.4rem;background:rgba(124,92,252,0.06);color:var(--accent);border-radius:99px;font-weight:600">' + escHtml(t) + '</span>';
       }).join('');
 
-      return '<div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:0.7rem 0.9rem;display:flex;align-items:center;gap:0.65rem;box-shadow:0 1px 3px rgba(30,27,46,0.06);cursor:pointer" onclick="openPerson(\'' + p.id + '\',\'screen-home\')">' +
+      return '<div style="background:var(--glass-bg-strong);border:1px solid var(--glass-border-subtle);border-radius:12px;padding:0.6rem 0.75rem;display:flex;align-items:center;gap:0.65rem;cursor:pointer" onclick="openPerson(\'' + p.id + '\',\'screen-home\')">' +
         avHtml +
         '<div style="flex:1;min-width:0">' +
           '<div style="display:flex;align-items:center;gap:0.4rem">' +

@@ -165,7 +165,7 @@ function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) {
   document.getElementById(id).classList.remove('open');
   // Always stop camera when closing live checkin
-  if (id === 'modal-live-checkin') stopLiveCamera();
+  if (id === 'modal-live-checkin') pauseLiveCamera();
 }
 // Close modal on backdrop click
 document.querySelectorAll('.modal-overlay').forEach(el => {

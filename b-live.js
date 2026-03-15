@@ -138,7 +138,7 @@ function liveToggleListView() {
     if (found) found.style.display = 'none';
     if (confirmed) confirmed.style.display = 'none';
     if (toggle) toggle.textContent = 'Vis scanner ↓';
-    stopLiveCamera();
+    pauseLiveCamera();
   } else {
     // Restore scanner
     if (scanner) scanner.style.display = '';
@@ -149,7 +149,7 @@ function liveToggleListView() {
 }
 
 function closeLiveCheckinModal() {
-  stopLiveCamera();
+  pauseLiveCamera();
   closeModal('modal-live-checkin');
 }
 
@@ -421,6 +421,16 @@ async function startLiveCamera() {
         document.head.appendChild(s);
       });
     }
+
+    // Reuse existing stream if still active
+    if (_liveQrStream && _liveQrStream.active) {
+      video.srcObject = _liveQrStream;
+      await video.play();
+      if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; }
+      liveQrPreviewLoop();
+      return;
+    }
+
     if (status) status.textContent = 'Starter kamera...';
     await initBarcodeDetector();
     _liveQrStream = await navigator.mediaDevices.getUserMedia({
@@ -439,7 +449,15 @@ async function startLiveCamera() {
   } catch(e) { logError("startLiveCamera", e); }
 }
 
+function pauseLiveCamera() {
+  // Pause scanning but keep stream alive (avoids re-permission)
+  if (_liveQrFrame) { cancelAnimationFrame(_liveQrFrame); _liveQrFrame = null; }
+  var video = document.getElementById('live-qr-video');
+  if (video) video.pause();
+}
+
 function stopLiveCamera() {
+  // Full stop — only call when truly done (navigation away, etc.)
   if (_liveQrFrame) { cancelAnimationFrame(_liveQrFrame); _liveQrFrame = null; }
   if (_liveQrStream) {
     _liveQrStream.getTracks().forEach(function(t) { t.stop(); });
@@ -642,7 +660,7 @@ async function liveScanConfirmJoin() {
       });
     }
 
-    stopLiveCamera();
+    pauseLiveCamera();
     // Show confirmation
     document.getElementById('live-scan-found').style.display = 'none';
     var confirmed = document.getElementById('live-scan-confirmed');
@@ -679,3 +697,11 @@ function liveScanReset() {
 
 
 
+
+// ── Release camera when app goes to background, restore on return ──
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) {
+    // App backgrounded — truly release camera to save battery
+    if (_liveQrStream) stopLiveCamera();
+  }
+});
