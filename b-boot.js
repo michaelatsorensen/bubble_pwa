@@ -217,19 +217,43 @@ async function checkQRAnonPreview() {
     var params = new URLSearchParams(window.location.search);
     var profileId = params.get('profile');
     var joinId = params.get('join');
+    var qrToken = params.get('qrt');
+    
+    // Resolve QR token → profile ID
+    if (qrToken && !profileId) {
+      try {
+        var { data: tokenData } = await sb.from('qr_tokens')
+          .select('user_id, expires_at')
+          .eq('token', qrToken)
+          .maybeSingle();
+        if (tokenData) {
+          if (new Date(tokenData.expires_at) > new Date()) {
+            profileId = tokenData.user_id;
+          } else {
+            // Token expired — clean URL and show toast
+            window.history.replaceState({}, document.title, window.location.pathname);
+            // Don't block boot — just ignore expired token
+          }
+        }
+      } catch(e) { logError('qrToken resolve', e); }
+    }
     
     // Only show anon preview if NOT logged in
     var { data: { session } } = await sb.auth.getSession();
-    if (session) return false; // Let normal flow handle it
+    if (session) {
+      // Logged-in user scanning a QR → save contact + navigate to profile
+      if (profileId && profileId !== session.user.id) {
+        sessionStorage.setItem('pending_contact', profileId);
+      }
+      return false;
+    }
     
     if (profileId) {
-      // QR profile preview: show profile without login
       sessionStorage.setItem('pending_contact', profileId);
       await loadQRProfilePreview(profileId);
       return true;
     }
     if (joinId) {
-      // QR bubble join: save for after signup
       sessionStorage.setItem('pending_join', joinId);
       await loadQRProfilePreview(null, joinId);
       return true;
@@ -530,8 +554,16 @@ async function showEventReadyQR() {
     var metaEl = document.getElementById('event-ready-meta');
     if (metaEl && _eventBubble) metaEl.textContent = 'Vis din QR-kode til arrangøren ved ' + _eventBubble.name;
     
-    // Generate personal QR (profile URL)
-    var qrUrl = window.location.origin + window.location.pathname + '?qr=' + currentUser.id;
+    // Generate rotating QR token (10 min)
+    var token = crypto.randomUUID ? crypto.randomUUID().split('-')[0] : Math.random().toString(36).slice(2,10);
+    var expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    try {
+      await sb.from('qr_tokens').insert({ token: token, user_id: currentUser.id, expires_at: expiresAt });
+    } catch(e) { token = null; }
+    
+    var qrUrl = token
+      ? window.location.origin + window.location.pathname + '?qrt=' + token
+      : window.location.origin + window.location.pathname + '?profile=' + currentUser.id;
     
     setTimeout(function() {
       var container = document.getElementById('event-ready-qr');

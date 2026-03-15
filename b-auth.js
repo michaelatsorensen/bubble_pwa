@@ -605,9 +605,28 @@ async function handleGoogleLogin() {
 // ══════════════════════════════════════════════════════════
 //  PERSONAL QR CODE
 // ══════════════════════════════════════════════════════════
-function openMyQR() {
+async function openMyQR() {
   if (!currentUser || !currentProfile) { showToast('Log ind først'); return; }
-  var url = window.location.origin + window.location.pathname + '?profile=' + currentUser.id;
+  
+  // Generate short-lived token (10 min)
+  var token = crypto.randomUUID ? crypto.randomUUID().split('-')[0] : Math.random().toString(36).slice(2,10);
+  var expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+  
+  try {
+    await sb.from('qr_tokens').insert({
+      token: token,
+      user_id: currentUser.id,
+      expires_at: expiresAt
+    });
+  } catch(e) {
+    logError('openMyQR:token', e);
+    // Fallback to static URL if token creation fails
+    token = null;
+  }
+  
+  var url = token
+    ? window.location.origin + window.location.pathname + '?qrt=' + token
+    : window.location.origin + window.location.pathname + '?profile=' + currentUser.id;
   
   var overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(30,27,46,0.25);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
@@ -617,23 +636,21 @@ function openMyQR() {
   sheet.style.cssText = 'width:100%;max-width:680px;background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);border-radius:24px 24px 0 0;padding:1.5rem;text-align:center;color:var(--text);font-family:Figtree,sans-serif';
   sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.12);margin:0 auto 1rem;cursor:pointer" onclick="this.parentElement.parentElement.remove()"></div>' +
     '<div style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem">Min QR-kode</div>' +
-    '<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Andre kan scanne den for at se din profil</div>' +
+    '<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Gyldig i 10 minutter · opdateres automatisk</div>' +
     '<div id="my-qr-container" style="display:flex;justify-content:center;margin-bottom:1rem"></div>' +
-    '<div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem;word-break:break-all">' + url + '</div>' +
-    '<button onclick="navigator.clipboard.writeText(\'' + url + '\');this.textContent=\'Kopieret! ✓\';setTimeout(()=>this.textContent=\'Kopiér link\',2000)" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-bg);color:var(--text);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Kopiér link</button>' +
-    '<button onclick="if(navigator.share)navigator.share({title:\'Bubble\',url:\'' + url + '\'}).catch(()=>{});else{navigator.clipboard.writeText(\'' + url + '\');showToast(\'Link kopieret\')}" style="width:100%;margin-top:0.4rem;padding:0.7rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer">Del profil →</button>';
+    '<div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.8rem">' + escHtml(currentProfile.name) + ' · ' + escHtml(currentProfile.title || '') + '</div>' +
+    '<button onclick="navigator.clipboard.writeText(\'' + url + '\');this.textContent=\'Kopieret! ✓\';setTimeout(()=>this.textContent=\'Del profil\',2000)" style="width:100%;padding:0.7rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer">Del profil</button>';
   
   overlay.appendChild(sheet);
   document.body.appendChild(overlay);
   
-  // Generate QR code
   setTimeout(function() {
     var container = document.getElementById('my-qr-container');
     if (container && typeof QRCode !== 'undefined') {
       new QRCode(container, {
         text: url,
-        width: 180,
-        height: 180,
+        width: 200,
+        height: 200,
         colorDark: '#1E1B2E',
         colorLight: '#FFFFFF',
         correctLevel: QRCode.CorrectLevel.M

@@ -582,6 +582,59 @@ async function liveScanAutoResolve(data) {
     } catch(e) {}
   }
   
+  // ── Check if it's a personal QR token ──
+  if (data.includes('qrt=') || data.includes('profile=')) {
+    try {
+      var url2 = new URL(data);
+      var qrt = url2.searchParams.get('qrt');
+      var profileParam = url2.searchParams.get('profile');
+      var userId = null;
+      
+      if (qrt) {
+        var { data: tokenData } = await sb.from('qr_tokens')
+          .select('user_id, expires_at')
+          .eq('token', qrt)
+          .maybeSingle();
+        if (tokenData && new Date(tokenData.expires_at) > new Date()) {
+          userId = tokenData.user_id;
+        } else if (tokenData) {
+          if (status) { status.textContent = 'QR-kode udløbet — bed personen åbne en ny'; status.className = 'live-scan-status error'; }
+          _liveQrPending = false;
+          setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
+          return;
+        }
+      } else if (profileParam) {
+        userId = profileParam;
+      }
+      
+      if (userId) {
+        // Look up profile
+        var { data: scannedProfile } = await sb.from('profiles')
+          .select('id, name, title, workplace')
+          .eq('id', userId)
+          .maybeSingle();
+        
+        if (scannedProfile) {
+          if (status) status.style.display = 'none';
+          var confirmed = document.getElementById('live-scan-confirmed');
+          var cName = document.getElementById('live-scan-confirmed-name');
+          var cMeta = document.getElementById('live-scan-confirmed-meta');
+          if (cName) cName.textContent = '✓ ' + (scannedProfile.name || 'Bruger') + ' fundet!';
+          if (cMeta) cMeta.textContent = (scannedProfile.title || '') + (scannedProfile.workplace ? ' · ' + scannedProfile.workplace : '');
+          if (confirmed) confirmed.style.display = 'flex';
+          showSuccessToast((scannedProfile.name || 'Bruger') + ' scannet! ✓');
+          _liveQrPending = false;
+          setTimeout(function() {
+            if (confirmed) confirmed.style.display = 'none';
+            if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; }
+            liveQrPreviewLoop();
+          }, 3000);
+          return;
+        }
+      }
+    } catch(e) {}
+  }
+  
   // ── Standard bubble QR ──
   var joinCode = data;
   if (data.includes('join=')) {

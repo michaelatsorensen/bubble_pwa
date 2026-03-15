@@ -95,15 +95,22 @@ async function openPerson(userId, fromScreen) {
       liBtn.style.display = 'none';
     }
 
-    // Shared interests (overlap only — not full tag list)
+    // Shared interests — collapsible (show 6, expand to all)
     const overlapEl = document.getElementById('person-overlap');
     if (overlap.length) {
+      var INITIAL_SHOW = 6;
+      var allTagsHtml = overlap.map(function(k) {
+        var original = (p.keywords || []).find(function(t) { return t.toLowerCase() === k; }) || k;
+        return '<span class="tag mint">' + icon("check") + ' ' + escHtml(original) + '</span>';
+      });
+      var visibleHtml = allTagsHtml.slice(0, INITIAL_SHOW).join('');
+      var hiddenHtml = allTagsHtml.slice(INITIAL_SHOW).join('');
+      var hasMore = overlap.length > INITIAL_SHOW;
+      
       overlapEl.innerHTML = '<div class="section-label" style="margin-bottom:0.3rem">Fælles interesser · ' + overlap.length + '</div>' +
-        overlap.slice(0, 12).map(k => {
-          var original = (p.keywords || []).find(function(t) { return t.toLowerCase() === k; }) || k;
-          return '<span class="tag mint">' + icon("check") + ' ' + escHtml(original) + '</span>';
-        }).join('') +
-        (overlap.length > 12 ? '<span class="tag" style="opacity:0.5">+' + (overlap.length - 12) + ' mere</span>' : '');
+        '<div id="person-tags-visible">' + visibleHtml + '</div>' +
+        (hasMore ? '<div id="person-tags-hidden" style="display:none">' + hiddenHtml + '</div>' +
+          '<button id="person-tags-toggle" onclick="togglePersonTags()" style="font-size:0.7rem;font-weight:600;color:var(--accent);background:none;border:none;padding:0.4rem 0;cursor:pointer;font-family:inherit">Vis alle ' + overlap.length + ' →</button>' : '');
     } else {
       overlapEl.innerHTML = '<span class="fs-085 text-muted">Ingen fælles interesser fundet</span>';
     }
@@ -1149,6 +1156,15 @@ function psSetStar(userId, rating) {
   }
   // Refresh saved contacts list in background
   loadSavedContacts();
+}
+
+function togglePersonTags() {
+  var hidden = document.getElementById('person-tags-hidden');
+  var btn = document.getElementById('person-tags-toggle');
+  if (!hidden || !btn) return;
+  var isHidden = hidden.style.display === 'none';
+  hidden.style.display = isHidden ? '' : 'none';
+  btn.textContent = isHidden ? '← Vis færre' : 'Vis alle →';
 }
 
 function personSetStar(userId, rating) {

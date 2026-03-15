@@ -6,6 +6,23 @@
 // ══════════════════════════════════════════════════════════
 //  BOOT
 // ══════════════════════════════════════════════════════════
+
+// TTL windows for each notification type
+var NOTIF_TTL = {
+  invites:    14 * 24 * 60 * 60 * 1000,  // 14 dage
+  messages:   null,                        // aldrig (lever i chatten)
+  savedBy:    7 * 24 * 60 * 60 * 1000,    // 7 dage
+  live:       4 * 60 * 60 * 1000,          // 4 timer (live = nu)
+  newMembers: 7 * 24 * 60 * 60 * 1000,    // 7 dage
+  matches:    48 * 60 * 60 * 1000          // 48 timer
+};
+
+function ttlSince(type) {
+  var ms = NOTIF_TTL[type];
+  if (!ms) return null;
+  return new Date(Date.now() - ms).toISOString();
+}
+
 async function loadNotifications() {
   try {
     var myNav = _navVersion;
@@ -14,21 +31,19 @@ async function loadNotifications() {
     if (!list) return;
     list.innerHTML = skelCards(4);
 
-    var since30d = new Date(Date.now() - 30*24*60*60*1000).toISOString();
-    var since7d = new Date(Date.now() - 7*24*60*60*1000).toISOString();
-
-    // Run all 5 sections in parallel — each returns an HTML string
-    var [inviteHtml, dmHtml, savedByHtml, liveHtml, newMemberHtml] = await Promise.all([
+    // Run all 6 sections in parallel — each uses its own TTL
+    var [inviteHtml, dmHtml, savedByHtml, liveHtml, matchHtml, newMemberHtml] = await Promise.all([
       _notifInvites(),
-      _notifUnreadDMs(since7d),
-      _notifSavedBy(since30d),
+      _notifUnreadDMs(),
+      _notifSavedBy(),
       _notifLiveContacts(),
-      _notifNewMembers(since30d)
+      _notifStrongMatches(),
+      _notifNewMembers()
     ]);
 
     if (_navVersion !== myNav) return; // screen changed during load
 
-    var html = inviteHtml + dmHtml + savedByHtml + liveHtml + newMemberHtml;
+    var html = inviteHtml + dmHtml + matchHtml + liveHtml + savedByHtml + newMemberHtml;
     if (!html) {
       html = '<div class="empty-state"><div class="empty-icon">' + icon('bell') + '</div><div class="empty-text">Ingen notifikationer endnu<br><span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400">Gem profiler og join bobler — så ser du aktivitet her</span></div></div>';
     }
@@ -39,11 +54,14 @@ async function loadNotifications() {
 // ── Notification sub-loaders (parallelized) ──
 async function _notifInvites() {
   try {
-    var { data: invites } = await sb.from('bubble_invitations')
+    var since = ttlSince('invites');
+    var q = sb.from('bubble_invitations')
       .select('id, from_user_id, bubble_id, created_at, profiles!bubble_invitations_from_user_id_fkey(name,title), bubbles(name)')
       .eq('to_user_id', currentUser.id)
       .eq('status', 'pending')
       .order('created_at', {ascending:false});
+    if (since) q = q.gte('created_at', since);
+    var { data: invites } = await q;
     if (!invites || invites.length === 0) return '';
     return invites.map(function(inv) {
       var p = inv.profiles || {};
@@ -63,8 +81,9 @@ async function _notifInvites() {
   } catch(e) { logError('_notifInvites', e); return ''; }
 }
 
-async function _notifUnreadDMs(since) {
+async function _notifUnreadDMs() {
   try {
+    var since = ttlSince('messages') || new Date(Date.now() - 30*24*60*60*1000).toISOString();
     var { data: unreadDMs } = await sb.from('messages')
       .select('id, sender_id, content, file_url, created_at')
       .eq('receiver_id', currentUser.id)
@@ -101,14 +120,16 @@ async function _notifUnreadDMs(since) {
   } catch(e) { logError('_notifUnreadDMs', e); return ''; }
 }
 
-async function _notifSavedBy(since) {
+async function _notifSavedBy() {
   try {
-    var { data: savedBy } = await sb.from('saved_contacts')
+    var since = ttlSince('savedBy');
+    var q = sb.from('saved_contacts')
       .select('user_id, created_at')
       .eq('contact_id', currentUser.id)
-      .gte('created_at', since)
       .order('created_at', {ascending:false})
       .limit(10);
+    if (since) q = q.gte('created_at', since);
+    var { data: savedBy } = await q;
     if (!savedBy || savedBy.length === 0) return '';
     var saverIds = savedBy.map(function(s){return s.user_id;});
     var { data: saverProfiles } = await sb.from('profiles').select('id,name,avatar_url').in('id', saverIds);
@@ -167,15 +188,18 @@ async function _notifLiveContacts() {
   } catch(e) { logError('_notifLiveContacts', e); return ''; }
 }
 
-async function _notifNewMembers(since) {
+async function _notifNewMembers() {
   try {
+    var since = ttlSince('newMembers');
     var { data: myMemberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
     if (!myMemberships || myMemberships.length === 0) return '';
     var myBubbleIds = myMemberships.map(function(m){return m.bubble_id;});
-    var { data: newMembers } = await sb.from('bubble_members')
+    var q = sb.from('bubble_members')
       .select('user_id, joined_at, bubble_id, bubbles(name)')
       .in('bubble_id', myBubbleIds).neq('user_id', currentUser.id)
-      .gte('joined_at', since).order('joined_at', {ascending:false}).limit(20);
+      .order('joined_at', {ascending:false}).limit(20);
+    if (since) q = q.gte('joined_at', since);
+    var { data: newMembers } = await q;
     if (!newMembers || newMembers.length === 0) return '';
     var memberUserIds = [...new Set(newMembers.map(function(m){return m.user_id;}))];
     var { data: memberProfiles } = await sb.from('profiles').select('id,name,avatar_url').in('id', memberUserIds);
@@ -196,6 +220,84 @@ async function _notifNewMembers(since) {
         '</div></div></div>';
     }).join('');
   } catch(e) { logError('_notifNewMembers', e); return ''; }
+}
+
+// ── "Nyt stærkt match" — people with 80+ score who joined your bubbles recently ──
+async function _notifStrongMatches() {
+  try {
+    var since = ttlSince('matches');
+    if (!since) return '';
+    if (!currentProfile || !(currentProfile.keywords || []).length) return '';
+
+    // Get user's bubbles
+    var { data: myMemberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+    if (!myMemberships || myMemberships.length === 0) return '';
+    var myBubbleIds = myMemberships.map(function(m){ return m.bubble_id; });
+
+    // Get recently joined members
+    var { data: recentMembers } = await sb.from('bubble_members')
+      .select('user_id, joined_at, bubble_id, bubbles(name)')
+      .in('bubble_id', myBubbleIds)
+      .neq('user_id', currentUser.id)
+      .gte('joined_at', since)
+      .order('joined_at', {ascending:false})
+      .limit(30);
+    if (!recentMembers || recentMembers.length === 0) return '';
+
+    // Deduplicate
+    var seen = {};
+    var unique = [];
+    recentMembers.forEach(function(m) {
+      if (!seen[m.user_id]) { seen[m.user_id] = true; unique.push(m); }
+    });
+
+    // Get profiles
+    var userIds = unique.map(function(m){ return m.user_id; });
+    var { data: profiles } = await sb.from('profiles')
+      .select('id, name, title, workplace, keywords, dynamic_keywords, bio, linkedin, avatar_url')
+      .in('id', userIds);
+    if (!profiles || profiles.length === 0) return '';
+
+    var pMap = {};
+    profiles.forEach(function(p) { pMap[p.id] = p; });
+
+    // Score and filter for strong matches (80+)
+    var strong = [];
+    unique.forEach(function(m) {
+      var p = pMap[m.user_id];
+      if (!p) return;
+      var score = (typeof calcMatchScore === 'function') ? calcMatchScore(currentProfile, p, 1) : 0;
+      if (score >= 80) {
+        strong.push({ member: m, profile: p, score: score });
+      }
+    });
+
+    if (strong.length === 0) return '';
+
+    // Render
+    return '<div style="padding:0.5rem 0 0.2rem;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--green)">Nye stærke matches</div>' +
+      strong.map(function(s) {
+        var p = s.profile;
+        var m = s.member;
+        var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+        var time = new Date(m.joined_at).toLocaleDateString('da-DK', {day:'numeric',month:'short'});
+        var myKw = (currentProfile.keywords || []).map(function(k){ return k.toLowerCase(); });
+        var theirKw = (p.keywords || []).map(function(k){ return k.toLowerCase(); });
+        var shared = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; }).slice(0, 3);
+        var sharedHtml = shared.length > 0 ? '<div style="display:flex;gap:0.2rem;flex-wrap:wrap;margin-top:0.2rem">' +
+          shared.map(function(t){ return '<span style="font-size:0.55rem;padding:0.1rem 0.35rem;background:rgba(26,158,142,0.08);color:var(--green);border-radius:99px;font-weight:600">' + escHtml(t) + '</span>'; }).join('') + '</div>' : '';
+        var avatarHtml = p.avatar_url ?
+          '<div class="notif-avatar" style="overflow:hidden;border:2px solid rgba(26,158,142,0.3)"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
+          '<div class="notif-avatar" style="background:linear-gradient(135deg,#1A9E8E,#10B981);border:2px solid rgba(26,158,142,0.3)">' + initials + '</div>';
+        return '<div class="notif-card" onclick="openPerson(\'' + p.id + '\',\'screen-notifications\')" style="cursor:pointer;border-left:3px solid var(--green)">' +
+          '<div class="notif-header">' + avatarHtml +
+          '<div style="flex:1;min-width:0">' +
+          '<div class="notif-title" style="display:flex;align-items:center;gap:0.3rem">' + escHtml(p.name||'Ukendt') + ' <span style="font-size:0.58rem;font-weight:700;color:var(--green);background:rgba(26,158,142,0.08);padding:0.1rem 0.35rem;border-radius:6px">Stærkt match</span></div>' +
+          '<div class="notif-sub">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + ' · ' + escHtml(m.bubbles?.name||'') + ' · ' + time + '</div>' +
+          sharedHtml +
+          '</div></div></div>';
+      }).join('');
+  } catch(e) { logError('_notifStrongMatches', e); return ''; }
 }
 
 async function acceptBubbleInvite(inviteId, fromUserId) {
