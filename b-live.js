@@ -50,14 +50,15 @@ async function loadLiveBubbleStatus() {
       currentLiveBubble.member_count = count || 1;
 
       document.getElementById('live-bubble-name').textContent = currentLiveBubble.bubble_name;
+      // Update label to be contextual
+      var labelEl = document.querySelector('.live-bubble-label');
+      if (labelEl) labelEl.textContent = '📡 DU ER LIVE';
       const since = new Date(currentLiveBubble.checked_in_at);
       const mins = Math.round((Date.now() - since.getTime()) / 60000);
       const timeStr = mins < 60 ? mins + ' min' : Math.round(mins / 60) + 't ' + (mins % 60) + 'min';
-      const typeLabel = myLive.bubbles.type_label || myLive.bubbles.type || '';
       document.getElementById('live-bubble-meta').textContent =
-        (typeLabel ? typeLabel + ' · ' : '') +
         (currentLiveBubble.bubble_location ? currentLiveBubble.bubble_location + ' · ' : '') +
-        timeStr + ' siden';
+        timeStr + ' · ' + (currentLiveBubble.member_count || 1) + ' personer her';
       document.getElementById('live-bubble-count').textContent = currentLiveBubble.member_count;
 
       activeEl.style.display = 'block';

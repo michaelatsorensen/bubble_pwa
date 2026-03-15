@@ -27,7 +27,7 @@ async function loadHome() {
     var loaders = [];
     if (hsp.bubbles) loaders.push(loadHomeBubblesCard());
     if (hsp.notifs) loaders.push(loadHomeNotifCard());
-    if (hsp.radar) { loaders.push(updateRadarCount()); loaders.push(loadProximityMap()); }
+    if (hsp.radar) { loaders.push(updateRadarCount()); loaders.push(loadProximityMap()); loaders.push(loadTopMatches()); }
     if (hsp.live) loaders.push(loadLiveBubbleStatus());
     if (hsp.saved) loaders.push(loadSavedContacts());
     await Promise.all(loaders);
@@ -473,6 +473,83 @@ async function updateRadarCount() {
       }
     }
   } catch(e) { logError("updateRadarCount", e); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  TOP MATCHES — "Vigtigste personer du bør møde"
+// ══════════════════════════════════════════════════════════
+async function loadTopMatches() {
+  try {
+    var container = document.getElementById('home-top-matches');
+    var list = document.getElementById('home-top-matches-list');
+    if (!container || !list || !currentProfile || !currentUser) return;
+
+    var myKw = (currentProfile.keywords || []).map(function(k) { return k.toLowerCase(); });
+    if (myKw.length === 0) { container.style.display = 'none'; return; }
+
+    // Get user's bubbles
+    var { data: myBubbles } = await sb.from('bubble_members')
+      .select('bubble_id').eq('user_id', currentUser.id);
+    var bubbleIds = (myBubbles || []).map(function(m) { return m.bubble_id; });
+    if (bubbleIds.length === 0) { container.style.display = 'none'; return; }
+
+    // Get other members with profiles (limit 50 for perf)
+    var { data: others } = await sb.from('bubble_members')
+      .select('user_id, profiles(id, name, title, workplace, keywords, avatar_url)')
+      .in('bubble_id', bubbleIds)
+      .neq('user_id', currentUser.id)
+      .limit(50);
+
+    if (!others || others.length === 0) { container.style.display = 'none'; return; }
+
+    // Deduplicate by user_id
+    var seen = {};
+    var unique = [];
+    others.forEach(function(m) {
+      if (!seen[m.user_id] && m.profiles) { seen[m.user_id] = true; unique.push(m.profiles); }
+    });
+
+    // Score by tag overlap
+    var scored = unique.map(function(p) {
+      var theirKw = (p.keywords || []).map(function(k) { return k.toLowerCase(); });
+      var shared = myKw.filter(function(k) { return theirKw.indexOf(k) >= 0; });
+      var score = myKw.length > 0 ? Math.round((shared.length / Math.max(myKw.length, theirKw.length)) * 100) : 0;
+      return { profile: p, shared: shared, score: score };
+    }).filter(function(s) { return s.score > 0; })
+      .sort(function(a, b) { return b.score - a.score; })
+      .slice(0, 5);
+
+    if (scored.length === 0) { container.style.display = 'none'; return; }
+
+    // Render
+    var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)'];
+
+    list.innerHTML = scored.map(function(s, i) {
+      var p = s.profile;
+      var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var avHtml = p.avatar_url ?
+        '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid rgba(124,92,252,0.15)"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
+        '<div style="width:40px;height:40px;border-radius:50%;background:' + avColors[i % 5] + ';display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>';
+
+      var sharedTags = s.shared.slice(0, 3).map(function(t) {
+        return '<span style="font-size:0.58rem;padding:0.1rem 0.4rem;background:rgba(124,92,252,0.06);color:var(--accent);border-radius:99px;font-weight:600">' + escHtml(t) + '</span>';
+      }).join('');
+
+      return '<div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:0.7rem 0.9rem;display:flex;align-items:center;gap:0.65rem;box-shadow:0 1px 3px rgba(30,27,46,0.06);cursor:pointer" onclick="openPerson(\'' + p.id + '\',\'screen-home\')">' +
+        avHtml +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="display:flex;align-items:center;gap:0.4rem">' +
+            '<div style="font-size:0.82rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(p.name || '?') + '</div>' +
+            '<div style="font-size:0.65rem;font-weight:700;color:var(--accent);background:rgba(124,92,252,0.08);padding:0.1rem 0.35rem;border-radius:6px;flex-shrink:0">' + s.score + '%</div>' +
+          '</div>' +
+          '<div style="font-size:0.68rem;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(p.title || '') + (p.workplace ? ' \u00b7 ' + escHtml(p.workplace) : '') + '</div>' +
+          '<div style="display:flex;gap:0.2rem;margin-top:0.2rem;flex-wrap:wrap">' + sharedTags + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    container.style.display = 'block';
+  } catch(e) { logError('loadTopMatches', e); }
 }
 
 function bubbleCard(b, joined) {
