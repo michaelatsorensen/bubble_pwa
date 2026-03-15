@@ -5,9 +5,9 @@
 // ══════════════════════════════════════════════════════════
 const TAG_CATEGORIES = {
   rolle:      { label: 'Rolle & Titel', icon: 'user', color: '#7C5CFC' },
-  branche:    { label: 'Branche',       icon: 'building', color: '#6B8BFF' },
+  branche:    { label: 'Branche',       icon: 'building', color: '#3B82F6' },
   kompetence: { label: 'Kompetencer',   icon: 'cpu', color: '#1A9E8E' },
-  interesse:  { label: 'Interesser',    icon: 'rocket', color: '#6B8BFF' },
+  interesse:  { label: 'Interesser',    icon: 'rocket', color: '#E879A8' },
 };
 
 const TAG_DATABASE = {

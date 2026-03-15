@@ -182,7 +182,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
     document.getElementById('bc-emoji').innerHTML = bubbleEmoji(b.type);
     document.getElementById('bc-name').textContent = b.name;
     // Hero gradient based on bubble type
-    var _heroGrads = {'event':'linear-gradient(135deg,#8B5CF6,#6B8BFF)','live':'linear-gradient(135deg,#8B5CF6,#A855F7)','local':'linear-gradient(135deg,#1A9E8E,#4338CA)','topic':'linear-gradient(135deg,#7C5CFC,#164E4E)','company':'linear-gradient(135deg,#8B5CF6,#A855F7)'};
+    var _heroGrads = {'event':'linear-gradient(135deg,#7C5CFC,#6366F1)','live':'linear-gradient(135deg,#2ECFCF,#06B6D4)','local':'linear-gradient(135deg,#1A9E8E,#2ECFCF)','topic':'linear-gradient(135deg,#6366F1,#8B5CF6)','company':'linear-gradient(135deg,#3B82F6,#6366F1)'};
     var hg = document.getElementById('bc-hero-gradient');
     var hi = document.getElementById('bc-hero-icon');
     if (hg) hg.style.background = _heroGrads[b.type] || _heroGrads['topic'];
@@ -247,7 +247,7 @@ async function bcLoadBubbleInfo() {
     bcBubbleData = b;
     document.getElementById('bc-emoji').innerHTML = bubbleEmoji(b.type);
     document.getElementById('bc-name').textContent = b.name;
-    var _heroGrads2 = {'event':'linear-gradient(135deg,#8B5CF6,#6B8BFF)','live':'linear-gradient(135deg,#8B5CF6,#A855F7)','local':'linear-gradient(135deg,#1A9E8E,#4338CA)','topic':'linear-gradient(135deg,#7C5CFC,#164E4E)','company':'linear-gradient(135deg,#8B5CF6,#A855F7)'};
+    var _heroGrads2 = {'event':'linear-gradient(135deg,#7C5CFC,#6366F1)','live':'linear-gradient(135deg,#2ECFCF,#06B6D4)','local':'linear-gradient(135deg,#1A9E8E,#2ECFCF)','topic':'linear-gradient(135deg,#6366F1,#8B5CF6)','company':'linear-gradient(135deg,#3B82F6,#6366F1)'};
     var hg2 = document.getElementById('bc-hero-gradient');
     var hi2 = document.getElementById('bc-hero-icon');
     if (hg2) hg2.style.background = _heroGrads2[b.type] || _heroGrads2['topic'];
@@ -348,7 +348,7 @@ function bcRenderMsg(m) {
   const name = p.name || '?';
   const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   const time = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'});
-  const gradients = ['linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#2ECFCF,#6B8BFF)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#164E4E,#4ABEAE)','linear-gradient(135deg,#C06098,#E879A8)'];
+  const gradients = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
   const color = gradients[Math.abs(name.charCodeAt(0)) % gradients.length];
 
   const row = document.createElement('div');
@@ -743,7 +743,7 @@ async function bcLoadMembers() {
         new Date(m.checked_in_at).getTime() > (now - LIVE_EXPIRE_HOURS * 3600000);
     });
 
-    const colors = ['linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#2ECFCF,#6B8BFF)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#164E4E,#4ABEAE)','linear-gradient(135deg,#C06098,#E879A8)'];
+    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
     const ownerId = bcBubbleData?.created_by;
     const isOwner = currentUser && ownerId === currentUser.id;
 

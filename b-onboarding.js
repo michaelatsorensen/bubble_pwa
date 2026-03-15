@@ -447,7 +447,7 @@ function showProgressiveOnboarding() {
   var steps = [
     { key: 'tags', ico: '🏷️', color: 'var(--green)', softColor: 'rgba(26,158,142,0.08)', title: 'Vælg interesser', sub: 'Aktiverer matching', done: !!progress.tags },
     { key: 'title', ico: '💼', color: 'var(--accent)', softColor: 'rgba(124,92,252,0.06)', title: 'Tilføj titel & arbejdsplads', sub: 'Unlock 5+ flere matches', done: !!progress.title },
-    { key: 'photo', ico: '📸', color: '#6B8BFF', softColor: 'rgba(107,139,255,0.06)', title: 'Tilføj profilbillede', sub: '3x flere kontakter', done: !!progress.photo },
+    { key: 'photo', ico: '📸', color: '#3B82F6', softColor: 'rgba(107,139,255,0.06)', title: 'Tilføj profilbillede', sub: '3x flere kontakter', done: !!progress.photo },
     { key: 'bubble', ico: '🫧', color: '#E879A8', softColor: 'rgba(232,121,168,0.06)', title: 'Join din første boble', sub: 'Åbn for endnu flere profiler', done: !!progress.bubble }
   ];
 
@@ -750,7 +750,7 @@ var _obPreviewLoaded = false;
 var _obPreviewProfiles = [];
 var _obPreviewPinned = []; // Pinned top 3 for stability
 var _obPreviewTimer = null;
-var _obPreviewColors = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#C06098,#E879A8)','linear-gradient(135deg,#7C3AED,#4ABEAE)'];
+var _obPreviewColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
 
 async function obLoadPeoplePreview() {
   if (_obPreviewLoaded) return;

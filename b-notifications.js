@@ -50,7 +50,7 @@ async function _notifInvites() {
       var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       return '<div class="notif-card invite" id="invite-' + inv.id + '">' +
         '<div class="notif-header">' +
-        '<div class="notif-avatar" style="background:linear-gradient(135deg,#6B8BFF,#8B5CF6)">' + initials + '</div>' +
+        '<div class="notif-avatar" style="background:linear-gradient(135deg,#6366F1,#7C5CFC)">' + initials + '</div>' +
         '<div>' +
         '<div class="notif-title">' + icon("bubble") + ' Invitation til boble</div>' +
         '<div class="notif-sub">' + escHtml(p.name||'Nogen') + ' inviterer dig til ' + escHtml(inv.bubbles?.name||'en boble') + '</div>' +
@@ -90,7 +90,7 @@ async function _notifUnreadDMs(since) {
       var preview = d.latest.file_url ? 'Sendte et billede' : (d.latest.content || '').slice(0, 40);
       var avatarHtml = p.avatar_url ?
         '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
-        '<div class="notif-avatar" style="background:linear-gradient(135deg,#6B8BFF,#8B5CF6)">' + initials + '</div>';
+        '<div class="notif-avatar" style="background:linear-gradient(135deg,#6366F1,#7C5CFC)">' + initials + '</div>';
       return '<div class="notif-card" onclick="openChat(\'' + sid + '\',\'screen-notifications\')" style="cursor:pointer">' +
         '<div class="notif-header">' + avatarHtml +
         '<div>' +
@@ -120,7 +120,7 @@ async function _notifSavedBy(since) {
       var time = new Date(s.created_at).toLocaleDateString('da-DK', {day:'numeric',month:'short'});
       var avatarHtml = p.avatar_url ?
         '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
-        '<div class="notif-avatar" style="background:linear-gradient(135deg,#1A9E8E,#4338CA)">' + initials + '</div>';
+        '<div class="notif-avatar" style="background:linear-gradient(135deg,#1A9E8E,#10B981)">' + initials + '</div>';
       return '<div class="notif-card" onclick="openPerson(\'' + s.user_id + '\',\'screen-notifications\')" style="cursor:pointer">' +
         '<div class="notif-header">' + avatarHtml +
         '<div>' +
@@ -156,7 +156,7 @@ async function _notifLiveContacts() {
       var bLoc = m.bubbles?.location || '';
       var avatarHtml = p.avatar_url ?
         '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
-        '<div class="notif-avatar" style="background:linear-gradient(135deg,#2ECFCF,#4338CA)">' + initials + '</div>';
+        '<div class="notif-avatar" style="background:linear-gradient(135deg,#2ECFCF,#22B8CF)">' + initials + '</div>';
       return '<div class="notif-card">' +
         '<div class="notif-header">' + avatarHtml +
         '<div>' +

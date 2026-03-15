@@ -50,7 +50,7 @@ async function checkAuth() {
     }
   } catch(e) {
     var el = document.getElementById('loading-msg');
-    if (el) { el.textContent = 'Fejl: ' + (e.message || 'Ukendt'); el.style.color = '#6B8BFF'; }
+    if (el) { el.textContent = 'Fejl: ' + (e.message || 'Ukendt'); el.style.color = '#D06070'; }
     logError('checkAuth', e);
   }
 }
@@ -448,14 +448,14 @@ async function loadInterestPreview() {
     }).sort(function(a, b) { return b.shared - a.shared; });
 
     var top = scored.slice(0, 3);
-    var colors = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)'];
+    var colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
 
     el.innerHTML = top.map(function(item, i) {
       var p = item.p;
       var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var avHtml = p.avatar_url ?
         '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;border:1.5px solid rgba(30,27,46,0.05)"><img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover"></div>' :
-        '<div style="width:40px;height:40px;border-radius:50%;background:'+colors[i%3]+';display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;flex-shrink:0">'+ini+'</div>';
+        '<div style="width:40px;height:40px;border-radius:50%;background:'+colors[i % 10]+';display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;flex-shrink:0">'+ini+'</div>';
       var sharedText = item.shared > 0 ?
         '<span style="font-size:0.6rem;color:var(--accent)">' + item.shared + ' fælles interesser</span>' :
         '<span style="font-size:0.6rem;color:var(--muted)">Muligt match</span>';
@@ -592,7 +592,7 @@ function openMyQR() {
     '<div id="my-qr-container" style="display:flex;justify-content:center;margin-bottom:1rem"></div>' +
     '<div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.8rem;word-break:break-all">' + url + '</div>' +
     '<button onclick="navigator.clipboard.writeText(\'' + url + '\');this.textContent=\'Kopieret! ✓\';setTimeout(()=>this.textContent=\'Kopiér link\',2000)" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-bg);color:var(--text);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Kopiér link</button>' +
-    '<button onclick="if(navigator.share)navigator.share({title:\'Bubble\',url:\'' + url + '\'}).catch(()=>{});else{navigator.clipboard.writeText(\'' + url + '\');showToast(\'Link kopieret\')}" style="width:100%;margin-top:0.4rem;padding:0.7rem;border-radius:12px;border:none;background:linear-gradient(135deg,#2ECFCF,#6B8BFF,#8B5CF6);color:white;font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer">Del profil →</button>';
+    '<button onclick="if(navigator.share)navigator.share({title:\'Bubble\',url:\'' + url + '\'}).catch(()=>{});else{navigator.clipboard.writeText(\'' + url + '\');showToast(\'Link kopieret\')}" style="width:100%;margin-top:0.4rem;padding:0.7rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer">Del profil →</button>';
   
   overlay.appendChild(sheet);
   document.body.appendChild(overlay);

@@ -202,7 +202,18 @@ async function confirmRemoveSaved() {
 var proxVisible = true;
 var proxRange = 5;
 var proxAllProfiles = [];
-var proxColors = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#5B8AFF,#7B6BEF)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#C06098,#E879A8)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#C06098,#E879A8)'];
+var proxColors = [
+  'linear-gradient(135deg,#2ECFCF,#22B8CF)',  // cyan
+  'linear-gradient(135deg,#6366F1,#7C5CFC)',  // indigo→purple
+  'linear-gradient(135deg,#E879A8,#EC4899)',  // pink→rose
+  'linear-gradient(135deg,#F59E0B,#EAB308)',  // amber
+  'linear-gradient(135deg,#1A9E8E,#10B981)',  // teal→emerald
+  'linear-gradient(135deg,#8B5CF6,#A855F7)',  // violet
+  'linear-gradient(135deg,#3B82F6,#6366F1)',  // blue→indigo
+  'linear-gradient(135deg,#EF4444,#F97316)',  // red→orange
+  'linear-gradient(135deg,#06B6D4,#0EA5E9)',  // sky
+  'linear-gradient(135deg,#D946EF,#C026D3)',  // fuchsia
+];
 // Radar (map): relevance labels + thresholds — "who matches me?"
 var proxRangeLabels = ['Nær match','Gode matches','Alle matches','Udvidet','Alle'];
 var proxThresholds  = [0.6, 0.35, 0.15, 0.05, 0];
@@ -687,7 +698,7 @@ async function loadSavedContacts() {
     // Update home screen story bar
     renderSavedStoryBar(saved, profileMap);
 
-    const colors = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#C06098,#E879A8)','linear-gradient(135deg,#2ECFCF,#6B8BFF)'];
+    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
 
     // Sort by star rating (highest first), then by date
     saved.sort(function(a, b) {
@@ -738,7 +749,7 @@ function renderSavedStoryBar(saved, profileMap) {
     var sa = starGet(a.contact_id), sb2 = starGet(b.contact_id);
     return sb2 - sa;
   });
-  var colors = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#C06098,#E879A8)','linear-gradient(135deg,#2ECFCF,#6B8BFF)'];
+  var colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
   list.innerHTML = saved.map(function(s, i) {
     var p = profileMap[s.contact_id];
     if (s.contact_id === currentUser?.id) return '';
@@ -832,7 +843,7 @@ async function loadProfileInvitations() {
       (bubbles || []).forEach(b => { bubbleMap[b.id] = b; });
     }
 
-    const colors = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#C06098,#E879A8)','linear-gradient(135deg,#2ECFCF,#6B8BFF)'];
+    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
 
     list.innerHTML = invites.map((inv, i) => {
       const p = profileMap[inv.from_user_id] || {};

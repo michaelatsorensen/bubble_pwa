@@ -32,7 +32,7 @@ async function adminLoadReports() {
         (isBanned ? ' <span style="font-size:0.55rem;background:rgba(26,122,138,0.2);color:var(--accent2);padding:0.1rem 0.3rem;border-radius:4px">Banned</span>' : '') +
         '<div style="font-size:0.62rem;color:var(--muted)">' + escHtml(r.type || 'report') + ' · ' + escHtml(r.reason || 'Ingen grund') + ' · ' + timeAgo + '</div>' +
         '<div style="font-size:0.6rem;color:var(--muted)">Af: ' + escHtml(reporterName) + '</div></div>' +
-        (!isBanned ? '<button class="btn-sm" onclick="adminBanUser(\'' + r.reported_id + '\',\'' + escHtml(reportedName).replace(/'/g,"\\'") + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,122,138,0.15);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:6px;flex-shrink:0">Ban</button>' :
+        (!isBanned ? '<button class="btn-sm" onclick="adminBanUser(\'' + r.reported_id + '\',\'' + escHtml(reportedName).replace(/'/g,"\\'") + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(124,92,252,0.12);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:6px;flex-shrink:0">Ban</button>' :
         '<button class="btn-sm" onclick="adminUnbanUser(\'' + r.reported_id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,158,142,0.15);color:var(--green);border:1px solid rgba(26,158,142,0.3);border-radius:6px;flex-shrink:0">Unban</button>') +
         '</div></div>';
     }).join('');
@@ -102,7 +102,7 @@ async function adminLoadStats() {
     el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem">' +
       adminStatCard('Brugere', userCount || 0, '#7C5CFC', 'Antal registrerede profiler i Bubble. Inkluderer alle der har oprettet en konto.') +
       adminStatCard('Live nu', liveCount || 0, '#1A9E8E', 'Brugere der er checked ind i en Live Bubble inden for de sidste 4 timer.') +
-      adminStatCard('Bannede', bannedCount || 0, '#6B8BFF', 'Brugere der er banned via admin panel. De kan ikke logge ind og er usynlige på radar.') +
+      adminStatCard('Bannede', bannedCount || 0, '#3B82F6', 'Brugere der er banned via admin panel. De kan ikke logge ind og er usynlige på radar.') +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
       adminStatCard('Bobler', bubbleCount || 0, '#2ECFCF', 'Samlet antal bobler (offentlige + private + skjulte). Inkluderer alle typer.') +
@@ -111,12 +111,12 @@ async function adminLoadStats() {
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
       adminStatCard('Beskeder', msgCount || 0, '#7C5CFC', 'Samlet antal direkte beskeder (DMs) sendt mellem brugere. Inkluderer tekst, GIFs og filer.') +
-      adminStatCard('Rapporter', reportCount || 0, '#6B8BFF', 'Antal brugerrapporter modtaget. Se detaljer i Rapporterede brugere ovenfor.') +
-      adminStatCard('Feedback', feedbackCount || 0, '#6B8BFF', 'Antal feedback-beskeder sendt via Giv Feedback knappen på hjem-skærmen.') +
+      adminStatCard('Rapporter', reportCount || 0, '#3B82F6', 'Antal brugerrapporter modtaget. Se detaljer i Rapporterede brugere ovenfor.') +
+      adminStatCard('Feedback', feedbackCount || 0, '#3B82F6', 'Antal feedback-beskeder sendt via Giv Feedback knappen på hjem-skærmen.') +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
       adminStatCard('Medlemskaber', membershipCount || 0, '#2ECFCF', 'Samlet antal boble-medlemskaber. Én bruger i 3 bobler = 3 medlemskaber. Viser engagement — jo højere ratio pr. bruger, jo mere aktive er de.') +
-      adminStatCard('Gemte kontakter', savedCount || 0, '#4ABEAE', 'Antal gange en bruger har gemt en andens profil. Viser hvor meget networking der sker.') +
+      adminStatCard('Gemte kontakter', savedCount || 0, '#2ECFCF', 'Antal gange en bruger har gemt en andens profil. Viser hvor meget networking der sker.') +
       adminStatCard('Gns. tags', avgTags, '#1A9E8E', 'Gennemsnitligt antal tags per profil der har tags. Højere = bedre matchkvalitet på radar.') +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
@@ -168,7 +168,7 @@ async function adminBanUser(userId, userName) {
         tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0.5rem;margin-top:0.3rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:8px;gap:0.4rem';
         tray.innerHTML = '<span style="font-size:0.68rem;color:var(--text-secondary)">Ban ' + escHtml(userName||'bruger') + '?</span>' +
           '<div style="display:flex;gap:0.25rem">' +
-          '<button style="font-size:0.65rem;padding:0.2rem 0.5rem;background:rgba(26,122,138,0.15);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600" onclick="adminConfirmBan()">Ban</button>' +
+          '<button style="font-size:0.65rem;padding:0.2rem 0.5rem;background:rgba(124,92,252,0.12);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600" onclick="adminConfirmBan()">Ban</button>' +
           '<button style="font-size:0.65rem;padding:0.2rem 0.5rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:6px;cursor:pointer;font-family:inherit" onclick="adminCancelBan(this)">Annuller</button>' +
           '</div>';
         row.appendChild(tray);
@@ -237,7 +237,7 @@ function adminSearchUser(query) {
           '<div style="font-size:0.6rem;color:var(--muted)">' + escHtml(p.title || '') + ' · ' + escHtml(p.email || p.id.slice(0,8)) + '</div>' +
           '</div>' +
           (!isBanned ?
-            '<button class="btn-sm" onclick="adminBanUser(\'' + p.id + '\',\'' + escHtml(p.name||'').replace(/'/g,"\\'") + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,122,138,0.15);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:6px;flex-shrink:0">Ban</button>' :
+            '<button class="btn-sm" onclick="adminBanUser(\'' + p.id + '\',\'' + escHtml(p.name||'').replace(/'/g,"\\'") + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(124,92,252,0.12);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:6px;flex-shrink:0">Ban</button>' :
             '<button class="btn-sm" onclick="adminUnbanUser(\'' + p.id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,158,142,0.15);color:var(--green);border:1px solid rgba(26,158,142,0.3);border-radius:6px;flex-shrink:0">Unban</button>') +
           '</div>';
       }).join('');

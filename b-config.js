@@ -130,7 +130,7 @@ let isAnon = false;
 function initSupabase() {
   if (SUPABASE_URL === "DIN_SUPABASE_URL_HER") {
     document.getElementById('loading-msg').textContent = '⚠️ Indsæt dine Supabase-nøgler i filen';
-    document.getElementById('loading-msg').style.color = '#6B8BFF';
+    document.getElementById('loading-msg').style.color = '#3B82F6';
     return false;
   }
   try {

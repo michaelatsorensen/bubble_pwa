@@ -197,7 +197,7 @@ async function leaveBubble(bubbleId) {
   tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:10px;gap:0.5rem;width:100%';
   tray.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Forlad boblen?</span>' +
     '<div style="display:flex;gap:0.3rem">' +
-    '<button style="font-size:0.7rem;padding:0.25rem 0.6rem;background:rgba(26,122,138,0.15);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600" onclick="confirmLeaveBubble(\'' + bubbleId + '\')">Forlad</button>' +
+    '<button style="font-size:0.7rem;padding:0.25rem 0.6rem;background:rgba(124,92,252,0.12);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600" onclick="confirmLeaveBubble(\'' + bubbleId + '\')">Forlad</button>' +
     '<button style="font-size:0.7rem;padding:0.25rem 0.6rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit" onclick="cancelLeaveBubble()">Annuller</button>' +
     '</div>';
   bar.dataset.originalHtml = originalHtml;
@@ -873,7 +873,7 @@ async function openInviteModal(bubbleId) {
     }
     // Sort by star rating
     available.sort(function(a, b) { return (starGet(b.id) || 0) - (starGet(a.id) || 0); });
-    var colors = proxColors || ['linear-gradient(135deg,#2ECFCF,#3AAFDF)'];
+    var colors = proxColors || ['linear-gradient(135deg,#2ECFCF,#22B8CF)'];
     list.innerHTML = available.map(function(p, i) {
       var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var col = colors[i % colors.length];
@@ -1003,7 +1003,7 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
 async function dmOpenPersonSheet(userId) {
   try {
     var { data: p } = await sb.from('profiles').select('name,title,avatar_url').eq('id', userId).single();
-    bcOpenPerson(userId, p?.name || 'Ukendt', p?.title || '', 'linear-gradient(135deg,#2ECFCF,#3AAFDF)', 'screen-chat');
+    bcOpenPerson(userId, p?.name || 'Ukendt', p?.title || '', 'linear-gradient(135deg,#2ECFCF,#22B8CF)', 'screen-chat');
   } catch(e) { logError('dmOpenPersonSheet', e); }
 }
 

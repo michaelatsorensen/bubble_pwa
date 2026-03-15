@@ -198,7 +198,7 @@ async function loadLiveCheckinList() {
       return new Date(b.created_at) - new Date(a.created_at);
     });
 
-    var colors = ['linear-gradient(135deg,#2ECFCF,#3AAFDF)','linear-gradient(135deg,#6B8BFF,#8B5CF6)','linear-gradient(135deg,#8B5CF6,#A855F7)'];
+    var colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
     list.innerHTML = filtered.map(function(b) {
       var cnt = countMap[b.id] || 0;
       var isEvent = b.type === 'event' || b.type === 'live';
@@ -214,7 +214,7 @@ async function loadLiveCheckinList() {
           if (p.avatar_url) {
             return '<div style="width:22px;height:22px;border-radius:50%;overflow:hidden;border:1.5px solid var(--bg);margin-left:' + (i > 0 ? '-6px' : '0') + ';position:relative;z-index:' + (3-i) + '"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
           }
-          return '<div style="width:22px;height:22px;border-radius:50%;background:' + colors[i%3] + ';display:flex;align-items:center;justify-content:center;font-size:0.45rem;font-weight:700;color:white;border:1.5px solid var(--bg);margin-left:' + (i > 0 ? '-6px' : '0') + ';position:relative;z-index:' + (3-i) + '">' + ini + '</div>';
+          return '<div style="width:22px;height:22px;border-radius:50%;background:' + colors[i % 10] + ';display:flex;align-items:center;justify-content:center;font-size:0.45rem;font-weight:700;color:white;border:1.5px solid var(--bg);margin-left:' + (i > 0 ? '-6px' : '0') + ';position:relative;z-index:' + (3-i) + '">' + ini + '</div>';
         }).join('');
         avatarHtml = '<div style="display:flex;align-items:center;margin-right:0.3rem">' + avatars + '</div>';
       }
@@ -228,7 +228,7 @@ async function loadLiveCheckinList() {
       }
 
       return '<div class="live-checkin-item">' +
-        '<div class="live-checkin-icon" style="' + (isEvent ? 'background:rgba(26,122,138,0.12);color:#6B8BFF' : '') + '">' + ico(isEvent ? 'calendar' : 'pin') + '</div>' +
+        '<div class="live-checkin-icon" style="' + (isEvent ? 'background:rgba(124,92,252,0.1);color:var(--accent)' : '') + '">' + ico(isEvent ? 'calendar' : 'pin') + '</div>' +
         '<div style="flex:1;min-width:0;cursor:pointer" onclick="closeLiveCheckinModal();openBubble(\'' + b.id + '\')">' +
         '<div class="fw-600 fs-085">' + escHtml(b.name) + '</div>' +
         '<div class="fs-072 text-muted">' + typeLabel + (b.location ? ' \u00B7 ' + escHtml(b.location) : '') + '</div>' +
