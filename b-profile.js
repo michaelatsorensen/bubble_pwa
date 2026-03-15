@@ -213,6 +213,7 @@ var RADAR_PAGE_SIZE = 25;
 function setRadarFilter(filter, btn) {
   _radarFilter = filter;
   _radarPage = 0;
+  matchPage = 0;  // Reset map pagination too
   // Update active button
   document.querySelectorAll('.radar-filter-btn').forEach(function(b) { b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
@@ -314,8 +315,7 @@ function renderProximityDots() {
   var emptyEl = document.getElementById('prox-empty');
   if (!map || !av || !canvas) return;
 
-  var threshold = proxThresholds[proxRange-1] || 0;
-  var allFil = proxAllProfiles.filter(function(p) { return !p.is_anon && p.relevance >= threshold; });
+  var allFil = getFilteredProfiles();
 
   // Smart cap: show MATCH_CAP profiles per page, paginated
   var start = matchPage * MATCH_CAP;
@@ -388,7 +388,7 @@ function renderProximityDots() {
 
 
 function radarShowMore() {
-  var allFil = proxAllProfiles.filter(function(p) { return !p.is_anon; });
+  var allFil = getFilteredProfiles();
   var maxPages = Math.ceil(allFil.length / MATCH_CAP);
   matchPage = (matchPage + 1) % maxPages;
   renderProximityDots();
@@ -438,17 +438,13 @@ function drawProxRings(canvas) {
 }
 
 function updateProximityRange(val) {
-  proxRange = parseInt(val);
+  // Now driven by filter buttons, not slider
   var el = document.getElementById('prox-range-label');
+  var filtered = getFilteredProfiles();
+  if (el) el.textContent = filtered.length + ' personer';
   if (radarCurrentView === 'map') {
-    var threshold = proxThresholds[proxRange-1] || 0;
-    var count = proxAllProfiles.filter(function(p) { return !p.is_anon && p.relevance >= threshold; }).length;
-    if (el) el.textContent = count + (count === 1 ? ' person' : ' personer') + ' · ' + (proxRangeLabels[proxRange-1]||'');
     renderProximityDots();
   } else {
-    var maxN = [5,10,20,35,50][proxRange-1] || 50;
-    var count2 = Math.min(proxAllProfiles.length, maxN);
-    if (el) el.textContent = count2 + (count2 === 1 ? ' person' : ' personer') + ' · ' + (listRangeLabels[proxRange-1]||'');
     renderRadarList();
   }
 }
