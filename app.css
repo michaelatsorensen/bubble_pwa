@@ -951,8 +951,8 @@ a.person-action-btn { text-decoration:none; }
   font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.1rem;
 }
 .radar-person-match {
-  font-size: 0.85rem; font-weight: 700; color: var(--accent);
-  background: var(--accent-soft); padding: 0.25rem 0.6rem;
+  font-size: 0.78rem; font-weight: 700;
+  padding: 0.25rem 0.6rem;
   border-radius: var(--radius-pill); flex-shrink: 0;
 }
 .radar-person-close {

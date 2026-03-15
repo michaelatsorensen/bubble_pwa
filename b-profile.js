@@ -71,7 +71,11 @@ async function openPerson(userId, fromScreen) {
       sharedCount = sc || 0;
     }
     const score = calcMatchScore(currentProfile || {}, p, sharedCount);
-    document.getElementById('person-match-label').textContent = `Match: ${score}%`;
+    var ml = matchLabel(score);
+    var matchEl = document.getElementById('person-match-label');
+    matchEl.textContent = ml.text;
+    matchEl.style.background = ml.color;
+    matchEl.style.display = ml.text ? '' : 'none';
 
     // Hide full tags section — only show in edit profile
     var tagsSection = document.getElementById('person-tags-section');

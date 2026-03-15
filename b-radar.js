@@ -52,6 +52,7 @@ function renderRadarList() {
     var theirKw = (p.keywords || []).map(function(k){ return k.toLowerCase(); });
     var overlap = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; });
     var matchPct = p.matchScore || Math.min(Math.round(p.relevance * 85 + 10), 99);
+    var matchBadge = isA ? '' : matchBadgeHtml(matchPct);
     var bubbleInfo = p.sharedBubbles > 0 ? '<span class="fs-065 text-muted">' + p.sharedBubbles + ' f\u00e6lles boble' + (p.sharedBubbles > 1 ? 'r' : '') + '</span>' : '';
     return '<div class="radar-list-card" data-uid="' + p.id + '" data-name="' + escHtml(name) + '" style="--card-delay:' + (i * 40) + 'ms">' +
       '<div class="flex-row-center" style="gap:0.7rem">' +
@@ -60,7 +61,7 @@ function renderRadarList() {
           '<div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(name) + '</div>' +
           (isA ? '' : '<div class="fs-072 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + '</div>') +
         '</div>' +
-        (isA ? '' : '<div class="radar-list-match">' + matchPct + '%</div>') +
+        matchBadge +
         '<button class="radar-list-remove" onclick="event.stopPropagation();radarConfirmRemove(\'' + p.id + '\',\'' + escHtml(name).replace(/'/g,'') + '\')" title="Fjern">' + icon('x') + '</button>' +
       '</div>' +
       (bubbleInfo ? '<div style="padding-left:3.2rem;margin-top:0.15rem">' + bubbleInfo + '</div>' : '') +
@@ -158,7 +159,9 @@ async function openRadarPerson(userId) {
     // Use smart match from proxAllProfiles if available, otherwise calculate
     var proxData = proxAllProfiles.find(function(pp) { return pp.id === p.id; });
     var score = proxData ? proxData.matchScore : calcMatchScore(currentProfile || {}, p, 0);
-    document.getElementById('rp-match').textContent = score + '%';
+    var ml = matchLabel(score);
+    document.getElementById('rp-match').textContent = ml.text;
+    document.getElementById('rp-match').style.color = ml.color;
     document.getElementById('rp-bio').textContent = p.bio || '';
     document.getElementById('rp-bio').style.display = p.bio ? 'block' : 'none';
     document.getElementById('rp-tags').innerHTML = '';

@@ -509,13 +509,15 @@ async function loadTopMatches() {
       if (!seen[m.user_id] && m.profiles) { seen[m.user_id] = true; unique.push(m.profiles); }
     });
 
-    // Score by tag overlap
+    // Score using same algorithm as radar (calcMatchScore)
     var scored = unique.map(function(p) {
       var theirKw = (p.keywords || []).map(function(k) { return k.toLowerCase(); });
       var shared = myKw.filter(function(k) { return theirKw.indexOf(k) >= 0; });
-      var score = myKw.length > 0 ? Math.round((shared.length / Math.max(myKw.length, theirKw.length)) * 100) : 0;
+      var score = (typeof calcMatchScore === 'function')
+        ? calcMatchScore(currentProfile, p, 1)
+        : (myKw.length > 0 ? Math.round((shared.length / Math.max(myKw.length, theirKw.length)) * 100) : 0);
       return { profile: p, shared: shared, score: score };
-    }).filter(function(s) { return s.score > 0; })
+    }).filter(function(s) { return s.score > 15; })
       .sort(function(a, b) { return b.score - a.score; })
       .slice(0, 5);
 
@@ -540,7 +542,7 @@ async function loadTopMatches() {
         '<div style="flex:1;min-width:0">' +
           '<div style="display:flex;align-items:center;gap:0.4rem">' +
             '<div style="font-size:0.82rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(p.name || '?') + '</div>' +
-            '<div style="font-size:0.65rem;font-weight:700;color:var(--accent);background:rgba(124,92,252,0.08);padding:0.1rem 0.35rem;border-radius:6px;flex-shrink:0">' + s.score + '%</div>' +
+            matchBadgeHtml(s.score) +
           '</div>' +
           '<div style="font-size:0.68rem;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(p.title || '') + (p.workplace ? ' \u00b7 ' + escHtml(p.workplace) : '') + '</div>' +
           '<div style="display:flex;gap:0.2rem;margin-top:0.2rem;flex-wrap:wrap">' + sharedTags + '</div>' +
