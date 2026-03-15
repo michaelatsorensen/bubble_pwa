@@ -1005,9 +1005,7 @@ a.person-action-btn { text-decoration:none; }
 }
 .live-bubble-header {
   display: flex; align-items: center; gap: 0.75rem;
-  padding: 0.9rem 1rem;
-  background: rgba(26,158,142,0.06);
-  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 0.85rem 1.1rem 0.5rem;
 }
 .live-bubble-label {
   font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em;
@@ -1038,9 +1036,7 @@ a.person-action-btn { text-decoration:none; }
   border: 1px solid rgba(46,207,207,0.2);
 }
 .live-bubble-actions {
-  display: flex; gap: 0.4rem; padding: 0.5rem 1rem 0.7rem;
-  background: rgba(46,207,207,0.04);
-  border: 1px solid rgba(46,207,207,0.2);
+  display: flex; gap: 0.4rem; padding: 0 1.1rem 0.85rem;
   border-top: none;
   border-radius: 0 0 var(--radius) var(--radius);
 }
@@ -1061,7 +1057,6 @@ a.person-action-btn { text-decoration:none; }
 .live-bubble-idle-content {
   display: flex; align-items: center; gap: 0.85rem;
   padding: 0.85rem 1.1rem; cursor: pointer;
-  background: var(--glass-bg);
   border: 1px solid var(--glass-border-subtle);
   border-radius: var(--radius);
   transition: all 0.2s;
