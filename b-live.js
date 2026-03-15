@@ -93,7 +93,32 @@ function openLiveCheckin() {
   if (status) { status.textContent = 'Starter kamera...'; status.className = 'live-scan-status'; status.style.display = ''; }
   var toggle = document.getElementById('live-list-toggle');
   if (toggle) toggle.textContent = 'Vis mere \u2191';
+  // Show manual check-in for owners/admins
+  showManualCheckinIfOwner();
   startLiveCamera();
+}
+
+async function showManualCheckinIfOwner() {
+  var el = document.getElementById('live-manual-checkin');
+  if (!el || !currentUser) return;
+  try {
+    var expCut = new Date(Date.now() - 6 * 3600000).toISOString();
+    var { data: myLive } = await sb.from('bubble_members')
+      .select('bubble_id, role, bubbles(created_by)')
+      .eq('user_id', currentUser.id)
+      .not('checked_in_at', 'is', null)
+      .is('checked_out_at', null)
+      .gte('checked_in_at', expCut)
+      .limit(1)
+      .maybeSingle();
+    if (myLive) {
+      var isOwner = myLive.bubbles?.created_by === currentUser.id;
+      var isAdmin = myLive.role === 'admin';
+      el.style.display = (isOwner || isAdmin) ? 'block' : 'none';
+    } else {
+      el.style.display = 'none';
+    }
+  } catch(e) { el.style.display = 'none'; }
 }
 
 var _liveListExpanded = false;
@@ -502,7 +527,43 @@ async function liveScanAutoResolve(data) {
   var status = document.getElementById('live-scan-status');
   if (status) { status.textContent = 'QR fundet — henter info...'; status.className = 'live-scan-status found'; }
   
-  // Parse QR data
+  // ── Check if it's a guest QR ──
+  if (data.includes('guest=')) {
+    try {
+      var url = new URL(data);
+      var guestId = url.searchParams.get('guest');
+      var bubbleId = url.searchParams.get('bubble');
+      if (guestId) {
+        // Look up guest record
+        var { data: guest } = await sb.from('guest_checkins').select('*').eq('id', guestId).maybeSingle();
+        if (guest) {
+          // Mark as checked in
+          if (!guest.checked_in_at) {
+            await sb.from('guest_checkins').update({ checked_in_at: new Date().toISOString() }).eq('id', guestId);
+          }
+          // Show confirmation
+          if (status) status.style.display = 'none';
+          var confirmed = document.getElementById('live-scan-confirmed');
+          var cName = document.getElementById('live-scan-confirmed-name');
+          var cMeta = document.getElementById('live-scan-confirmed-meta');
+          if (cName) cName.textContent = '✓ ' + (guest.name || 'Gæst') + ' checked ind!';
+          if (cMeta) cMeta.textContent = (guest.title || 'Gæst') + ' · via Guest QR';
+          if (confirmed) confirmed.style.display = 'flex';
+          showSuccessToast((guest.name || 'Gæst') + ' checked ind! ✓');
+          _liveQrPending = false;
+          // Resume scanning after 3s
+          setTimeout(function() {
+            if (confirmed) confirmed.style.display = 'none';
+            if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; }
+            liveQrPreviewLoop();
+          }, 3000);
+          return;
+        }
+      }
+    } catch(e) {}
+  }
+  
+  // ── Standard bubble QR ──
   var joinCode = data;
   if (data.includes('join=')) {
     try { joinCode = new URL(data).searchParams.get('join') || data; } catch(e) {}

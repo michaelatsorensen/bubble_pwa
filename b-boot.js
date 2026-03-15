@@ -388,6 +388,195 @@ async function checkPendingContact() {
   }
 }
 
+// ══════════════════════════════════════════════════════════
+//  GUEST CHECK-IN FLOW — instant QR without signup
+// ══════════════════════════════════════════════════════════
+async function checkGuestEventRoute() {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var eventId = params.get('event');
+    if (!eventId) return false;
+    
+    // Don't show guest flow if already logged in
+    var { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      // Logged-in user → just join/checkin to this bubble
+      sessionStorage.setItem('pending_join', eventId);
+      return false;
+    }
+    
+    // Load bubble info
+    var bubble = null;
+    var { data: b } = await sb.from('bubbles')
+      .select('id, name, type, location')
+      .or('id.eq.' + eventId + ',join_code.eq.' + eventId)
+      .limit(1)
+      .maybeSingle();
+    if (b) bubble = b;
+    
+    if (!bubble) {
+      // Try UUID match
+      var uuidMatch = eventId.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+      if (uuidMatch) {
+        var { data: b2 } = await sb.from('bubbles').select('id, name, type, location').eq('id', uuidMatch[0]).maybeSingle();
+        if (b2) bubble = b2;
+      }
+    }
+    
+    if (!bubble) {
+      showToast('Event ikke fundet');
+      return false;
+    }
+    
+    // Show guest check-in screen
+    _guestEventBubble = bubble;
+    var nameEl = document.getElementById('guest-event-name');
+    var metaEl = document.getElementById('guest-event-meta');
+    if (nameEl) nameEl.textContent = bubble.name;
+    if (metaEl) metaEl.textContent = (bubble.location || '') + (bubble.location && bubble.type ? ' · ' : '') + (bubble.type === 'event' ? 'Live Event' : bubble.type || '');
+    
+    goTo('screen-guest-checkin');
+    window.history.replaceState({}, document.title, window.location.pathname);
+    return true;
+  } catch(e) {
+    logError('checkGuestEventRoute', e);
+    return false;
+  }
+}
+
+var _guestEventBubble = null;
+
+async function createGuestQR() {
+  var name = (document.getElementById('guest-name')?.value || '').trim();
+  if (!name) { showToast('Indtast dit navn'); return; }
+  var title = (document.getElementById('guest-title')?.value || '').trim();
+  
+  if (!_guestEventBubble) { showToast('Intet event valgt'); return; }
+  
+  try {
+    showToast('Opretter QR...');
+    
+    // Insert guest record into guest_checkins table
+    var guestId = crypto.randomUUID ? crypto.randomUUID() : 'g-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
+    var { error } = await sb.from('guest_checkins').insert({
+      id: guestId,
+      bubble_id: _guestEventBubble.id,
+      name: name,
+      title: title || null,
+      created_at: new Date().toISOString()
+    });
+    
+    if (error) {
+      logError('createGuestQR:insert', error);
+      showToast('Fejl — prøv at oprette en fuld profil i stedet');
+      return;
+    }
+    
+    // Generate QR code
+    var qrUrl = window.location.origin + window.location.pathname + '?guest=' + guestId + '&bubble=' + _guestEventBubble.id;
+    
+    // Show QR step
+    document.getElementById('guest-step-name').style.display = 'none';
+    document.getElementById('guest-step-qr').style.display = 'block';
+    document.getElementById('guest-qr-name').textContent = name;
+    document.getElementById('guest-qr-title').textContent = title || _guestEventBubble.name;
+    
+    // Save for potential upgrade
+    sessionStorage.setItem('guest_id', guestId);
+    sessionStorage.setItem('guest_name', name);
+    sessionStorage.setItem('guest_title', title || '');
+    sessionStorage.setItem('pending_join', _guestEventBubble.id);
+    
+    // Render QR
+    setTimeout(function() {
+      var container = document.getElementById('guest-qr-container');
+      if (container && typeof QRCode !== 'undefined') {
+        container.innerHTML = '';
+        new QRCode(container, {
+          text: qrUrl,
+          width: 200,
+          height: 200,
+          colorDark: '#1E1B2E',
+          colorLight: '#FFFFFF',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+    }, 100);
+    
+    trackEvent('guest_qr_created', { bubble_id: _guestEventBubble.id });
+  } catch(e) {
+    logError('createGuestQR', e);
+    showToast('Fejl: ' + (e.message || 'ukendt'));
+  }
+}
+
+function guestUpgradeToFull() {
+  // Pre-fill signup with guest info
+  var name = sessionStorage.getItem('guest_name') || '';
+  var title = sessionStorage.getItem('guest_title') || '';
+  goTo('screen-auth');
+  showAuthForms();
+  setTimeout(function() {
+    switchToSignup();
+    var nameEl = document.getElementById('signup-name');
+    var titleEl = document.getElementById('signup-title');
+    if (nameEl && name) nameEl.value = name;
+    if (titleEl && title) titleEl.value = title;
+  }, 200);
+}
+
+// ══════════════════════════════════════════════════════════
+//  MANUAL CHECK-IN — organizer adds guest by name
+// ══════════════════════════════════════════════════════════
+async function manualCheckinGuest() {
+  var nameInput = document.getElementById('manual-checkin-name');
+  var name = (nameInput?.value || '').trim();
+  if (!name) { showToast('Indtast deltagerens navn'); return; }
+  
+  // Find the current live bubble
+  var bubbleId = _liveQrResolvedBubble?.id || _currentLiveBubbleId;
+  if (!bubbleId && window.bcBubbleData) bubbleId = bcBubbleData.id;
+  
+  // Try from live status
+  if (!bubbleId) {
+    try {
+      var expCut = new Date(Date.now() - 6 * 3600000).toISOString();
+      var { data: myLive } = await sb.from('bubble_members')
+        .select('bubble_id')
+        .eq('user_id', currentUser.id)
+        .not('checked_in_at', 'is', null)
+        .is('checked_out_at', null)
+        .gte('checked_in_at', expCut)
+        .limit(1)
+        .maybeSingle();
+      if (myLive) bubbleId = myLive.bubble_id;
+    } catch(e) {}
+  }
+  
+  if (!bubbleId) { showToast('Check ind i en boble først'); return; }
+  
+  try {
+    var guestId = crypto.randomUUID ? crypto.randomUUID() : 'g-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
+    var { error } = await sb.from('guest_checkins').insert({
+      id: guestId,
+      bubble_id: bubbleId,
+      name: name,
+      checked_in_at: new Date().toISOString()
+    });
+    if (error) { showToast('Fejl: ' + error.message); return; }
+    
+    if (nameInput) nameInput.value = '';
+    showSuccessToast(name + ' tilføjet! ✓');
+    trackEvent('manual_checkin', { bubble_id: bubbleId, guest_name: name });
+    
+    // Refresh checkin list
+    if (typeof loadLiveCheckinList === 'function') loadLiveCheckinList();
+  } catch(e) {
+    logError('manualCheckinGuest', e);
+    showToast('Fejl: ' + (e.message || 'ukendt'));
+  }
+}
+
 //  APP BOOT
 // ══════════════════════════════════════════════════════════
 // ── Lyt på beskeder fra Service Worker ──
@@ -451,10 +640,15 @@ function showUpdateBanner() {
 window.addEventListener('load', async () => {
   // Check QR anon preview BEFORE auth (shows profile without login)
   if (initSupabase()) {
+    var isGuest = await checkGuestEventRoute();
+    if (isGuest) {
+      initAllSwipeClose();
+      return;
+    }
     var isAnon = await checkQRAnonPreview();
     if (isAnon) {
       initAllSwipeClose();
-      return; // Don't run normal auth flow
+      return;
     }
   }
   await checkAuth();

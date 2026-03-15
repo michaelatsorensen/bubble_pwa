@@ -146,7 +146,7 @@ async function submitQuickLive() {
       if (nameEl) nameEl.textContent = 'Checked ind \u2014 ' + name + '!';
       var metaEl = document.getElementById('live-scan-confirmed-meta');
       if (metaEl) metaEl.innerHTML = '<div style="display:flex;gap:0.3rem;margin-top:0.4rem">' +
-        '<button onclick="closeLiveCheckinModal();openBubble(\'' + bubble.id + '\')" style="flex:1;font-size:0.72rem;padding:0.35rem 0.8rem;background:rgba(46,207,207,0.12);color:var(--accent3);border:1px solid rgba(46,207,207,0.25);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Se hvem der er her \u2192</button>' +
+        '<button onclick="closeLiveCheckinModal();openBubble(\'' + bubble.id + '\')" style="flex:1;font-size:0.72rem;padding:0.35rem 0.8rem;background:rgba(124,92,252,0.08);color:var(--accent);border:1px solid rgba(124,92,252,0.2);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Se hvem der er her \u2192</button>' +
         '<button onclick="liveCheckout();closeLiveCheckinModal()" style="font-size:0.72rem;padding:0.35rem 0.6rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Check ud</button>' +
         '</div>';
     }
@@ -214,10 +214,10 @@ async function bbLoadLivePanel() {
 
     if (filtered.length === 0) {
       list.innerHTML = '<div style="text-align:center;padding:2rem 1rem">' +
-        '<div style="width:44px;height:44px;margin:0 auto 0.7rem;opacity:0.4;color:var(--accent3)">' + ico('pin') + '</div>' +
+        '<div style="width:44px;height:44px;margin:0 auto 0.7rem;opacity:0.4;color:var(--accent)">' + ico('pin') + '</div>' +
         '<div style="font-size:0.85rem;font-weight:700;margin-bottom:0.25rem">Ingen events eller steder endnu</div>' +
         '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.4">Opret en event-boble med lokation, eller scan en QR-kode for at checke ind.</div>' +
-        '<button onclick="openCreateBubble()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(46,207,207,0.12);color:var(--accent3);border:1px solid rgba(46,207,207,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">+ Opret event</button>' +
+        '<button onclick="openCreateBubble()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(124,92,252,0.08);color:var(--accent);border:1px solid rgba(124,92,252,0.2);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">+ Opret event</button>' +
         '</div>';
       return;
     }
@@ -287,7 +287,7 @@ async function bbLoadLivePanel() {
         '</div>' +
         avatarHtml +
         (cnt > 0 ? '<div style="display:flex;align-items:center;gap:0.3rem"><div class="live-dot" style="width:6px;height:6px"></div><span class="fs-075 fw-600">' + cnt + '</span></div>' : '') +
-        '<button onclick="event.stopPropagation();liveCheckin(\'' + b.id + '\')" style="font-size:0.62rem;padding:0.25rem 0.5rem;background:rgba(46,207,207,0.1);color:var(--accent3);border:1px solid rgba(46,207,207,0.2);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0;margin-left:0.3rem">Check ind</button>' +
+        '<button onclick="event.stopPropagation();liveCheckin(\'' + b.id + '\')" style="font-size:0.62rem;padding:0.25rem 0.5rem;background:rgba(124,92,252,0.08);color:var(--accent);border:1px solid rgba(124,92,252,0.15);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0;margin-left:0.3rem">Check ind</button>' +
         '</div>';
     }).join('');
   } catch(e) {

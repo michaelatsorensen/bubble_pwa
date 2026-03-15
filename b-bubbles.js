@@ -398,6 +398,10 @@ async function confirmLeaveBubble(bubbleId) {
 //  CREATE BUBBLE
 // ══════════════════════════════════════════════════════════
 function openCreateBubble() {
+  openModal('modal-create-picker');
+}
+
+function openCreateNetworkModal() {
   cbChips = [];
   document.getElementById('cb-name').value = '';
   document.getElementById('cb-desc').value = '';
@@ -407,9 +411,8 @@ function openCreateBubble() {
   setTimeout(function() {
     initInputConfirmButtons();
     cbRenderPillSelect('cb-type', [
-      { value: 'event',   icon: 'rocket',   label: 'Event' },
+      { value: 'topic',   icon: 'target',   label: 'Emne' },
       { value: 'local',   icon: 'pin',      label: 'Lokal' },
-      { value: 'theme',   icon: 'target',   label: 'Tematiseret' },
       { value: 'company', icon: 'building', label: 'Virksomhed' }
     ]);
     cbRenderPillSelect('cb-visibility', [
