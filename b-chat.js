@@ -181,20 +181,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
 
     document.getElementById('bc-emoji').innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:1.1rem;height:1.1rem;border-radius:4px;object-fit:cover">' : bubbleEmoji(b.type);
     document.getElementById('bc-name').textContent = b.name;
-    // Hero: custom cover or type-based gradient
-    var _heroGrads = {'event':'linear-gradient(135deg,#7C5CFC,#6366F1)','live':'linear-gradient(135deg,#2ECFCF,#06B6D4)','local':'linear-gradient(135deg,#1A9E8E,#2ECFCF)','topic':'linear-gradient(135deg,#6366F1,#8B5CF6)','company':'linear-gradient(135deg,#3B82F6,#6366F1)'};
-    var hg = document.getElementById('bc-hero-gradient');
-    var hi = document.getElementById('bc-hero-icon');
-    var hero = document.getElementById('bc-hero');
-    if (b.cover_url) {
-      if (hg) { hg.style.background = 'url(' + escHtml(b.cover_url) + ') center/cover no-repeat'; hg.style.opacity = '1'; }
-      if (hi) hi.style.display = 'none';
-      if (hero) hero.style.height = '120px';
-    } else {
-      if (hg) { hg.style.background = _heroGrads[b.type] || _heroGrads['topic']; hg.style.opacity = ''; }
-      if (hi) { hi.style.display = ''; hi.innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:28px;height:28px;border-radius:8px;object-fit:cover">' : bubbleEmoji(b.type); }
-      if (hero) hero.style.height = '';
-    }
+
 
     // Use denormalized count if available, fallback to query
     var memberCount = b.member_count;
@@ -255,19 +242,7 @@ async function bcLoadBubbleInfo() {
     bcBubbleData = b;
     document.getElementById('bc-emoji').innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:1.1rem;height:1.1rem;border-radius:4px;object-fit:cover">' : bubbleEmoji(b.type);
     document.getElementById('bc-name').textContent = b.name;
-    var _heroGrads2 = {'event':'linear-gradient(135deg,#7C5CFC,#6366F1)','live':'linear-gradient(135deg,#2ECFCF,#06B6D4)','local':'linear-gradient(135deg,#1A9E8E,#2ECFCF)','topic':'linear-gradient(135deg,#6366F1,#8B5CF6)','company':'linear-gradient(135deg,#3B82F6,#6366F1)'};
-    var hg2 = document.getElementById('bc-hero-gradient');
-    var hi2 = document.getElementById('bc-hero-icon');
-    var hero2 = document.getElementById('bc-hero');
-    if (b.cover_url) {
-      if (hg2) { hg2.style.background = 'url(' + escHtml(b.cover_url) + ') center/cover no-repeat'; hg2.style.opacity = '1'; }
-      if (hi2) hi2.style.display = 'none';
-      if (hero2) hero2.style.height = '120px';
-    } else {
-      if (hg2) { hg2.style.background = _heroGrads2[b.type] || _heroGrads2['topic']; hg2.style.opacity = ''; }
-      if (hi2) { hi2.style.display = ''; hi2.innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:28px;height:28px;border-radius:8px;object-fit:cover">' : bubbleEmoji(b.type); }
-      if (hero2) hero2.style.height = '';
-    }
+
     var memberCount2 = b.member_count;
     if (memberCount2 == null) {
       var { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bcBubbleId);

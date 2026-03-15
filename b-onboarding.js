@@ -254,8 +254,8 @@ function abortOnboarding() {
     // Show confirm overlay
     var overlay = document.createElement('div');
     overlay.id = 'abort-confirm-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)';
-    overlay.innerHTML = '<div style="background:rgba(12,12,25,0.95);border:1px solid var(--glass-border);border-radius:20px;padding:1.5rem;max-width:320px;text-align:center;font-family:Figtree,sans-serif">' +
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(30,27,46,0.2);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)';
+    overlay.innerHTML = '<div style="background:rgba(255,255,255,0.98);border:1px solid var(--glass-border);border-radius:20px;padding:1.5rem;max-width:320px;text-align:center;font-family:Figtree,sans-serif">' +
       '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">Afbryd opsætning?</div>' +
       '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">Alt du har udfyldt nulstilles og du vender tilbage til login-skærmen.</div>' +
       '<button onclick="confirmAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid rgba(26,122,138,0.3);background:rgba(26,122,138,0.1);color:var(--accent2);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.4rem">Ja, afbryd og nulstil</button>' +

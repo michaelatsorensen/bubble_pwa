@@ -180,11 +180,11 @@ function viewAvatarFull(el) {
   var img = el.querySelector('img');
   if (!img || !img.src) return;
   var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(30,27,46,0.25);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
   overlay.onclick = function() { overlay.remove(); };
   var bigImg = document.createElement('img');
   bigImg.src = img.src;
-  bigImg.style.cssText = 'max-width:90vw;max-height:80vh;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.5);object-fit:contain';
+  bigImg.style.cssText = 'max-width:90vw;max-height:80vh;border-radius:16px;box-shadow:0 20px 60px rgba(30,27,46,0.15);object-fit:contain';
   overlay.appendChild(bigImg);
   var closeBtn = document.createElement('div');
   closeBtn.textContent = '✕';
@@ -478,11 +478,11 @@ async function loadInterestPreview() {
 
 function showTerms() {
   var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.85);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(30,27,46,0.25);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
   overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
 
   var sheet = document.createElement('div');
-  sheet.style.cssText = 'width:100%;max-width:680px;max-height:85vh;background:rgba(12,12,25,0.95);border-radius:24px 24px 0 0;padding:1.5rem;overflow-y:auto;color:var(--text);font-family:Figtree,sans-serif';
+  sheet.style.cssText = 'width:100%;max-width:680px;max-height:85vh;background:rgba(255,255,255,0.98);border-radius:24px 24px 0 0;padding:1.5rem;overflow-y:auto;color:var(--text);font-family:Figtree,sans-serif';
   sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.08);margin:0 auto 1rem;cursor:pointer" onclick="this.parentElement.parentElement.remove()"></div>' +
     '<h2 style="font-size:1.2rem;font-weight:800;margin-bottom:0.8rem">Betingelser & Privatlivspolitik</h2>' +
     '<div style="font-size:0.78rem;line-height:1.7;color:var(--text-secondary)">' +
@@ -523,11 +523,11 @@ function showTerms() {
 
 function openFeedback() {
   var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.85);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(30,27,46,0.25);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
   overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
 
   var sheet = document.createElement('div');
-  sheet.style.cssText = 'width:100%;max-width:680px;background:rgba(12,12,25,0.95);border-radius:24px 24px 0 0;padding:1.5rem;color:var(--text);font-family:Figtree,sans-serif';
+  sheet.style.cssText = 'width:100%;max-width:680px;background:rgba(255,255,255,0.98);border-radius:24px 24px 0 0;padding:1.5rem;color:var(--text);font-family:Figtree,sans-serif';
   sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.08);margin:0 auto 1rem;cursor:pointer" onclick="this.parentElement.parentElement.remove()"></div>' +
     '<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem">Giv feedback</h2>' +
     '<p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Vi er i beta — din feedback er guld værd og hjælper os med at bygge det bedste produkt.</p>' +

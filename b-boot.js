@@ -427,10 +427,10 @@ function showUpdateBanner() {
   banner.id = 'update-banner';
   banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;'
     + 'padding-top:env(safe-area-inset-top,0px);'
-    + 'background:rgba(12,12,25,0.92);'
+    + 'background:rgba(255,255,255,0.96);'
     + 'backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);'
     + 'border-bottom:1px solid rgba(124,92,252,0.25);'
-    + 'box-shadow:0 4px 24px rgba(0,0,0,0.4);';
+    + 'box-shadow:0 4px 24px rgba(30,27,46,0.12);';
   banner.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;'
     + 'padding:0.55rem 1rem;gap:0.75rem;font-family:inherit">'
     + '<div style="display:flex;align-items:center;gap:0.5rem;min-width:0">'

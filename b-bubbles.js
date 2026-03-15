@@ -520,21 +520,14 @@ async function openEditBubble(bubbleId) {
       if (b.icon_url) { iconPrev.innerHTML = '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:12px">'; }
       else { iconPrev.innerHTML = bubbleEmoji(b.type); }
     }
-    // Cover preview
-    var coverPrev = document.getElementById('eb-cover-preview');
-    if (coverPrev) {
-      if (b.cover_url) { coverPrev.innerHTML = '<img src="' + escHtml(b.cover_url) + '" style="width:100%;height:100%;object-fit:cover"><input type="file" id="eb-cover-input" accept="image/*" onchange="handleBubbleCoverUpload(this)" style="display:none">'; }
-      else { coverPrev.innerHTML = '<input type="file" id="eb-cover-input" accept="image/*" onchange="handleBubbleCoverUpload(this)" style="display:none"><span style="font-size:0.72rem;color:var(--muted)">Tryk for at uploade</span>'; }
-    }
+
     _pendingBubbleIcon = b.icon_url || null;
-    _pendingBubbleCover = b.cover_url || null;
     openModal('modal-edit-bubble');
     setTimeout(initInputConfirmButtons, 50);
   } catch(e) { logError("openEditBubble", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 var _pendingBubbleIcon = null;
-var _pendingBubbleCover = null;
 
 async function handleBubbleIconUpload(input) {
   try {
@@ -557,25 +550,7 @@ async function handleBubbleIconUpload(input) {
   } catch(e) { logError('handleBubbleIconUpload', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
 }
 
-async function handleBubbleCoverUpload(input) {
-  try {
-    var file = input.files[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { showToast('Maks 2MB'); input.value = ''; return; }
-    var allowed = ['image/jpeg','image/png','image/webp'];
-    if (allowed.indexOf(file.type) < 0) { showToast('Brug JPG, PNG eller WebP'); input.value = ''; return; }
-    showToast('Uploader cover...');
-    var path = 'bubbles/' + currentEditBubbleId + '/cover-' + Date.now() + '.jpg';
-    var { error: upErr } = await sb.storage.from('bubble-files').upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type });
-    if (upErr) { showToast('Upload fejlede: ' + (upErr.message || 'ukendt')); input.value = ''; return; }
-    var { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
-    _pendingBubbleCover = urlData.publicUrl;
-    var prev = document.getElementById('eb-cover-preview');
-    if (prev) prev.innerHTML = '<img src="' + _pendingBubbleCover + '" style="width:100%;height:100%;object-fit:cover"><input type="file" id="eb-cover-input" accept="image/*" onchange="handleBubbleCoverUpload(this)" style="display:none">';
-    showToast('Cover uploadet! 🎨');
-    input.value = '';
-  } catch(e) { logError('handleBubbleCoverUpload', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
-}
+
 
 async function saveEditBubble() {
   try {
@@ -590,7 +565,6 @@ async function saveEditBubble() {
       visibility, description: desc, location, keywords: ebChips
     };
     if (_pendingBubbleIcon) updateObj.icon_url = _pendingBubbleIcon;
-    if (_pendingBubbleCover) updateObj.cover_url = _pendingBubbleCover;
     const { error } = await sb.from('bubbles').update(updateObj).eq('id', currentEditBubbleId);
     if (error) return showToast('Fejl: ' + error.message);
     closeModal('modal-edit-bubble');
