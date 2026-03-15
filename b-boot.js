@@ -502,6 +502,13 @@ function eventSignupEmail() {
   setTimeout(function() { if (typeof switchToSignup === 'function') switchToSignup(); }, 200);
 }
 
+function eventSignupApple() {
+  sessionStorage.setItem('event_flow', 'true');
+  goTo('screen-auth');
+  showAuthForms();
+  setTimeout(function() { if (typeof appleSignIn === 'function') appleSignIn(); }, 200);
+}
+
 function eventLoginExisting() {
   sessionStorage.setItem('event_flow', 'true');
   goTo('screen-auth');
@@ -545,8 +552,22 @@ async function showEventReadyQR() {
   } catch(e) { logError('showEventReadyQR', e); }
 }
 
+function eventReadyGoToTags() {
+  // Check if user has tags — if not, show onboarding for tag selection
+  var hasTags = (currentProfile?.keywords || []).length >= 3;
+  if (!hasTags) {
+    sessionStorage.setItem('post_tags_destination', 'event_bubble');
+    reRunOnboarding();
+    showToast('Vælg mindst 3 interesser for bedre matches');
+    return;
+  }
+  eventReadyGoToEvent();
+}
+
 function eventReadyGoToEvent() {
   var bubbleId = sessionStorage.getItem('pending_join');
+  sessionStorage.removeItem('pending_join');
+  sessionStorage.removeItem('post_tags_destination');
   if (bubbleId) {
     goTo('screen-home');
     loadHome();

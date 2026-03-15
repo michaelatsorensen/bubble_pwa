@@ -228,7 +228,7 @@ function skipOnboarding() {
 
   // Event flow requires full profile
   var isEventFlow = sessionStorage.getItem('event_flow');
-  if (isEventFlow) { showToast('Udfyld navn, virksomhed og titel for at deltage i eventet'); return; }
+  if (isEventFlow) { showToast('Udfyld navn og virksomhed for at deltage'); return; }
 
   sb.from('profiles').upsert({
     id: currentUser.id, name: name,
@@ -1134,9 +1134,10 @@ async function saveOnboarding() {
     const linkedin  = document.getElementById('ob-linkedin').value.trim();
     const workplace = (document.getElementById('ob-workplace')?.value || '').trim();
     if (!name)            return showToast('Navn er påkrævet');
-    if (!title)           return showToast('Titel er påkrævet');
     if (!workplace)       return showToast('Virksomhed er påkrævet');
-    if (obSelectedTags.length < 3) return showToast('Vælg mindst 3 tags');
+    // Tags: required in normal flow, deferred in event flow
+    var isEventFlow = sessionStorage.getItem('event_flow');
+    if (!isEventFlow && obSelectedTags.length < 3) return showToast('Vælg mindst 3 tags');
     const { error } = await sb.from('profiles').upsert({
       id: currentUser.id, name, title, bio, linkedin, workplace,
       keywords: obSelectedTags, dynamic_keywords: obDynChips, is_anon: false
@@ -1154,10 +1155,14 @@ async function saveOnboarding() {
     initPushNotifications();
     // If coming from event flow → auto-join + show QR
     var isEventFlow = sessionStorage.getItem('event_flow');
+    var postTagsDest = sessionStorage.getItem('post_tags_destination');
     if (isEventFlow) {
       sessionStorage.removeItem('event_flow');
       await checkPendingJoin();
       showEventReadyQR();
+    } else if (postTagsDest === 'event_bubble') {
+      sessionStorage.removeItem('post_tags_destination');
+      eventReadyGoToEvent();
     } else {
       goTo('screen-welcome');
     }
