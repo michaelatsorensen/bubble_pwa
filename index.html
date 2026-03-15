@@ -51,7 +51,7 @@
 .radar-dots-row .avatar:first-child { margin-left:0; }
 
 /* ═══ V4.0 — QR Topbar Button ═══ */
-.qr-topbar-btn { position:relative; width:34px; height:34px; border-radius:50%; background:#FFFFFF; border:1px solid var(--glass-border-subtle); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-secondary); transition:all 0.15s; }
+.qr-topbar-btn { position:relative; width:34px; height:34px; border-radius:50%; background:var(--glass-bg-strong); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-secondary); transition:all 0.15s; }
 .qr-topbar-btn:active { transform:scale(0.9); }
 .qr-topbar-btn .qr-pulse { position:absolute; top:2px; right:2px; width:8px; height:8px; border-radius:50%; background:var(--accent); border:2px solid var(--bg); animation:pulse 2s infinite; }
 
@@ -584,7 +584,7 @@
     <!-- Greeting -->
     <div style="padding:0.3rem 0 0.6rem">
       <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.3rem;letter-spacing:0.04em;text-transform:uppercase;font-weight:600">Goddag,</div>
-      <div style="font-size:1.5rem;font-weight:800;letter-spacing:-0.02em" id="home-greeting-name"><svg class="ico" style="width:1.5rem;height:1.5rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 11V6.5a1.5 1.5 0 013 0V11"/><path d="M12.5 10V5.5a1.5 1.5 0 013 0v5"/><path d="M15.5 11V7.5a1.5 1.5 0 013 0v5.5a7 7 0 01-7 7h-1a7 7 0 01-5.8-3.1L4 15.5a1.5 1.5 0 012.1-2.1L9.5 16"/><path d="M9.5 11V4.5a1.5 1.5 0 00-3 0V12"/></svg></div>
+      <div style="font-size:1.5rem;font-weight:800;letter-spacing:-0.02em;display:flex;align-items:center;gap:0.3rem" id="home-greeting-name"><svg class="ico" style="width:1.5rem;height:1.5rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 11V6.5a1.5 1.5 0 013 0V11"/><path d="M12.5 10V5.5a1.5 1.5 0 013 0v5"/><path d="M15.5 11V7.5a1.5 1.5 0 013 0v5.5a7 7 0 01-7 7h-1a7 7 0 01-5.8-3.1L4 15.5a1.5 1.5 0 012.1-2.1L9.5 16"/><path d="M9.5 11V4.5a1.5 1.5 0 00-3 0V12"/></svg></div>
     </div>
 
 
@@ -693,13 +693,13 @@
       <div class="radar-card-v4" data-hs="radar" onclick="openRadarSheet()">
         <div style="display:flex;align-items:center;gap:0.6rem">
           <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#7C5CFC,#6366F1);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="white"/></svg></div>
-          <div style="flex:1">
+          <div style="flex:1;min-width:0">
             <div style="font-size:0.88rem;font-weight:700;color:var(--text)">Radar</div>
             <div style="font-size:0.72rem;color:var(--text-secondary)" id="radar-count-home">Henter matches...</div>
           </div>
-          <div style="color:var(--accent);font-size:0.78rem;font-weight:600">Se →</div>
+          <div style="color:var(--accent);font-size:0.78rem;font-weight:600;flex-shrink:0;align-self:center">Se →</div>
         </div>
-        <div class="radar-dots-row" id="radar-preview-avatars"></div>
+        <div class="radar-dots-row" id="radar-preview-avatars" style="padding-left:46px"></div>
       </div>
 
 
@@ -811,8 +811,8 @@
       <div class="person-cover-gradient" id="person-cover-grad"></div>
       <div class="person-cover-pattern"></div>
       <div style="position:absolute;bottom:0.75rem;left:0;right:0;display:flex;justify-content:space-between;padding:0 1rem;z-index:5">
-        <button id="person-back-btn" onclick="" style="background:rgba(0,0,0,0.4);backdrop-filter:blur(8px);border:none;border-radius:99px;padding:0.3rem 0.8rem;color:white;font-size:0.8rem;font-family:inherit;cursor:pointer">←</button>
-        <div id="person-match-label" style="background:rgba(0,0,0,0.4);backdrop-filter:blur(8px);border-radius:99px;padding:0.3rem 0.8rem;font-size:0.75rem;font-weight:700;color:white"></div>
+        <button id="person-back-btn" onclick="" style="background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);border:1px solid var(--glass-border-subtle);border-radius:99px;padding:0.3rem 0.8rem;color:var(--text);font-size:0.8rem;font-family:inherit;cursor:pointer;box-shadow:0 1px 4px rgba(30,27,46,0.1)">←</button>
+        <div id="person-match-label" style="background:var(--accent);border-radius:99px;padding:0.3rem 0.8rem;font-size:0.75rem;font-weight:700;color:white;box-shadow:0 2px 8px rgba(124,92,252,0.3)"></div>
       </div>
     </div>
     <!-- Avatar + name -->
@@ -1317,6 +1317,24 @@
     <div class="input-group">
       <div class="input-label">Lokation (valgfrit)</div>
       <input class="input" id="eb-location" placeholder="f.eks. København">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Boble-ikon (valgfrit)</div>
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <div id="eb-icon-preview" style="width:48px;height:48px;border-radius:12px;background:var(--glass-bg-strong);border:1px solid var(--glass-border-subtle);display:flex;align-items:center;justify-content:center;font-size:1.2rem;overflow:hidden;flex-shrink:0;color:var(--muted)">?</div>
+        <div style="flex:1">
+          <input type="file" id="eb-icon-input" accept="image/*" onchange="handleBubbleIconUpload(this)" style="display:none">
+          <button class="btn-sm" style="background:var(--glass-bg-strong);border:1px solid var(--glass-border-subtle);color:var(--text-secondary);font-size:0.72rem;padding:0.4rem 0.8rem;border-radius:8px;cursor:pointer;font-family:inherit" onclick="document.getElementById('eb-icon-input').click()">Upload ikon</button>
+          <div style="font-size:0.6rem;color:var(--muted);margin-top:0.2rem">Maks 2MB · JPG, PNG, WebP</div>
+        </div>
+      </div>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Cover-baggrund (valgfrit)</div>
+      <div id="eb-cover-preview" style="width:100%;height:56px;border-radius:12px;background:var(--glass-bg-strong);border:1px solid var(--glass-border-subtle);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;position:relative" onclick="document.getElementById('eb-cover-input').click()">
+        <input type="file" id="eb-cover-input" accept="image/*" onchange="handleBubbleCoverUpload(this)" style="display:none">
+        <span style="font-size:0.72rem;color:var(--muted)">Tryk for at uploade</span>
+      </div>
     </div>
     <button class="btn-primary" onclick="saveEditBubble()">Gem ændringer</button>
     <button class="btn-secondary" onclick="closeModal('modal-edit-bubble')">Annuller</button>

@@ -185,7 +185,176 @@ async function joinBubble(bubbleId) {
   } catch(e) { logError("joinBubble", e); showToast(e.message || "Ukendt fejl"); }
 }
 
+// ══════════════════════════════════════════════════════════
+//  OWNERSHIP TRANSFER + ADMIN DESIGNATION
+// ══════════════════════════════════════════════════════════
+var _memberSheetEl = null;
+
+function _buildMemberSheet(title, subtitle, members, actionFn) {
+  // Reusable member picker sheet
+  if (_memberSheetEl) _memberSheetEl.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'member-action-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(30,27,46,0.25);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
+  overlay.onclick = function(e) { if (e.target === overlay) { overlay.remove(); _memberSheetEl = null; } };
+
+  var sheet = document.createElement('div');
+  sheet.style.cssText = 'width:100%;max-width:680px;max-height:70vh;background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);border-radius:24px 24px 0 0;padding:1.5rem;color:var(--text);font-family:Figtree,sans-serif;overflow-y:auto';
+
+  var avColors = proxColors || ['linear-gradient(135deg,#6366F1,#7C5CFC)'];
+
+  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.12);margin:0 auto 1rem;cursor:pointer" onclick="closeMemberSheet()"></div>' +
+    '<div style="font-size:1.05rem;font-weight:800;margin-bottom:0.3rem">' + title + '</div>' +
+    '<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">' + subtitle + '</div>' +
+    '<div id="member-sheet-list">' +
+    members.map(function(m, i) {
+      var p = m.profiles || {};
+      var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var avHtml = p.avatar_url ?
+        '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
+        '<div style="width:40px;height:40px;border-radius:50%;background:' + avColors[i % avColors.length] + ';display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>';
+      var isAdmin = m.role === 'admin';
+      var adminBadge = isAdmin ? '<span class="admin-badge" style="font-size:0.55rem;background:rgba(124,92,252,0.1);color:var(--accent);padding:0.1rem 0.35rem;border-radius:6px;font-weight:600">Admin</span>' : '';
+      return '<div class="member-pick-row" data-uid="' + m.user_id + '" data-name="' + escHtml(p.name||'?').replace(/"/g,'&quot;') + '" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border-radius:12px;border:1px solid var(--glass-border-subtle);margin-bottom:0.4rem;cursor:pointer;transition:all 0.15s" onclick="' + actionFn + '(\'' + m.user_id + '\',\'' + escHtml(p.name||'?').replace(/'/g,"\\'") + '\')">' +
+        avHtml +
+        '<div style="flex:1"><div style="font-weight:600;font-size:0.85rem;display:flex;align-items:center;gap:0.3rem">' + escHtml(p.name||'Ukendt') + ' ' + adminBadge + '</div><div style="font-size:0.72rem;color:var(--text-secondary)">' + escHtml(p.title||'') + '</div></div>' +
+        '<div style="color:var(--accent);font-size:0.72rem;font-weight:600">Vælg</div>' +
+      '</div>';
+    }).join('') +
+    '</div>' +
+    '<div id="member-sheet-tray" style="display:none"></div>';
+
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+  _memberSheetEl = overlay;
+}
+
+function closeMemberSheet() {
+  if (_memberSheetEl) { _memberSheetEl.remove(); _memberSheetEl = null; }
+}
+
+function _showMemberTray(userId, userName, confirmText, cancelText, onConfirm) {
+  var list = document.getElementById('member-sheet-list');
+  var tray = document.getElementById('member-sheet-tray');
+  if (!list || !tray) return;
+  list.style.display = 'none';
+  tray.style.display = 'block';
+  tray.innerHTML = '<div style="text-align:center;padding:1rem 0">' +
+    '<div style="font-size:0.92rem;font-weight:700;margin-bottom:0.3rem">' + confirmText.replace('{name}', '<strong>' + escHtml(userName) + '</strong>') + '</div>' +
+    '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem">Denne handling kan ikke fortrydes</div>' +
+    '<div style="display:flex;gap:0.5rem;justify-content:center">' +
+    '<button style="flex:1;padding:0.65rem;border-radius:12px;background:var(--gradient-primary);color:white;border:none;font-family:inherit;font-weight:700;font-size:0.82rem;cursor:pointer" onclick="' + onConfirm + '">Bekræft</button>' +
+    '<button style="flex:1;padding:0.65rem;border-radius:12px;background:none;color:var(--text-secondary);border:1px solid var(--glass-border);font-family:inherit;font-weight:600;font-size:0.82rem;cursor:pointer" onclick="closeMemberSheet()">Annuller</button>' +
+    '</div></div>';
+}
+
+// ── Transfer ownership ──
+async function openTransferOwnership(bubbleId) {
+  try {
+    var { data: members } = await sb.from('bubble_members')
+      .select('user_id, role, profiles(id,name,title,avatar_url)')
+      .eq('bubble_id', bubbleId)
+      .neq('user_id', currentUser.id);
+    if (!members || members.length === 0) { showToast('Ingen medlemmer at overdrage til'); return; }
+    _buildMemberSheet(
+      ico('crown') + ' Overdrag ejerskab',
+      'Vælg det nye medlem der skal overtage som ejer. Du beholder dit medlemskab.',
+      members,
+      '_selectTransferTarget.bind(null,\\\'' + bubbleId + '\\\')'
+    );
+    // Override click handlers for cleaner binding
+    document.querySelectorAll('#member-sheet-list .member-pick-row').forEach(function(row) {
+      row.onclick = function() {
+        _selectTransferTarget(bubbleId, row.dataset.uid, row.dataset.name);
+      };
+    });
+  } catch(e) { logError('openTransferOwnership', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+}
+
+function _selectTransferTarget(bubbleId, userId, userName) {
+  _showMemberTray(userId, userName, 'Overdrag ejerskab til {name}?',
+    'Annuller',
+    '_executeTransfer(\'' + bubbleId + '\',\'' + userId + '\',\'' + escHtml(userName).replace(/'/g,"\\'") + '\')');
+}
+
+async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
+  try {
+    var { error } = await sb.from('bubbles').update({ created_by: newOwnerId }).eq('id', bubbleId).eq('created_by', currentUser.id);
+    if (error) { showToast('Fejl: ' + error.message); return; }
+    closeMemberSheet();
+    showSuccessToast('Ejerskab overdraget til ' + newOwnerName);
+    trackEvent('bubble_ownership_transferred', { bubble_id: bubbleId, new_owner: newOwnerId });
+    await bcLoadBubbleInfo();
+    bcLoadInfo();
+  } catch(e) { logError('_executeTransfer', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+}
+
+// ── Admin designation ──
+async function openAdminDesignation(bubbleId) {
+  try {
+    var { data: members } = await sb.from('bubble_members')
+      .select('user_id, role, profiles(id,name,title,avatar_url)')
+      .eq('bubble_id', bubbleId)
+      .neq('user_id', currentUser.id);
+    if (!members || members.length === 0) { showToast('Ingen medlemmer at udpege'); return; }
+    _buildMemberSheet(
+      ico('crown') + ' Udpeg admin',
+      'Admins kan redigere boblen, invitere og fjerne medlemmer.',
+      members,
+      'dummy'
+    );
+    // Override click handlers
+    document.querySelectorAll('#member-sheet-list .member-pick-row').forEach(function(row) {
+      row.onclick = function() {
+        var isAdmin = row.querySelector('.admin-badge');
+        if (isAdmin) {
+          _selectRemoveAdmin(bubbleId, row.dataset.uid, row.dataset.name);
+        } else {
+          _selectMakeAdmin(bubbleId, row.dataset.uid, row.dataset.name);
+        }
+      };
+    });
+  } catch(e) { logError('openAdminDesignation', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+}
+
+function _selectMakeAdmin(bubbleId, userId, userName) {
+  _showMemberTray(userId, userName, 'Gør {name} til admin?',
+    'Annuller',
+    '_executeSetRole(\'' + bubbleId + '\',\'' + userId + '\',\'' + escHtml(userName).replace(/'/g,"\\'") + '\',\'admin\')');
+}
+
+function _selectRemoveAdmin(bubbleId, userId, userName) {
+  _showMemberTray(userId, userName, 'Fjern admin-rettigheder fra {name}?',
+    'Annuller',
+    '_executeSetRole(\'' + bubbleId + '\',\'' + userId + '\',\'' + escHtml(userName).replace(/'/g,"\\'") + '\',\'member\')');
+}
+
+async function _executeSetRole(bubbleId, userId, userName, role) {
+  try {
+    var { error } = await sb.from('bubble_members').update({ role: role }).eq('bubble_id', bubbleId).eq('user_id', userId);
+    if (error) { showToast('Fejl: ' + error.message); return; }
+    closeMemberSheet();
+    if (role === 'admin') {
+      showSuccessToast(userName + ' er nu admin');
+    } else {
+      showToast(userName + ' er ikke længere admin');
+    }
+    trackEvent('bubble_role_changed', { bubble_id: bubbleId, user_id: userId, role: role });
+    await bcLoadMembers();
+  } catch(e) { logError('_executeSetRole', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+}
+
 async function leaveBubble(bubbleId) {
+  // If user is owner, warn to transfer first
+  if (bcBubbleData && bcBubbleData.created_by === currentUser.id) {
+    var { count } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', bubbleId).neq('user_id', currentUser.id);
+    if (count > 0) {
+      showToast('Du er ejer — overdrag ejerskab først under Info-fanen');
+      return;
+    }
+    // Owner is the only member — allow leaving (bubble becomes orphaned)
+  }
   // Show inline confirm tray in the action bar area
   var bar = document.getElementById('bc-action-bar');
   if (!bar) return;
@@ -345,9 +514,67 @@ async function openEditBubble(bubbleId) {
     document.getElementById('eb-location').value = b.location || '';
     ebChips = [...(b.keywords || [])];
     renderChips('eb-chips', ebChips, 'eb-chips-container', 'eb-chip-input');
+    // Icon preview
+    var iconPrev = document.getElementById('eb-icon-preview');
+    if (iconPrev) {
+      if (b.icon_url) { iconPrev.innerHTML = '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:12px">'; }
+      else { iconPrev.innerHTML = bubbleEmoji(b.type); }
+    }
+    // Cover preview
+    var coverPrev = document.getElementById('eb-cover-preview');
+    if (coverPrev) {
+      if (b.cover_url) { coverPrev.innerHTML = '<img src="' + escHtml(b.cover_url) + '" style="width:100%;height:100%;object-fit:cover"><input type="file" id="eb-cover-input" accept="image/*" onchange="handleBubbleCoverUpload(this)" style="display:none">'; }
+      else { coverPrev.innerHTML = '<input type="file" id="eb-cover-input" accept="image/*" onchange="handleBubbleCoverUpload(this)" style="display:none"><span style="font-size:0.72rem;color:var(--muted)">Tryk for at uploade</span>'; }
+    }
+    _pendingBubbleIcon = b.icon_url || null;
+    _pendingBubbleCover = b.cover_url || null;
     openModal('modal-edit-bubble');
     setTimeout(initInputConfirmButtons, 50);
   } catch(e) { logError("openEditBubble", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+var _pendingBubbleIcon = null;
+var _pendingBubbleCover = null;
+
+async function handleBubbleIconUpload(input) {
+  try {
+    var file = input.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { showToast('Maks 2MB'); input.value = ''; return; }
+    var allowed = ['image/jpeg','image/png','image/webp'];
+    if (allowed.indexOf(file.type) < 0) { showToast('Brug JPG, PNG eller WebP'); input.value = ''; return; }
+    showToast('Uploader ikon...');
+    var resized = typeof resizeImage === 'function' ? await resizeImage(file, 256) : file;
+    var path = 'bubbles/' + currentEditBubbleId + '/icon-' + Date.now() + '.jpg';
+    var { error: upErr } = await sb.storage.from('bubble-files').upload(path, resized, { cacheControl: '3600', upsert: true, contentType: 'image/jpeg' });
+    if (upErr) { showToast('Upload fejlede: ' + (upErr.message || 'ukendt')); input.value = ''; return; }
+    var { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
+    _pendingBubbleIcon = urlData.publicUrl;
+    var prev = document.getElementById('eb-icon-preview');
+    if (prev) prev.innerHTML = '<img src="' + _pendingBubbleIcon + '" style="width:100%;height:100%;object-fit:cover;border-radius:12px">';
+    showToast('Ikon uploadet! 📸');
+    input.value = '';
+  } catch(e) { logError('handleBubbleIconUpload', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+}
+
+async function handleBubbleCoverUpload(input) {
+  try {
+    var file = input.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { showToast('Maks 2MB'); input.value = ''; return; }
+    var allowed = ['image/jpeg','image/png','image/webp'];
+    if (allowed.indexOf(file.type) < 0) { showToast('Brug JPG, PNG eller WebP'); input.value = ''; return; }
+    showToast('Uploader cover...');
+    var path = 'bubbles/' + currentEditBubbleId + '/cover-' + Date.now() + '.jpg';
+    var { error: upErr } = await sb.storage.from('bubble-files').upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type });
+    if (upErr) { showToast('Upload fejlede: ' + (upErr.message || 'ukendt')); input.value = ''; return; }
+    var { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
+    _pendingBubbleCover = urlData.publicUrl;
+    var prev = document.getElementById('eb-cover-preview');
+    if (prev) prev.innerHTML = '<img src="' + _pendingBubbleCover + '" style="width:100%;height:100%;object-fit:cover"><input type="file" id="eb-cover-input" accept="image/*" onchange="handleBubbleCoverUpload(this)" style="display:none">';
+    showToast('Cover uploadet! 🎨');
+    input.value = '';
+  } catch(e) { logError('handleBubbleCoverUpload', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
 }
 
 async function saveEditBubble() {
@@ -358,14 +585,16 @@ async function saveEditBubble() {
     const desc       = document.getElementById('eb-desc').value.trim();
     const location   = document.getElementById('eb-location').value.trim();
     if (!name) return showToast('Navn er påkrævet');
-    const { error } = await sb.from('bubbles').update({
+    var updateObj = {
       name, type, type_label: typeLabel(type),
       visibility, description: desc, location, keywords: ebChips
-    }).eq('id', currentEditBubbleId);
+    };
+    if (_pendingBubbleIcon) updateObj.icon_url = _pendingBubbleIcon;
+    if (_pendingBubbleCover) updateObj.cover_url = _pendingBubbleCover;
+    const { error } = await sb.from('bubbles').update(updateObj).eq('id', currentEditBubbleId);
     if (error) return showToast('Fejl: ' + error.message);
     closeModal('modal-edit-bubble');
     showSuccessToast('Boble opdateret');
-    // Reload bubble data in-place (preserves back navigation)
     await bcLoadBubbleInfo();
     await bcLoadMembers();
   } catch(e) { logError("saveEditBubble", e); showToast(e.message || "Ukendt fejl"); }
@@ -880,8 +1109,11 @@ async function openInviteModal(bubbleId) {
       var isPending = pendingIds.indexOf(p.id) >= 0;
       var stars = starGet(p.id);
       var starHtml = stars > 0 ? ' <span style="font-size:0.55rem;color:var(--accent)">' + '\u2605'.repeat(stars) + '</span>' : '';
+      var avHtml = p.avatar_url ?
+        '<div class="invite-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>' :
+        '<div class="invite-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>';
       return '<label class="invite-row' + (isPending ? ' pending' : '') + '" data-uid="' + p.id + '">' +
-        '<div class="invite-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>' +
+        avHtml +
         '<div style="flex:1;min-width:0">' +
           '<div class="fw-600 fs-085">' + escHtml(p.name || '?') + starHtml + '</div>' +
           '<div class="fs-072 text-muted">' + escHtml(p.title || '') + '</div>' +

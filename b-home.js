@@ -19,7 +19,7 @@ async function loadHome() {
     var greetText = hour < 5 ? 'God nat' : hour < 12 ? 'Godmorgen' : hour < 17 ? 'Goddag' : hour < 22 ? 'God aften' : 'God nat';
     var greetLabel = nameEl?.previousElementSibling;
     if (greetLabel) greetLabel.textContent = greetText + ',';
-      nameEl.innerHTML = escHtml(currentProfile.name.split(' ')[0]) + ' ' + icon('wave');
+      nameEl.innerHTML = escHtml(currentProfile.name.split(' ')[0]) + '<span style="display:inline-flex;width:1.3rem;height:1.3rem">' + ico('wave') + '</span>';
     }
 
     // Load all dashboard data in parallel
@@ -447,21 +447,29 @@ async function updateRadarCount() {
     }
     if (rcEl) rcEl.textContent = total + ' profiler synlige i dine bobler';
 
-    // Load preview avatars for radar card
+    // Load preview avatars for radar card (deduplicated by user_id)
     var previewEl = document.getElementById('radar-preview-avatars');
     if (previewEl && total > 0) {
       var { data: previewProfiles } = await sb.from('bubble_members')
         .select('user_id, profiles(name, avatar_url)')
         .in('bubble_id', ids).neq('user_id', currentUser.id)
-        .limit(5);
-      if (previewProfiles && previewProfiles.length > 0) {
+        .limit(20);
+      // Deduplicate by user_id
+      var seen = {};
+      var unique = [];
+      (previewProfiles || []).forEach(function(m) {
+        if (!seen[m.user_id]) { seen[m.user_id] = true; unique.push(m); }
+      });
+      var deduped = unique.slice(0, 5);
+      var uniqueTotal = Object.keys(seen).length;
+      if (deduped.length > 0) {
         var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
-        previewEl.innerHTML = previewProfiles.map(function(m, i) {
+        previewEl.innerHTML = deduped.map(function(m, i) {
           var p = m.profiles || {};
           var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
           if (p.avatar_url) return '<div class="avatar" style="background:' + avColors[i % 10] + ';overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
           return '<div class="avatar" style="background:' + avColors[i % 10] + '">' + ini + '</div>';
-        }).join('') + (total > 5 ? '<div class="avatar" style="background:var(--glass-bg);color:var(--text-secondary);font-size:0.5rem;border:1px solid var(--glass-border-subtle)">+' + (total - 5) + '</div>' : '');
+        }).join('') + (uniqueTotal > 5 ? '<div class="avatar" style="background:var(--glass-bg);color:var(--text-secondary);font-size:0.5rem;border:1px solid var(--glass-border-subtle)">+' + (uniqueTotal - 5) + '</div>' : '');
       }
     }
   } catch(e) { logError("updateRadarCount", e); }
