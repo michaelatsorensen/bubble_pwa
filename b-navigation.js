@@ -53,7 +53,7 @@ function goTo(screenId) {
   const globalNav = document.getElementById('global-nav');
   const activeIdx = navMap[screenId];
   if (globalNav) {
-    var hideNav = screenId === 'screen-chat' || screenId === 'screen-bubble-chat' || screenId === 'screen-qr-preview' || screenId === 'screen-qr-teaser' || screenId === 'screen-social-proof' || screenId === 'screen-guest-checkin' || screenId === 'screen-event-ready';
+    var hideNav = screenId === 'screen-chat' || screenId === 'screen-bubble-chat' || screenId === 'screen-qr-preview' || screenId === 'screen-qr-teaser' || screenId === 'screen-social-proof' || screenId === 'screen-guest-checkin' || screenId === 'screen-event-ready' || screenId === 'screen-auth' || screenId === 'screen-loading' || screenId === 'screen-onboarding' || screenId === 'screen-welcome';
     globalNav.classList.toggle('nav-hidden', hideNav);
     if (activeIdx !== undefined && activeIdx >= 0) {
       globalNav.querySelectorAll('.nav-item').forEach((btn, i) => {

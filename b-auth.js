@@ -237,8 +237,37 @@ async function handleSignup() {
     if (!name || !email || !pass) return showToast('Udfyld alle felter');
     if (pass.length < 6) return showToast('Adgangskode skal være min. 6 tegn');
     showToast('Opretter konto...');
-    const { data, error } = await sb.auth.signUp({ email, password: pass });
+    const { data, error } = await sb.auth.signUp({
+      email,
+      password: pass,
+      options: {
+        emailRedirectTo: window.location.origin + window.location.pathname,
+        data: { name: name }
+      }
+    });
     if (error) return showToast('Fejl: ' + error.message);
+
+    // Check if email confirmation is required
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      // Email already exists
+      showToast('Denne email er allerede registreret — prøv at logge ind');
+      return;
+    }
+
+    if (data.user && !data.session) {
+      // Email confirmation required — show friendly message
+      var formArea = document.getElementById('auth-forms');
+      if (formArea) {
+        formArea.innerHTML = '<div style="text-align:center;padding:2rem 1rem">' +
+          '<div style="font-size:2rem;margin-bottom:0.8rem">📧</div>' +
+          '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">Tjek din email</div>' +
+          '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem">Vi har sendt en bekræftelsesmail til<br><strong style="color:var(--text)">' + escHtml(email) + '</strong><br><br>Klik på linket i mailen for at aktivere din konto. Tjek også spam-mappen.</div>' +
+          '<button class="btn-secondary" onclick="location.reload()" style="width:100%">Jeg har bekræftet — log ind</button>' +
+          '</div>';
+      }
+      return;
+    }
+
     currentUser = data.user;
 
     // Retry profile creation a few times — auth sometimes needs a moment to propagate
