@@ -138,7 +138,7 @@ function liveToggleListView() {
     if (found) found.style.display = 'none';
     if (confirmed) confirmed.style.display = 'none';
     if (toggle) toggle.textContent = 'Vis scanner ↓';
-    pauseLiveCamera();
+    stopLiveCamera();
   } else {
     // Restore scanner
     if (scanner) scanner.style.display = '';
@@ -149,7 +149,7 @@ function liveToggleListView() {
 }
 
 function closeLiveCheckinModal() {
-  pauseLiveCamera();
+  stopLiveCamera();
   closeModal('modal-live-checkin');
 }
 
@@ -660,7 +660,7 @@ async function liveScanConfirmJoin() {
       });
     }
 
-    pauseLiveCamera();
+    stopLiveCamera();
     // Show confirmation
     document.getElementById('live-scan-found').style.display = 'none';
     var confirmed = document.getElementById('live-scan-confirmed');

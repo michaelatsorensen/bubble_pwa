@@ -80,7 +80,6 @@ body {
 .scroll-area { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:1rem 1.1rem calc(56px + env(safe-area-inset-bottom, 0px) + 0.5rem); overscroll-behavior-x:none; }
 
 /* ── BOTTOM NAV ── */
-/* Nav bar — single source of truth, GPU-locked */
 #global-nav {
   position: fixed;
   bottom: 0;
@@ -89,25 +88,22 @@ body {
   z-index: 50;
   display: flex;
   justify-content: space-around;
-  align-items: center;
-  height: 56px;
-  padding: 0 0.5rem;
+  align-items: stretch;
+  padding: 0;
   padding-bottom: env(safe-area-inset-bottom, 0px);
   margin: 0;
   background: rgba(255,255,255,0.96);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
   border-top: 1px solid #D8D5E4;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  will-change: transform;
 }
 #global-nav.nav-hidden {
-  transform: translateY(calc(100% + env(safe-area-inset-bottom, 0px))) translateZ(0);
+  transform: translateY(100%);
   pointer-events: none;
   transition: transform 0.25s ease;
 }
 #global-nav:not(.nav-hidden) {
+  transform: none;
   transition: transform 0.25s ease;
 }
 .nav-item {
@@ -116,14 +112,13 @@ body {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  height: 44px;
+  padding: 8px 0 6px;
   font-size: 0.55rem;
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--muted);
   cursor: pointer;
   position: relative;
-  padding: 0;
   border: none;
   background: none;
   flex: 1;
@@ -865,6 +860,15 @@ a.person-action-btn { text-decoration:none; }
 .radar-view-btn:not(.active):hover { color: var(--text-secondary); }
 
 /* ── RADAR LIST VIEW ── */
+.radar-filter-btn {
+  font-size: 0.65rem; font-weight: 600; font-family: inherit;
+  padding: 0.3rem 0.6rem; border-radius: 99px; cursor: pointer;
+  border: 1px solid var(--glass-border-subtle); background: #FFFFFF;
+  color: var(--text-secondary); transition: all 0.15s; white-space: nowrap;
+}
+.radar-filter-btn.active {
+  background: var(--accent); color: white; border-color: var(--accent);
+}
 .radar-list-card {
   display: flex; flex-direction: column;
   padding: 0.7rem 0.9rem; border-radius: var(--radius);

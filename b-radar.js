@@ -30,13 +30,19 @@ function renderRadarList() {
   var emptyEl = document.getElementById('prox-empty');
   if (!el) return;
 
-  var maxN = [5,10,20,35,50][proxRange-1] || 50;
-  var fil = proxAllProfiles.filter(function(p) { return radarDismissed.indexOf(p.id) < 0; }).slice(0, maxN);
+  var filtered = getFilteredProfiles();
+  var totalPages = Math.ceil(filtered.length / RADAR_PAGE_SIZE);
+  if (_radarPage >= totalPages) _radarPage = Math.max(0, totalPages - 1);
+  var pageStart = _radarPage * RADAR_PAGE_SIZE;
+  var fil = filtered.slice(pageStart, pageStart + RADAR_PAGE_SIZE);
 
   if (fil.length === 0) {
-    el.innerHTML = '<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:var(--muted)">Ingen profiler i n\u00e6rheden' +
+    el.innerHTML = '<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:var(--muted)">Ingen profiler' +
+      (_radarFilter !== 'all' ? ' med dette match-niveau' : ' i n\u00e6rheden') +
       (radarDismissed.length > 0 ? '<br><button class="btn-sm btn-ghost" onclick="radarResetDismissed()" style="margin-top:0.5rem;font-size:0.7rem">Vis alle igen</button>' : '') + '</div>';
     if (emptyEl) emptyEl.style.display = 'none';
+    var pag = document.getElementById('radar-pagination');
+    if (pag) pag.style.display = 'none';
     return;
   }
   if (emptyEl) emptyEl.style.display = 'none';
@@ -67,6 +73,16 @@ function renderRadarList() {
       (bubbleInfo ? '<div style="padding-left:3.2rem;margin-top:0.15rem">' + bubbleInfo + '</div>' : '') +
     '</div>';
   }).join('');
+
+  // Pagination
+  var pag = document.getElementById('radar-pagination');
+  var pageInfo = document.getElementById('radar-page-info');
+  var filtered = getFilteredProfiles();
+  var totalPages = Math.ceil(filtered.length / RADAR_PAGE_SIZE);
+  if (pag) {
+    pag.style.display = totalPages > 1 ? 'block' : 'none';
+    if (pageInfo) pageInfo.textContent = 'Side ' + (_radarPage + 1) + ' af ' + totalPages + ' · ' + filtered.length + ' personer i alt';
+  }
 }
 
 function radarConfirmRemove(uid, name) {

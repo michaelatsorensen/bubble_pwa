@@ -206,6 +206,44 @@ async function confirmRemoveSaved() {
 var proxVisible = true;
 var proxRange = 5;
 var proxAllProfiles = [];
+var _radarFilter = 'all';    // all | strong | good | shared
+var _radarPage = 0;
+var RADAR_PAGE_SIZE = 25;
+
+function setRadarFilter(filter, btn) {
+  _radarFilter = filter;
+  _radarPage = 0;
+  // Update active button
+  document.querySelectorAll('.radar-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  // Re-render both views
+  renderProximityDots();
+  renderRadarList();
+  // Update count label
+  var filtered = getFilteredProfiles();
+  var el = document.getElementById('prox-range-label');
+  if (el) el.textContent = filtered.length + ' personer';
+}
+
+function getFilteredProfiles() {
+  return proxAllProfiles.filter(function(p) {
+    if (p.is_anon) return false;
+    if (radarDismissed.indexOf(p.id) >= 0) return false;
+    var score = p.matchScore || Math.round((p.relevance || 0) * 85 + 10);
+    if (_radarFilter === 'strong') return score >= 80;
+    if (_radarFilter === 'good') return score >= 60;
+    if (_radarFilter === 'shared') return score >= 40;
+    return true; // 'all'
+  });
+}
+
+function radarNextPage() {
+  _radarPage++;
+  renderRadarList();
+  // Scroll list to top
+  var listEl = document.getElementById('radar-view-list');
+  if (listEl) listEl.scrollTop = 0;
+}
 var proxColors = [
   'linear-gradient(135deg,#2ECFCF,#22B8CF)',  // cyan
   'linear-gradient(135deg,#6366F1,#7C5CFC)',  // indigo→purple
