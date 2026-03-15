@@ -47,8 +47,8 @@ function renderRadarList() {
     var isA = p.is_anon;
     var name = isA ? 'Anonym bruger' : (p.name || '?');
     var ini = isA ? '?' : name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-    var col = isA ? 'rgba(255,255,255,0.08)' : colors[i % colors.length];
-    var bd = isA ? 'border:1px solid rgba(255,255,255,0.06);' : '';
+    var col = isA ? 'rgba(30,27,46,0.05)' : colors[i % colors.length];
+    var bd = isA ? 'border:1px solid rgba(30,27,46,0.04);' : '';
     var theirKw = (p.keywords || []).map(function(k){ return k.toLowerCase(); });
     var overlap = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; });
     var matchPct = p.matchScore || Math.min(Math.round(p.relevance * 85 + 10), 99);

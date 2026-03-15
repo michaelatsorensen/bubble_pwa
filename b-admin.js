@@ -26,7 +26,7 @@ async function adminLoadReports() {
       var reportedName = r.reported ? r.reported.name : 'Ukendt';
       var isBanned = r.reported && r.reported.banned;
       var timeAgo = adminTimeAgo(r.created_at);
-      return '<div style="padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.03)">' +
+      return '<div style="padding:0.4rem 0;border-bottom:1px solid rgba(30,27,46,0.025)">' +
         '<div style="display:flex;justify-content:space-between;align-items:center">' +
         '<div><span style="font-weight:600">' + escHtml(reportedName) + '</span>' +
         (isBanned ? ' <span style="font-size:0.55rem;background:rgba(26,122,138,0.2);color:var(--accent2);padding:0.1rem 0.3rem;border-radius:4px">Banned</span>' : '') +
@@ -52,7 +52,7 @@ async function adminLoadBanned() {
       return;
     }
     el.innerHTML = data.map(function(p) {
-      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid rgba(255,255,255,0.03)">' +
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid rgba(30,27,46,0.025)">' +
         '<div><span style="font-weight:600">' + escHtml(p.name || 'Ukendt') + '</span>' +
         '<div style="font-size:0.6rem;color:var(--muted)">' + escHtml(p.email || p.id.slice(0,8)) + '</div></div>' +
         '<button class="btn-sm" onclick="adminUnbanUser(\'' + p.id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,158,142,0.15);color:var(--green);border:1px solid rgba(26,158,142,0.3);border-radius:6px">Unban</button>' +
@@ -129,8 +129,8 @@ async function adminLoadStats() {
 
 function adminStatCard(label, count, color, info) {
   var infoAttr = info ? ' onclick="adminShowInfo(this,\'' + escHtml(info).replace(/'/g,"\\'") + '\')" style="cursor:pointer"' : '';
-  return '<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:0.4rem 0.6rem;text-align:center;position:relative"' + infoAttr + '>' +
-    (info ? '<div style="position:absolute;top:0.2rem;right:0.3rem;font-size:0.5rem;color:rgba(255,255,255,0.15)">ⓘ</div>' : '') +
+  return '<div style="background:rgba(30,27,46,0.025);border-radius:8px;padding:0.4rem 0.6rem;text-align:center;position:relative"' + infoAttr + '>' +
+    (info ? '<div style="position:absolute;top:0.2rem;right:0.3rem;font-size:0.5rem;color:rgba(30,27,46,0.08)">ⓘ</div>' : '') +
     '<div style="font-size:1.1rem;font-weight:800;color:' + color + '">' + count + '</div>' +
     '<div style="font-size:0.6rem;color:var(--muted)">' + label + '</div></div>';
 }
@@ -230,7 +230,7 @@ function adminSearchUser(query) {
       }
       el.innerHTML = data.map(function(p) {
         var isBanned = p.banned;
-        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid rgba(255,255,255,0.03)">' +
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid rgba(30,27,46,0.025)">' +
           '<div style="flex:1;min-width:0">' +
           '<div style="font-size:0.75rem;font-weight:600">' + escHtml(p.name || 'Ukendt') +
           (isBanned ? ' <span style="font-size:0.55rem;background:rgba(26,122,138,0.2);color:var(--accent2);padding:0.1rem 0.3rem;border-radius:4px">Banned</span>' : '') + '</div>' +

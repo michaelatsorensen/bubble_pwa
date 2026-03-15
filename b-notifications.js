@@ -381,7 +381,7 @@ function setPushBtnActive(btn) {
 function setPushBtnInactive(btn) {
   if (!btn) return;
   btn.innerHTML = icon('bell') + ' Aktivér';
-  btn.style.background = 'rgba(255,255,255,0.05)';
+  btn.style.background = 'rgba(30,27,46,0.035)';
   btn.style.borderColor = 'var(--glass-border)';
   btn.style.color = 'var(--muted)';
 }

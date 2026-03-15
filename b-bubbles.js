@@ -264,7 +264,7 @@ function cbRenderPillSelect(selectId, options) {
     var btn = document.createElement('button');
     btn.type = 'button';
     var isActive = opt.value === current;
-    btn.style.cssText = 'display:flex;align-items:center;gap:0.35rem;padding:0.4rem 0.75rem;border-radius:99px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.15s;border:1.5px solid ' + (isActive ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)') + ';background:' + (isActive ? 'rgba(124,92,252,0.12)' : 'rgba(255,255,255,0.04)') + ';color:' + (isActive ? 'var(--accent)' : 'var(--muted)');
+    btn.style.cssText = 'display:flex;align-items:center;gap:0.35rem;padding:0.4rem 0.75rem;border-radius:99px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.15s;border:1.5px solid ' + (isActive ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)') + ';background:' + (isActive ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)') + ';color:' + (isActive ? 'var(--accent)' : 'var(--muted)');
     var ico = document.createElement('span');
     ico.style.cssText = 'width:0.85rem;height:0.85rem;display:flex;align-items:center;justify-content:center';
     ico.innerHTML = ICONS[opt.icon] || '';
@@ -276,7 +276,7 @@ function cbRenderPillSelect(selectId, options) {
       select.value = opt.value;
       wrap.querySelectorAll('button').forEach(function(b) {
         b.style.borderColor = 'var(--glass-border)';
-        b.style.background = 'rgba(255,255,255,0.04)';
+        b.style.background = 'rgba(30,27,46,0.04)';
         b.style.color = 'var(--muted)';
       });
       btn.style.borderColor = 'rgba(124,92,252,0.5)';

@@ -283,7 +283,11 @@ function renderProximityDots() {
 
   var ce = document.getElementById('prox-center');
   if (ce && currentProfile && currentProfile.name) {
-    ce.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    if (currentProfile.avatar_url) {
+      ce.innerHTML = '<img src="' + escHtml(currentProfile.avatar_url) + '">';
+    } else {
+      ce.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    }
   }
 
   var w = map.offsetWidth || 300, h = map.offsetHeight || w, cx = w/2, cy = h/2;
@@ -346,21 +350,14 @@ function drawProxRings(canvas) {
   var ctx = canvas.getContext('2d'); ctx.scale(2,2); ctx.clearRect(0,0,w,h);
   var cx = w/2, cy = h/2, maxR = Math.min(cx, cy);
 
-  // Dartboard: center avatar (you) + 5 match rings around it
-  // Center: your avatar (r=0.10)
-  // Ring 1: 80-100% match (closest to you)
-  // Ring 2: 60-80%
-  // Ring 3: 40-60%
-  // Ring 4: 20-40%
-  // Ring 5: 0-20% (outer edge)
-  var centerR = 0.10; // Your avatar zone
+  var centerR = 0.10;
   var zones = [
-    { r: centerR, fill: 'rgba(124,92,252,0.15)' },   // YOU — center
-    { r: 0.26, fill: 'rgba(124,92,252,0.08)' },       // 80-100% — inner purple
-    { r: 0.42, fill: 'rgba(26,158,142,0.05)' },        // 60-80% — green
-    { r: 0.58, fill: 'rgba(46,207,207,0.04)' },        // 40-60% — teal
-    { r: 0.74, fill: 'rgba(26,122,138,0.03)' },        // 20-40% — pink
-    { r: 0.90, fill: 'rgba(255,255,255,0.02)' },       // 0-20% — faint
+    { r: centerR, fill: 'rgba(124,92,252,0.18)' },
+    { r: 0.26, fill: 'rgba(124,92,252,0.10)' },
+    { r: 0.42, fill: 'rgba(46,207,207,0.08)' },
+    { r: 0.58, fill: 'rgba(107,139,255,0.06)' },
+    { r: 0.74, fill: 'rgba(139,92,246,0.04)' },
+    { r: 0.90, fill: 'rgba(124,92,252,0.02)' },
   ];
   // Draw filled zones from outside in so inner overlaps
   for (var i = zones.length - 1; i >= 0; i--) {
@@ -369,17 +366,17 @@ function drawProxRings(canvas) {
     ctx.fillStyle = zones[i].fill;
     ctx.fill();
   }
-  // Draw ring borders
+  // Draw ring borders — visible on light bg
   for (var i = 0; i < zones.length; i++) {
     ctx.beginPath();
     ctx.arc(cx, cy, zones[i].r * maxR, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.strokeStyle = 'rgba(30,27,46,0.08)';
     ctx.lineWidth = 1;
     ctx.stroke();
   }
   // Subtle center glow
   var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, zones[0].r * maxR);
-  g.addColorStop(0, 'rgba(124,92,252,0.08)');
+  g.addColorStop(0, 'rgba(124,92,252,0.12)');
   g.addColorStop(1, 'rgba(124,92,252,0)');
   ctx.fillStyle = g;
   ctx.beginPath();
@@ -418,12 +415,15 @@ function toggleProximityVisibility() {
       btn.style.borderColor = 'rgba(26,158,142,0.3)';
       btn.style.color = '#1A9E8E';
     } else {
-      btn.style.background = 'rgba(255,255,255,0.04)';
-      btn.style.borderColor = 'rgba(255,255,255,0.08)';
+      btn.style.background = 'rgba(30,27,46,0.04)';
+      btn.style.borderColor = 'var(--glass-border)';
       btn.style.color = 'var(--muted)';
     }
   }
-  if (c) { if (proxVisible && currentProfile && currentProfile.name) { c.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); c.style.background = 'var(--gradient-primary)'; } else { c.textContent = '?'; c.style.background = 'rgba(255,255,255,0.08)'; } }
+  if (c) { if (proxVisible && currentProfile && currentProfile.name) { 
+    if (currentProfile.avatar_url) { c.innerHTML = '<img src="' + escHtml(currentProfile.avatar_url) + '">'; } 
+    else { c.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); }
+    c.style.background = 'var(--gradient-primary)'; } else { c.textContent = '?'; c.style.background = 'rgba(30,27,46,0.06)'; } }
   var hint = document.getElementById('prox-toggle-hint');
   if (hint) hint.textContent = proxVisible ? 'Andre kan se dig på radar' : 'Du er usynlig på radar';
   toggleAnon();
@@ -447,8 +447,8 @@ function openRadarSheet() {
       btn.style.borderColor = 'rgba(26,158,142,0.3)';
       btn.style.color = '#1A9E8E';
     } else {
-      btn.style.background = 'rgba(255,255,255,0.04)';
-      btn.style.borderColor = 'rgba(255,255,255,0.08)';
+      btn.style.background = 'rgba(30,27,46,0.04)';
+      btn.style.borderColor = 'var(--glass-border)';
       btn.style.color = 'var(--muted)';
     }
   }

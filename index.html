@@ -207,7 +207,7 @@
         <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.1rem">
           <span style="font-size:1rem">👋</span>
           <span style="font-size:0.85rem;font-weight:800">Folk du kunne møde</span>
-          <span style="font-size:0.55rem;color:var(--muted);background:rgba(255,255,255,0.05);padding:0.15rem 0.4rem;border-radius:99px;margin-left:auto">Preview</span>
+          <span style="font-size:0.55rem;color:var(--muted);background:rgba(30,27,46,0.035);padding:0.15rem 0.4rem;border-radius:99px;margin-left:auto">Preview</span>
         </div>
         <div style="font-size:0.65rem;color:var(--text-secondary);margin-bottom:0.5rem">Baseret på dine 3 interesser</div>
         <div id="interest-people" style="display:flex;flex-direction:column;gap:0.15rem"></div>
@@ -355,7 +355,7 @@
         <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.1rem">
           <span style="font-size:1rem">👋</span>
           <span style="font-size:0.85rem;font-weight:800">Folk du kunne møde</span>
-          <span style="font-size:0.55rem;color:var(--muted);background:rgba(255,255,255,0.05);padding:0.15rem 0.4rem;border-radius:99px;margin-left:auto">Foreløbigt preview</span>
+          <span style="font-size:0.55rem;color:var(--muted);background:rgba(30,27,46,0.035);padding:0.15rem 0.4rem;border-radius:99px;margin-left:auto">Foreløbigt preview</span>
         </div>
         <div style="font-size:0.65rem;color:var(--text-secondary);margin-bottom:0.5rem" id="ob-preview-hint">Baseret på din livsfase</div>
         <div id="ob-people-preview" style="display:flex;flex-direction:column;gap:0.15rem">
@@ -428,7 +428,7 @@
     <!-- Strength meter -->
     <div id="ob-strength" style="margin:0.8rem 0 0.3rem;padding:0.6rem 0.8rem;background:rgba(124,92,252,0.03);border-radius:10px">
       <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem"><span style="font-size:0.72rem;font-weight:600">Profil-styrke</span><span id="ob-strength-label" style="font-size:0.72rem;font-weight:700;color:var(--muted)">Svag</span></div>
-      <div style="height:4px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden"><div id="ob-strength-bar" style="height:100%;width:10%;border-radius:99px;background:var(--accent2);transition:all 0.4s"></div></div>
+      <div style="height:4px;background:rgba(30,27,46,0.04);border-radius:99px;overflow:hidden"><div id="ob-strength-bar" style="height:100%;width:10%;border-radius:99px;background:var(--accent2);transition:all 0.4s"></div></div>
       <div id="ob-strength-hint" style="font-size:0.65rem;color:var(--muted);margin-top:0.3rem"></div>
     </div>
     <button class="btn-primary" id="ob-save-btn" onclick="saveOnboarding()" style="margin-top:0.5rem;opacity:0.3;pointer-events:none">Kom i gang →</button>
@@ -1171,7 +1171,7 @@
 
     <!-- Profile hero (compact, left-aligned) -->
     <div class="profile-hero" style="flex-shrink:0;padding:0.6rem 1.1rem 0.4rem;display:flex;align-items:center;gap:0.8rem">
-      <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#2ECFCF,#6B8BFF,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:white;box-shadow:0 4px 16px rgba(124,92,252,0.3);border:2px solid rgba(255,255,255,0.08);flex-shrink:0;overflow:hidden;cursor:pointer" id="my-avatar" onclick="viewAvatarFull(this)">?</div>
+      <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#2ECFCF,#6B8BFF,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:white;box-shadow:0 4px 16px rgba(124,92,252,0.3);border:2px solid rgba(30,27,46,0.05);flex-shrink:0;overflow:hidden;cursor:pointer" id="my-avatar" onclick="viewAvatarFull(this)">?</div>
       <div style="flex:1;min-width:0;text-align:left">
         <div style="font-size:1rem;font-weight:800;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-name">...</div>
         <div style="font-size:0.75rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-role">...</div>
@@ -1221,7 +1221,7 @@
       <div style="flex:1">
         <div style="font-size:0.82rem;font-weight:600">Notifikationer</div>
         <div class="hs-view-picker" style="display:flex;gap:0.35rem;margin-top:0.35rem">
-          <button class="hs-view-btn active" id="hs-notif-card" onclick="hsSetNotifView('card')" style="font-size:0.72rem;padding:0.35rem 0.7rem;border-radius:8px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.06);color:var(--text-secondary);cursor:pointer;font-family:inherit;font-weight:600;transition:all 0.2s">Kort</button>
+          <button class="hs-view-btn active" id="hs-notif-card" onclick="hsSetNotifView('card')" style="font-size:0.72rem;padding:0.35rem 0.7rem;border-radius:8px;border:1px solid var(--glass-border);background:rgba(30,27,46,0.04);color:var(--text-secondary);cursor:pointer;font-family:inherit;font-weight:600;transition:all 0.2s">Kort</button>
           <button class="hs-view-btn" id="hs-notif-feed" onclick="hsSetNotifView('feed')" style="font-size:0.72rem;padding:0.35rem 0.7rem;border-radius:8px;border:1px solid var(--glass-border);background:none;color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all 0.2s">Live feed</button>
         </div>
       </div>
@@ -1238,7 +1238,7 @@
         <div style="font-size:0.85rem;font-weight:600">Push-notifikationer</div>
         <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:0.1rem">Få besked når nogen sender dig en besked eller gemmer din profil</div>
       </div>
-      <button id="push-toggle-btn" onclick="togglePushNotifications()" style="font-size:0.75rem;font-weight:700;font-family:inherit;padding:0.35rem 0.85rem;border-radius:99px;cursor:pointer;transition:all 0.2s;white-space:nowrap;border:1.5px solid var(--glass-border);background:rgba(255,255,255,0.05);color:var(--muted)">Aktivér</button>
+      <button id="push-toggle-btn" onclick="togglePushNotifications()" style="font-size:0.75rem;font-weight:700;font-family:inherit;padding:0.35rem 0.85rem;border-radius:99px;cursor:pointer;transition:all 0.2s;white-space:nowrap;border:1.5px solid var(--glass-border);background:rgba(30,27,46,0.035);color:var(--muted)">Aktivér</button>
     </div>
 
     <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Synlighed</div>

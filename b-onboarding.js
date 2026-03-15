@@ -804,7 +804,7 @@ function obRenderPreviewProfiles() {
     var p = item.p;
     var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     var avHtml = p.avatar_url ?
-      '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;border:1.5px solid rgba(255,255,255,0.08)"><img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover"></div>' :
+      '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;border:1.5px solid rgba(30,27,46,0.05)"><img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover"></div>' :
       '<div style="width:40px;height:40px;border-radius:50%;background:'+_obPreviewColors[i%5]+';display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;flex-shrink:0">'+ini+'</div>';
 
     var sharedText;
@@ -821,7 +821,7 @@ function obRenderPreviewProfiles() {
       matchPct = Math.min(matchPct, 99);
       sharedText = '<span style="font-size:0.6rem;color:var(--green);font-weight:600">' + matchPct + '% match · ' + item.shared + ' fælles</span>';
     }
-    return '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0;transition:opacity 0.3s;' + (i < 2 ? 'border-bottom:1px solid rgba(255,255,255,0.03)' : '') + '">' +
+    return '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0;transition:opacity 0.3s;' + (i < 2 ? 'border-bottom:1px solid rgba(30,27,46,0.025)' : '') + '">' +
       avHtml +
       '<div style="flex:1;min-width:0">' +
       '<div style="font-size:0.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.name||'Ukendt') + '</div>' +
