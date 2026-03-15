@@ -998,14 +998,14 @@ a.person-action-btn { text-decoration:none; }
 .live-bubble-card {
   border-radius: var(--radius);
   overflow: hidden;
+  background: #FFFFFF;
   border: 1px solid var(--glass-border-subtle);
-  box-shadow: var(--glass-inset);
+  box-shadow: 0 1px 3px rgba(30,27,46,0.06), 0 1px 2px rgba(30,27,46,0.04);
 }
 .live-bubble-header {
   display: flex; align-items: center; gap: 0.75rem;
   padding: 0.9rem 1rem;
-  background: linear-gradient(135deg, rgba(46,207,207,0.12), rgba(124,92,252,0.08));
-  border: 1px solid rgba(46,207,207,0.2);
+  background: rgba(46,207,207,0.06);
   border-radius: var(--radius) var(--radius) 0 0;
 }
 .live-bubble-pulse {

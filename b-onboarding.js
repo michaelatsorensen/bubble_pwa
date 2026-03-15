@@ -423,63 +423,50 @@ function dismissGettingStarted() {
 // ══════════════════════════════════════════════════════════
 //  PROGRESSIVE ONBOARDING (v4.0)
 // ══════════════════════════════════════════════════════════
-function showProgressiveOnboarding() {
-  if (!currentProfile) return;
+async function showProgressiveOnboarding() {
+  if (!currentProfile || !currentUser) return;
   var container = document.getElementById('home-progressive-onboarding');
   var cardsEl = document.getElementById('gs-v4-cards');
   if (!container || !cardsEl) return;
-
-  // Load progress from localStorage
-  var progress = {};
-  try { progress = JSON.parse(localStorage.getItem('bubble_gs_progress') || '{}'); } catch(e) {}
 
   // Check current profile state
   var hasPhoto = !!currentProfile.avatar_url;
   var hasTitle = !!(currentProfile.title && currentProfile.workplace);
   var hasTags = (currentProfile.keywords || []).length >= 3;
-  var hasJoined = false;
 
-  // Auto-mark completed steps
-  if (hasTags) progress.tags = true;
-  if (hasTitle) progress.title = true;
-  if (hasPhoto) progress.photo = true;
+  // Check bubble membership (async)
+  var hasBubble = false;
+  try {
+    var { count } = await sb.from('bubble_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', currentUser.id);
+    hasBubble = (count || 0) > 0;
+  } catch(e) { /* silent */ }
 
   var steps = [
-    { key: 'tags', ico: '🏷️', color: 'var(--green)', softColor: 'rgba(26,158,142,0.08)', title: 'Vælg interesser', sub: 'Aktiverer matching', done: !!progress.tags },
-    { key: 'title', ico: '💼', color: 'var(--accent)', softColor: 'rgba(124,92,252,0.06)', title: 'Tilføj titel & arbejdsplads', sub: 'Unlock 5+ flere matches', done: !!progress.title },
-    { key: 'photo', ico: '📸', color: '#3B82F6', softColor: 'rgba(107,139,255,0.06)', title: 'Tilføj profilbillede', sub: '3x flere kontakter', done: !!progress.photo },
-    { key: 'bubble', ico: '🫧', color: '#E879A8', softColor: 'rgba(232,121,168,0.06)', title: 'Join din første boble', sub: 'Åbn for endnu flere profiler', done: !!progress.bubble }
+    { key: 'tags', ico: '🏷️', color: 'var(--green)', softColor: 'rgba(26,158,142,0.08)', title: 'Vælg interesser', sub: 'Aktiverer matching', done: hasTags, action: 'reRunOnboarding()' },
+    { key: 'title', ico: '💼', color: 'var(--accent)', softColor: 'rgba(124,92,252,0.06)', title: 'Tilføj titel & arbejdsplads', sub: 'Unlock 5+ flere matches', done: hasTitle, action: "goTo('screen-profile');setTimeout(function(){profSwitchTab('edit')},200)" },
+    { key: 'photo', ico: '📸', color: '#3B82F6', softColor: 'rgba(59,130,246,0.06)', title: 'Tilføj profilbillede', sub: '3x flere kontakter', done: hasPhoto, action: "goTo('screen-profile');setTimeout(function(){profSwitchTab('edit')},200)" },
+    { key: 'bubble', ico: '🫧', color: '#E879A8', softColor: 'rgba(232,121,168,0.06)', title: 'Join din første boble', sub: 'Åbn for endnu flere profiler', done: hasBubble, action: "goTo('screen-discover')" }
   ];
 
-  // Count completed
-  var doneCount = steps.filter(function(s) { return s.done; }).length;
+  // Only show incomplete steps
+  var incomplete = steps.filter(function(s) { return !s.done; });
 
-  // Hide if all done
-  if (doneCount >= steps.length) {
+  // All done — hide entire section
+  if (incomplete.length === 0) {
     container.style.display = 'none';
     return;
   }
 
-  // Save progress
-  try { localStorage.setItem('bubble_gs_progress', JSON.stringify(progress)); } catch(e) {}
-
-  // Render cards
-  var firstIncomplete = true;
-  cardsEl.innerHTML = steps.map(function(s) {
-    var highlight = !s.done && firstIncomplete;
-    if (highlight) firstIncomplete = false;
-    var action = '';
-    if (!s.done) {
-      if (s.key === 'tags') action = 'onclick="reRunOnboarding()"';
-      else if (s.key === 'title') action = 'onclick="goTo(\'screen-profile\');setTimeout(function(){profSwitchTab(\'edit\')},200)"';
-      else if (s.key === 'photo') action = 'onclick="goTo(\'screen-profile\');setTimeout(function(){profSwitchTab(\'edit\')},200)"';
-      else if (s.key === 'bubble') action = 'onclick="goTo(\'screen-discover\')"';
-    }
-    return '<div class="gs-v4-card' + (s.done ? ' done' : '') + (highlight ? ' highlight' : '') + '" ' + action + '>' +
-      '<div class="gs-v4-icon" style="background:' + s.softColor + ';color:' + s.color + '">' + (s.done ? '✓' : s.ico) + '</div>' +
-      '<div class="gs-v4-text"><div class="gs-v4-title"' + (s.done ? ' style="color:var(--green)"' : '') + '>' + s.title + '</div>' +
-      '<div class="gs-v4-sub">' + (s.done ? 'Fuldført' : s.sub) + '</div></div>' +
-      '<div class="gs-v4-check' + (s.done ? ' done' : '') + '">' + (s.done ? '✓' : '') + '</div>' +
+  // Render only incomplete steps
+  cardsEl.innerHTML = incomplete.map(function(s, i) {
+    var highlight = i === 0;
+    return '<div class="gs-v4-card' + (highlight ? ' highlight' : '') + '" onclick="' + s.action + '">' +
+      '<div class="gs-v4-icon" style="background:' + s.softColor + ';color:' + s.color + '">' + s.ico + '</div>' +
+      '<div class="gs-v4-text"><div class="gs-v4-title">' + s.title + '</div>' +
+      '<div class="gs-v4-sub">' + s.sub + '</div></div>' +
+      '<div style="color:var(--accent);font-size:0.75rem;font-weight:600">\u2192</div>' +
       '</div>';
   }).join('');
 
