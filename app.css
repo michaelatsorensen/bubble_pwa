@@ -10,8 +10,8 @@
 
 :root {
   --bg: #FFFFFF;
-  --glass-bg: #F9F8FE;
-  --glass-bg-hover: #F3F1FA;
+  --glass-bg: #FFFFFF;
+  --glass-bg-hover: #F8F7FC;
   --glass-bg-strong: #F4F3F9;
   --glass-border: #CCC8DC;
   --glass-border-subtle: #D8D5E4;
@@ -150,7 +150,7 @@ body {
 .main-nav-card, .card-bobler, .card-beskeder, .card-notif { background:#FFFFFF; border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:0.85rem 1.1rem; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 3px rgba(30,27,46,0.06), 0 1px 2px rgba(30,27,46,0.04); position:relative; overflow:visible; display:flex; align-items:center; gap:0.85rem; }
 .main-nav-card:hover, .card-bobler:hover, .card-beskeder:hover, .card-notif:hover { background:var(--glass-bg-hover); border-color:var(--glass-border); }
 .main-nav-card:active { transform:scale(0.985); }
-.radar-card { background:linear-gradient(135deg,rgba(124,92,252,0.04),rgba(46,207,207,0.03)); border:1px solid rgba(124,92,252,0.1); border-radius:var(--radius); padding:0.85rem 1.1rem; box-shadow:var(--glass-inset); display:flex; align-items:center; gap:0.85rem; }
+.radar-card { background:#FFFFFF; border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:0.85rem 1.1rem; box-shadow:0 1px 3px rgba(30,27,46,0.06), 0 1px 2px rgba(30,27,46,0.04); display:flex; align-items:center; gap:0.85rem; }
 .radar-card .live-dot { width:8px; height:8px; flex-shrink:0; margin:0; position:static; }
 
 /* ── BUTTONS ── */
@@ -330,7 +330,7 @@ textarea.input { min-height:80px; resize:vertical; }
 .chat-file-size { font-size:0.58rem; color:var(--muted); }
 
 /* Chat info panel */
-.chat-info-block { background:var(--glass-bg); border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:0.75rem 1rem; margin-bottom:0.5rem; box-shadow:var(--glass-inset); }
+.chat-info-block { background:#FFFFFF; border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:0.75rem 1rem; margin-bottom:0.5rem; box-shadow:0 1px 3px rgba(30,27,46,0.06), 0 1px 2px rgba(30,27,46,0.04); }
 .chat-info-label { font-size:0.52rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:0.3rem; }
 .chat-info-val { font-size:0.78rem; color:var(--text); line-height:1.5; }
 .chat-info-list { list-style:none; padding:1rem 1.25rem 6rem; overflow-y:auto; }
@@ -365,7 +365,7 @@ textarea.input { min-height:80px; resize:vertical; }
 .bubble-up-yes { flex:2; padding:0.5rem; border-radius:10px; background:var(--gradient-primary); border:none; color:white; font-size:0.75rem; font-family:'Figtree',sans-serif; font-weight:600; cursor:pointer; }
 
 /* ── NOTIFICATIONS ── */
-.notif-card { background:var(--glass-bg); backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:0.75rem 1rem; margin-bottom:0.5rem; box-shadow:var(--glass-inset); }
+.notif-card { background:#FFFFFF; border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:0.75rem 1rem; margin-bottom:0.5rem; box-shadow:0 1px 3px rgba(30,27,46,0.06), 0 1px 2px rgba(30,27,46,0.04); }
 .notif-header { display:flex; align-items:center; gap:0.65rem; }
 .notif-avatar { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:700; color:white; flex-shrink:0; }
 .notif-title { font-size:0.78rem; font-weight:600; }
@@ -1410,7 +1410,7 @@ a.person-action-btn { text-decoration:none; }
 [data-hs-hidden="true"] { display:none !important; }
 
 /* Notification feed window on home */
-.notif-feed-window { background:var(--glass-bg); border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:1rem 1.2rem; margin-bottom:0.65rem; backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); box-shadow:var(--glass-inset); }
+.notif-feed-window { background:#FFFFFF; border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:1rem 1.2rem; margin-bottom:0.65rem; box-shadow:0 1px 3px rgba(30,27,46,0.06), 0 1px 2px rgba(30,27,46,0.04); }
 .notif-feed-item { display:flex; align-items:flex-start; gap:0.5rem; padding:0.4rem 0; border-bottom:1px solid rgba(30,27,46,0.025); }
 .notif-feed-item:last-child { border-bottom:none; }
 .notif-feed-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; margin-top:0.35rem; }
@@ -1538,7 +1538,7 @@ a.person-action-btn { text-decoration:none; }
 .ob-cat-custom-btn.confirmed, .ob-cat-custom-btn:focus { background:var(--green); color:white; }
 
 /* ═══ SAVED CONTACTS V2 ═══ */
-.saved-card-v2 { background:var(--glass-bg); border:1px solid var(--glass-border-subtle); border-radius:16px; padding:1rem 1.1rem; margin-bottom:0.6rem; cursor:pointer; transition:border-color 0.2s, background 0.2s; }
+.saved-card-v2 { background:#FFFFFF; border:1px solid var(--glass-border-subtle); border-radius:16px; padding:1rem 1.1rem; margin-bottom:0.6rem; cursor:pointer; transition:border-color 0.2s, background 0.2s; box-shadow:0 1px 3px rgba(30,27,46,0.06), 0 1px 2px rgba(30,27,46,0.04); }
 .saved-card-v2:active { background:rgba(30,27,46,0.04); border-color:var(--glass-border); }
 .saved-card-top { display:flex; align-items:center; gap:0.8rem; }
 .saved-avatar-lg { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.95rem; font-weight:700; color:white; flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,0.25); }
@@ -1899,17 +1899,12 @@ input[type="range"] {
 }
 .bc-hero-icon .ico { width:20px;height:20px; }
 
-/* ── SCROLL FADE + ESCALATOR ── */
-/* Bottom fade only — top stays sharp, items handle their own exit */
-.scroll-area {
-  mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 24px), transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 24px), transparent 100%);
-}
-/* Sheets/modals: no mask — they have their own scroll context */
-.modal-sheet,
-.person-sheet {
-  mask-image: none;
-  -webkit-mask-image: none;
+/* ── SCROLL FADE ── */
+/* Subtle bottom fade on all scroll containers — content fades before hard edge */
+.scroll-area,
+.screen-inner-scroll {
+  mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 20px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 20px), transparent 100%);
 }
 /* Live checkin modal: don't clip scanner viewport */
 #modal-live-checkin .modal-sheet {

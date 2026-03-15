@@ -44,7 +44,7 @@
 <style>
 /* ═══ V4.0 — Quick Actions ═══ */
 .quick-actions { display:flex; gap:0.45rem; padding:0 0 0.5rem; overflow-x:auto; }
-.qa-btn { display:flex; flex-direction:column; align-items:center; gap:0.3rem; padding:0.65rem 0.5rem; min-width:72px; border-radius:var(--radius-sm); background:var(--glass-bg); border:1px solid var(--glass-border-subtle); cursor:pointer; transition:all 0.15s; flex:1; }
+.qa-btn { display:flex; flex-direction:column; align-items:center; gap:0.3rem; padding:0.65rem 0.5rem; min-width:72px; border-radius:var(--radius-sm); background:#FFFFFF; border:1px solid var(--glass-border-subtle); cursor:pointer; transition:all 0.15s; flex:1; box-shadow:0 1px 3px rgba(30,27,46,0.06); }
 .qa-btn:active { transform:scale(0.95); }
 .qa-ico { width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:0.85rem; }
 .qa-label { font-size:0.6rem; font-weight:600; color:var(--text-secondary); text-align:center; line-height:1.2; }
@@ -57,7 +57,7 @@
 .radar-dots-row .avatar:first-child { margin-left:0; }
 
 /* ═══ V4.0 — QR Topbar Button ═══ */
-.qr-topbar-btn { position:relative; width:34px; height:34px; border-radius:50%; background:var(--glass-bg); border:1px solid var(--glass-border-subtle); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-secondary); transition:all 0.15s; }
+.qr-topbar-btn { position:relative; width:34px; height:34px; border-radius:50%; background:#FFFFFF; border:1px solid var(--glass-border-subtle); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-secondary); transition:all 0.15s; }
 .qr-topbar-btn:active { transform:scale(0.9); }
 .qr-topbar-btn .qr-pulse { position:absolute; top:2px; right:2px; width:8px; height:8px; border-radius:50%; background:var(--accent); border:2px solid var(--bg); animation:pulse 2s infinite; }
 
@@ -68,9 +68,9 @@
 .qr-profile-title { font-size:0.82rem; color:var(--text-secondary); margin-top:0.15rem; }
 .qr-profile-tags { display:flex; gap:0.3rem; justify-content:center; flex-wrap:wrap; margin-top:0.6rem; }
 .qr-context-bar { display:flex; gap:0.4rem; padding:0.6rem 1.2rem; overflow-x:auto; }
-.qr-context-chip { display:flex; align-items:center; gap:0.35rem; padding:0.35rem 0.7rem; border-radius:20px; background:var(--glass-bg); border:1px solid var(--glass-border-subtle); font-size:0.68rem; font-weight:600; color:var(--text-secondary); flex-shrink:0; }
+.qr-context-chip { display:flex; align-items:center; gap:0.35rem; padding:0.35rem 0.7rem; border-radius:20px; background:#FFFFFF; border:1px solid var(--glass-border-subtle); font-size:0.68rem; font-weight:600; color:var(--text-secondary); flex-shrink:0; box-shadow:0 1px 2px rgba(30,27,46,0.04); }
 .qr-context-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
-.qr-social-proof { text-align:center; padding:1rem; margin:0.5rem 1.2rem; border-radius:var(--radius); background:var(--glass-bg); border:1px solid var(--glass-border-subtle); }
+.qr-social-proof { text-align:center; padding:1rem; margin:0.5rem 1.2rem; border-radius:var(--radius); background:#FFFFFF; border:1px solid var(--glass-border-subtle); box-shadow:0 1px 3px rgba(30,27,46,0.06); }
 .qr-sp-number { font-size:1.8rem; font-weight:900; color:var(--accent); font-weight:900; }
 
 /* ═══ V4.0 — Blurred cards ═══ */
@@ -78,7 +78,7 @@
 .cta-bottom-overlay { position:sticky; bottom:0; left:0; right:0; padding:0.75rem 1.2rem calc(0.75rem + env(safe-area-inset-bottom,0px)); background:linear-gradient(to top,var(--bg) 60%,transparent); z-index:10; }
 
 /* ═══ V4.0 — Progressive Onboarding ═══ */
-.gs-v4-card { display:flex; align-items:center; gap:0.75rem; padding:0.85rem 1rem; margin:0 0 0.4rem; border-radius:var(--radius); background:var(--glass-bg); border:1px solid var(--glass-border-subtle); cursor:pointer; transition:all 0.15s; }
+.gs-v4-card { display:flex; align-items:center; gap:0.75rem; padding:0.85rem 1rem; margin:0 0 0.4rem; border-radius:var(--radius); background:#FFFFFF; border:1px solid var(--glass-border-subtle); cursor:pointer; transition:all 0.15s; box-shadow:0 1px 3px rgba(30,27,46,0.06); }
 .gs-v4-card:active { transform:scale(0.98); }
 .gs-v4-card.highlight { border:1.5px solid rgba(124,92,252,0.15); }
 .gs-v4-card.done { opacity:0.6; }
@@ -93,7 +93,7 @@
 .sp-filter-bar { display:flex; gap:0.35rem; padding:0.4rem 1.2rem; overflow-x:auto; }
 .sp-filter-chip { padding:0.35rem 0.75rem; border-radius:20px; font-size:0.68rem; font-weight:600; font-family:var(--font); border:1px solid var(--glass-border-subtle); background:var(--glass-bg); color:var(--text-muted); cursor:pointer; flex-shrink:0; transition:all 0.2s; }
 .sp-filter-chip.active { background:linear-gradient(135deg,#7C5CFC,#6366F1); color:#fff; border-color:transparent; }
-.anon-card { background:var(--glass-bg); border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:0.6rem 0.85rem; margin:0 1.2rem 0.35rem; display:flex; align-items:center; gap:0.6rem; }
+.anon-card { background:#FFFFFF; border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:0.6rem 0.85rem; margin:0 1.2rem 0.35rem; display:flex; align-items:center; gap:0.6rem; box-shadow:0 1px 3px rgba(30,27,46,0.06); }
 .anon-name-bar { width:80px; height:10px; border-radius:4px; background:var(--glass-border); }
 .anon-title-bar { width:120px; height:8px; border-radius:4px; background:var(--glass-border-subtle); margin-top:0.2rem; }
 
@@ -449,7 +449,7 @@
     </div>
     <div style="display:flex;flex-direction:column;gap:0.8rem;max-width:380px;margin:0 auto;width:100%">
       <!-- Step 1 -->
-      <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer" onclick="welcomeGo('discover')">
+      <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer;box-shadow:0 1px 3px rgba(30,27,46,0.06)" onclick="welcomeGo('discover')">
         <div style="width:44px;height:44px;border-radius:12px;background:rgba(124,92,252,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></div>
         <div style="flex:1">
           <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem">Udforsk bobler</div>
@@ -458,7 +458,7 @@
         <div style="color:var(--muted);font-size:1.1rem">→</div>
       </div>
       <!-- Step 2 -->
-      <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer" onclick="welcomeGo('radar')">
+      <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer;box-shadow:0 1px 3px rgba(30,27,46,0.06)" onclick="welcomeGo('radar')">
         <div style="width:44px;height:44px;border-radius:12px;background:rgba(232,121,168,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent2)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div>
         <div style="flex:1">
           <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem">Se hvem der er her</div>
@@ -467,7 +467,7 @@
         <div style="color:var(--muted);font-size:1.1rem">→</div>
       </div>
       <!-- Step 3 -->
-      <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer" onclick="welcomeGo('home')">
+      <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer;box-shadow:0 1px 3px rgba(30,27,46,0.06)" onclick="welcomeGo('home')">
         <div style="width:44px;height:44px;border-radius:12px;background:rgba(26,158,142,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5v9a1.5 1.5 0 001.5 1.5H10v-5a2 2 0 014 0v5h3.5a1.5 1.5 0 001.5-1.5v-9"/></svg></div>
         <div style="flex:1">
           <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem">Gå til hjem</div>
@@ -484,7 +484,7 @@
      SCREEN: QR PROFILE PREVIEW (anon)
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-qr-preview">
-  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px)">
+  <div class="screen-inner-scroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px)">
     <div class="qr-profile-hero">
       <div class="qr-profile-avatar" id="qr-preview-avatar">?</div>
       <div class="qr-profile-name" id="qr-preview-name">...</div>
@@ -513,7 +513,7 @@
      SCREEN: QR RADAR TEASER (anon)
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-qr-teaser">
-  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px);position:relative">
+  <div class="screen-inner-scroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px);position:relative">
     <div style="text-align:center;padding:1.2rem 1.2rem 0.5rem">
       <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Hvem er i nærheden?</div>
       <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.2rem" id="qr-teaser-count">Matches fundet i dit område</div>
@@ -538,7 +538,7 @@
      SCREEN: SOCIAL PROOF (opsøgende flow)
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-social-proof">
-  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px);position:relative">
+  <div class="screen-inner-scroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px);position:relative">
     <div style="text-align:center;padding:1.2rem 1.2rem 0.6rem">
       <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Se hvem der er her</div>
     </div>
