@@ -358,3 +358,89 @@ function showSuccessToast(message) {
   clearTimeout(window._toastTimer);
   window._toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2500);
 }
+
+// ══════════════════════════════════════════════════════════
+//  ESCALATOR SCROLL EFFECT
+//  Cards gently fade + scale + tilt as they scroll past top
+// ══════════════════════════════════════════════════════════
+(function initEscalator() {
+  var FADE_ZONE = 70; // px from top where fade begins
+  var _rafPending = false;
+
+  function processScroll(scrollEl) {
+    var rect = scrollEl.getBoundingClientRect();
+    var topEdge = rect.top;
+    var children = scrollEl.children;
+
+    for (var i = 0; i < children.length; i++) {
+      var child = children[i];
+      // Skip non-card elements (empty divs, section labels, etc.)
+      if (child.offsetHeight < 20) continue;
+
+      var childRect = child.getBoundingClientRect();
+      var distFromTop = childRect.top - topEdge;
+
+      if (distFromTop < FADE_ZONE && distFromTop > -childRect.height) {
+        // In fade zone — calculate progress (1 = fully visible, 0 = at edge)
+        var progress = Math.max(0, distFromTop / FADE_ZONE);
+        var opacity = 0.3 + progress * 0.7;
+        var scale = 0.92 + progress * 0.08;
+        var rotateX = (1 - progress) * 4; // subtle tilt
+        var translateY = (1 - progress) * -3;
+        child.style.opacity = opacity;
+        child.style.transform = 'scale(' + scale + ') perspective(600px) rotateX(' + rotateX + 'deg) translateY(' + translateY + 'px)';
+        child.style.transformOrigin = 'center top';
+      } else if (distFromTop <= -child.offsetHeight) {
+        // Fully scrolled past — hide
+        child.style.opacity = '0';
+        child.style.transform = 'scale(0.88) perspective(600px) rotateX(6deg) translateY(-5px)';
+      } else {
+        // Fully visible — reset
+        if (child.style.opacity !== '' && child.style.opacity !== '1') {
+          child.style.opacity = '';
+          child.style.transform = '';
+          child.style.transformOrigin = '';
+        }
+      }
+    }
+  }
+
+  function onScroll(e) {
+    if (_rafPending) return;
+    _rafPending = true;
+    requestAnimationFrame(function() {
+      _rafPending = false;
+      processScroll(e.target);
+    });
+  }
+
+  // Attach to all scroll areas on load
+  window.addEventListener('load', function() {
+    document.querySelectorAll('.scroll-area, .modal-sheet, .person-sheet').forEach(function(el) {
+      // Skip chat message areas — they scroll differently
+      if (el.classList.contains('chat-messages') || el.closest('#screen-chat') || el.closest('#screen-bubble-chat')) return;
+      el.addEventListener('scroll', onScroll, { passive: true });
+    });
+
+    // Also observe for dynamically added scroll areas (sheets, modals)
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) {
+        m.addedNodes.forEach(function(node) {
+          if (node.nodeType !== 1) return;
+          if (node.classList && (node.classList.contains('scroll-area') || node.classList.contains('modal-sheet') || node.classList.contains('person-sheet'))) {
+            if (!node.closest('#screen-chat') && !node.closest('#screen-bubble-chat')) {
+              node.addEventListener('scroll', onScroll, { passive: true });
+            }
+          }
+          var nested = node.querySelectorAll ? node.querySelectorAll('.scroll-area, .modal-sheet, .person-sheet') : [];
+          nested.forEach(function(el) {
+            if (!el.closest('#screen-chat') && !el.closest('#screen-bubble-chat')) {
+              el.addEventListener('scroll', onScroll, { passive: true });
+            }
+          });
+        });
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  });
+})();
