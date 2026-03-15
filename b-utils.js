@@ -360,46 +360,64 @@ function showSuccessToast(message) {
 }
 
 // ══════════════════════════════════════════════════════════
-//  ESCALATOR SCROLL EFFECT
-//  Cards gently fade + scale + tilt as they scroll past top
+//  ESCALATOR SCROLL EFFECT v3
+//  Only individual card-sized elements get the fall-back
+//  effect as they exit the top. Large wrapper divs are
+//  skipped — their children are processed instead.
 // ══════════════════════════════════════════════════════════
 (function initEscalator() {
-  var FADE_ZONE = 70; // px from top where fade begins
+  var EXIT_ZONE = 90;
   var _rafPending = false;
 
+  function collectItems(scrollEl) {
+    // Collect "leaf" content items — skip pure wrapper divs
+    var containerH = scrollEl.clientHeight;
+    var items = [];
+    function walk(parent) {
+      var kids = parent.children;
+      for (var i = 0; i < kids.length; i++) {
+        var el = kids[i];
+        if (el.offsetHeight < 10) continue;
+        // If element is taller than 60% of viewport, it's a wrapper — go deeper
+        if (el.offsetHeight > containerH * 0.6 && el.children.length > 1) {
+          walk(el);
+        } else {
+          items.push(el);
+        }
+      }
+    }
+    walk(scrollEl);
+    return items;
+  }
+
   function processScroll(scrollEl) {
-    var rect = scrollEl.getBoundingClientRect();
-    var topEdge = rect.top;
-    var children = scrollEl.children;
+    var containerTop = scrollEl.getBoundingClientRect().top;
+    var items = collectItems(scrollEl);
 
-    for (var i = 0; i < children.length; i++) {
-      var child = children[i];
-      // Skip non-card elements (empty divs, section labels, etc.)
-      if (child.offsetHeight < 20) continue;
+    for (var i = 0; i < items.length; i++) {
+      var el = items[i];
+      var rect = el.getBoundingClientRect();
 
-      var childRect = child.getBoundingClientRect();
-      var distFromTop = childRect.top - topEdge;
+      // How much of the element is still visible below the container top edge
+      var visibleBelow = rect.bottom - containerTop;
 
-      if (distFromTop < FADE_ZONE && distFromTop > -childRect.height) {
-        // In fade zone — calculate progress (1 = fully visible, 0 = at edge)
-        var progress = Math.max(0, distFromTop / FADE_ZONE);
-        var opacity = 0.3 + progress * 0.7;
-        var scale = 0.92 + progress * 0.08;
-        var rotateX = (1 - progress) * 4; // subtle tilt
-        var translateY = (1 - progress) * -3;
-        child.style.opacity = opacity;
-        child.style.transform = 'scale(' + scale + ') perspective(600px) rotateX(' + rotateX + 'deg) translateY(' + translateY + 'px)';
-        child.style.transformOrigin = 'center top';
-      } else if (distFromTop <= -child.offsetHeight) {
-        // Fully scrolled past — hide
-        child.style.opacity = '0';
-        child.style.transform = 'scale(0.88) perspective(600px) rotateX(6deg) translateY(-5px)';
+      if (rect.top < containerTop && visibleBelow > 0) {
+        // Partially exiting the top — animate
+        var progress = Math.min(1, visibleBelow / EXIT_ZONE);
+        el.style.opacity = (0.2 + progress * 0.8).toFixed(3);
+        el.style.transform = 'scale(' + (0.94 + progress * 0.06).toFixed(4) + ') perspective(800px) rotateX(' + ((1 - progress) * 4).toFixed(2) + 'deg)';
+        el.style.transformOrigin = 'center bottom';
+      } else if (visibleBelow <= 0) {
+        // Fully gone
+        el.style.opacity = '0';
+        el.style.transform = 'scale(0.92) perspective(800px) rotateX(5deg)';
+        el.style.transformOrigin = 'center bottom';
       } else {
-        // Fully visible — reset
-        if (child.style.opacity !== '' && child.style.opacity !== '1') {
-          child.style.opacity = '';
-          child.style.transform = '';
-          child.style.transformOrigin = '';
+        // Fully visible — crisp, no transforms
+        if (el.style.opacity) {
+          el.style.opacity = '';
+          el.style.transform = '';
+          el.style.transformOrigin = '';
         }
       }
     }
@@ -414,33 +432,24 @@ function showSuccessToast(message) {
     });
   }
 
-  // Attach to all scroll areas on load
-  window.addEventListener('load', function() {
-    document.querySelectorAll('.scroll-area, .modal-sheet, .person-sheet').forEach(function(el) {
-      // Skip chat message areas — they scroll differently
-      if (el.classList.contains('chat-messages') || el.closest('#screen-chat') || el.closest('#screen-bubble-chat')) return;
-      el.addEventListener('scroll', onScroll, { passive: true });
-    });
+  function attach(el) {
+    if (el._esc) return;
+    if (el.closest('#screen-chat') || el.closest('#screen-bubble-chat')) return;
+    el.addEventListener('scroll', onScroll, { passive: true });
+    el._esc = true;
+  }
 
-    // Also observe for dynamically added scroll areas (sheets, modals)
-    var observer = new MutationObserver(function(mutations) {
-      mutations.forEach(function(m) {
-        m.addedNodes.forEach(function(node) {
-          if (node.nodeType !== 1) return;
-          if (node.classList && (node.classList.contains('scroll-area') || node.classList.contains('modal-sheet') || node.classList.contains('person-sheet'))) {
-            if (!node.closest('#screen-chat') && !node.closest('#screen-bubble-chat')) {
-              node.addEventListener('scroll', onScroll, { passive: true });
-            }
-          }
-          var nested = node.querySelectorAll ? node.querySelectorAll('.scroll-area, .modal-sheet, .person-sheet') : [];
-          nested.forEach(function(el) {
-            if (!el.closest('#screen-chat') && !el.closest('#screen-bubble-chat')) {
-              el.addEventListener('scroll', onScroll, { passive: true });
-            }
-          });
+  window.addEventListener('load', function() {
+    document.querySelectorAll('.scroll-area').forEach(attach);
+    new MutationObserver(function(muts) {
+      muts.forEach(function(m) {
+        m.addedNodes.forEach(function(n) {
+          if (n.nodeType !== 1) return;
+          if (n.classList && n.classList.contains('scroll-area')) attach(n);
+          var nested = n.querySelectorAll ? n.querySelectorAll('.scroll-area') : [];
+          nested.forEach(attach);
         });
       });
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+    }).observe(document.body, { childList: true, subtree: true });
   });
 })();

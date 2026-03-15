@@ -1900,21 +1900,18 @@ input[type="range"] {
 .bc-hero-icon .ico { width:20px;height:20px; }
 
 /* ── SCROLL FADE + ESCALATOR ── */
-.scroll-area,
+/* Bottom fade only — top stays sharp, items handle their own exit */
+.scroll-area {
+  mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 24px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 24px), transparent 100%);
+}
+/* Sheets/modals: no mask — they have their own scroll context */
 .modal-sheet,
 .person-sheet {
-  mask-image: linear-gradient(to bottom, transparent 0px, black 18px, black calc(100% - 18px), transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0px, black 18px, black calc(100% - 18px), transparent 100%);
-}
-/* Escalator: cards fade+shrink as they scroll past the top edge */
-.scroll-area > .escalator-item,
-.scroll-area > div > .escalator-item {
-  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
-  will-change: opacity, transform;
+  mask-image: none;
+  -webkit-mask-image: none;
 }
 /* Live checkin modal: don't clip scanner viewport */
 #modal-live-checkin .modal-sheet {
   overflow: visible;
-  mask-image: none;
-  -webkit-mask-image: none;
 }
