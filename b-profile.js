@@ -730,12 +730,6 @@ async function loadSavedContacts() {
     // Filter out self
     var saved = (savedRaw || []).filter(function(s) { return s.contact_id !== currentUser.id; });
 
-    const countEl = document.getElementById('saved-count');
-    if (countEl) {
-      if (saved?.length) { countEl.textContent = saved.length; countEl.style.display = 'inline-flex'; }
-      else { countEl.style.display = 'none'; }
-    }
-
     if (!saved || saved.length === 0) {
       if (savedEl) savedEl.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bookmark') + '</div><div class="empty-text">Ingen gemte kontakter endnu.<br>Tryk Gem på en profil for at huske dem.</div></div>';
       renderSavedStoryBar(null, {});
@@ -763,7 +757,7 @@ async function loadSavedContacts() {
       return new Date(b.created_at) - new Date(a.created_at);
     });
 
-    if (savedEl) savedEl.innerHTML = saved.map((s, i) => {
+    if (savedEl) savedEl.innerHTML = '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.5rem">Du har ' + saved.length + ' gemte profil' + (saved.length !== 1 ? 'er' : '') + '</div>' + saved.map((s, i) => {
       const p = profileMap[s.contact_id] || {};
       if (s.contact_id === currentUser?.id) return '';
       const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();

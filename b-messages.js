@@ -49,7 +49,9 @@ function convToggleSelectMode() {
         cb.className = 'conv-check';
         cb.setAttribute('data-id', id);
         cb.onclick = function(e) { e.stopPropagation(); convToggleConv(id, this); };
-        card.appendChild(cb);
+        var flexRow = card.querySelector('.flex-row-center');
+        if (flexRow) { flexRow.insertBefore(cb, flexRow.firstChild); }
+        else { card.prepend(cb); }
       });
     }
   } else {
