@@ -832,7 +832,7 @@ function profSwitchTab(tab) {
         '<div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Konto</div>' +
         '<button onclick="openFeedback()" style="width:100%;padding:0.7rem;background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.15);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent);cursor:pointer;margin-bottom:0.5rem">💬 Giv feedback</button>' +
         '<button onclick="showTerms()" style="width:100%;padding:0.7rem;background:none;border:1px solid var(--glass-border);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--text-secondary);cursor:pointer;margin-bottom:0.5rem">Betingelser & Privatlivspolitik</button>' +
-        '<button onclick="handleLogout()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(26,122,138,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent2);cursor:pointer">Log ud</button>' +
+        '<button onclick="handleLogout()" style="width:100%;padding:0.7rem;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:#EF4444;cursor:pointer">Log ud</button>' +
         '<div style="text-align:center;margin-top:2rem;font-size:0.62rem;color:var(--muted)">Bubble ' + BUILD_VERSION + ' · Build ' + BUILD_TIMESTAMP + '</div>';
       container.parentElement.insertBefore(div, container.nextSibling);
     }

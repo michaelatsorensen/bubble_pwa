@@ -498,7 +498,7 @@ async function loadEventSocialProof(bubbleId) {
           var p = m.profiles || {};
           var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
           var tags = (p.keywords || []).slice(0,2).map(function(k) { return '<span style="font-size:0.58rem;padding:0.1rem 0.4rem;background:rgba(124,92,252,0.06);color:var(--accent);border-radius:99px">' + escHtml(k) + '</span>'; }).join('');
-          return '<div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:0.7rem 0.9rem;display:flex;align-items:center;gap:0.6rem;box-shadow:0 1px 3px rgba(30,27,46,0.06);filter:blur(' + (i > 1 ? '3px' : '0px') + ');opacity:' + (i > 2 ? '0.5' : '1') + '">' +
+          return '<div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:0.7rem 0.9rem;display:flex;align-items:center;gap:0.6rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
             '<div style="width:36px;height:36px;border-radius:50%;background:' + avColors[i] + ';display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>' +
             '<div style="flex:1;min-width:0"><div style="font-size:0.8rem;font-weight:600;color:var(--text)">' + escHtml(p.name || 'Deltager') + '</div>' +
             '<div style="font-size:0.68rem;color:var(--text-secondary)">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
