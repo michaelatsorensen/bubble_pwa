@@ -780,16 +780,6 @@ async function loadHomeNotifFeed() {
   } catch(e) { logError('loadHomeNotifFeed', e); list.innerHTML = '<div class="fs-072 text-muted" style="padding:0.5rem">Kunne ikke hente</div>'; }
 }
 
-function timeAgo(dateStr) {
-  var diff = Date.now() - new Date(dateStr).getTime();
-  var mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'nu';
-  if (mins < 60) return mins + 'm';
-  var hrs = Math.floor(mins / 60);
-  if (hrs < 24) return hrs + 't';
-  var days = Math.floor(hrs / 24);
-  return days + 'd';
-}
 
 
 function updateAnonToggle() {
