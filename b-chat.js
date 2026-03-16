@@ -171,8 +171,8 @@ async function openBubbleChat(bubbleId, fromScreen) {
     bcSwitchTab('members');
 
     // Hent boble-info og vis metadata + actions i topbar
-    const { data: b } = await sb.from('bubbles').select('*').eq('id', bubbleId).single();
-    if (!b) {
+    const { data: b, error: bErr } = await sb.from('bubbles').select('*').eq('id', bubbleId).maybeSingle();
+    if (!b || bErr) {
       showToast('Denne boble eksisterer ikke længere');
       goTo(fromScreen || _activeScreen || 'screen-home');
       return;
@@ -191,16 +191,17 @@ async function openBubbleChat(bubbleId, fromScreen) {
     }
     document.getElementById('bc-members-count').textContent = memberCount + ' medlemmer';
 
-    // Vis actions i topbar baseret på membership
-    await loadBubbleUpvotes();
-    const { data: myMembership } = await sb.from('bubble_members')
-      .select('id').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle();
+    // Vis actions i topbar baseret på membership (parallel queries)
+    var [upvoteRes, memberRes, roleRes] = await Promise.all([
+      loadBubbleUpvotes().catch(function() {}),
+      sb.from('bubble_members').select('id').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle(),
+      sb.from('bubble_members').select('role').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle()
+    ]);
+    const myMembership = memberRes?.data;
+    var myRole = roleRes?.data;
 
     const actionArea = document.getElementById('bc-action-btns');
     const isOwner = b.created_by === currentUser.id;
-    // Check if user is admin
-    var { data: myRole } = await sb.from('bubble_members')
-      .select('role').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle();
     const isAdmin = myRole && myRole.role === 'admin';
     const canEdit = isOwner || isAdmin;
     // Store role for use in info tab
@@ -241,12 +242,12 @@ async function openBubbleChat(bubbleId, fromScreen) {
       // Badge sættes via real-time subscription når man er på en anden tab
     });
     bcSubscribe();
-  } catch(e) { logError("openBubbleChat", e); bcUnsubscribe(); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("openBubbleChat", e); bcUnsubscribe(); showToast('Kunne ikke åbne boblen'); goTo(fromScreen || _activeScreen || 'screen-home'); }
 }
 
 async function bcLoadBubbleInfo() {
   try {
-    const { data: b } = await sb.from('bubbles').select('*').eq('id', bcBubbleId).single();
+    const { data: b } = await sb.from('bubbles').select('*').eq('id', bcBubbleId).maybeSingle();
     if (!b) return;
     bcBubbleData = b;
     document.getElementById('bc-emoji').innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:1.1rem;height:1.1rem;border-radius:4px;object-fit:cover">' : bubbleEmoji(b.type);
@@ -400,7 +401,7 @@ var _profileCache = {};
 async function getCachedProfile(userId) {
   try {
   if (_profileCache[userId]) return _profileCache[userId];
-  var { data: p } = await sb.from('profiles').select('name,title,avatar_url').eq('id', userId).single();
+  var { data: p } = await sb.from('profiles').select('name,title,avatar_url').eq('id', userId).maybeSingle();
   if (p) _profileCache[userId] = p;
   return p || {};
   } catch(e) { logError("getCachedProfile", e); }

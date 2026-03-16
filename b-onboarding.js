@@ -132,7 +132,8 @@ var obLifestage = null;
 function obCheckProgress() {
   var name = (document.getElementById('ob-name')?.value || '').trim();
   var title = (document.getElementById('ob-title')?.value || '').trim();
-  var secADone = name && obLifestage;
+  var isEventFlowOb = sessionStorage.getItem('event_flow');
+  var secADone = isEventFlowOb ? !!name : (name && obLifestage);
   var secBDone = obSelectedTags.length >= 3;
 
   // Preview: unlock when name + livsfase
@@ -182,10 +183,12 @@ function obCheckProgress() {
     else { checkB.classList.remove('done'); checkB.textContent = '2'; }
   }
 
-  // Save button: active when name + title + 3 tags
+  // Save button: active when minimum requirements met
   var saveBtn = document.getElementById('ob-save-btn');
   if (saveBtn) {
-    var canSave = name && title && secBDone;
+    var workplace = (document.getElementById('ob-workplace')?.value || '').trim();
+    var isEventFlow = sessionStorage.getItem('event_flow');
+    var canSave = isEventFlow ? (name && workplace) : (name && title && secBDone);
     saveBtn.style.opacity = canSave ? '1' : '0.3';
     saveBtn.style.pointerEvents = canSave ? 'auto' : 'none';
   }

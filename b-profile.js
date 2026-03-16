@@ -13,6 +13,17 @@ async function openPerson(userId, fromScreen) {
     goTo('screen-person');
     var myNav = _navVersion;
 
+    // Reset bubble-up confirmation from any previous profile
+    var bupBtn = document.getElementById('person-bubbleup-btn');
+    var bupConfirm = document.getElementById('person-bubbleup-confirm');
+    if (bupBtn) bupBtn.style.display = 'flex';
+    if (bupConfirm) bupConfirm.classList.remove('show');
+    // Reset other stateful UI
+    var starSec = document.getElementById('person-star-section');
+    if (starSec) starSec.style.display = 'none';
+    var matchEl = document.getElementById('person-match-label');
+    if (matchEl) { matchEl.textContent = ''; matchEl.style.display = 'none'; }
+
     const { data: p } = await sb.from('profiles').select('*').eq('id', userId).single();
     if (!p || _navVersion !== myNav) {
       // Profile doesn't exist or was deleted
@@ -1214,22 +1225,39 @@ async function loadDashboard() {
     var completePct = Math.round((completeness / totalFields) * 100);
 
     // Render
-    var statCard = function(emoji, label, value, color) {
+    var statCard = function(iconName, label, value, color) {
+      var iconHtml = ico(iconName).replace('<svg ', '<svg style="width:18px;height:18px" ');
       return '<div style="display:flex;align-items:center;gap:0.7rem;padding:0.7rem 0.9rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
-        '<div style="width:36px;height:36px;border-radius:10px;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">' + emoji + '</div>' +
+        '<div style="width:36px;height:36px;border-radius:10px;background:' + color + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">' + iconHtml + '</div>' +
         '<div style="flex:1;min-width:0"><div style="font-size:1.1rem;font-weight:800;color:var(--text)">' + value + '</div><div style="font-size:0.68rem;color:var(--text-secondary)">' + label + '</div></div>' +
         '</div>';
     };
 
+    // Profile CTA based on completeness
+    var ctaHtml = '';
+    if (completePct >= 100) {
+      ctaHtml = '<div style="font-size:0.65rem;color:var(--green);margin-top:0.4rem;display:flex;align-items:center;gap:0.3rem">' + icon('check') + ' Din profil er komplet!</div>';
+    } else {
+      var missing = [];
+      if (!currentProfile.bio) missing.push('bio');
+      if (!currentProfile.avatar_url) missing.push('billede');
+      if ((currentProfile.keywords||[]).length < 3) missing.push('interesser');
+      if (!currentProfile.title) missing.push('titel');
+      ctaHtml = '<div style="font-size:0.65rem;color:var(--text-secondary);margin-top:0.3rem">Tilføj ' + missing.join(', ') + ' for bedre matches</div>' +
+        '<button onclick="openEditProfile()" style="width:100%;margin-top:0.5rem;padding:0.55rem;font-size:0.78rem;font-weight:600;font-family:inherit;background:rgba(124,92,252,0.08);color:var(--accent);border:1px solid rgba(124,92,252,0.15);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.3rem">' + icon('edit') + ' Fortsæt med at forbedre din profil</button>';
+    }
+
     el.innerHTML =
       '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.4rem">Din Bubble-uge</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem">' +
-        statCard('👁', 'Profilvisninger', views, 'rgba(124,92,252,0.08)') +
-        statCard('⭐', 'Har gemt dig', savedBy, 'rgba(232,121,168,0.08)') +
-        statCard('💾', 'Du har gemt', mySaved, 'rgba(26,158,142,0.08)') +
-        statCard('🫧', 'Bobler', bubbles, 'rgba(46,207,207,0.08)') +
+        statCard('eye', 'Profilvisninger', views, 'rgba(124,92,252,0.08)') +
+        statCard('bookmark', 'Har gemt dig', savedBy, 'rgba(232,121,168,0.08)') +
+        statCard('heart', 'Du har gemt', mySaved, 'rgba(26,158,142,0.08)') +
+        statCard('bubble', 'Bobler', bubbles, 'rgba(46,207,207,0.08)') +
       '</div>' +
-      statCard('🤝', 'Stærke matches i dine bobler', strongMatches, 'rgba(26,158,142,0.08)') +
+      '<div style="margin-top:0.4rem">' +
+        statCard('target', 'Stærke matches i dine bobler', strongMatches, 'rgba(26,158,142,0.08)') +
+      '</div>' +
       '<div style="margin-top:0.6rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:0.7rem 0.9rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">' +
           '<div style="font-size:0.78rem;font-weight:700;color:var(--text)">Profilstyrke</div>' +
@@ -1238,7 +1266,7 @@ async function loadDashboard() {
         '<div style="height:6px;background:var(--glass-bg-strong);border-radius:3px;overflow:hidden">' +
           '<div style="height:100%;width:' + completePct + '%;background:' + (completePct >= 100 ? 'var(--green)' : 'var(--gradient-primary)') + ';border-radius:3px;transition:width 0.5s ease"></div>' +
         '</div>' +
-        (completePct < 100 ? '<div style="font-size:0.65rem;color:var(--text-secondary);margin-top:0.3rem">Tilføj ' + (currentProfile.bio ? '' : 'bio, ') + (currentProfile.avatar_url ? '' : 'billede, ') + ((currentProfile.keywords||[]).length < 3 ? 'interesser' : '') + ' for bedre matches</div>' : '<div style="font-size:0.65rem;color:var(--green);margin-top:0.3rem">✓ Din profil er komplet!</div>') +
+        ctaHtml +
       '</div>';
 
   } catch(e) {
