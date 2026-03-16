@@ -198,9 +198,18 @@ async function openBubbleChat(bubbleId, fromScreen) {
 
     const actionArea = document.getElementById('bc-action-btns');
     const isOwner = b.created_by === currentUser.id;
+    // Check if user is admin
+    var { data: myRole } = await sb.from('bubble_members')
+      .select('role').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle();
+    const isAdmin = myRole && myRole.role === 'admin';
+    const canEdit = isOwner || isAdmin;
+    // Store role for use in info tab
+    bcBubbleData._isOwner = isOwner;
+    bcBubbleData._isAdmin = isAdmin;
+    bcBubbleData._canEdit = canEdit;
     if (myMembership) {
       actionArea.innerHTML =
-        (isOwner ? `<button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" style="font-size:0.82rem;padding:0.3rem 0.4rem" title="Rediger">${icon("edit")}</button>` : '');
+        (canEdit ? `<button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" style="font-size:0.82rem;padding:0.3rem 0.4rem" title="Rediger">${icon("edit")}</button>` : '');
       // Update action bar under tabs
       var actionBar = document.getElementById('bc-action-bar');
       if (actionBar) {
@@ -818,7 +827,9 @@ async function bcLoadInfo() {
     const b = bcBubbleData;
     if (!b) return;
     const tags = (b.keywords||[]).map(k=>`<span class="tag">${escHtml(k)}</span>`).join('');
-    const isOwner = currentUser && b.created_by === currentUser.id;
+    const isOwner = bcBubbleData._isOwner || (currentUser && b.created_by === currentUser.id);
+    const isAdmin = bcBubbleData._isAdmin || false;
+    const canEdit = isOwner || isAdmin;
 
     // Member count — use denormalized if available
     var memberCount3 = b.member_count;
@@ -836,10 +847,13 @@ async function bcLoadInfo() {
       <div>
         <button class="${myUpvotes[b.id] ? 'chat-info-btn success' : 'chat-info-btn primary'}" id="bc-recommend-btn" onclick="toggleBubbleUpvote('${b.id}')">${myUpvotes[b.id] ? icon('checkCircle') + ' Anbefalet' : icon('rocket') + ' Anbefal denne boble'}</button>
         <button class="chat-info-btn primary" data-action="openQRModal" data-id="${b.id}">${icon("qrcode")} Del boble / QR-kode</button>
-        ${isOwner ? `<button class="chat-info-btn primary" onclick="downloadMembersPdf('${b.id}')" style="background:rgba(124,92,252,0.12);border-color:rgba(124,92,252,0.3);color:var(--accent)">${icon('users')} Download deltagerliste (PDF)</button>` : ''}
+        ${canEdit ? `<button class="chat-info-btn primary" onclick="openBubbleScannerFromInfo('${b.id}')" style="background:rgba(26,158,142,0.08);border-color:rgba(26,158,142,0.2);color:var(--green)">${icon('camera')} Scan deltagere ind</button>` : ''}
+        ${canEdit ? `<button class="chat-info-btn primary" data-action="openEditBubble" data-id="${b.id}" style="background:rgba(124,92,252,0.08);border-color:rgba(124,92,252,0.2);color:var(--accent)">${icon('edit')} Rediger boble</button>` : ''}
+        ${canEdit ? `<button class="chat-info-btn primary" onclick="downloadMembersPdf('${b.id}')" style="background:rgba(124,92,252,0.08);border-color:rgba(124,92,252,0.2);color:var(--accent)">${icon('users')} Download deltagerliste</button>` : ''}
         ${isOwner ? `<button class="chat-info-btn primary" onclick="openTransferOwnership('${b.id}')" style="background:rgba(124,92,252,0.06);border-color:rgba(124,92,252,0.15);color:var(--accent)">${icon('crown')} Overdrag ejerskab</button>` : ''}
         ${isOwner ? `<button class="chat-info-btn primary" onclick="openAdminDesignation('${b.id}')" style="background:rgba(124,92,252,0.06);border-color:rgba(124,92,252,0.15);color:var(--accent)">${icon('users')} Udpeg admins</button>` : ''}
         <button class="chat-info-btn danger" data-action="leaveBubble" data-id="${b.id}">${icon("logout")} Forlad boblen</button>
+        ${isOwner ? `<button class="chat-info-btn danger" onclick="confirmPopBubble('${b.id}')" style="margin-top:0.3rem">${icon('x')} Slet boble</button>` : ''}
       </div>`;
   } catch(e) { logError("bcLoadInfo", e); showToast(e.message || "Ukendt fejl"); }
 }

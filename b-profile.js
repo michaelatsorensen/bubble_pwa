@@ -664,7 +664,7 @@ async function loadProfile() {
     isAnon = currentProfile.is_anon || false;
     updateAnonToggle();
 
-    await Promise.all([loadSavedContacts(), loadMyBubbles(), loadProfileInvitations()]);
+    await Promise.all([loadSavedContacts(), loadMyBubbles(), loadProfileInvitations(), loadDashboard()]);
 
     // Admin panel — only for admin UID
     var adminPanel = document.getElementById('admin-panel');
@@ -837,12 +837,13 @@ function profSwitchTab(tab) {
       container.parentElement.insertBefore(div, container.nextSibling);
     }
   }
-  ['saved','bubbles','invites','settings'].forEach(function(t) {
+  ['dashboard','saved','bubbles','invites','settings'].forEach(function(t) {
     var panel = document.getElementById('prof-panel-' + t);
     var tabBtn = document.getElementById('prof-tab-' + t);
     if (panel) panel.style.display = t === tab ? 'flex' : 'none';
     if (tabBtn) tabBtn.classList.toggle('active', t === tab);
   });
+  if (tab === 'dashboard') loadDashboard();
   if (tab === 'settings') { updateAnonToggle(); hsUpdateAllToggles(); }
 }
 
@@ -1156,6 +1157,94 @@ function psSetStar(userId, rating) {
   }
   // Refresh saved contacts list in background
   loadSavedContacts();
+}
+
+// ══════════════════════════════════════════════════════════
+//  DASHBOARD — user metrics
+// ══════════════════════════════════════════════════════════
+async function loadDashboard() {
+  var el = document.getElementById('prof-dashboard-content');
+  if (!el || !currentUser) return;
+
+  try {
+    // Run all queries in parallel — each wrapped for resilience
+    var safe = async function(fn) { try { return await fn(); } catch(e) { return { count: 0 }; } };
+
+    var [viewsRes, savedByRes, savedRes, bubblesRes, matchesRes] = await Promise.all([
+      safe(function() { return sb.from('profile_views').select('*', { count: 'exact', head: true }).eq('viewed_id', currentUser.id); }),
+      safe(function() { return sb.from('saved_contacts').select('*', { count: 'exact', head: true }).eq('contact_id', currentUser.id); }),
+      safe(function() { return sb.from('saved_contacts').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id); }),
+      safe(function() { return sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id); }),
+      safe(async function() {
+        if (!currentProfile || !(currentProfile.keywords || []).length) return { count: 0 };
+        var { data: myBubbles } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+        if (!myBubbles || myBubbles.length === 0) return { count: 0 };
+        var bubbleIds = myBubbles.map(function(m) { return m.bubble_id; });
+        var { data: others } = await sb.from('bubble_members')
+          .select('user_id, profiles(id, keywords, dynamic_keywords, bio, title, linkedin)')
+          .in('bubble_id', bubbleIds).neq('user_id', currentUser.id).limit(50);
+        if (!others) return { count: 0 };
+        var seen = {};
+        var strong = 0;
+        others.forEach(function(m) {
+          if (seen[m.user_id] || !m.profiles) return;
+          seen[m.user_id] = true;
+          var score = (typeof calcMatchScore === 'function') ? calcMatchScore(currentProfile, m.profiles, 1) : 0;
+          if (score >= 80) strong++;
+        });
+        return { count: strong };
+      })
+    ]);
+
+    var views = viewsRes.count || 0;
+    var savedBy = savedByRes.count || 0;
+    var mySaved = savedRes.count || 0;
+    var bubbles = bubblesRes.count || 0;
+    var strongMatches = matchesRes.count || 0;
+
+    // Profile completeness
+    var completeness = 0;
+    var totalFields = 6;
+    if (currentProfile.name) completeness++;
+    if (currentProfile.title) completeness++;
+    if (currentProfile.workplace) completeness++;
+    if (currentProfile.bio) completeness++;
+    if (currentProfile.avatar_url) completeness++;
+    if ((currentProfile.keywords || []).length >= 3) completeness++;
+    var completePct = Math.round((completeness / totalFields) * 100);
+
+    // Render
+    var statCard = function(emoji, label, value, color) {
+      return '<div style="display:flex;align-items:center;gap:0.7rem;padding:0.7rem 0.9rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
+        '<div style="width:36px;height:36px;border-radius:10px;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">' + emoji + '</div>' +
+        '<div style="flex:1;min-width:0"><div style="font-size:1.1rem;font-weight:800;color:var(--text)">' + value + '</div><div style="font-size:0.68rem;color:var(--text-secondary)">' + label + '</div></div>' +
+        '</div>';
+    };
+
+    el.innerHTML =
+      '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.4rem">Din Bubble-uge</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem">' +
+        statCard('👁', 'Profilvisninger', views, 'rgba(124,92,252,0.08)') +
+        statCard('⭐', 'Har gemt dig', savedBy, 'rgba(232,121,168,0.08)') +
+        statCard('💾', 'Du har gemt', mySaved, 'rgba(26,158,142,0.08)') +
+        statCard('🫧', 'Bobler', bubbles, 'rgba(46,207,207,0.08)') +
+      '</div>' +
+      statCard('🤝', 'Stærke matches i dine bobler', strongMatches, 'rgba(26,158,142,0.08)') +
+      '<div style="margin-top:0.6rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:0.7rem 0.9rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">' +
+          '<div style="font-size:0.78rem;font-weight:700;color:var(--text)">Profilstyrke</div>' +
+          '<div style="font-size:0.78rem;font-weight:800;color:' + (completePct >= 100 ? 'var(--green)' : 'var(--accent)') + '">' + completePct + '%</div>' +
+        '</div>' +
+        '<div style="height:6px;background:var(--glass-bg-strong);border-radius:3px;overflow:hidden">' +
+          '<div style="height:100%;width:' + completePct + '%;background:' + (completePct >= 100 ? 'var(--green)' : 'var(--gradient-primary)') + ';border-radius:3px;transition:width 0.5s ease"></div>' +
+        '</div>' +
+        (completePct < 100 ? '<div style="font-size:0.65rem;color:var(--text-secondary);margin-top:0.3rem">Tilføj ' + (currentProfile.bio ? '' : 'bio, ') + (currentProfile.avatar_url ? '' : 'billede, ') + ((currentProfile.keywords||[]).length < 3 ? 'interesser' : '') + ' for bedre matches</div>' : '<div style="font-size:0.65rem;color:var(--green);margin-top:0.3rem">✓ Din profil er komplet!</div>') +
+      '</div>';
+
+  } catch(e) {
+    logError('loadDashboard', e);
+    el.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">Kunne ikke hente dashboard-data</div>';
+  }
 }
 
 function togglePersonTags() {

@@ -364,7 +364,7 @@ async function leaveBubble(bubbleId) {
   var tray = document.createElement('div');
   tray.className = 'leave-confirm';
   tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:10px;gap:0.5rem;width:100%';
-  tray.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Forlad boblen?</span>' +
+  tray.innerHTML = '<span style="font-size:0.75rem;font-weight:600;color:var(--text)">Forlad boblen?</span><span style="font-size:0.65rem;color:var(--text-secondary);margin-left:0.2rem">Du mister adgang til chat og deltagere</span>' +
     '<div style="display:flex;gap:0.3rem">' +
     '<button style="font-size:0.7rem;padding:0.25rem 0.6rem;background:rgba(124,92,252,0.12);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600" onclick="confirmLeaveBubble(\'' + bubbleId + '\')">Forlad</button>' +
     '<button style="font-size:0.7rem;padding:0.25rem 0.6rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit" onclick="cancelLeaveBubble()">Annuller</button>' +
@@ -563,6 +563,15 @@ async function saveEditBubble() {
     const desc       = document.getElementById('eb-desc').value.trim();
     const location   = document.getElementById('eb-location').value.trim();
     if (!name) return showToast('Navn er påkrævet');
+    // Show confirmation tray
+    var saveBtn = document.querySelector('#modal-edit-bubble .btn-primary[onclick="saveEditBubble()"]');
+    if (saveBtn && !saveBtn.dataset.confirmed) {
+      saveBtn.dataset.confirmed = 'pending';
+      saveBtn.textContent = 'Bekræft ændringer';
+      saveBtn.style.background = 'var(--green)';
+      setTimeout(function() { saveBtn.dataset.confirmed = ''; saveBtn.textContent = 'Gem ændringer'; saveBtn.style.background = ''; }, 4000);
+      return;
+    }
     var updateObj = {
       name, type, type_label: typeLabel(type),
       visibility, description: desc, location, keywords: ebChips
@@ -572,6 +581,7 @@ async function saveEditBubble() {
     if (error) return showToast('Fejl: ' + error.message);
     closeModal('modal-edit-bubble');
     showSuccessToast('Boble opdateret');
+    if (saveBtn) { saveBtn.dataset.confirmed = ''; saveBtn.textContent = 'Gem ændringer'; saveBtn.style.background = ''; }
     await bcLoadBubbleInfo();
     await bcLoadMembers();
   } catch(e) { logError("saveEditBubble", e); showToast(e.message || "Ukendt fejl"); }
@@ -1223,6 +1233,50 @@ function psClose() {
   document.getElementById('ps-bubbleup-btn').style.display = 'flex';
   document.getElementById('ps-bubbleup-confirm').classList.remove('show');
   setTimeout(() => document.getElementById('ps-overlay').classList.remove('open'), 320);
+}
+
+// ══════════════════════════════════════════════════════════
+//  SCANNER FROM BUBBLE — opens live scanner in context
+// ══════════════════════════════════════════════════════════
+function openBubbleScannerFromInfo(bubbleId) {
+  // Open the live checkin modal with scanner active
+  openLiveCheckin();
+  showToast('Scanner klar — scan en deltagers QR-kode');
+}
+
+// ══════════════════════════════════════════════════════════
+//  POP (DELETE) BUBBLE — owner only, with confirmation tray
+// ══════════════════════════════════════════════════════════
+function confirmPopBubble(bubbleId) {
+  var infoList = document.getElementById('bc-info-list');
+  if (!infoList) return;
+  // Find the delete button and replace with confirmation tray
+  var existing = document.getElementById('pop-bubble-tray');
+  if (existing) return; // Already showing
+  var tray = document.createElement('div');
+  tray.id = 'pop-bubble-tray';
+  tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.8rem;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:12px;margin-top:0.5rem;gap:0.5rem';
+  tray.innerHTML = '<div style="flex:1"><div style="font-size:0.78rem;font-weight:700;color:#EF4444">Slet denne boble?</div><div style="font-size:0.65rem;color:var(--text-secondary)">Chat, medlemmer og data slettes permanent</div></div>' +
+    '<div style="display:flex;gap:0.3rem">' +
+    '<button onclick="popBubble(\'' + bubbleId + '\')" style="font-size:0.72rem;padding:0.35rem 0.7rem;background:#EF4444;color:white;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700">Slet</button>' +
+    '<button onclick="document.getElementById(\'pop-bubble-tray\').remove()" style="font-size:0.72rem;padding:0.35rem 0.7rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit">Annuller</button>' +
+    '</div>';
+  infoList.appendChild(tray);
+}
+
+async function popBubble(bubbleId) {
+  try {
+    showToast('Sletter boble...');
+    // Delete in order: messages, reactions, members, invitations, bubble
+    await sb.from('bubble_messages').delete().eq('bubble_id', bubbleId);
+    await sb.from('bubble_members').delete().eq('bubble_id', bubbleId);
+    await sb.from('bubble_invitations').delete().eq('bubble_id', bubbleId);
+    var { error } = await sb.from('bubbles').delete().eq('id', bubbleId).eq('created_by', currentUser.id);
+    if (error) { showToast('Fejl: ' + error.message); return; }
+    showSuccessToast('Boble slettet');
+    goTo('screen-home');
+    loadHome();
+  } catch(e) { logError('popBubble', e); showToast(e.message || 'Ukendt fejl'); }
 }
 
 
