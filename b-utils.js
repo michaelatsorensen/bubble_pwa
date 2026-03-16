@@ -261,9 +261,10 @@ async function fetchContactAvatarsForBubbles(bubbleIds, savedIds) {
 
 // ── Visibility label + icon for bubbles ──
 function visibilityBadge(visibility) {
-  if (visibility === 'hidden') return '<span class="fs-065" style="color:var(--muted);display:inline-flex;align-items:center;gap:0.15rem">' + ico('eye') + ' Skjult</span>';
-  if (visibility === 'private') return '<span class="fs-065" style="color:var(--accent);display:inline-flex;align-items:center;gap:0.15rem">' + ico('lock') + ' Privat</span>';
-  return '<span class="fs-065" style="color:var(--green);display:inline-flex;align-items:center;gap:0.15rem">' + ico('globe') + ' Åben</span>';
+  var iconStyle = 'style="width:0.6rem;height:0.6rem;flex-shrink:0"';
+  if (visibility === 'hidden') return '<span style="font-size:0.65rem;color:var(--muted);display:inline-flex;align-items:center;gap:0.15rem;vertical-align:middle">' + ico('eye').replace('<svg ', '<svg ' + iconStyle + ' ') + 'Skjult</span>';
+  if (visibility === 'private') return '<span style="font-size:0.65rem;color:var(--accent);display:inline-flex;align-items:center;gap:0.15rem;vertical-align:middle">' + ico('lock').replace('<svg ', '<svg ' + iconStyle + ' ') + 'Privat</span>';
+  return '<span style="font-size:0.65rem;color:var(--green);display:inline-flex;align-items:center;gap:0.15rem;vertical-align:middle">' + ico('globe').replace('<svg ', '<svg ' + iconStyle + ' ') + 'Åben</span>';
 }
 
 // ── Retry state: show inline error with retry button ──

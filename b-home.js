@@ -579,7 +579,7 @@ function bubbleCard(b, joined) {
     <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};color:${bubbleColor(b.type, 0.9)}">${bubbleEmoji(b.type)}</div>
     <div style="flex:1;min-width:0">
       <div class="fw-600 fs-09">${escHtml(b.name)}</div>
-      <div class="fs-075 text-muted">${escHtml(b.type_label || b.type)} ${b.location ? '· ' + escHtml(b.location) : ''} · ${visBadge}</div>
+      <div style="font-size:0.75rem;color:var(--text-secondary);display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap">${escHtml(b.type_label || b.type)} ${b.location ? '<span>·</span> <span>' + escHtml(b.location) + '</span>' : ''} <span>·</span> ${visBadge}</div>
       ${contactHtml}
     </div>
     <div class="flex-col-end" style="align-items:flex-end;gap:0.15rem">
