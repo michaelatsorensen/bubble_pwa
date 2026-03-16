@@ -37,7 +37,15 @@ async function checkAuth() {
       await loadBlockedUsers();
       const needsOnboarding = await maybeShowOnboarding();
       if (!needsOnboarding) {
-        goTo('screen-home');
+        await checkPendingJoin();
+        await checkPendingContact();
+        var isEventFlow = sessionStorage.getItem('event_flow');
+        if (isEventFlow) {
+          sessionStorage.removeItem('event_flow');
+          showEventReadyQR();
+        } else {
+          goTo('screen-home');
+        }
         preloadAllData();
         initGlobalRealtime();
         updateUnreadBadge();
@@ -217,7 +225,16 @@ async function handleLogin() {
     await loadBlockedUsers();
     const needsOnboarding = await maybeShowOnboarding();
     if (!needsOnboarding) {
-      goTo('screen-home');
+      // Handle event/QR pending actions before going to home
+      await checkPendingJoin();
+      await checkPendingContact();
+      var isEventFlow = sessionStorage.getItem('event_flow');
+      if (isEventFlow) {
+        sessionStorage.removeItem('event_flow');
+        showEventReadyQR();
+      } else {
+        goTo('screen-home');
+      }
       preloadAllData();
       initGlobalRealtime();
       updateUnreadBadge();
@@ -290,7 +307,15 @@ async function handleSignup() {
     await loadBlockedUsers();
     const needsOnboarding = await maybeShowOnboarding();
     if (!needsOnboarding) {
-      goTo('screen-home');
+      await checkPendingJoin();
+      await checkPendingContact();
+      var isEventFlow2 = sessionStorage.getItem('event_flow');
+      if (isEventFlow2) {
+        sessionStorage.removeItem('event_flow');
+        showEventReadyQR();
+      } else {
+        goTo('screen-home');
+      }
       preloadAllData();
       initGlobalRealtime();
       updateUnreadBadge();

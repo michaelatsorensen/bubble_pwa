@@ -449,10 +449,10 @@ async function showProgressiveOnboarding() {
   } catch(e) { /* silent */ }
 
   var steps = [
-    { key: 'tags', ico: '🏷️', color: 'var(--green)', softColor: 'rgba(26,158,142,0.08)', title: 'Vælg interesser', sub: 'Aktiverer matching', done: hasTags, action: 'reRunOnboarding()' },
-    { key: 'title', ico: '💼', color: 'var(--accent)', softColor: 'rgba(124,92,252,0.06)', title: 'Tilføj titel & arbejdsplads', sub: 'Unlock 5+ flere matches', done: hasTitle, action: "goTo('screen-profile');setTimeout(function(){profSwitchTab('edit')},200)" },
-    { key: 'photo', ico: '📸', color: '#3B82F6', softColor: 'rgba(59,130,246,0.06)', title: 'Tilføj profilbillede', sub: '3x flere kontakter', done: hasPhoto, action: "goTo('screen-profile');setTimeout(function(){profSwitchTab('edit')},200)" },
-    { key: 'bubble', ico: '🫧', color: '#E879A8', softColor: 'rgba(232,121,168,0.06)', title: 'Join din første boble', sub: 'Åbn for endnu flere profiler', done: hasBubble, action: "goTo('screen-discover')" }
+    { key: 'tags', svgIco: 'target', color: 'var(--green)', softColor: 'rgba(26,158,142,0.08)', title: 'Vælg interesser', sub: 'Aktiverer matching', done: hasTags, action: 'reRunOnboarding()' },
+    { key: 'title', svgIco: 'briefcase', color: 'var(--accent)', softColor: 'rgba(124,92,252,0.06)', title: 'Tilføj titel & arbejdsplads', sub: 'Unlock 5+ flere matches', done: hasTitle, action: "goTo('screen-profile');setTimeout(function(){profSwitchTab('edit')},200)" },
+    { key: 'photo', svgIco: 'camera', color: '#3B82F6', softColor: 'rgba(59,130,246,0.06)', title: 'Tilføj profilbillede', sub: '3x flere kontakter', done: hasPhoto, action: "goTo('screen-profile');setTimeout(function(){profSwitchTab('edit')},200)" },
+    { key: 'bubble', svgIco: 'bubble', color: '#E879A8', softColor: 'rgba(232,121,168,0.06)', title: 'Join din første boble', sub: 'Åbn for endnu flere profiler', done: hasBubble, action: "goTo('screen-discover')" }
   ];
 
   // Only show incomplete steps
@@ -468,7 +468,7 @@ async function showProgressiveOnboarding() {
   cardsEl.innerHTML = incomplete.map(function(s, i) {
     var highlight = i === 0;
     return '<div class="gs-v4-card' + (highlight ? ' highlight' : '') + '" onclick="' + s.action + '">' +
-      '<div class="gs-v4-icon" style="background:' + s.softColor + ';color:' + s.color + '">' + s.ico + '</div>' +
+      '<div class="gs-v4-icon" style="background:' + s.softColor + ';color:' + s.color + '">' + ico(s.svgIco) + '</div>' +
       '<div class="gs-v4-text"><div class="gs-v4-title">' + s.title + '</div>' +
       '<div class="gs-v4-sub">' + s.sub + '</div></div>' +
       '<div style="color:var(--accent);font-size:0.75rem;font-weight:600">\u2192</div>' +

@@ -107,7 +107,7 @@ async function openPerson(userId, fromScreen) {
       var hiddenHtml = allTagsHtml.slice(INITIAL_SHOW).join('');
       var hasMore = overlap.length > INITIAL_SHOW;
       
-      overlapEl.innerHTML = '<div class="section-label" style="margin-bottom:0.3rem">Fælles interesser · ' + overlap.length + '</div>' +
+      overlapEl.innerHTML = '<div class="person-section-title" style="margin-bottom:0.4rem">Fælles interesser · ' + overlap.length + '</div>' +
         '<div id="person-tags-visible">' + visibleHtml + '</div>' +
         (hasMore ? '<div id="person-tags-hidden" style="display:none">' + hiddenHtml + '</div>' +
           '<button id="person-tags-toggle" onclick="togglePersonTags()" style="font-size:0.7rem;font-weight:600;color:var(--accent);background:none;border:none;padding:0.4rem 0;cursor:pointer;font-family:inherit">Vis alle ' + overlap.length + ' →</button>' : '');
@@ -117,7 +117,7 @@ async function openPerson(userId, fromScreen) {
 
     const dynEl = document.getElementById('person-dynamic-keywords');
     if ((p.dynamic_keywords||[]).length) {
-      dynEl.innerHTML = '<div class="section-label">Søger nu</div>' + p.dynamic_keywords.map(k => `<span class="tag gold">${icon("fire")} ${escHtml(k)}</span>`).join('');
+      dynEl.innerHTML = '<div class="person-section-title">Søger nu</div>' + p.dynamic_keywords.map(k => `<span class="tag gold">${icon("fire")} ${escHtml(k)}</span>`).join('');
     } else { dynEl.innerHTML = ''; }
 
     // Check if saved

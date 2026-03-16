@@ -516,7 +516,7 @@ function eventSignupGoogle() {
   sessionStorage.setItem('event_flow', 'true');
   goTo('screen-auth');
   showAuthForms();
-  setTimeout(function() { if (typeof googleSignIn === 'function') googleSignIn(); }, 200);
+  setTimeout(function() { handleGoogleLogin(); }, 200);
 }
 
 function eventSignupEmail() {
