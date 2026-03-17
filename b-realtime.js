@@ -198,7 +198,10 @@ function initGlobalRealtime() {
 // Legacy alias — some code still calls this
 function subscribeToIncoming() { initGlobalRealtime(); }
 
+var _messagesLoading = false;
 async function loadMessages() {
+  if (_messagesLoading) return;
+  _messagesLoading = true;
   try {
     var myNav = _navVersion;
     const list = document.getElementById('conversations-list');
@@ -253,6 +256,7 @@ async function loadMessages() {
         '</div></div>';
     }).join('');
   } catch(e) { logError("loadMessages", e); showRetryState('conversations-list', 'loadMessages', 'Kunne ikke hente beskeder'); }
+  finally { _messagesLoading = false; }
 }
 
 async function openChat(userId, fromScreen) {

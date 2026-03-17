@@ -6,7 +6,16 @@
 // ══════════════════════════════════════════════════════════
 //  NAVIGATION
 // ══════════════════════════════════════════════════════════
+var _navLock = false;
+
 function goTo(screenId) {
+  // Fix 1: Skip if already on this screen
+  if (_activeScreen === screenId) return;
+  // Fix 5: Click throttle (250ms)
+  if (_navLock) return;
+  _navLock = true;
+  setTimeout(function() { _navLock = false; }, 250);
+
   try {
     console.debug('[nav] goTo:', screenId);
     _navVersion++;
@@ -101,4 +110,13 @@ function goTo(screenId) {
   }
 }
 
-
+// ══════════════════════════════════════════════════════════
+//  Fix 3: Safe-area detection — only use in standalone PWA
+// ══════════════════════════════════════════════════════════
+function updateBottomSafeInset() {
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  document.documentElement.style.setProperty('--bottom-safe', isStandalone ? 'env(safe-area-inset-bottom, 0px)' : '0px');
+}
+window.addEventListener('load', updateBottomSafeInset);
+window.addEventListener('resize', updateBottomSafeInset);
+window.addEventListener('orientationchange', updateBottomSafeInset);

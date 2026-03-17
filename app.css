@@ -90,6 +90,10 @@ body {
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
   border-top: 1px solid #D8D5E4;
+  height: calc(52px + var(--bottom-safe, 0px));
+  min-height: calc(52px + var(--bottom-safe, 0px));
+  max-height: calc(52px + var(--bottom-safe, 0px));
+  overflow: hidden;
 }
 #global-nav .nav-row {
   display: flex;
@@ -98,7 +102,7 @@ body {
   height: 52px;
 }
 #global-nav .nav-safe {
-  height: env(safe-area-inset-bottom, 0px);
+  height: var(--bottom-safe, 0px);
 }
 #global-nav.nav-hidden {
   transform: translateY(100%);
