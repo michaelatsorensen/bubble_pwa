@@ -791,4 +791,157 @@ function updateAnonToggle() {
   knob.style.left = isAnon ? '23px' : '3px';
 }
 
+// ══════════════════════════════════════════════════════════
+//  HOME TRAY — fuld liste over matches
+// ══════════════════════════════════════════════════════════
+function openHomeTray() {
+  var overlay = document.getElementById('home-tray-overlay');
+  var tray    = document.getElementById('home-tray');
+  if (!overlay || !tray) {
+    // Build tray HTML if not yet in DOM
+    _buildHomeTrayDOM();
+    overlay = document.getElementById('home-tray-overlay');
+    tray    = document.getElementById('home-tray');
+    if (!overlay || !tray) return;
+  }
+  // Populate tray with current proxAllProfiles sorted by score
+  _renderHomeTrayList();
+  overlay.style.display = 'block';
+  requestAnimationFrame(function() {
+    overlay.style.opacity = '1';
+    tray.style.transform  = 'translateY(0)';
+  });
+}
+
+function closeHomeTray() {
+  var overlay = document.getElementById('home-tray-overlay');
+  var tray    = document.getElementById('home-tray');
+  if (!overlay || !tray) return;
+  overlay.style.opacity = '0';
+  tray.style.transform  = 'translateY(100%)';
+  setTimeout(function() { overlay.style.display = 'none'; }, 320);
+}
+
+function _buildHomeTrayDOM() {
+  var div = document.createElement('div');
+  div.innerHTML =
+    '<div id="home-tray-overlay" style="display:none;opacity:0;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:900;transition:opacity 0.3s" onclick="closeHomeTray()">' +
+      '<div id="home-tray" style="position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;max-height:82vh;overflow:hidden;display:flex;flex-direction:column;transform:translateY(100%);transition:transform 0.32s cubic-bezier(.32,1,.56,1)" onclick="event.stopPropagation()">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1rem 0.6rem">' +
+          '<span style="font-size:0.9rem;font-weight:700;color:var(--text)">Alle matches i nærheden</span>' +
+          '<button onclick="closeHomeTray()" style="background:none;border:none;cursor:pointer;padding:0.25rem;color:var(--muted);font-size:1.1rem">✕</button>' +
+        '</div>' +
+        '<div id="home-tray-list" style="overflow-y:auto;padding:0 0.75rem 1.5rem;flex:1"></div>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(div.firstChild);
+}
+
+function _renderHomeTrayList() {
+  var el = document.getElementById('home-tray-list');
+  if (!el) return;
+  var profiles = (typeof proxAllProfiles !== 'undefined' ? proxAllProfiles : [])
+    .slice().sort(function(a, b) { return (b.matchScore || 0) - (a.matchScore || 0); });
+  if (profiles.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:2rem;font-size:0.8rem;color:var(--muted)">Ingen i nærheden lige nu</div>';
+    return;
+  }
+  var colors = ['#7C5CFC','#E879A8','#2ECFCF','#F59E0B','#10B981','#3B82F6','#EF4444','#8B5CF6','#06B6D4','#84CC16'];
+  el.innerHTML = profiles.map(function(p, i) {
+    var name = p.is_anon ? 'Anonym' : (p.name || '?');
+    var ini  = p.is_anon ? '?' : name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    var col  = colors[i % colors.length];
+    var ml   = (typeof matchLabel === 'function') ? matchLabel(p.matchScore || 0) : { text: '', color: 'var(--muted)' };
+    return '<div style="display:flex;align-items:center;gap:0.75rem;padding:0.65rem 0.25rem;border-bottom:1px solid var(--border);cursor:pointer" onclick="closeHomeTray();setTimeout(function(){openRadarPerson(\'' + p.id + '\')},350)">' +
+      '<div style="width:2.4rem;height:2.4rem;border-radius:50%;background:' + col + ';display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#fff;flex-shrink:0">' + escHtml(ini) + '</div>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:0.85rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(name) + '</div>' +
+        '<div style="font-size:0.7rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + '</div>' +
+      '</div>' +
+      (ml.text ? '<span style="font-size:0.58rem;font-weight:700;color:' + ml.color + ';background:' + ml.bg + ';padding:0.15rem 0.45rem;border-radius:6px;white-space:nowrap">' + ml.text + '</span>' : '') +
+    '</div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+//  HOME MINI-DARTBOARD
+//  Renders a small bulls-eye with dots positioned by score
+// ══════════════════════════════════════════════════════════
+function renderHomeDartboard(containerId) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  var profiles = (typeof proxAllProfiles !== 'undefined' ? proxAllProfiles : []).slice(0, 20);
+  var size = 180;
+  var cx = size / 2, cy = size / 2, r = size / 2 - 6;
+  var colors = ['#7C5CFC','#E879A8','#2ECFCF','#F59E0B','#10B981','#3B82F6','#EF4444','#8B5CF6','#06B6D4','#84CC16'];
+
+  // Rings: 3 zones (inner=60+, mid=40+, outer=1+)
+  var rings = [
+    { pct: 0.30, fill: 'rgba(124,92,252,0.07)', stroke: 'rgba(124,92,252,0.2)' },
+    { pct: 0.58, fill: 'rgba(124,92,252,0.04)', stroke: 'rgba(124,92,252,0.12)' },
+    { pct: 0.90, fill: 'rgba(124,92,252,0.02)', stroke: 'rgba(124,92,252,0.07)' }
+  ];
+
+  var svgRings = rings.map(function(ring) {
+    var rr = r * ring.pct;
+    return '<circle cx="' + cx + '" cy="' + cy + '" r="' + rr + '" fill="' + ring.fill + '" stroke="' + ring.stroke + '" stroke-width="1"/>';
+  }).join('');
+
+  // Cross-hair lines
+  var crosshair = '<line x1="' + cx + '" y1="' + (cy - r * 0.92) + '" x2="' + cx + '" y2="' + (cy + r * 0.92) + '" stroke="rgba(124,92,252,0.08)" stroke-width="1"/>' +
+    '<line x1="' + (cx - r * 0.92) + '" y1="' + cy + '" x2="' + (cx + r * 0.92) + '" y2="' + cy + '" stroke="rgba(124,92,252,0.08)" stroke-width="1"/>';
+
+  // Dots: position based on score + random angle
+  var dots = profiles.map(function(p, i) {
+    var score  = p.matchScore || 5;
+    // Higher score = closer to center
+    var dist   = r * 0.90 * (1 - (score / 100) * 0.85);
+    var angle  = (i / Math.max(profiles.length, 1)) * 2 * Math.PI + (p.id ? (p.id.charCodeAt(0) * 0.4) : 0);
+    var x = cx + dist * Math.cos(angle);
+    var y = cy + dist * Math.sin(angle);
+    var col = colors[i % colors.length];
+    var dotR = score >= 60 ? 5 : score >= 40 ? 4 : 3;
+    var ini  = p.is_anon ? '?' : (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase().charAt(0);
+    return '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + dotR + '" fill="' + col + '" opacity="0.9"/>';
+  }).join('');
+
+  // Centre dot (you)
+  var centre = '<circle cx="' + cx + '" cy="' + cy + '" r="5" fill="var(--accent)"/>' +
+    '<circle cx="' + cx + '" cy="' + cy + '" r="2" fill="white"/>';
+
+  el.innerHTML = '<svg viewBox="0 0 ' + size + ' ' + size + '" width="' + size + '" height="' + size + '" xmlns="http://www.w3.org/2000/svg">' +
+    svgRings + crosshair + dots + centre + '</svg>';
+}
+
+// ══════════════════════════════════════════════════════════
+//  PROFILE NUDGE — contextual hint with progress bar
+// ══════════════════════════════════════════════════════════
+function showProfileNudge() {
+  var el = document.getElementById('home-profile-nudge');
+  if (!el || !currentProfile) return;
+  var p = currentProfile;
+  var fields = [
+    { done: !!(p.name && p.name.trim()),     hint: 'Tilføj dit navn' },
+    { done: !!(p.title && p.title.trim()),   hint: 'Tilføj din titel' },
+    { done: !!(p.bio && p.bio.trim()),       hint: 'Skriv en kort bio' },
+    { done: !!(p.keywords && p.keywords.length >= 3), hint: 'Tilføj mindst 3 interesser' },
+    { done: !!(p.avatar_url),                hint: 'Upload et profilbillede' }
+  ];
+  var done = fields.filter(function(f) { return f.done; }).length;
+  var total = fields.length;
+  var pct = Math.round((done / total) * 100);
+  if (pct >= 100) { el.style.display = 'none'; return; }
+  var nextHint = fields.find(function(f) { return !f.done; });
+  el.style.display = 'block';
+  el.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem">' +
+      '<span style="font-size:0.72rem;font-weight:600;color:var(--text)">Profil ' + pct + '% komplet</span>' +
+      '<button onclick="openEditProfile()" style="font-size:0.65rem;font-weight:600;color:var(--accent);background:none;border:none;cursor:pointer;padding:0">Udfyld →</button>' +
+    '</div>' +
+    '<div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:0.35rem">' +
+      '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;transition:width 0.5s"></div>' +
+    '</div>' +
+    '<div style="font-size:0.68rem;color:var(--muted)">' + (nextHint ? nextHint.hint : '') + '</div>';
+}
+
 
