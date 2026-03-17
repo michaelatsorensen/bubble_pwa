@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=500">
+<link rel="manifest" href="manifest.json?v=501">
 <link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=2">
 <link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=2">
 <link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=2">
@@ -17,27 +17,27 @@
 <link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=2">
 <link rel="apple-touch-icon" href="bubble-icon-180.png?v=2">
 
-<link rel="stylesheet" href="app.css?v=500">
+<link rel="stylesheet" href="app.css?v=501">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=500" defer></script>
-<script src="tag-data.js?v=500" defer></script>
-<script src="b-config.js?v=500" defer></script>
-<script src="b-utils.js?v=500" defer></script>
-<script src="b-navigation.js?v=500" defer></script>
-<script src="b-auth.js?v=500" defer></script>
-<script src="b-home.js?v=500" defer></script>
-<script src="b-bubbles.js?v=500" defer></script>
-<script src="b-profile.js?v=500" defer></script>
-<script src="b-radar.js?v=500" defer></script>
-<script src="b-messages.js?v=500" defer></script>
-<script src="b-realtime.js?v=500" defer></script>
-<script src="b-onboarding.js?v=500" defer></script>
-<script src="b-chat.js?v=500" defer></script>
-<script src="b-notifications.js?v=500" defer></script>
-<script src="b-live.js?v=500" defer></script>
-<script src="b-admin.js?v=500" defer></script>
-<script src="b-boot.js?v=500" defer></script>
+<script src="bubble-icons.js?v=501" defer></script>
+<script src="tag-data.js?v=501" defer></script>
+<script src="b-config.js?v=501" defer></script>
+<script src="b-utils.js?v=501" defer></script>
+<script src="b-navigation.js?v=501" defer></script>
+<script src="b-auth.js?v=501" defer></script>
+<script src="b-home.js?v=501" defer></script>
+<script src="b-bubbles.js?v=501" defer></script>
+<script src="b-profile.js?v=501" defer></script>
+<script src="b-radar.js?v=501" defer></script>
+<script src="b-messages.js?v=501" defer></script>
+<script src="b-realtime.js?v=501" defer></script>
+<script src="b-onboarding.js?v=501" defer></script>
+<script src="b-chat.js?v=501" defer></script>
+<script src="b-notifications.js?v=501" defer></script>
+<script src="b-live.js?v=501" defer></script>
+<script src="b-admin.js?v=501" defer></script>
+<script src="b-boot.js?v=501" defer></script>
   
 
 
@@ -678,29 +678,23 @@
     <div style="display:flex;flex-direction:column;gap:0.5rem">
 
       <div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem">
-          <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">🎯 Dit netværk</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.2rem">
+          <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;gap:0.3rem"><span style="display:inline-flex;width:14px;height:14px;color:var(--accent)">${typeof ico !== 'undefined' ? '' : ''}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg></span>Dit netværk</div>
           <div style="font-size:0.68rem;color:var(--muted)" id="radar-count-home">Henter...</div>
         </div>
-        <div id="home-radar-dartboard" onclick="openRadarSheet()" style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:20px;padding:0.8rem 0.5rem 0.5rem;box-shadow:0 1px 3px rgba(30,27,46,0.06);position:relative;cursor:pointer">
-          <div id="home-radar-dots" style="position:relative;width:100%;height:220px;display:flex;align-items:center;justify-content:center">
+        <!-- Dartboard: borderless, large -->
+        <div id="home-radar-dartboard" onclick="openRadarSheet()" style="position:relative;cursor:pointer;margin:0 -0.4rem">
+          <div id="home-radar-dots" style="position:relative;width:100%;height:280px;display:flex;align-items:center;justify-content:center">
             <div class="spinner" style="width:24px;height:24px"></div>
           </div>
         </div>
-        <div style="display:flex;justify-content:center;margin-top:0.45rem">
-          <button onclick="openHomeTray()" style="display:flex;align-items:center;gap:0.4rem;padding:0.5rem 1.2rem;border-radius:14px;background:#FFFFFF;border:1px solid var(--glass-border-subtle);box-shadow:0 1px 3px rgba(30,27,46,0.06);cursor:pointer;font-size:0.78rem;font-weight:600;color:var(--text);font-family:var(--font)">
-            ≡ Se liste · <span id="home-tray-count">0</span> personer
-          </button>
-        </div>
-      </div>
-
-      <!-- TOP MATCHES -->
-      <div id="home-top-matches" style="display:none;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);box-shadow:0 1px 3px rgba(30,27,46,0.06), 0 1px 2px rgba(30,27,46,0.04);padding:0.75rem 0.9rem 0.6rem">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
-          <div style="font-size:0.82rem;font-weight:700;color:var(--text)">Vigtigste matches</div>
-          <button class="btn-sm btn-ghost" onclick="openHomeTray()" style="font-size:0.62rem;padding:0.15rem 0.45rem">Se alle</button>
-        </div>
-        <div id="home-top-matches-list" style="display:flex;flex-direction:column;gap:0.35rem"></div>
+        <!-- Full-width list button with avatar previews -->
+        <button onclick="openHomeTray()" id="home-list-btn" style="display:flex;align-items:center;gap:0.5rem;padding:0.65rem 1rem;border-radius:14px;background:#FFFFFF;border:1px solid var(--glass-border-subtle);box-shadow:0 1px 3px rgba(30,27,46,0.06);cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text);font-family:var(--font);width:100%;margin-top:0.3rem">
+          <span style="font-size:0.85rem;color:var(--muted)">≡</span>
+          <span style="flex:1;text-align:left">Vigtigste matches</span>
+          <span id="home-list-avatars" style="display:flex;align-items:center"></span>
+          <span id="home-list-plus" style="font-size:0.72rem;color:var(--muted)"></span>
+        </button>
       </div>
 
       <!-- LIVE BUBBLE -->
@@ -1729,6 +1723,7 @@
   <div class="nav-row">
     <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
     <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></span>Bobler</button>
+    <button class="nav-item" onclick="goTo('screen-bubbles')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>Events</button>
     <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
     <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
   </div>

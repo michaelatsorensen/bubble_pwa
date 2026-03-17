@@ -863,53 +863,93 @@ function renderHomeDartboard() {
   var container = document.getElementById('home-radar-dots');
   if (!container) return;
 
-  var profiles = (proxAllProfiles || []).slice(0, 8); // Show max 8 dots
+  var profiles = (proxAllProfiles || []).slice(0, 10); // Max 10 dots
+  var total = (proxAllProfiles || []).length;
   var countEl = document.getElementById('home-tray-count');
   var countEl2 = document.getElementById('radar-count-home');
-  var total = (proxAllProfiles || []).length;
   if (countEl) countEl.textContent = total;
-  if (countEl2) countEl2.textContent = total + ' matches';
+  if (countEl2) countEl2.textContent = total + ' af ' + total;
 
   if (profiles.length === 0) {
-    container.innerHTML = '<div style="text-align:center;font-size:0.75rem;color:var(--muted)">Join en boble for at se matches</div>';
+    container.innerHTML = '<div style="text-align:center;font-size:0.75rem;color:var(--muted);padding:2rem 0">Join en boble for at se matches</div>';
     return;
   }
 
-  var w = container.clientWidth || 300;
-  var h = 220;
+  var w = container.clientWidth || 320;
+  var h = 280;
   var cx = w / 2;
   var cy = h / 2;
-  var maxR = Math.min(cx, cy) - 24;
-  var colors = proxColors || ['linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#3B82F6,#6366F1)'];
+  var maxR = Math.min(cx, cy) - 20;
+  var colors = proxColors || ['linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
 
-  // Render rings
+  // ── Colored rings (matching old radar style) ──
+  var ringColors = ['rgba(124,92,252,0.08)','rgba(124,92,252,0.06)','rgba(46,207,207,0.05)','rgba(232,121,168,0.04)'];
+  var ringBorders = ['rgba(124,92,252,0.18)','rgba(124,92,252,0.12)','rgba(46,207,207,0.10)','rgba(232,121,168,0.08)'];
   var ringsHtml = '';
-  [0.95, 0.68, 0.42, 0.2].forEach(function(s, i) {
+  [0.92, 0.68, 0.44, 0.22].forEach(function(s, i) {
     var r = maxR * s;
-    ringsHtml += '<div style="position:absolute;left:' + (cx - r) + 'px;top:' + (cy - r) + 'px;width:' + (r * 2) + 'px;height:' + (r * 2) + 'px;border-radius:50%;border:1px ' + (i === 0 ? 'solid' : 'dashed') + ' var(--glass-border-subtle);' + (i === 3 ? 'background:rgba(124,92,252,0.04)' : '') + '"></div>';
+    ringsHtml += '<div style="position:absolute;left:' + (cx - r) + 'px;top:' + (cy - r) + 'px;width:' + (r * 2) + 'px;height:' + (r * 2) + 'px;border-radius:50%;border:1px dashed ' + ringBorders[i] + ';background:' + ringColors[i] + '"></div>';
   });
 
-  // Center dot (you)
-  ringsHtml += '<div style="position:absolute;left:' + (cx - 6) + 'px;top:' + (cy - 6) + 'px;width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(124,92,252,0.2);z-index:10"></div>';
+  // ── Own avatar in center (bulls-eye) ──
+  var myName = currentProfile?.name || '?';
+  var myIni = myName.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+  var myAvSize = 36;
+  if (currentProfile?.avatar_url) {
+    ringsHtml += '<div style="position:absolute;left:' + (cx - myAvSize/2) + 'px;top:' + (cy - myAvSize/2) + 'px;width:' + myAvSize + 'px;height:' + myAvSize + 'px;border-radius:50%;overflow:hidden;z-index:10;box-shadow:0 0 0 3px rgba(124,92,252,0.25),0 2px 8px rgba(0,0,0,0.12)"><img src="' + escHtml(currentProfile.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
+  } else {
+    ringsHtml += '<div style="position:absolute;left:' + (cx - myAvSize/2) + 'px;top:' + (cy - myAvSize/2) + 'px;width:' + myAvSize + 'px;height:' + myAvSize + 'px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#6366F1);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;color:white;z-index:10;box-shadow:0 0 0 3px rgba(124,92,252,0.25),0 2px 8px rgba(0,0,0,0.12)">' + escHtml(myIni) + '</div>';
+  }
 
-  // People dots
+  // ── People dots — score determines ring position ──
+  // 90-100: innermost ring (closest to center)
+  // 60-89: second ring
+  // 40-59: third ring
+  // 20-39: fourth ring
+  // 0-19: edge
   profiles.forEach(function(p, i) {
     var score = p.matchScore || 0;
     var angle = (i * 137.5 + 30) * Math.PI / 180;
-    // Higher score = closer to center
-    var dist = maxR * (1 - Math.min(score, 100) / 120); // score 100→close, score 0→edge
-    var x = cx + Math.cos(angle) * dist - 14;
-    var y = cy + Math.sin(angle) * dist - 14;
+    // Map score to distance from center
+    var distPct;
+    if (score >= 90) distPct = 0.12 + Math.random() * 0.10;      // very close
+    else if (score >= 60) distPct = 0.25 + Math.random() * 0.15;  // inner-mid
+    else if (score >= 40) distPct = 0.45 + Math.random() * 0.15;  // mid
+    else if (score >= 20) distPct = 0.65 + Math.random() * 0.12;  // outer-mid
+    else distPct = 0.80 + Math.random() * 0.12;                    // edge
+    var dist = maxR * distPct;
+    var dotSize = 30;
+    var x = cx + Math.cos(angle) * dist - dotSize/2;
+    var y = cy + Math.sin(angle) * dist - dotSize/2;
     var name = p.is_anon ? '?' : (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     var col = p.is_anon ? 'var(--glass-border)' : colors[i % colors.length];
     var avInner = p.avatar_url && !p.is_anon
       ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
-      : '<span style="font-size:0.5rem;font-weight:700;color:white">' + escHtml(name) + '</span>';
+      : '<span style="font-size:0.52rem;font-weight:700;color:white">' + escHtml(name) + '</span>';
 
-    ringsHtml += '<div onclick="openRadarPerson(\'' + p.id + '\')" style="position:absolute;left:' + x + 'px;top:' + y + 'px;width:28px;height:28px;border-radius:50%;background:' + col + ';display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:5;overflow:hidden;border:2px solid var(--bg);box-shadow:0 1px 3px rgba(0,0,0,0.1);transition:transform 0.15s" onmousedown="this.style.transform=\'scale(0.9)\'" onmouseup="this.style.transform=\'\'" ontouchstart="this.style.transform=\'scale(0.9)\'" ontouchend="this.style.transform=\'\'">' + avInner + '</div>';
+    ringsHtml += '<div onclick="event.stopPropagation();openRadarPerson(\'' + p.id + '\')" style="position:absolute;left:' + x + 'px;top:' + y + 'px;width:' + dotSize + 'px;height:' + dotSize + 'px;border-radius:50%;background:' + col + ';display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:5;overflow:hidden;border:2px solid rgba(255,255,255,0.9);box-shadow:0 1px 4px rgba(0,0,0,0.12);transition:transform 0.15s">' + avInner + '</div>';
   });
 
   container.innerHTML = ringsHtml;
+
+  // ── Update list button with avatar previews ──
+  var avatarsEl = document.getElementById('home-list-avatars');
+  var plusEl = document.getElementById('home-list-plus');
+  if (avatarsEl) {
+    var top3 = (proxAllProfiles || []).slice(0, 3);
+    avatarsEl.innerHTML = top3.map(function(p, i) {
+      var ini = (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var col = colors[i % colors.length];
+      if (p.avatar_url && !p.is_anon) {
+        return '<div style="width:22px;height:22px;border-radius:50%;overflow:hidden;margin-left:' + (i > 0 ? '-6px' : '0') + ';border:1.5px solid #fff;position:relative;z-index:' + (5-i) + '"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
+      }
+      return '<div style="width:22px;height:22px;border-radius:50%;background:' + col + ';display:flex;align-items:center;justify-content:center;font-size:0.42rem;font-weight:700;color:white;margin-left:' + (i > 0 ? '-6px' : '0') + ';border:1.5px solid #fff;position:relative;z-index:' + (5-i) + '">' + escHtml(ini) + '</div>';
+    }).join('');
+  }
+  if (plusEl) {
+    var remaining = total - 3;
+    plusEl.textContent = remaining > 0 ? '+' + remaining : '';
+  }
 }
 
 // ══════════════════════════════════════════════════════════
