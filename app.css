@@ -89,7 +89,11 @@ body {
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
   border-top: 1px solid #D8D5E4;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: 0px;
+}
+/* Only add safe-area padding in standalone PWA — Safari browser handles it natively */
+@media all and (display-mode: standalone) {
+  #global-nav { padding-bottom: env(safe-area-inset-bottom, 0px); }
 }
 #global-nav .nav-row {
   display: flex;
