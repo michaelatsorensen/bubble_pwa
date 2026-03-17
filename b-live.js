@@ -593,10 +593,11 @@ async function liveScanAutoResolve(data) {
       var userId = null;
       
       if (qrt) {
-        var { data: tokenData } = await sb.from('qr_tokens')
+        var { data: tokenData, error: tokenErr } = await sb.from('qr_tokens')
           .select('user_id, expires_at')
           .eq('token', qrt)
           .maybeSingle();
+        if (tokenErr) console.error('[scan] qr_tokens lookup error:', tokenErr);
         if (tokenData && new Date(tokenData.expires_at) > new Date()) {
           userId = tokenData.user_id;
         } else if (tokenData) {
@@ -604,17 +605,23 @@ async function liveScanAutoResolve(data) {
           _liveQrPending = false;
           setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
           return;
+        } else {
+          // Token not found in DB — try to extract user ID from URL as fallback
+          console.warn('[scan] QR token not found in DB:', qrt);
         }
-      } else if (profileParam) {
+      }
+      
+      if (!userId && profileParam) {
         userId = profileParam;
       }
       
       if (userId) {
         // Look up profile
-        var { data: scannedProfile } = await sb.from('profiles')
+        var { data: scannedProfile, error: profErr } = await sb.from('profiles')
           .select('id, name, title, workplace')
           .eq('id', userId)
           .maybeSingle();
+        if (profErr) console.error('[scan] profile lookup error:', profErr);
         
         if (scannedProfile) {
           if (status) status.style.display = 'none';
@@ -669,9 +676,27 @@ async function liveScanAutoResolve(data) {
             liveQrPreviewLoop();
           }, 3000);
           return;
+        } else {
+          // userId found but no profile in DB
+          if (status) { status.textContent = 'Bruger ikke fundet i Bubble'; status.className = 'live-scan-status error'; }
+          _liveQrPending = false;
+          setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
+          return;
         }
+      } else {
+        // Could not resolve userId from QR
+        if (status) { status.textContent = 'QR-kode ikke genkendt — prøv igen'; status.className = 'live-scan-status error'; }
+        _liveQrPending = false;
+        setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
+        return;
       }
-    } catch(e) {}
+    } catch(e) {
+      console.error('[scan] personal QR error:', e);
+      if (status) { status.textContent = 'Fejl ved scanning: ' + (e.message || 'ukendt'); status.className = 'live-scan-status error'; }
+      _liveQrPending = false;
+      setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
+      return;
+    }
   }
   
   // ── Standard bubble QR ──
