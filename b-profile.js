@@ -40,6 +40,11 @@ async function openPerson(userId, fromScreen) {
       return;
     }
 
+    // Track profile view (fire-and-forget, no await)
+    if (currentUser && userId !== currentUser.id) {
+      sb.from('profile_views').insert({ viewer_id: currentUser.id, viewed_id: userId }).then(function() {}).catch(function() {});
+    }
+
     const initials = p.is_anon ? '?' : (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     var personAvEl = document.getElementById('person-avatar');
     if (personAvEl) {

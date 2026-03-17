@@ -851,6 +851,7 @@ async function bcLoadInfo() {
         ${canEdit ? `<button class="chat-info-btn primary" onclick="openBubbleScannerFromInfo('${b.id}')" style="background:rgba(26,158,142,0.1);border-color:rgba(26,158,142,0.25);color:var(--green)">${icon('camera')} Scan deltagere ind</button>` : ''}
         ${canEdit ? `<button class="chat-info-btn primary" data-action="openEditBubble" data-id="${b.id}">${icon('edit')} Rediger boble</button>` : ''}
         ${canEdit ? `<button class="chat-info-btn primary" onclick="downloadMembersPdf('${b.id}')">${icon('users')} Download deltagerliste</button>` : ''}
+        ${canEdit ? `<button class="chat-info-btn primary" onclick="generateEventReport('${b.id}')" style="background:linear-gradient(135deg,rgba(124,92,252,0.1),rgba(99,102,241,0.06));border-color:rgba(124,92,252,0.2);color:var(--accent)">${icon('file')} Event-rapport (HTML)</button>` : ''}
         ${isOwner ? `<button class="chat-info-btn primary" onclick="openTransferOwnership('${b.id}')" style="background:rgba(30,27,46,0.03);border-color:rgba(30,27,46,0.1);color:var(--text-secondary)">${icon('crown')} Overdrag ejerskab</button>` : ''}
         ${isOwner ? `<button class="chat-info-btn primary" onclick="openAdminDesignation('${b.id}')" style="background:rgba(30,27,46,0.03);border-color:rgba(30,27,46,0.1);color:var(--text-secondary)">${icon('users')} Udpeg admins</button>` : ''}
         <button class="chat-info-btn danger" data-action="leaveBubble" data-id="${b.id}">${icon("logout")} Forlad boblen</button>

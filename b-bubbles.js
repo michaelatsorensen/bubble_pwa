@@ -1049,6 +1049,276 @@ async function downloadMembersPdf(bubbleId) {
 }
 
 // ══════════════════════════════════════════════════════════
+//  EVENT RAPPORT — Interactive HTML report for event owners
+// ══════════════════════════════════════════════════════════
+async function generateEventReport(bubbleId) {
+  try {
+    showToast('Genererer event-rapport...');
+
+    // ── 1. Fetch all data in parallel ──
+    var [bubbleRes, membersRes, messagesRes, guestsRes, invitesRes] = await Promise.all([
+      sb.from('bubbles').select('*').eq('id', bubbleId).maybeSingle(),
+      sb.from('bubble_members').select('user_id, role, joined_at, checked_in_at, checked_out_at').eq('bubble_id', bubbleId).order('joined_at', { ascending: true }),
+      sb.from('bubble_messages').select('user_id, created_at').eq('bubble_id', bubbleId),
+      sb.from('guest_checkins').select('*').eq('bubble_id', bubbleId).then(function(r) { return r; }).catch(function() { return { data: [] }; }),
+      sb.from('bubble_invitations').select('to_user_id, status, created_at').eq('bubble_id', bubbleId).then(function(r) { return r; }).catch(function() { return { data: [] }; })
+    ]);
+
+    var b = bubbleRes.data;
+    if (!b) { showToast('Boble ikke fundet'); return; }
+    var members = membersRes.data || [];
+    var messages = messagesRes.data || [];
+    var guests = guestsRes.data || [];
+    var invites = invitesRes.data || [];
+
+    if (members.length === 0) { showToast('Ingen deltagere endnu'); return; }
+
+    // ── 2. Fetch profiles for all members ──
+    var userIds = members.map(function(m) { return m.user_id; });
+    var { data: profiles } = await sb.from('profiles').select('id, name, title, workplace, keywords, avatar_url').in('id', userIds);
+    var profileMap = {};
+    (profiles || []).forEach(function(p) { profileMap[p.id] = p; });
+
+    // ── 3. Fetch connections (saved_contacts between members) ──
+    var connectionCount = 0;
+    var connectorsMap = {};
+    try {
+      var { data: connections } = await sb.from('saved_contacts').select('user_id, contact_id').in('user_id', userIds).in('contact_id', userIds);
+      connectionCount = (connections || []).length;
+      (connections || []).forEach(function(c) {
+        connectorsMap[c.user_id] = (connectorsMap[c.user_id] || 0) + 1;
+      });
+    } catch(e) {}
+
+    // ── 4. Fetch profile views between members ──
+    var viewCount = 0;
+    try {
+      var { count } = await sb.from('profile_views').select('*', { count: 'exact', head: true }).in('viewer_id', userIds).in('viewed_id', userIds);
+      viewCount = count || 0;
+    } catch(e) {}
+
+    // ── 5. Compute stats ──
+    var totalMembers = members.length;
+    var checkedIn = members.filter(function(m) { return m.checked_in_at; });
+    var totalCheckedIn = checkedIn.length;
+    var totalMessages = messages.length;
+    var totalGuests = guests.length;
+    var acceptedInvites = invites.filter(function(i) { return i.status === 'accepted'; }).length;
+    var pendingInvites = invites.filter(function(i) { return i.status === 'pending'; }).length;
+
+    // Connection rate
+    var usersWithConnections = Object.keys(connectorsMap).length;
+    var connectionRate = totalMembers > 0 ? Math.round((usersWithConnections / totalMembers) * 100) : 0;
+
+    // Average stay duration
+    var totalMins = 0;
+    var stayCount = 0;
+    checkedIn.forEach(function(m) {
+      var end = m.checked_out_at ? new Date(m.checked_out_at) : new Date();
+      var mins = Math.round((end - new Date(m.checked_in_at)) / 60000);
+      if (mins > 0 && mins < 1440) { totalMins += mins; stayCount++; }
+    });
+    var avgStay = stayCount > 0 ? Math.round(totalMins / stayCount) : 0;
+    var avgStayLabel = avgStay < 60 ? avgStay + ' min' : Math.floor(avgStay / 60) + 't ' + (avgStay % 60) + 'min';
+
+    // Messages per user
+    var msgPerUser = {};
+    messages.forEach(function(m) { msgPerUser[m.user_id] = (msgPerUser[m.user_id] || 0) + 1; });
+
+    // Top keywords across all members
+    var kwCount = {};
+    members.forEach(function(m) {
+      var p = profileMap[m.user_id];
+      if (p && p.keywords) p.keywords.forEach(function(k) { kwCount[k] = (kwCount[k] || 0) + 1; });
+    });
+    var topKeywords = Object.entries(kwCount).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 10);
+
+    // Top connectors
+    var topConnectors = Object.entries(connectorsMap).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 5).map(function(e) {
+      var p = profileMap[e[0]] || {};
+      return { name: p.name || 'Ukendt', title: p.title || '', connections: e[1], messages: msgPerUser[e[0]] || 0 };
+    });
+
+    // Join timeline (by hour)
+    var hourBuckets = {};
+    members.forEach(function(m) {
+      var h = new Date(m.joined_at || m.checked_in_at || Date.now()).getHours();
+      hourBuckets[h] = (hourBuckets[h] || 0) + 1;
+    });
+
+    // Event date
+    var eventDate = new Date(b.created_at).toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+    // ── 6. Generate HTML ──
+    function statBox(label, value, sub, color) {
+      return '<div style="background:white;border-radius:16px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.04)">' +
+        '<div style="font-size:2rem;font-weight:800;color:' + color + ';line-height:1">' + value + '</div>' +
+        '<div style="font-size:0.85rem;font-weight:600;color:#1E1B2E;margin-top:0.3rem">' + label + '</div>' +
+        (sub ? '<div style="font-size:0.72rem;color:#8C8A97;margin-top:0.15rem">' + sub + '</div>' : '') +
+        '</div>';
+    }
+
+    function barChart(data, maxVal) {
+      if (!data.length) return '<div style="color:#8C8A97;font-size:0.8rem">Ingen data</div>';
+      var max = maxVal || Math.max.apply(null, data.map(function(d) { return d.value; }));
+      return data.map(function(d) {
+        var pct = max > 0 ? Math.round((d.value / max) * 100) : 0;
+        return '<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.35rem">' +
+          '<div style="width:120px;font-size:0.75rem;color:#1E1B2E;font-weight:500;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + d.label + '</div>' +
+          '<div style="flex:1;height:22px;background:#F4F3F9;border-radius:6px;overflow:hidden">' +
+            '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#7C5CFC,#6366F1);border-radius:6px;min-width:2px"></div>' +
+          '</div>' +
+          '<div style="width:28px;font-size:0.72rem;font-weight:700;color:#7C5CFC;text-align:right">' + d.value + '</div>' +
+          '</div>';
+      }).join('');
+    }
+
+    // Member table rows
+    var memberRows = members.map(function(m, i) {
+      var p = profileMap[m.user_id] || {};
+      var conn = connectorsMap[m.user_id] || 0;
+      var msgs = msgPerUser[m.user_id] || 0;
+      var joinTime = m.joined_at ? new Date(m.joined_at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '–';
+      return '<tr style="border-bottom:1px solid #F4F3F9">' +
+        '<td style="padding:0.5rem 0.6rem;font-size:0.8rem;font-weight:600">' + (p.name || 'Ukendt') + '</td>' +
+        '<td style="padding:0.5rem 0.4rem;font-size:0.75rem;color:#8C8A97">' + (p.title || '–') + '</td>' +
+        '<td style="padding:0.5rem 0.4rem;font-size:0.75rem;color:#8C8A97">' + (p.workplace || '–') + '</td>' +
+        '<td style="padding:0.5rem 0.4rem;font-size:0.75rem;text-align:center">' + conn + '</td>' +
+        '<td style="padding:0.5rem 0.4rem;font-size:0.75rem;text-align:center">' + msgs + '</td>' +
+        '<td style="padding:0.5rem 0.4rem;font-size:0.72rem;color:#8C8A97;text-align:center">' + joinTime + '</td>' +
+        '</tr>';
+    }).join('');
+
+    // Timeline chart
+    var timelineData = [];
+    for (var h = 7; h <= 23; h++) {
+      if (hourBuckets[h]) timelineData.push({ label: h + ':00', value: hourBuckets[h] });
+    }
+
+    var html = '<!DOCTYPE html><html lang="da"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+      '<title>Event Rapport — ' + (b.name || 'Bubble') + '</title>' +
+      '<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">' +
+      '<style>' +
+        '*{margin:0;padding:0;box-sizing:border-box}' +
+        'body{font-family:"Figtree",system-ui,sans-serif;background:#FAFAFA;color:#1E1B2E;line-height:1.5;-webkit-font-smoothing:antialiased}' +
+        '.wrap{max-width:800px;margin:0 auto;padding:2rem 1.5rem}' +
+        '.header{background:linear-gradient(135deg,#7C5CFC 0%,#6366F1 50%,#4F46E5 100%);color:white;padding:2.5rem 2rem;border-radius:20px;margin-bottom:2rem;position:relative;overflow:hidden}' +
+        '.header::after{content:"";position:absolute;top:-50%;right:-20%;width:300px;height:300px;background:rgba(255,255,255,0.06);border-radius:50%}' +
+        '.header::before{content:"";position:absolute;bottom:-30%;left:-10%;width:200px;height:200px;background:rgba(255,255,255,0.04);border-radius:50%}' +
+        '.header h1{font-size:1.6rem;font-weight:900;letter-spacing:-0.03em;position:relative;z-index:1}' +
+        '.header .meta{font-size:0.85rem;opacity:0.85;margin-top:0.3rem;position:relative;z-index:1}' +
+        '.header .bubble-badge{display:inline-flex;align-items:center;gap:0.3rem;background:rgba(255,255,255,0.18);padding:0.3rem 0.7rem;border-radius:99px;font-size:0.72rem;font-weight:600;margin-top:0.75rem;position:relative;z-index:1}' +
+        '.section{margin-bottom:1.75rem}' +
+        '.section-title{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#7C5CFC;margin-bottom:0.75rem}' +
+        '.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem}' +
+        '.card{background:white;border-radius:16px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.04)}' +
+        '.highlight-card{background:linear-gradient(135deg,rgba(124,92,252,0.06),rgba(99,102,241,0.04));border:1px solid rgba(124,92,252,0.12)}' +
+        'table{width:100%;border-collapse:collapse}' +
+        'th{text-align:left;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#8C8A97;padding:0.5rem 0.6rem;border-bottom:2px solid #ECEAF5}' +
+        '.connector-card{display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;border-bottom:1px solid #F4F3F9}' +
+        '.connector-rank{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;flex-shrink:0}' +
+        '.tag{display:inline-block;background:#F4F3F9;color:#1E1B2E;padding:0.2rem 0.55rem;border-radius:99px;font-size:0.72rem;font-weight:500;margin:0.15rem}' +
+        '.footer{text-align:center;padding:2rem 0 1rem;font-size:0.72rem;color:#8C8A97;border-top:1px solid #ECEAF5;margin-top:2rem}' +
+        '.footer a{color:#7C5CFC;text-decoration:none;font-weight:600}' +
+        '@media print{body{background:white}.wrap{padding:1rem}.header{break-inside:avoid}.section{break-inside:avoid}.no-print{display:none!important}}' +
+        '@media(max-width:600px){.stat-grid{grid-template-columns:1fr 1fr}.wrap{padding:1rem}}' +
+      '</style></head><body><div class="wrap">' +
+
+      // Header
+      '<div class="header">' +
+        '<h1>' + (b.name || 'Event') + '</h1>' +
+        '<div class="meta">' + eventDate + (b.location ? ' · ' + b.location : '') + '</div>' +
+        '<div class="bubble-badge">🫧 Rapport genereret via Bubble</div>' +
+      '</div>' +
+
+      // Key stats
+      '<div class="section">' +
+        '<div class="section-title">Overblik</div>' +
+        '<div class="stat-grid">' +
+          statBox('Deltagere', totalMembers, totalCheckedIn > 0 ? totalCheckedIn + ' checked in' : null, '#7C5CFC') +
+          statBox('Connections', connectionCount, connectionRate + '% lavede min. 1', '#1A9E8E') +
+          statBox('Profilvisninger', viewCount, '', '#E879A8') +
+          statBox('Beskeder', totalMessages, '', '#2ECFCF') +
+          (avgStay > 0 ? statBox('Gns. opholdstid', avgStayLabel, '', '#F59E0B') : '') +
+          (totalGuests > 0 ? statBox('Gæster (manuel)', totalGuests, '', '#8C8A97') : '') +
+        '</div>' +
+      '</div>' +
+
+      // Connection rate highlight
+      '<div class="section">' +
+        '<div class="card highlight-card" style="text-align:center;padding:1.5rem">' +
+          '<div style="font-size:2.5rem;font-weight:900;color:#7C5CFC">' + connectionRate + '%</div>' +
+          '<div style="font-size:0.9rem;font-weight:600;margin-top:0.2rem">Connection rate</div>' +
+          '<div style="font-size:0.78rem;color:#8C8A97;margin-top:0.2rem">' + usersWithConnections + ' af ' + totalMembers + ' deltagere lavede mindst én ny forbindelse</div>' +
+        '</div>' +
+      '</div>' +
+
+      // Top connectors
+      (topConnectors.length > 0 ? '<div class="section">' +
+        '<div class="section-title">Mest aktive networkere</div>' +
+        '<div class="card">' +
+          topConnectors.map(function(c, i) {
+            return '<div class="connector-card">' +
+              '<div class="connector-rank">' + (i + 1) + '</div>' +
+              '<div style="flex:1;min-width:0">' +
+                '<div style="font-size:0.85rem;font-weight:700">' + c.name + '</div>' +
+                '<div style="font-size:0.72rem;color:#8C8A97">' + c.title + '</div>' +
+              '</div>' +
+              '<div style="text-align:right">' +
+                '<div style="font-size:0.78rem;font-weight:700;color:#1A9E8E">' + c.connections + ' connections</div>' +
+                '<div style="font-size:0.68rem;color:#8C8A97">' + c.messages + ' beskeder</div>' +
+              '</div>' +
+            '</div>';
+          }).join('') +
+        '</div>' +
+      '</div>' : '') +
+
+      // Interest map
+      (topKeywords.length > 0 ? '<div class="section">' +
+        '<div class="section-title">Interesser blandt deltagerne</div>' +
+        '<div class="card">' +
+          barChart(topKeywords.map(function(kw) { return { label: kw[0], value: kw[1] }; })) +
+        '</div>' +
+      '</div>' : '') +
+
+      // Join timeline
+      (timelineData.length > 0 ? '<div class="section">' +
+        '<div class="section-title">Deltagertilgang over tid</div>' +
+        '<div class="card">' +
+          barChart(timelineData) +
+        '</div>' +
+      '</div>' : '') +
+
+      // Full member table
+      '<div class="section">' +
+        '<div class="section-title">Alle deltagere (' + totalMembers + ')</div>' +
+        '<div class="card" style="overflow-x:auto;padding:0.5rem">' +
+          '<table><thead><tr>' +
+            '<th>Navn</th><th>Titel</th><th>Virksomhed</th><th style="text-align:center">Connections</th><th style="text-align:center">Beskeder</th><th style="text-align:center">Joined</th>' +
+          '</tr></thead><tbody>' + memberRows + '</tbody></table>' +
+        '</div>' +
+      '</div>' +
+
+      // Footer
+      '<div class="footer">' +
+        '<div>Genereret ' + new Date().toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + '</div>' +
+        '<div style="margin-top:0.3rem">Powered by <a href="https://bubbleme.dk" target="_blank">Bubble</a> — Hyperlokal networking</div>' +
+        '<button class="no-print" onclick="window.print()" style="margin-top:1rem;padding:0.6rem 1.5rem;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;border:none;border-radius:10px;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Print / Gem som PDF</button>' +
+      '</div>' +
+
+      '</div></body></html>';
+
+    // ── 7. Open in new tab ──
+    var blob = new Blob([html], { type: 'text/html' });
+    var url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    showSuccessToast('Rapport åbnet i nyt faneblad');
+    trackEvent('event_report_generated', { bubble_id: bubbleId, member_count: totalMembers });
+
+  } catch(e) { logError('generateEventReport', e); showToast('Rapport fejl: ' + (e.message || 'ukendt')); }
+}
+
+// ══════════════════════════════════════════════════════════
 //  BUBBLE INVITE SYSTEM
 // ══════════════════════════════════════════════════════════
 var inviteBubbleId = null;
