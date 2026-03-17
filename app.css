@@ -68,7 +68,10 @@ body {
 .bg-canvas::after { content:''; position:absolute; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); opacity:0.5; }
 
 /* ── SCREENS ── */
-.screen { display:none; flex-direction:column; height:100vh; height:100dvh; height:-webkit-fill-available; position:relative; z-index:1; overflow:hidden; }
+/* ── APP SHELL (flex layout — nav in flow, not fixed) ── */
+#app-shell { height:100%; height:100dvh; display:flex; flex-direction:column; overflow:hidden; }
+#screens-wrap { flex:1; position:relative; overflow:hidden; min-height:0; }
+.screen { position:absolute; inset:0; display:none; flex-direction:column; z-index:1; overflow:hidden; }
 .screen.active { display:flex; }
 
 /* ── TOPBAR ── */
@@ -77,22 +80,16 @@ body {
 .topbar-title { font-size:1rem; font-weight:800; letter-spacing:-0.03em; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.25; }
 
 /* ── SCROLL AREA ── */
-.scroll-area { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:1rem 1.1rem calc(56px + var(--bottom-safe, 0px) + 0.5rem); overscroll-behavior-x:none; }
+.scroll-area { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:1rem 1.1rem 1.5rem; overscroll-behavior-x:none; }
 
-/* ── BOTTOM NAV ── */
+/* ── BOTTOM NAV (in document flow, not fixed) ── */
 #global-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 50;
+  flex-shrink: 0;
   background: rgba(255,255,255,0.96);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
   border-top: 1px solid #D8D5E4;
-  height: auto;
-  padding-bottom: var(--bottom-safe, 0px);
-  overflow: hidden;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 #global-nav .nav-row {
   display: flex;
@@ -101,13 +98,7 @@ body {
   height: 52px;
 }
 #global-nav.nav-hidden {
-  transform: translateY(100%);
-  pointer-events: none;
-  transition: transform 0.25s ease;
-}
-#global-nav:not(.nav-hidden) {
-  transform: none;
-  transition: transform 0.25s ease;
+  display: none;
 }
 .nav-item {
   display: flex;
@@ -728,7 +719,7 @@ a.person-action-btn { text-decoration:none; }
 .chat-panel[style*="flex"] { display:flex; } /* compat with JS toggle */
 #bc-panel-chat.chat-panel { display:none; }
 .chat-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0.75rem 1rem; display:flex; flex-direction:column; gap:0.15rem; }
-.chat-composer { flex-shrink:0; border-top:1px solid var(--glass-border-subtle); background:rgba(255,255,255,0.96); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); padding:0.5rem 0.75rem calc(0.5rem + var(--bottom-safe, 0px)); z-index:10; }
+.chat-composer { flex-shrink:0; border-top:1px solid var(--glass-border-subtle); background:rgba(255,255,255,0.96); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); padding:0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom, 0px)); z-index:10; }
 .chat-composer-row { display:flex; align-items:center; gap:0.4rem; }
 .chat-composer-input { flex:1; background:#F4F3F9; border:1px solid var(--glass-border-subtle); border-radius:20px; padding:0.55rem 0.85rem; font-size:0.8rem; font-family:'Figtree',sans-serif; color:var(--text); outline:none; transition:border-color 0.2s; }
 .chat-composer-input:focus { border-color:var(--accent); }
@@ -776,8 +767,6 @@ a.person-action-btn { text-decoration:none; }
    ══════════════════════════════════════ */
 #screen-bubble-chat.active,
 #screen-chat.active {
-  height: 100vh;
-  height: 100dvh;
   overflow: hidden;
 }
 #screen-bubble-chat .topbar,
@@ -790,10 +779,6 @@ a.person-action-btn { text-decoration:none; }
 .chat-scroll {
   mask-image: linear-gradient(to bottom, transparent 0px, black 12px, black 100%);
   -webkit-mask-image: linear-gradient(to bottom, transparent 0px, black 12px, black 100%);
-}
-/* Composer clears fixed nav in bubble-chat */
-#screen-bubble-chat .chat-composer {
-  padding-bottom: calc(0.5rem + var(--bottom-safe, 0px));
 }
 /* DM screen — explicit flex on panel */
 #screen-chat .chat-panel {
@@ -1191,13 +1176,7 @@ a.person-action-btn { text-decoration:none; }
       0 0 200px rgba(124,92,252,0.02);
   }
 
-  /* Fixed elements: use width + left/right calc to center within 680px */
-  #global-nav {
-    width: 680px;
-    left: 0 !important;
-    right: 0 !important;
-    margin: 0 auto;
-  }
+  /* Nav is in flow — inherits width from app-shell/body */
 
   .toast { max-width: 540px; left:0; right:0; margin-left:auto; margin-right:auto; }
 
