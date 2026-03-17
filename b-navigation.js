@@ -115,8 +115,20 @@ function goTo(screenId) {
 // ══════════════════════════════════════════════════════════
 function updateBottomSafeInset() {
   var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  document.documentElement.style.setProperty('--bottom-safe', isStandalone ? 'env(safe-area-inset-bottom, 0px)' : '0px');
+  if (!isStandalone) {
+    document.documentElement.style.setProperty('--bottom-safe', '0px');
+    return;
+  }
+  // iPhone bottom safe area is ~34px. Use conservative fixed value
+  // to avoid Safari first-render bugs with env(safe-area-inset-bottom)
+  document.documentElement.style.setProperty('--bottom-safe', '34px');
 }
-window.addEventListener('load', updateBottomSafeInset);
+window.addEventListener('load', function() {
+  updateBottomSafeInset();
+  requestAnimationFrame(function() {
+    updateBottomSafeInset();
+    setTimeout(updateBottomSafeInset, 120);
+  });
+});
 window.addEventListener('resize', updateBottomSafeInset);
 window.addEventListener('orientationchange', updateBottomSafeInset);

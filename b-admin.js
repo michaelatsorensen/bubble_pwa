@@ -109,9 +109,9 @@ async function adminLoadStats() {
       sb.from('analytics').select('user_id', { count: 'exact', head: false }).eq('event_type', 'app_open').gte('created_at', day1).then(function(r) { return new Set((r.data||[]).map(function(a){return a.user_id;})).size; }).catch(function(){return 0;}),
       sb.from('analytics').select('user_id', { count: 'exact', head: false }).eq('event_type', 'app_open').gte('created_at', day7).then(function(r) { return new Set((r.data||[]).map(function(a){return a.user_id;})).size; }).catch(function(){return 0;}),
       sb.from('analytics').select('user_id', { count: 'exact', head: false }).eq('event_type', 'app_open').gte('created_at', day30).then(function(r) { return new Set((r.data||[]).map(function(a){return a.user_id;})).size; }).catch(function(){return 0;}),
-      sb.from('profile_views').select('*', { count: 'exact', head: true }).gte('created_at', day7).catch(function(){return {count:0};}),
-      sb.from('saved_contacts').select('*', { count: 'exact', head: true }).gte('created_at', day7).catch(function(){return {count:0};}),
-      sb.from('bubble_messages').select('*', { count: 'exact', head: true }).gte('created_at', day7).catch(function(){return {count:0};}),
+      sb.from('profile_views').select('*', { count: 'exact', head: true }).gte('created_at', day7).then(function(r){return r;}).catch(function(){return {count:0};}),
+      sb.from('saved_contacts').select('*', { count: 'exact', head: true }).gte('created_at', day7).then(function(r){return r;}).catch(function(){return {count:0};}),
+      sb.from('bubble_messages').select('*', { count: 'exact', head: true }).gte('created_at', day7).then(function(r){return r;}).catch(function(){return {count:0};}),
       sb.from('analytics').select('event_type').gte('created_at', day7).then(function(r) { return r.data || []; }).catch(function(){return [];})
     ]);
 
