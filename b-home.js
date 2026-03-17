@@ -921,15 +921,16 @@ function showProfileNudge() {
   if (!el || !currentProfile) return;
   var p = currentProfile;
   var fields = [
-    { done: !!(p.name && p.name.trim()),     hint: 'Tilføj dit navn' },
-    { done: !!(p.title && p.title.trim()),   hint: 'Tilføj din titel' },
-    { done: !!(p.bio && p.bio.trim()),       hint: 'Skriv en kort bio' },
-    { done: !!(p.keywords && p.keywords.length >= 3), hint: 'Tilføj mindst 3 interesser' },
-    { done: !!(p.avatar_url),                hint: 'Upload et profilbillede' }
+    { done: !!(p.name && p.name.trim()),                          hint: 'Tilføj dit navn' },
+    { done: !!(p.title && p.title.trim()),                        hint: 'Tilføj din titel' },
+    { done: !!(p.bio && p.bio.trim()),                            hint: 'Skriv en kort bio' },
+    { done: !!(p.sectors && p.sectors.length > 0),               hint: 'Vælg dine brancher i onboarding' },
+    { done: !!(p.life_phase),                                     hint: 'Angiv din livsfase' },
+    { done: !!(p.avatar_url),                                     hint: 'Upload et profilbillede' }
   ];
-  var done = fields.filter(function(f) { return f.done; }).length;
+  var done  = fields.filter(function(f) { return f.done; }).length;
   var total = fields.length;
-  var pct = Math.round((done / total) * 100);
+  var pct   = Math.round((done / total) * 100);
   if (pct >= 100) { el.style.display = 'none'; return; }
   var nextHint = fields.find(function(f) { return !f.done; });
   el.style.display = 'block';
