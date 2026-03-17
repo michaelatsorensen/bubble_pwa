@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=4320">
+<link rel="manifest" href="manifest.json?v=500">
 <link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=2">
 <link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=2">
 <link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=2">
@@ -17,27 +17,27 @@
 <link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=2">
 <link rel="apple-touch-icon" href="bubble-icon-180.png?v=2">
 
-<link rel="stylesheet" href="app.css?v=4320">
+<link rel="stylesheet" href="app.css?v=500">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=4320" defer></script>
-<script src="tag-data.js?v=4320" defer></script>
-<script src="b-config.js?v=4320" defer></script>
-<script src="b-utils.js?v=4320" defer></script>
-<script src="b-navigation.js?v=4320" defer></script>
-<script src="b-auth.js?v=4320" defer></script>
-<script src="b-home.js?v=4320" defer></script>
-<script src="b-bubbles.js?v=4320" defer></script>
-<script src="b-profile.js?v=4320" defer></script>
-<script src="b-radar.js?v=4320" defer></script>
-<script src="b-messages.js?v=4320" defer></script>
-<script src="b-realtime.js?v=4320" defer></script>
-<script src="b-onboarding.js?v=4320" defer></script>
-<script src="b-chat.js?v=4320" defer></script>
-<script src="b-notifications.js?v=4320" defer></script>
-<script src="b-live.js?v=4320" defer></script>
-<script src="b-admin.js?v=4320" defer></script>
-<script src="b-boot.js?v=4320" defer></script>
+<script src="bubble-icons.js?v=500" defer></script>
+<script src="tag-data.js?v=500" defer></script>
+<script src="b-config.js?v=500" defer></script>
+<script src="b-utils.js?v=500" defer></script>
+<script src="b-navigation.js?v=500" defer></script>
+<script src="b-auth.js?v=500" defer></script>
+<script src="b-home.js?v=500" defer></script>
+<script src="b-bubbles.js?v=500" defer></script>
+<script src="b-profile.js?v=500" defer></script>
+<script src="b-radar.js?v=500" defer></script>
+<script src="b-messages.js?v=500" defer></script>
+<script src="b-realtime.js?v=500" defer></script>
+<script src="b-onboarding.js?v=500" defer></script>
+<script src="b-chat.js?v=500" defer></script>
+<script src="b-notifications.js?v=500" defer></script>
+<script src="b-live.js?v=500" defer></script>
+<script src="b-admin.js?v=500" defer></script>
+<script src="b-boot.js?v=500" defer></script>
   
 
 
@@ -662,130 +662,129 @@
 
   <div class="scroll-area" id="home-scroll">
 
-    <!-- Greeting -->
-    <div style="padding:0.3rem 0 0.6rem">
-      <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.3rem;letter-spacing:0.04em;text-transform:uppercase;font-weight:600">Goddag,</div>
-      <div style="font-size:1.5rem;font-weight:800;letter-spacing:-0.02em;display:flex;align-items:center;gap:0.3rem" id="home-greeting-name"><svg class="ico" style="width:1.5rem;height:1.5rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 11V6.5a1.5 1.5 0 013 0V11"/><path d="M12.5 10V5.5a1.5 1.5 0 013 0v5"/><path d="M15.5 11V7.5a1.5 1.5 0 013 0v5.5a7 7 0 01-7 7h-1a7 7 0 01-5.8-3.1L4 15.5a1.5 1.5 0 012.1-2.1L9.5 16"/><path d="M9.5 11V4.5a1.5 1.5 0 00-3 0V12"/></svg></div>
+    <!-- Greeting (compact) -->
+    <div style="padding:0.2rem 0 0.4rem;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:0.68rem;color:var(--muted);letter-spacing:0.04em;text-transform:uppercase;font-weight:600">Goddag,</div>
+        <div style="font-size:1.25rem;font-weight:800;letter-spacing:-0.02em;display:flex;align-items:center;gap:0.3rem" id="home-greeting-name"></div>
+      </div>
+      <button onclick="goTo('screen-notifications')" style="position:relative;background:none;border:1px solid var(--glass-border-subtle);border-radius:10px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px"><path d="M18 8.5A6 6 0 006 8.5c0 6-2.5 8.5-2.5 8.5h17S18 14.5 18 8.5"/><path d="M13.73 20a2 2 0 01-3.46 0"/></svg>
+        <div class="main-nav-badge badge-notif" id="home-notif-badge" style="display:none;position:absolute;top:-2px;right:-2px"></div>
+      </button>
     </div>
 
+    <!-- ═══ RADAR HERO ═══ -->
+    <div style="display:flex;flex-direction:column;gap:0.5rem">
 
-    <!-- GETTING STARTED (dismissible) -->
-    <div id="home-getting-started" style="display:none;margin-bottom:0.8rem">
-      <div style="background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.12);border-radius:16px;padding:1rem 1.1rem;position:relative">
-        <button onclick="dismissGettingStarted()" style="position:absolute;top:0.6rem;right:0.7rem;background:none;border:none;color:var(--muted);font-size:0.9rem;cursor:pointer;padding:0.2rem;font-family:inherit">✕</button>
-        <div style="font-size:0.85rem;font-weight:700;margin-bottom:0.6rem">Kom godt i gang</div>
-        <div style="display:flex;flex-direction:column;gap:0.45rem" id="gs-steps">
-          <div class="gs-step" onclick="goTo('screen-discover');loadDiscover()" style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem;border-radius:10px;background:rgba(124,92,252,0.03);cursor:pointer">
-            <div style="width:28px;height:28px;border-radius:8px;background:rgba(124,92,252,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent);font-size:0.85rem;font-weight:800">1</div>
-            <div style="flex:1"><div style="font-size:0.78rem;font-weight:600">Udforsk & join en boble</div><div style="font-size:0.65rem;color:var(--text-secondary)">Tryk her for at se bobler du kan joine</div></div>
-            <div style="color:var(--muted);font-size:0.85rem">→</div>
-          </div>
-          <div class="gs-step" onclick="openRadarSheet()" style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem;border-radius:10px;background:rgba(124,92,252,0.03);cursor:pointer">
-            <div style="width:28px;height:28px;border-radius:8px;background:rgba(232,121,168,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent2);font-size:0.85rem;font-weight:800">2</div>
-            <div style="flex:1"><div style="font-size:0.78rem;font-weight:600">Åbn radaren</div><div style="font-size:0.65rem;color:var(--text-secondary)">Se hvem der er i nærheden og match-%</div></div>
-            <div style="color:var(--muted);font-size:0.85rem">→</div>
-          </div>
-          <div class="gs-step" onclick="goTo('screen-profile');profSwitchTab('saved')" style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem;border-radius:10px;background:rgba(124,92,252,0.03);cursor:pointer">
-            <div style="width:28px;height:28px;border-radius:8px;background:rgba(26,158,142,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E;font-size:0.85rem;font-weight:800">3</div>
-            <div style="flex:1"><div style="font-size:0.78rem;font-weight:600">Gem en profil</div><div style="font-size:0.65rem;color:var(--text-secondary)">Tryk Gem på en person du vil huske</div></div>
-            <div style="color:var(--muted);font-size:0.85rem">→</div>
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem">
+          <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">🎯 Dit netværk</div>
+          <div style="font-size:0.68rem;color:var(--muted)" id="radar-count-home">Henter...</div>
+        </div>
+        <div id="home-radar-dartboard" onclick="openRadarSheet()" style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:20px;padding:0.8rem 0.5rem 0.5rem;box-shadow:0 1px 3px rgba(30,27,46,0.06);position:relative;cursor:pointer">
+          <div id="home-radar-dots" style="position:relative;width:100%;height:220px;display:flex;align-items:center;justify-content:center">
+            <div class="spinner" style="width:24px;height:24px"></div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- All home cards in one flex container with consistent gap -->
-    <div style="display:flex;flex-direction:column;gap:0.45rem">
-
-    <!-- RADAR (dominant) -->
-      <div class="radar-card-v4" data-hs="radar" onclick="openRadarSheet()" style="padding:1.1rem 1.2rem">
-        <div style="display:flex;align-items:center;gap:0.7rem">
-          <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#7C5CFC,#6366F1);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="white"/></svg></div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:0.95rem;font-weight:800;color:var(--text)">Din Radar</div>
-            <div style="font-size:0.72rem;color:var(--text-secondary)" id="radar-count-home">Henter matches...</div>
-          </div>
-          <div style="color:var(--accent);font-size:0.78rem;font-weight:700;flex-shrink:0;align-self:center">Åbn →</div>
+        <div style="display:flex;justify-content:center;margin-top:0.45rem">
+          <button onclick="openHomeTray()" style="display:flex;align-items:center;gap:0.4rem;padding:0.5rem 1.2rem;border-radius:14px;background:#FFFFFF;border:1px solid var(--glass-border-subtle);box-shadow:0 1px 3px rgba(30,27,46,0.06);cursor:pointer;font-size:0.78rem;font-weight:600;color:var(--text);font-family:var(--font)">
+            ≡ Se liste · <span id="home-tray-count">0</span> personer
+          </button>
         </div>
-        <div class="radar-dots-row" id="radar-preview-avatars" style="padding-left:51px;margin-top:0.5rem"></div>
       </div>
 
-    <!-- TOP MATCHES — "Personer du bør møde" -->
+      <!-- TOP MATCHES -->
       <div id="home-top-matches" style="display:none;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);box-shadow:0 1px 3px rgba(30,27,46,0.06), 0 1px 2px rgba(30,27,46,0.04);padding:0.75rem 0.9rem 0.6rem">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
           <div style="font-size:0.82rem;font-weight:700;color:var(--text)">Vigtigste matches</div>
-          <button class="btn-sm btn-ghost" onclick="openRadarSheet()" style="font-size:0.62rem;padding:0.15rem 0.45rem">Se alle</button>
+          <button class="btn-sm btn-ghost" onclick="openHomeTray()" style="font-size:0.62rem;padding:0.15rem 0.45rem">Se alle</button>
         </div>
         <div id="home-top-matches-list" style="display:flex;flex-direction:column;gap:0.35rem"></div>
       </div>
 
-    <!-- LIVE BUBBLE -->
-    <div id="live-bubble-card" class="live-bubble-card" data-hs="live" style="display:none">
-      <!-- State: checked in -->
-      <div id="live-bubble-active" style="display:none">
-        <div class="live-bubble-header">
-          <div class="live-bubble-pulse"></div>
-          <div style="flex:1;min-width:0">
-            <div class="live-bubble-label">📡 DU ER LIVE</div>
-            <div class="live-bubble-name" id="live-bubble-name">...</div>
-            <div class="live-bubble-meta" id="live-bubble-meta">...</div>
+      <!-- LIVE BUBBLE -->
+      <div id="live-bubble-card" class="live-bubble-card" data-hs="live" style="display:none">
+        <div id="live-bubble-active" style="display:none">
+          <div class="live-bubble-header">
+            <div class="live-bubble-pulse"></div>
+            <div style="flex:1;min-width:0">
+              <div class="live-bubble-label">📡 DU ER LIVE</div>
+              <div class="live-bubble-name" id="live-bubble-name">...</div>
+              <div class="live-bubble-meta" id="live-bubble-meta">...</div>
+            </div>
+            <div class="live-bubble-count" id="live-bubble-count">0</div>
           </div>
-          <div class="live-bubble-count" id="live-bubble-count">0</div>
+          <div class="live-bubble-actions">
+            <button class="live-bubble-btn primary" id="live-bubble-open-btn" onclick="openLiveBubble()">Se hvem der er her →</button>
+            <button class="live-bubble-btn ghost" onclick="liveCheckout()">Check ud</button>
+          </div>
         </div>
-        <div class="live-bubble-actions">
-          <button class="live-bubble-btn primary" id="live-bubble-open-btn" onclick="openLiveBubble()">Se hvem der er her →</button>
-          <button class="live-bubble-btn ghost" onclick="liveCheckout()">Check ud</button>
+        <div id="live-bubble-idle">
+          <div class="live-bubble-idle-content" onclick="openLiveCheckin()">
+            <div class="live-bubble-idle-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M12 21.5c-3.5-3.5-6.5-7-6.5-10.5a6.5 6.5 0 0113 0c0 3.5-3 7-6.5 10.5z"/><circle cx="12" cy="11" r="2.5"/></svg></div>
+            <div style="flex:1">
+              <div class="live-bubble-idle-title">Check ind</div>
+              <div class="live-bubble-idle-sub">Scan QR eller vælg en boble</div>
+            </div>
+            <div class="live-bubble-idle-arrow">›</div>
+          </div>
         </div>
       </div>
-      <!-- State: not checked in -->
-      <div id="live-bubble-idle">
-        <div class="live-bubble-idle-content" onclick="openLiveCheckin()">
-          <div class="live-bubble-idle-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M12 21.5c-3.5-3.5-6.5-7-6.5-10.5a6.5 6.5 0 0113 0c0 3.5-3 7-6.5 10.5z"/><circle cx="12" cy="11" r="2.5"/></svg></div>
+
+      <!-- GEMTE PROFILER -->
+      <div id="saved-profiles-bar" data-hs="saved" style="display:none">
+        <div style="font-size:0.78rem;font-weight:700;color:var(--text);margin-bottom:0.4rem">Gemte profiler <span id="saved-count-badge" class="saved-count-badge"></span></div>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <div class="saved-story-scroll" id="saved-story-list" style="flex:1"></div>
+          <button class="btn-sm btn-ghost" onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('saved')},200)" style="font-size:0.62rem;flex-shrink:0;padding:0.25rem 0.5rem">Se alle</button>
+        </div>
+      </div>
+
+      <!-- MINE BOBLER (horizontal pills) -->
+      <div data-hs="bubbles">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.3rem">
+          <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">📌 Mine bobler</div>
+          <button class="btn-sm btn-ghost" onclick="goTo('screen-discover')" style="font-size:0.62rem;padding:0.15rem 0.45rem">Alle →</button>
+        </div>
+        <div id="home-bubbles-scroll" style="display:flex;gap:0.4rem;overflow-x:auto;padding-bottom:0.3rem;-webkit-overflow-scrolling:touch">
+          <div style="font-size:0.72rem;color:var(--muted);padding:0.4rem" id="home-bubbles-sub">Henter...</div>
+        </div>
+      </div>
+
+      <!-- PROFILE NUDGE -->
+      <div id="home-profile-nudge" style="display:none">
+        <div style="background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.12);border-radius:14px;padding:0.7rem 0.9rem;display:flex;align-items:center;gap:0.7rem;cursor:pointer" onclick="goTo('screen-profile')">
+          <div style="width:34px;height:34px;border-radius:10px;background:rgba(124,92,252,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></div>
           <div style="flex:1">
-            <div class="live-bubble-idle-title">Live Bubble</div>
-            <div class="live-bubble-idle-sub">Check ind hvor du er — se hvem der er her lige nu</div>
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text)">Styrk din profil</div>
+            <div style="font-size:0.62rem;color:var(--text-secondary)" id="nudge-hint">Tilføj mere → bedre matches</div>
           </div>
-          <div class="live-bubble-idle-arrow">›</div>
+          <div id="nudge-bar" style="width:40px;height:6px;border-radius:3px;background:var(--glass-border-subtle);overflow:hidden;flex-shrink:0">
+            <div id="nudge-bar-fill" style="height:100%;background:var(--accent);border-radius:3px;width:30%;transition:width 0.3s"></div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- GEMTE PROFILER (story-bar) -->
-    <div id="saved-profiles-bar" data-hs="saved" style="display:none">
-      <div style="font-size:0.78rem;font-weight:700;color:var(--text);margin-bottom:0.4rem">Gemte profiler <span id="saved-count-badge" class="saved-count-badge"></span></div>
-      <div style="display:flex;align-items:center;gap:0.5rem">
-        <div class="saved-story-scroll" id="saved-story-list" style="flex:1"></div>
-        <button class="btn-sm btn-ghost" onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('saved')},200)" style="font-size:0.62rem;flex-shrink:0;padding:0.25rem 0.5rem">Se alle</button>
-      </div>
-    </div>
-
-      <!-- Bobler -->
-      <div class="main-nav-card card-bobler" data-hs="bubbles" onclick="goTo('screen-bubbles')">
-        <div class="main-nav-icon" style="background:rgba(124,92,252,0.15);color:#9B8AFF"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
-        <div style="flex:1">
-          <div class="section-title">Bobler</div>
-          <div class="sub-muted" id="home-bubbles-sub">Henter...</div>
-        </div>
-        <div class="main-nav-badge badge-bobler" id="home-bubbles-badge" style="display:none"></div>
-        <div class="icon-muted">›</div>
-      </div>
-
-      <!-- Notifikationer -->
-      <div class="main-nav-card card-notif" data-hs="notifs" onclick="goTo('screen-notifications')">
-        <div class="main-nav-icon" style="background:rgba(46,207,207,0.15);color:#2ECFCF"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5A6 6 0 006 8.5c0 6-2.5 8.5-2.5 8.5h17S18 14.5 18 8.5"/><path d="M13.73 20a2 2 0 01-3.46 0"/></svg></div>
-        <div style="flex:1">
-          <div class="section-title">Notifikationer</div>
-          <div class="sub-muted" id="home-notif-sub">Henter...</div>
-        </div>
-        <div class="main-nav-badge badge-notif" id="home-notif-badge" style="display:none"></div>
-        <div class="icon-muted">›</div>
-      </div>
-
-
-      <!-- Progressive onboarding (v4) -->
+      <!-- Progressive onboarding -->
       <div id="home-progressive-onboarding" style="display:none">
-        <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent);padding:0.75rem 0 0.35rem">Styrk din profil</div>
+        <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent);padding:0.5rem 0 0.3rem">Kom i gang</div>
         <div id="gs-v4-cards"></div>
+      </div>
+
+      <!-- GETTING STARTED -->
+      <div id="home-getting-started" style="display:none">
+        <div style="background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.12);border-radius:14px;padding:0.8rem 1rem;position:relative">
+          <button onclick="dismissGettingStarted()" style="position:absolute;top:0.5rem;right:0.6rem;background:none;border:none;color:var(--muted);font-size:0.85rem;cursor:pointer;padding:0.2rem;font-family:inherit">✕</button>
+          <div style="font-size:0.82rem;font-weight:700;margin-bottom:0.5rem">Kom godt i gang</div>
+          <div style="display:flex;flex-direction:column;gap:0.4rem" id="gs-steps">
+            <div class="gs-step" onclick="goTo('screen-discover');loadDiscover()" style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem;border-radius:10px;background:rgba(124,92,252,0.03);cursor:pointer">
+              <div style="width:26px;height:26px;border-radius:8px;background:rgba(124,92,252,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent);font-size:0.78rem;font-weight:800">1</div>
+              <div style="flex:1"><div style="font-size:0.75rem;font-weight:600">Udforsk & join en boble</div></div>
+              <div style="color:var(--muted);font-size:0.78rem">→</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Feedback -->
@@ -799,16 +798,25 @@
       </div>
     </div>
 
-    <div id="home-empty-state" style="display:none;text-align:center;padding:2.5rem 1rem">
-      <div style="width:48px;height:48px;margin:0 auto 0.8rem;opacity:0.5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:var(--accent)"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
-      <div style="font-size:0.88rem;font-weight:700;margin-bottom:0.3rem">Din hjem-skærm er tom</div>
-      <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:1.2rem;line-height:1.45">Vælg hvad du vil se her under indstillinger</div>
-      <button onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('settings')},200)" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(124,92,252,0.12);color:var(--accent);border:1px solid rgba(124,92,252,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:all 0.2s">Åbn indstillinger</button>
-    </div>
+    <div style="height:1rem"></div>
 
   </div>
 
-  
+  <!-- ═══ LIST TRAY (slides up over home) ═══ -->
+  <div id="home-tray-backdrop" onclick="closeHomeTray()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.3);z-index:50"></div>
+  <div id="home-tray" style="position:absolute;bottom:0;left:0;right:0;height:72%;background:#FFFFFF;border-radius:20px 20px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,0.12);transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1);z-index:55;display:flex;flex-direction:column">
+    <div style="padding:10px 0 4px;display:flex;justify-content:center;flex-shrink:0"><div style="width:36px;height:4px;border-radius:2px;background:var(--glass-border)"></div></div>
+    <div style="padding:6px 1.2rem 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--glass-border-subtle);flex-shrink:0">
+      <div>
+        <div style="font-size:1rem;font-weight:800">Alle matches</div>
+        <div style="font-size:0.72rem;color:var(--muted)" id="home-tray-subtitle">0 personer</div>
+      </div>
+      <button onclick="closeHomeTray()" style="width:32px;height:32px;border-radius:10px;border:1px solid var(--glass-border-subtle);background:var(--bg);cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;color:var(--muted);font-family:var(--font)">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:0.5rem 1.2rem" id="home-tray-list">
+      <div style="text-align:center;padding:1rem"><div class="spinner" style="width:20px;height:20px"></div></div>
+    </div>
+  </div>
     
 </div>
 
@@ -1720,7 +1728,7 @@
 <div id="global-nav" class="nav-hidden">
   <div class="nav-row">
     <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
-    <button class="nav-item" onclick="goTo('screen-bubbles')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.5"/><circle cx="16" cy="8" r="3.5" opacity=".6"/><circle cx="11" cy="16" r="3" opacity=".4"/></svg></span>Bobler</button>
+    <button class="nav-item" onclick="goTo('screen-discover')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></span>Bobler</button>
     <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
     <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
   </div>

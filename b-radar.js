@@ -231,197 +231,169 @@ function rpFullProfile() {
 
 
 // ══════════════════════════════════════════════════════════
-//  SMART MATCH ALGORITHM (v5 — tier-based additive model)
-//  Max score ~100:
-//    Sektorer      : 10pt per overlap, max 30 (3 sektorer)
-//    Livsfase      : 15pt same, 8pt adjacent
-//    Fælles bobler : 8pt per, max 24 (3 bobler)
-//    Tag-cluster   : 5pt per cluster, max 20
-//  Backwards-compatible via _inferSectorsFromKeywords()
+//  SMART MATCH ALGORITHM (v3 — Tier-based)
+//  - Tier 1: Sector overlap (interests) — 10pt per match, max 30
+//  - Tier 2: Lifestage match — 15 same, 8 related
+//  - Tier 3: Shared bubbles — 8pt per, max 24
+//  - Tier 4: Tag cluster bonus — 5pt per cluster overlap, max 20
+//  - Tier 5: Live context — same event +15
+//  No TF-IDF, no sigmoid. Predictable, welcoming scores.
 // ══════════════════════════════════════════════════════════
-var MATCH_CAP = 25;
-var matchPage = 0;
+var MATCH_CAP = 25;  // Max profiles shown on radar at once
+var matchPage = 0;   // For "vis flere" rotation
 
-var CAT_WEIGHTS = { branche: 1.5, kompetence: 1.3, rolle: 1.0, interesse: 0.8, custom: 1.0 };
-var _tagPopularity = {};
+// Sector keys from onboarding interest picker
+var ALL_SECTORS = ['startup','tech','sustainability','leadership','public','industry','health','education','creative','commerce','community'];
 
-// ── Sector inference: maps existing keywords to sectors ──
-// Sectors: tech, kreativ, handel, sundhed, uddannelse, ledelse, service, produktion
-var _SECTOR_MAP = {
-  'software': 'tech', 'it': 'tech', 'programmering': 'tech', 'udvikler': 'tech', 'developer': 'tech',
-  'data': 'tech', 'ai': 'tech', 'machine learning': 'tech', 'cybersikkerhed': 'tech',
-  'design': 'kreativ', 'marketing': 'kreativ', 'branding': 'kreativ', 'kommunikation': 'kreativ',
-  'indhold': 'kreativ', 'content': 'kreativ', 'foto': 'kreativ', 'video': 'kreativ',
-  'salg': 'handel', 'økonomi': 'handel', 'finans': 'handel', 'handel': 'handel',
-  'e-handel': 'handel', 'retail': 'handel', 'export': 'handel',
-  'sundhed': 'sundhed', 'sygepleje': 'sundhed', 'medicin': 'sundhed', 'terapi': 'sundhed',
-  'psykologi': 'sundhed', 'fysioterapi': 'sundhed', 'ernæring': 'sundhed',
-  'undervisning': 'uddannelse', 'forskning': 'uddannelse', 'coaching': 'uddannelse',
-  'uddannelse': 'uddannelse', 'pædagogik': 'uddannelse',
-  'ledelse': 'ledelse', 'strategi': 'ledelse', 'hr': 'ledelse', 'konsulent': 'ledelse',
-  'projekt': 'ledelse', 'startup': 'ledelse', 'iværksætter': 'ledelse',
-  'service': 'service', 'turisme': 'service', 'event': 'service', 'hotel': 'service',
-  'restaurant': 'service', 'logistik': 'service',
-  'produktion': 'produktion', 'bygge': 'produktion', 'ingeniør': 'produktion',
-  'arkitektur': 'produktion', 'energi': 'produktion', 'landbrug': 'produktion'
+// Related lifestages (partial match gets 8 instead of 15)
+var LIFESTAGE_RELATED = {
+  entrepreneur: ['freelancer','investor','student'],
+  freelancer: ['entrepreneur','employee'],
+  student: ['entrepreneur','employee'],
+  employee: ['freelancer','public'],
+  investor: ['entrepreneur'],
+  public: ['employee'],
+  practical: ['employee','freelancer'],
+  other: []
 };
 
-// Adjacent sectors (for 8pt partial match)
-var _SECTOR_ADJACENT = {
-  'tech': ['kreativ', 'ledelse'],
-  'kreativ': ['tech', 'handel', 'service'],
-  'handel': ['kreativ', 'ledelse', 'service'],
-  'sundhed': ['uddannelse', 'service'],
-  'uddannelse': ['sundhed', 'ledelse'],
-  'ledelse': ['tech', 'handel', 'uddannelse'],
-  'service': ['handel', 'kreativ', 'produktion'],
-  'produktion': ['service', 'ledelse']
-};
-
-function _inferSectorsFromKeywords(keywords) {
-  var sectors = [];
-  (keywords || []).forEach(function(kw) {
-    var k = kw.toLowerCase();
-    // Direct lookup
-    if (_SECTOR_MAP[k] && sectors.indexOf(_SECTOR_MAP[k]) < 0) {
-      sectors.push(_SECTOR_MAP[k]);
-      return;
+// Tag-to-cluster mapping: maps individual tags to broad clusters for bonus scoring
+// Uses the sub-group comments from tag-data.js as cluster names
+var TAG_CLUSTERS = {};
+function _buildTagClusters() {
+  if (Object.keys(TAG_CLUSTERS).length > 0) return;
+  // Map each tag to its category sub-group for cluster matching
+  var clusterMap = {
+    rolle: {
+      'leadership': ['Founder','Co-Founder','CEO','CTO','CFO','COO','CMO','CPO','VP','Director','Partner','Board Member','General Manager','Country Manager','Managing Director'],
+      'management': ['Product Manager','Project Manager','Team Lead','Afdelingsleder','Program Manager','Scrum Master','Agile Coach'],
+      'tech_dev': ['Developer','Software Engineer','Frontend Developer','Backend Developer','Data Scientist','Data Engineer','ML Engineer','DevOps Engineer','QA Engineer','Solutions Architect','Tech Lead'],
+      'design_creative': ['Designer','UX Designer','UI Designer','Graphic Designer','Art Director','Creative Director','Content Creator','Fotograf','Journalist','Kommunikationsrådgiver'],
+      'advisory': ['Consultant','Advisor','Mentor','Coach','Business Coach','Management Consultant','Strategisk Rådgiver'],
+      'sales_marketing': ['Sales','Sales Manager','Account Manager','Key Account Manager','Marketing','Marketing Manager','Growth Manager','Brand Manager','Digital Marketing Manager','Social Media Manager'],
+      'entrepreneurship': ['Freelancer','Iværksætter','Serial Entrepreneur','Selvstændig'],
+      'education_research': ['Student','PhD','Professor','Researcher','Underviser','Lektor','Pædagog','Lærer'],
+      'health_care': ['Sygeplejerske','Læge','Tandlæge','Fysioterapeut','Psykolog','Farmaceut'],
+      'trades': ['Tømrer','Elektriker','VVS-installatør','Murer','Ingeniør','Maskinmester'],
+    },
+    branche: {
+      'tech_sector': ['SaaS','Fintech','AI/ML','Cybersecurity','Cloud','Infrastructure','DevTools','IoT','Robotics','AR/VR','Blockchain','Deep Tech','Hardware'],
+      'health_sector': ['Healthtech','MedTech','Pharma','Biotech','Mental Health','Sundhed','Velfærdsteknologi'],
+      'green_sector': ['Cleantech','Energi','Bæredygtighed','Circular Economy','Vindenergi','Solenergi','Grøn Omstilling'],
+      'education_sector': ['Edtech','Forskning','Universitet','Efteruddannelse'],
+      'food_agri': ['Foodtech','Agritech','Landbrug','Økologi','Fødevarer','Restaurant'],
+      'construction': ['Byggeri','Anlæg','Renovering','Produktion','Industri','Automation'],
+      'commerce_retail': ['E-commerce','Retail','Fashion','D2C','B2B','B2C','Marketplace'],
+      'finance_sector': ['Finans','Banking','Forsikring','Revision','Investering','Crypto'],
+      'media_creative': ['Media','Publishing','Gaming','Entertainment','Reklame','Film','Musik'],
+      'public_ngo': ['NGO','GovTech','Civic Tech','Impact','Kommune','Forening','Socialøkonomi'],
     }
-    // Partial match
-    Object.keys(_SECTOR_MAP).forEach(function(key) {
-      if (k.indexOf(key) >= 0 || key.indexOf(k) >= 0) {
-        var s = _SECTOR_MAP[key];
-        if (sectors.indexOf(s) < 0) sectors.push(s);
-      }
+  };
+  Object.keys(clusterMap).forEach(function(cat) {
+    Object.keys(clusterMap[cat]).forEach(function(cluster) {
+      clusterMap[cat][cluster].forEach(function(tag) {
+        TAG_CLUSTERS[tag.toLowerCase()] = cluster;
+      });
     });
   });
-  return sectors;
 }
 
-// ── Tag-cluster bonus: tags that cluster together ──
-var _TAG_CLUSTERS = [
-  ['salg', 'marketing', 'branding', 'kommunikation', 'indhold', 'content'],
-  ['software', 'it', 'programmering', 'data', 'ai', 'developer', 'udvikler'],
-  ['ledelse', 'strategi', 'konsulent', 'projekt', 'hr'],
-  ['iværksætter', 'startup', 'investor', 'fundraising', 'pitch'],
-  ['design', 'ux', 'ui', 'grafik', 'kreativ'],
-  ['sundhed', 'velvære', 'terapi', 'coaching', 'psykologi'],
-  ['undervisning', 'forskning', 'uddannelse', 'pædagogik'],
-  ['økonomi', 'finans', 'regnskab', 'revision', 'investering']
-];
-
-function _calcClusterBonus(myKw, theirKw) {
-  var bonus = 0;
-  _TAG_CLUSTERS.forEach(function(cluster) {
-    var myHits = myKw.filter(function(k) { return cluster.indexOf(k) >= 0; }).length;
-    var theirHits = theirKw.filter(function(k) { return cluster.indexOf(k) >= 0; }).length;
-    if (myHits >= 1 && theirHits >= 1) bonus += 5;
-  });
-  return Math.min(bonus, 20);
-}
-
-// ── Life-phase detection ──
-var _LIFE_PHASE_TAGS = {
-  student:    ['studerende', 'bachelor', 'kandidat', 'phd', 'praktikant'],
-  early:      ['nyuddannet', 'junior', 'trainee', 'entry level'],
-  mid:        ['specialist', 'seniorkonsulent', 'projektleder', 'manager'],
-  senior:     ['direktør', 'ceo', 'cto', 'partner', 'founder', 'leder', 'chef', 'vp'],
-  freelance:  ['freelancer', 'selvstændig', 'konsulent', 'iværksætter', 'solopreneur']
-};
-
-function _inferLifePhase(keywords) {
-  var kw = (keywords || []).map(function(k) { return k.toLowerCase(); });
-  var phases = Object.keys(_LIFE_PHASE_TAGS);
-  for (var i = 0; i < phases.length; i++) {
-    var phase = phases[i];
-    if (_LIFE_PHASE_TAGS[phase].some(function(t) { return kw.some(function(k) { return k.indexOf(t) >= 0; }); })) {
-      return phase;
-    }
-  }
-  return null;
-}
-
-var _PHASE_ADJACENT = {
-  student: ['early'],
-  early:   ['student', 'mid'],
-  mid:     ['early', 'senior', 'freelance'],
-  senior:  ['mid', 'freelance'],
-  freelance: ['mid', 'senior']
-};
-
+// No-op: keep buildTagPopularity signature for compatibility but make it a no-op
 function buildTagPopularity(allProfiles) {
-  _tagPopularity = {};
-  var total = allProfiles.length || 1;
-  allProfiles.forEach(function(p) {
-    (p.keywords || []).forEach(function(k) {
-      var key = k.toLowerCase();
-      _tagPopularity[key] = (_tagPopularity[key] || 0) + 1;
-    });
-  });
-  Object.keys(_tagPopularity).forEach(function(key) {
-    _tagPopularity[key] = 1.0 / Math.log2((_tagPopularity[key] + 1) / total * 10 + 2);
-  });
+  _buildTagClusters();
 }
 
 function getTagRarity(tagLower) {
-  return _tagPopularity[tagLower] || 1.2;
+  return 1.0; // Flat weight — TF-IDF disabled
 }
 
 function calcMatchScore(myProfile, theirProfile, sharedBubbleCount) {
-  var myKw    = (myProfile.keywords    || []).map(function(k) { return k.toLowerCase(); });
-  var theirKw = (theirProfile.keywords || []).map(function(k) { return k.toLowerCase(); });
-
-  // Minimal profiles — base score only
-  if (myKw.length === 0 || theirKw.length === 0) {
-    return Math.min(8 + Math.min((sharedBubbleCount || 0) * 8, 24) +
-      (theirProfile.bio ? 4 : 0) + (theirProfile.title ? 4 : 0), 40);
-  }
-
+  _buildTagClusters();
   var score = 0;
 
-  // 1. Sector overlap — 10pt per sector match, max 30
-  var mySectors    = myProfile.sectors    || _inferSectorsFromKeywords(myProfile.keywords);
-  var theirSectors = theirProfile.sectors || _inferSectorsFromKeywords(theirProfile.keywords);
-  var sectorScore = 0;
-  mySectors.forEach(function(s) {
-    if (theirSectors.indexOf(s) >= 0) {
-      sectorScore += 10;
-    } else {
-      // Adjacent sector: 5pt
-      var adj = _SECTOR_ADJACENT[s] || [];
-      if (adj.some(function(a) { return theirSectors.indexOf(a) >= 0; })) {
-        sectorScore += 5;
-      }
-    }
+  // ── Tier 1: Sector overlap (interests from onboarding) ──
+  // Stored as profile.interests (array of sector keys like 'startup','tech',...)
+  var myInterests = myProfile.interests || [];
+  var theirInterests = theirProfile.interests || [];
+  // Fallback: extract from keywords if interests field not populated
+  if (myInterests.length === 0 && myProfile.keywords) {
+    myInterests = _inferSectorsFromKeywords(myProfile.keywords);
+  }
+  if (theirInterests.length === 0 && theirProfile.keywords) {
+    theirInterests = _inferSectorsFromKeywords(theirProfile.keywords);
+  }
+  var sectorOverlap = 0;
+  myInterests.forEach(function(s) {
+    if (theirInterests.indexOf(s) >= 0) sectorOverlap++;
   });
-  score += Math.min(sectorScore, 30);
+  score += Math.min(sectorOverlap * 10, 30); // 10pt per overlap, max 30
 
-  // 2. Life phase — 15pt same, 8pt adjacent
-  var myPhase    = myProfile.life_phase    || _inferLifePhase(myProfile.keywords);
-  var theirPhase = theirProfile.life_phase || _inferLifePhase(theirProfile.keywords);
-  if (myPhase && theirPhase) {
-    if (myPhase === theirPhase) {
+  // ── Tier 2: Lifestage match ──
+  var myLs = myProfile.lifestage || '';
+  var theirLs = theirProfile.lifestage || '';
+  if (myLs && theirLs) {
+    if (myLs === theirLs) {
       score += 15;
-    } else {
-      var adjPhases = _PHASE_ADJACENT[myPhase] || [];
-      if (adjPhases.indexOf(theirPhase) >= 0) score += 8;
+    } else if (LIFESTAGE_RELATED[myLs] && LIFESTAGE_RELATED[myLs].indexOf(theirLs) >= 0) {
+      score += 8;
     }
   }
 
-  // 3. Shared bubbles — 8pt per, max 24
-  score += Math.min((sharedBubbleCount || 0) * 8, 24);
+  // ── Tier 3: Shared bubbles ──
+  var bubbleBonus = Math.min((sharedBubbleCount || 0) * 8, 24);
+  score += bubbleBonus;
 
-  // 4. Tag-cluster bonus — 5pt per cluster, max 20
-  score += _calcClusterBonus(myKw, theirKw);
-
-  // 5. Direct tag overlap bonus (for profiles that haven't migrated to sectors yet)
-  var overlap = myKw.filter(function(k) { return theirKw.indexOf(k) >= 0; });
-  if (overlap.length > 0 && sectorScore === 0) {
-    // Fallback: give tag overlap some weight if sector detection yielded nothing
-    score += Math.min(overlap.length * 4, 16);
+  // ── Tier 4: Tag cluster overlap (bonus for filled-out profiles) ──
+  var myKw = (myProfile.keywords || []).map(function(k) { return k.toLowerCase(); });
+  var theirKw = (theirProfile.keywords || []).map(function(k) { return k.toLowerCase(); });
+  if (myKw.length > 0 && theirKw.length > 0) {
+    var myClusters = {};
+    var theirClusters = {};
+    myKw.forEach(function(k) { var c = TAG_CLUSTERS[k]; if (c) myClusters[c] = true; });
+    theirKw.forEach(function(k) { var c = TAG_CLUSTERS[k]; if (c) theirClusters[c] = true; });
+    var clusterOverlap = 0;
+    Object.keys(myClusters).forEach(function(c) { if (theirClusters[c]) clusterOverlap++; });
+    score += Math.min(clusterOverlap * 5, 20);
   }
 
-  return Math.min(Math.max(Math.round(score), 1), 99);
+  // ── Tier 5: Live context bonus (same event check-in) ──
+  // Handled externally when building radar — adds 15 if both checked in to same bubble
+  // (passed in as extra parameter or pre-added to sharedBubbleCount)
+
+  // ── Minimum score: everyone visible on radar ──
+  // Even with zero overlap, give 1 point so they show as "I dit netværk"
+  if (score === 0 && (sharedBubbleCount || 0) === 0) {
+    // Tiny bonus for having a profile at all
+    score = (theirProfile.name ? 1 : 0);
+  }
+
+  return Math.min(Math.max(score, 0), 100);
+}
+
+// Infer sector keys from keywords for backwards compatibility
+// Maps common keywords to their onboarding sector
+function _inferSectorsFromKeywords(keywords) {
+  var sectorKeywordMap = {
+    startup: ['Founder','Co-Founder','Iværksætter','Startup','Serial Entrepreneur','Lean Startup','Entrepreneurship','Venture Capital','Angel Investing','Fundraising','Pitch Deck'],
+    tech: ['SaaS','AI/ML','Developer','Software Engineer','Frontend','Backend','DevOps','Cloud','Cybersecurity','Data Scientist','Machine Learning','React','Python','Node.js','TypeScript','IoT','Robotics','Blockchain','Deep Tech'],
+    sustainability: ['Cleantech','Bæredygtighed','Energi','Circular Economy','Vindenergi','Solenergi','Grøn Omstilling','Climate Action','ESG','Carbon','Sustainability'],
+    leadership: ['CEO','CTO','CFO','COO','CMO','VP','Director','Leadership','Management','Strategy','OKR','Board Member'],
+    public: ['NGO','GovTech','Civic Tech','Kommune','Region','Stat','Socialrådgiver','Embedsmand','Sagsbehandler','Social Impact'],
+    industry: ['Byggeri','Produktion','Industri','Automation','Tømrer','Elektriker','VVS','Ingeniør','Maskinmester','Logistik','Transport','Håndværker'],
+    health: ['Healthtech','MedTech','Pharma','Biotech','Sundhed','Sygeplejerske','Læge','Tandlæge','Fysioterapeut','Psykolog','Mental Health'],
+    education: ['Edtech','Forskning','Student','PhD','Professor','Researcher','Underviser','Universitet'],
+    creative: ['Designer','UX Designer','UI Designer','Graphic Designer','Content Creator','Fotograf','Journalist','Media','Publishing','Gaming','Film','Musik'],
+    commerce: ['E-commerce','Retail','Fashion','B2B','B2C','Sales','Account Manager','Marketplace','Detail'],
+    community: ['Networking','Community Building','Frivillig','Foreningsliv','Mentoring','Coaching','Events']
+  };
+  var found = [];
+  var kwLower = keywords.map(function(k) { return k.toLowerCase(); });
+  Object.keys(sectorKeywordMap).forEach(function(sector) {
+    var sectorTags = sectorKeywordMap[sector].map(function(t) { return t.toLowerCase(); });
+    var hits = kwLower.filter(function(k) { return sectorTags.indexOf(k) >= 0; });
+    if (hits.length >= 1) found.push(sector);
+  });
+  return found.slice(0, 3); // Max 3 like onboarding
 }
 
 // Quick relevance for sorting (0-1 range, used internally)

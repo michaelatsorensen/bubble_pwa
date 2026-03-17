@@ -25,7 +25,7 @@ async function loadHome() {
     // Load all dashboard data in parallel
     var hsp = hsGetPrefs();
     var loaders = [];
-    if (hsp.bubbles) loaders.push(loadHomeBubblesCard());
+    if (hsp.bubbles) { loaders.push(loadHomeBubblesCard()); loaders.push(loadHomeBubblePills()); }
     if (hsp.notifs) loaders.push(loadHomeNotifCard());
     if (hsp.radar) { loaders.push(updateRadarCount()); loaders.push(loadProximityMap()); loaders.push(loadTopMatches()); }
     if (hsp.live) loaders.push(loadLiveBubbleStatus());
@@ -34,6 +34,9 @@ async function loadHome() {
     hsApplyToHome();
     showGettingStarted();
     showProgressiveOnboarding();
+    // v5: render dartboard + profile nudge after data loads
+    try { renderHomeDartboard(); } catch(e) { logError('renderHomeDartboard', e); }
+    try { showProfileNudge(); } catch(e) { logError('showProfileNudge', e); }
   } catch(e) { logError("loadHome", e); /* Individual cards handle their own errors */ }
 }
 
@@ -792,157 +795,181 @@ function updateAnonToggle() {
 }
 
 // ══════════════════════════════════════════════════════════
-//  HOME TRAY — fuld liste over matches
+//  HOME LIST TRAY — slides up with full match list
 // ══════════════════════════════════════════════════════════
 function openHomeTray() {
-  var overlay = document.getElementById('home-tray-overlay');
-  var tray    = document.getElementById('home-tray');
-  if (!overlay || !tray) {
-    // Build tray HTML if not yet in DOM
-    _buildHomeTrayDOM();
-    overlay = document.getElementById('home-tray-overlay');
-    tray    = document.getElementById('home-tray');
-    if (!overlay || !tray) return;
-  }
-  // Populate tray with current proxAllProfiles sorted by score
-  _renderHomeTrayList();
-  overlay.style.display = 'block';
-  requestAnimationFrame(function() {
-    overlay.style.opacity = '1';
-    tray.style.transform  = 'translateY(0)';
-  });
+  var backdrop = document.getElementById('home-tray-backdrop');
+  var tray = document.getElementById('home-tray');
+  if (!backdrop || !tray) return;
+  backdrop.style.display = 'block';
+  // Force reflow before transition
+  void tray.offsetHeight;
+  tray.style.transform = 'translateY(0)';
+  // Populate list
+  renderHomeTrayList();
 }
 
 function closeHomeTray() {
-  var overlay = document.getElementById('home-tray-overlay');
-  var tray    = document.getElementById('home-tray');
-  if (!overlay || !tray) return;
-  overlay.style.opacity = '0';
-  tray.style.transform  = 'translateY(100%)';
-  setTimeout(function() { overlay.style.display = 'none'; }, 320);
+  var backdrop = document.getElementById('home-tray-backdrop');
+  var tray = document.getElementById('home-tray');
+  if (backdrop) backdrop.style.display = 'none';
+  if (tray) tray.style.transform = 'translateY(100%)';
 }
 
-function _buildHomeTrayDOM() {
-  var div = document.createElement('div');
-  div.innerHTML =
-    '<div id="home-tray-overlay" style="display:none;opacity:0;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:900;transition:opacity 0.3s" onclick="closeHomeTray()">' +
-      '<div id="home-tray" style="position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;max-height:82vh;overflow:hidden;display:flex;flex-direction:column;transform:translateY(100%);transition:transform 0.32s cubic-bezier(.32,1,.56,1)" onclick="event.stopPropagation()">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1rem 0.6rem">' +
-          '<span style="font-size:0.9rem;font-weight:700;color:var(--text)">Alle matches i nærheden</span>' +
-          '<button onclick="closeHomeTray()" style="background:none;border:none;cursor:pointer;padding:0.25rem;color:var(--muted);font-size:1.1rem">✕</button>' +
-        '</div>' +
-        '<div id="home-tray-list" style="overflow-y:auto;padding:0 0.75rem 1.5rem;flex:1"></div>' +
-      '</div>' +
-    '</div>';
-  document.body.appendChild(div.firstChild);
-}
+function renderHomeTrayList() {
+  var list = document.getElementById('home-tray-list');
+  var subtitle = document.getElementById('home-tray-subtitle');
+  if (!list) return;
 
-function _renderHomeTrayList() {
-  var el = document.getElementById('home-tray-list');
-  if (!el) return;
-  var profiles = (typeof proxAllProfiles !== 'undefined' ? proxAllProfiles : [])
-    .slice().sort(function(a, b) { return (b.matchScore || 0) - (a.matchScore || 0); });
-  if (profiles.length === 0) {
-    el.innerHTML = '<div style="text-align:center;padding:2rem;font-size:0.8rem;color:var(--muted)">Ingen i nærheden lige nu</div>';
+  var profiles = proxAllProfiles || [];
+  var sorted = profiles.slice().sort(function(a, b) { return (b.matchScore || 0) - (a.matchScore || 0); });
+
+  if (subtitle) subtitle.textContent = sorted.length + ' personer fra dine bobler';
+
+  if (sorted.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:var(--muted)">Ingen matches endnu. Join en boble for at se folk her.</div>';
     return;
   }
-  var colors = ['#7C5CFC','#E879A8','#2ECFCF','#F59E0B','#10B981','#3B82F6','#EF4444','#8B5CF6','#06B6D4','#84CC16'];
-  el.innerHTML = profiles.map(function(p, i) {
+
+  var colors = proxColors || ['linear-gradient(135deg,#6366F1,#7C5CFC)'];
+  list.innerHTML = sorted.map(function(p, i) {
     var name = p.is_anon ? 'Anonym' : (p.name || '?');
-    var ini  = p.is_anon ? '?' : name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-    var col  = colors[i % colors.length];
-    var ml   = (typeof matchLabel === 'function') ? matchLabel(p.matchScore || 0) : { text: '', color: 'var(--muted)' };
-    return '<div style="display:flex;align-items:center;gap:0.75rem;padding:0.65rem 0.25rem;border-bottom:1px solid var(--border);cursor:pointer" onclick="closeHomeTray();setTimeout(function(){openRadarPerson(\'' + p.id + '\')},350)">' +
-      '<div style="width:2.4rem;height:2.4rem;border-radius:50%;background:' + col + ';display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#fff;flex-shrink:0">' + escHtml(ini) + '</div>' +
+    var ini = name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    var col = p.is_anon ? 'var(--glass-border)' : colors[i % colors.length];
+    var score = p.matchScore || 0;
+    var ml = matchLabel(score);
+    var avHtml = p.avatar_url && !p.is_anon
+      ? '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>'
+      : '<div style="width:40px;height:40px;border-radius:50%;background:' + col + ';display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;color:white;flex-shrink:0">' + escHtml(ini) + '</div>';
+
+    return '<div onclick="closeHomeTray();openRadarPerson(\'' + p.id + '\')" style="display:flex;align-items:center;gap:0.7rem;padding:0.65rem 0;border-bottom:1px solid var(--glass-border-subtle);cursor:pointer">' +
+      avHtml +
       '<div style="flex:1;min-width:0">' +
-        '<div style="font-size:0.85rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(name) + '</div>' +
-        '<div style="font-size:0.7rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + '</div>' +
+        '<div style="display:flex;align-items:center;gap:0.4rem">' +
+          '<span style="font-weight:600;font-size:0.85rem">' + escHtml(name) + '</span>' +
+          (ml.text ? '<span style="font-size:0.6rem;font-weight:700;color:' + ml.color + ';background:' + ml.bg + ';padding:0.12rem 0.4rem;border-radius:6px;white-space:nowrap">' + ml.text + '</span>' : '') +
+        '</div>' +
+        '<div style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + '</div>' +
       '</div>' +
-      (ml.text ? '<span style="font-size:0.58rem;font-weight:700;color:' + ml.color + ';background:' + ml.bg + ';padding:0.15rem 0.45rem;border-radius:6px;white-space:nowrap">' + ml.text + '</span>' : '') +
+      '<span style="color:var(--muted);font-size:0.85rem;opacity:0.5">›</span>' +
     '</div>';
   }).join('');
 }
 
 // ══════════════════════════════════════════════════════════
-//  HOME MINI-DARTBOARD
-//  Renders a small bulls-eye with dots positioned by score
+//  HOME RADAR DARTBOARD — mini dartboard with dots
 // ══════════════════════════════════════════════════════════
-function renderHomeDartboard(containerId) {
-  var el = document.getElementById(containerId);
-  if (!el) return;
-  var profiles = (typeof proxAllProfiles !== 'undefined' ? proxAllProfiles : []).slice(0, 20);
-  var size = 180;
-  var cx = size / 2, cy = size / 2, r = size / 2 - 6;
-  var colors = ['#7C5CFC','#E879A8','#2ECFCF','#F59E0B','#10B981','#3B82F6','#EF4444','#8B5CF6','#06B6D4','#84CC16'];
+function renderHomeDartboard() {
+  var container = document.getElementById('home-radar-dots');
+  if (!container) return;
 
-  // Rings: 3 zones (inner=60+, mid=40+, outer=1+)
-  var rings = [
-    { pct: 0.30, fill: 'rgba(124,92,252,0.07)', stroke: 'rgba(124,92,252,0.2)' },
-    { pct: 0.58, fill: 'rgba(124,92,252,0.04)', stroke: 'rgba(124,92,252,0.12)' },
-    { pct: 0.90, fill: 'rgba(124,92,252,0.02)', stroke: 'rgba(124,92,252,0.07)' }
-  ];
+  var profiles = (proxAllProfiles || []).slice(0, 8); // Show max 8 dots
+  var countEl = document.getElementById('home-tray-count');
+  var countEl2 = document.getElementById('radar-count-home');
+  var total = (proxAllProfiles || []).length;
+  if (countEl) countEl.textContent = total;
+  if (countEl2) countEl2.textContent = total + ' matches';
 
-  var svgRings = rings.map(function(ring) {
-    var rr = r * ring.pct;
-    return '<circle cx="' + cx + '" cy="' + cy + '" r="' + rr + '" fill="' + ring.fill + '" stroke="' + ring.stroke + '" stroke-width="1"/>';
-  }).join('');
+  if (profiles.length === 0) {
+    container.innerHTML = '<div style="text-align:center;font-size:0.75rem;color:var(--muted)">Join en boble for at se matches</div>';
+    return;
+  }
 
-  // Cross-hair lines
-  var crosshair = '<line x1="' + cx + '" y1="' + (cy - r * 0.92) + '" x2="' + cx + '" y2="' + (cy + r * 0.92) + '" stroke="rgba(124,92,252,0.08)" stroke-width="1"/>' +
-    '<line x1="' + (cx - r * 0.92) + '" y1="' + cy + '" x2="' + (cx + r * 0.92) + '" y2="' + cy + '" stroke="rgba(124,92,252,0.08)" stroke-width="1"/>';
+  var w = container.clientWidth || 300;
+  var h = 220;
+  var cx = w / 2;
+  var cy = h / 2;
+  var maxR = Math.min(cx, cy) - 24;
+  var colors = proxColors || ['linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#3B82F6,#6366F1)'];
 
-  // Dots: position based on score + random angle
-  var dots = profiles.map(function(p, i) {
-    var score  = p.matchScore || 5;
+  // Render rings
+  var ringsHtml = '';
+  [0.95, 0.68, 0.42, 0.2].forEach(function(s, i) {
+    var r = maxR * s;
+    ringsHtml += '<div style="position:absolute;left:' + (cx - r) + 'px;top:' + (cy - r) + 'px;width:' + (r * 2) + 'px;height:' + (r * 2) + 'px;border-radius:50%;border:1px ' + (i === 0 ? 'solid' : 'dashed') + ' var(--glass-border-subtle);' + (i === 3 ? 'background:rgba(124,92,252,0.04)' : '') + '"></div>';
+  });
+
+  // Center dot (you)
+  ringsHtml += '<div style="position:absolute;left:' + (cx - 6) + 'px;top:' + (cy - 6) + 'px;width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(124,92,252,0.2);z-index:10"></div>';
+
+  // People dots
+  profiles.forEach(function(p, i) {
+    var score = p.matchScore || 0;
+    var angle = (i * 137.5 + 30) * Math.PI / 180;
     // Higher score = closer to center
-    var dist   = r * 0.90 * (1 - (score / 100) * 0.85);
-    var angle  = (i / Math.max(profiles.length, 1)) * 2 * Math.PI + (p.id ? (p.id.charCodeAt(0) * 0.4) : 0);
-    var x = cx + dist * Math.cos(angle);
-    var y = cy + dist * Math.sin(angle);
-    var col = colors[i % colors.length];
-    var dotR = score >= 60 ? 5 : score >= 40 ? 4 : 3;
-    var ini  = p.is_anon ? '?' : (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase().charAt(0);
-    return '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + dotR + '" fill="' + col + '" opacity="0.9"/>';
-  }).join('');
+    var dist = maxR * (1 - Math.min(score, 100) / 120); // score 100→close, score 0→edge
+    var x = cx + Math.cos(angle) * dist - 14;
+    var y = cy + Math.sin(angle) * dist - 14;
+    var name = p.is_anon ? '?' : (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    var col = p.is_anon ? 'var(--glass-border)' : colors[i % colors.length];
+    var avInner = p.avatar_url && !p.is_anon
+      ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+      : '<span style="font-size:0.5rem;font-weight:700;color:white">' + escHtml(name) + '</span>';
 
-  // Centre dot (you)
-  var centre = '<circle cx="' + cx + '" cy="' + cy + '" r="5" fill="var(--accent)"/>' +
-    '<circle cx="' + cx + '" cy="' + cy + '" r="2" fill="white"/>';
+    ringsHtml += '<div onclick="openRadarPerson(\'' + p.id + '\')" style="position:absolute;left:' + x + 'px;top:' + y + 'px;width:28px;height:28px;border-radius:50%;background:' + col + ';display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:5;overflow:hidden;border:2px solid var(--bg);box-shadow:0 1px 3px rgba(0,0,0,0.1);transition:transform 0.15s" onmousedown="this.style.transform=\'scale(0.9)\'" onmouseup="this.style.transform=\'\'" ontouchstart="this.style.transform=\'scale(0.9)\'" ontouchend="this.style.transform=\'\'">' + avInner + '</div>';
+  });
 
-  el.innerHTML = '<svg viewBox="0 0 ' + size + ' ' + size + '" width="' + size + '" height="' + size + '" xmlns="http://www.w3.org/2000/svg">' +
-    svgRings + crosshair + dots + centre + '</svg>';
+  container.innerHTML = ringsHtml;
 }
 
 // ══════════════════════════════════════════════════════════
-//  PROFILE NUDGE — contextual hint with progress bar
+//  HOME PROFILE NUDGE — show when profile is incomplete
 // ══════════════════════════════════════════════════════════
 function showProfileNudge() {
-  var el = document.getElementById('home-profile-nudge');
-  if (!el || !currentProfile) return;
-  var p = currentProfile;
-  var fields = [
-    { done: !!(p.name && p.name.trim()),                          hint: 'Tilføj dit navn' },
-    { done: !!(p.title && p.title.trim()),                        hint: 'Tilføj din titel' },
-    { done: !!(p.bio && p.bio.trim()),                            hint: 'Skriv en kort bio' },
-    { done: !!(p.sectors && p.sectors.length > 0),               hint: 'Vælg dine brancher i onboarding' },
-    { done: !!(p.life_phase),                                     hint: 'Angiv din livsfase' },
-    { done: !!(p.avatar_url),                                     hint: 'Upload et profilbillede' }
-  ];
-  var done  = fields.filter(function(f) { return f.done; }).length;
-  var total = fields.length;
-  var pct   = Math.round((done / total) * 100);
-  if (pct >= 100) { el.style.display = 'none'; return; }
-  var nextHint = fields.find(function(f) { return !f.done; });
-  el.style.display = 'block';
-  el.innerHTML =
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem">' +
-      '<span style="font-size:0.72rem;font-weight:600;color:var(--text)">Profil ' + pct + '% komplet</span>' +
-      '<button onclick="openEditProfile()" style="font-size:0.65rem;font-weight:600;color:var(--accent);background:none;border:none;cursor:pointer;padding:0">Udfyld →</button>' +
-    '</div>' +
-    '<div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:0.35rem">' +
-      '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;transition:width 0.5s"></div>' +
-    '</div>' +
-    '<div style="font-size:0.68rem;color:var(--muted)">' + (nextHint ? nextHint.hint : '') + '</div>';
+  var nudge = document.getElementById('home-profile-nudge');
+  if (!nudge || !currentProfile) return;
+
+  var hasName = !!currentProfile.name;
+  var hasTitle = !!currentProfile.title;
+  var hasBio = !!currentProfile.bio;
+  var hasInterests = (currentProfile.interests || []).length > 0;
+  var hasLifestage = !!currentProfile.lifestage;
+  var hasKeywords = (currentProfile.keywords || []).length >= 3;
+  var hasAvatar = !!currentProfile.avatar_url;
+
+  var items = [hasName, hasTitle, hasInterests, hasLifestage, hasKeywords, hasBio, hasAvatar];
+  var done = items.filter(Boolean).length;
+  var total = items.length;
+  var pct = Math.round(done / total * 100);
+
+  if (pct >= 100) {
+    nudge.style.display = 'none';
+    return;
+  }
+
+  nudge.style.display = 'block';
+  var bar = document.getElementById('nudge-bar-fill');
+  var hint = document.getElementById('nudge-hint');
+  if (bar) bar.style.width = pct + '%';
+  if (hint) {
+    if (!hasTitle) hint.textContent = 'Tilføj din titel → bedre matches';
+    else if (!hasBio) hint.textContent = 'Skriv en kort bio → folk finder dig';
+    else if (!hasAvatar) hint.textContent = 'Tilføj profilbillede → mere tillid';
+    else hint.textContent = pct + '% komplet — tilføj mere';
+  }
 }
 
-
+// ══════════════════════════════════════════════════════════
+//  HOME BUBBLES — horizontal scroll pills
+// ══════════════════════════════════════════════════════════
+async function loadHomeBubblePills() {
+  try {
+    var scroll = document.getElementById('home-bubbles-scroll');
+    if (!scroll) return;
+    var { data: memberships } = await sb.from('bubble_members').select('bubble_id, bubbles(id,name,type,icon_url)').eq('user_id', currentUser.id);
+    if (!memberships || memberships.length === 0) {
+      scroll.innerHTML = '<div style="font-size:0.72rem;color:var(--muted);padding:0.4rem">Ingen bobler endnu — <span style="color:var(--accent);cursor:pointer" onclick="goTo(\'screen-discover\')">udforsk →</span></div>';
+      return;
+    }
+    var colors = ['#7C5CFC','#3B82F6','#1A9E8E','#E879A8','#F59E0B','#EC4899','#10B981','#6366F1'];
+    scroll.innerHTML = memberships.map(function(m, i) {
+      var b = m.bubbles;
+      if (!b) return '';
+      var col = colors[i % colors.length];
+      return '<div onclick="openBubble(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.35rem;padding:0.45rem 0.75rem;border-radius:12px;background:#FFFFFF;border:1px solid var(--glass-border-subtle);flex-shrink:0;cursor:pointer;box-shadow:0 1px 2px rgba(30,27,46,0.04)">' +
+        '<div style="width:8px;height:8px;border-radius:50%;background:' + col + '"></div>' +
+        '<span style="font-size:0.75rem;font-weight:600;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis">' + escHtml(b.name) + '</span>' +
+      '</div>';
+    }).join('');
+  } catch(e) { logError('loadHomeBubblePills', e); }
+}
