@@ -151,6 +151,7 @@ function liveToggleListView() {
 function closeLiveCheckinModal() {
   stopLiveCamera();
   _scannerBubbleId = null;
+  _pendingScanCheckin = null;
   closeModal('modal-live-checkin');
 }
 
@@ -541,6 +542,53 @@ function liveQrPreviewLoop() {
 var _liveQrPending = false;
 var _liveQrResolvedBubble = null;
 var _scannerBubbleId = null; // Set when scanning from bubble info tab
+var _pendingScanCheckin = null; // { profile, bubbleId } — awaiting confirmation
+
+async function liveScanConfirmPersonCheckin() {
+  if (!_pendingScanCheckin) return;
+  var p = _pendingScanCheckin;
+  _pendingScanCheckin = null;
+  var found = document.getElementById('live-scan-found');
+  if (found) found.style.display = 'none';
+  var status = document.getElementById('live-scan-status');
+  if (status) { status.textContent = 'Checker ind...'; status.className = 'live-scan-status found'; status.style.display = ''; }
+  try {
+    var { data: existingMember } = await sb.from('bubble_members')
+      .select('id').eq('bubble_id', p.bubbleId).eq('user_id', p.profile.id).maybeSingle();
+    if (!existingMember) {
+      await sb.from('bubble_members').insert({
+        bubble_id: p.bubbleId,
+        user_id: p.profile.id,
+        checked_in_at: new Date().toISOString()
+      });
+    } else {
+      await sb.from('bubble_members').update({
+        checked_in_at: new Date().toISOString(),
+        checked_out_at: null
+      }).eq('bubble_id', p.bubbleId).eq('user_id', p.profile.id);
+    }
+    // Log scan
+    try { sb.from('qr_scans').insert({ bubble_id: p.bubbleId, scanned_by: currentUser.id, scanned_user: p.profile.id, scan_type: 'event_checkin' }); } catch(e2) {}
+    // Show success
+    var confirmed = document.getElementById('live-scan-confirmed');
+    var cName = document.getElementById('live-scan-confirmed-name');
+    var cMeta = document.getElementById('live-scan-confirmed-meta');
+    if (status) status.style.display = 'none';
+    if (cName) cName.textContent = '✓ ' + (p.profile.name || 'Bruger') + ' checked ind!';
+    if (cMeta) cMeta.textContent = (p.profile.title || '') + (p.profile.workplace ? ' · ' + p.profile.workplace : '');
+    if (confirmed) confirmed.style.display = 'flex';
+    showSuccessToast((p.profile.name || 'Bruger') + ' checked ind! ✓');
+    setTimeout(function() {
+      if (confirmed) confirmed.style.display = 'none';
+      if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; }
+      liveQrPreviewLoop();
+    }, 3000);
+  } catch(e) {
+    showToast('Check-in fejl: ' + (e.message || 'ukendt'));
+    if (status) { status.textContent = 'Fejl ved check-in'; status.className = 'live-scan-status error'; status.style.display = ''; }
+    setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
+  }
+}
 
 async function liveScanAutoResolve(data) {
   try {
@@ -625,42 +673,26 @@ async function liveScanAutoResolve(data) {
         
         if (scannedProfile) {
           if (status) status.style.display = 'none';
-          var confirmed = document.getElementById('live-scan-confirmed');
-          var cName = document.getElementById('live-scan-confirmed-name');
-          var cMeta = document.getElementById('live-scan-confirmed-meta');
 
-          // If scanning from a specific bubble → auto-join + check-in
+          // If scanning from a specific bubble → show confirmation first
           if (_scannerBubbleId) {
-            try {
-              // Check if already member
-              var { data: existingMember } = await sb.from('bubble_members')
-                .select('id').eq('bubble_id', _scannerBubbleId).eq('user_id', scannedProfile.id).maybeSingle();
-              if (!existingMember) {
-                // Add as member
-                await sb.from('bubble_members').insert({
-                  bubble_id: _scannerBubbleId,
-                  user_id: scannedProfile.id,
-                  checked_in_at: new Date().toISOString()
-                });
-              } else {
-                // Already member — update check-in
-                await sb.from('bubble_members').update({
-                  checked_in_at: new Date().toISOString(),
-                  checked_out_at: null
-                }).eq('bubble_id', _scannerBubbleId).eq('user_id', scannedProfile.id);
-              }
-              if (cName) cName.textContent = '✓ ' + (scannedProfile.name || 'Bruger') + ' checked ind!';
-              if (cMeta) cMeta.textContent = (scannedProfile.title || '') + (scannedProfile.workplace ? ' · ' + scannedProfile.workplace : '');
-              showSuccessToast((scannedProfile.name || 'Bruger') + ' checked ind! ✓');
-              // Log scan
-              try { sb.from('qr_scans').insert({ bubble_id: _scannerBubbleId, scanned_by: currentUser.id, scanned_user: scannedProfile.id, scan_type: 'event_checkin' }); } catch(e2) {}
-            } catch(joinErr) {
-              if (cName) cName.textContent = '⚠ ' + (scannedProfile.name || 'Bruger') + ' — fejl ved check-in';
-              if (cMeta) cMeta.textContent = joinErr.message || 'Ukendt fejl';
-              showToast('Check-in fejl: ' + (joinErr.message || 'ukendt'));
-            }
+            // Store pending data for confirm button
+            _pendingScanCheckin = { profile: scannedProfile, bubbleId: _scannerBubbleId };
+            var found = document.getElementById('live-scan-found');
+            var fName = document.getElementById('live-scan-found-name');
+            var fMeta = document.getElementById('live-scan-found-meta');
+            var fBtn = document.getElementById('live-scan-confirm-btn');
+            if (fName) fName.textContent = scannedProfile.name || 'Bruger';
+            if (fMeta) fMeta.textContent = (scannedProfile.title || '') + (scannedProfile.workplace ? ' · ' + scannedProfile.workplace : '');
+            if (fBtn) { fBtn.textContent = 'Check ' + (scannedProfile.name || 'bruger').split(' ')[0] + ' ind'; fBtn.onclick = function() { liveScanConfirmPersonCheckin(); }; }
+            if (found) found.style.display = 'block';
+            _liveQrPending = false;
+            return;
           } else {
             // No bubble context — just save as contact
+            var confirmed = document.getElementById('live-scan-confirmed');
+            var cName = document.getElementById('live-scan-confirmed-name');
+            var cMeta = document.getElementById('live-scan-confirmed-meta');
             if (cName) cName.textContent = '✓ ' + (scannedProfile.name || 'Bruger') + ' fundet!';
             if (cMeta) cMeta.textContent = (scannedProfile.title || '') + (scannedProfile.workplace ? ' · ' + scannedProfile.workplace : '');
             showSuccessToast((scannedProfile.name || 'Bruger') + ' scannet! ✓');
@@ -803,6 +835,7 @@ function liveScanReset() {
   _liveQrPending = false;
   _liveQrFound = null;
   _liveQrResolvedBubble = null;
+  _pendingScanCheckin = null;
   document.getElementById('live-scan-found').style.display = 'none';
   var status = document.getElementById('live-scan-status');
   if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; }
