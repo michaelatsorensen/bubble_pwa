@@ -26,6 +26,12 @@ async function preloadAllData() {
 //  CHAT INPUT EVENT LISTENERS (bind exactly once on load)
 // ══════════════════════════════════════════════════════════
 window.addEventListener('load', () => {
+  // Safari reflow hack — force recalc of safe-area/viewport
+  requestAnimationFrame(function() {
+    document.body.style.height = '100.1dvh';
+    setTimeout(function() { document.body.style.height = ''; }, 50);
+  });
+
   const bcInput = document.getElementById('bc-input');
   if (bcInput) {
     bcInput.addEventListener('keydown', (e) => {
@@ -77,7 +83,7 @@ document.addEventListener('click', (e) => {
   const id = el.dataset.id;
   const from = el.dataset.from;
   switch (action) {
-    case 'openBubble': openBubble(id); break;
+    case 'openBubble': openBubble(id, from); break;
     case 'openPerson': openPerson(id, from); break;
     case 'openChat': openChat(id, from); break;
     case 'joinBubble': joinBubble(id); break;
@@ -519,6 +525,13 @@ function eventSignupGoogle() {
   setTimeout(function() { handleGoogleLogin(); }, 200);
 }
 
+function eventSignupLinkedIn() {
+  sessionStorage.setItem('event_flow', 'true');
+  goTo('screen-auth');
+  showAuthForms();
+  setTimeout(function() { handleLinkedInLogin(); }, 200);
+}
+
 function eventSignupEmail() {
   sessionStorage.setItem('event_flow', 'true');
   goTo('screen-auth');
@@ -530,7 +543,7 @@ function eventSignupApple() {
   sessionStorage.setItem('event_flow', 'true');
   goTo('screen-auth');
   showAuthForms();
-  setTimeout(function() { if (typeof appleSignIn === 'function') appleSignIn(); }, 200);
+  setTimeout(function() { handleAppleLogin(); }, 200);
 }
 
 function eventLoginExisting() {

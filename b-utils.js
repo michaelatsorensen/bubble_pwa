@@ -301,9 +301,10 @@ function toggleChatMenu(mode) {
   if (!isOpen) {
     menu.classList.add('open');
     if (btn) btn.classList.add('open');
-    // Close on outside tap
+    // Close on outside tap — remove first to prevent stacking
     setTimeout(function() {
-      document.addEventListener('click', _closeChatMenuOutside, { once: true });
+      document.removeEventListener('click', _closeChatMenuOutside);
+      document.addEventListener('click', _closeChatMenuOutside);
     }, 10);
   }
 }
@@ -316,6 +317,7 @@ function _closeChatMenuOutside(e) {
   if (e.target.closest('.chat-plus-menu') || e.target.closest('.chat-plus-btn')) return;
   document.querySelectorAll('.chat-plus-menu.open').forEach(function(m) { m.classList.remove('open'); });
   document.querySelectorAll('.chat-plus-btn.open').forEach(function(b) { b.classList.remove('open'); });
+  document.removeEventListener('click', _closeChatMenuOutside);
 }
 
 // ── Skeleton loading states ──

@@ -682,6 +682,22 @@ async function loadProfile() {
 
     await Promise.all([loadSavedContacts(), loadMyBubbles(), loadProfileInvitations(), loadDashboard()]);
 
+    // Quick stats (always visible above tabs)
+    var qs = document.getElementById('prof-quick-stats');
+    if (qs && currentUser) {
+      try {
+        var [qViews, qSaved, qBubbles] = await Promise.all([
+          sb.from('profile_views').select('*', { count: 'exact', head: true }).eq('viewed_id', currentUser.id).then(function(r) { return r.count || 0; }).catch(function() { return 0; }),
+          sb.from('saved_contacts').select('*', { count: 'exact', head: true }).eq('contact_id', currentUser.id).then(function(r) { return r.count || 0; }).catch(function() { return 0; }),
+          sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).then(function(r) { return r.count || 0; }).catch(function() { return 0; })
+        ]);
+        function qStat(val, label) {
+          return '<div style="text-align:center;flex:1"><div style="font-size:1rem;font-weight:800;color:var(--text)">' + val + '</div><div style="font-size:0.6rem;color:var(--text-secondary);font-weight:500">' + label + '</div></div>';
+        }
+        qs.innerHTML = qStat(qViews, 'Visninger') + qStat(qSaved, 'Gemt dig') + qStat(qBubbles, 'Bobler');
+      } catch(e) { qs.innerHTML = ''; }
+    }
+
     // Admin panel — only for admin UID
     var adminPanel = document.getElementById('admin-panel');
     if (adminPanel) {

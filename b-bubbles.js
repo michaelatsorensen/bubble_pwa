@@ -258,7 +258,7 @@ async function openTransferOwnership(bubbleId) {
       .neq('user_id', currentUser.id);
     if (!members || members.length === 0) { showToast('Ingen medlemmer at overdrage til'); return; }
     _buildMemberSheet(
-      ico('crown') + ' Overdrag ejerskab',
+      '<span style="display:inline-flex;align-items:center;gap:0.3rem">' + ico('crown').replace('<svg ','<svg style="width:1.1rem;height:1.1rem" ') + ' Overdrag ejerskab</span>',
       'Vælg det nye medlem der skal overtage som ejer. Du beholder dit medlemskab.',
       members,
       '_selectTransferTarget.bind(null,\\\'' + bubbleId + '\\\')'
@@ -299,7 +299,7 @@ async function openAdminDesignation(bubbleId) {
       .neq('user_id', currentUser.id);
     if (!members || members.length === 0) { showToast('Ingen medlemmer at udpege'); return; }
     _buildMemberSheet(
-      ico('crown') + ' Udpeg admin',
+      '<span style="display:inline-flex;align-items:center;gap:0.3rem">' + ico('crown').replace('<svg ','<svg style="width:1.1rem;height:1.1rem" ') + ' Udpeg admin</span>',
       'Admins kan redigere boblen, invitere og fjerne medlemmer.',
       members,
       'dummy'

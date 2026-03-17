@@ -628,6 +628,36 @@ async function handleGoogleLogin() {
 }
 
 // ══════════════════════════════════════════════════════════
+//  LINKEDIN LOGIN
+// ══════════════════════════════════════════════════════════
+async function handleLinkedInLogin() {
+  try {
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'linkedin_oidc',
+      options: {
+        redirectTo: window.location.origin + window.location.pathname
+      }
+    });
+    if (error) showToast('LinkedIn login fejl: ' + error.message);
+  } catch(e) { logError("handleLinkedInLogin", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  APPLE LOGIN
+// ══════════════════════════════════════════════════════════
+async function handleAppleLogin() {
+  try {
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'apple',
+      options: {
+        redirectTo: window.location.origin + window.location.pathname
+      }
+    });
+    if (error) showToast('Apple login fejl: ' + error.message);
+  } catch(e) { logError("handleAppleLogin", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+// ══════════════════════════════════════════════════════════
 //  PERSONAL QR CODE
 // ══════════════════════════════════════════════════════════
 async function openMyQR() {

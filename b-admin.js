@@ -99,29 +99,67 @@ async function adminLoadStats() {
     // Saved contacts count
     var { count: savedCount } = await sb.from('saved_contacts').select('*', { count: 'exact', head: true });
 
+    // ── Activity analytics ──
+    var now = new Date();
+    var day1 = new Date(now - 24*3600000).toISOString();
+    var day7 = new Date(now - 7*24*3600000).toISOString();
+    var day30 = new Date(now - 30*24*3600000).toISOString();
+
+    var [dauRes, wauRes, mauRes, viewsRes, connectionsRes, bcMsgRes, analyticsRes] = await Promise.all([
+      sb.from('analytics').select('user_id', { count: 'exact', head: false }).eq('event_type', 'app_open').gte('created_at', day1).then(function(r) { return new Set((r.data||[]).map(function(a){return a.user_id;})).size; }).catch(function(){return 0;}),
+      sb.from('analytics').select('user_id', { count: 'exact', head: false }).eq('event_type', 'app_open').gte('created_at', day7).then(function(r) { return new Set((r.data||[]).map(function(a){return a.user_id;})).size; }).catch(function(){return 0;}),
+      sb.from('analytics').select('user_id', { count: 'exact', head: false }).eq('event_type', 'app_open').gte('created_at', day30).then(function(r) { return new Set((r.data||[]).map(function(a){return a.user_id;})).size; }).catch(function(){return 0;}),
+      sb.from('profile_views').select('*', { count: 'exact', head: true }).gte('created_at', day7).catch(function(){return {count:0};}),
+      sb.from('saved_contacts').select('*', { count: 'exact', head: true }).gte('created_at', day7).catch(function(){return {count:0};}),
+      sb.from('bubble_messages').select('*', { count: 'exact', head: true }).gte('created_at', day7).catch(function(){return {count:0};}),
+      sb.from('analytics').select('event_type').gte('created_at', day7).then(function(r) { return r.data || []; }).catch(function(){return [];})
+    ]);
+
+    // Feature heatmap
+    var featureCount = {};
+    analyticsRes.forEach(function(a) { featureCount[a.event_type] = (featureCount[a.event_type] || 0) + 1; });
+    var featureList = Object.entries(featureCount).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+    var featureHtml = featureList.map(function(f) {
+      var maxVal = featureList[0] ? featureList[0][1] : 1;
+      var pct = Math.round((f[1]/maxVal)*100);
+      return '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.2rem">' +
+        '<div style="width:100px;font-size:0.62rem;color:var(--text-secondary);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(f[0]) + '</div>' +
+        '<div style="flex:1;height:12px;background:var(--glass-bg-strong);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:var(--gradient-primary);border-radius:4px"></div></div>' +
+        '<div style="width:24px;font-size:0.62rem;font-weight:700;color:var(--accent);text-align:right">' + f[1] + '</div></div>';
+    }).join('');
+
     el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem">' +
-      adminStatCard('Brugere', userCount || 0, '#7C5CFC', 'Antal registrerede profiler i Bubble. Inkluderer alle der har oprettet en konto.') +
-      adminStatCard('Live nu', liveCount || 0, '#1A9E8E', 'Brugere der er checked ind i en Live Bubble inden for de sidste 4 timer.') +
-      adminStatCard('Bannede', bannedCount || 0, '#3B82F6', 'Brugere der er banned via admin panel. De kan ikke logge ind og er usynlige på radar.') +
+      adminStatCard('Brugere', userCount || 0, '#7C5CFC', 'Antal registrerede profiler.') +
+      adminStatCard('Live nu', liveCount || 0, '#1A9E8E', 'Checked ind inden for de sidste 4 timer.') +
+      adminStatCard('Bannede', bannedCount || 0, '#3B82F6', 'Bannede brugere.') +
+      '</div>' +
+      '<div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin:0.6rem 0 0.3rem">Aktivitet</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem">' +
+      adminStatCard('DAU', dauRes, '#1A9E8E', 'Unikke brugere der åbnede appen de seneste 24 timer.') +
+      adminStatCard('WAU', wauRes, '#2ECFCF', 'Unikke brugere de seneste 7 dage.') +
+      adminStatCard('MAU', mauRes, '#7C5CFC', 'Unikke brugere de seneste 30 dage.') +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
-      adminStatCard('Bobler', bubbleCount || 0, '#2ECFCF', 'Samlet antal bobler (offentlige + private + skjulte). Inkluderer alle typer.') +
-      adminStatCard('Offentlige', publicBubbles || 0, '#2ECFCF', 'Bobler synlige for alle på Opdag-skærmen. Alle kan joine dem.') +
-      adminStatCard('Private', (privateBubbles||0) + '+' + (hiddenBubbles||0), '#E879A8', 'Private + skjulte bobler. Private kræver invitation. Skjulte er usynlige i Opdag men kan joines via direkte link.') +
+      adminStatCard('Visninger /7d', viewsRes.count || 0, '#E879A8', 'Profilvisninger de seneste 7 dage.') +
+      adminStatCard('Connections /7d', connectionsRes.count || 0, '#1A9E8E', 'Nye gemte kontakter de seneste 7 dage.') +
+      adminStatCard('Boble-msg /7d', bcMsgRes.count || 0, '#7C5CFC', 'Boble-chat beskeder de seneste 7 dage.') +
+      '</div>' +
+      '<div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin:0.6rem 0 0.3rem">Feature-brug (7 dage)</div>' +
+      '<div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:0.6rem 0.75rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">' + (featureHtml || '<div style="font-size:0.72rem;color:var(--muted)">Ingen analytics data</div>') + '</div>' +
+      '<div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin:0.6rem 0 0.3rem">System</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem">' +
+      adminStatCard('Bobler', bubbleCount || 0, '#2ECFCF', 'Samlet antal bobler.') +
+      adminStatCard('Offentlige', publicBubbles || 0, '#2ECFCF', 'Synlige for alle.') +
+      adminStatCard('Private', (privateBubbles||0) + '+' + (hiddenBubbles||0), '#E879A8', 'Private + skjulte.') +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
-      adminStatCard('Beskeder', msgCount || 0, '#7C5CFC', 'Samlet antal direkte beskeder (DMs) sendt mellem brugere. Inkluderer tekst, GIFs og filer.') +
-      adminStatCard('Rapporter', reportCount || 0, '#3B82F6', 'Antal brugerrapporter modtaget. Se detaljer i Rapporterede brugere ovenfor.') +
-      adminStatCard('Feedback', feedbackCount || 0, '#3B82F6', 'Antal feedback-beskeder sendt via Giv Feedback knappen på hjem-skærmen.') +
-      '</div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
-      adminStatCard('Medlemskaber', membershipCount || 0, '#2ECFCF', 'Samlet antal boble-medlemskaber. Én bruger i 3 bobler = 3 medlemskaber. Viser engagement — jo højere ratio pr. bruger, jo mere aktive er de.') +
-      adminStatCard('Gemte kontakter', savedCount || 0, '#2ECFCF', 'Antal gange en bruger har gemt en andens profil. Viser hvor meget networking der sker.') +
-      adminStatCard('Gns. tags', avgTags, '#1A9E8E', 'Gennemsnitligt antal tags per profil der har tags. Højere = bedre matchkvalitet på radar.') +
+      adminStatCard('DMs', msgCount || 0, '#7C5CFC', 'Direkte beskeder.') +
+      adminStatCard('Medlemskaber', membershipCount || 0, '#2ECFCF', 'Boble-medlemskaber.') +
+      adminStatCard('Gemte', savedCount || 0, '#2ECFCF', 'Gemte kontakter.') +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
-      adminStatCard('Profiler m/ tags', taggedCount + '/' + (userCount||0), '#F5C35A', 'Hvor mange profiler der har mindst 1 tag vs. totalt antal brugere. Profiler uden tags matcher dårligt på radar.') +
-      adminStatCard('Tags i alt', totalTags, '#F5C35A', 'Samlet antal tags på tværs af alle profiler. Divideret med profiler m/ tags = gennemsnittet.') +
+      adminStatCard('Profiler m/ tags', taggedCount + '/' + (userCount||0), '#F5C35A', 'Profiler med mindst 1 tag.') +
+      adminStatCard('Gns. tags', avgTags, '#F5C35A', 'Gennemsnitligt antal tags.') +
       '</div>';
   } catch(e) { el.innerHTML = '<div style="color:var(--accent2)">Fejl: ' + escHtml(e.message) + '</div>'; }
   } catch(e) { logError("adminLoadStats", e); }

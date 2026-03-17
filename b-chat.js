@@ -603,7 +603,14 @@ function bcOpenContext(e, btn, isMe, msgId) {
   if (top + 200 > window.innerHeight) top = r.top - 200;
   menu.style.top = top + 'px';
   menu.style.left = left + 'px';
-  setTimeout(() => document.addEventListener('click', bcCloseContext, {once:true}), 10);
+  // Remove first to prevent stacking, then add
+  document.removeEventListener('click', _bcCloseContextHandler);
+  setTimeout(function() { document.addEventListener('click', _bcCloseContextHandler); }, 10);
+}
+
+function _bcCloseContextHandler() {
+  bcCloseContext();
+  document.removeEventListener('click', _bcCloseContextHandler);
 }
 
 async function bcReact(emoji) {
