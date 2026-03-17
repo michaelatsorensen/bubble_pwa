@@ -110,25 +110,5 @@ function goTo(screenId) {
   }
 }
 
-// ══════════════════════════════════════════════════════════
-//  Fix 3: Safe-area detection — only use in standalone PWA
-// ══════════════════════════════════════════════════════════
-function updateBottomSafeInset() {
-  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  if (!isStandalone) {
-    document.documentElement.style.setProperty('--bottom-safe', '0px');
-    return;
-  }
-  // iPhone bottom safe area is ~34px. Use conservative fixed value
-  // to avoid Safari first-render bugs with env(safe-area-inset-bottom)
-  document.documentElement.style.setProperty('--bottom-safe', '34px');
-}
-window.addEventListener('load', function() {
-  updateBottomSafeInset();
-  requestAnimationFrame(function() {
-    updateBottomSafeInset();
-    setTimeout(updateBottomSafeInset, 120);
-  });
-});
-window.addEventListener('resize', updateBottomSafeInset);
-window.addEventListener('orientationchange', updateBottomSafeInset);
+// Nav is now in document flow (not fixed), so env(safe-area-inset-bottom)
+// is handled by CSS directly. No JS safe-area management needed.

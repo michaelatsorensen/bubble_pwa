@@ -1509,7 +1509,8 @@ function psClose() {
 //  SCANNER FROM BUBBLE — opens live scanner in context
 // ══════════════════════════════════════════════════════════
 function openBubbleScannerFromInfo(bubbleId) {
-  // Open the live checkin modal with scanner active
+  // Store which bubble we're scanning for
+  _scannerBubbleId = bubbleId;
   openLiveCheckin();
   showToast('Scanner klar — scan en deltagers QR-kode');
 }

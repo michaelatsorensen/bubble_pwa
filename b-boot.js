@@ -26,12 +26,6 @@ async function preloadAllData() {
 //  CHAT INPUT EVENT LISTENERS (bind exactly once on load)
 // ══════════════════════════════════════════════════════════
 window.addEventListener('load', () => {
-  // Safari reflow hack — force recalc of safe-area/viewport
-  requestAnimationFrame(function() {
-    document.body.style.height = '100.1dvh';
-    setTimeout(function() { document.body.style.height = ''; }, 50);
-  });
-
   const bcInput = document.getElementById('bc-input');
   if (bcInput) {
     bcInput.addEventListener('keydown', (e) => {
