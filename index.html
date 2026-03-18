@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=5000">
+<link rel="manifest" href="manifest.json?v=4500">
 <link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=2">
 <link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=2">
 <link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=2">
@@ -17,27 +17,27 @@
 <link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=2">
 <link rel="apple-touch-icon" href="bubble-icon-180.png?v=2">
 
-<link rel="stylesheet" href="app.css?v=5000">
+<link rel="stylesheet" href="app.css?v=4500">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=5000" defer></script>
-<script src="tag-data.js?v=5000" defer></script>
-<script src="b-config.js?v=5000" defer></script>
-<script src="b-utils.js?v=5000" defer></script>
-<script src="b-navigation.js?v=5000" defer></script>
-<script src="b-auth.js?v=5000" defer></script>
-<script src="b-home.js?v=5000" defer></script>
-<script src="b-bubbles.js?v=5000" defer></script>
-<script src="b-profile.js?v=5000" defer></script>
-<script src="b-radar.js?v=5000" defer></script>
-<script src="b-messages.js?v=5000" defer></script>
-<script src="b-realtime.js?v=5000" defer></script>
-<script src="b-onboarding.js?v=5000" defer></script>
-<script src="b-chat.js?v=5000" defer></script>
-<script src="b-notifications.js?v=5000" defer></script>
-<script src="b-live.js?v=5000" defer></script>
-<script src="b-admin.js?v=5000" defer></script>
-<script src="b-boot.js?v=5000" defer></script>
+<script src="bubble-icons.js?v=5001" defer></script>
+<script src="tag-data.js?v=5001" defer></script>
+<script src="b-config.js?v=5001" defer></script>
+<script src="b-utils.js?v=5001" defer></script>
+<script src="b-navigation.js?v=5001" defer></script>
+<script src="b-auth.js?v=5001" defer></script>
+<script src="b-home.js?v=5001" defer></script>
+<script src="b-bubbles.js?v=5001" defer></script>
+<script src="b-profile.js?v=5001" defer></script>
+<script src="b-radar.js?v=5001" defer></script>
+<script src="b-messages.js?v=5001" defer></script>
+<script src="b-realtime.js?v=5001" defer></script>
+<script src="b-onboarding.js?v=5001" defer></script>
+<script src="b-chat.js?v=5001" defer></script>
+<script src="b-notifications.js?v=5001" defer></script>
+<script src="b-live.js?v=5001" defer></script>
+<script src="b-admin.js?v=5001" defer></script>
+<script src="b-boot.js?v=5001" defer></script>
   
 
 
@@ -699,26 +699,10 @@
 
     <!-- ═══ RADAR HERO (borderless dartboard) ═══ -->
       <div data-hs="radar">
-        <!-- Canvas container — matches .proximity-map exactly -->
-        <div id="home-radar-dartboard" onclick="onDartboardTap(event)"
-             style="position:relative;width:100%;height:0;padding-bottom:min(100%,55vh);border-radius:16px;background:rgba(124,92,252,0.02);overflow:hidden;cursor:pointer">
-          <canvas id="home-prox-canvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
-          <div id="home-prox-avatars" style="position:absolute;inset:0"></div>
-          <div class="prox-center" id="home-prox-center">DU</div>
-          <!-- Spinner while loading -->
-          <div id="home-radar-spinner" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+        <div id="home-radar-dartboard" onclick="onDartboardTap(event)" style="position:relative;cursor:pointer;margin:0 -0.3rem">
+          <div id="home-radar-dots" style="position:relative;width:100%;height:270px;display:flex;align-items:center;justify-content:center">
             <div class="spinner" style="width:24px;height:24px"></div>
           </div>
-          <!-- Liste icon — bottom right corner -->
-          <button onclick="event.stopPropagation();openHomeTray()" title="Vis liste"
-                  style="position:absolute;bottom:10px;right:10px;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(30,27,46,0.08);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 4px rgba(30,27,46,0.08);z-index:10">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-              <circle cx="3" cy="6" r="1.2" fill="var(--text-secondary)" stroke="none"/>
-              <circle cx="3" cy="12" r="1.2" fill="var(--text-secondary)" stroke="none"/>
-              <circle cx="3" cy="18" r="1.2" fill="var(--text-secondary)" stroke="none"/>
-            </svg>
-          </button>
         </div>
         <!-- Filter chips under dartboard -->
         <div style="display:flex;gap:0.3rem;padding:0.4rem 0;overflow-x:auto;-webkit-overflow-scrolling:touch">
@@ -849,13 +833,11 @@
     <div class="topbar-title">Bobler</div>
     <button class="btn-sm btn-ghost" onclick="openCreateBubble()" style="font-size:0.75rem;padding:0.35rem 0.75rem">+ Ny</button>
   </div>
-  <!-- Mine / Udforsk toggle -->
   <div class="bubble-tabs" style="flex-shrink:0;position:sticky;top:0;z-index:5;background:var(--bg);margin:0.4rem 1.1rem 0;padding:3px">
     <button class="bubble-tab active" id="bb-tab-mine" onclick="bbSwitchTab('mine')">Mine</button>
     <button class="bubble-tab" id="bb-tab-explore" onclick="bbSwitchTab('explore')">Udforsk</button>
   </div>
   <div class="scroll-area" style="padding-top:0.5rem">
-    <!-- Mine panel: owned + joined bubbles -->
     <div id="bb-panel-mine">
       <div class="section-label" style="margin-top:0.25rem">Mine bobler</div>
       <div id="my-owned-bubbles-list"><div class="spinner"></div></div>
@@ -863,7 +845,6 @@
       <div id="my-bubbles-list"><div class="spinner"></div></div>
       <div id="suggested-bubbles-list"></div>
     </div>
-    <!-- Udforsk panel: discover all bubbles -->
     <div id="bb-panel-explore" style="display:none">
       <input class="input" type="search" placeholder="Søg bobler..." id="bubble-search" oninput="filterBubbles()" style="margin-bottom:1rem">
       <div class="section-label">Alle bobler</div>
@@ -885,7 +866,7 @@
   </div>
 </div>
 
-<!-- screen-discover: redirect shim — content moved to screen-bubbles Udforsk tab -->
+<!-- screen-discover: content moved to screen-bubbles Udforsk tab -->
 <div class="screen" id="screen-discover" style="display:none"></div>
 
 <!-- ════════════════════════════════════════
@@ -994,6 +975,9 @@
     <button class="bubble-tab" id="bc-tab-chat" onclick="bcSwitchTab('chat')">Chat <span class="bubble-tab-badge" id="bc-unread-badge" style="display:none">0</span></button>
     <button class="bubble-tab" id="bc-tab-info" onclick="bcSwitchTab('info')">Info</button>
   </div>
+
+  <!-- Parent bubble attribution chip (shown for events with a parent network bubble) -->
+  <div id="bc-parent-chip" style="display:none;padding:6px 12px 0"></div>
 
   <!-- Action bar: Invitér / Anbefal / QR -->
   <div class="bc-action-bar" id="bc-action-bar" style="display:none"></div>
@@ -1481,11 +1465,12 @@
 <div class="modal-overlay" id="modal-create-bubble" onclick="if(event.target===this)closeModal('modal-create-bubble')">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">Opret netværk</div>
+    <div class="modal-title">Opret boble</div>
     <div class="input-group">
       <div class="input-label">Navn</div>
       <input class="input" id="cb-name" placeholder="f.eks. Startup Sønderborg">
     </div>
+    <div id="cb-parent-label" style="display:none;font-size:0.7rem;font-weight:700;color:#2ECFCF;background:rgba(46,207,207,0.08);border:1px solid rgba(46,207,207,0.2);border-radius:8px;padding:5px 10px;margin-bottom:4px"></div>
     <div class="input-group">
       <div class="input-label">Type</div>
       <select class="input" id="cb-type">

@@ -67,8 +67,7 @@ function goTo(screenId) {
   try {
     const navMap = {
       'screen-home': 0, 'screen-bubble-chat': -1,
-      'screen-bubbles': 1,
-      'screen-discover': 1,
+      'screen-bubbles': 1, 'screen-discover': 1,
       'screen-messages': 2, 'screen-chat': -1,
       'screen-profile': 3,
       'screen-notifications': -1, 'screen-person': -1,

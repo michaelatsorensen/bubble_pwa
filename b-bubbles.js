@@ -401,12 +401,53 @@ function openCreateBubble() {
   openModal('modal-create-picker');
 }
 
+function openCreateEventFromBubble(parentBubbleId) {
+  // Pre-fill create modal as event type, with parent bubble id stored
+  cbChips = [];
+  document.getElementById('cb-name').value = '';
+  document.getElementById('cb-desc').value = '';
+  document.getElementById('cb-location').value = '';
+  renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
+  // Store parent bubble id on the modal for use in createBubble()
+  var modal = document.getElementById('modal-create-bubble');
+  if (modal) modal.dataset.parentBubbleId = parentBubbleId;
+  openModal('modal-create-bubble');
+  setTimeout(function() {
+    initInputConfirmButtons();
+    // Force event type selected, hide type picker
+    var typeSelect = document.getElementById('cb-type');
+    if (typeSelect) typeSelect.value = 'event';
+    cbRenderPillSelect('cb-type', [
+      { value: 'event', icon: 'calendar', label: 'Event' }
+    ]);
+    cbRenderPillSelect('cb-visibility', [
+      { value: 'public',  icon: 'globe', label: 'Offentlig' },
+      { value: 'private', icon: 'lock',  label: 'Privat' },
+      { value: 'hidden',  icon: 'eye',   label: 'Skjult' }
+    ]);
+    // Show parent attribution label
+    var parentLabel = document.getElementById('cb-parent-label');
+    if (parentLabel) parentLabel.style.display = 'block';
+    // Fetch parent name async
+    sb.from('bubbles').select('name').eq('id', parentBubbleId).maybeSingle().then(function(r) {
+      if (r.data && parentLabel) {
+        parentLabel.textContent = 'Event under: ' + r.data.name;
+      }
+    }).catch(function() {});
+  }, 50);
+}
+
 function openCreateNetworkModal() {
   cbChips = [];
   document.getElementById('cb-name').value = '';
   document.getElementById('cb-desc').value = '';
   document.getElementById('cb-location').value = '';
   renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
+  // Clear any lingering parent bubble state
+  var modal = document.getElementById('modal-create-bubble');
+  if (modal) delete modal.dataset.parentBubbleId;
+  var parentLabel = document.getElementById('cb-parent-label');
+  if (parentLabel) { parentLabel.style.display = 'none'; parentLabel.textContent = ''; }
   openModal('modal-create-bubble');
   setTimeout(function() {
     initInputConfirmButtons();
@@ -469,10 +510,18 @@ async function createBubble() {
     const location = document.getElementById('cb-location').value.trim();
     if (!name) return showToast('Navn er påkrævet');
     const visibility = document.getElementById('cb-visibility')?.value || 'public';
-    const { data: bubble, error } = await sb.from('bubbles').insert({
+    // Pick up parent bubble id if set (from openCreateEventFromBubble)
+    var modal = document.getElementById('modal-create-bubble');
+    var parentBubbleId = (modal && modal.dataset.parentBubbleId) || null;
+    if (modal) delete modal.dataset.parentBubbleId;
+    var parentLabel = document.getElementById('cb-parent-label');
+    if (parentLabel) { parentLabel.style.display = 'none'; parentLabel.textContent = ''; }
+    const insertData = {
       name, type, type_label: typeLabel(type), description: desc, location,
       keywords: cbChips, created_by: currentUser.id, visibility
-    }).select().single();
+    };
+    if (parentBubbleId) insertData.parent_bubble_id = parentBubbleId;
+    const { data: bubble, error } = await sb.from('bubbles').insert(insertData).select().single();
     if (error) return showToast('Fejl: ' + error.message);
     // Auto-join
     await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id });

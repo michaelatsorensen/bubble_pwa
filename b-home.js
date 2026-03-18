@@ -162,21 +162,22 @@ async function openQuickLiveBubble() {
 }
 
 function bbSwitchTab(tab) {
-  var networkPanel = document.getElementById('bb-panel-network');
-  var livePanel = document.getElementById('bb-panel-live');
-  var networkTab = document.getElementById('bb-tab-network');
-  var liveTab = document.getElementById('bb-tab-live');
-  if (tab === 'live') {
-    if (networkPanel) networkPanel.style.display = 'none';
-    if (livePanel) livePanel.style.display = 'block';
-    if (networkTab) networkTab.classList.remove('active');
-    if (liveTab) liveTab.classList.add('active');
-    bbLoadLivePanel();
+  var minePanel    = document.getElementById('bb-panel-mine');
+  var explorePanel = document.getElementById('bb-panel-explore');
+  var mineTab      = document.getElementById('bb-tab-mine');
+  var exploreTab   = document.getElementById('bb-tab-explore');
+  if (tab === 'explore') {
+    if (minePanel)    minePanel.style.display    = 'none';
+    if (explorePanel) explorePanel.style.display = 'block';
+    if (mineTab)      mineTab.classList.remove('active');
+    if (exploreTab)   exploreTab.classList.add('active');
+    loadDiscover();
   } else {
-    if (networkPanel) networkPanel.style.display = 'block';
-    if (livePanel) livePanel.style.display = 'none';
-    if (networkTab) networkTab.classList.add('active');
-    if (liveTab) liveTab.classList.remove('active');
+    if (minePanel)    minePanel.style.display    = 'block';
+    if (explorePanel) explorePanel.style.display = 'none';
+    if (mineTab)      mineTab.classList.add('active');
+    if (exploreTab)   exploreTab.classList.remove('active');
+    loadMyBubbles();
   }
 }
 
@@ -313,14 +314,14 @@ async function loadMyBubbles() {
 
     if (!memberships || memberships.length === 0) {
       ownedList.innerHTML  = '';
-      joinedList.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke med i nogen bobler endnu</div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.82rem;padding:0.6rem 1.5rem">Opdag bobler →</button></div><div style="margin-top:0.5rem"><button class="btn-secondary" onclick="openCreateBubble()" style="font-size:0.78rem;padding:0.5rem 1.2rem">+ Opret en boble</button></div></div>';
+      joinedList.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke med i nogen bobler endnu</div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-bubbles\');bbSwitchTab(\'explore\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">Opdag bobler →</button></div><div style="margin-top:0.5rem"><button class="btn-secondary" onclick="openCreateBubble()" style="font-size:0.78rem;padding:0.5rem 1.2rem">+ Opret en boble</button></div></div>';
       var profBubblesEl = document.getElementById('profile-bubbles');
       if (profBubblesEl) {
         profBubblesEl.innerHTML = '<div style="text-align:center;padding:2rem 1rem">' +
           '<div style="width:44px;height:44px;margin:0 auto 0.7rem;opacity:0.4;color:var(--accent)">' + ico('bubble') + '</div>' +
           '<div style="font-size:0.85rem;font-weight:700;margin-bottom:0.25rem">Ingen bobler endnu</div>' +
           '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.4">Bobler er fællesskaber og events. Udforsk og join din første!</div>' +
-          '<button onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(124,92,252,0.12);color:var(--accent);border:1px solid rgba(124,92,252,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
+          '<button onclick="goTo(\'screen-bubbles\');bbSwitchTab(\'explore\')" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(124,92,252,0.12);color:var(--accent);border:1px solid rgba(124,92,252,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
           '</div>';
       }
       return;
@@ -396,7 +397,7 @@ async function loadMyBubbles() {
           '<div style="width:44px;height:44px;margin:0 auto 0.7rem;opacity:0.4;color:var(--accent)">' + ico('bubble') + '</div>' +
           '<div style="font-size:0.85rem;font-weight:700;margin-bottom:0.25rem">Ingen bobler endnu</div>' +
           '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.4">Bobler er fællesskaber og events. Udforsk og join din første!</div>' +
-          '<button onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(124,92,252,0.12);color:var(--accent);border:1px solid rgba(124,92,252,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
+          '<button onclick="goTo(\'screen-bubbles\');bbSwitchTab(\'explore\')" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(124,92,252,0.12);color:var(--accent);border:1px solid rgba(124,92,252,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
           '</div>';
       } else {
         profBubblesEl.innerHTML = bubbles.map(function(b) {
@@ -870,121 +871,73 @@ function onDartboardTap(event) {
   openHomeTray();
 }
 
-function _homeDrawProxRings(canvas) {
-  if (!canvas) return;
-  var par = canvas.parentElement; if (!par) return;
-  var w = par.offsetWidth || 300, h = w;
-  canvas.width = w*2; canvas.height = h*2; canvas.style.width = w+'px'; canvas.style.height = h+'px';
-  var ctx = canvas.getContext('2d'); ctx.scale(2,2); ctx.clearRect(0,0,w,h);
-  var cx = w/2, cy = h/2, maxR = Math.min(cx, cy);
-  var zones = [
-    { r: 0.10, fill: 'rgba(124,92,252,0.18)' },
-    { r: 0.26, fill: 'rgba(124,92,252,0.10)' },
-    { r: 0.42, fill: 'rgba(46,207,207,0.08)' },
-    { r: 0.58, fill: 'rgba(107,139,255,0.06)' },
-    { r: 0.74, fill: 'rgba(139,92,246,0.04)' },
-    { r: 0.90, fill: 'rgba(124,92,252,0.02)' },
-  ];
-  for (var i = zones.length - 1; i >= 0; i--) {
-    ctx.beginPath(); ctx.arc(cx, cy, zones[i].r * maxR, 0, Math.PI*2);
-    ctx.fillStyle = zones[i].fill; ctx.fill();
-  }
-  for (var i = 0; i < zones.length; i++) {
-    ctx.beginPath(); ctx.arc(cx, cy, zones[i].r * maxR, 0, Math.PI*2);
-    ctx.strokeStyle = 'rgba(30,27,46,0.08)'; ctx.lineWidth = 1; ctx.stroke();
-  }
-  var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, zones[0].r * maxR);
-  g.addColorStop(0, 'rgba(124,92,252,0.12)'); g.addColorStop(1, 'rgba(124,92,252,0)');
-  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, zones[0].r * maxR, 0, Math.PI*2); ctx.fill();
-}
-
 function renderHomeDartboard() {
-  var canvas   = document.getElementById('home-prox-canvas');
-  var av       = document.getElementById('home-prox-avatars');
-  var ce       = document.getElementById('home-prox-center');
-  var spinner  = document.getElementById('home-radar-spinner');
-  var countEl  = document.getElementById('radar-count-home');
-  if (!av) return;
-
-  if (spinner) spinner.style.display = 'none';
+  var container = document.getElementById('home-radar-dots');
+  if (!container) return;
 
   var filtered = _getFilteredProfiles();
-  var profiles = filtered.slice(0, 25);
+  var profiles = filtered.slice(0, 10);
   var total = filtered.length;
+  var countEl = document.getElementById('radar-count-home');
   if (countEl) countEl.textContent = total > 0 ? ' · ' + total : '';
 
-  _homeDrawProxRings(canvas);
-
-  // Center avatar
-  if (ce) {
-    ce.style.display = 'flex';
-    if (currentProfile && currentProfile.avatar_url) {
-      ce.innerHTML = '<img src="' + escHtml(currentProfile.avatar_url) + '">';
-    } else {
-      var ini = (currentProfile && currentProfile.name)
-        ? currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase()
-        : 'DU';
-      ce.textContent = ini;
-    }
-  }
-
   if (profiles.length === 0) {
-    av.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:var(--muted)">' +
+    container.innerHTML = '<div style="text-align:center;font-size:0.75rem;color:var(--muted);padding:2rem 0">' +
       (_homeRadarFilter !== 'all' ? 'Ingen matches i denne kategori' : 'Join en boble for at se matches') + '</div>';
     return;
   }
 
-  var map = canvas ? canvas.parentElement : null;
-  var w = map ? (map.offsetWidth || 300) : 300;
-  var cx = w/2, cy = w/2, maxR = Math.min(cx, cy) - 24;
+  var w = container.clientWidth || 320;
+  var h = 270;
+  var cx = w / 2;
+  var cy = h / 2;
+  var maxR = Math.min(cx, cy) - 22;
+  var colors = proxColors || ['linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
 
-  var colors = (typeof proxColors !== 'undefined' && proxColors) ? proxColors : [
-    'linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)',
-    'linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)',
-    'linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)',
-    'linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)',
-    'linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'
-  ];
+  // Colored rings
+  var ringColors = ['rgba(124,92,252,0.07)','rgba(124,92,252,0.05)','rgba(46,207,207,0.04)','rgba(232,121,168,0.03)'];
+  var ringBorders = ['rgba(124,92,252,0.15)','rgba(124,92,252,0.10)','rgba(46,207,207,0.08)','rgba(232,121,168,0.06)'];
+  var html = '';
+  [0.92, 0.68, 0.44, 0.22].forEach(function(s, i) {
+    var r = maxR * s;
+    html += '<div style="position:absolute;left:' + (cx-r) + 'px;top:' + (cy-r) + 'px;width:' + (r*2) + 'px;height:' + (r*2) + 'px;border-radius:50%;border:1px dashed ' + ringBorders[i] + ';background:' + ringColors[i] + '"></div>';
+  });
 
-  // Collision avoidance (identical to renderProximityDots)
-  var placed = [];
-  function findSafe(ix, iy, sz) {
-    var hs = sz/2, tx = ix, ty = iy;
-    for (var a = 0; a < 12; a++) {
-      var hit = false;
-      for (var j = 0; j < placed.length; j++) {
-        var dx = (tx+hs)-(placed[j].x+placed[j].s/2), dy = (ty+hs)-(placed[j].y+placed[j].s/2);
-        if (Math.sqrt(dx*dx+dy*dy) < (hs+placed[j].s/2)+3) { hit = true; break; }
-      }
-      if (!hit) return {x:tx, y:ty};
-      var na = Math.atan2(ty+hs-cy, tx+hs-cx) + a*0.5;
-      tx = ix + Math.cos(na)*(8+a*5); ty = iy + Math.sin(na)*(8+a*5);
-    }
-    return {x:tx, y:ty};
+  // Own avatar in center
+  var myName = currentProfile?.name || '?';
+  var myIni = myName.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+  var avSz = 34;
+  if (currentProfile?.avatar_url) {
+    html += '<div style="position:absolute;left:' + (cx-avSz/2) + 'px;top:' + (cy-avSz/2) + 'px;width:' + avSz + 'px;height:' + avSz + 'px;border-radius:50%;overflow:hidden;z-index:10;box-shadow:0 0 0 3px rgba(124,92,252,0.2),0 2px 8px rgba(0,0,0,0.1)"><img src="' + escHtml(currentProfile.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
+  } else {
+    html += '<div style="position:absolute;left:' + (cx-avSz/2) + 'px;top:' + (cy-avSz/2) + 'px;width:' + avSz + 'px;height:' + avSz + 'px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#6366F1);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:white;z-index:10;box-shadow:0 0 0 3px rgba(124,92,252,0.2),0 2px 8px rgba(0,0,0,0.1)">' + escHtml(myIni) + '</div>';
   }
 
-  var out = '';
-  for (var i = 0; i < profiles.length; i++) {
-    var p = profiles[i];
-    var matchPct = p.matchScore || 0;
-    var minDist = 0.14, maxDist = 0.88;
-    var dist = minDist + (1 - matchPct / 100) * (maxDist - minDist);
-    var r = dist * maxR;
-    var ang = (i * 2.399) + (matchPct * 0.03);
-    var sz = matchPct >= 70 ? 38 : matchPct >= 40 ? 34 : 30;
-    var ix = cx + Math.cos(ang)*r - sz/2, iy = cy + Math.sin(ang)*r - sz/2;
-    var pos = findSafe(ix, iy, sz);
-    placed.push({x:pos.x, y:pos.y, s:sz});
-    var op = (0.5 + (matchPct / 100) * 0.5).toFixed(2);
+  // People dots
+  profiles.forEach(function(p, i) {
+    var score = p.matchScore || 0;
+    var angle = (i * 137.5 + 30) * Math.PI / 180;
+    var distPct;
+    if (score >= 90) distPct = 0.12 + Math.random() * 0.10;
+    else if (score >= 60) distPct = 0.25 + Math.random() * 0.15;
+    else if (score >= 40) distPct = 0.45 + Math.random() * 0.15;
+    else if (score >= 20) distPct = 0.65 + Math.random() * 0.12;
+    else distPct = 0.80 + Math.random() * 0.12;
+    var dist = maxR * distPct;
+    var sz = 30;
+    var x = cx + Math.cos(angle) * dist - sz/2;
+    var y = cy + Math.sin(angle) * dist - sz/2;
+    var ini = p.is_anon ? '?' : (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     var col = p.is_anon ? 'var(--glass-border)' : colors[i % colors.length];
-    var ini = p.is_anon ? '?' : (p.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
-    var inner = (p.avatar_url && !p.is_anon)
+    var inner = p.avatar_url && !p.is_anon
       ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
-      : ini;
-    out += '<div class=\"prox-dot\" style=\"width:'+sz+'px;height:'+sz+'px;left:'+pos.x.toFixed(1)+'px;top:'+pos.y.toFixed(1)+'px;background:'+col+';opacity:'+op+';font-size:'+(sz<34?'0.48':'0.55')+'rem\" onclick=\"event.stopPropagation();openRadarPerson(\\\''+p.id+'\\\')\" data-id=\"'+p.id+'\">'+inner+'</div>';
-  }
-  av.innerHTML = out;
+      : '<span style="font-size:0.5rem;font-weight:700;color:white">' + escHtml(ini) + '</span>';
+    html += '<div onclick="event.stopPropagation();openRadarPerson(\'' + p.id + '\')" style="position:absolute;left:' + x + 'px;top:' + y + 'px;width:' + sz + 'px;height:' + sz + 'px;border-radius:50%;background:' + col + ';display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:5;overflow:hidden;border:2px solid rgba(255,255,255,0.9);box-shadow:0 1px 4px rgba(0,0,0,0.1)">' + inner + '</div>';
+  });
+
+  container.innerHTML = html;
 }
+
 // ══════════════════════════════════════════════════════════
 //  HOME LIST TRAY
 // ══════════════════════════════════════════════════════════
@@ -1052,7 +1005,7 @@ async function loadHomeBubblePills() {
       .select('bubble_id, bubbles(id,name,type,icon_url)')
       .eq('user_id', currentUser.id);
     if (!memberships || memberships.length === 0) {
-      scroll.innerHTML = '<div style="font-size:0.72rem;color:var(--muted);padding:0.3rem">Ingen bobler — <span style="color:var(--accent);cursor:pointer" onclick="goTo(\'screen-discover\')">udforsk →</span></div>';
+      scroll.innerHTML = '<div style="font-size:0.72rem;color:var(--muted);padding:0.3rem">Ingen bobler — <span style="color:var(--accent);cursor:pointer" onclick="goTo(\'screen-bubbles\');bbSwitchTab(\'explore\')">udforsk →</span></div>';
       return;
     }
     var colors = ['#7C5CFC','#3B82F6','#1A9E8E','#E879A8','#F59E0B','#EC4899','#10B981','#6366F1'];

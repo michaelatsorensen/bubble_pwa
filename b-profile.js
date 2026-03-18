@@ -403,8 +403,7 @@ function renderProximityDots() {
     var sz = matchPct >= 70 ? 38 : matchPct >= 40 ? 34 : 30; // Bigger dots for better matches
     var pos = findSafe(ix, iy, sz);
     placed.push({x:pos.x, y:pos.y, s:sz});
-    var op = (0.5 + (matchPct / 100) * 0.5).toFixed(2); // More opaque for better matches
-    out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+pos.x.toFixed(1)+'px;top:'+pos.y.toFixed(1)+'px;background:'+col+';opacity:'+op+';font-size:'+(sz<34?'0.48':'0.55')+'rem" onclick="openRadarPerson(\''+p.id+'\')" data-id="'+p.id+'">'+escHtml(ini)+'</div>';
+    out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+pos.x.toFixed(1)+'px;top:'+pos.y.toFixed(1)+'px;background:'+col+';font-size:'+(sz<34?'0.48':'0.55')+'rem" onclick="openRadarPerson(\''+p.id+'\')" data-id="'+p.id+'">'+escHtml(ini)+'</div>';
   }
   av.innerHTML = out;
 }
