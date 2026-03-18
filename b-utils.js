@@ -3,12 +3,12 @@
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 
-// ── Match label system (prose instead of %) ──
+// ── Match label system v5 — tier-based (prose instead of %) ──
 function matchLabel(score) {
-  if (score >= 80) return { text: 'Stærkt match',       color: 'var(--green)',  bg: 'rgba(26,158,142,0.08)' };
-  if (score >= 60) return { text: 'Godt match',          color: 'var(--accent)', bg: 'rgba(124,92,252,0.08)' };
-  if (score >= 40) return { text: 'Fælles interesser',   color: '#3B82F6',       bg: 'rgba(59,130,246,0.08)' };
-  if (score >= 20) return { text: 'Måske relevant',      color: 'var(--muted)',  bg: 'rgba(30,27,46,0.04)' };
+  if (score >= 60) return { text: 'Stærkt match',       color: 'var(--green)',  bg: 'rgba(26,158,142,0.08)' };
+  if (score >= 40) return { text: 'Godt match',          color: 'var(--accent)', bg: 'rgba(124,92,252,0.08)' };
+  if (score >= 20) return { text: 'Fælles interesser',   color: '#3B82F6',       bg: 'rgba(59,130,246,0.08)' };
+  if (score >= 1)  return { text: 'I dit netværk',       color: 'var(--muted)',  bg: 'rgba(30,27,46,0.04)' };
   return              { text: '',                        color: 'var(--muted)',  bg: 'transparent' };
 }
 

@@ -66,9 +66,10 @@ function goTo(screenId) {
   // Update bottom nav active state + visibility
   try {
     const navMap = {
-      'screen-home': 0, 'screen-bubbles': 0, 'screen-bubble-chat': -1,
-      'screen-discover': 1,
-      'screen-messages': 2, 'screen-chat': -1,
+      'screen-home': 0,        'screen-bubble-chat': -1,
+      'screen-bubbles': 1,
+      'screen-discover': -1,
+      'screen-messages': 2,    'screen-chat': -1,
       'screen-profile': 3,
       'screen-notifications': -1, 'screen-person': -1,
       'screen-qr-preview': -1, 'screen-qr-teaser': -1, 'screen-social-proof': -1, 'screen-guest-checkin': -1, 'screen-event-ready': -1
