@@ -162,21 +162,23 @@ async function openQuickLiveBubble() {
 }
 
 function bbSwitchTab(tab) {
-  var networkPanel = document.getElementById('bb-panel-network');
-  var livePanel = document.getElementById('bb-panel-live');
-  var networkTab = document.getElementById('bb-tab-network');
-  var liveTab = document.getElementById('bb-tab-live');
-  if (tab === 'live') {
-    if (networkPanel) networkPanel.style.display = 'none';
-    if (livePanel) livePanel.style.display = 'block';
-    if (networkTab) networkTab.classList.remove('active');
-    if (liveTab) liveTab.classList.add('active');
-    bbLoadLivePanel();
+  var minePanel    = document.getElementById('bb-panel-mine');
+  var explorePanel = document.getElementById('bb-panel-explore');
+  var mineTab      = document.getElementById('bb-tab-mine');
+  var exploreTab   = document.getElementById('bb-tab-explore');
+  if (tab === 'explore') {
+    if (minePanel)    minePanel.style.display    = 'none';
+    if (explorePanel) explorePanel.style.display = 'block';
+    if (mineTab)      mineTab.classList.remove('active');
+    if (exploreTab)   exploreTab.classList.add('active');
+    loadDiscover();
   } else {
-    if (networkPanel) networkPanel.style.display = 'block';
-    if (livePanel) livePanel.style.display = 'none';
-    if (networkTab) networkTab.classList.add('active');
-    if (liveTab) liveTab.classList.remove('active');
+    // 'mine' — default
+    if (minePanel)    minePanel.style.display    = 'block';
+    if (explorePanel) explorePanel.style.display = 'none';
+    if (mineTab)      mineTab.classList.add('active');
+    if (exploreTab)   exploreTab.classList.remove('active');
+    loadMyBubbles();
   }
 }
 
@@ -313,14 +315,14 @@ async function loadMyBubbles() {
 
     if (!memberships || memberships.length === 0) {
       ownedList.innerHTML  = '';
-      joinedList.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke med i nogen bobler endnu</div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.82rem;padding:0.6rem 1.5rem">Opdag bobler →</button></div><div style="margin-top:0.5rem"><button class="btn-secondary" onclick="openCreateBubble()" style="font-size:0.78rem;padding:0.5rem 1.2rem">+ Opret en boble</button></div></div>';
+      joinedList.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke med i nogen bobler endnu</div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-bubbles\');bbSwitchTab(\'explore\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">Opdag bobler →</button></div><div style="margin-top:0.5rem"><button class="btn-secondary" onclick="openCreateBubble()" style="font-size:0.78rem;padding:0.5rem 1.2rem">+ Opret en boble</button></div></div>';
       var profBubblesEl = document.getElementById('profile-bubbles');
       if (profBubblesEl) {
         profBubblesEl.innerHTML = '<div style="text-align:center;padding:2rem 1rem">' +
           '<div style="width:44px;height:44px;margin:0 auto 0.7rem;opacity:0.4;color:var(--accent)">' + ico('bubble') + '</div>' +
           '<div style="font-size:0.85rem;font-weight:700;margin-bottom:0.25rem">Ingen bobler endnu</div>' +
           '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.4">Bobler er fællesskaber og events. Udforsk og join din første!</div>' +
-          '<button onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(124,92,252,0.12);color:var(--accent);border:1px solid rgba(124,92,252,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
+          '<button onclick="goTo(\'screen-bubbles\');bbSwitchTab(\'explore\')" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(124,92,252,0.12);color:var(--accent);border:1px solid rgba(124,92,252,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
           '</div>';
       }
       return;
@@ -396,7 +398,7 @@ async function loadMyBubbles() {
           '<div style="width:44px;height:44px;margin:0 auto 0.7rem;opacity:0.4;color:var(--accent)">' + ico('bubble') + '</div>' +
           '<div style="font-size:0.85rem;font-weight:700;margin-bottom:0.25rem">Ingen bobler endnu</div>' +
           '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.4">Bobler er fællesskaber og events. Udforsk og join din første!</div>' +
-          '<button onclick="goTo(\'screen-discover\');loadDiscover()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(124,92,252,0.12);color:var(--accent);border:1px solid rgba(124,92,252,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
+          '<button onclick="goTo(\'screen-bubbles\');bbSwitchTab(\'explore\')" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(124,92,252,0.12);color:var(--accent);border:1px solid rgba(124,92,252,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler →</button>' +
           '</div>';
       } else {
         profBubblesEl.innerHTML = bubbles.map(function(b) {
@@ -1004,7 +1006,7 @@ async function loadHomeBubblePills() {
       .select('bubble_id, bubbles(id,name,type,icon_url)')
       .eq('user_id', currentUser.id);
     if (!memberships || memberships.length === 0) {
-      scroll.innerHTML = '<div style="font-size:0.72rem;color:var(--muted);padding:0.3rem">Ingen bobler — <span style="color:var(--accent);cursor:pointer" onclick="goTo(\'screen-discover\')">udforsk →</span></div>';
+      scroll.innerHTML = '<div style="font-size:0.72rem;color:var(--muted);padding:0.3rem">Ingen bobler — <span style="color:var(--accent);cursor:pointer" onclick="goTo(\'screen-bubbles\');bbSwitchTab(\'explore\')">udforsk →</span></div>';
       return;
     }
     var colors = ['#7C5CFC','#3B82F6','#1A9E8E','#E879A8','#F59E0B','#EC4899','#10B981','#6366F1'];

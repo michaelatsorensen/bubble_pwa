@@ -66,7 +66,8 @@ function goTo(screenId) {
   // Update bottom nav active state + visibility
   try {
     const navMap = {
-      'screen-home': 0, 'screen-bubbles': 0, 'screen-bubble-chat': -1,
+      'screen-home': 0, 'screen-bubble-chat': -1,
+      'screen-bubbles': 1,
       'screen-discover': 1,
       'screen-messages': 2, 'screen-chat': -1,
       'screen-profile': 3,
@@ -91,7 +92,7 @@ function goTo(screenId) {
     if (screenId === 'screen-home') loadHome();
     if (screenId === 'screen-bubbles') loadMyBubbles();
     if (screenId === 'screen-notifications') loadNotifications();
-    if (screenId === 'screen-discover') loadDiscover();
+    if (screenId === 'screen-discover') { goTo('screen-bubbles'); bbSwitchTab('explore'); return; }
     if (screenId === 'screen-messages') { loadMessages(); dmBadgeClear(); }
     if (screenId === 'screen-profile') loadProfile();
   } catch(e) { console.error('[nav] loader error:', e); }
