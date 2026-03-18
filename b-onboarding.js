@@ -402,7 +402,7 @@ function persistCustomTitle(title) {
 function welcomeGo(target) {
   localStorage.setItem('bubble_welcomed', '1');
   if (target === 'discover') {
-    goTo('screen-discover');
+    goTo('screen-bubbles');bbSwitchTab('explore');
     loadDiscover();
   } else if (target === 'radar') {
     goTo('screen-home');
@@ -455,7 +455,7 @@ async function showProgressiveOnboarding() {
     { key: 'tags', svgIco: 'target', color: 'var(--green)', softColor: 'rgba(26,158,142,0.08)', title: 'Vælg interesser', sub: 'Aktiverer matching', done: hasTags, action: 'reRunOnboarding()' },
     { key: 'title', svgIco: 'briefcase', color: 'var(--accent)', softColor: 'rgba(124,92,252,0.06)', title: 'Tilføj titel & arbejdsplads', sub: 'Unlock 5+ flere matches', done: hasTitle, action: "goTo('screen-profile');setTimeout(function(){profSwitchTab('edit')},200)" },
     { key: 'photo', svgIco: 'camera', color: '#3B82F6', softColor: 'rgba(59,130,246,0.06)', title: 'Tilføj profilbillede', sub: '3x flere kontakter', done: hasPhoto, action: "goTo('screen-profile');setTimeout(function(){profSwitchTab('edit')},200)" },
-    { key: 'bubble', svgIco: 'bubble', color: '#E879A8', softColor: 'rgba(232,121,168,0.06)', title: 'Join din første boble', sub: 'Åbn for endnu flere profiler', done: hasBubble, action: "goTo('screen-discover')" }
+    { key: 'bubble', svgIco: 'bubble', color: '#E879A8', softColor: 'rgba(232,121,168,0.06)', title: 'Join din første boble', sub: 'Åbn for endnu flere profiler', done: hasBubble, action: "goTo('screen-bubbles');bbSwitchTab('explore')" }
   ];
 
   // Only show incomplete steps

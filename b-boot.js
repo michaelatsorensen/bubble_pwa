@@ -102,7 +102,7 @@ document.addEventListener('click', (e) => {
   const screenMap = {
     'screen-home':          { scroll: '#home-scroll', fn: loadHome },
     'screen-bubbles':       { scroll: '#screen-bubbles .scroll-area', fn: loadMyBubbles },
-    'screen-discover':      { scroll: '#screen-discover .scroll-area', fn: loadDiscover },
+    'screen-bubbles-explore': { scroll: '#screen-bubbles .scroll-area', fn: loadDiscover },
     'screen-messages':      { scroll: '#screen-messages .scroll-area', fn: loadMessages },
     'screen-notifications': { scroll: '#screen-notifications .scroll-area', fn: loadNotifications },
     'screen-profile':       { scroll: null, fn: loadProfile }, // uses active panel
