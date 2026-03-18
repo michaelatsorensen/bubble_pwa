@@ -27,15 +27,13 @@ async function loadHome() {
     var loaders = [];
     if (hsp.bubbles) loaders.push(loadHomeBubblesCard());
     if (hsp.notifs) loaders.push(loadHomeNotifCard());
-    if (hsp.radar) { loaders.push(updateRadarCount()); loaders.push(loadProximityMap()); loaders.push(loadTopMatches()); }
+    if (hsp.radar) { loaders.push(updateRadarCount()); loaders.push(loadProximityMap()); loaders.push(loadHomeDartboardData()); }
     if (hsp.live) loaders.push(loadLiveBubbleStatus());
     if (hsp.saved) loaders.push(loadSavedContacts());
     await Promise.all(loaders);
     hsApplyToHome();
     showGettingStarted();
     showProgressiveOnboarding();
-    // v5: render dartboard + bubble pills after data loads
-    try { renderHomeDartboard(); } catch(e) { logError('renderHomeDartboard', e); }
     try { loadHomeBubblePills(); } catch(e) { logError('loadHomeBubblePills', e); }
   } catch(e) { logError("loadHome", e); /* Individual cards handle their own errors */ }
 }
@@ -795,14 +793,65 @@ function updateAnonToggle() {
 }
 
 // ══════════════════════════════════════════════════════════
-//  HOME DARTBOARD — renders radar dots on home screen
+//  HOME DARTBOARD — data loader + renderer
 // ══════════════════════════════════════════════════════════
+var _homeDartboardProfiles = [];
+
+async function loadHomeDartboardData() {
+  try {
+    if (!currentUser || !currentProfile) return;
+
+    // Fetch profiles independently (don't depend on loadProximityMap which needs radar DOM)
+    var { data: allProfiles } = await sb.from('profiles')
+      .select('id,name,title,keywords,dynamic_keywords,bio,linkedin,is_anon,avatar_url')
+      .neq('id', currentUser.id).neq('banned', true).limit(200);
+    if (!allProfiles || allProfiles.length === 0) { renderHomeDartboard(); return; }
+
+    // Exclude saved contacts
+    var savedIds = [];
+    try {
+      var { data: savedRes } = await sb.from('saved_contacts').select('contact_id').eq('user_id', currentUser.id);
+      savedIds = (savedRes || []).map(function(s) { return s.contact_id; });
+    } catch(e) {}
+    allProfiles = allProfiles.filter(function(p) { return savedIds.indexOf(p.id) < 0 && !(typeof isBlocked === 'function' && isBlocked(p.id)); });
+
+    // Build tag clusters for scoring
+    if (typeof buildTagPopularity === 'function') buildTagPopularity(allProfiles);
+
+    // Get shared bubbles
+    var bmMap = {};
+    try {
+      var { data: myBubbles } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+      var myBubbleIds = (myBubbles || []).map(function(m) { return m.bubble_id; });
+      if (myBubbleIds.length > 0) {
+        var { data: allBm } = await sb.from('bubble_members').select('user_id,bubble_id').in('bubble_id', myBubbleIds);
+        (allBm || []).forEach(function(bm) { if (!bmMap[bm.user_id]) bmMap[bm.user_id] = []; bmMap[bm.user_id].push(bm.bubble_id); });
+      }
+    } catch(e) {}
+
+    // Score profiles
+    _homeDartboardProfiles = allProfiles.map(function(p) {
+      var sharedBubbles = (bmMap[p.id] || []).length;
+      var matchScore = (typeof calcMatchScore === 'function') ? calcMatchScore(currentProfile, p, sharedBubbles) : 0;
+      return { id:p.id, name:p.name, title:p.title, keywords:p.keywords, is_anon:p.is_anon, bio:p.bio, linkedin:p.linkedin, avatar_url:p.avatar_url, matchScore:matchScore, sharedBubbles:sharedBubbles };
+    }).sort(function(a,b) { return b.matchScore - a.matchScore; });
+
+    // Also update proxAllProfiles if empty (so tray and radar sheet work)
+    if (typeof proxAllProfiles !== 'undefined' && proxAllProfiles.length === 0) {
+      proxAllProfiles = _homeDartboardProfiles;
+    }
+
+    renderHomeDartboard();
+  } catch(e) { logError('loadHomeDartboardData', e); }
+}
+
 function renderHomeDartboard() {
   var container = document.getElementById('home-radar-dots');
   if (!container) return;
 
-  var profiles = (proxAllProfiles || []).slice(0, 10);
-  var total = (proxAllProfiles || []).length;
+  var allP = _homeDartboardProfiles.length > 0 ? _homeDartboardProfiles : (proxAllProfiles || []);
+  var profiles = allP.slice(0, 10);
+  var total = allP.length;
   var countEl = document.getElementById('radar-count-home');
   if (countEl) countEl.textContent = total > 0 ? total : '';
 
@@ -870,7 +919,8 @@ function updateMatchBar(total) {
   var plusEl = document.getElementById('home-bar-plus');
   if (!avatarsEl) return;
 
-  var top3 = (proxAllProfiles || []).slice(0, 3);
+  var allP = _homeDartboardProfiles.length > 0 ? _homeDartboardProfiles : (proxAllProfiles || []);
+  var top3 = allP.slice(0, 3);
   var colors = proxColors || ['linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#2ECFCF,#22B8CF)'];
   avatarsEl.innerHTML = top3.map(function(p, i) {
     var ini = (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
@@ -913,7 +963,8 @@ function renderHomeTrayList() {
   var subtitle = document.getElementById('home-tray-subtitle');
   if (!list) return;
 
-  var sorted = (proxAllProfiles || []).slice().sort(function(a, b) { return (b.matchScore || 0) - (a.matchScore || 0); });
+  var allP = _homeDartboardProfiles.length > 0 ? _homeDartboardProfiles : (proxAllProfiles || []);
+  var sorted = allP.slice().sort(function(a, b) { return (b.matchScore || 0) - (a.matchScore || 0); });
   if (subtitle) subtitle.textContent = sorted.length + ' personer';
 
   if (sorted.length === 0) {
