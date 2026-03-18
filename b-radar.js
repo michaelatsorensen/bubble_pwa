@@ -231,22 +231,123 @@ function rpFullProfile() {
 
 
 // ══════════════════════════════════════════════════════════
-//  SMART MATCH ALGORITHM (v2)
-//  - TF-IDF: rare shared tags score higher
-//  - Category weighting: branche > kompetence > rolle > interesse
-//  - Cross-match: "søger" ↔ "er" bonus
-//  - Shared bubble bonus
-//  - Sigmoid normalization to 0-99
+//  SMART MATCH ALGORITHM (v5 — tier-based additive model)
+//  Max score ~100:
+//    Sektorer      : 10pt per overlap, max 30 (3 sektorer)
+//    Livsfase      : 15pt same, 8pt adjacent
+//    Fælles bobler : 8pt per, max 24 (3 bobler)
+//    Tag-cluster   : 5pt per cluster, max 20
+//  Backwards-compatible via _inferSectorsFromKeywords()
 // ══════════════════════════════════════════════════════════
-var MATCH_CAP = 25;  // Max profiles shown on radar at once
-var matchPage = 0;   // For "vis flere" rotation
+var MATCH_CAP = 25;
+var matchPage = 0;
 
-// Category weights for match scoring
 var CAT_WEIGHTS = { branche: 1.5, kompetence: 1.3, rolle: 1.0, interesse: 0.8, custom: 1.0 };
-
-// Calculate tag rarity weight (TF-IDF inspired)
-// tagPopularity: { tagLower: count } built from all visible profiles
 var _tagPopularity = {};
+
+// ── Sector inference: maps existing keywords to sectors ──
+// Sectors: tech, kreativ, handel, sundhed, uddannelse, ledelse, service, produktion
+var _SECTOR_MAP = {
+  'software': 'tech', 'it': 'tech', 'programmering': 'tech', 'udvikler': 'tech', 'developer': 'tech',
+  'data': 'tech', 'ai': 'tech', 'machine learning': 'tech', 'cybersikkerhed': 'tech',
+  'design': 'kreativ', 'marketing': 'kreativ', 'branding': 'kreativ', 'kommunikation': 'kreativ',
+  'indhold': 'kreativ', 'content': 'kreativ', 'foto': 'kreativ', 'video': 'kreativ',
+  'salg': 'handel', 'økonomi': 'handel', 'finans': 'handel', 'handel': 'handel',
+  'e-handel': 'handel', 'retail': 'handel', 'export': 'handel',
+  'sundhed': 'sundhed', 'sygepleje': 'sundhed', 'medicin': 'sundhed', 'terapi': 'sundhed',
+  'psykologi': 'sundhed', 'fysioterapi': 'sundhed', 'ernæring': 'sundhed',
+  'undervisning': 'uddannelse', 'forskning': 'uddannelse', 'coaching': 'uddannelse',
+  'uddannelse': 'uddannelse', 'pædagogik': 'uddannelse',
+  'ledelse': 'ledelse', 'strategi': 'ledelse', 'hr': 'ledelse', 'konsulent': 'ledelse',
+  'projekt': 'ledelse', 'startup': 'ledelse', 'iværksætter': 'ledelse',
+  'service': 'service', 'turisme': 'service', 'event': 'service', 'hotel': 'service',
+  'restaurant': 'service', 'logistik': 'service',
+  'produktion': 'produktion', 'bygge': 'produktion', 'ingeniør': 'produktion',
+  'arkitektur': 'produktion', 'energi': 'produktion', 'landbrug': 'produktion'
+};
+
+// Adjacent sectors (for 8pt partial match)
+var _SECTOR_ADJACENT = {
+  'tech': ['kreativ', 'ledelse'],
+  'kreativ': ['tech', 'handel', 'service'],
+  'handel': ['kreativ', 'ledelse', 'service'],
+  'sundhed': ['uddannelse', 'service'],
+  'uddannelse': ['sundhed', 'ledelse'],
+  'ledelse': ['tech', 'handel', 'uddannelse'],
+  'service': ['handel', 'kreativ', 'produktion'],
+  'produktion': ['service', 'ledelse']
+};
+
+function _inferSectorsFromKeywords(keywords) {
+  var sectors = [];
+  (keywords || []).forEach(function(kw) {
+    var k = kw.toLowerCase();
+    // Direct lookup
+    if (_SECTOR_MAP[k] && sectors.indexOf(_SECTOR_MAP[k]) < 0) {
+      sectors.push(_SECTOR_MAP[k]);
+      return;
+    }
+    // Partial match
+    Object.keys(_SECTOR_MAP).forEach(function(key) {
+      if (k.indexOf(key) >= 0 || key.indexOf(k) >= 0) {
+        var s = _SECTOR_MAP[key];
+        if (sectors.indexOf(s) < 0) sectors.push(s);
+      }
+    });
+  });
+  return sectors;
+}
+
+// ── Tag-cluster bonus: tags that cluster together ──
+var _TAG_CLUSTERS = [
+  ['salg', 'marketing', 'branding', 'kommunikation', 'indhold', 'content'],
+  ['software', 'it', 'programmering', 'data', 'ai', 'developer', 'udvikler'],
+  ['ledelse', 'strategi', 'konsulent', 'projekt', 'hr'],
+  ['iværksætter', 'startup', 'investor', 'fundraising', 'pitch'],
+  ['design', 'ux', 'ui', 'grafik', 'kreativ'],
+  ['sundhed', 'velvære', 'terapi', 'coaching', 'psykologi'],
+  ['undervisning', 'forskning', 'uddannelse', 'pædagogik'],
+  ['økonomi', 'finans', 'regnskab', 'revision', 'investering']
+];
+
+function _calcClusterBonus(myKw, theirKw) {
+  var bonus = 0;
+  _TAG_CLUSTERS.forEach(function(cluster) {
+    var myHits = myKw.filter(function(k) { return cluster.indexOf(k) >= 0; }).length;
+    var theirHits = theirKw.filter(function(k) { return cluster.indexOf(k) >= 0; }).length;
+    if (myHits >= 1 && theirHits >= 1) bonus += 5;
+  });
+  return Math.min(bonus, 20);
+}
+
+// ── Life-phase detection ──
+var _LIFE_PHASE_TAGS = {
+  student:    ['studerende', 'bachelor', 'kandidat', 'phd', 'praktikant'],
+  early:      ['nyuddannet', 'junior', 'trainee', 'entry level'],
+  mid:        ['specialist', 'seniorkonsulent', 'projektleder', 'manager'],
+  senior:     ['direktør', 'ceo', 'cto', 'partner', 'founder', 'leder', 'chef', 'vp'],
+  freelance:  ['freelancer', 'selvstændig', 'konsulent', 'iværksætter', 'solopreneur']
+};
+
+function _inferLifePhase(keywords) {
+  var kw = (keywords || []).map(function(k) { return k.toLowerCase(); });
+  var phases = Object.keys(_LIFE_PHASE_TAGS);
+  for (var i = 0; i < phases.length; i++) {
+    var phase = phases[i];
+    if (_LIFE_PHASE_TAGS[phase].some(function(t) { return kw.some(function(k) { return k.indexOf(t) >= 0; }); })) {
+      return phase;
+    }
+  }
+  return null;
+}
+
+var _PHASE_ADJACENT = {
+  student: ['early'],
+  early:   ['student', 'mid'],
+  mid:     ['early', 'senior', 'freelance'],
+  senior:  ['mid', 'freelance'],
+  freelance: ['mid', 'senior']
+};
 
 function buildTagPopularity(allProfiles) {
   _tagPopularity = {};
@@ -257,79 +358,70 @@ function buildTagPopularity(allProfiles) {
       _tagPopularity[key] = (_tagPopularity[key] || 0) + 1;
     });
   });
-  // Convert counts to rarity weights: rare = high, common = low
   Object.keys(_tagPopularity).forEach(function(key) {
-    var freq = _tagPopularity[key] / total;
-    // Rarity: if 80% have it → ~0.3 weight; if 2% have it → ~1.7 weight
     _tagPopularity[key] = 1.0 / Math.log2((_tagPopularity[key] + 1) / total * 10 + 2);
   });
 }
 
 function getTagRarity(tagLower) {
-  return _tagPopularity[tagLower] || 1.2; // Unknown tags get above-average weight
+  return _tagPopularity[tagLower] || 1.2;
 }
 
 function calcMatchScore(myProfile, theirProfile, sharedBubbleCount) {
-  var myKw = (myProfile.keywords || []).map(function(k) { return k.toLowerCase(); });
+  var myKw    = (myProfile.keywords    || []).map(function(k) { return k.toLowerCase(); });
   var theirKw = (theirProfile.keywords || []).map(function(k) { return k.toLowerCase(); });
-  var myDyn = (myProfile.dynamic_keywords || []).map(function(k) { return k.toLowerCase(); });
-  var theirDyn = (theirProfile.dynamic_keywords || []).map(function(k) { return k.toLowerCase(); });
 
+  // Minimal profiles — base score only
   if (myKw.length === 0 || theirKw.length === 0) {
-    // Minimal profile — give base score with profile completeness bonus
-    return Math.round(15 + (theirProfile.bio ? 8 : 0) + (theirProfile.title ? 7 : 0) + (sharedBubbleCount || 0) * 5);
+    return Math.min(8 + Math.min((sharedBubbleCount || 0) * 8, 24) +
+      (theirProfile.bio ? 4 : 0) + (theirProfile.title ? 4 : 0), 40);
   }
 
-  // 1. Tag overlap with TF-IDF rarity weighting + category multiplier
-  var overlap = myKw.filter(function(k) { return theirKw.indexOf(k) >= 0; });
-  var tagScore = 0;
-  overlap.forEach(function(k) {
-    var rarity = getTagRarity(k);
-    // Find original casing to look up category
-    var original = (theirProfile.keywords || []).find(function(t) { return t.toLowerCase() === k; }) || k;
-    var cat = (typeof getTagCategory === 'function') ? getTagCategory(original) : 'custom';
-    var catWeight = CAT_WEIGHTS[cat] || 1.0;
-    tagScore += rarity * catWeight;
+  var score = 0;
+
+  // 1. Sector overlap — 10pt per sector match, max 30
+  var mySectors    = myProfile.sectors    || _inferSectorsFromKeywords(myProfile.keywords);
+  var theirSectors = theirProfile.sectors || _inferSectorsFromKeywords(theirProfile.keywords);
+  var sectorScore = 0;
+  mySectors.forEach(function(s) {
+    if (theirSectors.indexOf(s) >= 0) {
+      sectorScore += 10;
+    } else {
+      // Adjacent sector: 5pt
+      var adj = _SECTOR_ADJACENT[s] || [];
+      if (adj.some(function(a) { return theirSectors.indexOf(a) >= 0; })) {
+        sectorScore += 5;
+      }
+    }
   });
+  score += Math.min(sectorScore, 30);
 
-  // Normalize by max possible score
-  var maxPossible = Math.max(myKw.length, theirKw.length);
-  var normalizedTagScore = tagScore / (maxPossible * 1.0); // Typically 0-2 range
-
-  // 2. Cross-match: my "søger" ↔ their "er" (and vice versa)
-  var crossScore = 0;
-  if (myDyn.length > 0) {
-    myDyn.forEach(function(d) {
-      if (theirKw.indexOf(d) >= 0) crossScore += 2.0; // Strong signal
-      // Fuzzy: check if any of their tags contain my search term
-      theirKw.forEach(function(tk) {
-        if (tk !== d && (tk.indexOf(d) >= 0 || d.indexOf(tk) >= 0)) crossScore += 0.8;
-      });
-    });
-  }
-  if (theirDyn.length > 0) {
-    theirDyn.forEach(function(d) {
-      if (myKw.indexOf(d) >= 0) crossScore += 2.0;
-      myKw.forEach(function(mk) {
-        if (mk !== d && (mk.indexOf(d) >= 0 || d.indexOf(mk) >= 0)) crossScore += 0.8;
-      });
-    });
+  // 2. Life phase — 15pt same, 8pt adjacent
+  var myPhase    = myProfile.life_phase    || _inferLifePhase(myProfile.keywords);
+  var theirPhase = theirProfile.life_phase || _inferLifePhase(theirProfile.keywords);
+  if (myPhase && theirPhase) {
+    if (myPhase === theirPhase) {
+      score += 15;
+    } else {
+      var adjPhases = _PHASE_ADJACENT[myPhase] || [];
+      if (adjPhases.indexOf(theirPhase) >= 0) score += 8;
+    }
   }
 
-  // 3. Shared bubble bonus (being in the same bubble = shared context)
-  var bubbleScore = Math.min((sharedBubbleCount || 0) * 0.3, 1.0);
+  // 3. Shared bubbles — 8pt per, max 24
+  score += Math.min((sharedBubbleCount || 0) * 8, 24);
 
-  // 4. Profile completeness bonus (small)
-  var profileBonus = (theirProfile.bio ? 0.1 : 0) + (theirProfile.title ? 0.1 : 0) + (theirProfile.linkedin ? 0.05 : 0);
+  // 4. Tag-cluster bonus — 5pt per cluster, max 20
+  score += _calcClusterBonus(myKw, theirKw);
 
-  // Combine: tag overlap is primary, cross-match is high value, bubbles and profile are minor
-  var rawScore = normalizedTagScore * 3.0 + crossScore * 1.5 + bubbleScore + profileBonus;
+  // 5. Direct tag overlap bonus (for profiles that haven't migrated to sectors yet)
+  var overlap = myKw.filter(function(k) { return theirKw.indexOf(k) >= 0; });
+  if (overlap.length > 0 && sectorScore === 0) {
+    // Fallback: give tag overlap some weight if sector detection yielded nothing
+    score += Math.min(overlap.length * 4, 16);
+  }
 
-  // Sigmoid normalization: maps rawScore to 5-99 range
-  // sigmoid(x) = 1 / (1 + e^(-x)) mapped to our range
-  var sigmoid = 1 / (1 + Math.exp(-rawScore * 0.8 + 1.5));
-  var finalScore = Math.round(sigmoid * 85 + 10); // Range: ~12 to ~95
-  return Math.min(Math.max(finalScore, 5), 99);
+  return Math.min(Math.max(Math.round(score), 1), 99);
 }
 
 // Quick relevance for sorting (0-1 range, used internally)
