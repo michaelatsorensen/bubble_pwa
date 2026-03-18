@@ -411,9 +411,8 @@ function openCreateNetworkModal() {
   setTimeout(function() {
     initInputConfirmButtons();
     cbRenderPillSelect('cb-type', [
-      { value: 'topic',   icon: 'target',   label: 'Emne' },
-      { value: 'local',   icon: 'pin',      label: 'Lokal' },
-      { value: 'company', icon: 'building', label: 'Virksomhed' }
+      { value: 'network', icon: 'bubble',   label: 'Netværk' },
+      { value: 'event',   icon: 'calendar', label: 'Event' }
     ]);
     cbRenderPillSelect('cb-visibility', [
       { value: 'public',  icon: 'globe', label: 'Offentlig' },

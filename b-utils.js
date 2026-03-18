@@ -3,7 +3,8 @@
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 
-// ── Match label system v5 — tier-based (prose instead of %) ──
+// ── Match label system (v3 — tier-based thresholds) ──
+// Score 0-100 from tier-based calcMatchScore
 function matchLabel(score) {
   if (score >= 60) return { text: 'Stærkt match',       color: 'var(--green)',  bg: 'rgba(26,158,142,0.08)' };
   if (score >= 40) return { text: 'Godt match',          color: 'var(--accent)', bg: 'rgba(124,92,252,0.08)' };
@@ -201,22 +202,30 @@ function safeAvatarImg(url, style) {
 
 function bubbleEmoji(type) {
   var t = (type || '').toLowerCase();
-  return { event:ico('rocket'), local:ico('pin'), lokal:ico('pin'), theme:ico('cpu'), tema:ico('cpu'), company:ico('building'), virksomhed:ico('building'), live:ico('pin'), standard:ico('bubble') }[t] || ico('bubble');
+  // v5: simplified to network/event. Old types mapped for backwards compat.
+  if (t === 'event' || t === 'live') return ico('calendar');
+  return ico('bubble'); // network, topic, local, company, standard → all "network"
 }
 function bubbleIcon(type) {
   var t = (type || '').toLowerCase();
-  return { event:icon('rocket'), local:icon('pin'), lokal:icon('pin'), theme:icon('cpu'), tema:icon('cpu'), company:icon('building'), virksomhed:icon('building'), live:icon('pin'), standard:icon('bubble') }[t] || icon('bubble');
+  if (t === 'event' || t === 'live') return icon('calendar');
+  return icon('bubble');
 }
 
 function bubbleColor(type, alpha) {
   var t = (type || '').toLowerCase();
-  const map = { event:`rgba(108,99,255,${alpha})`, local:`rgba(67,232,176,${alpha})`, lokal:`rgba(67,232,176,${alpha})`, theme:`rgba(255,179,71,${alpha})`, tema:`rgba(255,179,71,${alpha})`, company:`rgba(255,101,132,${alpha})`, virksomhed:`rgba(255,101,132,${alpha})`, live:`rgba(46,207,207,${alpha})`, standard:`rgba(124,92,252,${alpha})` };
-  return map[t] || `rgba(124,92,252,${alpha})`;
+  // Event = cyan (#2ECFCF), Network = purple (#7C5CFC)
+  if (t === 'event' || t === 'live') return `rgba(46,207,207,${alpha})`;
+  return `rgba(124,92,252,${alpha})`; // network + all legacy types
 }
 
 function typeLabel(type) {
   var t = (type || '').toLowerCase();
-  return { event:'Event', local:'Lokal', lokal:'Lokal', theme:'Tema', tema:'Tema', company:'Virksomhed', virksomhed:'Virksomhed', live:'Live', standard:'Standard' }[t] || type;
+  // v5: two types. Old values mapped for backwards compat.
+  if (t === 'event' || t === 'live') return 'Event';
+  if (t === 'network' || t === 'topic' || t === 'local' || t === 'lokal' || t === 'theme' || t === 'tema' || t === 'standard') return 'Netværk';
+  if (t === 'company' || t === 'virksomhed') return 'Virksomhed';
+  return 'Netværk';
 }
 
 // Clock removed — iPhone shows native status bar
