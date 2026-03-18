@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=4320">
+<link rel="manifest" href="manifest.json?v=4500">
 <link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=2">
 <link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=2">
 <link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=2">
@@ -17,27 +17,27 @@
 <link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=2">
 <link rel="apple-touch-icon" href="bubble-icon-180.png?v=2">
 
-<link rel="stylesheet" href="app.css?v=4320">
+<link rel="stylesheet" href="app.css?v=4500">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=4320" defer></script>
-<script src="tag-data.js?v=4320" defer></script>
-<script src="b-config.js?v=4320" defer></script>
-<script src="b-utils.js?v=4320" defer></script>
-<script src="b-navigation.js?v=4320" defer></script>
-<script src="b-auth.js?v=4320" defer></script>
-<script src="b-home.js?v=4320" defer></script>
-<script src="b-bubbles.js?v=4320" defer></script>
-<script src="b-profile.js?v=4320" defer></script>
-<script src="b-radar.js?v=4320" defer></script>
-<script src="b-messages.js?v=4320" defer></script>
-<script src="b-realtime.js?v=4320" defer></script>
-<script src="b-onboarding.js?v=4320" defer></script>
-<script src="b-chat.js?v=4320" defer></script>
-<script src="b-notifications.js?v=4320" defer></script>
-<script src="b-live.js?v=4320" defer></script>
-<script src="b-admin.js?v=4320" defer></script>
-<script src="b-boot.js?v=4320" defer></script>
+<script src="bubble-icons.js?v=4500" defer></script>
+<script src="tag-data.js?v=4500" defer></script>
+<script src="b-config.js?v=4500" defer></script>
+<script src="b-utils.js?v=4500" defer></script>
+<script src="b-navigation.js?v=4500" defer></script>
+<script src="b-auth.js?v=4500" defer></script>
+<script src="b-home.js?v=4500" defer></script>
+<script src="b-bubbles.js?v=4500" defer></script>
+<script src="b-profile.js?v=4500" defer></script>
+<script src="b-radar.js?v=4500" defer></script>
+<script src="b-messages.js?v=4500" defer></script>
+<script src="b-realtime.js?v=4500" defer></script>
+<script src="b-onboarding.js?v=4500" defer></script>
+<script src="b-chat.js?v=4500" defer></script>
+<script src="b-notifications.js?v=4500" defer></script>
+<script src="b-live.js?v=4500" defer></script>
+<script src="b-admin.js?v=4500" defer></script>
+<script src="b-boot.js?v=4500" defer></script>
   
 
 
@@ -95,6 +95,11 @@
 /* ═══ V4.0 — Home Avatar ═══ */
 .home-avatar { width:34px; height:34px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; color:white; overflow:hidden; flex-shrink:0; }
 .home-avatar img { width:100%; height:100%; object-fit:cover; }
+
+/* ═══ V5.0 — Radar Filter Chips ═══ */
+.radar-filter-chip { padding:0.35rem 0.75rem; border-radius:20px; font-size:0.68rem; font-weight:600; font-family:var(--font); border:1px solid var(--glass-border-subtle); background:#FFFFFF; color:var(--text-secondary); cursor:pointer; flex-shrink:0; transition:all 0.15s; -webkit-tap-highlight-color:transparent; }
+.radar-filter-chip.active { background:linear-gradient(135deg,#7C5CFC,#6366F1); color:#fff; border-color:transparent; }
+.radar-filter-chip:active { transform:scale(0.95); }
 </style>
 
 </head>
@@ -694,22 +699,21 @@
 
     <!-- ═══ RADAR HERO (borderless dartboard) ═══ -->
       <div data-hs="radar">
-        <div id="home-radar-dartboard" onclick="openRadarSheet()" style="position:relative;cursor:pointer;margin:0 -0.3rem">
+        <div id="home-radar-dartboard" onclick="onDartboardTap(event)" style="position:relative;cursor:pointer;margin:0 -0.3rem">
           <div id="home-radar-dots" style="position:relative;width:100%;height:270px;display:flex;align-items:center;justify-content:center">
             <div class="spinner" style="width:24px;height:24px"></div>
           </div>
         </div>
-        <!-- Bedste matches bar -->
-        <button onclick="openHomeTray()" id="home-matches-bar" style="display:flex;align-items:center;gap:0.5rem;padding:0.6rem 1rem;border-radius:14px;background:#FFFFFF;border:1px solid var(--glass-border-subtle);box-shadow:0 1px 3px rgba(30,27,46,0.06);cursor:pointer;font-family:var(--font);width:100%;margin-top:0.35rem;transition:all 0.15s">
-          <span id="home-bar-avatars" style="display:flex;align-items:center"></span>
-          <span id="home-bar-plus" style="font-size:0.72rem;font-weight:700;color:var(--muted)"></span>
-          <span style="flex:1;text-align:left;font-size:0.82rem;font-weight:600;color:var(--text)">Bedste matches</span>
-          <span style="color:var(--muted);font-size:1rem" id="radar-count-home"></span>
-          <span style="color:var(--accent);font-size:0.85rem">›</span>
-        </button>
+        <!-- Filter chips under dartboard -->
+        <div style="display:flex;gap:0.3rem;padding:0.4rem 0;overflow-x:auto;-webkit-overflow-scrolling:touch">
+          <button class="radar-filter-chip active" onclick="filterRadarHome('all')" data-filter="all">Alle <span id="radar-count-home" style="opacity:0.6"></span></button>
+          <button class="radar-filter-chip" onclick="filterRadarHome('interest')" data-filter="interest">Fælles int.</button>
+          <button class="radar-filter-chip" onclick="filterRadarHome('good')" data-filter="good">Godt match</button>
+          <button class="radar-filter-chip" onclick="filterRadarHome('strong')" data-filter="strong">Stærkt match</button>
+        </div>
       </div>
 
-    <!-- TOP MATCHES (hidden — replaced by bar above, kept for JS compat) -->
+    <!-- TOP MATCHES (hidden — kept for JS compat) -->
       <div id="home-top-matches" style="display:none">
         <div id="home-top-matches-list"></div>
       </div>

@@ -796,18 +796,17 @@ function updateAnonToggle() {
 //  HOME DARTBOARD — data loader + renderer
 // ══════════════════════════════════════════════════════════
 var _homeDartboardProfiles = [];
+var _homeRadarFilter = 'all';
 
 async function loadHomeDartboardData() {
   try {
     if (!currentUser || !currentProfile) return;
 
-    // Fetch profiles independently (don't depend on loadProximityMap which needs radar DOM)
     var { data: allProfiles } = await sb.from('profiles')
       .select('id,name,title,keywords,dynamic_keywords,bio,linkedin,is_anon,avatar_url')
       .neq('id', currentUser.id).neq('banned', true).limit(200);
     if (!allProfiles || allProfiles.length === 0) { renderHomeDartboard(); return; }
 
-    // Exclude saved contacts
     var savedIds = [];
     try {
       var { data: savedRes } = await sb.from('saved_contacts').select('contact_id').eq('user_id', currentUser.id);
@@ -815,10 +814,8 @@ async function loadHomeDartboardData() {
     } catch(e) {}
     allProfiles = allProfiles.filter(function(p) { return savedIds.indexOf(p.id) < 0 && !(typeof isBlocked === 'function' && isBlocked(p.id)); });
 
-    // Build tag clusters for scoring
     if (typeof buildTagPopularity === 'function') buildTagPopularity(allProfiles);
 
-    // Get shared bubbles
     var bmMap = {};
     try {
       var { data: myBubbles } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
@@ -829,14 +826,12 @@ async function loadHomeDartboardData() {
       }
     } catch(e) {}
 
-    // Score profiles
     _homeDartboardProfiles = allProfiles.map(function(p) {
       var sharedBubbles = (bmMap[p.id] || []).length;
       var matchScore = (typeof calcMatchScore === 'function') ? calcMatchScore(currentProfile, p, sharedBubbles) : 0;
       return { id:p.id, name:p.name, title:p.title, keywords:p.keywords, is_anon:p.is_anon, bio:p.bio, linkedin:p.linkedin, avatar_url:p.avatar_url, matchScore:matchScore, sharedBubbles:sharedBubbles };
     }).sort(function(a,b) { return b.matchScore - a.matchScore; });
 
-    // Also update proxAllProfiles if empty (so tray and radar sheet work)
     if (typeof proxAllProfiles !== 'undefined' && proxAllProfiles.length === 0) {
       proxAllProfiles = _homeDartboardProfiles;
     }
@@ -845,19 +840,49 @@ async function loadHomeDartboardData() {
   } catch(e) { logError('loadHomeDartboardData', e); }
 }
 
+// ── Get filtered profiles based on active filter ──
+function _getFilteredProfiles() {
+  var allP = _homeDartboardProfiles.length > 0 ? _homeDartboardProfiles : (proxAllProfiles || []);
+  if (_homeRadarFilter === 'all') return allP;
+  if (_homeRadarFilter === 'interest') return allP.filter(function(p) { return p.matchScore >= 20; });
+  if (_homeRadarFilter === 'good') return allP.filter(function(p) { return p.matchScore >= 40; });
+  if (_homeRadarFilter === 'strong') return allP.filter(function(p) { return p.matchScore >= 60; });
+  return allP;
+}
+
+// ── Filter chip handler ──
+function filterRadarHome(filter) {
+  _homeRadarFilter = filter;
+  document.querySelectorAll('.radar-filter-chip').forEach(function(c) {
+    c.classList.toggle('active', c.dataset.filter === filter);
+  });
+  renderHomeDartboard();
+}
+
+// ── Tap dartboard background → open tray ──
+function onDartboardTap(event) {
+  // If the tap was on a dot (person avatar), don't open tray — the dot handles it
+  var target = event.target;
+  while (target && target !== event.currentTarget) {
+    if (target.onclick && target !== event.currentTarget) return; // clicked a dot
+    target = target.parentElement;
+  }
+  openHomeTray();
+}
+
 function renderHomeDartboard() {
   var container = document.getElementById('home-radar-dots');
   if (!container) return;
 
-  var allP = _homeDartboardProfiles.length > 0 ? _homeDartboardProfiles : (proxAllProfiles || []);
-  var profiles = allP.slice(0, 10);
-  var total = allP.length;
+  var filtered = _getFilteredProfiles();
+  var profiles = filtered.slice(0, 10);
+  var total = filtered.length;
   var countEl = document.getElementById('radar-count-home');
-  if (countEl) countEl.textContent = total > 0 ? total : '';
+  if (countEl) countEl.textContent = total > 0 ? ' · ' + total : '';
 
   if (profiles.length === 0) {
-    container.innerHTML = '<div style="text-align:center;font-size:0.75rem;color:var(--muted);padding:2rem 0">Join en boble for at se matches</div>';
-    updateMatchBar(0);
+    container.innerHTML = '<div style="text-align:center;font-size:0.75rem;color:var(--muted);padding:2rem 0">' +
+      (_homeRadarFilter !== 'all' ? 'Ingen matches i denne kategori' : 'Join en boble for at se matches') + '</div>';
     return;
   }
 
@@ -910,32 +935,6 @@ function renderHomeDartboard() {
   });
 
   container.innerHTML = html;
-  updateMatchBar(total);
-}
-
-// ── Update match bar avatars + count ──
-function updateMatchBar(total) {
-  var avatarsEl = document.getElementById('home-bar-avatars');
-  var plusEl = document.getElementById('home-bar-plus');
-  if (!avatarsEl) return;
-
-  var allP = _homeDartboardProfiles.length > 0 ? _homeDartboardProfiles : (proxAllProfiles || []);
-  var top3 = allP.slice(0, 3);
-  var colors = proxColors || ['linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#2ECFCF,#22B8CF)'];
-  avatarsEl.innerHTML = top3.map(function(p, i) {
-    var ini = (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-    var col = colors[i % colors.length];
-    var ml = i > 0 ? 'margin-left:-5px;' : '';
-    if (p.avatar_url && !p.is_anon) {
-      return '<div style="width:22px;height:22px;border-radius:50%;overflow:hidden;' + ml + 'border:1.5px solid #fff;position:relative;z-index:' + (5-i) + '"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
-    }
-    return '<div style="width:22px;height:22px;border-radius:50%;background:' + col + ';display:flex;align-items:center;justify-content:center;font-size:0.4rem;font-weight:700;color:white;' + ml + 'border:1.5px solid #fff;position:relative;z-index:' + (5-i) + '">' + escHtml(ini) + '</div>';
-  }).join('');
-
-  if (plusEl) {
-    var rem = total - 3;
-    plusEl.textContent = rem > 0 ? '+' + rem : '';
-  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -963,12 +962,11 @@ function renderHomeTrayList() {
   var subtitle = document.getElementById('home-tray-subtitle');
   if (!list) return;
 
-  var allP = _homeDartboardProfiles.length > 0 ? _homeDartboardProfiles : (proxAllProfiles || []);
-  var sorted = allP.slice().sort(function(a, b) { return (b.matchScore || 0) - (a.matchScore || 0); });
+  var sorted = _getFilteredProfiles().slice().sort(function(a, b) { return (b.matchScore || 0) - (a.matchScore || 0); });
   if (subtitle) subtitle.textContent = sorted.length + ' personer';
 
   if (sorted.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:var(--muted)">Ingen matches endnu</div>';
+    list.innerHTML = '<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:var(--muted)">Ingen matches' + (_homeRadarFilter !== 'all' ? ' i denne kategori' : '') + '</div>';
     return;
   }
 

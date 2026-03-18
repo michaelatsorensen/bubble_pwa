@@ -231,105 +231,191 @@ function rpFullProfile() {
 
 
 // ══════════════════════════════════════════════════════════
-//  SMART MATCH ALGORITHM (v2)
-//  - TF-IDF: rare shared tags score higher
-//  - Category weighting: branche > kompetence > rolle > interesse
-//  - Cross-match: "søger" ↔ "er" bonus
-//  - Shared bubble bonus
-//  - Sigmoid normalization to 0-99
+//  SMART MATCH ALGORITHM (v3 — Tier-based)
+//  Replaces TF-IDF with predictable, welcoming scoring:
+//  - Tier 1: Sector overlap (inferred from keywords) — max 30
+//  - Tier 2: Lifestage match (inferred from keywords) — max 15
+//  - Tier 3: Tag cluster overlap — max 30
+//  - Tier 4: Shared bubbles — max 16
+//  - Tier 5: Cross-match (søger↔er) — max 16
+//  - Tiny: profile completeness — max 4
+//  Total max: ~111 (capped at 100)
+//  Key difference: common tags are REWARDED, not penalized.
 // ══════════════════════════════════════════════════════════
-var MATCH_CAP = 25;  // Max profiles shown on radar at once
-var matchPage = 0;   // For "vis flere" rotation
+var MATCH_CAP = 25;
+var matchPage = 0;
 
-// Category weights for match scoring
-var CAT_WEIGHTS = { branche: 1.5, kompetence: 1.3, rolle: 1.0, interesse: 0.8, custom: 1.0 };
+// ── Sector inference: maps keywords → onboarding sectors ──
+var _sectorMap = {
+  startup: ['founder','co-founder','iværksætter','serial entrepreneur','startup','lean startup','entrepreneurship','venture capital','angel investing','fundraising','pitch deck','skalering','exit strategy','crowdfunding','startup økosystem','iværksætterkultur'],
+  tech: ['saas','ai/ml','developer','software engineer','frontend','backend','devops','cloud','cybersecurity','data scientist','machine learning','react','python','node.js','typescript','iot','robotics','blockchain','deep tech','infrastructure','devtools','data engineer','ml engineer','qa engineer','solutions architect','tech lead','arduino','api design','system design','full-stack','frontend developer','backend developer'],
+  sustainability: ['cleantech','bæredygtighed','energi','circular economy','vindenergi','solenergi','grøn omstilling','climate action','esg','carbon','sustainability','carbon capture','vandteknologi','affaldshåndtering','carbon accounting','lca','miljøledelse','energioptimering','grøn certificering'],
+  leadership: ['ceo','cto','cfo','coo','cmo','cpo','vp','director','leadership','management','strategy','okr','board member','general manager','country manager','managing director','partner'],
+  public: ['ngo','govtech','civic tech','kommune','region','stat','socialrådgiver','embedsmand','sagsbehandler','social impact','kommunaldirektør','kontorchef','forvaltningschef','socialøkonomi','frivilligsektor'],
+  industry: ['byggeri','produktion','industri','automation','tømrer','elektriker','vvs','ingeniør','maskinmester','logistik','transport','håndværker','murer','maler','smed','mekaniker','cnc-operatør','procesoperatør','anlæg','renovering'],
+  health: ['healthtech','medtech','pharma','biotech','sundhed','sygeplejerske','læge','tandlæge','fysioterapeut','psykolog','mental health','velfærdsteknologi','farmaceut','bioanalytiker','ergoterapeut','jordemoder'],
+  education: ['edtech','forskning','student','phd','professor','researcher','underviser','universitet','efteruddannelse','pædagog','lærer','skoleleder','didaktik','e-læring'],
+  creative: ['designer','ux designer','ui designer','graphic designer','content creator','fotograf','journalist','media','publishing','gaming','film','musik','art director','creative director','kommunikationsrådgiver','reklame'],
+  commerce: ['e-commerce','retail','fashion','b2b','b2c','sales','account manager','marketplace','detail','dagligvarer','butiksbestyrer','ejendomsmægler','d2c'],
+  community: ['networking','community building','frivillig','foreningsliv','mentoring','coaching','events','lokalt engagement','erfa-grupper','branchenetværk','frivilligt arbejde']
+};
 
-// Calculate tag rarity weight (TF-IDF inspired)
-// tagPopularity: { tagLower: count } built from all visible profiles
-var _tagPopularity = {};
+// ── Lifestage inference: maps keywords → lifestage ──
+var _lifestageMap = {
+  student: ['student','phd','researcher','praktikant','studentermedhjælper','kandidatstuderende','bachelorstuderende','stipendiat','teaching assistant','tutor'],
+  entrepreneur: ['founder','co-founder','ceo','cto','cfo','coo','cmo','cpo','iværksætter','serial entrepreneur','solo founder','startup','selvstændig'],
+  freelancer: ['freelancer','consultant','selvstændig','coach','mentor','advisor','fotograf','grafiker','tekstforfatter'],
+  employee: ['manager','lead','engineer','developer','designer','analyst','specialist','koordinator','rådgiver','chef','product manager','project manager','team lead','software engineer','frontend developer','backend developer','ux designer','ui designer','graphic designer','data scientist','data engineer','ml engineer','devops engineer','qa engineer','solutions architect','tech lead','sales manager','account manager','marketing manager','growth manager','brand manager','hr manager','operations manager'],
+  investor: ['investor','business angel','vc','lp','fund manager','board member','partner','impact investor'],
+  public: ['sagsbehandler','kommunaldirektør','embedsmand','socialrådgiver','pædagog','lærer','sygeplejerske','læge','skoleleder','forvaltningschef','kontorchef','tandlæge','fysioterapeut','psykolog'],
+  practical: ['tømrer','elektriker','vvs-installatør','murer','håndværker','mester','installatør','mekaniker','smed','ingeniør','maskinmester','maler','kok','bartender','industritekniker','procesoperatør','cnc-operatør']
+};
 
-function buildTagPopularity(allProfiles) {
-  _tagPopularity = {};
-  var total = allProfiles.length || 1;
-  allProfiles.forEach(function(p) {
-    (p.keywords || []).forEach(function(k) {
-      var key = k.toLowerCase();
-      _tagPopularity[key] = (_tagPopularity[key] || 0) + 1;
+// ── Tag-to-cluster mapping (broad clusters for bonus scoring) ──
+var _tagClusterMap = {
+  'leadership': ['founder','co-founder','ceo','cto','cfo','coo','cmo','cpo','vp','director','partner','board member','general manager','managing director'],
+  'management': ['product manager','project manager','team lead','afdelingsleder','program manager','scrum master','agile coach'],
+  'tech_dev': ['developer','software engineer','frontend developer','backend developer','data scientist','data engineer','ml engineer','devops engineer','qa engineer','solutions architect','tech lead','full-stack'],
+  'design': ['designer','ux designer','ui designer','graphic designer','art director','creative director','content creator','fotograf'],
+  'sales_growth': ['sales','sales manager','account manager','key account manager','marketing','marketing manager','growth manager','brand manager','digital marketing manager','social media manager'],
+  'advisory': ['consultant','advisor','mentor','coach','business coach','management consultant'],
+  'finance': ['investor','business angel','vc','fund manager','fundraising','financial modeling','budgettering','regnskab','revision'],
+  'tech_sector': ['saas','fintech','ai/ml','cybersecurity','cloud','infrastructure','devtools','iot','robotics','blockchain','deep tech','hardware'],
+  'health_sector': ['healthtech','medtech','pharma','biotech','mental health','sundhed','velfærdsteknologi'],
+  'green_sector': ['cleantech','energi','bæredygtighed','circular economy','vindenergi','solenergi','grøn omstilling'],
+  'education_sector': ['edtech','forskning','universitet','efteruddannelse'],
+  'commerce_sector': ['e-commerce','retail','fashion','b2b','b2c','marketplace','d2c'],
+  'construction': ['byggeri','anlæg','renovering','produktion','industri','automation','transport','logistik'],
+  'media': ['media','publishing','gaming','entertainment','reklame','film','musik','kommunikation','pr'],
+  'data_ai': ['data analytics','machine learning','nlp','computer vision','deep learning','data engineering','data visualization','business intelligence'],
+  'product_dev': ['product development','ux/ui design','frontend','backend','react','python','node.js','typescript','api design']
+};
+
+// Build reverse lookup once
+var _tagToCluster = null;
+function _ensureTagClusters() {
+  if (_tagToCluster) return;
+  _tagToCluster = {};
+  Object.keys(_tagClusterMap).forEach(function(cluster) {
+    _tagClusterMap[cluster].forEach(function(tag) {
+      _tagToCluster[tag.toLowerCase()] = cluster;
     });
   });
-  // Convert counts to rarity weights: rare = high, common = low
-  Object.keys(_tagPopularity).forEach(function(key) {
-    var freq = _tagPopularity[key] / total;
-    // Rarity: if 80% have it → ~0.3 weight; if 2% have it → ~1.7 weight
-    _tagPopularity[key] = 1.0 / Math.log2((_tagPopularity[key] + 1) / total * 10 + 2);
+}
+
+function _inferSectors(keywords) {
+  var found = {};
+  var kwLower = keywords.map(function(k) { return k.toLowerCase(); });
+  Object.keys(_sectorMap).forEach(function(sector) {
+    var hits = 0;
+    _sectorMap[sector].forEach(function(tag) {
+      if (kwLower.indexOf(tag) >= 0) hits++;
+    });
+    if (hits >= 1) found[sector] = hits;
   });
+  // Return top 3 by hit count
+  return Object.keys(found).sort(function(a,b) { return found[b] - found[a]; }).slice(0, 3);
+}
+
+function _inferLifestage(keywords) {
+  var kwLower = keywords.map(function(k) { return k.toLowerCase(); });
+  var best = null;
+  var bestHits = 0;
+  Object.keys(_lifestageMap).forEach(function(ls) {
+    var hits = 0;
+    _lifestageMap[ls].forEach(function(tag) {
+      if (kwLower.indexOf(tag) >= 0) hits++;
+    });
+    if (hits > bestHits) { best = ls; bestHits = hits; }
+  });
+  return best;
+}
+
+// Related lifestages (partial match)
+var _lifestageRelated = {
+  entrepreneur: ['freelancer','investor','student'],
+  freelancer: ['entrepreneur','employee'],
+  student: ['entrepreneur','employee'],
+  employee: ['freelancer','public'],
+  investor: ['entrepreneur'],
+  public: ['employee'],
+  practical: ['employee','freelancer']
+};
+
+// Keep buildTagPopularity signature — called from b-profile.js
+function buildTagPopularity(allProfiles) {
+  _ensureTagClusters();
 }
 
 function getTagRarity(tagLower) {
-  return _tagPopularity[tagLower] || 1.2; // Unknown tags get above-average weight
+  return 1.0;
 }
 
 function calcMatchScore(myProfile, theirProfile, sharedBubbleCount) {
-  var myKw = (myProfile.keywords || []).map(function(k) { return k.toLowerCase(); });
-  var theirKw = (theirProfile.keywords || []).map(function(k) { return k.toLowerCase(); });
+  _ensureTagClusters();
+  var score = 0;
+  var myKw = (myProfile.keywords || []);
+  var theirKw = (theirProfile.keywords || []);
+
+  // ── Tier 1: Sector overlap (max 30) ──
+  var mySectors = _inferSectors(myKw);
+  var theirSectors = _inferSectors(theirKw);
+  var sectorOverlap = 0;
+  mySectors.forEach(function(s) {
+    if (theirSectors.indexOf(s) >= 0) sectorOverlap++;
+  });
+  score += Math.min(sectorOverlap * 10, 30);
+
+  // ── Tier 2: Lifestage match (max 15) ──
+  var myLs = myProfile.lifestage || _inferLifestage(myKw);
+  var theirLs = theirProfile.lifestage || _inferLifestage(theirKw);
+  if (myLs && theirLs) {
+    if (myLs === theirLs) {
+      score += 15;
+    } else if (_lifestageRelated[myLs] && _lifestageRelated[myLs].indexOf(theirLs) >= 0) {
+      score += 8;
+    }
+  }
+
+  // ── Tier 3: Tag cluster overlap (max 30) ──
+  var myKwL = myKw.map(function(k) { return k.toLowerCase(); });
+  var theirKwL = theirKw.map(function(k) { return k.toLowerCase(); });
+  if (myKwL.length > 0 && theirKwL.length > 0) {
+    var myClusters = {};
+    var theirClusters = {};
+    myKwL.forEach(function(k) { var c = _tagToCluster[k]; if (c) myClusters[c] = true; });
+    theirKwL.forEach(function(k) { var c = _tagToCluster[k]; if (c) theirClusters[c] = true; });
+    var clusterOverlap = 0;
+    Object.keys(myClusters).forEach(function(c) { if (theirClusters[c]) clusterOverlap++; });
+    score += Math.min(clusterOverlap * 6, 30);
+
+    // Also count direct tag matches as small bonus
+    var directOverlap = myKwL.filter(function(k) { return theirKwL.indexOf(k) >= 0; });
+    score += Math.min(directOverlap.length * 2, 10);
+  }
+
+  // ── Tier 4: Shared bubbles (max 16) ──
+  score += Math.min((sharedBubbleCount || 0) * 8, 16);
+
+  // ── Tier 5: Cross-match — søger ↔ er (max 16) ──
   var myDyn = (myProfile.dynamic_keywords || []).map(function(k) { return k.toLowerCase(); });
   var theirDyn = (theirProfile.dynamic_keywords || []).map(function(k) { return k.toLowerCase(); });
-
-  if (myKw.length === 0 || theirKw.length === 0) {
-    // Minimal profile — give base score with profile completeness bonus
-    return Math.round(15 + (theirProfile.bio ? 8 : 0) + (theirProfile.title ? 7 : 0) + (sharedBubbleCount || 0) * 5);
-  }
-
-  // 1. Tag overlap with TF-IDF rarity weighting + category multiplier
-  var overlap = myKw.filter(function(k) { return theirKw.indexOf(k) >= 0; });
-  var tagScore = 0;
-  overlap.forEach(function(k) {
-    var rarity = getTagRarity(k);
-    // Find original casing to look up category
-    var original = (theirProfile.keywords || []).find(function(t) { return t.toLowerCase() === k; }) || k;
-    var cat = (typeof getTagCategory === 'function') ? getTagCategory(original) : 'custom';
-    var catWeight = CAT_WEIGHTS[cat] || 1.0;
-    tagScore += rarity * catWeight;
-  });
-
-  // Normalize by max possible score
-  var maxPossible = Math.max(myKw.length, theirKw.length);
-  var normalizedTagScore = tagScore / (maxPossible * 1.0); // Typically 0-2 range
-
-  // 2. Cross-match: my "søger" ↔ their "er" (and vice versa)
-  var crossScore = 0;
+  var crossHits = 0;
   if (myDyn.length > 0) {
-    myDyn.forEach(function(d) {
-      if (theirKw.indexOf(d) >= 0) crossScore += 2.0; // Strong signal
-      // Fuzzy: check if any of their tags contain my search term
-      theirKw.forEach(function(tk) {
-        if (tk !== d && (tk.indexOf(d) >= 0 || d.indexOf(tk) >= 0)) crossScore += 0.8;
-      });
-    });
+    myDyn.forEach(function(d) { if (theirKwL.indexOf(d) >= 0) crossHits++; });
   }
   if (theirDyn.length > 0) {
-    theirDyn.forEach(function(d) {
-      if (myKw.indexOf(d) >= 0) crossScore += 2.0;
-      myKw.forEach(function(mk) {
-        if (mk !== d && (mk.indexOf(d) >= 0 || d.indexOf(mk) >= 0)) crossScore += 0.8;
-      });
-    });
+    theirDyn.forEach(function(d) { if (myKwL.indexOf(d) >= 0) crossHits++; });
   }
+  score += Math.min(crossHits * 8, 16);
 
-  // 3. Shared bubble bonus (being in the same bubble = shared context)
-  var bubbleScore = Math.min((sharedBubbleCount || 0) * 0.3, 1.0);
+  // ── Tiny: profile completeness (max 4) ──
+  score += (theirProfile.bio ? 2 : 0) + (theirProfile.title ? 1 : 0) + (theirProfile.linkedin ? 1 : 0);
 
-  // 4. Profile completeness bonus (small)
-  var profileBonus = (theirProfile.bio ? 0.1 : 0) + (theirProfile.title ? 0.1 : 0) + (theirProfile.linkedin ? 0.05 : 0);
+  // Everyone visible: minimum 1 if they have a name
+  if (score === 0 && theirProfile.name) score = 1;
 
-  // Combine: tag overlap is primary, cross-match is high value, bubbles and profile are minor
-  var rawScore = normalizedTagScore * 3.0 + crossScore * 1.5 + bubbleScore + profileBonus;
-
-  // Sigmoid normalization: maps rawScore to 5-99 range
-  // sigmoid(x) = 1 / (1 + e^(-x)) mapped to our range
-  var sigmoid = 1 / (1 + Math.exp(-rawScore * 0.8 + 1.5));
-  var finalScore = Math.round(sigmoid * 85 + 10); // Range: ~12 to ~95
-  return Math.min(Math.max(finalScore, 5), 99);
+  return Math.min(Math.max(score, 0), 100);
 }
 
 // Quick relevance for sorting (0-1 range, used internally)
