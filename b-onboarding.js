@@ -239,9 +239,7 @@ function skipOnboarding() {
     workplace: (document.getElementById('ob-workplace')?.value || '').trim() || '',
     keywords: obSelectedTags.length > 0 ? obSelectedTags : ['Ny bruger'],
     dynamic_keywords: [], bio: '', is_anon: false,
-    onboarding_skipped: true,
-    life_phase: obLifestage || null,
-    sectors: (_selectedInterests && _selectedInterests.length > 0) ? _selectedInterests : []
+    onboarding_skipped: true
   }).then(function() {
     loadCurrentProfile();
     showToast('Du kan altid udfylde din profil senere');
@@ -1145,9 +1143,7 @@ async function saveOnboarding() {
     if (!isEventFlow && obSelectedTags.length < 3) return showToast('Vælg mindst 3 tags');
     const { error } = await sb.from('profiles').upsert({
       id: currentUser.id, name, title, bio, linkedin, workplace,
-      keywords: obSelectedTags, dynamic_keywords: obDynChips, is_anon: false,
-      life_phase: obLifestage || null,
-      sectors: (_selectedInterests && _selectedInterests.length > 0) ? _selectedInterests : []
+      keywords: obSelectedTags, dynamic_keywords: obDynChips, is_anon: false
     });
     if (error) return showToast('Fejl: ' + error.message);
     persistCustomTitle(title);
