@@ -142,20 +142,18 @@ let bcSubscription = null;
 let bcBubbleData = null;
 
 // ── REALTIME CLEANUP HELPER ──
+// v5.2: chat only cleans up its own subscriptions.
+// Global channels are owned by b-realtime.js → rtUnsubscribeAll().
 function bcUnsubscribe() {
   if (bcSubscription) { bcSubscription.unsubscribe(); bcSubscription = null; }
 }
 function dmUnsubscribe() {
   if (chatSubscription) { chatSubscription.unsubscribe(); chatSubscription = null; }
 }
-function incomingUnsubscribe() {
-  _globalRtChannels.forEach(function(ch) { try { ch.unsubscribe(); } catch(e) {} });
-  _globalRtChannels = [];
-}
 function bcUnsubscribeAll() {
   bcUnsubscribe();
   dmUnsubscribe();
-  incomingUnsubscribe();
+  // NOTE: does NOT touch global realtime channels — use rtUnsubscribeAll() for full teardown
 }
 
 async function openBubbleChat(bubbleId, fromScreen) {

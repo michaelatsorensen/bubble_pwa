@@ -295,6 +295,7 @@ async function confirmAbortOnboarding() {
     obLifestage = null;
     // Sign out and go to auth
     bcUnsubscribeAll();
+    rtUnsubscribeAll();
     sb.removeAllChannels();
     await sb.auth.signOut();
     currentUser = null;

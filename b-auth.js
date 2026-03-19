@@ -69,6 +69,7 @@ function setupAuthListener() {
     if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
       // User signed out (possibly in another tab)
       bcUnsubscribeAll();
+      rtUnsubscribeAll();
       currentUser = null;
       currentProfile = null;
       _profileCache = {};
@@ -330,6 +331,7 @@ async function handleSignup() {
 async function handleLogout() {
   try {
     bcUnsubscribeAll();
+    rtUnsubscribeAll();
     sb.removeAllChannels();
     await sb.auth.signOut();
     currentUser = null; currentProfile = null;

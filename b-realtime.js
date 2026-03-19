@@ -16,6 +16,13 @@ var _globalRtChannels = [];
 var _radarRefreshTimer = null;
 var _radarScreenActive = false;
 
+// ── Teardown: only b-realtime owns this cleanup ──
+function rtUnsubscribeAll() {
+  _globalRtChannels.forEach(function(ch) { try { ch.unsubscribe(); } catch(e) {} });
+  _globalRtChannels = [];
+  rtStopRadarPolling();
+}
+
 // ── Helpers: instant badge manipulation (no DB query needed) ──
 function dmBadgeGet() {
   var el = document.querySelector('.msg-unread-badge');
