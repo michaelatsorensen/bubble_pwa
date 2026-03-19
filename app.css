@@ -81,7 +81,7 @@ body {
 .topbar-badge { position:absolute;top:4px;right:4px;min-width:14px;height:14px;border-radius:7px;background:var(--accent2);color:white;font-size:0.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1;box-shadow:0 0 0 2px #FFFFFF; }
 
 /* ── SCROLL AREA ── */
-.scroll-area { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:1rem 1.1rem 1.5rem; overscroll-behavior-x:none; }
+.scroll-area { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:1rem 1.2rem 1.5rem; overscroll-behavior-x:none; }
 
 /* ── BOTTOM NAV (in document flow, not fixed) ── */
 #global-nav {
