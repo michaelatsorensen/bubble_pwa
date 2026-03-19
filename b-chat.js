@@ -187,7 +187,11 @@ async function openBubbleChat(bubbleId, fromScreen) {
       var { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bubbleId);
       memberCount = count || 0;
     }
-    document.getElementById('bc-members-count').textContent = memberCount + ' medlemmer';
+    document.getElementById('bc-members-count').textContent = memberCount + (b.type === 'event' || b.type === 'live' ? ' deltagere' : ' medlemmer');
+
+    // Dynamic tab label: "Deltagere" for events, "Medlemmer" for networks
+    var tabMembers = document.getElementById('bc-tab-members');
+    if (tabMembers) tabMembers.textContent = (b.type === 'event' || b.type === 'live') ? 'Deltagere' : 'Medlemmer';
 
     // Vis actions i topbar baseret på membership (parallel queries)
     var [upvoteRes, memberRes, roleRes] = await Promise.all([
@@ -832,36 +836,162 @@ async function bcLoadInfo() {
     if (!bcBubbleData) await bcLoadBubbleInfo();
     const b = bcBubbleData;
     if (!b) return;
-    const tags = (b.keywords||[]).map(k=>`<span class="tag">${escHtml(k)}</span>`).join('');
     const isOwner = bcBubbleData._isOwner || (currentUser && b.created_by === currentUser.id);
     const isAdmin = bcBubbleData._isAdmin || false;
     const canEdit = isOwner || isAdmin;
+    const isEvent = b.type === 'event' || b.type === 'live';
+    const memberLabel = isEvent ? 'deltagere' : 'medlemmer';
 
-    // Member count — use denormalized if available
-    var memberCount3 = b.member_count;
-    if (memberCount3 == null) {
-      var { count: mc } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', b.id);
-      memberCount3 = mc || 0;
+    // Member count
+    var mc = b.member_count;
+    if (mc == null) {
+      var { count: c } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', b.id);
+      mc = c || 0;
     }
 
-    list.innerHTML = `
-      <div class="chat-info-block"><div class="chat-info-label">Beskrivelse</div><div class="chat-info-val">${escHtml(b.description||'Ingen beskrivelse')}</div></div>
-      <div class="chat-info-block"><div class="chat-info-label">Interesser</div><div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.4rem">${tags||'–'}</div></div>
-      <div class="chat-info-block"><div class="chat-info-label">Boble-type</div><div class="chat-info-val">${typeLabel(b.type)}</div></div>
-      <div class="chat-info-block"><div class="chat-info-label">Sted</div><div class="chat-info-val">${escHtml(b.location||'Ikke angivet')}</div></div>
-      <div class="chat-info-block"><div class="chat-info-label">Medlemmer</div><div class="chat-info-val">${memberCount3 || 0} personer</div></div>
-      <div>
-        <button class="${myUpvotes[b.id] ? 'chat-info-btn success' : 'chat-info-btn primary'}" id="bc-recommend-btn" onclick="toggleBubbleUpvote('${b.id}')" style="${myUpvotes[b.id] ? '' : 'background:var(--gradient-primary);color:white;border:none'}">${myUpvotes[b.id] ? icon('checkCircle') + ' Anbefalet' : icon('rocket') + ' Anbefal denne boble'}</button>
-        <button class="chat-info-btn primary" data-action="openQRModal" data-id="${b.id}" style="background:var(--gradient-primary);color:white;border:none">${icon("qrcode")} Del boble / QR-kode</button>
-        ${canEdit ? `<button class="chat-info-btn primary" onclick="openBubbleScannerFromInfo('${b.id}')" style="background:rgba(26,158,142,0.1);border-color:rgba(26,158,142,0.25);color:var(--green)">${icon('camera')} Scan deltagere ind</button>` : ''}
-        ${canEdit ? `<button class="chat-info-btn primary" data-action="openEditBubble" data-id="${b.id}">${icon('edit')} Rediger boble</button>` : ''}
-        ${canEdit ? `<button class="chat-info-btn primary" onclick="downloadMembersPdf('${b.id}')">${icon('users')} Download deltagerliste</button>` : ''}
-        ${canEdit ? `<button class="chat-info-btn primary" onclick="generateEventReport('${b.id}')" style="background:linear-gradient(135deg,rgba(124,92,252,0.1),rgba(99,102,241,0.06));border-color:rgba(124,92,252,0.2);color:var(--accent)">${icon('file')} Event-rapport (HTML)</button>` : ''}
-        ${isOwner ? `<button class="chat-info-btn primary" onclick="openTransferOwnership('${b.id}')" style="background:rgba(30,27,46,0.03);border-color:rgba(30,27,46,0.1);color:var(--text-secondary)">${icon('crown')} Overdrag ejerskab</button>` : ''}
-        ${isOwner ? `<button class="chat-info-btn primary" onclick="openAdminDesignation('${b.id}')" style="background:rgba(30,27,46,0.03);border-color:rgba(30,27,46,0.1);color:var(--text-secondary)">${icon('users')} Udpeg admins</button>` : ''}
-        <button class="chat-info-btn danger" data-action="leaveBubble" data-id="${b.id}">${icon("logout")} Forlad boblen</button>
-        ${isOwner ? `<button class="chat-info-btn danger" onclick="confirmPopBubble('${b.id}')" style="margin-top:0.3rem;background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.25);color:#DC2626">${icon('x')} Slet boble</button>` : ''}
-      </div>`;
+    // Tags
+    var tagsHtml = (b.keywords || []).map(function(k) {
+      var col = isEvent ? 'rgba(46,207,207,0.07)' : 'rgba(124,92,252,0.07)';
+      var txt = isEvent ? '#0F6E56' : '#534AB7';
+      return '<span style="font-size:0.68rem;padding:0.2rem 0.55rem;border-radius:99px;background:' + col + ';color:' + txt + ';font-weight:500">' + escHtml(k) + '</span>';
+    }).join('');
+
+    // Color theming
+    var accentBg = isEvent ? 'rgba(46,207,207,' : 'rgba(124,92,252,';
+    var accentTxt = isEvent ? '#085041' : '#534AB7';
+    var accentStroke = isEvent ? '#2ECFCF' : '#7C5CFC';
+    var iconBg = isEvent ? 'rgba(46,207,207,0.1)' : 'rgba(124,92,252,0.1)';
+    var heroIcon = isEvent ? icon('calendar') : ico('bubble');
+
+    // ── Parent reference (only for events with parent_bubble_id) ──
+    var parentHtml = '';
+    if (isEvent && b.parent_bubble_id) {
+      try {
+        var { data: parent } = await sb.from('bubbles').select('id,name').eq('id', b.parent_bubble_id).maybeSingle();
+        if (parent) {
+          parentHtml = '<div onclick="openBubble(\'' + parent.id + '\')" style="display:flex;align-items:center;gap:0.55rem;padding:0.55rem 0.7rem;border-radius:12px;background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.1);margin-bottom:0.9rem;cursor:pointer">' +
+            '<div style="width:24px;height:24px;border-radius:7px;background:rgba(124,92,252,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + ico('bubble') + '</div>' +
+            '<div style="flex:1"><div style="font-size:0.68rem;color:var(--muted)">Del af</div><div style="font-size:0.78rem;font-weight:600;color:#534AB7">' + escHtml(parent.name) + '</div></div>' +
+            '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+        }
+      } catch(e) { /* silent */ }
+    }
+
+    // ── Child events (only for network bubbles) ──
+    var eventsHtml = '';
+    if (!isEvent) {
+      try {
+        var { data: childEvents } = await sb.from('bubbles')
+          .select('id, name, type, created_at, member_count')
+          .eq('parent_bubble_id', b.id)
+          .eq('type', 'event')
+          .order('created_at', { ascending: false })
+          .limit(10);
+        if (childEvents && childEvents.length > 0) {
+          var eventCards = childEvents.map(function(ev) {
+            var evMc = ev.member_count || 0;
+            var dateStr = new Date(ev.created_at).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+            return '<div onclick="openBubble(\'' + ev.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.65rem;border-radius:12px;background:rgba(46,207,207,0.04);border:1px solid rgba(46,207,207,0.12);cursor:pointer">' +
+              '<div style="width:34px;height:34px;border-radius:10px;background:rgba(46,207,207,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + icon('calendar') + '</div>' +
+              '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:600;color:var(--text)">' + escHtml(ev.name) + '</div>' +
+              '<div style="font-size:0.68rem;color:var(--muted)">' + dateStr + ' · ' + evMc + ' tilmeldt</div></div>' +
+              '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+          }).join('');
+          eventsHtml = '<div style="margin-bottom:0.9rem">' +
+            '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">' +
+            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">Events</div>' +
+            '<div style="font-size:0.68rem;color:#0F6E56;font-weight:600">' + childEvents.length + ' kommende</div></div>' +
+            '<div style="display:flex;flex-direction:column;gap:0.4rem">' + eventCards + '</div>' +
+            (canEdit ? '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="width:100%;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem;margin-top:0.4rem">' + icon('calendar') + ' Opret event</button>' : '') +
+            '</div>';
+        } else if (canEdit) {
+          eventsHtml = '<div style="margin-bottom:0.9rem">' +
+            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Events</div>' +
+            '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="width:100%;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('calendar') + ' Opret event</button></div>';
+        }
+      } catch(e) { logError('bcLoadInfo:childEvents', e); }
+    }
+
+    // ── Quick actions ──
+    var quickActions = '<div style="display:flex;gap:0.4rem;margin-bottom:0.9rem">' +
+      '<div onclick="toggleBubbleUpvote(\'' + b.id + '\')" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:0.25rem;padding:0.65rem 0.4rem;border-radius:14px;background:' + accentBg + '0.04);border:1px solid ' + accentBg + '0.1);cursor:pointer">' +
+        '<span style="width:16px;height:16px;display:flex;align-items:center;justify-content:center;color:' + accentStroke + '">' + (myUpvotes[b.id] ? icon('checkCircle') : icon('rocket')) + '</span>' +
+        '<div style="font-size:0.68rem;font-weight:600;color:' + accentTxt + '">' + (myUpvotes[b.id] ? 'Anbefalet' : 'Anbefal') + '</div></div>' +
+      '<div data-action="openQRModal" data-id="' + b.id + '" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:0.25rem;padding:0.65rem 0.4rem;border-radius:14px;background:' + accentBg + '0.04);border:1px solid ' + accentBg + '0.1);cursor:pointer">' +
+        '<span style="width:16px;height:16px;display:flex;align-items:center;justify-content:center;color:' + accentStroke + '">' + icon('qrcode') + '</span>' +
+        '<div style="font-size:0.68rem;font-weight:600;color:' + accentTxt + '">Del QR</div></div>' +
+      '<div onclick="openInviteModal(\'' + b.id + '\')" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:0.25rem;padding:0.65rem 0.4rem;border-radius:14px;background:' + accentBg + '0.04);border:1px solid ' + accentBg + '0.1);cursor:pointer">' +
+        '<span style="width:16px;height:16px;display:flex;align-items:center;justify-content:center;color:' + accentStroke + '">' + icon('user-plus') + '</span>' +
+        '<div style="font-size:0.68rem;font-weight:600;color:' + accentTxt + '">Inviter</div></div>' +
+    '</div>';
+
+    // ── Admin section (role-aware, type-aware) ──
+    var adminHtml = '';
+    if (canEdit) {
+      var adminItems = '';
+      // Event-only: scanner
+      if (isEvent) {
+        adminItems += '<div onclick="openBubbleScannerFromInfo(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;background:rgba(26,158,142,0.03);cursor:pointer">' +
+          '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:#1A9E8E">' + icon('camera') + '</span>' +
+          '<div style="flex:1;font-size:0.8rem;font-weight:600;color:#085041">Scan deltagere ind</div>' +
+          '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>' +
+          '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>';
+      }
+      // Shared: admins
+      if (isOwner) {
+        adminItems += '<div onclick="openAdminDesignation(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
+          '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('users') + '</span>' +
+          '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">Udpeg admins</div>' +
+          '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>' +
+          '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>';
+      }
+      // Shared: download list
+      adminItems += '<div onclick="downloadMembersPdf(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
+        '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('file') + '</span>' +
+        '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">Download ' + memberLabel + 'liste</div>' +
+        '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+      // Event-only: rapport
+      if (isEvent) {
+        adminItems += '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>' +
+          '<div onclick="generateEventReport(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
+          '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('file') + '</span>' +
+          '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">Event-rapport</div>' +
+          '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+      }
+      // Owner: transfer
+      if (isOwner) {
+        adminItems += '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>' +
+          '<div onclick="openTransferOwnership(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
+          '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('crown') + '</span>' +
+          '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">Overdrag ejerskab</div>' +
+          '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+      }
+      adminHtml = '<div style="margin-bottom:0.9rem">' +
+        '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">' + (isEvent ? 'Event-administration' : 'Administration') + '</div>' +
+        '<div style="border-radius:12px;border:1px solid var(--glass-border-subtle);overflow:hidden">' + adminItems + '</div></div>';
+    }
+
+    // ── Destructive actions ──
+    var destructHtml = '<div style="display:flex;flex-direction:column;gap:0.4rem;border-top:1px solid var(--glass-border-subtle);padding-top:0.8rem">' +
+      '<button data-action="leaveBubble" data-id="' + b.id + '" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.1);color:#A32D2D;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">Forlad ' + (isEvent ? 'event' : 'boblen') + '</button>' +
+      (isOwner ? '<button onclick="confirmPopBubble(\'' + b.id + '\')" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.1);color:#791F1F;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">Slet ' + (isEvent ? 'event' : 'boble') + '</button>' : '') +
+      '</div>';
+
+    // ── Assemble ──
+    list.innerHTML =
+      parentHtml +
+      '<div style="text-align:center;padding:0.25rem 0 1rem">' +
+        '<div style="width:52px;height:52px;border-radius:15px;background:' + iconBg + ';display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;color:' + accentStroke + '">' + heroIcon + '</div>' +
+        '<div style="font-size:1rem;font-weight:800;color:var(--text)">' + escHtml(b.name) + '</div>' +
+        '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.15rem">' + typeLabel(b.type) + (b.location ? ' · ' + escHtml(b.location) : '') + ' · ' + mc + ' ' + memberLabel + '</div>' +
+        (b.description ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;line-height:1.5;text-align:left">' + escHtml(b.description) + '</div>' : '') +
+        (tagsHtml ? '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.5rem;justify-content:center">' + tagsHtml + '</div>' : '') +
+      '</div>' +
+      quickActions +
+      eventsHtml +
+      adminHtml +
+      destructHtml;
+
   } catch(e) { logError("bcLoadInfo", e); showToast(e.message || "Ukendt fejl"); }
 }
 
