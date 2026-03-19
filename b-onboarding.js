@@ -1205,6 +1205,8 @@ async function saveOnboarding() {
     // If coming from event flow → checkPendingJoin handles mode A/B
     var isEventFlow = sessionStorage.getItem('event_flow');
     var postTagsDest = sessionStorage.getItem('post_tags_destination');
+    // Always check pending contact (personal QR flow)
+    await checkPendingContact();
     if (isEventFlow) {
       // Don't remove event_flow here — checkPendingJoin reads it for mode detection
       await checkPendingJoin();
@@ -1219,6 +1221,7 @@ async function saveOnboarding() {
       sessionStorage.removeItem('post_tags_destination');
       eventReadyGoToEvent();
     } else {
+      await checkPendingJoin();
       goTo('screen-home');
     }
   } catch(e) { logError("saveOnboarding", e); showToast(e.message || "Ukendt fejl"); }
