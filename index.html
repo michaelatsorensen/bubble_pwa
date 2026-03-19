@@ -20,24 +20,24 @@
 <link rel="stylesheet" href="app.css?v=4500">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=5001" defer></script>
-<script src="tag-data.js?v=5001" defer></script>
-<script src="b-config.js?v=5001" defer></script>
-<script src="b-utils.js?v=5001" defer></script>
-<script src="b-navigation.js?v=5001" defer></script>
-<script src="b-auth.js?v=5001" defer></script>
-<script src="b-home.js?v=5001" defer></script>
-<script src="b-bubbles.js?v=5001" defer></script>
-<script src="b-profile.js?v=5001" defer></script>
-<script src="b-radar.js?v=5001" defer></script>
-<script src="b-messages.js?v=5001" defer></script>
-<script src="b-realtime.js?v=5001" defer></script>
-<script src="b-onboarding.js?v=5001" defer></script>
-<script src="b-chat.js?v=5001" defer></script>
-<script src="b-notifications.js?v=5001" defer></script>
-<script src="b-live.js?v=5001" defer></script>
-<script src="b-admin.js?v=5001" defer></script>
-<script src="b-boot.js?v=5001" defer></script>
+<script src="bubble-icons.js?v=5200" defer></script>
+<script src="tag-data.js?v=5200" defer></script>
+<script src="b-config.js?v=5200" defer></script>
+<script src="b-utils.js?v=5200" defer></script>
+<script src="b-navigation.js?v=5200" defer></script>
+<script src="b-auth.js?v=5200" defer></script>
+<script src="b-home.js?v=5200" defer></script>
+<script src="b-bubbles.js?v=5200" defer></script>
+<script src="b-profile.js?v=5200" defer></script>
+<script src="b-radar.js?v=5200" defer></script>
+<script src="b-messages.js?v=5200" defer></script>
+<script src="b-realtime.js?v=5200" defer></script>
+<script src="b-onboarding.js?v=5200" defer></script>
+<script src="b-chat.js?v=5200" defer></script>
+<script src="b-notifications.js?v=5200" defer></script>
+<script src="b-live.js?v=5200" defer></script>
+<script src="b-admin.js?v=5200" defer></script>
+<script src="b-boot.js?v=5200" defer></script>
   
 
 
@@ -658,6 +658,10 @@
   <div class="topbar">
     <img src="bubble-logo-topbar-v2.png" alt="bubble" onclick="goTo('screen-home')" style="cursor:pointer;height:22px;width:auto">
     <div style="flex:1"></div>
+    <button id="topbar-notif-btn" onclick="goTo('screen-notifications')" style="position:relative;width:36px;height:36px;border-radius:12px;border:1px solid var(--glass-border-subtle);background:#FFFFFF;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(30,27,46,0.04);margin-right:0.35rem" title="Notifikationer">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5A6 6 0 006 8.5c0 6-2.5 8.5-2.5 8.5h17S18 14.5 18 8.5"/><path d="M13.73 20a2 2 0 01-3.46 0"/></svg>
+      <div id="topbar-notif-badge" class="topbar-badge" style="display:none">0</div>
+    </button>
     <div class="home-avatar" id="home-avatar" onclick="goTo('screen-profile')" style="background:linear-gradient(135deg,#6366F1,#7C5CFC)">?</div>
   </div>
 
@@ -679,27 +683,35 @@
     </div>
 
 
-    <!-- GETTING STARTED (dismissible) -->
-    <div id="home-getting-started" style="display:none;margin-bottom:0.8rem">
-      <div style="background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.12);border-radius:16px;padding:1rem 1.1rem;position:relative">
-        <button onclick="dismissGettingStarted()" style="position:absolute;top:0.6rem;right:0.7rem;background:none;border:none;color:var(--muted);font-size:0.9rem;cursor:pointer;padding:0.2rem;font-family:inherit">✕</button>
-        <div style="font-size:0.85rem;font-weight:700;margin-bottom:0.6rem">Kom godt i gang</div>
-        <div style="display:flex;flex-direction:column;gap:0.45rem" id="gs-steps">
-          <div class="gs-step" onclick="goTo('screen-bubbles');bbSwitchTab('explore')" style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem;border-radius:10px;background:rgba(124,92,252,0.03);cursor:pointer">
-            <div style="width:28px;height:28px;border-radius:8px;background:rgba(124,92,252,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent);font-size:0.85rem;font-weight:800">1</div>
-            <div style="flex:1"><div style="font-size:0.78rem;font-weight:600">Udforsk & join en boble</div><div style="font-size:0.65rem;color:var(--text-secondary)">Tryk her for at se bobler du kan joine</div></div>
-            <div style="color:var(--muted);font-size:0.85rem">→</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- All home cards -->
+    <!-- ═══ ALL HOME CARDS (v5.2) ═══ -->
     <div style="display:flex;flex-direction:column;gap:0.45rem">
 
-    <!-- ═══ RADAR HERO (borderless dartboard) ═══ -->
+      <!-- ═══ SEGMENTED CONTROL: Alle / Live (only visible when checked in) ═══ -->
+      <div id="home-mode-tabs" style="display:none">
+        <div style="display:flex;background:rgba(30,27,46,0.04);border-radius:10px;padding:3px">
+          <button id="home-tab-all" onclick="homeSetMode('all')" class="home-mode-tab active" style="flex:1;text-align:center;padding:0.4rem 0;font-size:0.75rem;font-weight:700;border:none;cursor:pointer;border-radius:8px;font-family:var(--font);transition:all 0.2s;background:var(--gradient-primary);color:white">Alle</button>
+          <button id="home-tab-live" onclick="homeSetMode('live')" class="home-mode-tab" style="flex:1;text-align:center;padding:0.4rem 0;font-size:0.75rem;font-weight:600;border:none;cursor:pointer;border-radius:8px;font-family:var(--font);transition:all 0.2s;background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:0.3rem">
+            <span id="home-tab-live-dot" style="width:6px;height:6px;border-radius:50%;background:#1A9E8E;box-shadow:0 0 0 2px rgba(26,158,142,0.25);animation:livePulse 2s infinite"></span>
+            Live
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══ LIVE EVENT BANNER (shown when Live tab active) ═══ -->
+      <div id="home-live-banner" style="display:none">
+        <div onclick="openLiveCheckoutTray()" style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;border-radius:12px;background:rgba(26,158,142,0.07);border:1px solid rgba(26,158,142,0.18);cursor:pointer">
+          <div style="width:8px;height:8px;border-radius:50%;background:#1A9E8E;box-shadow:0 0 0 3px rgba(26,158,142,0.2);animation:livePulse 2s infinite;flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:0.62rem;font-weight:700;color:#1A9E8E;text-transform:uppercase;letter-spacing:0.04em">LIVE</div>
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="home-live-banner-name">...</div>
+          </div>
+          <div style="font-size:0.68rem;color:var(--muted);font-weight:600;flex-shrink:0" id="home-live-banner-count"></div>
+          <div style="font-size:0.88rem;color:var(--muted);flex-shrink:0">›</div>
+        </div>
+      </div>
+
+      <!-- ═══ RADAR HERO (borderless dartboard) ═══ -->
       <div data-hs="radar">
-        <!-- Canvas radar — identical to radar sheet -->
         <div id="home-radar-dartboard" onclick="onDartboardTap(event)"
              style="position:relative;width:100%;height:0;padding-bottom:min(100%,55vh);border-radius:16px;background:rgba(124,92,252,0.02);overflow:hidden;cursor:pointer">
           <canvas id="home-prox-canvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
@@ -708,7 +720,6 @@
           <div id="home-radar-spinner" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
             <div class="spinner" style="width:24px;height:24px"></div>
           </div>
-          <!-- Liste icon — bottom right -->
           <button onclick="event.stopPropagation();openHomeTray()" title="Vis liste"
                   style="position:absolute;bottom:10px;right:10px;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(30,27,46,0.08);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 4px rgba(30,27,46,0.08);z-index:10">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -720,7 +731,7 @@
           </button>
         </div>
         <!-- Filter chips under dartboard -->
-        <div style="display:flex;gap:0.3rem;padding:0.4rem 0;overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <div id="home-filter-chips" style="display:flex;gap:0.3rem;padding:0.4rem 0;overflow-x:auto;-webkit-overflow-scrolling:touch">
           <button class="radar-filter-chip active" onclick="filterRadarHome('all')" data-filter="all">Alle <span id="radar-count-home" style="opacity:0.6"></span></button>
           <button class="radar-filter-chip" onclick="filterRadarHome('interest')" data-filter="interest">Fælles int.</button>
           <button class="radar-filter-chip" onclick="filterRadarHome('good')" data-filter="good">Godt match</button>
@@ -728,97 +739,47 @@
         </div>
       </div>
 
-    <!-- TOP MATCHES (hidden — kept for JS compat) -->
+      <!-- TOP MATCHES (hidden — kept for JS compat) -->
       <div id="home-top-matches" style="display:none">
         <div id="home-top-matches-list"></div>
       </div>
 
-    <!-- LIVE BUBBLE -->
-    <div id="live-bubble-card" class="live-bubble-card" data-hs="live" style="display:none">
-      <!-- State: checked in -->
-      <div id="live-bubble-active" style="display:none">
-        <div class="live-bubble-header">
-          <div class="live-bubble-pulse"></div>
-          <div style="flex:1;min-width:0">
-            <div class="live-bubble-label">📡 DU ER LIVE</div>
-            <div class="live-bubble-name" id="live-bubble-name">...</div>
-            <div class="live-bubble-meta" id="live-bubble-meta">...</div>
-          </div>
-          <div class="live-bubble-count" id="live-bubble-count">0</div>
-        </div>
-        <div class="live-bubble-actions">
-          <button class="live-bubble-btn primary" id="live-bubble-open-btn" onclick="openLiveBubble()">Se hvem der er her →</button>
-          <button class="live-bubble-btn ghost" onclick="liveCheckout()">Check ud</button>
+      <!-- ═══ GEMTE PROFILER (story-bar) ═══ -->
+      <div id="saved-profiles-bar" data-hs="saved" style="display:none">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">Gemte profiler <span id="saved-count-badge" class="saved-count-badge"></span></div>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <div class="saved-story-scroll" id="saved-story-list" style="flex:1"></div>
+          <button class="btn-sm btn-ghost" onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('saved')},200)" style="font-size:0.62rem;flex-shrink:0;padding:0.25rem 0.5rem">Se alle</button>
         </div>
       </div>
-      <!-- State: not checked in -->
-      <div id="live-bubble-idle">
-        <div class="live-bubble-idle-content" onclick="openLiveCheckin()">
-          <div class="live-bubble-idle-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M12 21.5c-3.5-3.5-6.5-7-6.5-10.5a6.5 6.5 0 0113 0c0 3.5-3 7-6.5 10.5z"/><circle cx="12" cy="11" r="2.5"/></svg></div>
+
+      <!-- ═══ PROFIL NUDGE (periodic, dismissible) ═══ -->
+      <div id="home-profile-nudge" style="display:none" data-hs="nudge">
+        <div onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('edit')},200)" style="display:flex;align-items:center;gap:0.6rem;padding:0.6rem 0.8rem;border-radius:14px;background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.12);cursor:pointer;position:relative">
+          <button onclick="event.stopPropagation();dismissProfileNudge()" style="position:absolute;top:0.4rem;right:0.5rem;background:none;border:none;color:var(--muted);font-size:0.8rem;cursor:pointer;padding:0.15rem;font-family:inherit;line-height:1">✕</button>
+          <div style="width:32px;height:32px;border-radius:10px;background:rgba(124,92,252,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <div style="flex:1;padding-right:1rem">
+            <div style="font-size:0.78rem;font-weight:700;color:var(--text)">Styrk din profil</div>
+            <div style="font-size:0.68rem;color:var(--text-secondary);line-height:1.3" id="nudge-hint">Tilføj titel og bio for bedre matches</div>
+          </div>
+          <div style="font-size:0.88rem;color:var(--muted);flex-shrink:0">›</div>
+        </div>
+      </div>
+
+      <!-- ═══ FEEDBACK ═══ -->
+      <div data-hs="feedback">
+        <div class="main-nav-card" onclick="openFeedback()">
+          <div class="main-nav-icon" style="background:rgba(124,92,252,0.12);color:var(--accent)"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
           <div style="flex:1">
-            <div class="live-bubble-idle-title">Live Bubble</div>
-            <div class="live-bubble-idle-sub">Check ind hvor du er — se hvem der er her lige nu</div>
+            <div class="section-title">Giv feedback</div>
+            <div class="sub-muted">Hjælp os med at gøre Bubble bedre</div>
           </div>
-          <div class="live-bubble-idle-arrow">›</div>
+          <div class="icon-muted">›</div>
         </div>
       </div>
-    </div>
 
-    <!-- GEMTE PROFILER (story-bar) -->
-    <div id="saved-profiles-bar" data-hs="saved" style="display:none">
-      <div style="font-size:0.78rem;font-weight:700;color:var(--text);margin-bottom:0.4rem">Gemte profiler <span id="saved-count-badge" class="saved-count-badge"></span></div>
-      <div style="display:flex;align-items:center;gap:0.5rem">
-        <div class="saved-story-scroll" id="saved-story-list" style="flex:1"></div>
-        <button class="btn-sm btn-ghost" onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('saved')},200)" style="font-size:0.62rem;flex-shrink:0;padding:0.25rem 0.5rem">Se alle</button>
-      </div>
-    </div>
-
-      <!-- Bobler (horizontal scroll) -->
-      <div data-hs="bubbles">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.3rem">
-          <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">Mine bobler</div>
-          <button class="btn-sm btn-ghost" onclick="goTo('screen-bubbles');bbSwitchTab('explore')" style="font-size:0.62rem;padding:0.15rem 0.45rem">Alle →</button>
-        </div>
-        <div id="home-bubbles-scroll" style="display:flex;gap:0.4rem;overflow-x:auto;padding-bottom:0.25rem;-webkit-overflow-scrolling:touch">
-          <div style="font-size:0.72rem;color:var(--muted);padding:0.4rem" id="home-bubbles-sub">Henter...</div>
-        </div>
-        <div class="main-nav-badge badge-bobler" id="home-bubbles-badge" style="display:none"></div>
-      </div>
-
-      <!-- Notifikationer -->
-      <div class="main-nav-card card-notif" data-hs="notifs" onclick="goTo('screen-notifications')">
-        <div class="main-nav-icon" style="background:rgba(46,207,207,0.15);color:#2ECFCF"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5A6 6 0 006 8.5c0 6-2.5 8.5-2.5 8.5h17S18 14.5 18 8.5"/><path d="M13.73 20a2 2 0 01-3.46 0"/></svg></div>
-        <div style="flex:1">
-          <div class="section-title">Notifikationer</div>
-          <div class="sub-muted" id="home-notif-sub">Henter...</div>
-        </div>
-        <div class="main-nav-badge badge-notif" id="home-notif-badge" style="display:none"></div>
-        <div class="icon-muted">›</div>
-      </div>
-
-
-      <!-- Progressive onboarding (v4) -->
-      <div id="home-progressive-onboarding" style="display:none">
-        <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent);padding:0.75rem 0 0.35rem">Styrk din profil</div>
-        <div id="gs-v4-cards"></div>
-      </div>
-
-      <!-- Feedback -->
-      <div class="main-nav-card" onclick="openFeedback()">
-        <div class="main-nav-icon" style="background:rgba(124,92,252,0.12);color:var(--accent)"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
-        <div style="flex:1">
-          <div class="section-title">Giv feedback</div>
-          <div class="sub-muted">Hjælp os med at gøre Bubble bedre</div>
-        </div>
-        <div class="icon-muted">›</div>
-      </div>
-    </div>
-
-    <div id="home-empty-state" style="display:none;text-align:center;padding:2.5rem 1rem">
-      <div style="width:48px;height:48px;margin:0 auto 0.8rem;opacity:0.5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:var(--accent)"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
-      <div style="font-size:0.88rem;font-weight:700;margin-bottom:0.3rem">Din hjem-skærm er tom</div>
-      <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:1.2rem;line-height:1.45">Vælg hvad du vil se her under indstillinger</div>
-      <button onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('settings')},200)" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(124,92,252,0.12);color:var(--accent);border:1px solid rgba(124,92,252,0.25);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">Åbn indstillinger</button>
     </div>
 
   </div>
@@ -836,6 +797,25 @@
     </div>
     <div style="flex:1;overflow-y:auto;padding:0.5rem 1.2rem;-webkit-overflow-scrolling:touch" id="home-tray-list">
       <div style="text-align:center;padding:1rem"><div class="spinner" style="width:20px;height:20px"></div></div>
+    </div>
+  </div>
+
+  <!-- ═══ LIVE CHECKOUT TRAY ═══ -->
+  <div id="live-checkout-backdrop" onclick="closeLiveCheckoutTray()" style="display:none;position:absolute;inset:0;background:rgba(30,27,46,0.25);z-index:60;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)"></div>
+  <div id="live-checkout-tray" style="position:absolute;bottom:0;left:0;right:0;background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:24px 24px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,0.1);transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1);z-index:65;padding:0.6rem 1.5rem 2rem">
+    <div style="display:flex;justify-content:center;padding:0 0 0.8rem"><div style="width:36px;height:4px;border-radius:2px;background:rgba(30,27,46,0.12)"></div></div>
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.2rem">
+      <div style="width:44px;height:44px;border-radius:14px;background:rgba(26,158,142,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-3.5-3.5-6.5-7-6.5-10.5a6.5 6.5 0 0113 0c0 3.5-3 7-6.5 10.5z"/><circle cx="12" cy="11" r="2.5"/></svg>
+      </div>
+      <div>
+        <div style="font-size:1rem;font-weight:800;color:var(--text)" id="live-checkout-name">...</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:0.1rem" id="live-checkout-meta">Checked ind</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.5rem">
+      <button onclick="liveCheckout();closeLiveCheckoutTray()" style="width:100%;padding:0.85rem;border-radius:14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#DC2626;font-size:0.92rem;font-weight:700;cursor:pointer;font-family:var(--font)">Check ud</button>
+      <button onclick="closeLiveCheckoutTray()" style="width:100%;padding:0.85rem;border-radius:14px;background:rgba(30,27,46,0.04);border:1px solid var(--glass-border-subtle);color:var(--muted);font-size:0.92rem;font-weight:600;cursor:pointer;font-family:var(--font)">Annuller</button>
     </div>
   </div>
 </div>
@@ -1281,30 +1261,16 @@
 
       <div class="section-label" style="margin-bottom:0.25rem">Hjem-skærm</div>
     <div class="settings-row" style="border-bottom:1px solid var(--glass-border-subtle)">
-      <div style="font-size:0.82rem;font-weight:600">Live Bubble</div>
-      <div class="settings-toggle" id="hs-toggle-live" onclick="hsToggle('live')" data-on="true"><div class="settings-toggle-knob"></div></div>
-    </div>
-    <div class="settings-row" style="border-bottom:1px solid var(--glass-border-subtle)">
       <div style="font-size:0.82rem;font-weight:600">Gemte profiler</div>
       <div class="settings-toggle" id="hs-toggle-saved" onclick="hsToggle('saved')" data-on="true"><div class="settings-toggle-knob"></div></div>
     </div>
     <div class="settings-row" style="border-bottom:1px solid var(--glass-border-subtle)">
-      <div style="font-size:0.82rem;font-weight:600">Bobler</div>
-      <div class="settings-toggle" id="hs-toggle-bubbles" onclick="hsToggle('bubbles')" data-on="true"><div class="settings-toggle-knob"></div></div>
-    </div>
-    <div class="settings-row" style="border-bottom:1px solid var(--glass-border-subtle)">
-      <div style="flex:1">
-        <div style="font-size:0.82rem;font-weight:600">Notifikationer</div>
-        <div class="hs-view-picker" style="display:flex;gap:0.35rem;margin-top:0.35rem">
-          <button class="hs-view-btn active" id="hs-notif-card" onclick="hsSetNotifView('card')" style="font-size:0.72rem;padding:0.35rem 0.7rem;border-radius:8px;border:1px solid var(--glass-border);background:rgba(30,27,46,0.04);color:var(--text-secondary);cursor:pointer;font-family:inherit;font-weight:600;transition:all 0.2s">Kort</button>
-          <button class="hs-view-btn" id="hs-notif-feed" onclick="hsSetNotifView('feed')" style="font-size:0.72rem;padding:0.35rem 0.7rem;border-radius:8px;border:1px solid var(--glass-border);background:none;color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;transition:all 0.2s">Live feed</button>
-        </div>
-      </div>
-      <div class="settings-toggle" id="hs-toggle-notifs" onclick="hsToggle('notifs')" data-on="true"><div class="settings-toggle-knob"></div></div>
+      <div style="font-size:0.82rem;font-weight:600">Profil-påmindelse</div>
+      <div class="settings-toggle" id="hs-toggle-nudge" onclick="hsToggle('nudge')" data-on="true"><div class="settings-toggle-knob"></div></div>
     </div>
     <div class="settings-row">
-      <div style="font-size:0.82rem;font-weight:600">Radar</div>
-      <div class="settings-toggle" id="hs-toggle-radar" onclick="hsToggle('radar')" data-on="true"><div class="settings-toggle-knob"></div></div>
+      <div style="font-size:0.82rem;font-weight:600">Feedback</div>
+      <div class="settings-toggle" id="hs-toggle-feedback" onclick="hsToggle('feedback')" data-on="true"><div class="settings-toggle-knob"></div></div>
     </div>
 
     <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Notifikationer</div>

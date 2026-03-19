@@ -6,6 +6,10 @@
 // ══════════════════════════════════════════════════════════
 //  HOME
 // ══════════════════════════════════════════════════════════
+
+// ── Live context: set when user is checked into an event ──
+var _homeLiveContext = null; // { bubbleId, bubbleName, memberCount }
+
 async function loadHome() {
   try {
     if (!currentProfile) await loadCurrentProfile();
@@ -14,28 +18,262 @@ async function loadHome() {
     // Greeting
     const nameEl = document.getElementById('home-greeting-name');
     if (nameEl && currentProfile?.name) {
-    // Dynamic greeting
-    var hour = new Date().getHours();
-    var greetText = hour < 5 ? 'God nat' : hour < 12 ? 'Godmorgen' : hour < 17 ? 'Goddag' : hour < 22 ? 'God aften' : 'God nat';
-    var greetLabel = nameEl?.previousElementSibling;
-    if (greetLabel) greetLabel.textContent = greetText + ',';
+      var hour = new Date().getHours();
+      var greetText = hour < 5 ? 'God nat' : hour < 12 ? 'Godmorgen' : hour < 17 ? 'Goddag' : hour < 22 ? 'God aften' : 'God nat';
+      var greetLabel = nameEl?.previousElementSibling;
+      if (greetLabel) greetLabel.textContent = greetText + ',';
       nameEl.innerHTML = escHtml(currentProfile.name.split(' ')[0]) + '<span style="display:inline-flex;width:1.3rem;height:1.3rem">' + ico('wave') + '</span>';
     }
 
-    // Load all dashboard data in parallel
-    var hsp = hsGetPrefs();
-    var loaders = [];
-    if (hsp.bubbles) loaders.push(loadHomeBubblesCard());
-    if (hsp.notifs) loaders.push(loadHomeNotifCard());
-    if (hsp.radar) { loaders.push(updateRadarCount()); loaders.push(loadProximityMap()); loaders.push(loadHomeDartboardData()); }
-    if (hsp.live) loaders.push(loadLiveBubbleStatus());
-    if (hsp.saved) loaders.push(loadSavedContacts());
-    await Promise.all(loaders);
+    // Load all data in parallel — v5.2
+    await Promise.all([
+      loadLiveBanner(),
+      loadHomeDartboardData(),
+      loadSavedContacts(),
+      updateTopbarNotifBadge()
+    ].map(function(p) { return p.catch(function(e) { logError('loadHome:parallel', e); }); }));
+
+    // Post-load: apply visibility toggles, show nudge
     hsApplyToHome();
-    showGettingStarted();
-    showProgressiveOnboarding();
-    try { loadHomeBubblePills(); } catch(e) { logError('loadHomeBubblePills', e); }
-  } catch(e) { logError("loadHome", e); /* Individual cards handle their own errors */ }
+    showProfileNudge();
+  } catch(e) { logError("loadHome", e); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  LIVE BANNER + MODE TABS (Alle / Live)
+// ══════════════════════════════════════════════════════════
+var _homeMode = 'all'; // 'all' or 'live'
+
+async function loadLiveBanner() {
+  var tabs = document.getElementById('home-mode-tabs');
+  var banner = document.getElementById('home-live-banner');
+  if (!currentUser) return;
+  try {
+    var expCut = new Date(Date.now() - 6 * 3600000).toISOString();
+    var { data: myLive } = await sb.from('bubble_members')
+      .select('bubble_id, checked_in_at, bubbles(id, name, type)')
+      .eq('user_id', currentUser.id)
+      .not('checked_in_at', 'is', null)
+      .is('checked_out_at', null)
+      .gte('checked_in_at', expCut)
+      .limit(1)
+      .maybeSingle();
+
+    if (myLive && myLive.bubbles) {
+      var { count: liveCount } = await sb.from('bubble_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('bubble_id', myLive.bubble_id)
+        .not('checked_in_at', 'is', null)
+        .is('checked_out_at', null)
+        .gte('checked_in_at', expCut);
+
+      // Calculate expiry time
+      var checkinTime = new Date(myLive.checked_in_at).getTime();
+      var expiryTime = new Date(checkinTime + 6 * 3600000);
+      var expiryStr = expiryTime.getHours().toString().padStart(2,'0') + ':' + expiryTime.getMinutes().toString().padStart(2,'0');
+
+      _homeLiveContext = {
+        bubbleId: myLive.bubble_id,
+        bubbleName: myLive.bubbles.name,
+        bubbleType: myLive.bubbles.type,
+        memberCount: liveCount || 0,
+        expiryStr: expiryStr
+      };
+
+      // Show tabs — auto-switch to live on first load
+      if (tabs) tabs.style.display = 'block';
+      homeSetMode('live');
+    } else {
+      _homeLiveContext = null;
+      if (tabs) tabs.style.display = 'none';
+      if (banner) banner.style.display = 'none';
+      homeSetMode('all');
+    }
+  } catch(e) {
+    logError('loadLiveBanner', e);
+    _homeLiveContext = null;
+    if (tabs) tabs.style.display = 'none';
+    if (banner) banner.style.display = 'none';
+  }
+}
+
+function homeSetMode(mode) {
+  _homeMode = mode;
+  var tabAll = document.getElementById('home-tab-all');
+  var tabLive = document.getElementById('home-tab-live');
+  var banner = document.getElementById('home-live-banner');
+
+  if (mode === 'live' && _homeLiveContext) {
+    // Live tab active
+    if (tabAll) { tabAll.style.background = 'transparent'; tabAll.style.color = 'var(--muted)'; tabAll.style.fontWeight = '600'; }
+    if (tabLive) { tabLive.style.background = 'linear-gradient(135deg,#1A9E8E,#10B981)'; tabLive.style.color = 'white'; tabLive.style.fontWeight = '700'; }
+
+    // Show live banner
+    if (banner) {
+      banner.style.display = 'block';
+      var nameEl = document.getElementById('home-live-banner-name');
+      var countEl = document.getElementById('home-live-banner-count');
+      if (nameEl) nameEl.textContent = _homeLiveContext.bubbleName;
+      if (countEl) countEl.textContent = _homeLiveContext.memberCount + ' her nu';
+    }
+
+    // Update checkout tray info
+    var coName = document.getElementById('live-checkout-name');
+    var coMeta = document.getElementById('live-checkout-meta');
+    if (coName) coName.textContent = _homeLiveContext.bubbleName;
+    if (coMeta) coMeta.textContent = 'Checked ind · udløber kl. ' + (_homeLiveContext.expiryStr || '—');
+
+    // Load event members into dartboard
+    loadEventDartboard();
+  } else {
+    // Alle tab active
+    if (tabAll) { tabAll.style.background = 'var(--gradient-primary)'; tabAll.style.color = 'white'; tabAll.style.fontWeight = '700'; }
+    if (tabLive) { tabLive.style.background = 'transparent'; tabLive.style.color = 'var(--muted)'; tabLive.style.fontWeight = '600'; }
+
+    // Hide live banner
+    if (banner) banner.style.display = 'none';
+
+    // Reset filter chips to purple/default
+    _homeRadarFilter = 'all';
+    renderHomeDartboard();
+  }
+  updateFilterChipStyle();
+}
+
+function updateFilterChipStyle() {
+  var chips = document.getElementById('home-filter-chips');
+  if (!chips) return;
+  var isLive = _homeMode === 'live' && _homeLiveContext;
+  // Update first chip text
+  var firstChip = chips.querySelector('[data-filter="all"]');
+  if (firstChip) {
+    var countSpan = firstChip.querySelector('#radar-count-home') || firstChip.querySelector('span');
+    if (isLive) {
+      firstChip.childNodes[0].textContent = 'Alle deltagere ';
+      if (countSpan) countSpan.textContent = '· ' + (_homeLiveContext.memberCount || 0);
+    } else {
+      firstChip.childNodes[0].textContent = 'Alle ';
+    }
+  }
+  // Update chip active colors
+  chips.querySelectorAll('.radar-filter-chip.active').forEach(function(c) {
+    if (isLive) {
+      c.style.background = 'linear-gradient(135deg,#1A9E8E,#10B981)';
+      c.style.borderColor = 'transparent';
+    } else {
+      c.style.background = 'linear-gradient(135deg,#7C5CFC,#6366F1)';
+      c.style.borderColor = 'transparent';
+    }
+  });
+}
+
+// ── Event-aware dartboard: load only event members ──
+async function loadEventDartboard() {
+  if (!_homeLiveContext) return;
+  try {
+    var expCut = new Date(Date.now() - 6 * 3600000).toISOString();
+    var { data: members } = await sb.from('bubble_members')
+      .select('user_id')
+      .eq('bubble_id', _homeLiveContext.bubbleId)
+      .not('checked_in_at', 'is', null)
+      .is('checked_out_at', null)
+      .gte('checked_in_at', expCut);
+    var memberIds = (members || []).map(function(m) { return m.user_id; }).filter(function(id) { return id !== currentUser.id; });
+    if (memberIds.length === 0) { renderHomeDartboard(); return; }
+
+    var { data: profiles } = await sb.from('profiles')
+      .select('id,name,title,keywords,dynamic_keywords,bio,linkedin,is_anon,avatar_url')
+      .in('id', memberIds);
+
+    _homeDartboardProfiles = (profiles || []).map(function(p) {
+      var matchScore = (typeof calcMatchScore === 'function') ? calcMatchScore(currentProfile, p, 1) : 0;
+      return { id:p.id, name:p.name, title:p.title, keywords:p.keywords, is_anon:p.is_anon, bio:p.bio, linkedin:p.linkedin, avatar_url:p.avatar_url, matchScore:matchScore, sharedBubbles:1 };
+    }).sort(function(a,b) { return b.matchScore - a.matchScore; });
+
+    renderHomeDartboard();
+  } catch(e) { logError('loadEventDartboard', e); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  LIVE CHECKOUT TRAY
+// ══════════════════════════════════════════════════════════
+function openLiveCheckoutTray() {
+  var backdrop = document.getElementById('live-checkout-backdrop');
+  var tray = document.getElementById('live-checkout-tray');
+  if (!backdrop || !tray) return;
+  backdrop.style.display = 'block';
+  void tray.offsetHeight;
+  tray.style.transform = 'translateY(0)';
+}
+function closeLiveCheckoutTray() {
+  var backdrop = document.getElementById('live-checkout-backdrop');
+  var tray = document.getElementById('live-checkout-tray');
+  if (backdrop) backdrop.style.display = 'none';
+  if (tray) tray.style.transform = 'translateY(100%)';
+}
+
+// ══════════════════════════════════════════════════════════
+//  PROFILE NUDGE (periodic, dismissible)
+// ══════════════════════════════════════════════════════════
+var NUDGE_RESHOW_DAYS = 7;
+function showProfileNudge() {
+  var el = document.getElementById('home-profile-nudge');
+  if (!el || !currentProfile) return;
+  // Calculate profile strength
+  var strength = 0;
+  if (currentProfile.name) strength += 20;
+  if (currentProfile.title) strength += 20;
+  if (currentProfile.bio) strength += 20;
+  if (currentProfile.keywords && currentProfile.keywords.length >= 3) strength += 20;
+  if (currentProfile.linkedin || currentProfile.avatar_url) strength += 20;
+  // Don't show if profile is strong enough
+  if (strength >= 80) { el.style.display = 'none'; return; }
+  // Check dismiss timestamp
+  var dismissed = localStorage.getItem('bubble_nudge_dismissed');
+  if (dismissed) {
+    var daysSince = (Date.now() - parseInt(dismissed)) / (1000 * 60 * 60 * 24);
+    if (daysSince < NUDGE_RESHOW_DAYS) { el.style.display = 'none'; return; }
+  }
+  // Show with contextual hint
+  var hint = document.getElementById('nudge-hint');
+  if (hint) {
+    if (!currentProfile.title) hint.textContent = 'Tilføj din titel for bedre matches';
+    else if (!currentProfile.bio) hint.textContent = 'Skriv en kort bio så andre kan finde dig';
+    else if (!currentProfile.keywords || currentProfile.keywords.length < 3) hint.textContent = 'Tilføj flere interesser for præcise matches';
+    else hint.textContent = 'Tilføj profilbillede og LinkedIn';
+  }
+  el.style.display = 'block';
+}
+function dismissProfileNudge() {
+  localStorage.setItem('bubble_nudge_dismissed', Date.now().toString());
+  var el = document.getElementById('home-profile-nudge');
+  if (el) { el.style.transition = 'opacity 0.2s'; el.style.opacity = '0'; setTimeout(function() { el.style.display = 'none'; el.style.opacity = ''; }, 200); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  TOPBAR NOTIFICATION BADGE
+// ══════════════════════════════════════════════════════════
+async function updateTopbarNotifBadge() {
+  try {
+    var badge = document.getElementById('topbar-notif-badge');
+    if (!badge || !currentUser) return;
+    var lastSeen = localStorage.getItem('bubble_notifs_seen') || '2000-01-01';
+    var [invRes, saveRes] = await Promise.all([
+      sb.from('bubble_invitations').select('*', { count: 'exact', head: true })
+        .eq('to_user_id', currentUser.id).eq('status', 'pending'),
+      sb.from('saved_contacts').select('*', { count: 'exact', head: true })
+        .eq('contact_id', currentUser.id).gt('created_at', lastSeen)
+    ]);
+    var total = (invRes.count || 0) + (saveRes.count || 0);
+    if (total > 0) {
+      badge.textContent = total > 9 ? '9+' : total;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+    // Also update nav tab badge (for consistency)
+    notifBadgeSet(total);
+  } catch(e) { logError('updateTopbarNotifBadge', e); }
 }
 
 async function loadHomeBubblesCard() {
@@ -65,22 +303,8 @@ async function loadHomeBubblesCard() {
 
 // ── Notification nav badge ──
 async function updateNotifNavBadge() {
-  try {
-    var badge = document.getElementById('home-notif-badge');
-    if (!badge || !currentUser) return;
-    var lastSeen = localStorage.getItem('bubble_notifs_seen') || '2000-01-01';
-    // Count pending invitations + new saves since last seen
-    var { count: invCount } = await sb.from('bubble_invitations')
-      .select('*', { count: 'exact', head: true })
-      .eq('to_user_id', currentUser.id)
-      .eq('status', 'pending');
-    var { count: saveCount } = await sb.from('saved_contacts')
-      .select('*', { count: 'exact', head: true })
-      .eq('contact_id', currentUser.id)
-      .gt('created_at', lastSeen);
-    var n = (invCount || 0) + (saveCount || 0);
-    if (badge) { badge.textContent = n > 9 ? '9+' : n; badge.style.display = n > 0 ? 'flex' : 'none'; }
-  } catch(e) { /* silent */ }
+  // v5.2: delegated to topbar badge
+  updateTopbarNotifBadge();
 }
 
 async function loadHomeNotifCard() {
@@ -645,37 +869,25 @@ function hsUpdateToggleUI(key, isOn) {
 
 function hsUpdateAllToggles() {
   var prefs = hsGetPrefs();
-  ['live','saved','bubbles','notifs','radar'].forEach(function(key) {
-    hsUpdateToggleUI(key, prefs[key]);
+  ['saved','nudge','feedback'].forEach(function(key) {
+    hsUpdateToggleUI(key, prefs[key] !== false);
   });
-  // Update notif view picker
-  var mode = hsGetNotifView();
-  var cardBtn = document.getElementById('hs-notif-card');
-  var feedBtn = document.getElementById('hs-notif-feed');
-  if (cardBtn) cardBtn.classList.toggle('active', mode === 'card');
-  if (feedBtn) feedBtn.classList.toggle('active', mode === 'feed');
   hsUpdatePreview();
 }
 
 function hsApplyToHome() {
   var prefs = hsGetPrefs();
-  var anyVisible = false;
-  ['live','saved','bubbles','notifs','radar'].forEach(function(key) {
-    if (key === 'notifs') return;
+  // v5.2: toggle keys are saved, nudge, feedback. Radar is always visible.
+  ['saved','nudge','feedback'].forEach(function(key) {
     var els = document.querySelectorAll('[data-hs="' + key + '"]');
     els.forEach(function(el) {
-      if (prefs[key]) {
+      if (prefs[key] !== false) {
         el.removeAttribute('data-hs-hidden');
       } else {
         el.setAttribute('data-hs-hidden', 'true');
       }
     });
-    if (prefs[key]) anyVisible = true;
   });
-  if (prefs.notifs) anyVisible = true;
-  hsApplyNotifView();
-  var emptyEl = document.getElementById('home-empty-state');
-  if (emptyEl) emptyEl.style.display = anyVisible ? 'none' : 'block';
 }
 
 
@@ -858,6 +1070,7 @@ function filterRadarHome(filter) {
     c.classList.toggle('active', c.dataset.filter === filter);
   });
   renderHomeDartboard();
+  updateFilterChipStyle();
 }
 
 // ── Tap dartboard background → open tray ──

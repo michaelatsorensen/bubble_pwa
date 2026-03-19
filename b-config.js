@@ -10,13 +10,13 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-03-18T20:00:00';
-const BUILD_VERSION  = 'v5.1.0';
+const BUILD_TIMESTAMP = '2026-03-19T18:00:00';
+const BUILD_VERSION  = 'v5.2.0';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
 
-var hsDefaults = { live: true, saved: true, bubbles: true, notifs: true, radar: true };
+var hsDefaults = { radar: true, saved: true, nudge: true, feedback: true };
 
 // ══════════════════════════════════════════════════════════
 //  GLOBAL ERROR HANDLERS + ERROR LOGGING + EMAIL ALERTS
