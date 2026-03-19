@@ -9,35 +9,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=5501">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=5501">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=5501">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=5501">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=5501">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=5501">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=5501">
+<link rel="manifest" href="manifest.json?v=5601">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=5601">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=5601">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=5601">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=5601">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=5601">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=5601">
 
-<link rel="stylesheet" href="app.css?v=5501">
+<link rel="stylesheet" href="app.css?v=5601">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=5501" defer></script>
-<script src="tag-data.js?v=5501" defer></script>
-<script src="b-config.js?v=5501" defer></script>
-<script src="b-utils.js?v=5501" defer></script>
-<script src="b-navigation.js?v=5501" defer></script>
-<script src="b-auth.js?v=5501" defer></script>
-<script src="b-home.js?v=5501" defer></script>
-<script src="b-bubbles.js?v=5501" defer></script>
-<script src="b-profile.js?v=5501" defer></script>
-<script src="b-radar.js?v=5501" defer></script>
-<script src="b-messages.js?v=5501" defer></script>
-<script src="b-realtime.js?v=5501" defer></script>
-<script src="b-onboarding.js?v=5501" defer></script>
-<script src="b-chat.js?v=5501" defer></script>
-<script src="b-notifications.js?v=5501" defer></script>
-<script src="b-live.js?v=5501" defer></script>
-<script src="b-admin.js?v=5501" defer></script>
-<script src="b-boot.js?v=5501" defer></script>
+<script src="bubble-icons.js?v=5601" defer></script>
+<script src="tag-data.js?v=5601" defer></script>
+<script src="b-config.js?v=5601" defer></script>
+<script src="b-utils.js?v=5601" defer></script>
+<script src="b-navigation.js?v=5601" defer></script>
+<script src="b-auth.js?v=5601" defer></script>
+<script src="b-home.js?v=5601" defer></script>
+<script src="b-bubbles.js?v=5601" defer></script>
+<script src="b-profile.js?v=5601" defer></script>
+<script src="b-radar.js?v=5601" defer></script>
+<script src="b-messages.js?v=5601" defer></script>
+<script src="b-realtime.js?v=5601" defer></script>
+<script src="b-onboarding.js?v=5601" defer></script>
+<script src="b-chat.js?v=5601" defer></script>
+<script src="b-notifications.js?v=5601" defer></script>
+<script src="b-live.js?v=5601" defer></script>
+<script src="b-admin.js?v=5601" defer></script>
+<script src="b-boot.js?v=5601" defer></script>
   
 
 
@@ -50,10 +50,15 @@
 .radar-dots-row .avatar { width:24px; height:24px; font-size:0.5rem; margin-left:-6px; border:2px solid var(--bg); }
 .radar-dots-row .avatar:first-child { margin-left:0; }
 
-/* ═══ V4.0 — QR Topbar Button ═══ */
-.qr-topbar-btn { position:relative; width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#7C5CFC,#6366F1); border:none; color:white !important; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-secondary); transition:all 0.15s; }
-.qr-topbar-btn:active { transform:scale(0.9); }
-.qr-topbar-btn .qr-pulse { position:absolute; top:0px; right:0px; width:8px; height:8px; border-radius:50%; background:#2ECFCF; border:2px solid var(--bg); animation:pulse 2s infinite; }
+/* ═══ V5.6 — Topbar Action Buttons ═══ */
+.topbar-action-btn { position:relative; width:36px; height:36px; border-radius:12px; border:1px solid var(--glass-border-subtle); background:#FFFFFF; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 2px rgba(30,27,46,0.04); transition:all 0.15s; flex-shrink:0; }
+.topbar-action-btn:active { transform:scale(0.92); }
+.topbar-qr-btn { position:relative; width:36px; height:36px; border-radius:12px; background:var(--gradient-primary); border:none; color:white; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.15s; flex-shrink:0; }
+.topbar-qr-btn:active { transform:scale(0.92); }
+
+/* ═══ V5.6 — Home Avatar ═══ */
+.home-avatar { width:36px; height:36px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; color:white; overflow:hidden; flex-shrink:0; border:2px solid rgba(124,92,252,0.15); }
+.home-avatar img { width:100%; height:100%; object-fit:cover; }
 
 /* ═══ V4.0 — QR Preview Screen ═══ */
 .qr-profile-hero { text-align:center; padding:2rem 1.5rem 1rem; }
@@ -91,10 +96,6 @@
 .anon-card { background:#FFFFFF; border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:0.6rem 0.85rem; margin:0 1.2rem 0.35rem; display:flex; align-items:center; gap:0.6rem; box-shadow:0 1px 3px rgba(30,27,46,0.06); }
 .anon-name-bar { width:80px; height:10px; border-radius:4px; background:var(--glass-border); }
 .anon-title-bar { width:120px; height:8px; border-radius:4px; background:var(--glass-border-subtle); margin-top:0.2rem; }
-
-/* ═══ V4.0 — Home Avatar ═══ */
-.home-avatar { width:34px; height:34px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; color:white; overflow:hidden; flex-shrink:0; }
-.home-avatar img { width:100%; height:100%; object-fit:cover; }
 
 /* ═══ V5.0 — Radar Filter Chips ═══ */
 .radar-filter-chip { padding:0.35rem 0.75rem; border-radius:20px; font-size:0.68rem; font-weight:600; font-family:var(--font); border:1px solid var(--glass-border-subtle); background:#FFFFFF; color:var(--text-secondary); cursor:pointer; flex-shrink:0; transition:all 0.15s; -webkit-tap-highlight-color:transparent; }
@@ -669,8 +670,8 @@
   <div class="topbar">
     <img src="bubble-logo-topbar-v2.png" alt="bubble" onclick="goTo('screen-home')" style="cursor:pointer;height:22px;width:auto">
     <div style="flex:1"></div>
-    <button id="topbar-notif-btn" onclick="goTo('screen-notifications')" style="position:relative;width:36px;height:36px;border-radius:12px;border:1px solid var(--glass-border-subtle);background:#FFFFFF;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(30,27,46,0.04);margin-right:0.35rem" title="Notifikationer">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5A6 6 0 006 8.5c0 6-2.5 8.5-2.5 8.5h17S18 14.5 18 8.5"/><path d="M13.73 20a2 2 0 01-3.46 0"/></svg>
+    <button id="topbar-notif-btn" onclick="goTo('screen-notifications')" class="topbar-action-btn" title="Notifikationer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5A6 6 0 006 8.5c0 6-2.5 8.5-2.5 8.5h17S18 14.5 18 8.5"/><path d="M13.73 20a2 2 0 01-3.46 0"/></svg>
       <div id="topbar-notif-badge" class="topbar-badge" style="display:none">0</div>
     </button>
     <div class="home-avatar" id="home-avatar" onclick="goTo('screen-profile')" style="background:linear-gradient(135deg,#6366F1,#7C5CFC)">?</div>
@@ -684,11 +685,12 @@
         <div style="font-size:0.68rem;color:var(--muted);letter-spacing:0.04em;text-transform:uppercase;font-weight:600">Goddag,</div>
         <div style="font-size:1.3rem;font-weight:800;letter-spacing:-0.02em;display:flex;align-items:center;gap:0.3rem" id="home-greeting-name"></div>
       </div>
-      <div style="display:flex;gap:0.4rem">
-        <button onclick="openLiveCheckin()" style="width:36px;height:36px;border-radius:12px;border:1px solid var(--glass-border-subtle);background:#FFFFFF;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(30,27,46,0.04)" title="Scanner"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
-        <button class="qr-topbar-btn" onclick="openMyQR()" title="Min QR-kode">
+      <div style="display:flex;gap:0.35rem;align-items:center">
+        <button onclick="openLiveCheckin()" class="topbar-action-btn" title="Scanner">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </button>
+        <button onclick="openMyQR()" class="topbar-qr-btn" title="Min QR-kode">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="3.5" height="3.5"/><path d="M20 14h-2.5v3M14 20h3v-3M20 20h-3"/></svg>
-          <div class="qr-pulse"></div>
         </button>
       </div>
     </div>
@@ -764,18 +766,38 @@
         </div>
       </div>
 
-      <!-- ═══ PROFIL NUDGE (periodic, dismissible) ═══ -->
-      <div id="home-profile-nudge" style="display:none" data-hs="nudge">
-        <div onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('edit')},200)" style="display:flex;align-items:center;gap:0.6rem;padding:0.6rem 0.8rem;border-radius:14px;background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.12);cursor:pointer;position:relative">
-          <button onclick="event.stopPropagation();dismissProfileNudge()" style="position:absolute;top:0.4rem;right:0.5rem;background:none;border:none;color:var(--muted);font-size:0.8rem;cursor:pointer;padding:0.15rem;font-family:inherit;line-height:1">✕</button>
-          <div style="width:32px;height:32px;border-radius:10px;background:rgba(124,92,252,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      <!-- ═══ PROFILE SETUP CTA (shown until 59%) ═══ -->
+      <div id="home-profile-setup" style="display:none">
+        <div onclick="openNextProfileSetupSheet()" style="padding:0.65rem 0.85rem;border-radius:14px;background:linear-gradient(135deg,rgba(124,92,252,0.06),rgba(232,121,168,0.04));border:1px solid rgba(124,92,252,0.15);cursor:pointer">
+          <div style="display:flex;align-items:center;gap:0.55rem;margin-bottom:0.5rem">
+            <div class="home-avatar-mini" id="setup-cta-avatar" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#7C5CFC);display:flex;align-items:center;justify-content:center;color:white;font-size:0.72rem;font-weight:700;flex-shrink:0;overflow:hidden">?</div>
+            <div style="flex:1">
+              <div style="font-size:0.82rem;font-weight:700;color:var(--text)">Styrk din profil</div>
+              <div style="font-size:0.68rem;color:var(--text-secondary)">Få bedre matches på radaren</div>
+            </div>
           </div>
-          <div style="flex:1;padding-right:1rem">
-            <div style="font-size:0.78rem;font-weight:700;color:var(--text)">Styrk din profil</div>
-            <div style="font-size:0.68rem;color:var(--text-secondary);line-height:1.3" id="nudge-hint">Tilføj titel og bio for bedre matches</div>
+          <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.4rem">
+            <div style="flex:1;height:5px;border-radius:3px;background:rgba(124,92,252,0.1)"><div id="setup-cta-bar" style="height:100%;border-radius:3px;background:var(--gradient-primary);transition:width 0.4s"></div></div>
+            <div style="font-size:0.72rem;color:var(--muted);font-weight:600;min-width:2rem;text-align:right" id="setup-cta-pct">20%</div>
           </div>
-          <div style="font-size:0.88rem;color:var(--muted);flex-shrink:0">›</div>
+          <div style="display:flex;align-items:center;gap:0.25rem">
+            <div style="font-size:0.72rem;color:#534AB7;font-weight:600" id="setup-cta-next">Næste: Tilføj titel</div>
+            <div style="font-size:0.82rem;color:#534AB7">→</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ MINI PROGRESS (shown 46-59%, replaces big CTA) ═══ -->
+      <div id="home-profile-mini" style="display:none">
+        <div style="padding:0.5rem 0.65rem;border-radius:10px;background:rgba(124,92,252,0.03);border:1px solid rgba(124,92,252,0.08)">
+          <div style="display:flex;align-items:center;gap:0.35rem">
+            <div style="flex:1;height:4px;border-radius:2px;background:rgba(124,92,252,0.1)"><div id="mini-bar-fill" style="height:100%;border-radius:2px;background:var(--gradient-primary);transition:width 0.4s"></div></div>
+            <div style="font-size:0.68rem;color:var(--muted);font-weight:600;min-width:2rem;text-align:right" id="mini-bar-pct">46%</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.3rem">
+            <div style="font-size:0.68rem;color:var(--muted)">Tilføj tags for bedre matches</div>
+            <div onclick="event.stopPropagation();openProfileSetupTags()" style="font-size:0.68rem;color:#534AB7;font-weight:600;cursor:pointer">Boost →</div>
+          </div>
         </div>
       </div>
 
@@ -1275,10 +1297,6 @@
       <div style="font-size:0.82rem;font-weight:600">Gemte profiler</div>
       <div class="settings-toggle" id="hs-toggle-saved" onclick="hsToggle('saved')" data-on="true"><div class="settings-toggle-knob"></div></div>
     </div>
-    <div class="settings-row" style="border-bottom:1px solid var(--glass-border-subtle)">
-      <div style="font-size:0.82rem;font-weight:600">Profil-påmindelse</div>
-      <div class="settings-toggle" id="hs-toggle-nudge" onclick="hsToggle('nudge')" data-on="true"><div class="settings-toggle-knob"></div></div>
-    </div>
     <div class="settings-row">
       <div style="font-size:0.82rem;font-weight:600">Feedback</div>
       <div class="settings-toggle" id="hs-toggle-feedback" onclick="hsToggle('feedback')" data-on="true"><div class="settings-toggle-knob"></div></div>
@@ -1351,6 +1369,80 @@
 
   </div><!-- /scroll area -->
 
+</div>
+
+<!-- ════════════════════════════════════════
+     PROFILE SETUP SHEETS (bottom sheets from home CTA)
+════════════════════════════════════════ -->
+
+<!-- SHEET 1: Title -->
+<div class="modal-overlay" id="sheet-setup-title" onclick="if(event.target===this)closeModal('sheet-setup-title')" style="align-items:flex-end">
+  <div class="setup-sheet">
+    <div class="setup-sheet-handle"></div>
+    <div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">Hvad er din titel?</div>
+    <div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Hjælper folk forstå hvad du laver</div>
+    <div class="input-group">
+      <input class="input" id="setup-title-input" placeholder="f.eks. CTO, Designer, Studerende..." oninput="setupTitleChanged()">
+    </div>
+    <div style="font-size:0.68rem;color:var(--muted);margin-bottom:0.4rem">Populære titler:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:1.2rem" id="setup-title-suggestions">
+      <button type="button" class="setup-suggestion" onclick="pickSetupTitle(this)">Founder</button>
+      <button type="button" class="setup-suggestion" onclick="pickSetupTitle(this)">CTO</button>
+      <button type="button" class="setup-suggestion" onclick="pickSetupTitle(this)">Product Manager</button>
+      <button type="button" class="setup-suggestion" onclick="pickSetupTitle(this)">Designer</button>
+      <button type="button" class="setup-suggestion" onclick="pickSetupTitle(this)">Salgschef</button>
+      <button type="button" class="setup-suggestion" onclick="pickSetupTitle(this)">Konsulent</button>
+      <button type="button" class="setup-suggestion" onclick="pickSetupTitle(this)">Studerende</button>
+      <button type="button" class="setup-suggestion" onclick="pickSetupTitle(this)">Projektleder</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.8rem">
+      <div style="flex:1;height:5px;border-radius:3px;background:rgba(124,92,252,0.1)"><div id="setup-title-bar" style="height:100%;border-radius:3px;background:var(--gradient-primary);transition:width 0.4s"></div></div>
+      <div style="font-size:0.72rem;color:var(--muted);font-weight:600" id="setup-title-pct">33%</div>
+    </div>
+    <button class="btn-primary" id="setup-title-save" onclick="saveSetupTitle()" style="width:100%">Gem og fortsæt</button>
+    <div onclick="skipSetupSheet('title')" style="text-align:center;margin-top:0.5rem;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:0.3rem">Spring over</div>
+  </div>
+</div>
+
+<!-- SHEET 2: Interests (11 categories) -->
+<div class="modal-overlay" id="sheet-setup-interests" onclick="if(event.target===this)closeModal('sheet-setup-interests')" style="align-items:flex-end">
+  <div class="setup-sheet" style="max-height:85vh">
+    <div class="setup-sheet-handle"></div>
+    <div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">Hvad interesserer dig?</div>
+    <div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem" id="setup-interest-count">Vælg mindst 3 emner (0/3)</div>
+    <div style="display:flex;flex-direction:column;gap:0.35rem;margin-bottom:1.2rem;overflow-y:auto;max-height:45vh" id="setup-interest-list"></div>
+    <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.8rem">
+      <div style="flex:1;height:5px;border-radius:3px;background:rgba(124,92,252,0.1)"><div id="setup-interest-bar" style="height:100%;border-radius:3px;background:var(--gradient-primary);transition:width 0.4s"></div></div>
+      <div style="font-size:0.72rem;color:var(--muted);font-weight:600" id="setup-interest-pct">46%</div>
+    </div>
+    <button class="btn-primary" id="setup-interest-save" onclick="saveSetupInterests()" style="width:100%;opacity:0.35;pointer-events:none">Vælg 3 mere</button>
+    <div onclick="skipSetupSheet('interests')" style="text-align:center;margin-top:0.5rem;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:0.3rem">Spring over</div>
+  </div>
+</div>
+
+<!-- SHEET 3: Lifestage -->
+<div class="modal-overlay" id="sheet-setup-lifestage" onclick="if(event.target===this)closeModal('sheet-setup-lifestage')" style="align-items:flex-end">
+  <div class="setup-sheet">
+    <div class="setup-sheet-handle"></div>
+    <div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">Hvad beskriver dig bedst?</div>
+    <div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Vælg én — vi tilpasser dine matches</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-bottom:1.2rem" id="setup-lifestage-grid">
+      <button type="button" class="setup-ls-btn" data-ls="student" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(59,130,246,0.1);color:#3B82F6"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 10l-10-5L2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg></div><span>Studerende</span></button>
+      <button type="button" class="setup-ls-btn" data-ls="employee" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(124,92,252,0.1);color:#7C5CFC"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg></div><span>Erhverv</span></button>
+      <button type="button" class="setup-ls-btn" data-ls="entrepreneur" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(232,121,168,0.1);color:#E879A8"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4.5 16.5c-1.5 1.5-2 5-2 5s3.5-.5 5-2c.8-.8 1-2 .4-2.8a2.1 2.1 0 00-3.4-.2z"/><path d="M14.5 2.5c-3 2-5 5.5-5.5 9l3.5 3.5c3.5-.5 7-2.5 9-5.5z"/></svg></div><span>Iværksætter</span></button>
+      <button type="button" class="setup-ls-btn" data-ls="freelancer" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(26,158,142,0.1);color:#1A9E8E"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg></div><span>Freelancer</span></button>
+      <button type="button" class="setup-ls-btn" data-ls="public" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(26,158,142,0.1);color:#1A9E8E"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M10 21v-3h4v3"/></svg></div><span>Offentlig / NGO</span></button>
+      <button type="button" class="setup-ls-btn" data-ls="practical" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(245,158,11,0.1);color:#F59E0B"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div><span>Håndværk & Teknik</span></button>
+      <button type="button" class="setup-ls-btn" data-ls="investor" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(245,158,11,0.1);color:#F59E0B"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div><span>Investor</span></button>
+      <button type="button" class="setup-ls-btn" data-ls="other" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(46,207,207,0.1);color:#2ECFCF"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v.01"/><path d="M12 8a2.5 2.5 0 011.13 4.74c-.46.27-.76.72-.87 1.26"/></svg></div><span>Andet</span></button>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.8rem">
+      <div style="flex:1;height:5px;border-radius:3px;background:rgba(124,92,252,0.1)"><div id="setup-ls-bar" style="height:100%;border-radius:3px;background:var(--gradient-primary);transition:width 0.4s"></div></div>
+      <div style="font-size:0.72rem;color:var(--muted);font-weight:600" id="setup-ls-pct">59%</div>
+    </div>
+    <button class="btn-primary" id="setup-ls-save" onclick="saveSetupLifestage()" style="width:100%;opacity:0.35;pointer-events:none">Vælg din type</button>
+    <div onclick="skipSetupSheet('lifestage')" style="text-align:center;margin-top:0.5rem;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:0.3rem">Spring over</div>
+  </div>
 </div>
 
 <!-- ════════════════════════════════════════

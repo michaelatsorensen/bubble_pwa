@@ -1184,12 +1184,11 @@ async function saveOnboarding() {
     const workplace = (document.getElementById('ob-workplace')?.value || '').trim();
     if (!name)            return showToast('Navn er påkrævet');
     if (!workplace)       return showToast('Virksomhed er påkrævet');
-    // Tags: required in normal flow, deferred in event flow
-    var isEventFlow = sessionStorage.getItem('event_flow');
-    if (!isEventFlow && obSelectedTags.length < 3) return showToast('Vælg mindst 3 tags');
     const { error } = await sb.from('profiles').upsert({
       id: currentUser.id, name, title, bio, linkedin, workplace,
-      keywords: obSelectedTags, dynamic_keywords: obDynChips, is_anon: false
+      keywords: obSelectedTags.length > 0 ? obSelectedTags : [],
+      dynamic_keywords: obDynChips, is_anon: false,
+      lifestage: obLifestage || null
     });
     if (error) return showToast('Fejl: ' + error.message);
     persistCustomTitle(title);

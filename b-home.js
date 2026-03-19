@@ -35,7 +35,7 @@ async function loadHome() {
 
     // Post-load: apply visibility toggles, show nudge
     hsApplyToHome();
-    showProfileNudge();
+    showProfileSetupCTA();
   } catch(e) { logError("loadHome", e); }
 }
 
@@ -213,41 +213,275 @@ function closeLiveCheckoutTray() {
 }
 
 // ══════════════════════════════════════════════════════════
-//  PROFILE NUDGE (periodic, dismissible)
 // ══════════════════════════════════════════════════════════
-var NUDGE_RESHOW_DAYS = 7;
-function showProfileNudge() {
-  var el = document.getElementById('home-profile-nudge');
-  if (!el || !currentProfile) return;
-  // Calculate profile strength
-  var strength = 0;
-  if (currentProfile.name) strength += 20;
-  if (currentProfile.title) strength += 20;
-  if (currentProfile.bio) strength += 20;
-  if (currentProfile.keywords && currentProfile.keywords.length >= 3) strength += 20;
-  if (currentProfile.linkedin || currentProfile.avatar_url) strength += 20;
-  // Don't show if profile is strong enough
-  if (strength >= 80) { el.style.display = 'none'; return; }
-  // Check dismiss timestamp
-  var dismissed = localStorage.getItem('bubble_nudge_dismissed');
-  if (dismissed) {
-    var daysSince = (Date.now() - parseInt(dismissed)) / (1000 * 60 * 60 * 24);
-    if (daysSince < NUDGE_RESHOW_DAYS) { el.style.display = 'none'; return; }
-  }
-  // Show with contextual hint
-  var hint = document.getElementById('nudge-hint');
-  if (hint) {
-    if (!currentProfile.title) hint.textContent = 'Tilføj din titel for bedre matches';
-    else if (!currentProfile.bio) hint.textContent = 'Skriv en kort bio så andre kan finde dig';
-    else if (!currentProfile.keywords || currentProfile.keywords.length < 3) hint.textContent = 'Tilføj flere interesser for præcise matches';
-    else hint.textContent = 'Tilføj profilbillede og LinkedIn';
-  }
-  el.style.display = 'block';
+//  PROFILE SETUP CTA + BOTTOM SHEETS (v5.5)
+// ══════════════════════════════════════════════════════════
+var SETUP_THRESHOLD = 59; // CTA disappears at this %
+var _setupSelectedInterests = [];
+var _setupSelectedLifestage = null;
+
+var SETUP_INTERESTS = [
+  { id: 'startup',        label: 'Startup & Iværksætteri',    color: '#E879A8', bg: 'rgba(232,121,168,', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4.5 16.5c-1.5 1.5-2 5-2 5s3.5-.5 5-2c.8-.8 1-2 .4-2.8a2.1 2.1 0 00-3.4-.2z"/><path d="M14.5 2.5c-3 2-5 5.5-5.5 9l3.5 3.5c3.5-.5 7-2.5 9-5.5z"/></svg>' },
+  { id: 'tech',           label: 'Teknologi & Digitalisering', color: '#7C5CFC', bg: 'rgba(124,92,252,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>' },
+  { id: 'sustainability', label: 'Bæredygtighed & Energi',     color: '#1A9E8E', bg: 'rgba(26,158,142,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v19M5 8l7-5 7 5M5 16l7 5 7-5"/></svg>' },
+  { id: 'leadership',     label: 'Ledelse & Strategi',         color: '#F59E0B', bg: 'rgba(245,158,11,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>' },
+  { id: 'public',         label: 'Offentlig & NGO',            color: '#1A9E8E', bg: 'rgba(26,158,142,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M10 21v-3h4v3"/></svg>' },
+  { id: 'industry',       label: 'Industri & Håndværk',        color: '#F59E0B', bg: 'rgba(245,158,11,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>' },
+  { id: 'health',         label: 'Sundhed & Omsorg',           color: '#E879A8', bg: 'rgba(232,121,168,', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>' },
+  { id: 'education',      label: 'Uddannelse & Forskning',     color: '#3B82F6', bg: 'rgba(59,130,246,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 10l-10-5L2 10l10 5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>' },
+  { id: 'creative',       label: 'Kreativ & Medie',            color: '#2ECFCF', bg: 'rgba(46,207,207,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83M16.62 12l-5.74 9.94"/></svg>' },
+  { id: 'commerce',       label: 'Handel & Service',           color: '#888780', bg: 'rgba(136,135,128,', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 01-8 0"/></svg>' },
+  { id: 'community',      label: 'Fællesskab & Fritid',        color: '#2ECFCF', bg: 'rgba(46,207,207,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>' }
+];
+
+function calcProfileStrength(profile) {
+  if (!profile) return 0;
+  var s = 0;
+  if (profile.name) s += 10;
+  if (profile.workplace) s += 10;
+  if (profile.title) s += 13;
+  if (profile.keywords && profile.keywords.length >= 3) s += 13;
+  if (profile.lifestage) s += 13;
+  // Above 59% threshold — bonus fields
+  if (profile.keywords && profile.keywords.length >= 6) s += 13; // detailed tags
+  if (profile.bio) s += 8;
+  if (profile.avatar_url) s += 10;
+  if (profile.linkedin) s += 10;
+  return Math.min(s, 100);
 }
-function dismissProfileNudge() {
-  localStorage.setItem('bubble_nudge_dismissed', Date.now().toString());
-  var el = document.getElementById('home-profile-nudge');
-  if (el) { el.style.transition = 'opacity 0.2s'; el.style.opacity = '0'; setTimeout(function() { el.style.display = 'none'; el.style.opacity = ''; }, 200); }
+
+function showProfileSetupCTA() {
+  var setupEl = document.getElementById('home-profile-setup');
+  var miniEl = document.getElementById('home-profile-mini');
+  if (!setupEl || !miniEl || !currentProfile) return;
+
+  var strength = calcProfileStrength(currentProfile);
+
+  if (strength >= SETUP_THRESHOLD) {
+    setupEl.style.display = 'none';
+    miniEl.style.display = 'none';
+    return;
+  }
+
+  // Determine next step
+  var nextLabel = '';
+  if (!currentProfile.title) nextLabel = 'Næste: Tilføj titel';
+  else if (!currentProfile.keywords || currentProfile.keywords.length < 3) nextLabel = 'Næste: Vælg interesser';
+  else if (!currentProfile.lifestage) nextLabel = 'Næste: Vælg din type';
+  else nextLabel = 'Tilføj tags for bedre matches';
+
+  // Update CTA avatar
+  var avEl = document.getElementById('setup-cta-avatar');
+  if (avEl) {
+    if (currentProfile.avatar_url) {
+      avEl.innerHTML = '<img src="' + escHtml(currentProfile.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    } else {
+      avEl.textContent = (currentProfile.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    }
+  }
+
+  // Show big CTA or mini bar
+  var bar, pctEl, nextEl;
+  setupEl.style.display = 'block';
+  miniEl.style.display = 'none';
+  bar = document.getElementById('setup-cta-bar');
+  pctEl = document.getElementById('setup-cta-pct');
+  nextEl = document.getElementById('setup-cta-next');
+  if (bar) bar.style.width = strength + '%';
+  if (pctEl) pctEl.textContent = strength + '%';
+  if (nextEl) nextEl.textContent = nextLabel;
+}
+
+function openNextProfileSetupSheet() {
+  if (!currentProfile) return;
+  if (!currentProfile.title) { openSetupTitleSheet(); return; }
+  if (!currentProfile.keywords || currentProfile.keywords.length < 3) { openSetupInterestsSheet(); return; }
+  if (!currentProfile.lifestage) { openSetupLifestageSheet(); return; }
+  // All done — open profile tab for tags
+  openProfileSetupTags();
+}
+
+// ── TITLE SHEET ──
+function openSetupTitleSheet() {
+  var input = document.getElementById('setup-title-input');
+  if (input) input.value = currentProfile?.title || '';
+  var strength = calcProfileStrength(currentProfile);
+  var bar = document.getElementById('setup-title-bar');
+  var pct = document.getElementById('setup-title-pct');
+  if (bar) bar.style.width = Math.min(strength + 13, 100) + '%';
+  if (pct) pct.textContent = Math.min(strength + 13, 100) + '%';
+  setupTitleChanged();
+  openModal('sheet-setup-title');
+}
+
+function setupTitleChanged() {
+  var val = (document.getElementById('setup-title-input')?.value || '').trim();
+  // Highlight matching suggestion
+  var btns = document.querySelectorAll('#setup-title-suggestions .setup-suggestion');
+  btns.forEach(function(b) { b.classList.toggle('active', b.textContent.trim() === val); });
+}
+
+function pickSetupTitle(btn) {
+  var input = document.getElementById('setup-title-input');
+  if (input) { input.value = btn.textContent.trim(); setupTitleChanged(); }
+}
+
+async function saveSetupTitle() {
+  var title = (document.getElementById('setup-title-input')?.value || '').trim();
+  if (!title) { showToast('Skriv en titel'); return; }
+  try {
+    await sb.from('profiles').update({ title: title }).eq('id', currentUser.id);
+    if (currentProfile) currentProfile.title = title;
+    closeModal('sheet-setup-title');
+    showProfileSetupCTA();
+    loadHomeDartboardData();
+    // Auto-open next sheet after brief delay
+    setTimeout(function() { openNextProfileSetupSheet(); }, 400);
+  } catch(e) { showToast('Fejl: ' + (e.message || 'ukendt')); }
+}
+
+// ── INTERESTS SHEET ──
+function openSetupInterestsSheet() {
+  _setupSelectedInterests = Array.isArray(currentProfile?.keywords) ? currentProfile.keywords.filter(function(k) {
+    return SETUP_INTERESTS.some(function(si) { return si.id === k || si.label === k; });
+  }) : [];
+  renderSetupInterests();
+  openModal('sheet-setup-interests');
+}
+
+function renderSetupInterests() {
+  var list = document.getElementById('setup-interest-list');
+  if (!list) return;
+  list.innerHTML = SETUP_INTERESTS.map(function(si) {
+    var isActive = _setupSelectedInterests.indexOf(si.id) !== -1;
+    return '<div class="setup-interest-row' + (isActive ? ' active' : '') + '" onclick="toggleSetupInterest(\'' + si.id + '\')" ' +
+      'style="' + (isActive ? '--active-border:' + si.bg + '0.35);--active-bg:' + si.bg + '0.05);--check-color:' + si.color : '') + '">' +
+      '<div class="si-icon" style="background:' + si.bg + '0.1);color:' + si.color + '">' + si.icon + '</div>' +
+      '<div style="flex:1;font-size:0.82rem;font-weight:' + (isActive ? '700' : '600') + ';color:' + (isActive ? si.color : 'var(--text-secondary)') + '">' + si.label + '</div>' +
+      '<div class="si-check">' + (isActive ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</div>' +
+    '</div>';
+  }).join('');
+  // Update count + button
+  var cnt = _setupSelectedInterests.length;
+  var countEl = document.getElementById('setup-interest-count');
+  if (countEl) countEl.textContent = 'Vælg mindst 3 emner (' + cnt + '/3)';
+  var btn = document.getElementById('setup-interest-save');
+  if (btn) {
+    if (cnt >= 3) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; btn.textContent = 'Gem og fortsæt'; }
+    else { btn.style.opacity = '0.35'; btn.style.pointerEvents = 'none'; btn.textContent = 'Vælg ' + (3 - cnt) + ' mere'; }
+  }
+  // Update progress bar
+  var strength = calcProfileStrength(currentProfile);
+  var projectedStrength = cnt >= 3 ? Math.min(strength + 13, 100) : strength;
+  var bar = document.getElementById('setup-interest-bar');
+  var pct = document.getElementById('setup-interest-pct');
+  if (bar) bar.style.width = projectedStrength + '%';
+  if (pct) pct.textContent = projectedStrength + '%';
+}
+
+function toggleSetupInterest(id) {
+  var idx = _setupSelectedInterests.indexOf(id);
+  if (idx === -1) _setupSelectedInterests.push(id);
+  else _setupSelectedInterests.splice(idx, 1);
+  renderSetupInterests();
+}
+
+async function saveSetupInterests() {
+  if (_setupSelectedInterests.length < 3) return;
+  try {
+    // Merge with existing keywords (keep detailed tags, add broad interests)
+    var existing = Array.isArray(currentProfile?.keywords) ? currentProfile.keywords : [];
+    var merged = _setupSelectedInterests.slice();
+    existing.forEach(function(k) { if (merged.indexOf(k) === -1) merged.push(k); });
+    await sb.from('profiles').update({ keywords: merged }).eq('id', currentUser.id);
+    if (currentProfile) currentProfile.keywords = merged;
+    closeModal('sheet-setup-interests');
+    showProfileSetupCTA();
+    loadHomeDartboardData();
+    setTimeout(function() { openNextProfileSetupSheet(); }, 400);
+  } catch(e) { showToast('Fejl: ' + (e.message || 'ukendt')); }
+}
+
+// ── LIFESTAGE SHEET ──
+function openSetupLifestageSheet() {
+  _setupSelectedLifestage = currentProfile?.lifestage || null;
+  updateSetupLifestageUI();
+  openModal('sheet-setup-lifestage');
+}
+
+function pickSetupLifestage(btn) {
+  _setupSelectedLifestage = btn.dataset.ls;
+  updateSetupLifestageUI();
+}
+
+function updateSetupLifestageUI() {
+  document.querySelectorAll('#setup-lifestage-grid .setup-ls-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.ls === _setupSelectedLifestage);
+  });
+  var btn = document.getElementById('setup-ls-save');
+  if (btn) {
+    if (_setupSelectedLifestage) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; btn.textContent = 'Færdig!'; }
+    else { btn.style.opacity = '0.35'; btn.style.pointerEvents = 'none'; btn.textContent = 'Vælg din type'; }
+  }
+  var strength = calcProfileStrength(currentProfile);
+  var projected = _setupSelectedLifestage ? Math.min(strength + 13, 100) : strength;
+  var bar = document.getElementById('setup-ls-bar');
+  var pct = document.getElementById('setup-ls-pct');
+  if (bar) bar.style.width = projected + '%';
+  if (pct) pct.textContent = projected + '%';
+}
+
+async function saveSetupLifestage() {
+  if (!_setupSelectedLifestage) return;
+  try {
+    await sb.from('profiles').update({ lifestage: _setupSelectedLifestage }).eq('id', currentUser.id);
+    if (currentProfile) currentProfile.lifestage = _setupSelectedLifestage;
+    closeModal('sheet-setup-lifestage');
+    showSuccessToast('Profil klar!');
+    showProfileSetupCTA();
+    loadHomeDartboardData();
+  } catch(e) { showToast('Fejl: ' + (e.message || 'ukendt')); }
+}
+
+// ── SKIP + BOOST ──
+function skipSetupSheet(which) {
+  closeModal('sheet-setup-' + (which === 'interests' ? 'interests' : which === 'lifestage' ? 'lifestage' : 'title'));
+  // Back to home — CTA updates with next step
+  showProfileSetupCTA();
+}
+
+function openProfileSetupTags() {
+  goTo('screen-profile');
+  setTimeout(function() { if (typeof profSwitchTab === 'function') profSwitchTab('edit'); }, 200);
+}
+
+// ── EMPTY FILTER STATE ──
+function showDartboardEmpty(filter) {
+  var container = document.getElementById('home-prox-avatars');
+  if (!container) return;
+  var existing = container.querySelector('.dartboard-empty');
+  if (existing) existing.remove();
+  var msg = '', link = '', linkFn = '';
+  if (filter === 'strong') {
+    msg = 'Ingen stærke matches endnu';
+    link = 'Tilføj tags →';
+    linkFn = 'openProfileSetupTags()';
+  } else if (filter === 'good') {
+    msg = 'Ingen gode matches endnu';
+    link = 'Prøv et andet filter';
+    linkFn = 'filterRadarHome(\'all\')';
+  } else if (filter === 'interest') {
+    msg = 'Ingen med fælles interesser';
+    link = 'Tilføj interesser →';
+    linkFn = 'openSetupInterestsSheet()';
+  }
+  if (!msg) return;
+  var div = document.createElement('div');
+  div.className = 'dartboard-empty';
+  div.innerHTML = '<div class="de-title">' + msg + '</div>' +
+    '<div class="de-sub">Tilføj flere tags for at finde folk der matcher dine specifikke interesser</div>' +
+    '<div class="de-link" onclick="' + linkFn + '">' + link + '</div>';
+  container.appendChild(div);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1139,10 +1373,17 @@ function renderHomeDartboard() {
   }
 
   if (profiles.length === 0) {
-    av.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:var(--muted)">' +
-      (_homeRadarFilter !== 'all' ? 'Ingen matches i denne kategori' : 'Join en boble for at se matches') + '</div>';
+    av.innerHTML = '';
+    if (_homeRadarFilter !== 'all') {
+      showDartboardEmpty(_homeRadarFilter);
+    } else {
+      av.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:var(--muted)">Join en boble for at se matches</div>';
+    }
     return;
   }
+  // Clear any empty state
+  var emptyEl = av.querySelector('.dartboard-empty');
+  if (emptyEl) emptyEl.remove();
 
   var map = canvas ? canvas.parentElement : null;
   var w = map ? (map.offsetWidth || 300) : 300;
