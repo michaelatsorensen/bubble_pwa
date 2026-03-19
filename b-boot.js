@@ -265,27 +265,39 @@ async function checkQRAnonPreview() {
   }
 }
 
+// ── Store QR owner profile for contextual auth ──
+var _qrContactProfile = null;
+
 async function loadQRProfilePreview(userId, bubbleId) {
   try {
     if (!sb) initSupabase();
     
     if (userId) {
       var { data: profile } = await sb.from('profiles')
-        .select('id,name,title,keywords,avatar_url')
+        .select('id,name,title,keywords,avatar_url,workplace')
         .eq('id', userId)
         .maybeSingle();
       
       if (profile) {
+        // Store for contextual auth
+        _qrContactProfile = profile;
+
+        // ── Hero ──
         var nameEl = document.getElementById('qr-preview-name');
         var titleEl = document.getElementById('qr-preview-title');
         var tagsEl = document.getElementById('qr-preview-tags');
         var avatarEl = document.getElementById('qr-preview-avatar');
         
         if (nameEl) nameEl.textContent = profile.name || 'Bubble-bruger';
-        if (titleEl) titleEl.textContent = profile.title || '';
-        if (tagsEl && profile.keywords) {
-          tagsEl.innerHTML = (profile.keywords || []).slice(0, 4).map(function(t) {
-            return '<span class="tag">' + escHtml(t) + '</span>';
+        if (titleEl) {
+          var titleParts = [];
+          if (profile.title) titleParts.push(profile.title);
+          if (profile.workplace) titleParts.push(profile.workplace);
+          titleEl.textContent = titleParts.join(' · ') || '';
+        }
+        if (tagsEl) {
+          tagsEl.innerHTML = (profile.keywords || []).slice(0, 5).map(function(t) {
+            return '<span style="font-size:0.68rem;padding:0.2rem 0.55rem;border-radius:99px;background:rgba(124,92,252,0.07);color:#534AB7;font-weight:500">' + escHtml(t) + '</span>';
           }).join('');
         }
         if (avatarEl) {
@@ -296,34 +308,94 @@ async function loadQRProfilePreview(userId, bubbleId) {
           }
         }
         
-        // Load network count
-        var { count } = await sb.from('saved_contacts')
-          .select('*', { count: 'exact', head: true })
-          .or('user_id.eq.' + userId + ',contact_id.eq.' + userId);
-        var netEl = document.getElementById('qr-preview-network-count');
-        if (netEl) netEl.textContent = count || 0;
+        // ── Stats: network count + bubble count (parallel) ──
+        var [netRes, membRes] = await Promise.all([
+          sb.from('saved_contacts').select('*', { count: 'exact', head: true })
+            .or('user_id.eq.' + userId + ',contact_id.eq.' + userId),
+          sb.from('bubble_members').select('bubble_id, bubbles(id,name,type)')
+            .eq('user_id', userId).limit(8)
+        ]);
+        var netCount = netRes.count || 0;
+        var memberships = membRes.data || [];
         
-        // Load bubbles
-        var { data: memberships } = await sb.from('bubble_members')
-          .select('bubble_id, bubbles(name,type)')
-          .eq('user_id', userId)
-          .limit(5);
+        var netEl = document.getElementById('qr-preview-network-count');
+        if (netEl) netEl.textContent = netCount;
+        var bubCountEl = document.getElementById('qr-preview-bubble-count');
+        if (bubCountEl) bubCountEl.textContent = memberships.length;
+        
+        // ── Bubble pills ──
         var bubblesEl = document.getElementById('qr-preview-bubbles');
-        if (bubblesEl && memberships && memberships.length > 0) {
+        if (bubblesEl && memberships.length > 0) {
           bubblesEl.innerHTML = memberships.map(function(m) {
             var b = m.bubbles || {};
-            var isLive = b.type === 'live' || b.type === 'event';
-            return '<div class="qr-context-chip">' +
-              '<div class="qr-context-dot" style="background:' + (isLive ? 'var(--green)' : 'var(--accent)') + '"></div>' +
-              escHtml(b.name || '...') +
-              (isLive ? ' · <strong style="color:var(--green)">Live</strong>' : '') +
-              '</div>';
+            var isEvent = b.type === 'event' || b.type === 'live';
+            var col = isEvent ? 'rgba(46,207,207,' : 'rgba(124,92,252,';
+            var dotCol = isEvent ? '#2ECFCF' : '#7C5CFC';
+            var txtCol = isEvent ? '#0F6E56' : '#534AB7';
+            return '<div style="display:flex;align-items:center;gap:0.3rem;padding:0.35rem 0.65rem;border-radius:10px;background:' + col + '0.06);border:1px solid ' + col + '0.12);flex-shrink:0">' +
+              '<div style="width:6px;height:6px;border-radius:50%;background:' + dotCol + '"></div>' +
+              '<span style="font-size:0.68rem;font-weight:600;color:' + txtCol + ';white-space:nowrap">' + escHtml(b.name || '...') + '</span></div>';
           }).join('');
         }
         
+        // ── Network contacts (real profiles from shared bubbles) ──
         var labelEl = document.getElementById('qr-preview-context-label');
         if (labelEl && profile.name) {
-          labelEl.textContent = (profile.name.split(' ')[0]) + ' er aktiv i';
+          labelEl.textContent = 'Folk i ' + profile.name.split(' ')[0] + 's netværk';
+        }
+        var listEl = document.getElementById('qr-preview-network-list');
+        var moreEl = document.getElementById('qr-preview-more-label');
+        if (listEl) {
+          // Get contacts of this user
+          var { data: contacts } = await sb.from('saved_contacts')
+            .select('contact_id, profiles:contact_id(id,name,title,keywords,avatar_url)')
+            .eq('user_id', userId).limit(5);
+          // Fallback: bubble co-members
+          if (!contacts || contacts.length === 0) {
+            var bubbleIds = memberships.map(function(m) { return m.bubble_id; });
+            if (bubbleIds.length > 0) {
+              var { data: coMembers } = await sb.from('bubble_members')
+                .select('user_id, profiles:user_id(id,name,title,keywords,avatar_url)')
+                .in('bubble_id', bubbleIds).neq('user_id', userId).limit(8);
+              // Deduplicate
+              var seen = {};
+              contacts = (coMembers || []).filter(function(m) {
+                if (!m.profiles || seen[m.user_id]) return false;
+                seen[m.user_id] = true;
+                return true;
+              }).slice(0, 5).map(function(m) { return { profiles: m.profiles }; });
+            }
+          }
+          
+          var colors = [
+            'linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#8B5CF6,#A855F7)',
+            'linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#1A9E8E,#10B981)',
+            'linear-gradient(135deg,#6366F1,#7C5CFC)'
+          ];
+          if (contacts && contacts.length > 0) {
+            listEl.innerHTML = contacts.map(function(c, i) {
+              var p = c.profiles || {};
+              var ini = (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+              var avHtml = p.avatar_url
+                ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+                : ini;
+              var tags = (p.keywords || []).slice(0, 2).map(function(t) {
+                return '<span style="font-size:0.55rem;padding:0.1rem 0.35rem;border-radius:6px;background:rgba(124,92,252,0.07);color:#534AB7">' + escHtml(t) + '</span>';
+              }).join('');
+              return '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.6rem 0.7rem;border-radius:12px;background:rgba(30,27,46,0.02);border:1px solid var(--glass-border-subtle)">' +
+                '<div style="width:38px;height:38px;border-radius:50%;background:' + colors[i % colors.length] + ';display:flex;align-items:center;justify-content:center;color:white;font-size:0.72rem;font-weight:700;flex-shrink:0;overflow:hidden">' + avHtml + '</div>' +
+                '<div style="flex:1;min-width:0"><div style="font-size:0.8rem;font-weight:600;color:var(--text)">' + escHtml(p.name || '?') + '</div>' +
+                '<div style="font-size:0.68rem;color:var(--text-secondary)">' + escHtml(p.title || '') + '</div></div>' +
+                (tags ? '<div style="display:flex;gap:0.15rem;flex-shrink:0">' + tags + '</div>' : '') +
+              '</div>';
+            }).join('');
+            // "More" label
+            if (moreEl && netCount > contacts.length) {
+              moreEl.textContent = '+ ' + (netCount - contacts.length) + ' flere i netværket';
+            }
+          } else {
+            listEl.innerHTML = '';
+          }
         }
       }
       goTo('screen-qr-preview');
@@ -331,7 +403,6 @@ async function loadQRProfilePreview(userId, bubbleId) {
       // Bubble join without profile - show teaser
       goTo('screen-qr-teaser');
     }
-    // Clean URL
     window.history.replaceState({}, document.title, window.location.pathname);
   } catch(e) {
     logError('loadQRProfilePreview', e);
@@ -340,8 +411,9 @@ async function loadQRProfilePreview(userId, bubbleId) {
 }
 
 function qrPreviewSignup() {
-  goTo('screen-qr-teaser');
-  setTimeout(function() { goTo('screen-auth'); showAuthForms(); }, 800);
+  // Go directly to auth with QR context — no teaser detour
+  goTo('screen-auth');
+  showAuthForms(true); // true = QR context mode
 }
 
 function qrTeaserSignup() {

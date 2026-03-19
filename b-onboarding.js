@@ -10,32 +10,59 @@ async function maybeShowOnboarding() {
   try {
     // Don't re-trigger if user explicitly skipped
     if (currentProfile?.onboarding_skipped) return false;
-    if (!currentProfile ||
-        !currentProfile.name ||
-        currentProfile.name === currentProfile.id ||
-        currentProfile.name === currentUser.email ||
-        !currentProfile.title ||
-        !currentProfile.keywords ||
-        currentProfile.keywords.length === 0) {
-      // Pre-fill name from Google if available
-      const googleName = currentUser.user_metadata?.full_name ||
-                         currentUser.user_metadata?.name || '';
-      if (googleName) document.getElementById('ob-name').value = googleName;
-      else document.getElementById('ob-name').value = currentProfile?.name || '';
-      document.getElementById('ob-title').value = currentProfile?.title || '';
-      document.getElementById('ob-bio').value = currentProfile?.bio || '';
-      document.getElementById('ob-linkedin').value = currentProfile?.linkedin || '';
-      var obWp = document.getElementById('ob-workplace');
-      if (obWp) obWp.value = currentProfile?.workplace || '';
-      // Initialize tag picker with existing tags
-      obSelectedTags = Array.isArray(currentProfile?.keywords) ? [...currentProfile.keywords] : [];
-      obRenderSelectedTags();
-      obRenderCategories();
-      goTo('screen-onboarding');
-      setTimeout(initInputConfirmButtons, 50);
-      return true;
+
+    // Detect auth provider
+    var provider = currentUser?.app_metadata?.provider || 'email';
+    var meta = currentUser?.user_metadata || {};
+    var autoName = meta.full_name || meta.name || '';
+    var autoAvatar = meta.avatar_url || meta.picture || '';
+
+    // v5.2: Only require name + workplace to proceed.
+    // Title, bio, keywords are handled by profil-nudge on home.
+    var hasName = currentProfile?.name && currentProfile.name !== currentProfile?.id && currentProfile.name !== currentUser?.email;
+    var hasWorkplace = currentProfile?.workplace && currentProfile.workplace.trim().length > 0;
+
+    if (hasName && hasWorkplace) return false; // Profile is complete enough
+
+    // Pre-fill from OAuth metadata
+    var obName = document.getElementById('ob-name');
+    if (obName) obName.value = autoName || currentProfile?.name || '';
+    var obTitle = document.getElementById('ob-title');
+    if (obTitle) obTitle.value = currentProfile?.title || '';
+    var obBio = document.getElementById('ob-bio');
+    if (obBio) obBio.value = currentProfile?.bio || '';
+    var obLinkedin = document.getElementById('ob-linkedin');
+    if (obLinkedin) obLinkedin.value = currentProfile?.linkedin || '';
+    var obWp = document.getElementById('ob-workplace');
+    if (obWp) obWp.value = currentProfile?.workplace || '';
+
+    // Auto-save avatar from OAuth if user doesn't have one
+    if (autoAvatar && !currentProfile?.avatar_url) {
+      try {
+        await sb.from('profiles').update({ avatar_url: autoAvatar }).eq('id', currentUser.id);
+        if (currentProfile) currentProfile.avatar_url = autoAvatar;
+      } catch(e) { /* silent */ }
     }
-    return false;
+
+    // Initialize tag picker with existing tags
+    obSelectedTags = Array.isArray(currentProfile?.keywords) ? [...currentProfile.keywords] : [];
+    obRenderSelectedTags();
+    obRenderCategories();
+
+    // Show QR contact confirmation banner if pending
+    var pendingContact = sessionStorage.getItem('pending_contact');
+    var obQrBanner = document.getElementById('ob-qr-contact-banner');
+    if (obQrBanner && pendingContact && typeof _qrContactProfile !== 'undefined' && _qrContactProfile) {
+      var qrName = document.getElementById('ob-qr-contact-name');
+      if (qrName) qrName.textContent = _qrContactProfile.name || 'Kontakt';
+      obQrBanner.style.display = 'flex';
+    } else if (obQrBanner) {
+      obQrBanner.style.display = 'none';
+    }
+
+    goTo('screen-onboarding');
+    setTimeout(initInputConfirmButtons, 50);
+    return true;
   } catch(e) { logError("maybeShowOnboarding", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -132,8 +159,8 @@ var obLifestage = null;
 function obCheckProgress() {
   var name = (document.getElementById('ob-name')?.value || '').trim();
   var title = (document.getElementById('ob-title')?.value || '').trim();
-  var isEventFlowOb = sessionStorage.getItem('event_flow');
-  var secADone = isEventFlowOb ? !!name : (name && obLifestage);
+  var workplace = (document.getElementById('ob-workplace')?.value || '').trim();
+  var secADone = name && workplace;
   var secBDone = obSelectedTags.length >= 3;
 
   // Preview: unlock when name + livsfase
@@ -183,22 +210,18 @@ function obCheckProgress() {
     else { checkB.classList.remove('done'); checkB.textContent = '2'; }
   }
 
-  // Save button: active when minimum requirements met
+  // Save button: active when minimum requirements met (v5.2: name + workplace)
   var saveBtn = document.getElementById('ob-save-btn');
   if (saveBtn) {
     var workplace = (document.getElementById('ob-workplace')?.value || '').trim();
-    var isEventFlow = sessionStorage.getItem('event_flow');
-    var canSave = isEventFlow ? (name && workplace) : (name && title && secBDone);
+    var canSave = name && workplace;
     saveBtn.style.opacity = canSave ? '1' : '0.3';
     saveBtn.style.pointerEvents = canSave ? 'auto' : 'none';
   }
 
-  // Step label
+  // Step label (simplified)
   var stepLabel = document.getElementById('ob-step-label');
-  if (stepLabel) {
-    var step = secBDone ? 3 : secADone ? 2 : 1;
-    stepLabel.textContent = 'Trin ' + step + ' af 3';
-  }
+  if (stepLabel) stepLabel.textContent = '';
 
   // Update preview hint and CTA
   var hint = document.getElementById('ob-preview-hint');

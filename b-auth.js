@@ -361,13 +361,43 @@ function switchToLogin() {
   document.getElementById('auth-login').style.display = 'block';
 }
 
-function showAuthForms() {
+function showAuthForms(qrContext) {
   var splash = document.getElementById('auth-splash');
   var interests = document.getElementById('auth-interests');
   var forms = document.getElementById('auth-forms');
   if (splash) { splash.style.transition = 'opacity 0.3s'; splash.style.opacity = '0'; setTimeout(function(){ splash.style.display = 'none'; }, 300); }
-  if (interests) { interests.style.transition = 'opacity 0.3s'; interests.style.opacity = '0'; setTimeout(function(){ interests.style.display = 'none'; }, 300); }
+  if (interests) { interests.style.display = 'none'; }
   if (forms) { forms.style.display = 'block'; forms.style.opacity = '0'; setTimeout(function(){ forms.style.transition = 'opacity 0.3s'; forms.style.opacity = '1'; }, 50); }
+
+  // QR context: show "X vil gerne connecte" card + contextual heading
+  var ctxCard = document.getElementById('auth-qr-context');
+  var heading = document.getElementById('auth-heading');
+  if (qrContext && typeof _qrContactProfile !== 'undefined' && _qrContactProfile) {
+    var p = _qrContactProfile;
+    if (ctxCard) {
+      var avEl = document.getElementById('auth-qr-avatar');
+      if (avEl) {
+        if (p.avatar_url) {
+          avEl.innerHTML = '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+        } else {
+          avEl.textContent = (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+        }
+      }
+      var nameEl = document.getElementById('auth-qr-name');
+      if (nameEl) nameEl.textContent = p.name || 'Bubble-bruger';
+      ctxCard.style.display = 'block';
+    }
+    if (heading) {
+      var titleEl = document.getElementById('auth-heading-title');
+      var subEl = document.getElementById('auth-heading-sub');
+      if (titleEl) titleEl.textContent = 'Opret din profil';
+      if (subEl) subEl.textContent = 'Gem ' + (p.name ? p.name.split(' ')[0] : 'kontakten') + ' og opdag netværket';
+      heading.style.display = 'block';
+    }
+  } else {
+    if (ctxCard) ctxCard.style.display = 'none';
+    if (heading) heading.style.display = 'none';
+  }
 }
 
 function completeInterestPicker() {
