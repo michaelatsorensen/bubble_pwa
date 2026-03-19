@@ -1180,13 +1180,19 @@ async function saveOnboarding() {
     updateNotifNavBadge();
     loadLiveBubbleStatus();
     initPushNotifications();
-    // If coming from event flow → auto-join + show QR
+    // If coming from event flow → checkPendingJoin handles mode A/B
     var isEventFlow = sessionStorage.getItem('event_flow');
     var postTagsDest = sessionStorage.getItem('post_tags_destination');
     if (isEventFlow) {
-      sessionStorage.removeItem('event_flow');
+      // Don't remove event_flow here — checkPendingJoin reads it for mode detection
       await checkPendingJoin();
-      showEventReadyQR();
+      // If event_flow is still set after checkPendingJoin → Mode B (show QR)
+      var stillEventFlow = sessionStorage.getItem('event_flow');
+      if (stillEventFlow) {
+        sessionStorage.removeItem('event_flow');
+        showEventReadyQR();
+      }
+      // Mode A already navigated to home in checkPendingJoin
     } else if (postTagsDest === 'event_bubble') {
       sessionStorage.removeItem('post_tags_destination');
       eventReadyGoToEvent();

@@ -428,6 +428,9 @@ function openCreateEventFromBubble(parentBubbleId) {
     // Show parent attribution label
     var parentLabel = document.getElementById('cb-parent-label');
     if (parentLabel) parentLabel.style.display = 'block';
+    // Show checkin mode for events
+    var cmg = document.getElementById('cb-checkin-mode-group');
+    if (cmg) cmg.style.display = 'block';
     // Fetch parent name async
     sb.from('bubbles').select('name').eq('id', parentBubbleId).maybeSingle().then(function(r) {
       if (r.data && parentLabel) {
@@ -448,6 +451,9 @@ function openCreateNetworkModal() {
   if (modal) delete modal.dataset.parentBubbleId;
   var parentLabel = document.getElementById('cb-parent-label');
   if (parentLabel) { parentLabel.style.display = 'none'; parentLabel.textContent = ''; }
+  // Hide checkin mode (not relevant for networks)
+  var cmg = document.getElementById('cb-checkin-mode-group');
+  if (cmg) cmg.style.display = 'none';
   openModal('modal-create-bubble');
   setTimeout(function() {
     initInputConfirmButtons();
@@ -494,6 +500,11 @@ function cbRenderPillSelect(selectId, options) {
       btn.style.borderColor = 'rgba(124,92,252,0.5)';
       btn.style.background = 'rgba(124,92,252,0.12)';
       btn.style.color = 'var(--accent)';
+      // Show/hide checkin_mode for event type
+      if (selectId === 'cb-type') {
+        var cmg = document.getElementById('cb-checkin-mode-group');
+        if (cmg) cmg.style.display = (opt.value === 'event' || opt.value === 'live') ? 'block' : 'none';
+      }
     };
     wrap.appendChild(btn);
   });
@@ -521,6 +532,11 @@ async function createBubble() {
       keywords: cbChips, created_by: currentUser.id, visibility
     };
     if (parentBubbleId) insertData.parent_bubble_id = parentBubbleId;
+    // Event check-in mode (self = auto check-in, scan = reverse QR)
+    if (type === 'event' || type === 'live') {
+      var checkinMode = document.getElementById('cb-checkin-mode')?.value || 'self';
+      insertData.checkin_mode = checkinMode;
+    }
     const { data: bubble, error } = await sb.from('bubbles').insert(insertData).select().single();
     if (error) return showToast('Fejl: ' + error.message);
     // Auto-join
@@ -838,10 +854,43 @@ async function checkPendingJoin() {
     const joinId = sessionStorage.getItem('pending_join');
     if (!joinId) return;
     sessionStorage.removeItem('pending_join');
+
+    // Join bubble
     const { error } = await sb.from('bubble_members')
       .insert({ bubble_id: joinId, user_id: currentUser.id });
-    if (!error || String(error.message || '').includes('duplicate')) {
-      showSuccessToast('Du er checket ind');
+    if (error && !String(error.message || '').includes('duplicate')) {
+      showToast('Fejl ved join: ' + (error.message || 'ukendt'));
+      return;
+    }
+
+    // Check if this is an event flow
+    var isEventFlow = sessionStorage.getItem('event_flow');
+
+    // Fetch bubble to check type and checkin_mode
+    var { data: bubble } = await sb.from('bubbles')
+      .select('id, name, type, checkin_mode')
+      .eq('id', joinId).maybeSingle();
+
+    var isEvent = bubble && (bubble.type === 'event' || bubble.type === 'live');
+    var isSelfCheckin = !bubble || !bubble.checkin_mode || bubble.checkin_mode === 'self';
+
+    if (isEventFlow && isEvent && isSelfCheckin) {
+      // Mode A: auto check-in
+      await sb.from('bubble_members')
+        .update({ checked_in_at: new Date().toISOString(), checked_out_at: null })
+        .eq('bubble_id', joinId).eq('user_id', currentUser.id);
+      sessionStorage.removeItem('event_flow');
+      showSuccessToast('Du er checked ind!');
+      goTo('screen-home');
+      // Home will detect live context and show Live tab
+    } else if (isEventFlow && isEvent) {
+      // Mode B: show QR for organizer to scan
+      // event_flow flag stays — handled by checkAuth → showEventReadyQR()
+      showSuccessToast('Du er tilmeldt!');
+    } else {
+      // Normal bubble join (not event)
+      if (isEventFlow) sessionStorage.removeItem('event_flow');
+      showSuccessToast('Du er med i ' + (bubble ? bubble.name : 'boblen') + '!');
       await openBubble(joinId, 'screen-home');
     }
   } catch(e) { logError("checkPendingJoin", e); showToast(e.message || "Ukendt fejl"); }

@@ -495,10 +495,11 @@ async function checkGuestEventRoute() {
     var eventId = params.get('event');
     if (!eventId) return false;
     
-    // Already logged in → just join
+    // Already logged in → join + handle check-in
     var { data: { session } } = await sb.auth.getSession();
     if (session) {
       sessionStorage.setItem('pending_join', eventId);
+      sessionStorage.setItem('event_flow', 'true');
       return false;
     }
     
