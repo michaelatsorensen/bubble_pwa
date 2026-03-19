@@ -11,18 +11,35 @@ async function maybeShowOnboarding() {
     // Don't re-trigger if user explicitly skipped
     if (currentProfile?.onboarding_skipped) return false;
 
-    // Detect auth provider
+    // v5.4: Require name + workplace. Title optional. Rest via profil-nudge.
     var provider = currentUser?.app_metadata?.provider || 'email';
     var meta = currentUser?.user_metadata || {};
     var autoName = meta.full_name || meta.name || '';
     var autoAvatar = meta.avatar_url || meta.picture || '';
 
-    // v5.2: Only require name + workplace to proceed.
-    // Title, bio, keywords are handled by profil-nudge on home.
+    // Auto-save avatar from OAuth if user doesn't have one
+    if (autoAvatar && !currentProfile?.avatar_url) {
+      try {
+        await sb.from('profiles').update({ avatar_url: autoAvatar }).eq('id', currentUser.id);
+        if (currentProfile) currentProfile.avatar_url = autoAvatar;
+      } catch(e) { /* silent */ }
+    }
+
+    // Check if we already have what we need
     var hasName = currentProfile?.name && currentProfile.name !== currentProfile?.id && currentProfile.name !== currentUser?.email;
     var hasWorkplace = currentProfile?.workplace && currentProfile.workplace.trim().length > 0;
 
-    if (hasName && hasWorkplace) return false; // Profile is complete enough
+    // LinkedIn may provide enough to skip onboarding entirely
+    if (!hasName && autoName) {
+      // Try auto-saving name from OAuth
+      try {
+        await sb.from('profiles').update({ name: autoName }).eq('id', currentUser.id);
+        if (currentProfile) currentProfile.name = autoName;
+        hasName = true;
+      } catch(e) { /* silent */ }
+    }
+
+    if (hasName && hasWorkplace) return false; // Good enough — profil-nudge handles the rest
 
     // Pre-fill from OAuth metadata
     var obName = document.getElementById('ob-name');
@@ -250,29 +267,34 @@ function skipOnboarding() {
   var name = (document.getElementById('ob-name')?.value || '').trim();
   if (!name && currentProfile?.name) name = currentProfile.name;
   if (!name && currentUser?.email) name = currentUser.email.split('@')[0];
-  if (!name) { showToast('Skriv dit navn først — det er alt der kræves'); return; }
-
-  // Event flow requires full profile
-  var isEventFlow = sessionStorage.getItem('event_flow');
-  if (isEventFlow) { showToast('Udfyld navn og virksomhed for at deltage'); return; }
+  var workplace = (document.getElementById('ob-workplace')?.value || '').trim();
+  if (!name) { showToast('Skriv dit navn først'); return; }
+  if (!workplace) { showToast('Tilføj arbejdsplads — det er alt der mangler'); return; }
 
   sb.from('profiles').upsert({
     id: currentUser.id, name: name,
-    title: (document.getElementById('ob-title')?.value || '').trim() || 'Ikke udfyldt',
-    workplace: (document.getElementById('ob-workplace')?.value || '').trim() || '',
-    keywords: obSelectedTags.length > 0 ? obSelectedTags : ['Ny bruger'],
+    title: (document.getElementById('ob-title')?.value || '').trim() || '',
+    workplace: workplace,
+    keywords: obSelectedTags.length > 0 ? obSelectedTags : [],
     dynamic_keywords: [], bio: '', is_anon: false,
     onboarding_skipped: true
-  }).then(function() {
+  }).then(async function() {
     loadCurrentProfile();
-    showToast('Du kan altid udfylde din profil senere');
-    goTo('screen-home');
     preloadAllData();
     initGlobalRealtime();
     updateUnreadBadge();
     updateNotifNavBadge();
     loadLiveBubbleStatus();
     initPushNotifications();
+    await checkPendingJoin();
+    await checkPendingContact();
+    var stillEventFlow = sessionStorage.getItem('event_flow');
+    if (stillEventFlow) {
+      sessionStorage.removeItem('event_flow');
+      showEventReadyQR();
+    } else {
+      goTo('screen-home');
+    }
   }).catch(function(e) {
     showToast('Fejl: ' + (e.message || 'ukendt'));
   });
@@ -1197,7 +1219,7 @@ async function saveOnboarding() {
       sessionStorage.removeItem('post_tags_destination');
       eventReadyGoToEvent();
     } else {
-      goTo('screen-welcome');
+      goTo('screen-home');
     }
   } catch(e) { logError("saveOnboarding", e); showToast(e.message || "Ukendt fejl"); }
 }
