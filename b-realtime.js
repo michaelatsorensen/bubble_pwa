@@ -38,11 +38,11 @@ function dmBadgeIncrement() { dmBadgeSet(dmBadgeGet() + 1); }
 function dmBadgeClear()     { dmBadgeSet(0); }
 
 function notifBadgeGet() {
-  var el = document.getElementById('home-notif-badge');
+  var el = document.getElementById('topbar-notif-badge');
   return el ? (parseInt(el.textContent) || 0) : 0;
 }
 function notifBadgeSet(n) {
-  var el = document.getElementById('home-notif-badge');
+  var el = document.getElementById('topbar-notif-badge');
   if (!el) return;
   if (n > 0) { el.textContent = n > 9 ? '9+' : String(n); el.style.display = 'flex'; }
   else { el.style.display = 'none'; }

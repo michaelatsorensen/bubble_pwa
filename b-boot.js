@@ -9,14 +9,11 @@
 async function preloadAllData() {
   try {
     await Promise.all([
-      loadHome(),
       loadDiscover(),
       loadMessages(),
       loadMyBubbles(),
       loadSavedContacts(),
-      loadProximityMap(),
-      loadBlockedUsers(),
-      loadPromotedCustomTags()
+      loadProximityMap()
     ].map(function(p) { return p.catch(function(e) { logError('preload', e); }); }));
   } catch(e) { logError('preloadAllData', e); }
 }
@@ -818,10 +815,8 @@ window.addEventListener('load', async () => {
   }
   await checkAuth();
   await checkQRJoin();
-  await checkPendingJoin();
-  await checkPendingContact();
   if (currentUser) {
-    // Realtime, badges, preload etc. already initialized by checkAuth/handleLogin/handleSignup
+    // Realtime, badges, preload, pending actions already initialized by resolvePostAuth
     trackEvent('app_open');
   }
   // Init swipe-to-close on all sheets/modals

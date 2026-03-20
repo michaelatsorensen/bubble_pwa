@@ -851,8 +851,8 @@ async function bcLoadInfo() {
     const b = bcBubbleData;
     if (!b) return;
     const isOwner = bcBubbleData._isOwner || (currentUser && b.created_by === currentUser.id);
-    const isAdmin = bcBubbleData._isAdmin || false;
-    const canEdit = isOwner || isAdmin;
+    const isBubbleAdmin = bcBubbleData._isAdmin || false;
+    const canEdit = isOwner || isBubbleAdmin;
     const isEvent = b.type === 'event' || b.type === 'live';
     const memberLabel = isEvent ? 'deltagere' : 'medlemmer';
 
