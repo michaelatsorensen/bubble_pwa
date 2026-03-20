@@ -159,92 +159,152 @@ function bcUnsubscribeAll() {
 async function openBubbleChat(bubbleId, fromScreen) {
   if (!currentUser || !bubbleId) { console.warn('openBubbleChat: missing user or bubbleId'); return; }
   console.debug('[bc] openBubbleChat:', bubbleId, 'from:', fromScreen);
+
+  // 1. Navigate + cleanup previous
+  bcUnsubscribe();
+  bcBubbleId = bubbleId;
+  var backBtn = document.getElementById('bc-back-btn');
+  backBtn.onclick = () => goTo(fromScreen || _activeScreen || 'screen-home');
+  goTo('screen-bubble-chat');
+  bcSwitchTab('members');
+
+  // 2. Load all data
   try {
-    bcBubbleId = bubbleId;
-    const backBtn = document.getElementById('bc-back-btn');
-    backBtn.onclick = () => goTo(fromScreen || _activeScreen || 'screen-home');
-    goTo('screen-bubble-chat');
+    var success = await bcLoadChatData(bubbleId);
+    if (!success) { goTo(fromScreen || _activeScreen || 'screen-home'); return; }
+  } catch(e) {
+    logError("openBubbleChat:load", e);
+    showToast('Kunne ikke åbne boblen');
+    goTo(fromScreen || _activeScreen || 'screen-home');
+    return;
+  }
 
-    // Land altid på Medlemmer-tab
-    bcSwitchTab('members');
+  // 3. Subscribe AFTER data is ready
+  bcSubscribeRealtime();
+}
 
-    // Hent boble-info og vis metadata + actions i topbar
-    const { data: b, error: bErr } = await sb.from('bubbles').select('*').eq('id', bubbleId).maybeSingle();
-    if (!b || bErr) {
-      showToast('Denne boble eksisterer ikke længere');
-      goTo(fromScreen || _activeScreen || 'screen-home');
-      return;
+// ── Pure data loading: fetch bubble, membership, roles, render UI ──
+async function bcLoadChatData(bubbleId) {
+  // Fetch bubble
+  var { data: b, error: bErr } = await sb.from('bubbles').select('*').eq('id', bubbleId).maybeSingle();
+  if (!b || bErr) { showToast('Denne boble eksisterer ikke længere'); return false; }
+  bcBubbleData = b;
+
+  // Render topbar
+  document.getElementById('bc-emoji').innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:1.1rem;height:1.1rem;border-radius:4px;object-fit:cover">' : bubbleEmoji(b.type);
+  document.getElementById('bc-name').textContent = b.name;
+
+  // Member count
+  var memberCount = b.member_count;
+  if (memberCount == null) {
+    var { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bubbleId);
+    memberCount = count || 0;
+  }
+  document.getElementById('bc-members-count').textContent = memberCount + (b.type === 'event' || b.type === 'live' ? ' deltagere' : ' medlemmer');
+
+  // Dynamic tab label
+  var tabMembers = document.getElementById('bc-tab-members');
+  if (tabMembers) tabMembers.textContent = (b.type === 'event' || b.type === 'live') ? 'Deltagere' : 'Medlemmer';
+
+  // Membership + role (parallel)
+  var [upvoteRes, memberRes, roleRes] = await Promise.all([
+    loadBubbleUpvotes().catch(function() {}),
+    sb.from('bubble_members').select('id').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle(),
+    sb.from('bubble_members').select('role').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle()
+  ]);
+  var myMembership = memberRes?.data;
+  var myRole = roleRes?.data;
+  var isOwner = b.created_by === currentUser.id;
+  var isBubbleAdmin = myRole && myRole.role === 'admin';
+  var canEdit = isOwner || isBubbleAdmin;
+  bcBubbleData._isOwner = isOwner;
+  bcBubbleData._isAdmin = isBubbleAdmin;
+  bcBubbleData._canEdit = canEdit;
+
+  // Render action buttons
+  bcRenderActions(b, myMembership, canEdit);
+
+  // Load members tab + messages (parallel)
+  await Promise.all([
+    bcLoadMembers(),
+    bcLoadMessages()
+  ]);
+
+  return true;
+}
+
+// ── Render action buttons based on membership state ──
+function bcRenderActions(b, myMembership, canEdit) {
+  var actionArea = document.getElementById('bc-action-btns');
+  var actionBar = document.getElementById('bc-action-bar');
+
+  if (myMembership) {
+    actionArea.innerHTML =
+      (canEdit ? `<button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" style="font-size:0.82rem;padding:0.3rem 0.4rem" title="Rediger">${icon("edit")}</button>` : '');
+    if (actionBar) {
+      var upvoted = myUpvotes[b.id];
+      actionBar.innerHTML =
+        `<button class="bc-bar-btn" onclick="openInviteModal('${b.id}')">${icon('user-plus')} Invitér</button>` +
+        `<button class="bc-bar-btn${upvoted ? ' active' : ''}" id="bc-upvote-bar-btn" onclick="toggleBubbleUpvote('${b.id}')">${upvoted ? icon('checkCircle') : icon('rocket')} ${upvoted ? 'Anbefalet' : 'Anbefal'}</button>` +
+        `<button class="bc-bar-btn" data-action="openQRModal" data-id="${b.id}">${icon('qrcode')} QR</button>`;
+      actionBar.style.display = 'flex';
     }
-    bcBubbleData = b;
+  } else if (b.visibility === 'hidden') {
+    actionArea.innerHTML = `<span style="font-size:0.75rem;color:var(--muted)">${icon("eye")} Kun via invitation</span>`;
+    if (actionBar) actionBar.style.display = 'none';
+  } else if (b.visibility === 'private') {
+    actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="requestJoin" data-id="${b.id}">${icon("lock")} Anmod</button>`;
+    if (actionBar) actionBar.style.display = 'none';
+  } else {
+    actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="joinBubble" data-id="${b.id}">+ Join</button>`;
+    if (actionBar) actionBar.style.display = 'none';
+  }
+}
 
-    document.getElementById('bc-emoji').innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:1.1rem;height:1.1rem;border-radius:4px;object-fit:cover">' : bubbleEmoji(b.type);
-    document.getElementById('bc-name').textContent = b.name;
-
-
-    // Use denormalized count if available, fallback to query
-    var memberCount = b.member_count;
-    if (memberCount == null) {
-      var { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bubbleId);
-      memberCount = count || 0;
-    }
-    document.getElementById('bc-members-count').textContent = memberCount + (b.type === 'event' || b.type === 'live' ? ' deltagere' : ' medlemmer');
-
-    // Dynamic tab label: "Deltagere" for events, "Medlemmer" for networks
-    var tabMembers = document.getElementById('bc-tab-members');
-    if (tabMembers) tabMembers.textContent = (b.type === 'event' || b.type === 'live') ? 'Deltagere' : 'Medlemmer';
-
-    // Vis actions i topbar baseret på membership (parallel queries)
-    var [upvoteRes, memberRes, roleRes] = await Promise.all([
-      loadBubbleUpvotes().catch(function() {}),
-      sb.from('bubble_members').select('id').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle(),
-      sb.from('bubble_members').select('role').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle()
-    ]);
-    const myMembership = memberRes?.data;
-    var myRole = roleRes?.data;
-
-    const actionArea = document.getElementById('bc-action-btns');
-    const isOwner = b.created_by === currentUser.id;
-    const isAdmin = myRole && myRole.role === 'admin';
-    const canEdit = isOwner || isAdmin;
-    // Store role for use in info tab
-    bcBubbleData._isOwner = isOwner;
-    bcBubbleData._isAdmin = isAdmin;
-    bcBubbleData._canEdit = canEdit;
-    if (myMembership) {
-      actionArea.innerHTML =
-        (canEdit ? `<button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" style="font-size:0.82rem;padding:0.3rem 0.4rem" title="Rediger">${icon("edit")}</button>` : '');
-      // Update action bar under tabs
-      var actionBar = document.getElementById('bc-action-bar');
-      if (actionBar) {
-        var upvoted = myUpvotes[b.id];
-        actionBar.innerHTML =
-          `<button class="bc-bar-btn" onclick="openInviteModal('${b.id}')">${icon('user-plus')} Invitér</button>` +
-          `<button class="bc-bar-btn${upvoted ? ' active' : ''}" id="bc-upvote-bar-btn" onclick="toggleBubbleUpvote('${b.id}')">${upvoted ? icon('checkCircle') : icon('rocket')} ${upvoted ? 'Anbefalet' : 'Anbefal'}</button>` +
-          `<button class="bc-bar-btn" data-action="openQRModal" data-id="${b.id}">${icon('qrcode')} QR</button>`;
-        actionBar.style.display = 'flex';
-      }
-    } else if (b.visibility === 'hidden') {
-      actionArea.innerHTML = `<span style="font-size:0.75rem;color:var(--muted)">${icon("eye")} Kun via invitation</span>`;
-      var actionBar2 = document.getElementById('bc-action-bar'); if (actionBar2) actionBar2.style.display = 'none';
-    } else if (b.visibility === 'private') {
-      actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="requestJoin" data-id="${b.id}">${icon("lock")} Anmod</button>`;
-      var actionBar3 = document.getElementById('bc-action-bar'); if (actionBar3) actionBar3.style.display = 'none';
-    } else {
-      actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="joinBubble" data-id="${b.id}">+ Join</button>`;
-      var actionBar4 = document.getElementById('bc-action-bar'); if (actionBar4) actionBar4.style.display = 'none';
-    }
-
-    // Load data til aktive tabs
-    await bcLoadMembers();
-
-    // Load beskeder i baggrunden + subscribe (badge vises hvis der er ulæste)
-    bcLoadMessages().then(() => {
-      // Tjek om der er nye beskeder siden sidst — vis badge
-      const badge = document.getElementById('bc-unread-badge');
-      // Badge sættes via real-time subscription når man er på en anden tab
-    });
-    bcSubscribe();
-  } catch(e) { logError("openBubbleChat", e); bcUnsubscribe(); showToast('Kunne ikke åbne boblen'); goTo(fromScreen || _activeScreen || 'screen-home'); }
+// ── Realtime subscription: only call AFTER data is loaded ──
+function bcSubscribeRealtime() {
+  if (!currentUser || !bcBubbleId) { console.warn('bcSubscribeRealtime: missing user or bubbleId'); return; }
+  if (bcSubscription) bcSubscription.unsubscribe();
+  bcSubscription = sb.channel('bc-' + bcBubbleId)
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_messages', filter:`bubble_id=eq.${bcBubbleId}`},
+      async (payload) => {
+        const m = payload.new;
+        if (m.user_id === currentUser.id) return;
+        m.profiles = await getCachedProfile(m.user_id);
+        const panel = document.getElementById('bc-panel-chat');
+        if (panel.style.display !== 'none') {
+          document.getElementById('bc-messages').appendChild(bcRenderMsg(m));
+          bcScrollToBottom();
+        } else {
+          const badge = document.getElementById('bc-unread-badge');
+          badge.textContent = parseInt(badge.textContent||0) + 1;
+          badge.style.display = 'inline-flex';
+        }
+      })
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'bubble_messages', filter:`bubble_id=eq.${bcBubbleId}`},
+      (payload) => {
+        const m = payload.new;
+        const bubbleEl = document.getElementById('bc-bubble-' + m.id);
+        if (bubbleEl) {
+          bubbleEl.textContent = m.content || '';
+          const msgBody = bubbleEl.closest('.msg-body');
+          const msgHead = msgBody?.querySelector('.msg-head');
+          if (msgHead && !msgHead.querySelector('.msg-edited')) {
+            const e = document.createElement('span');
+            e.className = 'msg-edited';
+            e.style.cssText = 'font-size:0.6rem;color:var(--muted);margin-left:0.3rem;cursor:pointer';
+            e.textContent = 'redigeret';
+            const id = m.id;
+            e.onclick = () => bcShowHistory(id);
+            msgHead.appendChild(e);
+          }
+        }
+      })
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
+      () => { bcLoadMembers(); })
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
+      () => { bcLoadMembers(); })
+    .subscribe();
 }
 
 async function bcLoadBubbleInfo() {
@@ -407,52 +467,6 @@ async function getCachedProfile(userId) {
   if (p) _profileCache[userId] = p;
   return p || {};
   } catch(e) { logError("getCachedProfile", e); }
-}
-
-function bcSubscribe() {
-  if (!currentUser || !bcBubbleId) { console.warn('bcSubscribe: missing user or bubbleId'); return; }
-  if (bcSubscription) bcSubscription.unsubscribe();
-  bcSubscription = sb.channel('bc-' + bcBubbleId)
-    .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_messages', filter:`bubble_id=eq.${bcBubbleId}`},
-      async (payload) => {
-        const m = payload.new;
-        if (m.user_id === currentUser.id) return;
-        m.profiles = await getCachedProfile(m.user_id);
-        const panel = document.getElementById('bc-panel-chat');
-        if (panel.style.display !== 'none') {
-          document.getElementById('bc-messages').appendChild(bcRenderMsg(m));
-          bcScrollToBottom();
-        } else {
-          const badge = document.getElementById('bc-unread-badge');
-          badge.textContent = parseInt(badge.textContent||0) + 1;
-          badge.style.display = 'inline-flex';
-        }
-      })
-    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'bubble_messages', filter:`bubble_id=eq.${bcBubbleId}`},
-      (payload) => {
-        const m = payload.new;
-        const bubbleEl = document.getElementById('bc-bubble-' + m.id);
-        if (bubbleEl) {
-          bubbleEl.textContent = m.content || '';
-          const msgBody = bubbleEl.closest('.msg-body');
-          const msgHead = msgBody?.querySelector('.msg-head');
-          if (msgHead && !msgHead.querySelector('.msg-edited')) {
-            const e = document.createElement('span');
-            e.className = 'msg-edited';
-            e.style.cssText = 'font-size:0.6rem;color:var(--muted);margin-left:0.3rem;cursor:pointer';
-            e.textContent = 'redigeret';
-            const id = m.id;
-            e.onclick = () => bcShowHistory(id);
-            msgHead.appendChild(e);
-          }
-        }
-      })
-    // ── Realtime: member joins + check-in/out → opdater members-tab øjeblikkeligt ──
-    .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
-      () => { bcLoadMembers(); })
-    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
-      () => { bcLoadMembers(); })
-    .subscribe();
 }
 
 let bcSending = false;
