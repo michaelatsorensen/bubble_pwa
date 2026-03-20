@@ -293,3 +293,90 @@ function adminTimeAgo(dateStr) {
   return days + ' dage siden';
 }
 
+
+// ══════════════════════════════════════════════════════════
+//  ONBOARDING TEST TOOLS
+// ══════════════════════════════════════════════════════════
+var TEST_ACCOUNT_EMAIL = 'test@bubbleme.dk'; // Opret denne konto manuelt én gang
+
+async function testOnboardingReset(mode) {
+  if (!currentUser) { showToast('Ikke logget ind'); return; }
+  if (currentUser.id !== ADMIN_UID) { showToast('Kun admin kan bruge test-tools'); return; }
+
+  try {
+    // Find test account by email
+    var { data: testProfile } = await sb.from('profiles')
+      .select('id, name, email')
+      .eq('email', TEST_ACCOUNT_EMAIL)
+      .maybeSingle();
+
+    if (!testProfile) {
+      showToast('Testkonto "' + TEST_ACCOUNT_EMAIL + '" ikke fundet. Opret den med email signup først.');
+      return;
+    }
+
+    var testUserId = testProfile.id;
+
+    if (mode === 'setup') {
+      // Partial: clear title, keywords, lifestage — keep name + workplace
+      await sb.from('profiles').update({
+        title: null, keywords: [], lifestage: null,
+        bio: null, onboarding_skipped: false
+      }).eq('id', testUserId);
+      await sb.auth.signOut();
+      showSuccessToast('Testkonto nulstillet (setup). Log ind som ' + TEST_ACCOUNT_EMAIL);
+      setTimeout(function() { window.location.href = window.location.origin + window.location.pathname; }, 1000);
+      return;
+    }
+
+    // Full reset: wipe test account profile
+    await sb.from('profiles').update({
+      name: null, title: null, workplace: null, keywords: [],
+      lifestage: null, bio: null, avatar_url: null, linkedin: null,
+      onboarding_skipped: false
+    }).eq('id', testUserId);
+
+    // Build redirect URL
+    var baseUrl = window.location.origin + window.location.pathname;
+    var redirectUrl = baseUrl;
+
+    if (mode === 'qr') {
+      // Use admin's own QR token so test user sees admin profile
+      var { data: adminToken } = await sb.from('qr_tokens')
+        .select('token').eq('user_id', ADMIN_UID)
+        .order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (adminToken) {
+        redirectUrl = baseUrl + '?qrt=' + adminToken.token;
+      } else {
+        showToast('Du har ingen QR-token. Åbn "Min QR" først.');
+        return;
+      }
+    } else if (mode === 'event') {
+      var { data: events } = await sb.from('bubbles')
+        .select('id, name').eq('type', 'event')
+        .order('created_at', { ascending: false }).limit(5);
+      if (events && events.length > 0) {
+        var picked = events[0];
+        if (events.length > 1) {
+          var choices = events.map(function(e, i) { return (i+1) + '. ' + e.name; }).join('\n');
+          var pick = prompt('Vælg event:\n' + choices + '\n\nIndtast nummer:');
+          if (!pick) return;
+          picked = events[parseInt(pick) - 1] || events[0];
+        }
+        redirectUrl = baseUrl + '?event=' + picked.id;
+      } else {
+        showToast('Ingen events fundet');
+        return;
+      }
+    }
+
+    // Log out admin → redirect to flow. Log in as test account on auth screen.
+    await sb.auth.signOut();
+    showSuccessToast('Testkonto nulstillet. Log ind som ' + TEST_ACCOUNT_EMAIL);
+    setTimeout(function() { window.location.href = redirectUrl; }, 1000);
+
+  } catch(e) {
+    logError('testOnboardingReset', e);
+    showToast('Fejl: ' + (e.message || 'ukendt'));
+  }
+}

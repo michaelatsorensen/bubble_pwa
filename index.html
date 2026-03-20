@@ -9,35 +9,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=5602">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=5602">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=5602">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=5602">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=5602">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=5602">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=5602">
+<link rel="manifest" href="manifest.json?v=5604">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=5604">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=5604">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=5604">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=5604">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=5604">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=5604">
 
-<link rel="stylesheet" href="app.css?v=5602">
+<link rel="stylesheet" href="app.css?v=5604">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=5602" defer></script>
-<script src="tag-data.js?v=5602" defer></script>
-<script src="b-config.js?v=5602" defer></script>
-<script src="b-utils.js?v=5602" defer></script>
-<script src="b-navigation.js?v=5602" defer></script>
-<script src="b-auth.js?v=5602" defer></script>
-<script src="b-home.js?v=5602" defer></script>
-<script src="b-bubbles.js?v=5602" defer></script>
-<script src="b-profile.js?v=5602" defer></script>
-<script src="b-radar.js?v=5602" defer></script>
-<script src="b-messages.js?v=5602" defer></script>
-<script src="b-realtime.js?v=5602" defer></script>
-<script src="b-onboarding.js?v=5602" defer></script>
-<script src="b-chat.js?v=5602" defer></script>
-<script src="b-notifications.js?v=5602" defer></script>
-<script src="b-live.js?v=5602" defer></script>
-<script src="b-admin.js?v=5602" defer></script>
-<script src="b-boot.js?v=5602" defer></script>
+<script src="bubble-icons.js?v=5604" defer></script>
+<script src="tag-data.js?v=5604" defer></script>
+<script src="b-config.js?v=5604" defer></script>
+<script src="b-utils.js?v=5604" defer></script>
+<script src="b-navigation.js?v=5604" defer></script>
+<script src="b-auth.js?v=5604" defer></script>
+<script src="b-home.js?v=5604" defer></script>
+<script src="b-bubbles.js?v=5604" defer></script>
+<script src="b-profile.js?v=5604" defer></script>
+<script src="b-radar.js?v=5604" defer></script>
+<script src="b-messages.js?v=5604" defer></script>
+<script src="b-realtime.js?v=5604" defer></script>
+<script src="b-onboarding.js?v=5604" defer></script>
+<script src="b-chat.js?v=5604" defer></script>
+<script src="b-notifications.js?v=5604" defer></script>
+<script src="b-live.js?v=5604" defer></script>
+<script src="b-admin.js?v=5604" defer></script>
+<script src="b-boot.js?v=5604" defer></script>
   
 
 
@@ -1361,6 +1361,18 @@
       <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:12px;padding:0.8rem">
         <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem">Platform stats</div>
         <div id="admin-stats" style="font-size:0.72rem;color:var(--text-secondary)">Indlæser...</div>
+      </div>
+
+      <!-- Onboarding test tools -->
+      <div style="background:rgba(46,207,207,0.06);border:1px solid rgba(46,207,207,0.15);border-radius:12px;padding:0.8rem;margin-top:0.5rem">
+        <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.2rem">Test onboarding-flow</div>
+        <div style="font-size:0.65rem;color:var(--text-secondary);margin-bottom:0.6rem;line-height:1.4">Nulstiller <strong>test@bubbleme.dk</strong> (ikke din admin-konto) og logger dig ud. Log derefter ind som testkontoen.</div>
+        <div style="display:flex;flex-direction:column;gap:0.35rem">
+          <button class="btn-sm" onclick="testOnboardingReset('organic')" style="background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.15);color:var(--accent);font-weight:600;padding:0.45rem 0.6rem;border-radius:10px;font-family:var(--font);cursor:pointer;text-align:left;font-size:0.72rem">Organisk flow → splash → auth</button>
+          <button class="btn-sm" onclick="testOnboardingReset('qr')" style="background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.15);color:var(--accent);font-weight:600;padding:0.45rem 0.6rem;border-radius:10px;font-family:var(--font);cursor:pointer;text-align:left;font-size:0.72rem">Personlig QR → din profil-preview</button>
+          <button class="btn-sm" onclick="testOnboardingReset('event')" style="background:rgba(46,207,207,0.08);border:1px solid rgba(46,207,207,0.15);color:#085041;font-weight:600;padding:0.45rem 0.6rem;border-radius:10px;font-family:var(--font);cursor:pointer;text-align:left;font-size:0.72rem">Event QR → event landing</button>
+          <button class="btn-sm" onclick="testOnboardingReset('setup')" style="background:rgba(232,121,168,0.08);border:1px solid rgba(232,121,168,0.15);color:#993556;font-weight:600;padding:0.45rem 0.6rem;border-radius:10px;font-family:var(--font);cursor:pointer;text-align:left;font-size:0.72rem">Profil-setup CTA → kun nulstil titel/tags (bliv logget ind)</button>
+        </div>
       </div>
     </div>
 
