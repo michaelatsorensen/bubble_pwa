@@ -4,55 +4,91 @@
 // ══════════════════════════════════════════════════════════
 
 // ══════════════════════════════════════════════════════════
-//  AUTH
+//  AUTH — POST-AUTH STATE MACHINE (v5.7)
+// ══════════════════════════════════════════════════════════
+
+// Step 1: Ensure profile row exists (OAuth users may not have one)
+async function ensureProfileExists(session) {
+  var { data: existing } = await sb.from('profiles').select('id').eq('id', session.user.id).maybeSingle();
+  if (!existing) {
+    var meta = session.user.user_metadata || {};
+    await sb.from('profiles').upsert({
+      id: session.user.id,
+      name: meta.full_name || meta.name || session.user.email,
+      title: '', keywords: [], dynamic_keywords: [], bio: '', is_anon: false
+    });
+  }
+}
+
+// Step 2: Load essential profile data
+async function loadEssentials() {
+  await loadCurrentProfile();
+  await loadPromotedCustomTags();
+  await loadBlockedUsers();
+}
+
+// Step 3: Init background services (fire-and-forget)
+function initServices() {
+  preloadAllData();
+  initGlobalRealtime();
+  updateUnreadBadge();
+  updateNotifNavBadge();
+  loadLiveBubbleStatus();
+  initPushNotifications();
+}
+
+// Step 4: Resolve pending actions + navigate to correct screen
+async function resolvePostAuthDestination() {
+  await checkPendingContact();
+
+  var isEventFlow = sessionStorage.getItem('event_flow');
+  var postTagsDest = sessionStorage.getItem('post_tags_destination');
+
+  if (isEventFlow) {
+    await checkPendingJoin();
+    var stillEventFlow = sessionStorage.getItem('event_flow');
+    if (stillEventFlow) {
+      sessionStorage.removeItem('event_flow');
+      showEventReadyQR();
+    }
+    // Mode A (self check-in) already navigated in checkPendingJoin
+  } else if (postTagsDest === 'event_bubble') {
+    sessionStorage.removeItem('post_tags_destination');
+    eventReadyGoToEvent();
+  } else {
+    await checkPendingJoin();
+    goTo('screen-home');
+  }
+}
+
+// Full orchestrator: single entry point after any successful auth
+async function resolvePostAuth() {
+  await loadEssentials();
+  var needsOnboarding = await maybeShowOnboarding();
+  if (needsOnboarding) return; // onboarding calls initServices + resolvePostAuthDestination when done
+  initServices();
+  await resolvePostAuthDestination();
+}
+
+// ══════════════════════════════════════════════════════════
+//  AUTH — SESSION CHECK
 // ══════════════════════════════════════════════════════════
 async function checkAuth() {
   if (!initSupabase()) return;
   setupAuthListener();
   try {
-    // Handle OAuth redirect — Supabase v2 processes hash automatically
+    // Handle OAuth redirect
     if (window.location.hash && window.location.hash.includes('access_token')) {
       document.getElementById('loading-msg').textContent = 'Logger ind via Google...';
-      // Give Supabase a moment to process the hash
       await new Promise(r => setTimeout(r, 500));
-      // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    const { data: { session } } = await sb.auth.getSession();
+    var { data: { session } } = await sb.auth.getSession();
     if (session) {
       currentUser = session.user;
-      // Ensure profile row exists (Google users may not have one)
-      const { data: existingProfile } = await sb.from('profiles').select('id').eq('id', session.user.id).maybeSingle();
-      if (!existingProfile) {
-        const meta = session.user.user_metadata || {};
-        await sb.from('profiles').upsert({
-          id: session.user.id,
-          name: meta.full_name || meta.name || session.user.email,
-          title: '', keywords: [], dynamic_keywords: [], bio: '', is_anon: false
-        });
-      }
-      await loadCurrentProfile();
-      await loadPromotedCustomTags();
-      await loadBlockedUsers();
-      const needsOnboarding = await maybeShowOnboarding();
-      if (!needsOnboarding) {
-        await checkPendingJoin();
-        await checkPendingContact();
-        var isEventFlow = sessionStorage.getItem('event_flow');
-        if (isEventFlow) {
-          sessionStorage.removeItem('event_flow');
-          showEventReadyQR();
-        } else {
-          goTo('screen-home');
-        }
-        preloadAllData();
-        initGlobalRealtime();
-        updateUnreadBadge();
-        updateNotifNavBadge();
-        loadLiveBubbleStatus();
-        initPushNotifications();
-      }
+      await ensureProfileExists(session);
+      await resolvePostAuth();
     } else {
       goTo('screen-auth');
     }
@@ -221,28 +257,7 @@ async function handleLogin() {
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) return showToast('Fejl: ' + error.message);
     currentUser = data.user;
-    await loadCurrentProfile();
-    await loadPromotedCustomTags();
-    await loadBlockedUsers();
-    const needsOnboarding = await maybeShowOnboarding();
-    if (!needsOnboarding) {
-      // Handle event/QR pending actions before going to home
-      await checkPendingJoin();
-      await checkPendingContact();
-      var isEventFlow = sessionStorage.getItem('event_flow');
-      if (isEventFlow) {
-        sessionStorage.removeItem('event_flow');
-        showEventReadyQR();
-      } else {
-        goTo('screen-home');
-      }
-      preloadAllData();
-      initGlobalRealtime();
-      updateUnreadBadge();
-      updateNotifNavBadge();
-      loadLiveBubbleStatus();
-      initPushNotifications();
-    }
+    await resolvePostAuth();
   } catch(e) { logError("handleLogin", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -288,7 +303,7 @@ async function handleSignup() {
 
     currentUser = data.user;
 
-    // Retry profile creation a few times — auth sometimes needs a moment to propagate
+    // Retry profile creation — auth sometimes needs a moment to propagate
     let profileCreated = false;
     for (let i = 0; i < 5; i++) {
       await new Promise(r => setTimeout(r, 500));
@@ -300,30 +315,10 @@ async function handleSignup() {
     }
 
     if (!profileCreated) {
-      showToast('Konto oprettet — udfyld profil under Rediger 👤');
+      showToast('Konto oprettet — udfyld profil under Rediger');
     }
 
-    await loadCurrentProfile();
-    await loadPromotedCustomTags();
-    await loadBlockedUsers();
-    const needsOnboarding = await maybeShowOnboarding();
-    if (!needsOnboarding) {
-      await checkPendingJoin();
-      await checkPendingContact();
-      var isEventFlow2 = sessionStorage.getItem('event_flow');
-      if (isEventFlow2) {
-        sessionStorage.removeItem('event_flow');
-        showEventReadyQR();
-      } else {
-        goTo('screen-home');
-      }
-      preloadAllData();
-      initGlobalRealtime();
-      updateUnreadBadge();
-      updateNotifNavBadge();
-      loadLiveBubbleStatus();
-      initPushNotifications();
-    }
+    await resolvePostAuth();
     showSuccessToast('Velkommen til Bubble');
   } catch(e) { logError("handleSignup", e); showToast(e.message || "Ukendt fejl"); }
 }

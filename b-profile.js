@@ -697,10 +697,10 @@ async function loadProfile() {
       } catch(e) { qs.innerHTML = ''; }
     }
 
-    // Admin panel — only for admin UID
+    // Admin panel — only for admin role
     var adminPanel = document.getElementById('admin-panel');
     if (adminPanel) {
-      if (currentUser && currentUser.id === ADMIN_UID) {
+      if (isAdmin()) {
         adminPanel.style.display = 'block';
         adminLoadReports();
         adminLoadBanned();

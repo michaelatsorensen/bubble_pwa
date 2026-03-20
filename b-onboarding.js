@@ -197,6 +197,8 @@ function obCheckProgress() {
 }
 
 
+// Note: skipOnboarding is no longer called from UI (v5.6 removed skip button)
+// Kept for backwards compatibility if re-enabled
 function skipOnboarding() {
   var name = (document.getElementById('ob-name')?.value || '').trim();
   if (!name && currentProfile?.name) name = currentProfile.name;
@@ -213,22 +215,9 @@ function skipOnboarding() {
     dynamic_keywords: [], bio: '', is_anon: false,
     onboarding_skipped: true
   }).then(async function() {
-    loadCurrentProfile();
-    preloadAllData();
-    initGlobalRealtime();
-    updateUnreadBadge();
-    updateNotifNavBadge();
-    loadLiveBubbleStatus();
-    initPushNotifications();
-    await checkPendingJoin();
-    await checkPendingContact();
-    var stillEventFlow = sessionStorage.getItem('event_flow');
-    if (stillEventFlow) {
-      sessionStorage.removeItem('event_flow');
-      showEventReadyQR();
-    } else {
-      goTo('screen-home');
-    }
+    await loadCurrentProfile();
+    initServices();
+    await resolvePostAuthDestination();
   }).catch(function(e) {
     showToast('Fejl: ' + (e.message || 'ukendt'));
   });
@@ -1129,34 +1118,8 @@ async function saveOnboarding() {
     await loadCurrentProfile();
     showSuccessToast('Profil oprettet');
     trackEvent('onboarding_complete');
-    preloadAllData();
-    initGlobalRealtime();
-    updateUnreadBadge();
-    updateNotifNavBadge();
-    loadLiveBubbleStatus();
-    initPushNotifications();
-    // If coming from event flow → checkPendingJoin handles mode A/B
-    var isEventFlow = sessionStorage.getItem('event_flow');
-    var postTagsDest = sessionStorage.getItem('post_tags_destination');
-    // Always check pending contact (personal QR flow)
-    await checkPendingContact();
-    if (isEventFlow) {
-      // Don't remove event_flow here — checkPendingJoin reads it for mode detection
-      await checkPendingJoin();
-      // If event_flow is still set after checkPendingJoin → Mode B (show QR)
-      var stillEventFlow = sessionStorage.getItem('event_flow');
-      if (stillEventFlow) {
-        sessionStorage.removeItem('event_flow');
-        showEventReadyQR();
-      }
-      // Mode A already navigated to home in checkPendingJoin
-    } else if (postTagsDest === 'event_bubble') {
-      sessionStorage.removeItem('post_tags_destination');
-      eventReadyGoToEvent();
-    } else {
-      await checkPendingJoin();
-      goTo('screen-home');
-    }
+    initServices();
+    await resolvePostAuthDestination();
   } catch(e) { logError("saveOnboarding", e); showToast(e.message || "Ukendt fejl"); }
 }
 

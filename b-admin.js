@@ -6,7 +6,8 @@
 // ══════════════════════════════════════════════════════════
 //  ADMIN PANEL
 // ══════════════════════════════════════════════════════════
-var ADMIN_UID = '0015de9c-c128-477a-8110-2cbb38a625f4';
+// Admin check — uses DB role instead of hardcoded UID
+function isAdmin() { return currentProfile && currentProfile.role === 'admin'; }
 
 async function adminLoadReports() {
   try {
@@ -301,7 +302,7 @@ var TEST_ACCOUNT_EMAIL = 'test@bubbleme.dk'; // Opret denne konto manuelt én ga
 
 async function testOnboardingReset(mode) {
   if (!currentUser) { showToast('Ikke logget ind'); return; }
-  if (currentUser.id !== ADMIN_UID) { showToast('Kun admin kan bruge test-tools'); return; }
+  if (!isAdmin()) { showToast('Kun admin kan bruge test-tools'); return; }
 
   try {
     // Find test account by email
@@ -343,7 +344,7 @@ async function testOnboardingReset(mode) {
     if (mode === 'qr') {
       // Use admin's own QR token so test user sees admin profile
       var { data: adminToken } = await sb.from('qr_tokens')
-        .select('token').eq('user_id', ADMIN_UID)
+        .select('token').eq('user_id', currentUser.id)
         .order('created_at', { ascending: false }).limit(1).maybeSingle();
       if (adminToken) {
         redirectUrl = baseUrl + '?qrt=' + adminToken.token;
