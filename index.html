@@ -9,35 +9,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=5604">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=5604">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=5604">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=5604">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=5604">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=5604">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=5604">
+<link rel="manifest" href="manifest.json?v=5605">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=5605">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=5605">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=5605">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=5605">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=5605">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=5605">
 
-<link rel="stylesheet" href="app.css?v=5604">
+<link rel="stylesheet" href="app.css?v=5605">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=5604" defer></script>
-<script src="tag-data.js?v=5604" defer></script>
-<script src="b-config.js?v=5604" defer></script>
-<script src="b-utils.js?v=5604" defer></script>
-<script src="b-navigation.js?v=5604" defer></script>
-<script src="b-auth.js?v=5604" defer></script>
-<script src="b-home.js?v=5604" defer></script>
-<script src="b-bubbles.js?v=5604" defer></script>
-<script src="b-profile.js?v=5604" defer></script>
-<script src="b-radar.js?v=5604" defer></script>
-<script src="b-messages.js?v=5604" defer></script>
-<script src="b-realtime.js?v=5604" defer></script>
-<script src="b-onboarding.js?v=5604" defer></script>
-<script src="b-chat.js?v=5604" defer></script>
-<script src="b-notifications.js?v=5604" defer></script>
-<script src="b-live.js?v=5604" defer></script>
-<script src="b-admin.js?v=5604" defer></script>
-<script src="b-boot.js?v=5604" defer></script>
+<script src="bubble-icons.js?v=5605" defer></script>
+<script src="tag-data.js?v=5605" defer></script>
+<script src="b-config.js?v=5605" defer></script>
+<script src="b-utils.js?v=5605" defer></script>
+<script src="b-navigation.js?v=5605" defer></script>
+<script src="b-auth.js?v=5605" defer></script>
+<script src="b-home.js?v=5605" defer></script>
+<script src="b-bubbles.js?v=5605" defer></script>
+<script src="b-profile.js?v=5605" defer></script>
+<script src="b-radar.js?v=5605" defer></script>
+<script src="b-messages.js?v=5605" defer></script>
+<script src="b-realtime.js?v=5605" defer></script>
+<script src="b-onboarding.js?v=5605" defer></script>
+<script src="b-chat.js?v=5605" defer></script>
+<script src="b-notifications.js?v=5605" defer></script>
+<script src="b-live.js?v=5605" defer></script>
+<script src="b-admin.js?v=5605" defer></script>
+<script src="b-boot.js?v=5605" defer></script>
   
 
 
@@ -270,10 +270,6 @@
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-onboarding">
   <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(2rem + env(safe-area-inset-top, 0px)) 1.5rem 2rem;display:flex;flex-direction:column">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-      <div style="font-size:1.3rem;font-weight:800">Færdiggør din profil</div>
-      <div style="font-size:0.65rem;color:var(--accent);font-weight:600" id="ob-step-label"></div>
-    </div>
 
     <!-- QR contact banner (shown when coming from QR scan) -->
     <div id="ob-qr-contact-banner" style="display:none;align-items:center;gap:0.5rem;padding:0.6rem 0.75rem;border-radius:12px;background:rgba(26,158,142,0.05);border:1px solid rgba(26,158,142,0.12);margin-bottom:0.8rem">
@@ -281,150 +277,120 @@
       <div style="font-size:0.78rem;color:#085041;font-weight:600"><span id="ob-qr-contact-name">Kontakt</span> gemmes automatisk</div>
     </div>
 
-    <!-- ═══ SECTION A: Identitet ═══ -->
-    <div class="ob-progressive-section" id="ob-sec-a">
-      <div class="ob-prog-header">
-        <div class="ob-prog-check" id="ob-check-a">1</div>
-        <div>
-          <div class="ob-prog-title">Hvem er du?</div>
-          <div class="ob-prog-sub">Grundlæggende info der hjælper andre med at finde dig</div>
+    <!-- ═══ MUST-DO ZONE ═══ -->
+    <div style="font-size:1.3rem;font-weight:800;margin-bottom:0.15rem">Velkommen!</div>
+    <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:1.2rem">To hurtige felter og du er klar</div>
+
+    <div class="input-group">
+      <div class="input-label">Navn *</div>
+      <input class="input" id="ob-name" placeholder="Dit fulde navn" autocomplete="name" oninput="obCheckProgress()">
+    </div>
+
+    <div class="input-group">
+      <div class="input-label">Arbejdsplads *</div>
+      <input class="input" id="ob-workplace" placeholder="f.eks. Danfoss, SDU, selvstændig..." oninput="obCheckProgress()">
+    </div>
+
+    <button class="btn-primary" id="ob-save-btn" onclick="saveOnboarding()" style="margin-top:0.5rem;opacity:0.3;pointer-events:none">Start Bubble</button>
+    <div style="text-align:center;font-size:0.75rem;color:var(--muted);margin-top:0.4rem">Du kan udfylde resten inde i appen</div>
+
+    <!-- ═══ DIVIDER ═══ -->
+    <div style="position:relative;margin:1.5rem 0 1.2rem">
+      <div style="height:1px;background:var(--glass-border-subtle)"></div>
+      <div style="position:absolute;top:-0.6rem;left:50%;transform:translateX(-50%);background:var(--bg);padding:0 0.75rem;font-size:0.68rem;color:var(--muted);font-weight:500;white-space:nowrap">Eller udfyld mere nu</div>
+    </div>
+
+    <!-- ═══ OPTIONAL ZONE (dimmed until tapped) ═══ -->
+    <div id="ob-optional-zone" style="opacity:0.45;transition:opacity 0.3s" onclick="this.style.opacity='1'">
+
+      <!-- Livsfase -->
+      <div class="ob-progressive-section" id="ob-sec-a">
+        <div class="input-group">
+          <div class="input-label">Jeg er... <span style="font-weight:400;color:var(--muted)">(valgfrit)</span></div>
+          <div class="ob-lifestage-grid" id="ob-lifestage-grid">
+            <button type="button" class="ob-lifestage-btn" data-stage="student" onclick="obSelectLifestage(this)">
+              <span class="ob-ls-icon" style="color:#3B82F6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10l-10-5L2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/><path d="M22 10v6"/></svg></span><span class="ob-ls-label">Studerende</span>
+            </button>
+            <button type="button" class="ob-lifestage-btn" data-stage="employee" onclick="obSelectLifestage(this)">
+              <span class="ob-ls-icon" style="color:var(--accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M12 12v.01"/><path d="M2 12h20"/></svg></span><span class="ob-ls-label">Erhverv</span>
+            </button>
+            <button type="button" class="ob-lifestage-btn" data-stage="entrepreneur" onclick="obSelectLifestage(this)">
+              <span class="ob-ls-icon" style="color:var(--accent2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.5-2 5-2 5s3.5-.5 5-2c.8-.8 1-2 .4-2.8a2.1 2.1 0 00-3.4-.2z"/><path d="M14.5 2.5c-3 2-5 5.5-5.5 9l3.5 3.5c3.5-.5 7-2.5 9-5.5L14.5 2.5z"/><path d="M14 9a1 1 0 100 2 1 1 0 000-2z" fill="currentColor"/></svg></span><span class="ob-ls-label">Iværksætter</span>
+            </button>
+            <button type="button" class="ob-lifestage-btn" data-stage="freelancer" onclick="obSelectLifestage(this)">
+              <span class="ob-ls-icon" style="color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></span><span class="ob-ls-label">Freelancer</span>
+            </button>
+            <button type="button" class="ob-lifestage-btn" data-stage="public" onclick="obSelectLifestage(this)">
+              <span class="ob-ls-icon" style="color:#1A9E8E"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/><path d="M10 21v-3h4v3"/></svg></span><span class="ob-ls-label">Offentlig / NGO</span>
+            </button>
+            <button type="button" class="ob-lifestage-btn" data-stage="practical" onclick="obSelectLifestage(this)">
+              <span class="ob-ls-icon" style="color:#F59E0B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></span><span class="ob-ls-label">Håndværk & Teknik</span>
+            </button>
+            <button type="button" class="ob-lifestage-btn" data-stage="investor" onclick="obSelectLifestage(this)">
+              <span class="ob-ls-icon" style="color:var(--gold)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span><span class="ob-ls-label">Investor</span>
+            </button>
+            <button type="button" class="ob-lifestage-btn" data-stage="other" onclick="obSelectLifestage(this)">
+              <span class="ob-ls-icon" style="color:var(--accent3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v.01"/><path d="M12 8a2.5 2.5 0 011.13 4.74c-.46.27-.76.72-.87 1.26"/></svg></span><span class="ob-ls-label">Andet</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <div class="input-group">
-        <div class="input-label">Dit navn *</div>
-        <input class="input" id="ob-name" placeholder="Dit fulde navn" autocomplete="name" oninput="obCheckProgress()">
-      </div>
-
-      <div class="input-group">
-        <div class="input-label">Jeg er... *</div>
-        <div class="ob-lifestage-grid" id="ob-lifestage-grid">
-          <button type="button" class="ob-lifestage-btn" data-stage="student" onclick="obSelectLifestage(this)">
-            <span class="ob-ls-icon" style="color:#3B82F6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10l-10-5L2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/><path d="M22 10v6"/></svg></span><span class="ob-ls-label">Studerende</span>
-          </button>
-          <button type="button" class="ob-lifestage-btn" data-stage="employee" onclick="obSelectLifestage(this)">
-            <span class="ob-ls-icon" style="color:var(--accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M12 12v.01"/><path d="M2 12h20"/></svg></span><span class="ob-ls-label">Erhverv</span>
-          </button>
-          <button type="button" class="ob-lifestage-btn" data-stage="entrepreneur" onclick="obSelectLifestage(this)">
-            <span class="ob-ls-icon" style="color:var(--accent2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.5-2 5-2 5s3.5-.5 5-2c.8-.8 1-2 .4-2.8a2.1 2.1 0 00-3.4-.2z"/><path d="M14.5 2.5c-3 2-5 5.5-5.5 9l3.5 3.5c3.5-.5 7-2.5 9-5.5L14.5 2.5z"/><path d="M14 9a1 1 0 100 2 1 1 0 000-2z" fill="currentColor"/></svg></span><span class="ob-ls-label">Iværksætter</span>
-          </button>
-          <button type="button" class="ob-lifestage-btn" data-stage="freelancer" onclick="obSelectLifestage(this)">
-            <span class="ob-ls-icon" style="color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></span><span class="ob-ls-label">Freelancer</span>
-          </button>
-          <button type="button" class="ob-lifestage-btn" data-stage="public" onclick="obSelectLifestage(this)">
-            <span class="ob-ls-icon" style="color:#1A9E8E"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/><path d="M10 21v-3h4v3"/></svg></span><span class="ob-ls-label">Offentlig / NGO</span>
-          </button>
-          <button type="button" class="ob-lifestage-btn" data-stage="practical" onclick="obSelectLifestage(this)">
-            <span class="ob-ls-icon" style="color:#F59E0B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></span><span class="ob-ls-label">Håndværk & Teknik</span>
-          </button>
-          <button type="button" class="ob-lifestage-btn" data-stage="investor" onclick="obSelectLifestage(this)">
-            <span class="ob-ls-icon" style="color:var(--gold)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span><span class="ob-ls-label">Investor</span>
-          </button>
-          <button type="button" class="ob-lifestage-btn" data-stage="other" onclick="obSelectLifestage(this)">
-            <span class="ob-ls-icon" style="color:var(--accent3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v.01"/><path d="M12 8a2.5 2.5 0 011.13 4.74c-.46.27-.76.72-.87 1.26"/></svg></span><span class="ob-ls-label">Andet</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="input-group">
-        <div class="input-label">Arbejdsplads / organisation *</div>
-        <input class="input" id="ob-workplace" placeholder="f.eks. Danfoss, SDU, Sønderborg Kommune..." oninput="obCheckProgress()">
-        <div class="ob-payoff">Hjælper dig med at finde kollegaer og samarbejdspartnere</div>
-      </div>
-
+      <!-- Titel -->
       <div class="input-group">
         <div class="input-label">Titel / Rolle <span style="font-weight:400;color:var(--muted)">(valgfrit)</span></div>
         <input class="input" id="ob-title" placeholder="f.eks. CTO, Salgschef, Studerende..." oninput="obCheckProgress()">
         <div class="ob-role-suggestions" id="ob-role-suggestions"></div>
       </div>
-    </div>
 
-    <!-- ═══ PEOPLE PREVIEW (shows after name + livsfase, updates live) ═══ -->
-    <div class="ob-progressive-section ob-sec-locked" id="ob-sec-preview">
-      <div style="height:1px;background:rgba(124,92,252,0.04);margin:0.4rem 0 0.8rem"></div>
-      <div style="background:linear-gradient(135deg,rgba(124,92,252,0.08),rgba(232,121,168,0.04));border:1px solid rgba(124,92,252,0.15);border-radius:16px;padding:1rem">
-        <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.1rem">
-          <span style="font-size:1rem">👋</span>
-          <span style="font-size:0.85rem;font-weight:800">Folk du kunne møde</span>
-          <span style="font-size:0.55rem;color:var(--muted);background:rgba(30,27,46,0.035);padding:0.15rem 0.4rem;border-radius:99px;margin-left:auto">Foreløbigt preview</span>
-        </div>
-        <div style="font-size:0.65rem;color:var(--text-secondary);margin-bottom:0.5rem" id="ob-preview-hint">Baseret på din livsfase</div>
-        <div id="ob-people-preview" style="display:flex;flex-direction:column;gap:0.15rem">
-          <div style="text-align:center;padding:0.5rem;font-size:0.72rem;color:var(--muted)">Henter profiler...</div>
-        </div>
-        <div style="margin-top:0.6rem;font-size:0.68rem;color:var(--accent);font-weight:600;text-align:center" id="ob-preview-cta">Tilføj tags for at se bedre matches ↓</div>
-      </div>
-    </div>
-
-    <!-- ═══ SECTION B: Tags (locked) ═══ -->
-    <div class="ob-progressive-section ob-sec-locked" id="ob-sec-b">
-      <div style="height:1px;background:rgba(124,92,252,0.04);margin:0.4rem 0 0.8rem"></div>
-      <div class="ob-prog-header">
-        <div class="ob-prog-check" id="ob-check-b">2</div>
-        <div>
-          <div class="ob-prog-title">Hvad interesserer dig?</div>
-          <div class="ob-prog-sub">Vælg tags — se hvordan dine matches forbedres i realtid ↑</div>
+      <!-- Tags -->
+      <div class="ob-progressive-section" id="ob-sec-b">
+        <div class="input-group">
+          <div class="input-label">Interesser <span style="font-weight:400;color:var(--muted)">(valgfrit)</span></div>
+          <div class="tag-selected" id="ob-tag-selected"></div>
+          <div id="ob-tag-min-label" style="font-size:0.65rem;color:var(--muted);margin-bottom:0.4rem"></div>
+          <div class="tag-search-wrap">
+            <input class="input" id="ob-tag-search" placeholder="Søg tags..." autocomplete="off" oninput="obTagSearch(this.value)" onfocus="obTagSearch(this.value)">
+            <div class="tag-suggestions" id="ob-tag-suggestions"></div>
+          </div>
+          <div id="ob-tag-categories"></div>
         </div>
       </div>
 
-      <div class="tag-selected" id="ob-tag-selected"></div>
-      <div id="ob-tag-min-label" style="font-size:0.65rem;color:var(--muted);margin-bottom:0.4rem">Vælg mindst 3 tags (0/3)</div>
+      <!-- Bio + LinkedIn -->
+      <div class="ob-progressive-section" id="ob-sec-c">
+        <div class="input-group">
+          <div class="input-label">Om dig <span style="font-weight:400;color:var(--muted)">(valgfrit)</span></div>
+          <textarea class="input" id="ob-bio" placeholder="Hvem du er, hvad du arbejder med..."></textarea>
+        </div>
+        <div class="input-group">
+          <div class="input-label">LinkedIn <span style="font-weight:400;color:var(--muted)">(valgfrit)</span></div>
+          <input class="input" id="ob-linkedin" placeholder="https://linkedin.com/in/dit-navn" type="url">
+        </div>
+      </div>
 
+      <!-- Dynamic chips (intent) -->
       <div class="input-group">
-        <div class="tag-search-wrap">
-          <input class="input" id="ob-tag-search" placeholder="Søg tags..." autocomplete="off" oninput="obTagSearch(this.value)" onfocus="obTagSearch(this.value)">
-          <div class="tag-suggestions" id="ob-tag-suggestions"></div>
-        </div>
-      </div>
-      <div id="ob-tag-categories"></div>
-    </div>
-
-    <!-- ═══ SECTION C: Intent + Boost (locked) ═══ -->
-    <div class="ob-progressive-section ob-sec-locked" id="ob-sec-c">
-      <div style="height:1px;background:rgba(124,92,252,0.04);margin:0.4rem 0 0.8rem"></div>
-      <div class="ob-prog-header">
-        <div class="ob-prog-check" id="ob-check-c">3</div>
-        <div>
-          <div class="ob-prog-title">Hvad søger du lige nu?</div>
-          <div class="ob-prog-sub">Matches mod andres profiler med <strong style="color:var(--gold)">×2 bonus</strong></div>
-        </div>
-      </div>
-
-      <div class="input-group">
+        <div class="input-label">Hvad søger du? <span style="font-weight:400;color:var(--muted)">(valgfrit)</span></div>
         <div class="chips-container" id="ob-dyn-chips-container" onclick="document.getElementById('ob-dyn-chip-input').focus()">
           <input class="chip-input" id="ob-dyn-chip-input" placeholder="fx sparring, co-founder, investor-intro..." onkeydown="handleChipInput(event,'ob-dyn-chips')">
           <button type="button" onclick="addChipFromBtn('ob-dyn-chip-input','ob-dyn-chips')" class="ob-cat-custom-btn" title="Tilføj">✓</button>
         </div>
       </div>
 
-      <!-- Boost -->
-      <div class="ob-boost-section" id="ob-boost-section" style="margin-top:0.6rem">
-        <button type="button" class="ob-boost-toggle" onclick="obToggleBoost()">
-          <span>Gør din profil stærkere (valgfrit)</span>
-          <span class="ob-boost-arrow" id="ob-boost-arrow">＋</span>
-        </button>
-        <div class="ob-boost-content" id="ob-boost-content" style="display:none">
-          <div class="input-group" style="margin-top:0.6rem">
-            <div class="input-label">Om dig</div>
-            <textarea class="input" id="ob-bio" placeholder="Hvem du er, hvad du arbejder med, hvad du brænder for..."></textarea>
-          </div>
-          <div class="input-group">
-            <div class="input-label">LinkedIn</div>
-            <input class="input" id="ob-linkedin" placeholder="https://linkedin.com/in/dit-navn" type="url">
-          </div>
-        </div>
-      </div>
     </div>
 
-    <!-- Strength meter -->
-    <div id="ob-strength" style="margin:0.8rem 0 0.3rem;padding:0.6rem 0.8rem;background:rgba(124,92,252,0.03);border-radius:10px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem"><span style="font-size:0.72rem;font-weight:600">Profil-styrke</span><span id="ob-strength-label" style="font-size:0.72rem;font-weight:700;color:var(--muted)">Svag</span></div>
-      <div style="height:4px;background:rgba(30,27,46,0.04);border-radius:99px;overflow:hidden"><div id="ob-strength-bar" style="height:100%;width:10%;border-radius:99px;background:var(--accent2);transition:all 0.4s"></div></div>
-      <div id="ob-strength-hint" style="font-size:0.65rem;color:var(--muted);margin-top:0.3rem"></div>
+    <!-- Bottom actions -->
+    <div style="margin-top:1rem">
+      <div id="ob-strength" style="margin-bottom:0.5rem;padding:0.6rem 0.8rem;background:rgba(124,92,252,0.03);border-radius:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem"><span style="font-size:0.72rem;font-weight:600">Profil-styrke</span><span id="ob-strength-label" style="font-size:0.72rem;font-weight:700;color:var(--muted)">Svag</span></div>
+        <div style="height:4px;background:rgba(30,27,46,0.04);border-radius:99px;overflow:hidden"><div id="ob-strength-bar" style="height:100%;width:10%;border-radius:99px;background:var(--accent2);transition:all 0.4s"></div></div>
+        <div id="ob-strength-hint" style="font-size:0.65rem;color:var(--muted);margin-top:0.3rem"></div>
+      </div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-bottom:1.5rem" id="ob-step-label"></div>
+      <button type="button" onclick="abortOnboarding()" style="background:none;border:none;color:var(--accent2);font-size:0.7rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.5rem;width:100%;text-align:center;opacity:0.6">Afbryd og nulstil</button>
     </div>
-    <button class="btn-primary" id="ob-save-btn" onclick="saveOnboarding()" style="margin-top:0.5rem;opacity:0.3;pointer-events:none">Kom i gang →</button>
-    <button type="button" onclick="skipOnboarding()" style="margin-top:0.6rem;background:none;border:1px solid var(--glass-border);border-radius:12px;color:var(--text-secondary);font-size:0.78rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.55rem;width:100%;text-align:center;font-weight:600">Spring over — jeg udfylder senere</button>
-    <button type="button" onclick="abortOnboarding()" style="margin-top:1.5rem;margin-bottom:1rem;background:none;border:none;color:var(--accent2);font-size:0.7rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.5rem;width:100%;text-align:center;opacity:0.6">Afbryd og nulstil</button>
+
   </div>
 </div>
 

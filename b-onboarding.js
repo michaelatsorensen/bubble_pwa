@@ -172,89 +172,23 @@ var OB_LIFESTAGE_ROLES = {
 };
 var obLifestage = null;
 
-// ── Progressive section unlock ──
+// ── Progress check (simplified v5.6) ──
 function obCheckProgress() {
   var name = (document.getElementById('ob-name')?.value || '').trim();
-  var title = (document.getElementById('ob-title')?.value || '').trim();
   var workplace = (document.getElementById('ob-workplace')?.value || '').trim();
-  var secADone = name && workplace;
-  var secBDone = obSelectedTags.length >= 3;
 
-  // Preview: unlock when name + livsfase
-  var secPreview = document.getElementById('ob-sec-preview');
-  if (secPreview) {
-    if (secADone && secPreview.classList.contains('ob-sec-locked')) {
-      secPreview.classList.remove('ob-sec-locked');
-      obLoadPeoplePreview();
-    } else if (!secADone && !secPreview.classList.contains('ob-sec-locked')) {
-      secPreview.classList.add('ob-sec-locked');
-    }
-  }
-  // Live-update preview when tags change (throttled 400ms)
-  if (secADone && _obPreviewProfiles && _obPreviewProfiles.length > 0) {
-    clearTimeout(_obPreviewTimer);
-    _obPreviewTimer = setTimeout(obRenderPreviewProfiles, 400);
-  }
-
-  // Section B (tags): unlock when name + livsfase
-  var secB = document.getElementById('ob-sec-b');
-  var checkA = document.getElementById('ob-check-a');
-  if (secB) {
-    if (secADone && secB.classList.contains('ob-sec-locked')) {
-      secB.classList.remove('ob-sec-locked');
-      obRenderCategories();
-    } else if (!secADone && !secB.classList.contains('ob-sec-locked')) {
-      secB.classList.add('ob-sec-locked');
-    }
-  }
-  if (checkA) {
-    if (secADone) { checkA.classList.add('done'); checkA.innerHTML = '✓'; }
-    else { checkA.classList.remove('done'); checkA.textContent = '1'; }
-  }
-
-  // Section C (intent): unlock when 3+ tags
-  var secC = document.getElementById('ob-sec-c');
-  var checkB = document.getElementById('ob-check-b');
-  if (secC) {
-    if (secBDone && secC.classList.contains('ob-sec-locked')) {
-      secC.classList.remove('ob-sec-locked');
-    } else if (!secBDone && !secC.classList.contains('ob-sec-locked')) {
-      secC.classList.add('ob-sec-locked');
-    }
-  }
-  if (checkB) {
-    if (secBDone) { checkB.classList.add('done'); checkB.innerHTML = '✓'; }
-    else { checkB.classList.remove('done'); checkB.textContent = '2'; }
-  }
-
-  // Save button: active when minimum requirements met (v5.2: name + workplace)
+  // Save button: active when name + workplace filled
   var saveBtn = document.getElementById('ob-save-btn');
   if (saveBtn) {
-    var workplace = (document.getElementById('ob-workplace')?.value || '').trim();
     var canSave = name && workplace;
     saveBtn.style.opacity = canSave ? '1' : '0.3';
     saveBtn.style.pointerEvents = canSave ? 'auto' : 'none';
   }
 
-  // Step label (simplified)
-  var stepLabel = document.getElementById('ob-step-label');
-  if (stepLabel) stepLabel.textContent = '';
-
-  // Update preview hint and CTA
-  var hint = document.getElementById('ob-preview-hint');
-  var cta = document.getElementById('ob-preview-cta');
-  if (hint && cta) {
-    if (obSelectedTags.length === 0) {
-      hint.textContent = 'Baseret på din livsfase';
-      cta.textContent = 'Tilføj tags for at se bedre matches ↓';
-    } else if (obSelectedTags.length < 3) {
-      hint.textContent = 'Baseret på ' + obSelectedTags.length + ' tag' + (obSelectedTags.length > 1 ? 's' : '');
-      cta.textContent = 'Vælg ' + (3 - obSelectedTags.length) + ' mere for at fortsætte ↓';
-    } else {
-      hint.textContent = 'Baseret på ' + obSelectedTags.length + ' tags — bedre matches!';
-      cta.textContent = 'Færdiggør din profil for at starte samtaler →';
-      cta.style.color = 'var(--green)';
-    }
+  // Render tag categories if not yet done
+  if (name && workplace) {
+    var cats = document.getElementById('ob-tag-categories');
+    if (cats && !cats.innerHTML) obRenderCategories();
   }
 
   // Tag min label
