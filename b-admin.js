@@ -298,51 +298,37 @@ function adminTimeAgo(dateStr) {
 // ══════════════════════════════════════════════════════════
 //  ONBOARDING TEST TOOLS
 // ══════════════════════════════════════════════════════════
-var TEST_ACCOUNT_EMAIL = 'test@bubbleme.dk'; // Opret denne konto manuelt én gang
+var TEST_ACCOUNT_EMAIL = 'test@bubbleme.dk';
 
 async function testOnboardingReset(mode) {
   if (!currentUser) { showToast('Ikke logget ind'); return; }
   if (!isAdmin()) { showToast('Kun admin kan bruge test-tools'); return; }
 
   try {
-    // Find test account by email
-    var { data: testProfile } = await sb.from('profiles')
-      .select('id, name, email')
-      .eq('email', TEST_ACCOUNT_EMAIL)
-      .maybeSingle();
+    showToast('Nulstiller testkonto...');
 
-    if (!testProfile) {
-      showToast('Testkonto "' + TEST_ACCOUNT_EMAIL + '" ikke fundet. Opret den med email signup først.');
+    // Call Edge Function to delete/reset test user (requires service_role)
+    var { data: session } = await sb.auth.getSession();
+    var resp = await fetch(SUPABASE_URL + '/functions/v1/reset-test-user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + session.session.access_token,
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ mode: mode, testEmail: TEST_ACCOUNT_EMAIL })
+    });
+    var result = await resp.json();
+    if (!resp.ok || result.error) {
+      showToast('Reset fejl: ' + (result.error || 'ukendt'));
       return;
     }
-
-    var testUserId = testProfile.id;
-
-    if (mode === 'setup') {
-      // Partial: clear title, keywords, lifestage — keep name + workplace
-      await sb.from('profiles').update({
-        title: null, keywords: [], lifestage: null,
-        bio: null, onboarding_skipped: false
-      }).eq('id', testUserId);
-      await sb.auth.signOut();
-      showSuccessToast('Testkonto nulstillet (setup). Log ind som ' + TEST_ACCOUNT_EMAIL);
-      setTimeout(function() { window.location.href = window.location.origin + window.location.pathname; }, 1000);
-      return;
-    }
-
-    // Full reset: wipe test account profile
-    await sb.from('profiles').update({
-      name: null, title: null, workplace: null, keywords: [],
-      lifestage: null, bio: null, avatar_url: null, linkedin: null,
-      onboarding_skipped: false
-    }).eq('id', testUserId);
 
     // Build redirect URL
     var baseUrl = window.location.origin + window.location.pathname;
     var redirectUrl = baseUrl;
 
     if (mode === 'qr') {
-      // Use admin's own QR token so test user sees admin profile
       var { data: adminToken } = await sb.from('qr_tokens')
         .select('token').eq('user_id', currentUser.id)
         .order('created_at', { ascending: false }).limit(1).maybeSingle();
@@ -371,10 +357,13 @@ async function testOnboardingReset(mode) {
       }
     }
 
-    // Log out admin → redirect to flow. Log in as test account on auth screen.
+    // Log out admin → redirect
     await sb.auth.signOut();
-    showSuccessToast('Testkonto nulstillet. Log ind som ' + TEST_ACCOUNT_EMAIL);
-    setTimeout(function() { window.location.href = redirectUrl; }, 1000);
+    var actionLabel = mode === 'setup'
+      ? 'Profil nulstillet. Log ind som ' + TEST_ACCOUNT_EMAIL
+      : 'Testkonto slettet. Opret ny som ' + TEST_ACCOUNT_EMAIL;
+    showSuccessToast(actionLabel);
+    setTimeout(function() { window.location.href = redirectUrl; }, 1200);
 
   } catch(e) {
     logError('testOnboardingReset', e);
