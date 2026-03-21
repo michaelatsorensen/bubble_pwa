@@ -56,22 +56,37 @@ async function _notifInvites() {
   try {
     var since = ttlSince('invites');
     var q = sb.from('bubble_invitations')
-      .select('id, from_user_id, bubble_id, created_at, profiles!bubble_invitations_from_user_id_fkey(name,title), bubbles(name)')
+      .select('id, from_user_id, bubble_id, created_at')
       .eq('to_user_id', currentUser.id)
       .eq('status', 'pending')
       .order('created_at', {ascending:false});
     if (since) q = q.gte('created_at', since);
-    var { data: invites } = await q;
+    var { data: invites, error: invErr } = await q;
+    if (invErr) { logError('_notifInvites:query', invErr); return ''; }
     if (!invites || invites.length === 0) return '';
+
+    // Fetch profiles + bubble names separately (no FK hints)
+    var fromIds = [...new Set(invites.map(function(i) { return i.from_user_id; }))];
+    var bubbleIds = [...new Set(invites.map(function(i) { return i.bubble_id; }))];
+    var [profRes, bubRes] = await Promise.all([
+      sb.from('profiles').select('id, name, title').in('id', fromIds),
+      sb.from('bubbles').select('id, name').in('id', bubbleIds)
+    ]);
+    var profMap = {};
+    (profRes.data || []).forEach(function(p) { profMap[p.id] = p; });
+    var bubMap = {};
+    (bubRes.data || []).forEach(function(b) { bubMap[b.id] = b; });
+
     return invites.map(function(inv) {
-      var p = inv.profiles || {};
+      var p = profMap[inv.from_user_id] || {};
+      var bub = bubMap[inv.bubble_id] || {};
       var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       return '<div class="notif-card invite" id="invite-' + inv.id + '">' +
         '<div class="notif-header">' +
         '<div class="notif-avatar" style="background:linear-gradient(135deg,#6366F1,#7C5CFC)">' + initials + '</div>' +
         '<div>' +
         '<div class="notif-title">' + icon("bubble") + ' Invitation til boble</div>' +
-        '<div class="notif-sub">' + escHtml(p.name||'Nogen') + ' inviterer dig til ' + escHtml(inv.bubbles?.name||'en boble') + '</div>' +
+        '<div class="notif-sub">' + escHtml(p.name||'Nogen') + ' inviterer dig til ' + escHtml(bub.name||'en boble') + '</div>' +
         '</div></div>' +
         '<div class="notif-actions">' +
         '<button class="notif-btn accept" onclick="acceptBubbleInvite(\'' + inv.id + '\',\'' + inv.from_user_id + '\')">Accepter</button>' +

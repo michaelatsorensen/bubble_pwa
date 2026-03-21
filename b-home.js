@@ -830,7 +830,7 @@ async function loadMyBubbles() {
     var [memRes, invRes] = await Promise.all([
       sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id),
       sb.from('bubble_invitations')
-        .select('id, bubble_id, from_user_id, created_at, bubbles(id, name, type, location, description), profiles!bubble_invitations_from_user_id_fkey(name)')
+        .select('id, bubble_id, from_user_id, created_at')
         .eq('to_user_id', currentUser.id)
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
@@ -839,12 +839,28 @@ async function loadMyBubbles() {
     var pendingInvites = invRes.data || [];
     if (_navVersion !== myNav) return;
 
+    // Enrich invites with bubble + profile data (no FK hints)
+    if (pendingInvites.length > 0) {
+      var invBubbleIds = [...new Set(pendingInvites.map(function(i) { return i.bubble_id; }))];
+      var invFromIds = [...new Set(pendingInvites.map(function(i) { return i.from_user_id; }))];
+      var [ibRes, ipRes] = await Promise.all([
+        sb.from('bubbles').select('id, name, type, location, description').in('id', invBubbleIds),
+        sb.from('profiles').select('id, name').in('id', invFromIds)
+      ]);
+      var ibMap = {}; (ibRes.data || []).forEach(function(b) { ibMap[b.id] = b; });
+      var ipMap = {}; (ipRes.data || []).forEach(function(p) { ipMap[p.id] = p; });
+      pendingInvites.forEach(function(inv) {
+        inv._bubble = ibMap[inv.bubble_id] || {};
+        inv._from = ipMap[inv.from_user_id] || {};
+      });
+    }
+
     // Render pending invites at top
     if (inviteEl && pendingInvites.length > 0) {
       inviteEl.innerHTML = '<div class="section-label" style="margin-top:0.25rem;color:var(--accent)">Invitationer</div>' +
         pendingInvites.map(function(inv) {
-          var b = inv.bubbles || {};
-          var fromName = inv.profiles?.name || 'Nogen';
+          var b = inv._bubble;
+          var fromName = inv._from.name || 'Nogen';
           return '<div id="bb-inv-' + inv.id + '" class="card" style="border:1.5px solid rgba(124,92,252,0.25);background:rgba(124,92,252,0.02);margin-bottom:0.4rem">' +
             '<div style="display:flex;align-items:center;gap:0.6rem">' +
             '<div class="bubble-icon" style="background:' + bubbleColor(b.type, 0.15) + ';color:' + bubbleColor(b.type, 0.9) + '">' + bubbleEmoji(b.type) + '</div>' +
@@ -1258,14 +1274,22 @@ async function loadHomeNotifFeed() {
     // Get recent invitations
     var items = [];
     var { data: invites } = await sb.from('bubble_invitations')
-      .select('id, from_user_id, bubble_id, created_at, status, profiles!bubble_invitations_from_user_id_fkey(name), bubbles(name)')
+      .select('id, from_user_id, bubble_id, created_at, status')
       .eq('to_user_id', currentUser.id)
       .order('created_at', {ascending:false})
       .limit(8);
-    if (invites) {
+    if (invites && invites.length > 0) {
+      var iFids = [...new Set(invites.map(function(i) { return i.from_user_id; }))];
+      var iBids = [...new Set(invites.map(function(i) { return i.bubble_id; }))];
+      var [iPr, iBr] = await Promise.all([
+        sb.from('profiles').select('id, name').in('id', iFids),
+        sb.from('bubbles').select('id, name').in('id', iBids)
+      ]);
+      var iPm = {}; (iPr.data || []).forEach(function(p) { iPm[p.id] = p; });
+      var iBm = {}; (iBr.data || []).forEach(function(b) { iBm[b.id] = b; });
       invites.forEach(function(inv) {
-        var name = inv.profiles ? inv.profiles.name : 'Nogen';
-        var bname = inv.bubbles ? inv.bubbles.name : 'en boble';
+        var name = iPm[inv.from_user_id]?.name || 'Nogen';
+        var bname = iBm[inv.bubble_id]?.name || 'en boble';
         var isNew = inv.status === 'pending';
         items.push({
           html: '<strong>' + escHtml(name) + '</strong> inviterede dig til <strong>' + escHtml(bname) + '</strong>',
