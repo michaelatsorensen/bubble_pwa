@@ -9,35 +9,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=5706">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=5706">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=5706">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=5706">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=5706">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=5706">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=5706">
+<link rel="manifest" href="manifest.json?v=5800">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=5800">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=5800">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=5800">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=5800">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=5800">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=5800">
 
-<link rel="stylesheet" href="app.css?v=5706">
+<link rel="stylesheet" href="app.css?v=5800">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=5706" defer></script>
-<script src="tag-data.js?v=5706" defer></script>
-<script src="b-config.js?v=5706" defer></script>
-<script src="b-utils.js?v=5706" defer></script>
-<script src="b-navigation.js?v=5706" defer></script>
-<script src="b-auth.js?v=5706" defer></script>
-<script src="b-home.js?v=5706" defer></script>
-<script src="b-bubbles.js?v=5706" defer></script>
-<script src="b-profile.js?v=5706" defer></script>
-<script src="b-radar.js?v=5706" defer></script>
-<script src="b-messages.js?v=5706" defer></script>
-<script src="b-realtime.js?v=5706" defer></script>
-<script src="b-onboarding.js?v=5706" defer></script>
-<script src="b-chat.js?v=5706" defer></script>
-<script src="b-notifications.js?v=5706" defer></script>
-<script src="b-live.js?v=5706" defer></script>
-<script src="b-admin.js?v=5706" defer></script>
-<script src="b-boot.js?v=5706" defer></script>
+<script src="bubble-icons.js?v=5800" defer></script>
+<script src="tag-data.js?v=5800" defer></script>
+<script src="b-config.js?v=5800" defer></script>
+<script src="b-utils.js?v=5800" defer></script>
+<script src="b-navigation.js?v=5800" defer></script>
+<script src="b-auth.js?v=5800" defer></script>
+<script src="b-home.js?v=5800" defer></script>
+<script src="b-bubbles.js?v=5800" defer></script>
+<script src="b-profile.js?v=5800" defer></script>
+<script src="b-radar.js?v=5800" defer></script>
+<script src="b-messages.js?v=5800" defer></script>
+<script src="b-realtime.js?v=5800" defer></script>
+<script src="b-onboarding.js?v=5800" defer></script>
+<script src="b-chat.js?v=5800" defer></script>
+<script src="b-notifications.js?v=5800" defer></script>
+<script src="b-live.js?v=5800" defer></script>
+<script src="b-admin.js?v=5800" defer></script>
+<script src="b-boot.js?v=5800" defer></script>
   
 
 
@@ -963,10 +963,11 @@
   </div>
 
 
-  <!-- Tabs: Medlemmer (default) / Chat (med badge) / Info -->
+  <!-- Tabs: Medlemmer (default) / Chat (med badge) / Opslag / Info -->
   <div class="bubble-tabs">
     <button class="bubble-tab active" id="bc-tab-members" onclick="bcSwitchTab('members')">Medlemmer</button>
     <button class="bubble-tab" id="bc-tab-chat" onclick="bcSwitchTab('chat')">Chat <span class="bubble-tab-badge" id="bc-unread-badge" style="display:none">0</span></button>
+    <button class="bubble-tab" id="bc-tab-posts" onclick="bcSwitchTab('posts')">Opslag</button>
     <button class="bubble-tab" id="bc-tab-info" onclick="bcSwitchTab('info')">Info</button>
   </div>
 
@@ -1007,6 +1008,12 @@
   <!-- INFO TAB -->
   <div id="bc-panel-info" style="display:none;flex-direction:column;flex:1;overflow:hidden">
     <div class="chat-info-list" id="bc-info-list"></div>
+  </div>
+
+  <!-- POSTS TAB -->
+  <div id="bc-panel-posts" style="display:none;flex-direction:column;flex:1;overflow:hidden;position:relative">
+    <div class="scroll-area" id="bc-posts-list" style="flex:1;overflow-y:auto;padding:0.8rem"></div>
+    <button id="bc-posts-fab" onclick="bcOpenCreatePost()" style="display:none;position:absolute;bottom:1rem;right:1rem;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;border:none;font-size:1.5rem;font-weight:300;cursor:pointer;box-shadow:0 4px 16px rgba(124,92,252,0.3);z-index:10">+</button>
   </div>
 
   <!-- Context menu -->
@@ -1767,6 +1774,23 @@
   <div style="display:flex;gap:0.5rem;margin-top:0.6rem;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0.5rem)">
     <button onclick="closeInviteModal()" style="flex:1;padding:0.65rem;font-size:0.82rem;font-weight:600;border-radius:12px;border:1px solid var(--glass-border);cursor:pointer;font-family:inherit;color:var(--text-secondary);background:transparent">Annuller</button>
     <button id="invite-send-btn" onclick="sendBubbleInvites()" style="flex:1;padding:0.65rem;font-size:0.82rem;font-weight:700;border-radius:12px;border:none;cursor:pointer;font-family:inherit;background:var(--gradient-primary);color:white;opacity:0.4;transition:opacity 0.2s" disabled>Send invitationer</button>
+  </div>
+</div>
+
+<!-- Create Post Sheet -->
+<div class="modal-overlay" id="sheet-create-post" onclick="if(event.target===this)closeModal('sheet-create-post')" style="align-items:flex-end">
+  <div class="modal-sheet" style="padding:1.5rem 1.5rem 2rem">
+    <div class="person-sheet-handle" onclick="closeModal('sheet-create-post')"></div>
+    <div style="font-weight:800;font-size:1.1rem;margin-bottom:0.2rem">Nyt opslag</div>
+    <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem">Synligt for alle medlemmer i boblen</div>
+    <div style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.2rem">Titel *</div>
+    <input id="bp-title" class="input" placeholder="Fx: Netværksmøde d. 28. marts" style="margin-bottom:0.8rem">
+    <div style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.2rem">Indhold</div>
+    <textarea id="bp-content" class="input" placeholder="Skriv dit opslag her..." style="min-height:100px;resize:vertical;margin-bottom:0.8rem"></textarea>
+    <div style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.2rem">Link til event (valgfrit)</div>
+    <div id="bp-event-picker" style="margin-bottom:1rem"></div>
+    <button onclick="bcSubmitPost()" style="width:100%;padding:0.7rem;border-radius:12px;border:none;background:var(--gradient-primary);color:white;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Publicer opslag</button>
+    <button onclick="closeModal('sheet-create-post')" style="width:100%;margin-top:0.4rem;padding:0.5rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--muted);font-family:inherit;font-size:0.78rem;cursor:pointer">Annuller</button>
   </div>
 </div>
 

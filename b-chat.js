@@ -339,7 +339,7 @@ async function bcLoadBubbleInfo() {
 }
 
 function bcSwitchTab(tab) {
-  ['chat','members','info'].forEach(t => {
+  ['chat','members','info','posts'].forEach(t => {
     const panel = document.getElementById('bc-panel-'+t);
     const tabBtn = document.getElementById('bc-tab-'+t);
     if (panel) {
@@ -360,6 +360,7 @@ function bcSwitchTab(tab) {
     setTimeout(() => bcScrollToBottom(), 100);
   }
   if (tab === 'info') bcLoadInfo();
+  if (tab === 'posts') bcLoadPosts();
 }
 
 async function bcLoadMessages() {
@@ -1010,5 +1011,284 @@ async function bcLoadInfo() {
 }
 
 // Person sheet from chat avatar
+
+
+// ══════════════════════════════════════════════════════════
+//  BUBBLE POSTS (Opslag) — one-way admin/owner announcements
+// ══════════════════════════════════════════════════════════
+
+var _bcPostsCache = null;
+var _bcPostsProfileCache = {};
+
+async function bcLoadPosts() {
+  var list = document.getElementById('bc-posts-list');
+  var fab = document.getElementById('bc-posts-fab');
+  if (!list || !bcBubbleId) return;
+
+  // Show FAB only for owner/admin
+  var canPost = bcBubbleData && (bcBubbleData._isOwner || bcBubbleData._isAdmin);
+  if (fab) fab.style.display = canPost ? 'flex' : 'none';
+
+  list.innerHTML = skelCards(3);
+
+  try {
+    var { data: posts, error } = await sb.from('bubble_posts')
+      .select('*')
+      .eq('bubble_id', bcBubbleId)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+    _bcPostsCache = posts || [];
+
+    if (_bcPostsCache.length === 0) {
+      list.innerHTML = '<div class="empty-state" style="margin-top:2rem">' +
+        '<div class="empty-icon">' + icon('file') + '</div>' +
+        '<div class="empty-text">Ingen opslag endnu' +
+        (canPost ? '<br><span style="font-size:0.72rem;color:var(--accent);cursor:pointer" onclick="bcOpenCreatePost()">Opret det første opslag →</span>' : '<br><span style="font-size:0.72rem">Administratorer kan dele nyheder og opdateringer her</span>') +
+        '</div></div>';
+      return;
+    }
+
+    // Fetch author profiles
+    var authorIds = [...new Set(_bcPostsCache.map(function(p) { return p.author_id; }))];
+    var { data: profiles } = await sb.from('profiles').select('id, name, avatar_url, title').in('id', authorIds);
+    _bcPostsProfileCache = {};
+    (profiles || []).forEach(function(p) { _bcPostsProfileCache[p.id] = p; });
+
+    // Fetch linked events
+    var eventIds = _bcPostsCache.filter(function(p) { return p.event_id; }).map(function(p) { return p.event_id; });
+    var eventMap = {};
+    if (eventIds.length > 0) {
+      var { data: events } = await sb.from('bubbles').select('id, name, type').in('id', eventIds);
+      (events || []).forEach(function(e) { eventMap[e.id] = e; });
+    }
+
+    // Render
+    list.innerHTML = _bcPostsCache.map(function(post) {
+      return bcRenderPostCard(post, _bcPostsProfileCache[post.author_id], eventMap[post.event_id]);
+    }).join('');
+
+  } catch(e) {
+    logError('bcLoadPosts', e);
+    showRetryState('bc-posts-list', 'bcLoadPosts', 'Kunne ikke hente opslag');
+  }
+}
+
+function bcRenderPostCard(post, author, event) {
+  var name = author ? escHtml(author.name || '') : 'Ukendt';
+  var initials = name.split(' ').map(function(w) { return w[0] || ''; }).join('').slice(0, 2).toUpperCase();
+  var avatarHtml = author && author.avatar_url
+    ? '<div class="bp-avatar">' + safeAvatarImg(author.avatar_url, 'width:100%;height:100%;object-fit:cover;border-radius:50%') + '</div>'
+    : '<div class="bp-avatar" style="background:var(--accent)">' + initials + '</div>';
+
+  var roleLabel = '';
+  if (bcBubbleData && post.author_id === bcBubbleData.created_by) roleLabel = 'Ejer';
+  else roleLabel = 'Admin';
+
+  var ago = timeAgo(post.created_at);
+  var preview = escHtml((post.content || '').slice(0, 140));
+  var hasMore = (post.content || '').length > 140;
+
+  var eventChip = '';
+  if (event) {
+    eventChip = '<div class="bp-event-chip" onclick="event.stopPropagation();openBubbleChat(\'' + event.id + '\',\'screen-bubble-chat\')">' +
+      ico('calendar') + ' ' + escHtml(event.name) + ' ›</div>';
+  }
+
+  return '<div class="bp-card" onclick="bcExpandPost(\'' + post.id + '\')">' +
+    '<div class="bp-header">' +
+    avatarHtml +
+    '<div class="bp-meta"><div class="bp-author">' + name + ' <span style="font-size:0.6rem;color:var(--muted);font-weight:500">' + roleLabel + '</span></div>' +
+    '<div class="bp-time">' + ago + '</div></div>' +
+    '</div>' +
+    '<div class="bp-title">' + escHtml(post.title) + '</div>' +
+    '<div class="bp-preview">' + preview + '</div>' +
+    (hasMore ? '<div class="bp-readmore">Læs mere ›</div>' : '') +
+    eventChip +
+    '</div>';
+}
+
+function bcExpandPost(postId) {
+  var post = (_bcPostsCache || []).find(function(p) { return p.id === postId; });
+  if (!post) return;
+  var author = _bcPostsProfileCache[post.author_id];
+  var name = author ? escHtml(author.name || '') : 'Ukendt';
+  var initials = name.split(' ').map(function(w) { return w[0] || ''; }).join('').slice(0, 2).toUpperCase();
+
+  var avatarHtml = author && author.avatar_url
+    ? '<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0">' + safeAvatarImg(author.avatar_url, 'width:100%;height:100%;object-fit:cover') + '</div>'
+    : '<div style="width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:white;font-size:0.6rem;font-weight:800;flex-shrink:0">' + initials + '</div>';
+
+  // Format content: preserve newlines
+  var contentHtml = escHtml(post.content || '').replace(/\n/g, '<br>');
+
+  // Event link card
+  var eventCard = '';
+  if (post.event_id) {
+    eventCard = '<div onclick="openBubbleChat(\'' + post.event_id + '\',\'screen-bubble-chat\')" style="padding:0.6rem 0.8rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);display:flex;align-items:center;gap:0.5rem;margin-top:1rem;cursor:pointer">' +
+      '<div style="width:32px;height:32px;border-radius:10px;background:rgba(46,207,207,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green)">' + ico('calendar') + '</div>' +
+      '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:700;color:var(--green)" id="bp-expand-event-name">Henter event...</div></div>' +
+      '<div style="font-size:0.88rem;color:var(--green)">›</div></div>';
+  }
+
+  // Delete button for owner/admin
+  var deleteBtn = '';
+  var canDelete = bcBubbleData && (bcBubbleData._isOwner || bcBubbleData._isAdmin || post.author_id === currentUser.id);
+  if (canDelete) {
+    deleteBtn = '<button onclick="bcDeletePost(\'' + postId + '\')" style="width:100%;margin-top:0.6rem;padding:0.5rem;border-radius:10px;border:1px solid rgba(232,121,168,0.2);background:none;color:var(--accent2);font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer">Slet opslag</button>';
+  }
+
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(30,27,46,0.25);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+  var sheet = document.createElement('div');
+  sheet.style.cssText = 'width:100%;max-width:680px;max-height:85vh;overflow-y:auto;background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);border-radius:24px 24px 0 0;padding:1.5rem;color:var(--text);font-family:Figtree,sans-serif';
+  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.08);margin:0 auto 1rem;cursor:pointer" onclick="this.closest(\'[style*=backdrop-filter]\').remove()"></div>' +
+    '<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem">' + avatarHtml +
+    '<div><div style="font-size:0.88rem;font-weight:700">' + name + '</div>' +
+    '<div style="font-size:0.65rem;color:var(--muted)">' + timeAgo(post.created_at) + '</div></div></div>' +
+    '<div style="font-size:1.05rem;font-weight:800;margin-bottom:0.6rem">' + escHtml(post.title) + '</div>' +
+    '<div style="font-size:0.88rem;color:var(--text-secondary);line-height:1.65">' + contentHtml + '</div>' +
+    eventCard +
+    '<button onclick="this.closest(\'[style*=backdrop-filter]\').remove()" style="width:100%;margin-top:1.2rem;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer">Luk</button>' +
+    deleteBtn;
+
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+
+  // Fetch event name async if linked
+  if (post.event_id) {
+    sb.from('bubbles').select('name').eq('id', post.event_id).maybeSingle().then(function(r) {
+      var el = document.getElementById('bp-expand-event-name');
+      if (el && r.data) el.textContent = r.data.name;
+    }).catch(function() {});
+  }
+}
+
+async function bcOpenCreatePost() {
+  if (!bcBubbleId || !bcBubbleData) return;
+
+  document.getElementById('bp-title').value = '';
+  document.getElementById('bp-content').value = '';
+
+  // Build event picker: list child events of this bubble
+  var picker = document.getElementById('bp-event-picker');
+  picker.innerHTML = '<div style="font-size:0.72rem;color:var(--muted)">Henter events...</div>';
+
+  openModal('sheet-create-post');
+
+  try {
+    var { data: events } = await sb.from('bubbles')
+      .select('id, name, type')
+      .or('parent_bubble_id.eq.' + bcBubbleId + ',id.eq.' + bcBubbleId)
+      .eq('type', 'event')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (!events || events.length === 0) {
+      picker.innerHTML = '<div style="padding:0.5rem 0.6rem;border-radius:8px;border:1px dashed var(--glass-border);font-size:0.72rem;color:var(--muted);text-align:center">Ingen events at linke til</div>';
+    } else {
+      picker.innerHTML = events.map(function(ev) {
+        return '<label style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.6rem;border-radius:10px;border:1px solid var(--glass-border-subtle);margin-bottom:0.3rem;cursor:pointer;transition:border-color 0.15s" onclick="bcSelectPostEvent(this,\'' + ev.id + '\')">' +
+          '<input type="radio" name="bp-event" value="' + ev.id + '" style="display:none">' +
+          '<div style="width:24px;height:24px;border-radius:8px;background:rgba(46,207,207,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green);font-size:0.7rem">' + ico('calendar') + '</div>' +
+          '<div style="flex:1;font-size:0.78rem;font-weight:600;color:var(--text)">' + escHtml(ev.name) + '</div>' +
+          '<div class="bp-radio-dot" style="width:16px;height:16px;border-radius:50%;border:2px solid var(--glass-border);flex-shrink:0;transition:all 0.15s"></div>' +
+          '</label>';
+      }).join('');
+    }
+  } catch(e) {
+    picker.innerHTML = '<div style="font-size:0.72rem;color:var(--accent2)">Kunne ikke hente events</div>';
+  }
+}
+
+function bcSelectPostEvent(label, eventId) {
+  // Toggle selection
+  var allLabels = label.parentElement.querySelectorAll('label');
+  allLabels.forEach(function(l) {
+    l.style.borderColor = '';
+    l.style.background = '';
+    var dot = l.querySelector('.bp-radio-dot');
+    if (dot) { dot.style.borderColor = ''; dot.style.background = ''; }
+    l.querySelector('input').checked = false;
+  });
+  var input = label.querySelector('input');
+  if (input.value === label.parentElement._selectedEvent) {
+    // Deselect
+    label.parentElement._selectedEvent = null;
+    return;
+  }
+  input.checked = true;
+  label.style.borderColor = 'rgba(46,207,207,0.3)';
+  label.style.background = 'rgba(46,207,207,0.03)';
+  var dot = label.querySelector('.bp-radio-dot');
+  if (dot) { dot.style.borderColor = 'var(--green)'; dot.style.background = 'var(--green)'; }
+  label.parentElement._selectedEvent = eventId;
+}
+
+async function bcSubmitPost() {
+  var title = document.getElementById('bp-title').value.trim();
+  var content = document.getElementById('bp-content').value.trim();
+  if (!title) { showToast('Titel er påkrævet'); return; }
+
+  var picker = document.getElementById('bp-event-picker');
+  var selectedEvent = picker ? picker._selectedEvent || null : null;
+
+  try {
+    showToast('Publicerer...');
+    var { error } = await sb.from('bubble_posts').insert({
+      bubble_id: bcBubbleId,
+      author_id: currentUser.id,
+      title: title,
+      content: content || null,
+      event_id: selectedEvent
+    });
+    if (error) throw error;
+
+    closeModal('sheet-create-post');
+    showSuccessToast('Opslag publiceret');
+    trackEvent('post_created', { bubble_id: bcBubbleId });
+    bcLoadPosts();
+  } catch(e) {
+    logError('bcSubmitPost', e);
+    showToast('Fejl: ' + (e.message || 'ukendt'));
+  }
+}
+
+async function bcDeletePost(postId) {
+  try {
+    // Inline confirm
+    var overlay = document.querySelector('[style*="backdrop-filter"]');
+    if (!overlay) return;
+    var existing = overlay.querySelector('.bp-delete-confirm');
+    if (existing) { existing.remove(); return; }
+
+    var tray = document.createElement('div');
+    tray.className = 'bp-delete-confirm';
+    tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.5rem;background:rgba(232,121,168,0.06);border:1px solid rgba(232,121,168,0.15);border-radius:10px';
+    tray.innerHTML = '<span style="font-size:0.75rem;color:var(--text-secondary)">Slet dette opslag?</span>' +
+      '<div style="display:flex;gap:0.3rem">' +
+      '<button style="font-size:0.72rem;padding:0.3rem 0.65rem;background:var(--accent2);color:white;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600" onclick="bcConfirmDeletePost(\'' + postId + '\')">Slet</button>' +
+      '<button style="font-size:0.72rem;padding:0.3rem 0.65rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit" onclick="this.closest(\'.bp-delete-confirm\').remove()">Annuller</button>' +
+      '</div>';
+    overlay.querySelector('.modal-sheet, div[style*="border-radius:24px"]')?.appendChild(tray);
+  } catch(e) { logError('bcDeletePost', e); }
+}
+
+async function bcConfirmDeletePost(postId) {
+  try {
+    await sb.from('bubble_posts').delete().eq('id', postId);
+    // Close expand tray
+    var overlay = document.querySelector('[style*="backdrop-filter"]');
+    if (overlay) overlay.remove();
+    showSuccessToast('Opslag slettet');
+    bcLoadPosts();
+  } catch(e) {
+    logError('bcConfirmDeletePost', e);
+    showToast('Fejl: ' + (e.message || 'ukendt'));
+  }
+}
 
 

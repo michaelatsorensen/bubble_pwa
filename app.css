@@ -172,10 +172,10 @@ textarea.input { min-height:80px; resize:vertical; }
 .chip-remove:hover { opacity:1; }
 
 /* ── TAGS ── */
-.tag { display:inline-block; background:rgba(30,27,46,0.04); border:1px solid rgba(30,27,46,0.12); border-radius:var(--radius-pill); padding:0.18rem 0.55rem; font-size:0.68rem; font-weight:600; color:var(--text-secondary); margin:0.15rem 0.15rem 0 0; }
-.tag.mint { background:rgba(26,158,142,0.12); border-color:rgba(26,158,142,0.25); color:#1A9E8E; }
-.tag.gold { background:rgba(245,158,11,0.12); border-color:rgba(245,158,11,0.25); color:#D97706; }
-.tag.active-tag { background:rgba(124,92,252,0.15); border-color:rgba(124,92,252,0.3); color:var(--accent); }
+.tag { display:inline-block; background:rgba(30,27,46,0.06); border:1px solid rgba(30,27,46,0.1); border-radius:var(--radius-pill); padding:0.22rem 0.6rem; font-size:0.68rem; font-weight:600; color:var(--text); margin:0.15rem 0.15rem 0 0; }
+.tag.mint { background:rgba(26,158,142,0.15); border-color:rgba(26,158,142,0.3); color:#085041; }
+.tag.gold { background:rgba(245,158,11,0.15); border-color:rgba(245,158,11,0.3); color:#633806; }
+.tag.active-tag { background:rgba(124,92,252,0.15); border-color:rgba(124,92,252,0.3); color:#3C3489; }
 
 /* ── AVATARS ── */
 .avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; color:white; flex-shrink:0; }
@@ -259,6 +259,21 @@ textarea.input { min-height:80px; resize:vertical; }
 .bubble-tab { flex:1; text-align:center; padding:0.4rem 0.2rem; border-radius:8px; font-size:0.68rem; font-weight:600; color:var(--muted); cursor:pointer; transition:all 0.2s; user-select:none; font-family:'Figtree',sans-serif; border:none; background:none; position:relative; }
 .bubble-tab.active { background:#FFFFFF; border:1px solid #D8D5E4; color:var(--text); box-shadow:0 1px 3px rgba(30,27,46,0.06); }
 .bubble-tab-badge { position:absolute; top:-2px; right:8px; min-width:14px; height:14px; border-radius:99px; background:var(--accent2); font-size:0.48rem; font-weight:800; color:white; display:none; align-items:center; justify-content:center; padding:0 3px; }
+
+/* ══ Bubble Posts ══ */
+.bp-card { padding:0.8rem 1rem; border-radius:14px; border:1px solid var(--glass-border-subtle); background:var(--bg); margin-bottom:0.6rem; cursor:pointer; transition:border-color 0.15s; }
+.bp-card:active { transform:scale(0.99); }
+.bp-card.bp-new { border-color:rgba(124,92,252,0.2); background:rgba(124,92,252,0.02); }
+.bp-card .bp-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem; }
+.bp-card .bp-avatar { width:26px; height:26px; border-radius:50%; font-size:0.5rem; font-weight:800; color:white; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.bp-card .bp-meta { flex:1; min-width:0; }
+.bp-card .bp-author { font-size:0.72rem; font-weight:700; color:var(--text); }
+.bp-card .bp-time { font-size:0.6rem; color:var(--muted); }
+.bp-card .bp-title { font-size:0.85rem; font-weight:700; color:var(--text); margin-bottom:0.2rem; }
+.bp-card .bp-preview { font-size:0.75rem; color:var(--text-secondary); line-height:1.5; display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
+.bp-card .bp-readmore { font-size:0.68rem; font-weight:600; color:var(--accent); margin-top:0.35rem; }
+.bp-card .bp-event-chip { display:inline-flex; align-items:center; gap:0.3rem; padding:0.2rem 0.55rem; border-radius:8px; background:rgba(46,207,207,0.06); border:1px solid rgba(46,207,207,0.15); font-size:0.6rem; font-weight:600; color:var(--green); margin-top:0.35rem; cursor:pointer; }
+.bp-new-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; }
 
 .chat-messages { flex:1; padding:0.75rem; display:flex; flex-direction:column; gap:0.4rem; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .chat-date-sep { text-align:center; font-size:0.52rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin:0.4rem 0; }
@@ -1450,9 +1465,9 @@ a.person-action-btn { text-decoration:none; }
 .tag-cat-count { font-size:0.6rem; color:var(--muted); }
 .tag-cat-arrow { font-size:0.9rem; color:var(--muted); transition:transform 0.2s; font-weight:700; }
 .tag-cat-tags { display:flex; flex-wrap:wrap; gap:0.3rem; padding:0.3rem 0 0.5rem; }
-.tag-pick { display:inline-block; padding:0.28rem 0.55rem; border-radius:8px; font-size:0.68rem; font-weight:500; border:1px solid; cursor:pointer; transition:all 0.15s; color:var(--text-secondary); }
+.tag-pick { display:inline-block; padding:0.3rem 0.6rem; border-radius:8px; font-size:0.72rem; font-weight:500; border:1px solid rgba(30,27,46,0.12); cursor:pointer; transition:all 0.15s; color:var(--text-secondary); background:transparent; }
 .tag-pick:active { transform:scale(0.95); }
-.tag-pick.selected { color:var(--text); font-weight:600; }
+.tag-pick.selected { background:rgba(124,92,252,0.14); color:#3C3489; border-color:rgba(124,92,252,0.3); font-weight:700; }
 
 /* ═══ GIF PICKER ═══ */
 .gif-picker-overlay { position:fixed; inset:0; z-index:500; background:rgba(30,27,46,0.2); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); opacity:0; pointer-events:none; transition:opacity 0.25s; }
