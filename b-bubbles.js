@@ -641,7 +641,7 @@ async function saveEditBubble() {
       visibility, description: desc, location, keywords: ebChips
     };
     if (_pendingBubbleIcon) updateObj.icon_url = _pendingBubbleIcon;
-    const { error } = await sb.from('bubbles').update(updateObj).eq('id', currentEditBubbleId);
+    const { error } = await sb.from('bubbles').update(updateObj).eq('id', currentEditBubbleId).eq('created_by', currentUser.id);
     if (error) return showToast('Fejl: ' + error.message);
     closeModal('modal-edit-bubble');
     showSuccessToast('Boble opdateret');
@@ -662,7 +662,7 @@ async function openQRModal(bubbleId) {
     const { data: b } = await sb.from('bubbles').select('*').eq('id', bubbleId).single();
     if (!b) return;
 
-    document.getElementById('qr-modal-title').innerHTML = b.name + ' ' + icon('bubble');
+    document.getElementById('qr-modal-title').innerHTML = escHtml(b.name) + ' ' + icon('bubble');
     document.getElementById('qr-modal-subtitle').textContent =
       `${typeLabel(b.type)}${b.location ? ' · ' + b.location : ''} — scan for at joine`;
 

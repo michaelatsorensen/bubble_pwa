@@ -198,6 +198,16 @@ async function dmHandleFile(input) {
     const file = input.files[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) { showToast('Maks 10MB per fil'); return; }
+
+    // File type blocklist — prevent stored XSS
+    var blockedTypes = ['text/html','application/xhtml+xml','image/svg+xml','application/javascript','text/javascript','application/x-httpd-php'];
+    var blockedExts = ['html','htm','svg','js','php','exe','bat','cmd','sh','ps1'];
+    var ext = (file.name || '').split('.').pop().toLowerCase();
+    if (blockedTypes.indexOf(file.type) >= 0 || blockedExts.indexOf(ext) >= 0) {
+      showToast('Filtypen er ikke tilladt');
+      input.value = '';
+      return;
+    }
     showToast('Uploader...');
 
     const safeFilename = file.name

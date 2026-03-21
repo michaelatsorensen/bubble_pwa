@@ -428,13 +428,14 @@ function bcRenderMsg(m) {
   // Build content
   let bubble = '';
   if (m.file_url) {
+    const safeUrl = escHtml(m.file_url);
     const ext = m.file_name?.split('.').pop()?.toLowerCase() || '';
     const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext) || (m.file_type||'').startsWith('image/');
     if (isImg) {
-      bubble = `<a href="${m.file_url}" target="_blank"><img class="msg-img" src="${m.file_url}" alt="${escHtml(m.file_name||'')}"></a>`;
+      bubble = `<a href="${safeUrl}" target="_blank" rel="noopener"><img class="msg-img" src="${safeUrl}" alt="${escHtml(m.file_name||'')}"></a>`;
     } else {
       const sz = m.file_size ? (m.file_size < 1048576 ? Math.round(m.file_size/1024)+'KB' : (m.file_size/1048576).toFixed(1)+'MB') : '';
-      bubble = `<a class="msg-file" href="${m.file_url}" target="_blank">${icon('clip')} ${escHtml(m.file_name||'Fil')} <span class="msg-file-sz">${sz}</span></a>`;
+      bubble = `<a class="msg-file" href="${safeUrl}" target="_blank" rel="noopener">${icon('clip')} ${escHtml(m.file_name||'Fil')} <span class="msg-file-sz">${sz}</span></a>`;
     }
   } else {
     bubble = `<div class="msg-bubble${isMe ? ' sent' : ''}" id="bc-bubble-${m.id}">${escHtml(filterChatContent(m.content||''))}</div>`;
@@ -495,7 +496,7 @@ async function bcSendMessage() {
       if (orig) {
         await sb.from('bubble_message_edits').insert({message_id: bcEditingId, content: orig.content});
       }
-      await sb.from('bubble_messages').update({content: text, edited: true, updated_at: new Date().toISOString()}).eq('id', bcEditingId);
+      await sb.from('bubble_messages').update({content: text, edited: true, updated_at: new Date().toISOString()}).eq('id', bcEditingId).eq('user_id', currentUser.id);
       // Update local
       const bubbleEl = document.getElementById('bc-bubble-' + bcEditingId);
       if (bubbleEl) {
@@ -552,6 +553,16 @@ async function bcHandleFile(input) {
     const file = input.files[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) { showToast('Maks 10MB per fil'); return; }
+
+    // File type allowlist — block HTML/SVG/JS to prevent stored XSS
+    var blockedTypes = ['text/html','application/xhtml+xml','image/svg+xml','application/javascript','text/javascript','application/x-httpd-php'];
+    var blockedExts = ['html','htm','svg','js','php','exe','bat','cmd','sh','ps1'];
+    var ext = (file.name || '').split('.').pop().toLowerCase();
+    if (blockedTypes.indexOf(file.type) >= 0 || blockedExts.indexOf(ext) >= 0) {
+      showToast('Filtypen er ikke tilladt');
+      input.value = '';
+      return;
+    }
 
     // Sørg for at filen er på chat-tab så bruger kan se progress
     bcSwitchTab('chat');
