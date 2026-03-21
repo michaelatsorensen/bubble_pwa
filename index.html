@@ -9,35 +9,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=5802">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=5802">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=5802">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=5802">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=5802">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=5802">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=5802">
+<link rel="manifest" href="manifest.json?v=5807">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=5807">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=5807">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=5807">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=5807">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=5807">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=5807">
 
-<link rel="stylesheet" href="app.css?v=5802">
+<link rel="stylesheet" href="app.css?v=5807">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=5802" defer></script>
-<script src="tag-data.js?v=5802" defer></script>
-<script src="b-config.js?v=5802" defer></script>
-<script src="b-utils.js?v=5802" defer></script>
-<script src="b-navigation.js?v=5802" defer></script>
-<script src="b-auth.js?v=5802" defer></script>
-<script src="b-home.js?v=5802" defer></script>
-<script src="b-bubbles.js?v=5802" defer></script>
-<script src="b-profile.js?v=5802" defer></script>
-<script src="b-radar.js?v=5802" defer></script>
-<script src="b-messages.js?v=5802" defer></script>
-<script src="b-realtime.js?v=5802" defer></script>
-<script src="b-onboarding.js?v=5802" defer></script>
-<script src="b-chat.js?v=5802" defer></script>
-<script src="b-notifications.js?v=5802" defer></script>
-<script src="b-live.js?v=5802" defer></script>
-<script src="b-admin.js?v=5802" defer></script>
-<script src="b-boot.js?v=5802" defer></script>
+<script src="bubble-icons.js?v=5807" defer></script>
+<script src="tag-data.js?v=5807" defer></script>
+<script src="b-config.js?v=5807" defer></script>
+<script src="b-utils.js?v=5807" defer></script>
+<script src="b-navigation.js?v=5807" defer></script>
+<script src="b-auth.js?v=5807" defer></script>
+<script src="b-home.js?v=5807" defer></script>
+<script src="b-bubbles.js?v=5807" defer></script>
+<script src="b-profile.js?v=5807" defer></script>
+<script src="b-radar.js?v=5807" defer></script>
+<script src="b-messages.js?v=5807" defer></script>
+<script src="b-realtime.js?v=5807" defer></script>
+<script src="b-onboarding.js?v=5807" defer></script>
+<script src="b-chat.js?v=5807" defer></script>
+<script src="b-notifications.js?v=5807" defer></script>
+<script src="b-live.js?v=5807" defer></script>
+<script src="b-admin.js?v=5807" defer></script>
+<script src="b-boot.js?v=5807" defer></script>
   
 
 
@@ -710,7 +710,7 @@
           </button>
         </div>
         <!-- Filter chips under dartboard -->
-        <div id="home-filter-chips" style="display:flex;gap:0.3rem;padding:0.4rem 0;overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <div id="home-filter-chips" style="display:flex;gap:0.3rem;padding:0.4rem 0.2rem;overflow-x:auto;-webkit-overflow-scrolling:touch">
           <button class="radar-filter-chip active" onclick="filterRadarHome('all')" data-filter="all">Alle <span id="radar-count-home" style="opacity:0.6"></span></button>
           <button class="radar-filter-chip" onclick="filterRadarHome('interest')" data-filter="interest">Fælles int.</button>
           <button class="radar-filter-chip" onclick="filterRadarHome('good')" data-filter="good">Godt match</button>
@@ -833,6 +833,7 @@
   </div>
   <div class="scroll-area" style="padding-top:0.5rem">
     <div id="bb-panel-mine">
+      <div id="bb-pending-invites"></div>
       <div class="section-label" style="margin-top:0.25rem">Mine bobler</div>
       <div id="my-owned-bubbles-list"><div class="spinner"></div></div>
       <div class="section-label">Bobler jeg er med i</div>
@@ -963,11 +964,11 @@
   </div>
 
 
-  <!-- Tabs: Medlemmer (default) / Chat (med badge) / Opslag / Info -->
+  <!-- Tabs: Medlemmer > Opslag > Chat > Info -->
   <div class="bubble-tabs">
     <button class="bubble-tab active" id="bc-tab-members" onclick="bcSwitchTab('members')">Medlemmer</button>
-    <button class="bubble-tab" id="bc-tab-chat" onclick="bcSwitchTab('chat')">Chat <span class="bubble-tab-badge" id="bc-unread-badge" style="display:none">0</span></button>
     <button class="bubble-tab" id="bc-tab-posts" onclick="bcSwitchTab('posts')">Opslag</button>
+    <button class="bubble-tab" id="bc-tab-chat" onclick="bcSwitchTab('chat')">Chat <span class="bubble-tab-badge" id="bc-unread-badge" style="display:none">0</span></button>
     <button class="bubble-tab" id="bc-tab-info" onclick="bcSwitchTab('info')">Info</button>
   </div>
 

@@ -622,6 +622,61 @@ async function openQuickLiveBubble() {
   openCreateLiveModal();
 }
 
+// ── Bubble invite actions (from bubbles screen) ──
+function bbAcceptInvite(inviteId, fromUserId) {
+  var card = document.getElementById('bb-inv-' + inviteId);
+  if (!card) return;
+  // Remove any existing confirm tray
+  var existing = card.querySelector('.bb-inv-confirm');
+  if (existing) { existing.remove(); return; }
+  var tray = document.createElement('div');
+  tray.className = 'bb-inv-confirm';
+  tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0.5rem;margin-top:0.4rem;background:rgba(26,158,142,0.06);border:1px solid rgba(26,158,142,0.15);border-radius:10px';
+  tray.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Join denne boble?</span>' +
+    '<div style="display:flex;gap:0.25rem">' +
+    '<button style="font-size:0.72rem;padding:0.3rem 0.65rem;background:var(--gradient-primary);color:white;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700" onclick="bbConfirmAccept(\'' + inviteId + '\',\'' + fromUserId + '\')">Ja, join</button>' +
+    '<button style="font-size:0.72rem;padding:0.3rem 0.65rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit" onclick="this.closest(\'.bb-inv-confirm\').remove()">Annuller</button>' +
+    '</div>';
+  card.appendChild(tray);
+}
+
+async function bbConfirmAccept(inviteId, fromUserId) {
+  try {
+    await sb.from('bubble_invitations').update({ status: 'accepted' }).eq('id', inviteId);
+    var { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).single();
+    if (inv?.bubble_id) {
+      await sb.from('bubble_members').insert({ bubble_id: inv.bubble_id, user_id: currentUser.id });
+      showSuccessToast('Du er nu med i boblen!');
+      loadMyBubbles();
+    }
+  } catch(e) { logError('bbConfirmAccept', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+}
+
+function bbDeclineInvite(inviteId) {
+  var card = document.getElementById('bb-inv-' + inviteId);
+  if (!card) return;
+  var existing = card.querySelector('.bb-inv-confirm');
+  if (existing) { existing.remove(); return; }
+  var tray = document.createElement('div');
+  tray.className = 'bb-inv-confirm';
+  tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0.5rem;margin-top:0.4rem;background:rgba(232,121,168,0.06);border:1px solid rgba(232,121,168,0.15);border-radius:10px';
+  tray.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Afvis invitation?</span>' +
+    '<div style="display:flex;gap:0.25rem">' +
+    '<button style="font-size:0.72rem;padding:0.3rem 0.65rem;background:rgba(232,121,168,0.12);color:var(--accent2);border:1px solid rgba(232,121,168,0.25);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700" onclick="bbConfirmDecline(\'' + inviteId + '\')">Ja, afvis</button>' +
+    '<button style="font-size:0.72rem;padding:0.3rem 0.65rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit" onclick="this.closest(\'.bb-inv-confirm\').remove()">Annuller</button>' +
+    '</div>';
+  card.appendChild(tray);
+}
+
+async function bbConfirmDecline(inviteId) {
+  try {
+    await sb.from('bubble_invitations').update({ status: 'declined' }).eq('id', inviteId);
+    var card = document.getElementById('bb-inv-' + inviteId);
+    if (card) { card.style.transition = 'opacity 0.2s'; card.style.opacity = '0'; setTimeout(function() { card.remove(); }, 200); }
+    showToast('Invitation afvist');
+  } catch(e) { logError('bbConfirmDecline', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+}
+
 function bbSwitchTab(tab) {
   var minePanel    = document.getElementById('bb-panel-mine');
   var explorePanel = document.getElementById('bb-panel-explore');
@@ -766,12 +821,44 @@ async function loadMyBubbles() {
     localStorage.setItem('bubble_bubbles_seen', new Date().toISOString());
     const ownedList  = document.getElementById('my-owned-bubbles-list');
     const joinedList = document.getElementById('my-bubbles-list');
+    const inviteEl   = document.getElementById('bb-pending-invites');
     ownedList.innerHTML = skelCards(2);
     joinedList.innerHTML = skelCards(2);
+    if (inviteEl) inviteEl.innerHTML = '';
 
-    const { data: memberships } = await sb.from('bubble_members')
-      .select('bubble_id').eq('user_id', currentUser.id);
+    // Fetch memberships + pending invites in parallel
+    var [memRes, invRes] = await Promise.all([
+      sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id),
+      sb.from('bubble_invitations')
+        .select('id, bubble_id, from_user_id, created_at, bubbles(id, name, type, location, description), profiles!bubble_invitations_from_user_id_fkey(name)')
+        .eq('to_user_id', currentUser.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+    ]);
+    var memberships = memRes.data;
+    var pendingInvites = invRes.data || [];
     if (_navVersion !== myNav) return;
+
+    // Render pending invites at top
+    if (inviteEl && pendingInvites.length > 0) {
+      inviteEl.innerHTML = '<div class="section-label" style="margin-top:0.25rem;color:var(--accent)">Invitationer</div>' +
+        pendingInvites.map(function(inv) {
+          var b = inv.bubbles || {};
+          var fromName = inv.profiles?.name || 'Nogen';
+          return '<div id="bb-inv-' + inv.id + '" class="card" style="border:1.5px solid rgba(124,92,252,0.25);background:rgba(124,92,252,0.02);margin-bottom:0.4rem">' +
+            '<div style="display:flex;align-items:center;gap:0.6rem">' +
+            '<div class="bubble-icon" style="background:' + bubbleColor(b.type, 0.15) + ';color:' + bubbleColor(b.type, 0.9) + '">' + bubbleEmoji(b.type) + '</div>' +
+            '<div style="flex:1;min-width:0">' +
+            '<div class="fw-600 fs-09">' + escHtml(b.name || 'Boble') + '</div>' +
+            '<div class="fs-072 text-muted">' + escHtml(fromName) + ' inviterer dig · ' + timeAgo(inv.created_at) + '</div>' +
+            '</div>' +
+            '</div>' +
+            '<div style="display:flex;gap:0.35rem;margin-top:0.5rem">' +
+            '<button onclick="bbAcceptInvite(\'' + inv.id + '\',\'' + inv.from_user_id + '\')" style="flex:1;padding:0.45rem;border-radius:10px;border:none;background:var(--gradient-primary);color:white;font-family:inherit;font-size:0.78rem;font-weight:700;cursor:pointer">Acceptér</button>' +
+            '<button onclick="bbDeclineInvite(\'' + inv.id + '\')" style="padding:0.45rem 0.7rem;border-radius:10px;border:1px solid var(--glass-border);background:none;color:var(--muted);font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer">Nej tak</button>' +
+            '</div></div>';
+        }).join('');
+    }
 
     if (!memberships || memberships.length === 0) {
       ownedList.innerHTML  = '';

@@ -564,14 +564,15 @@ button {
   margin-left: auto;
 }
 
-/* FIX 7: Bubble tabs — bigger */
+/* FIX 7: Bubble tabs — aligned, consistent sizing */
 .bubble-tabs {
   margin: 0.4rem 1.1rem 0;
   padding: 3px; gap: 2px;
 }
 .bubble-tab {
-  padding: 0.45rem 0.3rem;
-  font-size: 0.75rem;
+  padding: 0.45rem 0.15rem;
+  font-size: 0.72rem;
+  min-width: 0;
 }
 
 /* FIX 8: Chat section labels — bigger */
