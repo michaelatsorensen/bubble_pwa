@@ -368,7 +368,6 @@ async function confirmDeclineInvite(inviteId) {
     showToast('Invitation afvist');
   } catch(e) { logError("confirmDeclineInvite", e); showToast(e.message || "Ukendt fejl"); }
 }
-}
 
 
 // ══════════════════════════════════════════════════════════
