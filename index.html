@@ -9,35 +9,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=5900">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=5900">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=5900">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=5900">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=5900">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=5900">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=5900">
+<link rel="manifest" href="manifest.json?v=5902">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=5902">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=5902">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=5902">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=5902">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=5902">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=5902">
 
-<link rel="stylesheet" href="app.css?v=5900">
+<link rel="stylesheet" href="app.css?v=5902">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=5900" defer></script>
-<script src="tag-data.js?v=5900" defer></script>
-<script src="b-config.js?v=5900" defer></script>
-<script src="b-utils.js?v=5900" defer></script>
-<script src="b-navigation.js?v=5900" defer></script>
-<script src="b-auth.js?v=5900" defer></script>
-<script src="b-home.js?v=5900" defer></script>
-<script src="b-bubbles.js?v=5900" defer></script>
-<script src="b-profile.js?v=5900" defer></script>
-<script src="b-radar.js?v=5900" defer></script>
-<script src="b-messages.js?v=5900" defer></script>
-<script src="b-realtime.js?v=5900" defer></script>
-<script src="b-onboarding.js?v=5900" defer></script>
-<script src="b-chat.js?v=5900" defer></script>
-<script src="b-notifications.js?v=5900" defer></script>
-<script src="b-live.js?v=5900" defer></script>
-<script src="b-admin.js?v=5900" defer></script>
-<script src="b-boot.js?v=5900" defer></script>
+<script src="bubble-icons.js?v=5902" defer></script>
+<script src="tag-data.js?v=5902" defer></script>
+<script src="b-config.js?v=5902" defer></script>
+<script src="b-utils.js?v=5902" defer></script>
+<script src="b-navigation.js?v=5902" defer></script>
+<script src="b-auth.js?v=5902" defer></script>
+<script src="b-home.js?v=5902" defer></script>
+<script src="b-bubbles.js?v=5902" defer></script>
+<script src="b-profile.js?v=5902" defer></script>
+<script src="b-radar.js?v=5902" defer></script>
+<script src="b-messages.js?v=5902" defer></script>
+<script src="b-realtime.js?v=5902" defer></script>
+<script src="b-onboarding.js?v=5902" defer></script>
+<script src="b-chat.js?v=5902" defer></script>
+<script src="b-notifications.js?v=5902" defer></script>
+<script src="b-live.js?v=5902" defer></script>
+<script src="b-admin.js?v=5902" defer></script>
+<script src="b-boot.js?v=5902" defer></script>
   
 
 
@@ -98,7 +98,7 @@
 .anon-title-bar { width:120px; height:8px; border-radius:4px; background:var(--glass-border-subtle); margin-top:0.2rem; }
 
 /* ═══ V5.0 — Radar Filter Chips ═══ */
-.radar-filter-chip { padding:0.35rem 0.75rem; border-radius:20px; font-size:0.68rem; font-weight:600; font-family:var(--font); border:1px solid var(--glass-border-subtle); background:#FFFFFF; color:var(--text-secondary); cursor:pointer; flex-shrink:0; transition:all 0.15s; -webkit-tap-highlight-color:transparent; }
+.radar-filter-chip { padding:0.3rem 0.55rem; border-radius:20px; font-size:0.64rem; font-weight:600; font-family:var(--font); border:1px solid var(--glass-border-subtle); background:#FFFFFF; color:var(--text-secondary); cursor:pointer; flex-shrink:0; transition:all 0.15s; -webkit-tap-highlight-color:transparent; white-space:nowrap; }
 .radar-filter-chip.active { background:linear-gradient(135deg,#7C5CFC,#6366F1); color:#fff; border-color:transparent; }
 .radar-filter-chip:active { transform:scale(0.95); }
 </style>
@@ -700,7 +700,7 @@
             <div class="spinner" style="width:24px;height:24px"></div>
           </div>
           <button onclick="event.stopPropagation();openHomeTray()" title="Vis liste"
-                  style="position:absolute;bottom:10px;right:10px;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(30,27,46,0.08);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 4px rgba(30,27,46,0.08);z-index:10">
+                  style="position:absolute;bottom:10px;right:0;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(30,27,46,0.08);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 4px rgba(30,27,46,0.08);z-index:10">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
               <circle cx="3" cy="6" r="1.2" fill="var(--text-secondary)" stroke="none"/>

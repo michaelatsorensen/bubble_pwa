@@ -1470,7 +1470,7 @@ function renderHomeDartboard() {
   var filtered = _getFilteredProfiles();
   var profiles = filtered.slice(0, 25);
   var total = filtered.length;
-  if (countEl) countEl.textContent = total > 0 ? ' · ' + total : '';
+  if (countEl) countEl.textContent = total > 0 ? '· ' + total : '';
 
   _homeDrawProxRings(canvas);
 
