@@ -105,7 +105,10 @@ async function selectGif(idx) {
       if (error) { logError('selectGif:bc', error); showToast('GIF fejl: ' + (error.message || 'ukendt')); return; }
       if (msg) {
         msg.profiles = { id: currentUser.id, name: currentProfile?.name || '?' };
-        document.getElementById('bc-messages').appendChild(bcRenderMsg(msg));
+        var msgEl2 = document.getElementById('bc-messages');
+        var es2 = msgEl2.querySelector('.empty-state');
+        if (es2) es2.remove();
+        msgEl2.appendChild(bcRenderMsg(msg));
         bcScrollToBottom();
       }
     } else if (mode === 'dm') {
@@ -273,7 +276,10 @@ function bcSubscribeRealtime() {
         m.profiles = await getCachedProfile(m.user_id);
         const panel = document.getElementById('bc-panel-chat');
         if (panel.style.display !== 'none') {
-          document.getElementById('bc-messages').appendChild(bcRenderMsg(m));
+          var msgContainer = document.getElementById('bc-messages');
+          var emptyS = msgContainer.querySelector('.empty-state');
+          if (emptyS) emptyS.remove();
+          msgContainer.appendChild(bcRenderMsg(m));
           bcScrollToBottom();
         } else {
           const badge = document.getElementById('bc-unread-badge');
@@ -528,7 +534,11 @@ async function bcSendMessage() {
           id: currentUser.id,
           name: currentProfile?.name || currentUser.email?.split('@')[0] || '?'
         };
-        document.getElementById('bc-messages').appendChild(bcRenderMsg(newMsg));
+        // Clear empty state if this is the first message
+        var msgEl = document.getElementById('bc-messages');
+        var emptyState = msgEl.querySelector('.empty-state');
+        if (emptyState) emptyState.remove();
+        msgEl.appendChild(bcRenderMsg(newMsg));
         bcScrollToBottom();
       }
     }
@@ -592,7 +602,10 @@ async function bcHandleFile(input) {
         id: currentUser.id,
         name: currentProfile?.name || currentUser.email?.split('@')[0] || '?'
       };
-      document.getElementById('bc-messages').appendChild(bcRenderMsg(newMsg));
+      var msgEl3 = document.getElementById('bc-messages');
+      var es3 = msgEl3.querySelector('.empty-state');
+      if (es3) es3.remove();
+      msgEl3.appendChild(bcRenderMsg(newMsg));
       bcScrollToBottom();
       showToast('Fil sendt! 📎');
     }

@@ -1509,16 +1509,35 @@ async function sendBubbleInvites() {
   try {
     var btn = document.getElementById('invite-send-btn');
     if (btn) { btn.textContent = 'Sender...'; btn.disabled = true; btn.style.opacity = '0.5'; }
-    var rows = inviteSelected.map(function(uid) {
-      return { bubble_id: inviteBubbleId, from_user_id: currentUser.id, to_user_id: uid, status: 'pending' };
-    });
-    var { error } = await sb.from('bubble_invitations').insert(rows);
-    if (error) throw error;
+
+    // Filter out users who already have a pending invite (prevents duplicate errors)
+    var { data: existing } = await sb.from('bubble_invitations')
+      .select('to_user_id')
+      .eq('bubble_id', inviteBubbleId)
+      .eq('status', 'pending')
+      .in('to_user_id', inviteSelected);
+    var existingIds = (existing || []).map(function(e) { return e.to_user_id; });
+    var newIds = inviteSelected.filter(function(uid) { return existingIds.indexOf(uid) < 0; });
+
+    if (newIds.length > 0) {
+      var rows = newIds.map(function(uid) {
+        return { bubble_id: inviteBubbleId, from_user_id: currentUser.id, to_user_id: uid, status: 'pending' };
+      });
+      var { error } = await sb.from('bubble_invitations').insert(rows);
+      if (error) throw error;
+    }
+
     closeInviteModal();
-    showToast(inviteSelected.length + ' invitation' + (inviteSelected.length > 1 ? 'er' : '') + ' sendt \u2713');
-  } catch(e) { logError('sendBubbleInvites', e); showToast('Kunne ikke sende: ' + (e.message || 'ukendt fejl'));
-    var btn2 = document.getElementById('invite-send-btn');
-    if (btn2) { btn2.textContent = 'Send (' + inviteSelected.length + ')'; btn2.disabled = false; btn2.style.opacity = '1'; }
+    var skipped = inviteSelected.length - newIds.length;
+    var msg = newIds.length > 0
+      ? newIds.length + ' invitation' + (newIds.length > 1 ? 'er' : '') + ' sendt ✓'
+      : 'Allerede inviteret';
+    if (skipped > 0 && newIds.length > 0) msg += ' (' + skipped + ' allerede inviteret)';
+    showToast(msg);
+  } catch(e) {
+    logError('sendBubbleInvites', e);
+    closeInviteModal();
+    showToast('Kunne ikke sende: ' + (e.message || 'ukendt fejl'));
   }
 }
 
