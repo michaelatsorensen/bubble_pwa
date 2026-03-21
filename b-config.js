@@ -11,7 +11,7 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
 const BUILD_TIMESTAMP = '2026-03-19T18:00:00';
-const BUILD_VERSION  = 'v5.9.2';
+const BUILD_VERSION  = 'v5.9.3';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -148,12 +148,28 @@ function initSupabase() {
 var _navVersion = 0;
 var _activeScreen = null;
 
-// ── Centralized flow state (replaces scattered sessionStorage keys) ──
+// ── Centralized flow state (sessionStorage-backed for OAuth redirect survival) ──
 // Keys: pending_contact, pending_join, event_flow, post_tags_destination
-var _flowState = {};
+// Clean API wrapping sessionStorage — survives page reloads from OAuth redirects
+var _flowStatePrefix = 'bf_'; // bf = bubble flow
 
-function flowGet(key) { return _flowState[key] || null; }
-function flowSet(key, value) { _flowState[key] = value; }
-function flowRemove(key) { delete _flowState[key]; }
-function flowClear() { _flowState = {}; }
+function flowGet(key) {
+  try { return sessionStorage.getItem(_flowStatePrefix + key) || null; }
+  catch(e) { return null; }
+}
+function flowSet(key, value) {
+  try { sessionStorage.setItem(_flowStatePrefix + key, value); }
+  catch(e) { /* silent — private browsing may block storage */ }
+}
+function flowRemove(key) {
+  try { sessionStorage.removeItem(_flowStatePrefix + key); }
+  catch(e) {}
+}
+function flowClear() {
+  try {
+    ['pending_contact','pending_join','event_flow','post_tags_destination'].forEach(function(k) {
+      sessionStorage.removeItem(_flowStatePrefix + k);
+    });
+  } catch(e) {}
+}
 

@@ -11,12 +11,6 @@ let currentLiveBubble = null; // { bubble_id, bubble_name, bubble_location, chec
 
 async function loadLiveBubbleStatus() {
   try {
-    const card = document.getElementById('live-bubble-card');
-    const activeEl = document.getElementById('live-bubble-active');
-    const idleEl = document.getElementById('live-bubble-idle');
-    if (!card) return;
-    card.style.display = 'block';
-
     // Find active check-in for current user (ANY bubble type)
     const expireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 60 * 60 * 1000).toISOString();
 
@@ -31,14 +25,6 @@ async function loadLiveBubbleStatus() {
       .maybeSingle();
 
     if (myLive && myLive.bubbles) {
-      currentLiveBubble = {
-        bubble_id: myLive.bubble_id,
-        bubble_name: myLive.bubbles.name,
-        bubble_location: myLive.bubbles.location,
-        bubble_type: myLive.bubbles.type,
-        checked_in_at: myLive.checked_in_at
-      };
-
       // Count active members at same location
       const { count } = await sb.from('bubble_members')
         .select('*', { count: 'exact', head: true })
@@ -47,35 +33,19 @@ async function loadLiveBubbleStatus() {
         .is('checked_out_at', null)
         .gte('checked_in_at', expireCutoff);
 
-      currentLiveBubble.member_count = count || 1;
-
-      document.getElementById('live-bubble-name').textContent = currentLiveBubble.bubble_name;
-      // Update label to be contextual
-      var labelEl = document.querySelector('.live-bubble-label');
-      if (labelEl) labelEl.textContent = '📡 DU ER LIVE';
-      const since = new Date(currentLiveBubble.checked_in_at);
-      const mins = Math.round((Date.now() - since.getTime()) / 60000);
-      const timeStr = mins < 60 ? mins + ' min' : Math.round(mins / 60) + 't ' + (mins % 60) + 'min';
-      document.getElementById('live-bubble-meta').textContent =
-        (currentLiveBubble.bubble_location ? currentLiveBubble.bubble_location + ' · ' : '') +
-        timeStr + ' · ' + (currentLiveBubble.member_count || 1) + ' personer her';
-      document.getElementById('live-bubble-count').textContent = currentLiveBubble.member_count;
-
-      activeEl.style.display = 'block';
-      idleEl.style.display = 'none';
+      currentLiveBubble = {
+        bubble_id: myLive.bubble_id,
+        bubble_name: myLive.bubbles.name,
+        bubble_location: myLive.bubbles.location,
+        bubble_type: myLive.bubbles.type,
+        checked_in_at: myLive.checked_in_at,
+        member_count: count || 1
+      };
     } else {
       currentLiveBubble = null;
-      activeEl.style.display = 'none';
-      idleEl.style.display = 'block';
     }
   } catch (e) {
     logError('loadLiveBubbleStatus', e);
-    const card = document.getElementById('live-bubble-card');
-    if (card) card.style.display = 'block';
-    var a = document.getElementById('live-bubble-active');
-    var b = document.getElementById('live-bubble-idle');
-    if (a) a.style.display = 'none';
-    if (b) b.style.display = 'block';
   }
 }
 

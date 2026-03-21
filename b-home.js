@@ -513,56 +513,10 @@ async function updateTopbarNotifBadge() {
   } catch(e) { logError('updateTopbarNotifBadge', e); }
 }
 
-async function loadHomeBubblesCard() {
-  try {
-    const sub = document.getElementById('home-bubbles-sub');
-    const badge = document.getElementById('home-bubbles-badge');
-    const { data: memberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
-    const count = memberships?.length || 0;
-    if (sub) sub.textContent = count > 0 ? `${count} aktiv${count !== 1 ? 'e' : ''} boble${count !== 1 ? 'r' : ''}` : 'Du er ikke i nogen bobler endnu';
-    // Badge: show count of unseen new members (since last viewed)
-    if (badge) {
-      var lastSeen = localStorage.getItem('bubble_bubbles_seen') || '2000-01-01';
-      if (count > 0) {
-        var ids = memberships.map(function(m) { return m.bubble_id; });
-        var { count: newCount } = await sb.from('bubble_members')
-          .select('*', {count:'exact',head:true})
-          .in('bubble_id', ids).neq('user_id', currentUser.id).gt('joined_at', lastSeen);
-        var n = newCount || 0;
-        badge.textContent = n;
-        badge.style.display = n > 0 ? 'flex' : 'none';
-      } else {
-        badge.style.display = 'none';
-      }
-    }
-  } catch(e) { logError("loadHomeBubblesCard", e); showToast(e.message || "Ukendt fejl"); }
-}
-
 // ── Notification nav badge ──
 async function updateNotifNavBadge() {
   // v5.2: delegated to topbar badge
   updateTopbarNotifBadge();
-}
-
-async function loadHomeNotifCard() {
-  try {
-    const sub = document.getElementById('home-notif-sub');
-    const badge = document.getElementById('home-notif-badge');
-    var lastSeen = localStorage.getItem('bubble_notifs_seen') || '2000-01-01';
-    const { data: memberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
-    if (!memberships || memberships.length === 0) {
-      if (sub) sub.textContent = 'Ingen notifikationer';
-      if (badge) badge.style.display = 'none';
-      return;
-    }
-    const ids = memberships.map(m => m.bubble_id);
-    const { count } = await sb.from('bubble_members')
-      .select('*', {count:'exact',head:true})
-      .in('bubble_id', ids).neq('user_id', currentUser.id).gt('joined_at', lastSeen);
-    const n = count || 0;
-    if (sub) sub.textContent = n > 0 ? `${n} nye i dine bobler` : 'Ingen nye notifikationer';
-    if (badge) { badge.textContent = n; badge.style.display = n > 0 ? 'flex' : 'none'; }
-  } catch(e) { logError("loadHomeNotifCard", e); showToast(e.message || "Ukendt fejl"); }
 }
 
 // ── Bubbles screen tabs ──
@@ -993,54 +947,6 @@ async function loadMyBubbles() {
   } catch(e) { logError("loadMyBubbles", e); showRetryState('my-bubbles-list', 'loadMyBubbles', 'Kunne ikke hente bobler'); }
 }
 
-async function updateRadarCount() {
-  try {
-    const { data: memberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
-    const rcEl = document.getElementById('radar-count-home');
-    if (!memberships || memberships.length === 0) {
-      if (rcEl) rcEl.textContent = 'Join en boble for at se matches';
-      return;
-    }
-    const ids = memberships.map(m => m.bubble_id);
-    // Use denormalized member_count if available, fallback to count query
-    const { data: myBubbles } = await sb.from('bubbles').select('member_count').in('id', ids);
-    var total = 0;
-    if (myBubbles && myBubbles[0]?.member_count != null) {
-      total = myBubbles.reduce(function(sum, b) { return sum + (b.member_count || 0); }, 0) - memberships.length;
-    } else {
-      var { count } = await sb.from('bubble_members').select('*', {count:'exact',head:true}).in('bubble_id', ids).neq('user_id', currentUser.id);
-      total = count || 0;
-    }
-    if (rcEl) rcEl.textContent = total + ' profiler synlige i dine bobler';
-
-    // Load preview avatars for radar card (deduplicated by user_id)
-    var previewEl = document.getElementById('radar-preview-avatars');
-    if (previewEl && total > 0) {
-      var { data: previewProfiles } = await sb.from('bubble_members')
-        .select('user_id, profiles(name, avatar_url)')
-        .in('bubble_id', ids).neq('user_id', currentUser.id)
-        .limit(20);
-      // Deduplicate by user_id
-      var seen = {};
-      var unique = [];
-      (previewProfiles || []).forEach(function(m) {
-        if (!seen[m.user_id]) { seen[m.user_id] = true; unique.push(m); }
-      });
-      var deduped = unique.slice(0, 5);
-      var uniqueTotal = Object.keys(seen).length;
-      if (deduped.length > 0) {
-        var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
-        previewEl.innerHTML = deduped.map(function(m, i) {
-          var p = m.profiles || {};
-          var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-          if (p.avatar_url) return '<div class="avatar" style="background:' + avColors[i % 10] + ';overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
-          return '<div class="avatar" style="background:' + avColors[i % 10] + '">' + ini + '</div>';
-        }).join('') + (uniqueTotal > 5 ? '<div class="avatar" style="background:var(--glass-bg);color:var(--text-secondary);font-size:0.5rem;border:1px solid var(--glass-border-subtle)">+' + (uniqueTotal - 5) + '</div>' : '');
-      }
-    }
-  } catch(e) { logError("updateRadarCount", e); }
-}
-
 // ══════════════════════════════════════════════════════════
 //  TOP MATCHES — "Vigtigste personer du bør møde"
 // ══════════════════════════════════════════════════════════
@@ -1231,116 +1137,6 @@ function hsApplyToHome() {
 }
 
 
-
-// Notification view mode: 'card' or 'feed'
-function hsGetNotifView() {
-  try { return localStorage.getItem('bubble_hs_notif_view') || 'card'; } catch(e) { return 'card'; }
-}
-
-function hsSetNotifView(mode) {
-  try { localStorage.setItem('bubble_hs_notif_view', mode); } catch(e) {}
-  // Update picker buttons
-  var cardBtn = document.getElementById('hs-notif-card');
-  var feedBtn = document.getElementById('hs-notif-feed');
-  if (cardBtn) { cardBtn.classList.toggle('active', mode === 'card'); }
-  if (feedBtn) { feedBtn.classList.toggle('active', mode === 'feed'); }
-  hsApplyNotifView();
-}
-
-function hsApplyNotifView() {
-  var mode = hsGetNotifView();
-  var card = document.querySelector('.card-notif[data-hs="notifs"]');
-  var feed = document.getElementById('home-notif-feed');
-  var prefs = hsGetPrefs();
-  if (!prefs.notifs) {
-    if (card) card.setAttribute('data-hs-hidden', 'true');
-    if (feed) feed.setAttribute('data-hs-hidden', 'true');
-    return;
-  }
-  if (mode === 'feed') {
-    if (card) card.setAttribute('data-hs-hidden', 'true');
-    if (feed) { feed.removeAttribute('data-hs-hidden'); }
-    loadHomeNotifFeed();
-  } else {
-    if (card) card.removeAttribute('data-hs-hidden');
-    if (feed) feed.setAttribute('data-hs-hidden', 'true');
-  }
-}
-
-async function loadHomeNotifFeed() {
-  var list = document.getElementById('home-notif-feed-list');
-  if (!list) return;
-  try {
-    // Get recent invitations
-    var items = [];
-    var { data: invites } = await sb.from('bubble_invitations')
-      .select('id, from_user_id, bubble_id, created_at, status')
-      .eq('to_user_id', currentUser.id)
-      .order('created_at', {ascending:false})
-      .limit(8);
-    if (invites && invites.length > 0) {
-      var iFids = [...new Set(invites.map(function(i) { return i.from_user_id; }))];
-      var iBids = [...new Set(invites.map(function(i) { return i.bubble_id; }))];
-      var [iPr, iBr] = await Promise.all([
-        sb.from('profiles').select('id, name').in('id', iFids),
-        sb.from('bubbles').select('id, name').in('id', iBids)
-      ]);
-      var iPm = {}; (iPr.data || []).forEach(function(p) { iPm[p.id] = p; });
-      var iBm = {}; (iBr.data || []).forEach(function(b) { iBm[b.id] = b; });
-      invites.forEach(function(inv) {
-        var name = iPm[inv.from_user_id]?.name || 'Nogen';
-        var bname = iBm[inv.bubble_id]?.name || 'en boble';
-        var isNew = inv.status === 'pending';
-        items.push({
-          html: '<strong>' + escHtml(name) + '</strong> inviterede dig til <strong>' + escHtml(bname) + '</strong>',
-          time: timeAgo(inv.created_at),
-          isNew: isNew,
-          date: new Date(inv.created_at).getTime()
-        });
-      });
-    }
-
-    // Get recent bubble member joins (for your bubbles)
-    var { data: myBubbles } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
-    var myBubbleIds = (myBubbles || []).map(function(m) { return m.bubble_id; });
-    if (myBubbleIds.length > 0) {
-      var { data: recentJoins } = await sb.from('bubble_members')
-        .select('user_id, bubble_id, created_at, profiles(name), bubbles(name)')
-        .in('bubble_id', myBubbleIds)
-        .neq('user_id', currentUser.id)
-        .order('created_at', {ascending:false})
-        .limit(5);
-      if (recentJoins) {
-        recentJoins.forEach(function(j) {
-          var name = j.profiles ? j.profiles.name : 'Nogen';
-          var bname = j.bubbles ? j.bubbles.name : 'en boble';
-          items.push({
-            html: '<strong>' + escHtml(name) + '</strong> joined <strong>' + escHtml(bname) + '</strong>',
-            time: timeAgo(j.created_at),
-            isNew: false,
-            date: new Date(j.created_at).getTime()
-          });
-        });
-      }
-    }
-
-    // Sort by date (most recent first)
-    items.sort(function(a, b) { return b.date - a.date; });
-
-    if (items.length === 0) {
-      list.innerHTML = '<div class="fs-072 text-muted" style="text-align:center;padding:0.8rem">Ingen notifikationer endnu</div>';
-      return;
-    }
-
-    list.innerHTML = items.slice(0, 6).map(function(item) {
-      return '<div class="notif-feed-item">' +
-        '<div class="notif-feed-dot' + (item.isNew ? '' : ' read') + '"></div>' +
-        '<div class="notif-feed-text">' + item.html + '</div>' +
-        '<div class="notif-feed-time">' + item.time + '</div>' +
-      '</div>';
-    }).join('');
-  } catch(e) { logError('loadHomeNotifFeed', e); list.innerHTML = '<div class="fs-072 text-muted" style="padding:0.5rem">Kunne ikke hente</div>'; }
-}
 
 
 
@@ -1607,29 +1403,4 @@ function renderHomeTrayList() {
 // ══════════════════════════════════════════════════════════
 //  HOME BUBBLE PILLS (horizontal scroll)
 // ══════════════════════════════════════════════════════════
-async function loadHomeBubblePills() {
-  try {
-    var scroll = document.getElementById('home-bubbles-scroll');
-    if (!scroll) return;
-    var { data: memberships } = await sb.from('bubble_members')
-      .select('bubble_id, bubbles(id,name,type,icon_url)')
-      .eq('user_id', currentUser.id);
-    if (!memberships || memberships.length === 0) {
-      scroll.innerHTML = '<div style="font-size:0.72rem;color:var(--muted);padding:0.3rem">Ingen bobler — <span style="color:var(--accent);cursor:pointer" onclick="goTo(\'screen-bubbles\');bbSwitchTab(\'explore\')">udforsk →</span></div>';
-      return;
-    }
-    var colors = ['#7C5CFC','#3B82F6','#1A9E8E','#E879A8','#F59E0B','#EC4899','#10B981','#6366F1'];
-    scroll.innerHTML = memberships.map(function(m, i) {
-      var b = m.bubbles;
-      if (!b) return '';
-      var isEvent = b.type === 'event' || b.type === 'live';
-      var col = isEvent ? '#2ECFCF' : colors[i % colors.length];
-      var icoHtml = isEvent ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="' + col + '" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' : '<div style="width:8px;height:8px;border-radius:50%;background:' + col + '"></div>';
-      return '<div onclick="openBubble(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.3rem;padding:0.4rem 0.7rem;border-radius:12px;background:#FFFFFF;border:1px solid ' + (isEvent ? 'rgba(46,207,207,0.25)' : 'var(--glass-border-subtle)') + ';flex-shrink:0;cursor:pointer;box-shadow:0 1px 2px rgba(30,27,46,0.04)">' +
-        icoHtml +
-        '<span style="font-size:0.72rem;font-weight:600;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis;color:var(--text)">' + escHtml(b.name) + '</span>' +
-      '</div>';
-    }).join('') +
-    '<div onclick="openCreateBubble()" style="display:flex;align-items:center;gap:0.3rem;padding:0.4rem 0.7rem;border-radius:12px;border:1px dashed var(--glass-border);flex-shrink:0;cursor:pointer;color:var(--muted);font-size:0.72rem;font-weight:600">+ Ny</div>';
-  } catch(e) { logError('loadHomeBubblePills', e); }
-}
+

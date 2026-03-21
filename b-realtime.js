@@ -81,31 +81,24 @@ function rtHandleMemberChange(payload) {
   var m = payload.new || payload.old;
   if (!m) return;
 
-  // If it's MY check-in/out → refresh live card
+  // If it's MY check-in/out → refresh live status + home banner
   if (m.user_id === currentUser.id) {
     loadLiveBubbleStatus();
-    // Also update home screen if active
     if (document.getElementById('screen-home')?.classList.contains('active')) {
-      loadHomeBubblesCard();
+      loadLiveBanner();
     }
     return;
   }
 
   // If bc chat is open for this bubble → reload members tab silently
   if (bcBubbleId && m.bubble_id === bcBubbleId) {
-    // Only reload if members tab is visible
     var membersPanel = document.getElementById('bc-members-list');
     if (membersPanel && membersPanel.closest('.bc-panel')?.style.display !== 'none') {
       bcLoadMembers();
     }
-    // Update live member count on home card
-    var countEl = document.getElementById('live-bubble-count');
-    if (countEl && currentLiveBubble && currentLiveBubble.bubble_id === m.bubble_id) {
-      loadLiveBubbleStatus();
-    }
   }
 
-  // If it's in MY current live bubble → update member count on card
+  // If it's in MY current live bubble → update member count
   if (currentLiveBubble && m.bubble_id === currentLiveBubble.bubble_id) {
     loadLiveBubbleStatus();
   }

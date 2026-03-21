@@ -315,29 +315,59 @@ async function _notifStrongMatches() {
   } catch(e) { logError('_notifStrongMatches', e); return ''; }
 }
 
-async function acceptBubbleInvite(inviteId, fromUserId) {
-  try {
-    // Update invitation status
-    await sb.from('bubble_invitations').update({status:'accepted'}).eq('id', inviteId);
-    // Get the bubble_id from invitation
-    const { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).single();
-    if (inv?.bubble_id) {
-      // Add to bubble_members
-      await sb.from('bubble_members').insert({bubble_id: inv.bubble_id, user_id: currentUser.id});
-      showToast('🫧 Du er nu med i boblen!');
-      loadNotifications();
-      // Open the bubble chat
-      setTimeout(() => openBubbleChat(inv.bubble_id, 'screen-notifications'), 800);
-    }
-  } catch(e) { logError("acceptBubbleInvite", e); showToast(e.message || "Ukendt fejl"); }
+function acceptBubbleInvite(inviteId, fromUserId) {
+  var card = document.getElementById('invite-' + inviteId);
+  if (!card) return;
+  var existing = card.querySelector('.notif-inv-confirm');
+  if (existing) { existing.remove(); return; }
+  var tray = document.createElement('div');
+  tray.className = 'notif-inv-confirm';
+  tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0.5rem;margin-top:0.4rem;background:rgba(26,158,142,0.06);border:1px solid rgba(26,158,142,0.15);border-radius:10px';
+  tray.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Join denne boble?</span>' +
+    '<div style="display:flex;gap:0.25rem">' +
+    '<button style="font-size:0.72rem;padding:0.3rem 0.65rem;background:var(--gradient-primary);color:white;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700" onclick="confirmAcceptInvite(\'' + inviteId + '\')">Ja, join</button>' +
+    '<button style="font-size:0.72rem;padding:0.3rem 0.65rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit" onclick="this.closest(\'.notif-inv-confirm\').remove()">Annuller</button>' +
+    '</div>';
+  card.appendChild(tray);
 }
 
-async function declineBubbleInvite(inviteId) {
+async function confirmAcceptInvite(inviteId) {
+  try {
+    await sb.from('bubble_invitations').update({status:'accepted'}).eq('id', inviteId);
+    const { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).single();
+    if (inv?.bubble_id) {
+      await sb.from('bubble_members').insert({bubble_id: inv.bubble_id, user_id: currentUser.id});
+      showSuccessToast('Du er nu med i boblen!');
+      loadNotifications();
+      setTimeout(() => openBubbleChat(inv.bubble_id, 'screen-notifications'), 800);
+    }
+  } catch(e) { logError("confirmAcceptInvite", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+function declineBubbleInvite(inviteId) {
+  var card = document.getElementById('invite-' + inviteId);
+  if (!card) return;
+  var existing = card.querySelector('.notif-inv-confirm');
+  if (existing) { existing.remove(); return; }
+  var tray = document.createElement('div');
+  tray.className = 'notif-inv-confirm';
+  tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0.5rem;margin-top:0.4rem;background:rgba(232,121,168,0.06);border:1px solid rgba(232,121,168,0.15);border-radius:10px';
+  tray.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Afvis invitation?</span>' +
+    '<div style="display:flex;gap:0.25rem">' +
+    '<button style="font-size:0.72rem;padding:0.3rem 0.65rem;background:rgba(232,121,168,0.12);color:var(--accent2);border:1px solid rgba(232,121,168,0.25);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700" onclick="confirmDeclineInvite(\'' + inviteId + '\')">Ja, afvis</button>' +
+    '<button style="font-size:0.72rem;padding:0.3rem 0.65rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit" onclick="this.closest(\'.notif-inv-confirm\').remove()">Annuller</button>' +
+    '</div>';
+  card.appendChild(tray);
+}
+
+async function confirmDeclineInvite(inviteId) {
   try {
     await sb.from('bubble_invitations').update({status:'declined'}).eq('id', inviteId);
-    document.getElementById('invite-' + inviteId)?.remove();
+    var card = document.getElementById('invite-' + inviteId);
+    if (card) { card.style.transition = 'opacity 0.2s'; card.style.opacity = '0'; setTimeout(function() { card.remove(); }, 200); }
     showToast('Invitation afvist');
-  } catch(e) { logError("declineBubbleInvite", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("confirmDeclineInvite", e); showToast(e.message || "Ukendt fejl"); }
+}
 }
 
 
