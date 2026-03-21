@@ -41,19 +41,19 @@ function initServices() {
 async function resolvePostAuthDestination() {
   await checkPendingContact();
 
-  var isEventFlow = sessionStorage.getItem('event_flow');
-  var postTagsDest = sessionStorage.getItem('post_tags_destination');
+  var isEventFlow = flowGet('event_flow');
+  var postTagsDest = flowGet('post_tags_destination');
 
   if (isEventFlow) {
     await checkPendingJoin();
-    var stillEventFlow = sessionStorage.getItem('event_flow');
+    var stillEventFlow = flowGet('event_flow');
     if (stillEventFlow) {
-      sessionStorage.removeItem('event_flow');
+      flowRemove('event_flow');
       showEventReadyQR();
     }
     // Mode A (self check-in) already navigated in checkPendingJoin
   } else if (postTagsDest === 'event_bubble') {
-    sessionStorage.removeItem('post_tags_destination');
+    flowRemove('post_tags_destination');
     eventReadyGoToEvent();
   } else {
     await checkPendingJoin();

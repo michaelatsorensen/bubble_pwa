@@ -11,7 +11,7 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
 const BUILD_TIMESTAMP = '2026-03-19T18:00:00';
-const BUILD_VERSION  = 'v5.8.0';
+const BUILD_VERSION  = 'v5.8.2';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -147,4 +147,13 @@ function initSupabase() {
 // Incremented on every goTo(). Async loaders check this to abort stale renders.
 var _navVersion = 0;
 var _activeScreen = null;
+
+// ── Centralized flow state (replaces scattered sessionStorage keys) ──
+// Keys: pending_contact, pending_join, event_flow, post_tags_destination
+var _flowState = {};
+
+function flowGet(key) { return _flowState[key] || null; }
+function flowSet(key, value) { _flowState[key] = value; }
+function flowRemove(key) { delete _flowState[key]; }
+function flowClear() { _flowState = {}; }
 

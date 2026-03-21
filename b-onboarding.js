@@ -67,7 +67,7 @@ async function maybeShowOnboarding() {
     obRenderCategories();
 
     // Show QR contact confirmation banner if pending
-    var pendingContact = sessionStorage.getItem('pending_contact');
+    var pendingContact = flowGet('pending_contact');
     var obQrBanner = document.getElementById('ob-qr-contact-banner');
     if (obQrBanner && pendingContact && typeof _qrContactProfile !== 'undefined' && _qrContactProfile) {
       var qrName = document.getElementById('ob-qr-contact-name');
@@ -199,7 +199,7 @@ function obCheckProgress() {
 
 // Note: skipOnboarding is no longer called from UI (v5.6 removed skip button)
 // Kept for backwards compatibility if re-enabled
-function skipOnboarding() {
+async function skipOnboarding() {
   var name = (document.getElementById('ob-name')?.value || '').trim();
   if (!name && currentProfile?.name) name = currentProfile.name;
   if (!name && currentUser?.email) name = currentUser.email.split('@')[0];
@@ -207,20 +207,23 @@ function skipOnboarding() {
   if (!name) { showToast('Skriv dit navn først'); return; }
   if (!workplace) { showToast('Tilføj arbejdsplads — det er alt der mangler'); return; }
 
-  sb.from('profiles').upsert({
-    id: currentUser.id, name: name,
-    title: (document.getElementById('ob-title')?.value || '').trim() || '',
-    workplace: workplace,
-    keywords: obSelectedTags.length > 0 ? obSelectedTags : [],
-    dynamic_keywords: [], bio: '', is_anon: false,
-    onboarding_skipped: true
-  }).then(async function() {
+  try {
+    await sb.from('profiles').upsert({
+      id: currentUser.id, name: name,
+      title: (document.getElementById('ob-title')?.value || '').trim() || '',
+      workplace: workplace,
+      keywords: obSelectedTags.length > 0 ? obSelectedTags : [],
+      dynamic_keywords: [], bio: '', is_anon: false,
+      onboarding_skipped: true
+    });
     await loadCurrentProfile();
+    // Delegate to shared post-auth pipeline (same as saveOnboarding)
     initServices();
     await resolvePostAuthDestination();
-  }).catch(function(e) {
+  } catch(e) {
+    logError('skipOnboarding', e);
     showToast('Fejl: ' + (e.message || 'ukendt'));
-  });
+  }
 }
 
 var _abortConfirmed = false;

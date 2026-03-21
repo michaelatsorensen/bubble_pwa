@@ -240,18 +240,18 @@ async function checkQRAnonPreview() {
     if (session) {
       // Logged-in user scanning a QR → save contact + navigate to profile
       if (profileId && profileId !== session.user.id) {
-        sessionStorage.setItem('pending_contact', profileId);
+        flowSet('pending_contact', profileId);
       }
       return false;
     }
     
     if (profileId) {
-      sessionStorage.setItem('pending_contact', profileId);
+      flowSet('pending_contact', profileId);
       await loadQRProfilePreview(profileId);
       return true;
     }
     if (joinId) {
-      sessionStorage.setItem('pending_join', joinId);
+      flowSet('pending_join', joinId);
       await loadQRProfilePreview(null, joinId);
       return true;
     }
@@ -460,9 +460,9 @@ function spContinueToSignup() {
 async function checkPendingContact() {
   try {
     if (!currentUser) return;
-    var contactId = sessionStorage.getItem('pending_contact');
+    var contactId = flowGet('pending_contact');
     if (!contactId || contactId === currentUser.id) {
-      sessionStorage.removeItem('pending_contact');
+      flowRemove('pending_contact');
       return;
     }
     // Auto-save the contact
@@ -470,14 +470,14 @@ async function checkPendingContact() {
       user_id: currentUser.id,
       contact_id: contactId
     });
-    sessionStorage.removeItem('pending_contact');
+    flowRemove('pending_contact');
     if (!error) {
       showToast('Kontakt gemt fra QR-scan! ✓');
       trackEvent('qr_contact_saved', { contact_id: contactId });
     }
   } catch(e) {
     logError('checkPendingContact', e);
-    sessionStorage.removeItem('pending_contact');
+    flowRemove('pending_contact');
   }
 }
 
@@ -495,8 +495,8 @@ async function checkGuestEventRoute() {
     // Already logged in → join + handle check-in
     var { data: { session } } = await sb.auth.getSession();
     if (session) {
-      sessionStorage.setItem('pending_join', eventId);
-      sessionStorage.setItem('event_flow', 'true');
+      flowSet('pending_join', eventId);
+      flowSet('event_flow', 'true');
       return false;
     }
     
@@ -520,8 +520,8 @@ async function checkGuestEventRoute() {
     if (!bubble) { showToast('Event ikke fundet'); return false; }
     
     _eventBubble = bubble;
-    sessionStorage.setItem('pending_join', bubble.id);
-    sessionStorage.setItem('event_flow', 'true');
+    flowSet('pending_join', bubble.id);
+    flowSet('event_flow', 'true');
     
     // Populate teaser screen
     var nameEl = document.getElementById('guest-event-name');
@@ -583,35 +583,35 @@ async function loadEventSocialProof(bubbleId) {
 
 // ── Event signup actions ──
 function eventSignupGoogle() {
-  sessionStorage.setItem('event_flow', 'true');
+  flowSet('event_flow', 'true');
   goTo('screen-auth');
   showAuthForms();
   setTimeout(function() { handleGoogleLogin(); }, 200);
 }
 
 function eventSignupLinkedIn() {
-  sessionStorage.setItem('event_flow', 'true');
+  flowSet('event_flow', 'true');
   goTo('screen-auth');
   showAuthForms();
   setTimeout(function() { handleLinkedInLogin(); }, 200);
 }
 
 function eventSignupEmail() {
-  sessionStorage.setItem('event_flow', 'true');
+  flowSet('event_flow', 'true');
   goTo('screen-auth');
   showAuthForms();
   setTimeout(function() { if (typeof switchToSignup === 'function') switchToSignup(); }, 200);
 }
 
 function eventSignupApple() {
-  sessionStorage.setItem('event_flow', 'true');
+  flowSet('event_flow', 'true');
   goTo('screen-auth');
   showAuthForms();
   setTimeout(function() { handleAppleLogin(); }, 200);
 }
 
 function eventLoginExisting() {
-  sessionStorage.setItem('event_flow', 'true');
+  flowSet('event_flow', 'true');
   goTo('screen-auth');
   showAuthForms();
 }
@@ -657,7 +657,7 @@ async function showEventReadyQR() {
       }
     }, 200);
     
-    trackEvent('event_qr_shown', { bubble_id: sessionStorage.getItem('pending_join') || '' });
+    trackEvent('event_qr_shown', { bubble_id: flowGet('pending_join') || '' });
   } catch(e) { logError('showEventReadyQR', e); }
 }
 
@@ -665,7 +665,7 @@ function eventReadyGoToTags() {
   // Check if user has tags — if not, show onboarding for tag selection
   var hasTags = (currentProfile?.keywords || []).length >= 3;
   if (!hasTags) {
-    sessionStorage.setItem('post_tags_destination', 'event_bubble');
+    flowSet('post_tags_destination', 'event_bubble');
     reRunOnboarding();
     showToast('Vælg mindst 3 interesser for bedre matches');
     return;
@@ -674,9 +674,9 @@ function eventReadyGoToTags() {
 }
 
 function eventReadyGoToEvent() {
-  var bubbleId = sessionStorage.getItem('pending_join');
-  sessionStorage.removeItem('pending_join');
-  sessionStorage.removeItem('post_tags_destination');
+  var bubbleId = flowGet('pending_join');
+  flowRemove('pending_join');
+  flowRemove('post_tags_destination');
   if (bubbleId) {
     goTo('screen-home');
     loadHome();

@@ -834,7 +834,7 @@ async function checkQRJoin() {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) {
       // Save for after login
-      sessionStorage.setItem('pending_join', joinId);
+      flowSet('pending_join', joinId);
       return;
     }
 
@@ -851,9 +851,9 @@ async function checkQRJoin() {
 
 async function checkPendingJoin() {
   try {
-    const joinId = sessionStorage.getItem('pending_join');
+    const joinId = flowGet('pending_join');
     if (!joinId) return;
-    sessionStorage.removeItem('pending_join');
+    flowRemove('pending_join');
 
     // Join bubble
     const { error } = await sb.from('bubble_members')
@@ -864,7 +864,7 @@ async function checkPendingJoin() {
     }
 
     // Check if this is an event flow
-    var isEventFlow = sessionStorage.getItem('event_flow');
+    var isEventFlow = flowGet('event_flow');
 
     // Fetch bubble to check type and checkin_mode
     var { data: bubble } = await sb.from('bubbles')
@@ -879,7 +879,7 @@ async function checkPendingJoin() {
       await sb.from('bubble_members')
         .update({ checked_in_at: new Date().toISOString(), checked_out_at: null })
         .eq('bubble_id', joinId).eq('user_id', currentUser.id);
-      sessionStorage.removeItem('event_flow');
+      flowRemove('event_flow');
       showSuccessToast('Du er checked ind!');
       goTo('screen-home');
       // Home will detect live context and show Live tab
@@ -889,7 +889,7 @@ async function checkPendingJoin() {
       showSuccessToast('Du er tilmeldt!');
     } else {
       // Normal bubble join (not event)
-      if (isEventFlow) sessionStorage.removeItem('event_flow');
+      if (isEventFlow) flowRemove('event_flow');
       showSuccessToast('Du er med i ' + (bubble ? bubble.name : 'boblen') + '!');
       await openBubble(joinId, 'screen-home');
     }
