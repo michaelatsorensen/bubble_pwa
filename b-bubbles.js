@@ -1418,7 +1418,7 @@ async function generateEventReport(bubbleId) {
     var tray = document.createElement('div');
     tray.id = 'event-report-tray';
     tray.onclick = function(e) { e.stopPropagation(); };
-    tray.style.cssText = 'position:fixed;top:0;right:0;bottom:0;z-index:501;width:100%;max-width:480px;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.22,1,0.36,1)';
+    tray.style.cssText = 'position:fixed;top:0;right:0;bottom:0;z-index:501;width:100%;max-width:480px;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.22,1,0.36,1);padding-top:env(safe-area-inset-top,0px)';
 
     // Build in-app HTML (reuse report structure but simplified for mobile)
     var trayHtml = '<div style="padding:1rem 1.2rem calc(1.5rem + env(safe-area-inset-bottom,0px))">' +

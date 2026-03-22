@@ -832,7 +832,7 @@ function renderSavedStoryBar(saved, profileMap) {
     var storyAvatar = (p && p.avatar_url) ?
       '<div style="position:relative"><div class="saved-story-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>' + starBadge + '</div>' :
       '<div style="position:relative"><div class="saved-story-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>' + starBadge + '</div>';
-    return '<div class="saved-story-item" onclick="openPerson(\'' + s.contact_id + '\',\'screen-profile\')">' +
+    return '<div class="saved-story-item" onclick="openPerson(\'' + s.contact_id + '\',\'screen-home\')">' +
       storyAvatar +
       '<div class="saved-story-name">' + escHtml(firstName) + '</div></div>';
   }).join('');
