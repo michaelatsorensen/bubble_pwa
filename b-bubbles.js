@@ -402,6 +402,11 @@ function openCreateBubble() {
 }
 
 function openCreateEventFromBubble(parentBubbleId) {
+  // Block creating events under events (only network bubbles can have child events)
+  if (bcBubbleData && (bcBubbleData.type === 'event' || bcBubbleData.type === 'live')) {
+    showToast('Events kan kun oprettes under netværksbobler');
+    return;
+  }
   // Pre-fill create modal as event type, with parent bubble id stored
   cbChips = [];
   document.getElementById('cb-name').value = '';
@@ -1405,14 +1410,179 @@ async function generateEventReport(bubbleId) {
 
       '</div></body></html>';
 
-    // ── 7. Open in new tab ──
-    var blob = new Blob([html], { type: 'text/html' });
-    var url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-    showSuccessToast('Rapport åbnet i nyt faneblad');
+    // ── 7. Show in-app report tray ──
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(30,27,46,0.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:0;transition:opacity 0.3s';
+    overlay.onclick = function() { closeReportTray(); };
+
+    var tray = document.createElement('div');
+    tray.id = 'event-report-tray';
+    tray.onclick = function(e) { e.stopPropagation(); };
+    tray.style.cssText = 'position:fixed;top:0;right:0;bottom:0;z-index:501;width:100%;max-width:480px;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.22,1,0.36,1)';
+
+    // Build in-app HTML (reuse report structure but simplified for mobile)
+    var trayHtml = '<div style="padding:1rem 1.2rem calc(1.5rem + env(safe-area-inset-bottom,0px))">' +
+      // Close + export bar
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">' +
+        '<button onclick="closeReportTray()" style="border:none;background:none;font-size:1.2rem;cursor:pointer;padding:0.3rem;color:var(--text)">←</button>' +
+        '<div style="font-size:0.82rem;font-weight:800;color:var(--text)">Event-rapport</div>' +
+        '<div style="display:flex;gap:0.3rem">' +
+          '<button onclick="exportReportPdf(\'' + bubbleId + '\')" style="font-size:0.65rem;padding:0.3rem 0.5rem;background:rgba(124,92,252,0.08);color:var(--accent);border:1px solid rgba(124,92,252,0.15);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">PDF</button>' +
+          '<button onclick="exportReportEmail(\'' + bubbleId + '\')" style="font-size:0.65rem;padding:0.3rem 0.5rem;background:rgba(46,207,207,0.08);color:#085041;border:1px solid rgba(46,207,207,0.15);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Email</button>' +
+        '</div>' +
+      '</div>' +
+
+      // Header card
+      '<div style="background:var(--gradient-primary);color:white;padding:1.25rem 1rem;border-radius:16px;margin-bottom:1rem">' +
+        '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;opacity:0.75">Event Rapport</div>' +
+        '<div style="font-size:1.2rem;font-weight:900;letter-spacing:-0.02em;margin-top:0.2rem">' + escHtml(b.name) + '</div>' +
+        '<div style="font-size:0.75rem;opacity:0.85;margin-top:0.15rem">' + eventDate + (b.location ? ' · ' + escHtml(b.location) : '') + '</div>' +
+      '</div>' +
+
+      // Stats grid
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:1rem">';
+
+    function miniStat(label, value, color) {
+      return '<div style="background:white;border-radius:12px;padding:0.75rem;border:1px solid var(--glass-border-subtle)">' +
+        '<div style="font-size:1.4rem;font-weight:800;color:' + color + '">' + value + '</div>' +
+        '<div style="font-size:0.68rem;font-weight:600;color:var(--text-secondary);margin-top:0.1rem">' + label + '</div></div>';
+    }
+
+    trayHtml += miniStat('Deltagere', totalMembers, '#7C5CFC');
+    trayHtml += miniStat('Check-ins', totalCheckedIn, '#2ECFCF');
+    trayHtml += miniStat('Connections', connectionCount, '#1A9E8E');
+    trayHtml += miniStat('Beskeder', totalMessages, '#E879A8');
+    if (avgStay > 0) trayHtml += miniStat('Gns. opholdstid', avgStayLabel, '#F59E0B');
+    trayHtml += miniStat('Connection rate', connectionRate + '%', '#7C5CFC');
+    trayHtml += '</div>';
+
+    // Top connectors
+    if (topConnectors.length > 0) {
+      trayHtml += '<div style="margin-bottom:1rem">' +
+        '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent);margin-bottom:0.4rem">Top networkere</div>';
+      topConnectors.forEach(function(c, i) {
+        trayHtml += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid var(--glass-border-subtle)">' +
+          '<div style="width:22px;height:22px;border-radius:50%;background:var(--gradient-primary);color:white;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:800;flex-shrink:0">' + (i + 1) + '</div>' +
+          '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:700">' + escHtml(c.name) + '</div><div style="font-size:0.65rem;color:var(--muted)">' + escHtml(c.title) + '</div></div>' +
+          '<div style="font-size:0.68rem;font-weight:700;color:#1A9E8E">' + c.connections + '</div>' +
+        '</div>';
+      });
+      trayHtml += '</div>';
+    }
+
+    // Top interests
+    if (topKeywords.length > 0) {
+      trayHtml += '<div style="margin-bottom:1rem">' +
+        '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent);margin-bottom:0.4rem">Interesser</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:0.25rem">';
+      topKeywords.forEach(function(kw) {
+        trayHtml += '<span class="tag">' + escHtml(kw[0]) + ' <span style="color:var(--muted);font-size:0.6rem">' + kw[1] + '</span></span>';
+      });
+      trayHtml += '</div></div>';
+    }
+
+    // Participant list
+    trayHtml += '<div style="margin-bottom:1rem">' +
+      '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent);margin-bottom:0.4rem">Alle deltagere (' + totalMembers + ')</div>';
+
+    members.forEach(function(m) {
+      var p = profileMap[m.user_id] || {};
+      var conn = connectorsMap[m.user_id] || 0;
+      var checkinTime = m.checked_in_at ? new Date(m.checked_in_at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '';
+      var checkoutTime = m.checked_out_at ? new Date(m.checked_out_at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '';
+      var isLive = m.checked_in_at && !m.checked_out_at;
+
+      trayHtml += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0;border-bottom:1px solid var(--glass-border-subtle)">' +
+        '<div style="width:6px;height:6px;border-radius:50%;background:' + (isLive ? '#1A9E8E' : m.checked_in_at ? 'var(--glass-border)' : 'transparent') + ';flex-shrink:0"></div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:0.78rem;font-weight:600">' + escHtml(p.name || 'Ukendt') + '</div>' +
+          '<div style="font-size:0.62rem;color:var(--muted)">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
+        '</div>' +
+        '<div style="text-align:right;flex-shrink:0">' +
+          (checkinTime ? '<div style="font-size:0.62rem;color:#1A9E8E;font-weight:600">' + checkinTime + (checkoutTime ? ' – ' + checkoutTime : isLive ? ' →' : '') + '</div>' : '<div style="font-size:0.6rem;color:var(--muted)">Ikke checket ind</div>') +
+          (conn > 0 ? '<div style="font-size:0.58rem;color:var(--accent)">' + conn + ' connections</div>' : '') +
+        '</div>' +
+      '</div>';
+    });
+
+    trayHtml += '</div>';
+
+    // Footer
+    trayHtml += '<div style="text-align:center;padding:1rem 0;font-size:0.68rem;color:var(--muted);border-top:1px solid var(--glass-border-subtle)">' +
+      'Genereret ' + new Date().toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) +
+      '<br>Powered by Bubble · bubbleme.dk</div>';
+
+    trayHtml += '</div>';
+
+    tray.innerHTML = trayHtml;
+    document.body.appendChild(overlay);
+    document.body.appendChild(tray);
+
+    // Store full HTML report for email export
+    window._lastReportHtml = html;
+    window._lastReportBubble = b;
+    window._lastReportStats = { totalMembers: totalMembers, totalCheckedIn: totalCheckedIn, connectionRate: connectionRate };
+
+    // Animate in
+    requestAnimationFrame(function() {
+      overlay.style.opacity = '1';
+      tray.style.transform = 'translateX(0)';
+    });
+
     trackEvent('event_report_generated', { bubble_id: bubbleId, member_count: totalMembers });
 
   } catch(e) { logError('generateEventReport', e); showToast('Rapport fejl: ' + (e.message || 'ukendt')); }
+}
+
+function closeReportTray() {
+  var tray = document.getElementById('event-report-tray');
+  var overlay = tray?.previousElementSibling;
+  if (tray) { tray.style.transform = 'translateX(100%)'; }
+  if (overlay) { overlay.style.opacity = '0'; }
+  setTimeout(function() {
+    if (tray) tray.remove();
+    if (overlay) overlay.remove();
+  }, 350);
+}
+
+function exportReportPdf(bubbleId) {
+  closeReportTray();
+  downloadMembersPdf(bubbleId);
+}
+
+async function exportReportEmail(bubbleId) {
+  try {
+    var b = window._lastReportBubble;
+    var stats = window._lastReportStats;
+    if (!b || !stats) { showToast('Ingen rapport at sende'); return; }
+
+    // Ask for email
+    var email = prompt('Indtast email-adresse til rapporten:');
+    if (!email || !email.includes('@')) { showToast('Ugyldig email'); return; }
+
+    showToast('Sender rapport...');
+
+    // Use EmailJS if available, otherwise fallback to mailto
+    if (_emailjsLoaded && window.emailjs) {
+      await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        to_email: email,
+        subject: 'Event-rapport: ' + b.name,
+        message: 'Event: ' + b.name + '\n' +
+          'Dato: ' + new Date(b.created_at).toLocaleDateString('da-DK') + '\n' +
+          'Deltagere: ' + stats.totalMembers + '\n' +
+          'Check-ins: ' + stats.totalCheckedIn + '\n' +
+          'Connection rate: ' + stats.connectionRate + '%\n\n' +
+          'Fuld rapport er vedhæftet som PDF — download den fra appen via Event → Info → Event-rapport → PDF.'
+      });
+      showSuccessToast('Rapport sendt til ' + email);
+    } else {
+      // Fallback: open mailto
+      var subject = encodeURIComponent('Event-rapport: ' + b.name);
+      var body = encodeURIComponent('Event: ' + b.name + '\nDeltagere: ' + stats.totalMembers + '\nCheck-ins: ' + stats.totalCheckedIn + '\nConnection rate: ' + stats.connectionRate + '%');
+      window.location.href = 'mailto:' + email + '?subject=' + subject + '&body=' + body;
+      showToast('Mail-app åbnet');
+    }
+  } catch(e) { logError('exportReportEmail', e); showToast('Kunne ikke sende: ' + (e.message || 'ukendt')); }
 }
 
 // ══════════════════════════════════════════════════════════

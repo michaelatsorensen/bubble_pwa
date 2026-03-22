@@ -164,21 +164,35 @@ async function openBubbleChat(bubbleId, fromScreen) {
   console.debug('[bc] openBubbleChat:', bubbleId, 'from:', fromScreen);
 
   // 1. Navigate + cleanup previous
+  // If navigating from one bubble to another (e.g. parent → child event),
+  // store previous bubble so back can reopen it
+  var prevBubbleId = (fromScreen === 'screen-bubble-chat' && bcBubbleId) ? bcBubbleId : null;
   bcUnsubscribe();
   bcBubbleId = bubbleId;
   var backBtn = document.getElementById('bc-back-btn');
-  backBtn.onclick = () => goTo(fromScreen || _activeScreen || 'screen-home');
+  if (prevBubbleId) {
+    // Back reopens the parent bubble
+    backBtn.onclick = function() { openBubbleChat(prevBubbleId, 'screen-bubbles'); };
+  } else {
+    backBtn.onclick = function() { goTo(fromScreen || 'screen-home'); };
+  }
   goTo('screen-bubble-chat');
   bcSwitchTab('members');
 
   // 2. Load all data
+  var backTarget = prevBubbleId ? 'screen-bubbles' : (fromScreen || 'screen-home');
   try {
     var success = await bcLoadChatData(bubbleId);
-    if (!success) { goTo(fromScreen || _activeScreen || 'screen-home'); return; }
+    if (!success) {
+      if (prevBubbleId) { openBubbleChat(prevBubbleId, 'screen-bubbles'); }
+      else { goTo(backTarget); }
+      return;
+    }
   } catch(e) {
     logError("openBubbleChat:load", e);
     showToast('Kunne ikke åbne boblen');
-    goTo(fromScreen || _activeScreen || 'screen-home');
+    if (prevBubbleId) { openBubbleChat(prevBubbleId, 'screen-bubbles'); }
+    else { goTo(backTarget); }
     return;
   }
 
@@ -807,6 +821,8 @@ async function bcLoadMembers() {
 
     const liveCount = members.filter(m => m._isLive).length;
 
+    // Section labels — event-aware terminology
+    var isEvent = bcBubbleData?.type === 'event' || bcBubbleData?.type === 'live';
     let html = '';
     let prevSection = '';
     sorted.forEach((m, i) => {
@@ -818,18 +834,31 @@ async function bcLoadMembers() {
       // Section labels
       let section = isOwnerRow ? 'owner' : (m._isLive ? 'live' : 'members');
       if (section !== prevSection) {
-        if (section === 'owner') html += `<div class="chat-section-label">Ejer</div>`;
-        else if (section === 'live') html += `<div class="chat-section-label" style="margin-top:0.8rem">Her lige nu · ${liveCount}</div>`;
-        else html += `<div class="chat-section-label" style="margin-top:0.8rem">Medlemmer · ${members.length - liveCount - (ownerId ? 1 : 0)}</div>`;
+        if (section === 'owner') html += `<div class="chat-section-label">${isEvent ? 'Arrangør' : 'Ejer'}</div>`;
+        else if (section === 'live') html += `<div class="chat-section-label" style="margin-top:0.8rem">${isEvent ? 'Til stede nu' : 'Her lige nu'} · ${liveCount}</div>`;
+        else {
+          var restCount = members.length - liveCount - (ownerId ? 1 : 0);
+          html += `<div class="chat-section-label" style="margin-top:0.8rem">${isEvent ? 'Deltagere' : 'Medlemmer'} · ${restCount}</div>`;
+        }
         prevSection = section;
       }
 
       const liveBadge = m._isLive ? '<span class="live-badge-mini">LIVE</span>' : '';
 
+      // Status line: for events, show check-in time; for networks, show title
+      var statusText = escHtml(p.title || '');
+      if (isEvent && !isOwnerRow && !m._isLive && m.checked_in_at) {
+        var checkinTime = new Date(m.checked_in_at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
+        statusText = (statusText ? statusText + ' · ' : '') + '<span style="color:var(--muted)">Var her kl. ' + checkinTime + '</span>';
+      }
+
+      // Role label
+      var roleLabel = isEvent ? 'Arrangør' : 'Ejer';
+
       html += `<div class="chat-member-row" data-member-uid="${m.user_id}" onclick="bcOpenPerson('${m.user_id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${color}')">
         <div class="chat-member-avatar" style="background:${color}">${initials}${m._isLive ? '<span class="live-dot"></span>' : ''}</div>
-        <div style="flex:1;min-width:0"><div class="chat-member-name">${escHtml(p.name||'Ukendt')} ${liveBadge}</div><div class="chat-member-status">${escHtml(p.title||'')}</div></div>
-        ${isOwnerRow ? '<span class="chat-member-role">Ejer</span>' : (isOwner && !isOwnerRow ? '<button class="bc-kick-btn" onclick="event.stopPropagation();bcShowKickConfirm(this,\'' + m.user_id + '\',\'' + escHtml(p.name||'Ukendt').replace(/'/g,'') + '\')" title="Fjern fra boble">' + icon('x') + '</button>' : '')}
+        <div style="flex:1;min-width:0"><div class="chat-member-name">${escHtml(p.name||'Ukendt')} ${liveBadge}</div><div class="chat-member-status">${statusText}</div></div>
+        ${isOwnerRow ? '<span class="chat-member-role">' + roleLabel + '</span>' : (isOwner && !isOwnerRow ? '<button class="bc-kick-btn" onclick="event.stopPropagation();bcShowKickConfirm(this,\'' + m.user_id + '\',\'' + escHtml(p.name||'Ukendt').replace(/'/g,'') + '\')" title="Fjern fra boble">' + icon('x') + '</button>' : '')}
       </div>`;
     });
     list.innerHTML = html;
