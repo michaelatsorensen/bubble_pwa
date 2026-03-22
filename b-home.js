@@ -1190,6 +1190,10 @@ async function loadHomeDartboardData() {
 function _getFilteredProfiles() {
   var allP = _homeDartboardProfiles.length > 0 ? _homeDartboardProfiles : (proxAllProfiles || []);
   if (_homeRadarFilter === 'all') return allP;
+  if (_homeRadarFilter === 'live') {
+    var liveIds = window._liveCheckedInIds || [];
+    return allP.filter(function(p) { return liveIds.indexOf(p.id) >= 0; });
+  }
   if (_homeRadarFilter === 'interest') return allP.filter(function(p) { return p.matchScore >= 20; });
   if (_homeRadarFilter === 'good') return allP.filter(function(p) { return p.matchScore >= 40; });
   if (_homeRadarFilter === 'strong') return allP.filter(function(p) { return p.matchScore >= 60; });

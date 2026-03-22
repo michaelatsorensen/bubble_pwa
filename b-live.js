@@ -41,8 +41,34 @@ async function loadLiveBubbleStatus() {
         checked_in_at: myLive.checked_in_at,
         member_count: count || 1
       };
+      // Fetch live member IDs for radar filtering
+      try {
+        var { data: liveMembers } = await sb.from('bubble_members')
+          .select('user_id')
+          .eq('bubble_id', myLive.bubble_id)
+          .not('checked_in_at', 'is', null)
+          .is('checked_out_at', null)
+          .gte('checked_in_at', expireCutoff);
+        window._liveCheckedInIds = (liveMembers || []).map(function(m) { return m.user_id; });
+      } catch(e2) { window._liveCheckedInIds = []; }
     } else {
       currentLiveBubble = null;
+      window._liveCheckedInIds = [];
+    }
+    // Show/hide Live radar chip
+    var liveChip = document.getElementById('radar-live-chip');
+    var liveCount = document.getElementById('radar-live-count');
+    if (liveChip) {
+      if (currentLiveBubble && (window._liveCheckedInIds || []).length > 1) {
+        liveChip.style.display = '';
+        if (liveCount) liveCount.textContent = '· ' + window._liveCheckedInIds.length;
+      } else {
+        liveChip.style.display = 'none';
+        // If live filter was active, reset to all
+        if (typeof _homeRadarFilter !== 'undefined' && _homeRadarFilter === 'live') {
+          filterRadarHome('all');
+        }
+      }
     }
   } catch (e) {
     logError('loadLiveBubbleStatus', e);
@@ -308,8 +334,13 @@ async function liveCheckin(bubbleId) {
     showToast('\uD83D\uDCCD ' + (bubbleName || 'Checked ind!'));
     trackEvent('live_checkin', { bubble_id: bubbleId, bubble_name: bubbleName });
 
-    // 4. Refresh home card in background (non-blocking)
-    loadLiveBubbleStatus();
+    // 4. Refresh home in background — auto-switch to live mode
+    loadLiveBubbleStatus().then(function() {
+      if (typeof filterRadarHome === 'function' && (window._liveCheckedInIds || []).length > 0) {
+        filterRadarHome('live');
+      }
+    });
+    if (typeof loadLiveBanner === 'function') loadLiveBanner();
   } catch (e) {
     logError('liveCheckin', e);
     showToast('Fejl ved check-in: ' + (e.message || 'ukendt'));
@@ -548,6 +579,8 @@ async function liveScanConfirmPersonCheckin() {
     if (cMeta) cMeta.textContent = (p.profile.title || '') + (p.profile.workplace ? ' · ' + p.profile.workplace : '');
     if (confirmed) confirmed.style.display = 'flex';
     showSuccessToast((p.profile.name || 'Bruger') + ' checked ind! ✓');
+    // Refresh member list if viewing this bubble
+    if (bcBubbleId === p.bubbleId && typeof bcLoadMembers === 'function') bcLoadMembers();
     setTimeout(function() {
       if (confirmed) confirmed.style.display = 'none';
       if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; }

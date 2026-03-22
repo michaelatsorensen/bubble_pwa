@@ -223,6 +223,21 @@ async function bcLoadChatData(bubbleId) {
   var tabMembers = document.getElementById('bc-tab-members');
   if (tabMembers) tabMembers.textContent = (b.type === 'event' || b.type === 'live') ? 'Deltagere' : 'Medlemmer';
 
+  // Show Events tab for network bubbles (not for events themselves)
+  var isEvent = b.type === 'event' || b.type === 'live';
+  var tabEvents = document.getElementById('bc-tab-events');
+  var tabPosts = document.getElementById('bc-tab-posts');
+  if (!isEvent) {
+    // Check for child events
+    var { count: evCount } = await sb.from('bubbles').select('*', { count: 'exact', head: true })
+      .eq('parent_bubble_id', bubbleId).eq('type', 'event');
+    if (tabEvents) tabEvents.style.display = (evCount > 0) ? '' : 'none';
+    if (tabPosts) tabPosts.style.display = (evCount > 0) ? 'none' : '';
+  } else {
+    if (tabEvents) tabEvents.style.display = 'none';
+    if (tabPosts) tabPosts.style.display = '';
+  }
+
   // Membership + role (parallel)
   var [upvoteRes, memberRes, roleRes] = await Promise.all([
     loadBubbleUpvotes().catch(function() {}),
@@ -359,7 +374,7 @@ async function bcLoadBubbleInfo() {
 }
 
 function bcSwitchTab(tab) {
-  ['chat','members','info','posts'].forEach(t => {
+  ['chat','members','info','posts','events'].forEach(t => {
     const panel = document.getElementById('bc-panel-'+t);
     const tabBtn = document.getElementById('bc-tab-'+t);
     if (panel) {
@@ -381,6 +396,59 @@ function bcSwitchTab(tab) {
   }
   if (tab === 'info') bcLoadInfo();
   if (tab === 'posts') bcLoadPosts();
+  if (tab === 'events') bcLoadEvents();
+}
+
+async function bcLoadEvents() {
+  var list = document.getElementById('bc-events-list');
+  if (!list || !bcBubbleId) return;
+  list.innerHTML = skelCards(3);
+  try {
+    var { data: events } = await sb.from('bubbles')
+      .select('id, name, type, created_at, event_date, visibility, checkin_mode, bubble_members(count)')
+      .eq('parent_bubble_id', bcBubbleId)
+      .eq('type', 'event')
+      .order('event_date', { ascending: true, nullsFirst: false })
+      .limit(20);
+    if (!events || events.length === 0) {
+      var canEdit = bcBubbleData?._canEdit;
+      list.innerHTML = '<div class="empty-state">' +
+        '<div class="empty-icon">' + icon('calendar') + '</div>' +
+        '<div class="empty-text">Ingen events endnu</div>' +
+        (canEdit ? '<div class="empty-cta"><button class="btn-primary" onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="font-size:0.82rem;padding:0.6rem 1.2rem">' + icon('calendar') + ' Opret event</button></div>' : '') +
+        '</div>';
+      return;
+    }
+    var now = new Date();
+    var html = events.map(function(ev) {
+      var mc = ev.bubble_members?.[0]?.count || 0;
+      var evDate = ev.event_date ? new Date(ev.event_date) : null;
+      var isPast = evDate && evDate < now;
+      var dateStr = evDate
+        ? evDate.toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' }) +
+          (evDate.getHours() > 0 ? ' kl. ' + evDate.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '')
+        : new Date(ev.created_at).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+      var badge = isPast
+        ? '<span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(30,27,46,0.06);color:var(--muted)">Afsluttet</span>'
+        : '<span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(46,207,207,0.1);color:#0F6E56">Kommende</span>';
+      return '<div class="card" style="padding:0.75rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="openBubbleChat(\'' + ev.id + '\',\'screen-bubble-chat\')">' +
+        '<div style="display:flex;align-items:center;gap:0.6rem">' +
+        '<div style="width:38px;height:38px;border-radius:10px;background:' + (isPast ? 'rgba(30,27,46,0.04)' : 'rgba(46,207,207,0.08)') + ';display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0">' + icon('calendar') + '</div>' +
+        '<div style="flex:1;min-width:0">' +
+        '<div style="display:flex;align-items:center;gap:0.4rem"><span class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(ev.name) + '</span>' + badge + '</div>' +
+        '<div class="fs-072 text-muted">' + dateStr + ' · ' + mc + ' deltager' + (mc !== 1 ? 'e' : '') + '</div>' +
+        '</div>' +
+        '<div style="font-size:0.88rem;color:var(--muted)">›</div></div></div>';
+    }).join('');
+    // Add create button for owners
+    if (bcBubbleData?._canEdit) {
+      html += '<button onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="width:100%;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem;margin-top:0.3rem">' + icon('calendar') + ' Opret event</button>';
+    }
+    list.innerHTML = html;
+  } catch(e) {
+    logError('bcLoadEvents', e);
+    showRetryState('bc-events-list', 'bcLoadEvents', 'Kunne ikke hente events');
+  }
 }
 
 async function bcLoadMessages() {

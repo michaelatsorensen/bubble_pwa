@@ -81,26 +81,48 @@ function rtHandleMemberChange(payload) {
   var m = payload.new || payload.old;
   if (!m) return;
 
-  // If it's MY check-in/out → refresh live status + home banner
+  // If it's MY check-in/out → refresh live status + home banner + show toast
   if (m.user_id === currentUser.id) {
-    loadLiveBubbleStatus();
+    loadLiveBubbleStatus().then(function() {
+      // Auto-activate live filter on home radar when I check in
+      if (m.checked_in_at && !m.checked_out_at) {
+        if (document.getElementById('screen-home')?.classList.contains('active')) {
+          if (typeof filterRadarHome === 'function' && (window._liveCheckedInIds || []).length > 0) {
+            filterRadarHome('live');
+          }
+        }
+      }
+    });
     if (document.getElementById('screen-home')?.classList.contains('active')) {
       loadLiveBanner();
+    }
+    // Show check-in confirmation to the user who was scanned in
+    if (m.checked_in_at && !m.checked_out_at) {
+      sb.from('bubbles').select('name').eq('id', m.bubble_id).maybeSingle().then(function(r) {
+        if (r.data) showSuccessToast('Du er checket ind i ' + r.data.name + ' — velkommen! ✓');
+      }).catch(function() {});
     }
     return;
   }
 
-  // If bc chat is open for this bubble → reload members tab silently
+  // If bc chat is open for this bubble → reload members tab
   if (bcBubbleId && m.bubble_id === bcBubbleId) {
-    var membersPanel = document.getElementById('bc-members-list');
-    if (membersPanel && membersPanel.closest('.bc-panel')?.style.display !== 'none') {
-      bcLoadMembers();
-    }
+    bcLoadMembers();
   }
 
-  // If it's in MY current live bubble → update member count
+  // If it's in MY current live bubble → update member count + radar
   if (currentLiveBubble && m.bubble_id === currentLiveBubble.bubble_id) {
-    loadLiveBubbleStatus();
+    loadLiveBubbleStatus().then(function() {
+      // Re-render home radar if live filter is active
+      if (document.getElementById('screen-home')?.classList.contains('active') &&
+          typeof _homeRadarFilter !== 'undefined' && _homeRadarFilter === 'live') {
+        renderHomeDartboard();
+      }
+    });
+    // Re-render dartboard if in live mode
+    if (typeof _homeMode !== 'undefined' && _homeMode === 'live') {
+      loadEventDartboard();
+    }
   }
 }
 
@@ -112,7 +134,13 @@ function rtStartRadarPolling() {
     if (!_radarScreenActive) { rtStopRadarPolling(); return; }
     if (!document.hidden) {
       console.debug('[rt] radar soft refresh');
-      loadProximityMap();
+      if (typeof _homeMode !== 'undefined' && _homeMode === 'live') {
+        // In live mode: refresh event dartboard + live status
+        loadLiveBubbleStatus();
+        loadEventDartboard();
+      } else {
+        loadProximityMap();
+      }
     }
   }, 20000);
 }
