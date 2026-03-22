@@ -182,7 +182,11 @@ async function loadEventDartboard() {
       .is('checked_out_at', null)
       .gte('checked_in_at', expCut);
     var memberIds = (members || []).map(function(m) { return m.user_id; }).filter(function(id) { return id !== currentUser.id; });
-    if (memberIds.length === 0) { renderHomeDartboard(); return; }
+    if (memberIds.length === 0) {
+      _homeDartboardProfiles = []; // Clear — show empty radar in live mode
+      renderHomeDartboard();
+      return;
+    }
 
     var { data: profiles } = await sb.from('profiles')
       .select('id,name,title,keywords,dynamic_keywords,bio,linkedin,is_anon,avatar_url')
@@ -1188,6 +1192,8 @@ async function loadHomeDartboardData() {
 
 // ── Get filtered profiles based on active filter ──
 function _getFilteredProfiles() {
+  // In live mode, ONLY use event dartboard profiles — never fall back to all
+  if (_homeMode === 'live') return _homeDartboardProfiles;
   var allP = _homeDartboardProfiles.length > 0 ? _homeDartboardProfiles : (proxAllProfiles || []);
   if (_homeRadarFilter === 'all') return allP;
   if (_homeRadarFilter === 'live') {
@@ -1277,7 +1283,13 @@ function renderHomeDartboard() {
 
   if (profiles.length === 0) {
     av.innerHTML = '';
-    if (_homeRadarFilter !== 'all') {
+    if (_homeMode === 'live') {
+      av.innerHTML = '<div class="dartboard-empty" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:1.5rem">' +
+        '<div style="font-size:1.5rem;margin-bottom:0.4rem">📡</div>' +
+        '<div style="font-size:0.78rem;font-weight:600;color:var(--text)">Du er den første her!</div>' +
+        '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.2rem">Radaren viser deltagere efterhånden som de checker ind</div>' +
+        '</div>';
+    } else if (_homeRadarFilter !== 'all') {
       showDartboardEmpty(_homeRadarFilter);
     } else {
       av.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:var(--muted)">Join en boble for at se matches</div>';

@@ -584,6 +584,24 @@ async function liveScanConfirmPersonCheckin() {
     }
     // Log scan
     try { sb.from('qr_scans').insert({ bubble_id: p.bubbleId, scanned_by: currentUser.id, scanned_user: p.profile.id, scan_type: 'event_checkin' }); } catch(e2) {}
+    // Send push notification to scanned user
+    try {
+      var { data: bName } = await sb.from('bubbles').select('name').eq('id', p.bubbleId).single();
+      var eventName = bName?.name || 'et event';
+      var { data: pushSub } = await sb.from('push_subscriptions').select('endpoint,p256dh,auth').eq('user_id', p.profile.id).maybeSingle();
+      if (pushSub && pushSub.endpoint) {
+        fetch(SUPABASE_URL + '/functions/v1/send-push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (await sb.auth.getSession()).data.session?.access_token },
+          body: JSON.stringify({
+            subscription: { endpoint: pushSub.endpoint, keys: { p256dh: pushSub.p256dh, auth: pushSub.auth } },
+            title: 'Velkommen! ✓',
+            body: 'Du er checket ind i ' + eventName,
+            data: { type: 'checkin', bubble_id: p.bubbleId }
+          })
+        }).catch(function() {});
+      }
+    } catch(e3) { console.debug('[scan] push notify error:', e3); }
     // Show success
     var confirmed = document.getElementById('live-scan-confirmed');
     var cName = document.getElementById('live-scan-confirmed-name');

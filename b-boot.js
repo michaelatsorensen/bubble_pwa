@@ -762,6 +762,8 @@ if ('serviceWorker' in navigator) {
       } else if (t === 'new_invite' || t === 'invitation' || t === 'saved_contact') {
         goTo('screen-notifications');
         loadNotifications();
+      } else if (t === 'checkin' && d.bubble_id) {
+        if (currentUser) openBubbleChat(d.bubble_id, 'screen-home');
       }
     }
   });

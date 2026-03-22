@@ -3,7 +3,7 @@
 // ══════════════════════════════════════
 // Version managed by CACHE_NAME below
 
-const CACHE_NAME = 'bubble-v6.0.8';
+const CACHE_NAME = 'bubble-v6.0.9';
 const CACHE_URLS = [
   './', './index.html', './app.css',
   './bubble-icons.js', './tag-data.js',
@@ -103,6 +103,8 @@ self.addEventListener('notificationclick', function(event) {
     url = d.sender_id ? './?push=chat&uid=' + d.sender_id : './?push=messages';
   } else if (type === 'new_invite' || type === 'invitation' || type === 'saved_contact') {
     url = './?push=notifications';
+  } else if (type === 'checkin' && d.bubble_id) {
+    url = './?push=bubble&id=' + d.bubble_id;
   }
 
   event.waitUntil(
