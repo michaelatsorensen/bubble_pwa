@@ -941,15 +941,18 @@ async function bcLoadInfo() {
     if (!isEvent) {
       try {
         var { data: childEvents } = await sb.from('bubbles')
-          .select('id, name, type, created_at, bubble_members(count)')
+          .select('id, name, type, created_at, event_date, bubble_members(count)')
           .eq('parent_bubble_id', b.id)
           .eq('type', 'event')
-          .order('created_at', { ascending: false })
+          .order('event_date', { ascending: true, nullsFirst: false })
           .limit(10);
         if (childEvents && childEvents.length > 0) {
           var eventCards = childEvents.map(function(ev) {
             var evMc = ev.bubble_members?.[0]?.count || 0;
-            var dateStr = new Date(ev.created_at).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+            var dateStr = ev.event_date
+              ? new Date(ev.event_date).toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' }) +
+                (new Date(ev.event_date).getHours() > 0 ? ' kl. ' + new Date(ev.event_date).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '')
+              : new Date(ev.created_at).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
             return '<div onclick="openBubble(\'' + ev.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.65rem;border-radius:12px;background:rgba(46,207,207,0.04);border:1px solid rgba(46,207,207,0.12);cursor:pointer">' +
               '<div style="width:34px;height:34px;border-radius:10px;background:rgba(46,207,207,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + icon('calendar') + '</div>' +
               '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:600;color:var(--text)">' + escHtml(ev.name) + '</div>' +

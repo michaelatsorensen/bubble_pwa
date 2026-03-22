@@ -433,9 +433,16 @@ function openCreateEventFromBubble(parentBubbleId) {
     // Show parent attribution label
     var parentLabel = document.getElementById('cb-parent-label');
     if (parentLabel) parentLabel.style.display = 'block';
-    // Show checkin mode for events
+    // Show checkin mode + date/time for events
     var cmg = document.getElementById('cb-checkin-mode-group');
     if (cmg) cmg.style.display = 'block';
+    var edg = document.getElementById('cb-event-date-group');
+    var etg = document.getElementById('cb-event-time-group');
+    if (edg) edg.style.display = 'block';
+    if (etg) etg.style.display = 'block';
+    // Default date to today
+    var dateInput = document.getElementById('cb-event-date');
+    if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
     // Fetch parent name async
     sb.from('bubbles').select('name').eq('id', parentBubbleId).maybeSingle().then(function(r) {
       if (r.data && parentLabel) {
@@ -456,9 +463,13 @@ function openCreateNetworkModal() {
   if (modal) delete modal.dataset.parentBubbleId;
   var parentLabel = document.getElementById('cb-parent-label');
   if (parentLabel) { parentLabel.style.display = 'none'; parentLabel.textContent = ''; }
-  // Hide checkin mode (not relevant for networks)
+  // Hide checkin mode + date/time (not relevant for networks)
   var cmg = document.getElementById('cb-checkin-mode-group');
   if (cmg) cmg.style.display = 'none';
+  var edg = document.getElementById('cb-event-date-group');
+  var etg = document.getElementById('cb-event-time-group');
+  if (edg) edg.style.display = 'none';
+  if (etg) etg.style.display = 'none';
   bbOpen('create-bubble');
   setTimeout(function() {
     initInputConfirmButtons();
@@ -507,8 +518,13 @@ function cbRenderPillSelect(selectId, options) {
       btn.style.color = 'var(--accent)';
       // Show/hide checkin_mode for event type
       if (selectId === 'cb-type') {
+        var isEvt = (opt.value === 'event' || opt.value === 'live');
         var cmg = document.getElementById('cb-checkin-mode-group');
-        if (cmg) cmg.style.display = (opt.value === 'event' || opt.value === 'live') ? 'block' : 'none';
+        var edg = document.getElementById('cb-event-date-group');
+        var etg = document.getElementById('cb-event-time-group');
+        if (cmg) cmg.style.display = isEvt ? 'block' : 'none';
+        if (edg) edg.style.display = isEvt ? 'block' : 'none';
+        if (etg) etg.style.display = isEvt ? 'block' : 'none';
       }
     };
     wrap.appendChild(btn);
@@ -541,6 +557,13 @@ async function createBubble() {
     if (type === 'event' || type === 'live') {
       var checkinMode = document.getElementById('cb-checkin-mode')?.value || 'self';
       insertData.checkin_mode = checkinMode;
+      // Event date/time
+      var dateVal = document.getElementById('cb-event-date')?.value;
+      var timeVal = document.getElementById('cb-event-time')?.value;
+      if (dateVal) {
+        var eventDateTime = timeVal ? dateVal + 'T' + timeVal : dateVal + 'T00:00';
+        insertData.event_date = new Date(eventDateTime).toISOString();
+      }
     }
     const { data: bubble, error } = await sb.from('bubbles').insert(insertData).select().single();
     if (error) return showToast('Fejl: ' + error.message);
@@ -548,6 +571,10 @@ async function createBubble() {
     await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id });
     bbClose('create-bubble');
     showToast(`"${name}" oprettet! 🫧`);
+    // If created as child event, refresh parent bubble's info tab
+    if (parentBubbleId && typeof bcLoadInfo === 'function' && bcBubbleId === parentBubbleId) {
+      bcLoadInfo();
+    }
     loadHome();
     loadDiscover();
   } catch(e) { logError("createBubble", e); showToast(e.message || "Ukendt fejl"); }
