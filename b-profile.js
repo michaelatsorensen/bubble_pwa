@@ -832,7 +832,7 @@ function renderSavedStoryBar(saved, profileMap) {
     var storyAvatar = (p && p.avatar_url) ?
       '<div style="position:relative"><div class="saved-story-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>' + starBadge + '</div>' :
       '<div style="position:relative"><div class="saved-story-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>' + starBadge + '</div>';
-    return '<div class="saved-story-item" onclick="openPerson(\'' + s.contact_id + '\',\'screen-home\')">' +
+    return '<div class="saved-story-item" onclick="openPerson(\'' + s.contact_id + '\',\'screen-profile\')">' +
       storyAvatar +
       '<div class="saved-story-name">' + escHtml(firstName) + '</div></div>';
   }).join('');
@@ -951,7 +951,7 @@ async function profAcceptInvite(inviteId, fromUserId) {
       await sb.from('bubble_members').insert({ bubble_id: inv.bubble_id, user_id: currentUser.id });
       showToast('Du er nu med i boblen!');
       loadProfileInvitations();
-      setTimeout(() => openBubbleChat(inv.bubble_id), 800);
+      setTimeout(() => openBubbleChat(inv.bubble_id, 'screen-profile'), 800);
     }
   } catch(e) { logError("profAcceptInvite", e); showToast(e.message || "Ukendt fejl"); }
 }

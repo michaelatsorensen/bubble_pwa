@@ -5,6 +5,39 @@
 // ══════════════════════════════════════════════════════════
 
 var _navLock = false;
+var _navStack = []; // History stack for back navigation
+var _navPopLock = false; // Prevents infinite loops with popstate
+
+// ── Browser/Android back button handler ──
+window.addEventListener('popstate', function() {
+  if (_navPopLock) return;
+  _navPopLock = true;
+  setTimeout(function() { _navPopLock = false; }, 300);
+
+  if (_navStack.length > 1) {
+    _navStack.pop(); // Remove current
+    var prev = _navStack[_navStack.length - 1]; // Peek at previous
+    if (prev) {
+      // For bubble-chat, we need to reopen the bubble
+      if (prev === 'screen-bubble-chat' && typeof openBubbleChat === 'function') {
+        // Can't reopen without bubbleId — fall back to home
+        goTo('screen-home');
+        _navStack = ['screen-home'];
+      } else {
+        goTo(prev);
+      }
+    }
+  } else {
+    // At root — push state back to prevent exiting app
+    if (_activeScreen !== 'screen-home') {
+      goTo('screen-home');
+      _navStack = ['screen-home'];
+    } else {
+      // On home already — let browser handle (minimize PWA)
+      history.pushState({ screen: 'screen-home' }, '');
+    }
+  }
+});
 
 // ── Screen hooks registry ──
 // navIndex: 0=home, 1=bubbles, 2=messages, 3=profile, -1=hide nav
@@ -73,10 +106,33 @@ function goTo(screenId) {
 
   // ── Phase 1: Leave previous screen ──
   try {
+    // Close ALL overlays, sheets, modals, pickers on navigation
     document.querySelectorAll('.person-sheet.open,.person-sheet-overlay.open,.radar-person-sheet.open,.radar-person-overlay.open').forEach(function(el) {
       el.classList.remove('open');
       el.style.transform = '';
     });
+    // Invite sheet
+    var invSheet = document.getElementById('invite-sheet');
+    var invOverlay = document.getElementById('invite-overlay');
+    if (invSheet) invSheet.classList.remove('open');
+    if (invOverlay) invOverlay.classList.remove('open');
+    // GIF picker
+    var gifPicker = document.getElementById('gif-picker');
+    var gifOverlay = document.getElementById('gif-picker-overlay');
+    if (gifPicker) gifPicker.classList.remove('open');
+    if (gifOverlay) gifOverlay.classList.remove('open');
+    // All modal overlays
+    document.querySelectorAll('.modal-overlay.open').forEach(function(el) { el.classList.remove('open'); });
+    // Context menus
+    document.querySelectorAll('.context-menu.open').forEach(function(el) { el.classList.remove('open'); });
+    // Report tray
+    var reportTray = document.getElementById('event-report-tray');
+    if (reportTray) { reportTray.remove(); reportTray.previousElementSibling?.remove(); }
+    // Home tray
+    try { if (typeof closeHomeTray === 'function') closeHomeTray(); } catch(e) {}
+    // Live checkout tray
+    try { if (typeof closeLiveCheckoutTray === 'function') closeLiveCheckoutTray(); } catch(e) {}
+
     var prevHook = _screenHooks[_activeScreen];
     if (prevHook && prevHook.leave) {
       try { _runHook(prevHook.leave); } catch(e) { console.error('[nav] onLeave error:', _activeScreen, e); }
@@ -85,6 +141,12 @@ function goTo(screenId) {
 
   // ── Phase 2: Switch screen ──
   _activeScreen = screenId;
+  // Push to history for browser/Android back
+  if (!_navPopLock) {
+    _navStack.push(screenId);
+    if (_navStack.length > 20) _navStack = _navStack.slice(-15); // Cap at 15
+    try { history.pushState({ screen: screenId }, ''); } catch(e) {}
+  }
   try {
     document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
     var target = document.getElementById(screenId);

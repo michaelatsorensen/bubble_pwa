@@ -245,7 +245,7 @@ async function loadMessages() {
       const convAvatar = p.avatar_url ?
         '<div class="avatar" style="width:44px;height:44px;overflow:hidden;border-radius:50%"><img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover"></div>' :
         '<div class="avatar" style="background:linear-gradient(135deg,#6366F1,#7C5CFC);width:44px;height:44px">'+initials+'</div>';
-      return '<div class="card conv-card' + (isUnread ? ' unread' : '') + '" data-action="openChat" data-id="' + partnerId + '" data-conv-id="' + partnerId + '">' +
+      return '<div class="card conv-card' + (isUnread ? ' unread' : '') + '" data-action="openChat" data-id="' + partnerId + '" data-from="screen-messages" data-conv-id="' + partnerId + '">' +
         '<div class="flex-row-center" style="gap:0.75rem">' + convAvatar +
         '<div style="flex:1;min-width:0">' +
         '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:0.5rem">' +
