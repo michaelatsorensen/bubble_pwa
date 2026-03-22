@@ -584,10 +584,25 @@ async function liveScanConfirmPersonCheckin() {
     }
     // Log scan
     try { sb.from('qr_scans').insert({ bubble_id: p.bubbleId, scanned_by: currentUser.id, scanned_user: p.profile.id, scan_type: 'event_checkin' }); } catch(e2) {}
-    // Send push notification to scanned user
+    // Get event name for notifications
+    var eventName = 'et event';
     try {
       var { data: bName } = await sb.from('bubbles').select('name').eq('id', p.bubbleId).single();
-      var eventName = bName?.name || 'et event';
+      if (bName?.name) eventName = bName.name;
+    } catch(e2b) {}
+    // Broadcast check-in notification directly to scanned user (bypasses RLS)
+    try {
+      var notifyChannel = sb.channel('checkin-notify-' + p.profile.id);
+      await notifyChannel.subscribe();
+      await notifyChannel.send({
+        type: 'broadcast',
+        event: 'checkin',
+        payload: { bubbleName: eventName, bubbleId: p.bubbleId }
+      });
+      setTimeout(function() { notifyChannel.unsubscribe(); }, 2000);
+    } catch(e4) { console.debug('[scan] broadcast notify error:', e4); }
+    // Send push notification to scanned user (backup for when app is closed)
+    try {
       var { data: pushSub } = await sb.from('push_subscriptions').select('endpoint,p256dh,auth').eq('user_id', p.profile.id).maybeSingle();
       if (pushSub && pushSub.endpoint) {
         fetch(SUPABASE_URL + '/functions/v1/send-push', {

@@ -221,6 +221,21 @@ function initGlobalRealtime() {
     })
     .subscribe();
   _globalRtChannels.push(chSaved);
+
+  // ── Kanal 5: Check-in broadcast (bypasses RLS — direct user notification) ──
+  var chCheckin = sb.channel('checkin-notify-' + currentUser.id)
+    .on('broadcast', { event: 'checkin' }, function(msg) {
+      var data = msg.payload || {};
+      showSuccessToast('Du er checket ind i ' + (data.bubbleName || 'et event') + ' — velkommen! ✓');
+      // Refresh live status so home banner + radar update
+      loadLiveBubbleStatus().then(function() {
+        if (document.getElementById('screen-home')?.classList.contains('active')) {
+          loadLiveBanner();
+        }
+      });
+    })
+    .subscribe();
+  _globalRtChannels.push(chCheckin);
 }
 
 // Legacy alias — some code still calls this

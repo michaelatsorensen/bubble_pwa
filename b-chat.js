@@ -337,6 +337,8 @@ function bcSubscribeRealtime() {
       () => { bcLoadMembers(); })
     .on('postgres_changes', {event:'UPDATE', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
       () => { bcLoadMembers(); })
+    .on('postgres_changes', {event:'DELETE', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
+      () => { bcLoadMembers(); })
     .subscribe();
 }
 

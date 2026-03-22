@@ -213,8 +213,9 @@ function bbConfirm(parentEl, options) {
   // options: { label, confirmText, cancelText, confirmClass, onConfirm }
   // confirmClass: 'bb-confirm-btn-danger' or 'bb-confirm-btn-accept'
   if (!parentEl) return;
-  var existing = parentEl.querySelector('.bb-confirm');
-  if (existing) { existing.remove(); return; } // Toggle off
+  // Toggle: check both inside and after the element
+  var existing = parentEl.querySelector('.bb-confirm') || (parentEl.nextElementSibling && parentEl.nextElementSibling.classList.contains('bb-confirm') ? parentEl.nextElementSibling : null);
+  if (existing) { existing.remove(); return; }
   var tray = document.createElement('div');
   tray.className = 'bb-confirm ' + (options.confirmClass === 'bb-confirm-btn-accept' ? 'bb-confirm-accept' : 'bb-confirm-danger');
   tray.onclick = function(e) { e.stopPropagation(); };
@@ -223,7 +224,8 @@ function bbConfirm(parentEl, options) {
     '<button class="bb-confirm-btn ' + (options.confirmClass || 'bb-confirm-btn-danger') + '" onclick="' + options.onConfirm + '">' + (options.confirmText || 'Ja') + '</button>' +
     '<button class="bb-confirm-btn" onclick="this.closest(\'.bb-confirm\').remove()">' + (options.cancelText || 'Annuller') + '</button>' +
     '</div>';
-  parentEl.appendChild(tray);
+  // Insert after parentEl (as sibling) so it doesn't break flex layouts
+  parentEl.insertAdjacentElement('afterend', tray);
   return tray;
 }
 // Close modal on backdrop click
