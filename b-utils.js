@@ -192,17 +192,13 @@ function bbClose(name) {
 }
 
 function bbCloseAll() {
-  // Close all standardized overlays
+  // Close all standardized bb-system overlays
   document.querySelectorAll('.bb-overlay.open').forEach(function(el) { el.classList.remove('open'); });
   document.querySelectorAll('.bb-sheet.open').forEach(function(el) { el.classList.remove('open'); });
-  // Close all legacy overlays too
+  // Close legacy overlays (not yet migrated)
   document.querySelectorAll('.modal-overlay.open').forEach(function(el) { el.classList.remove('open'); });
   document.querySelectorAll('.person-sheet.open,.person-sheet-overlay.open').forEach(function(el) { el.classList.remove('open'); el.style.transform = ''; });
   document.querySelectorAll('.radar-person-sheet.open,.radar-person-overlay.open').forEach(function(el) { el.classList.remove('open'); el.style.transform = ''; });
-  var invSheet = document.getElementById('invite-sheet');
-  var invOverlay = document.getElementById('invite-overlay');
-  if (invSheet) invSheet.classList.remove('open');
-  if (invOverlay) invOverlay.classList.remove('open');
   var gifPicker = document.getElementById('gif-picker');
   var gifOverlay = document.getElementById('gif-picker-overlay');
   if (gifPicker) gifPicker.classList.remove('open');

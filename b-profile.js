@@ -608,16 +608,19 @@ function initAllSwipeClose() {
   var gif = document.getElementById('gif-picker');
   if (gif) initSwipeClose(gif, closeGifPicker);
   // Invite sheet
-  var inv = document.getElementById('invite-sheet');
+  var inv = document.getElementById('bb-sheet-invite');
   if (inv) initSwipeClose(inv, closeInviteModal);
-  // Modals
-  ['modal-edit-profile','modal-create-bubble','modal-edit-bubble','modal-qr','modal-edit-history','modal-live-checkin'].forEach(function(id) {
+  // Modals (legacy)
+  ['modal-edit-profile','modal-edit-bubble','modal-qr','modal-edit-history','modal-live-checkin'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) {
       var sheetInner = el.querySelector('.modal-sheet');
       if (sheetInner) initSwipeClose(sheetInner, function() { closeModal(id); });
     }
   });
+  // bb-system sheets (migrated)
+  var bbCreateSheet = document.getElementById('bb-sheet-create-bubble');
+  if (bbCreateSheet) initSwipeClose(bbCreateSheet, function() { bbClose('create-bubble'); });
 }
 
 

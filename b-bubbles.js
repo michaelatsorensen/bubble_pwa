@@ -414,9 +414,9 @@ function openCreateEventFromBubble(parentBubbleId) {
   document.getElementById('cb-location').value = '';
   renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
   // Store parent bubble id on the modal for use in createBubble()
-  var modal = document.getElementById('modal-create-bubble');
+  var modal = document.getElementById('bb-sheet-create-bubble');
   if (modal) modal.dataset.parentBubbleId = parentBubbleId;
-  openModal('modal-create-bubble');
+  bbOpen('create-bubble');
   setTimeout(function() {
     initInputConfirmButtons();
     // Force event type selected, hide type picker
@@ -452,14 +452,14 @@ function openCreateNetworkModal() {
   document.getElementById('cb-location').value = '';
   renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
   // Clear any lingering parent bubble state
-  var modal = document.getElementById('modal-create-bubble');
+  var modal = document.getElementById('bb-sheet-create-bubble');
   if (modal) delete modal.dataset.parentBubbleId;
   var parentLabel = document.getElementById('cb-parent-label');
   if (parentLabel) { parentLabel.style.display = 'none'; parentLabel.textContent = ''; }
   // Hide checkin mode (not relevant for networks)
   var cmg = document.getElementById('cb-checkin-mode-group');
   if (cmg) cmg.style.display = 'none';
-  openModal('modal-create-bubble');
+  bbOpen('create-bubble');
   setTimeout(function() {
     initInputConfirmButtons();
     cbRenderPillSelect('cb-type', [
@@ -527,7 +527,7 @@ async function createBubble() {
     if (!name) return showToast('Navn er påkrævet');
     const visibility = document.getElementById('cb-visibility')?.value || 'public';
     // Pick up parent bubble id if set (from openCreateEventFromBubble)
-    var modal = document.getElementById('modal-create-bubble');
+    var modal = document.getElementById('bb-sheet-create-bubble');
     var parentBubbleId = (modal && modal.dataset.parentBubbleId) || null;
     if (modal) delete modal.dataset.parentBubbleId;
     var parentLabel = document.getElementById('cb-parent-label');
@@ -546,7 +546,7 @@ async function createBubble() {
     if (error) return showToast('Fejl: ' + error.message);
     // Auto-join
     await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id });
-    closeModal('modal-create-bubble');
+    bbClose('create-bubble');
     showToast(`"${name}" oprettet! 🫧`);
     loadHome();
     loadDiscover();
@@ -1595,12 +1595,9 @@ async function openInviteModal(bubbleId) {
   try {
   inviteBubbleId = bubbleId;
   inviteSelected = [];
-  var overlay = document.getElementById('invite-overlay');
-  var sheet = document.getElementById('invite-sheet');
   var list = document.getElementById('invite-list');
-  if (!overlay || !sheet || !list) return;
-  overlay.classList.add('open');
-  setTimeout(function() { sheet.classList.add('open'); }, 10);
+  if (!list) return;
+  bbOpen('invite');
   list.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">Henter gemte kontakter...</div>';
   var btn = document.getElementById('invite-send-btn');
   if (btn) btn.textContent = 'Send invitationer';
@@ -1651,10 +1648,7 @@ async function openInviteModal(bubbleId) {
 }
 
 function closeInviteModal() {
-  var sheet = document.getElementById('invite-sheet');
-  var overlay = document.getElementById('invite-overlay');
-  if (sheet) sheet.classList.remove('open');
-  setTimeout(function() { if (overlay) overlay.classList.remove('open'); }, 320);
+  bbClose('invite');
   inviteSelected = [];
 }
 

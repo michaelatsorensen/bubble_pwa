@@ -580,18 +580,12 @@ async function openQuickLiveBubble() {
 function bbAcceptInvite(inviteId, fromUserId) {
   var card = document.getElementById('bb-inv-' + inviteId);
   if (!card) return;
-  // Remove any existing confirm tray
-  var existing = card.querySelector('.bb-inv-confirm');
-  if (existing) { existing.remove(); return; }
-  var tray = document.createElement('div');
-  tray.className = 'bb-inv-confirm';
-  tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0.5rem;margin-top:0.4rem;background:rgba(26,158,142,0.06);border:1px solid rgba(26,158,142,0.15);border-radius:10px';
-  tray.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Join denne boble?</span>' +
-    '<div style="display:flex;gap:0.25rem">' +
-    '<button style="font-size:0.72rem;padding:0.3rem 0.65rem;background:var(--gradient-primary);color:white;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700" onclick="bbConfirmAccept(\'' + inviteId + '\',\'' + fromUserId + '\')">Ja, join</button>' +
-    '<button style="font-size:0.72rem;padding:0.3rem 0.65rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit" onclick="this.closest(\'.bb-inv-confirm\').remove()">Annuller</button>' +
-    '</div>';
-  card.appendChild(tray);
+  bbConfirm(card, {
+    label: 'Join denne boble?',
+    confirmText: 'Ja, join',
+    confirmClass: 'bb-confirm-btn-accept',
+    onConfirm: "bbConfirmAccept('" + inviteId + "','" + fromUserId + "')"
+  });
 }
 
 async function bbConfirmAccept(inviteId, fromUserId) {
@@ -609,17 +603,12 @@ async function bbConfirmAccept(inviteId, fromUserId) {
 function bbDeclineInvite(inviteId) {
   var card = document.getElementById('bb-inv-' + inviteId);
   if (!card) return;
-  var existing = card.querySelector('.bb-inv-confirm');
-  if (existing) { existing.remove(); return; }
-  var tray = document.createElement('div');
-  tray.className = 'bb-inv-confirm';
-  tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0.5rem;margin-top:0.4rem;background:rgba(232,121,168,0.06);border:1px solid rgba(232,121,168,0.15);border-radius:10px';
-  tray.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Afvis invitation?</span>' +
-    '<div style="display:flex;gap:0.25rem">' +
-    '<button style="font-size:0.72rem;padding:0.3rem 0.65rem;background:rgba(232,121,168,0.12);color:var(--accent2);border:1px solid rgba(232,121,168,0.25);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700" onclick="bbConfirmDecline(\'' + inviteId + '\')">Ja, afvis</button>' +
-    '<button style="font-size:0.72rem;padding:0.3rem 0.65rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit" onclick="this.closest(\'.bb-inv-confirm\').remove()">Annuller</button>' +
-    '</div>';
-  card.appendChild(tray);
+  bbConfirm(card, {
+    label: 'Afvis invitation?',
+    confirmText: 'Ja, afvis',
+    confirmClass: 'bb-confirm-btn-danger',
+    onConfirm: "bbConfirmDecline('" + inviteId + "')"
+  });
 }
 
 async function bbConfirmDecline(inviteId) {

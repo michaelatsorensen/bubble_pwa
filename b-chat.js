@@ -868,22 +868,13 @@ async function bcLoadMembers() {
 // ── Bubble owner: kick/remove member (inline confirm tray) ──
 function bcShowKickConfirm(btn, userId, userName) {
   var row = btn.closest('.chat-member-row');
-  if (!row || row.querySelector('.kick-confirm')) return;
-  var confirm = document.createElement('div');
-  confirm.className = 'kick-confirm';
-  confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:10px;gap:0.5rem';
-  confirm.onclick = function(e) { e.stopPropagation(); };
-  confirm.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Fjern ' + userName + '?</span>' +
-    '<div style="display:flex;gap:0.3rem">' +
-    '<button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="event.stopPropagation();bcConfirmKick(\'' + userId + '\',\'' + userName + '\')">Fjern</button>' +
-    '<button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="event.stopPropagation();bcCancelKick(this)">Annuller</button>' +
-    '</div>';
-  row.appendChild(confirm);
-}
-
-function bcCancelKick(btn) {
-  var confirm = btn.closest('.kick-confirm');
-  if (confirm) confirm.remove();
+  if (!row) return;
+  bbConfirm(row, {
+    label: 'Fjern ' + userName + '?',
+    confirmText: 'Fjern',
+    confirmClass: 'bb-confirm-btn-danger',
+    onConfirm: "event.stopPropagation();bcConfirmKick('" + userId + "','" + userName + "')"
+  });
 }
 
 async function bcConfirmKick(userId, userName) {
@@ -1312,21 +1303,17 @@ async function bcSubmitPost() {
 
 async function bcDeletePost(postId) {
   try {
-    // Inline confirm
     var overlay = document.querySelector('[style*="backdrop-filter"]');
     if (!overlay) return;
-    var existing = overlay.querySelector('.bp-delete-confirm');
-    if (existing) { existing.remove(); return; }
-
-    var tray = document.createElement('div');
-    tray.className = 'bp-delete-confirm';
-    tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.5rem;background:rgba(232,121,168,0.06);border:1px solid rgba(232,121,168,0.15);border-radius:10px';
-    tray.innerHTML = '<span style="font-size:0.75rem;color:var(--text-secondary)">Slet dette opslag?</span>' +
-      '<div style="display:flex;gap:0.3rem">' +
-      '<button style="font-size:0.72rem;padding:0.3rem 0.65rem;background:var(--accent2);color:white;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600" onclick="bcConfirmDeletePost(\'' + postId + '\')">Slet</button>' +
-      '<button style="font-size:0.72rem;padding:0.3rem 0.65rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit" onclick="this.closest(\'.bp-delete-confirm\').remove()">Annuller</button>' +
-      '</div>';
-    overlay.querySelector('.modal-sheet, div[style*="border-radius:24px"]')?.appendChild(tray);
+    var target = overlay.querySelector('.modal-sheet, div[style*="border-radius:24px"]');
+    if (target) {
+      bbConfirm(target, {
+        label: 'Slet dette opslag?',
+        confirmText: 'Slet',
+        confirmClass: 'bb-confirm-btn-danger',
+        onConfirm: "bcConfirmDeletePost('" + postId + "')"
+      });
+    }
   } catch(e) { logError('bcDeletePost', e); }
 }
 
