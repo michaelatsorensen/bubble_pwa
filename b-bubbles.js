@@ -1661,7 +1661,6 @@ function toggleInvite(cb) {
   if (btn) {
     btn.textContent = n > 0 ? 'Send (' + n + ')' : 'Send invitationer';
     btn.disabled = n === 0;
-    btn.style.opacity = n > 0 ? '1' : '0.4';
   }
   // Update subtitle
   var sub = document.getElementById('invite-subtitle');
@@ -1672,7 +1671,7 @@ async function sendBubbleInvites() {
   if (inviteSelected.length === 0) return showToast('Vælg mindst én kontakt');
   try {
     var btn = document.getElementById('invite-send-btn');
-    if (btn) { btn.textContent = 'Sender...'; btn.disabled = true; btn.style.opacity = '0.5'; }
+    if (btn) { btn.textContent = 'Sender...'; btn.disabled = true; btn.classList.add('btn-loading'); }
 
     // Filter out users who already have a pending invite (prevents duplicate errors)
     var { data: existing } = await sb.from('bubble_invitations')

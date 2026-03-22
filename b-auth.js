@@ -482,8 +482,7 @@ function toggleInterest(btn) {
   // Enable/disable continue button
   var btn2 = document.getElementById('interest-continue-btn');
   if (btn2) {
-    btn2.style.opacity = _selectedInterests.length >= 3 ? '1' : '0.3';
-    btn2.style.pointerEvents = _selectedInterests.length >= 3 ? 'auto' : 'none';
+    btn2.disabled = _selectedInterests.length < 3;
   }
 
   // Load preview when 3 selected

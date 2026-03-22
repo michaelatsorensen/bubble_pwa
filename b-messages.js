@@ -97,7 +97,6 @@ function convUpdateSelectCount() {
   if (delBtn) {
     delBtn.disabled = n === 0;
     delBtn.textContent = n > 0 ? 'Slet ' + n : 'Slet';
-    delBtn.style.opacity = n > 0 ? '1' : '0.4';
   }
 }
 
@@ -136,7 +135,7 @@ async function sendMessage() {
   if (dmSending) return;
   dmSending = true;
   var sendBtn = document.getElementById("chat-send-btn");
-  if (sendBtn) { sendBtn.disabled = true; sendBtn.style.opacity = "0.4"; }
+  if (sendBtn) { sendBtn.disabled = true; }
   console.debug('[dm] sendMessage');
   try {
     if (isBlocked(currentChatUser)) { showToast('Denne bruger er blokeret'); return; }
@@ -172,7 +171,7 @@ async function sendMessage() {
       input.focus();
     }
   } catch(e) { logError("sendMessage", e); showToast(e.message || "Ukendt fejl"); }
-  finally { dmSending = false; if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = ""; } }
+  finally { dmSending = false; if (sendBtn) { sendBtn.disabled = false; } }
 }
 
 async function sendDirectMessage(toId, content) {

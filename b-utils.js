@@ -338,10 +338,10 @@ function visibilityBadge(visibility) {
 function showRetryState(elementId, retryFnName, message) {
   var el = document.getElementById(elementId);
   if (!el) return;
-  el.innerHTML = '<div class="retry-state">' +
-    '<div style="width:36px;height:36px;margin:0 auto 0.5rem;opacity:0.4;color:var(--accent2)">' + ico('warn') + '</div>' +
-    '<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:0.6rem">' + escHtml(message) + '</div>' +
-    '<button onclick="' + retryFnName + '()" class="btn-sm btn-ghost" style="font-size:0.72rem;padding:0.35rem 1rem">Prøv igen</button>' +
+  el.innerHTML = '<div class="state-error">' +
+    '<div class="state-error-icon">' + ico('warn') + '</div>' +
+    '<div class="state-error-text">' + escHtml(message) + '</div>' +
+    '<button onclick="' + retryFnName + '()" class="state-error-btn">Prøv igen</button>' +
     '</div>';
 }
 

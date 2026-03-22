@@ -497,12 +497,12 @@ async function bcSendMessage() {
   if (bcSending) return;
   bcSending = true;
   var sendBtn = document.getElementById("bc-send-btn");
-  if (sendBtn) { sendBtn.disabled = true; sendBtn.style.opacity = "0.4"; }
+  if (sendBtn) { sendBtn.disabled = true; }
   console.debug('[bc] bcSendMessage');
   try {
     const inp = document.getElementById('bc-input');
     const text = filterChatContent(inp.value.trim());
-    if (!text) { bcSending = false; if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = ''; } return; }
+    if (!text) { bcSending = false; if (sendBtn) { sendBtn.disabled = false; } return; }
 
     if (bcEditingId) {
       // Save edit to history first
@@ -558,7 +558,7 @@ async function bcSendMessage() {
       }
     }
   } catch(e) { logError("bcSendMessage", e); showToast(e.message || "Ukendt fejl"); }
-  finally { bcSending = false; var sb3 = document.getElementById("bc-send-btn"); if (sb3) { sb3.disabled = false; sb3.style.opacity = ""; } }
+  finally { bcSending = false; var sb3 = document.getElementById("bc-send-btn"); if (sb3) { sb3.disabled = false; } }
   } catch(e) { logError("bcSendMessage", e); }
 }
 

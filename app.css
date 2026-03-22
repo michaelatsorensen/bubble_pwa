@@ -420,7 +420,23 @@ textarea.input { min-height:80px; resize:vertical; }
 /* ── EMPTY STATES ── */
 .empty-state { text-align:center; padding:2rem 1rem; }
 .empty-icon { font-size:2.5rem; margin-bottom:0.5rem; opacity:0.5; }
+.empty-icon .ico { width:2.5rem; height:2.5rem; }
 .empty-text { font-size:0.78rem; color:var(--text-secondary); line-height:1.5; }
+.empty-cta { margin-top:1rem; }
+
+/* ── BUTTON STATES (replaces inline opacity/pointerEvents hacks) ── */
+.btn-disabled, [disabled] { opacity:0.35 !important; pointer-events:none !important; }
+.btn-loading { opacity:0.7; pointer-events:none; position:relative; }
+.btn-loading::after { content:''; display:inline-block; width:14px; height:14px; border:2px solid transparent; border-top-color:currentColor; border-radius:50%; animation:btnSpin 0.6s linear infinite; margin-left:0.4rem; vertical-align:middle; }
+@keyframes btnSpin { to { transform:rotate(360deg); } }
+
+/* ── STATE: Error with retry ── */
+.state-error { text-align:center; padding:1.5rem 1rem; }
+.state-error-icon { width:32px; height:32px; margin:0 auto 0.5rem; color:var(--accent2); opacity:0.7; }
+.state-error-icon .ico { width:32px; height:32px; }
+.state-error-text { font-size:0.78rem; font-weight:600; color:var(--text); margin-bottom:0.5rem; }
+.state-error-btn { display:inline-block; padding:0.4rem 1rem; border-radius:8px; border:0.5px solid var(--glass-border-subtle); background:none; font-size:0.72rem; color:var(--text-secondary); cursor:pointer; font-family:inherit; font-weight:600; }
+.state-error-btn:active { transform:scale(0.97); }
 
 /* ── BACK BUTTON ── */
 .back-btn { background:var(--glass-bg); backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border-subtle); border-radius:var(--radius-pill); padding:0.3rem 0.8rem; color:var(--accent); font-size:0.72rem; font-weight:500; cursor:pointer; transition:all 0.2s; font-family:'Figtree',sans-serif; }
@@ -730,7 +746,6 @@ button {
 .bubble-up-btn .ico { width:1.1rem; height:1.1rem; }
 .chat-context-item .ico { width:0.9rem; height:0.9rem; }
 .tag .ico { width:0.7rem; height:0.7rem; }
-.empty-icon .ico { width:2.5rem; height:2.5rem; }
 
 /* Person-sheet LinkedIn button */
 .person-sheet-btn[id="ps-linkedin-btn"] { text-decoration:none; color:#0A66C2; }

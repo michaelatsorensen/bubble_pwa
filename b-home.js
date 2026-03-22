@@ -370,8 +370,8 @@ function renderSetupInterests() {
   if (countEl) countEl.textContent = 'Vælg mindst 3 emner (' + cnt + '/3)';
   var btn = document.getElementById('setup-interest-save');
   if (btn) {
-    if (cnt >= 3) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; btn.textContent = 'Gem og fortsæt'; }
-    else { btn.style.opacity = '0.35'; btn.style.pointerEvents = 'none'; btn.textContent = 'Vælg ' + (3 - cnt) + ' mere'; }
+    if (cnt >= 3) { btn.disabled = false; btn.textContent = 'Gem og fortsæt'; }
+    else { btn.disabled = true; btn.textContent = 'Vælg ' + (3 - cnt) + ' mere'; }
   }
   // Update progress bar
   var strength = calcProfileStrength(currentProfile);
@@ -423,8 +423,8 @@ function updateSetupLifestageUI() {
   });
   var btn = document.getElementById('setup-ls-save');
   if (btn) {
-    if (_setupSelectedLifestage) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; btn.textContent = 'Færdig!'; }
-    else { btn.style.opacity = '0.35'; btn.style.pointerEvents = 'none'; btn.textContent = 'Vælg din type'; }
+    if (_setupSelectedLifestage) { btn.disabled = false; btn.textContent = 'Færdig!'; }
+    else { btn.disabled = true; btn.textContent = 'Vælg din type'; }
   }
   var strength = calcProfileStrength(currentProfile);
   var projected = _setupSelectedLifestage ? Math.min(strength + 13, 100) : strength;

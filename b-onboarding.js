@@ -181,8 +181,7 @@ function obCheckProgress() {
   var saveBtn = document.getElementById('ob-save-btn');
   if (saveBtn) {
     var canSave = name && workplace;
-    saveBtn.style.opacity = canSave ? '1' : '0.3';
-    saveBtn.style.pointerEvents = canSave ? 'auto' : 'none';
+    saveBtn.disabled = !canSave;
   }
 
   // Render tag categories if not yet done
