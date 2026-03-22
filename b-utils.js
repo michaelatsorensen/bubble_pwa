@@ -156,7 +156,7 @@ function removeChip(arrayName, index, containerId, inputId) {
 
 
 // ══════════════════════════════════════════════════════════
-//  MODAL HELPERS
+//  MODAL HELPERS (legacy — gradually migrating to bb* system)
 // ══════════════════════════════════════════════════════════
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 
@@ -167,6 +167,68 @@ function closeModal(id) {
   document.getElementById(id).classList.remove('open');
   // Always stop camera when closing live checkin
   if (id === 'modal-live-checkin') stopLiveCamera();
+}
+
+// ══════════════════════════════════════════════════════════
+//  STANDARDIZED OVERLAY SYSTEM (v5.9)
+//  3 patterns: bb-overlay + bb-sheet, bb-confirm
+//  bbOpen('name') → finds #bb-overlay-{name} + #bb-sheet-{name}
+//  bbClose('name') → closes them
+//  bbCloseAll() → closes every open overlay (called by goTo)
+// ══════════════════════════════════════════════════════════
+
+function bbOpen(name) {
+  var overlay = document.getElementById('bb-overlay-' + name);
+  var sheet = document.getElementById('bb-sheet-' + name);
+  if (overlay) overlay.classList.add('open');
+  if (sheet) setTimeout(function() { sheet.classList.add('open'); }, 10);
+}
+
+function bbClose(name) {
+  var sheet = document.getElementById('bb-sheet-' + name);
+  var overlay = document.getElementById('bb-overlay-' + name);
+  if (sheet) sheet.classList.remove('open');
+  setTimeout(function() { if (overlay) overlay.classList.remove('open'); }, 320);
+}
+
+function bbCloseAll() {
+  // Close all standardized overlays
+  document.querySelectorAll('.bb-overlay.open').forEach(function(el) { el.classList.remove('open'); });
+  document.querySelectorAll('.bb-sheet.open').forEach(function(el) { el.classList.remove('open'); });
+  // Close all legacy overlays too
+  document.querySelectorAll('.modal-overlay.open').forEach(function(el) { el.classList.remove('open'); });
+  document.querySelectorAll('.person-sheet.open,.person-sheet-overlay.open').forEach(function(el) { el.classList.remove('open'); el.style.transform = ''; });
+  document.querySelectorAll('.radar-person-sheet.open,.radar-person-overlay.open').forEach(function(el) { el.classList.remove('open'); el.style.transform = ''; });
+  var invSheet = document.getElementById('invite-sheet');
+  var invOverlay = document.getElementById('invite-overlay');
+  if (invSheet) invSheet.classList.remove('open');
+  if (invOverlay) invOverlay.classList.remove('open');
+  var gifPicker = document.getElementById('gif-picker');
+  var gifOverlay = document.getElementById('gif-picker-overlay');
+  if (gifPicker) gifPicker.classList.remove('open');
+  if (gifOverlay) gifOverlay.classList.remove('open');
+  document.querySelectorAll('.context-menu.open').forEach(function(el) { el.classList.remove('open'); });
+  var reportTray = document.getElementById('event-report-tray');
+  if (reportTray) { try { closeReportTray(); } catch(e) { reportTray.remove(); } }
+}
+
+// Helper: create inline confirm tray (standardized)
+function bbConfirm(parentEl, options) {
+  // options: { label, confirmText, cancelText, confirmClass, onConfirm }
+  // confirmClass: 'bb-confirm-btn-danger' or 'bb-confirm-btn-accept'
+  if (!parentEl) return;
+  var existing = parentEl.querySelector('.bb-confirm');
+  if (existing) { existing.remove(); return; } // Toggle off
+  var tray = document.createElement('div');
+  tray.className = 'bb-confirm ' + (options.confirmClass === 'bb-confirm-btn-accept' ? 'bb-confirm-accept' : 'bb-confirm-danger');
+  tray.onclick = function(e) { e.stopPropagation(); };
+  tray.innerHTML = '<span class="bb-confirm-label">' + (options.label || 'Er du sikker?') + '</span>' +
+    '<div class="bb-confirm-actions">' +
+    '<button class="bb-confirm-btn ' + (options.confirmClass || 'bb-confirm-btn-danger') + '" onclick="' + options.onConfirm + '">' + (options.confirmText || 'Ja') + '</button>' +
+    '<button class="bb-confirm-btn" onclick="this.closest(\'.bb-confirm\').remove()">' + (options.cancelText || 'Annuller') + '</button>' +
+    '</div>';
+  parentEl.appendChild(tray);
+  return tray;
 }
 // Close modal on backdrop click
 document.querySelectorAll('.modal-overlay').forEach(el => {

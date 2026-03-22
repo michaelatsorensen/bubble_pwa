@@ -106,32 +106,8 @@ function goTo(screenId) {
 
   // ── Phase 1: Leave previous screen ──
   try {
-    // Close ALL overlays, sheets, modals, pickers on navigation
-    document.querySelectorAll('.person-sheet.open,.person-sheet-overlay.open,.radar-person-sheet.open,.radar-person-overlay.open').forEach(function(el) {
-      el.classList.remove('open');
-      el.style.transform = '';
-    });
-    // Invite sheet
-    var invSheet = document.getElementById('invite-sheet');
-    var invOverlay = document.getElementById('invite-overlay');
-    if (invSheet) invSheet.classList.remove('open');
-    if (invOverlay) invOverlay.classList.remove('open');
-    // GIF picker
-    var gifPicker = document.getElementById('gif-picker');
-    var gifOverlay = document.getElementById('gif-picker-overlay');
-    if (gifPicker) gifPicker.classList.remove('open');
-    if (gifOverlay) gifOverlay.classList.remove('open');
-    // All modal overlays
-    document.querySelectorAll('.modal-overlay.open').forEach(function(el) { el.classList.remove('open'); });
-    // Context menus
-    document.querySelectorAll('.context-menu.open').forEach(function(el) { el.classList.remove('open'); });
-    // Report tray
-    var reportTray = document.getElementById('event-report-tray');
-    if (reportTray) { reportTray.remove(); reportTray.previousElementSibling?.remove(); }
-    // Home tray
-    try { if (typeof closeHomeTray === 'function') closeHomeTray(); } catch(e) {}
-    // Live checkout tray
-    try { if (typeof closeLiveCheckoutTray === 'function') closeLiveCheckoutTray(); } catch(e) {}
+    // Close ALL overlays, sheets, modals, pickers
+    bbCloseAll();
 
     var prevHook = _screenHooks[_activeScreen];
     if (prevHook && prevHook.leave) {
