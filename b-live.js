@@ -381,6 +381,20 @@ async function liveCheckout() {
     currentLiveBubble = null;
     showToast('Checked ud 👋');
     await loadLiveBubbleStatus();
+
+    // Reset home to 'all' mode + re-render dartboard
+    if (typeof _homeMode !== 'undefined' && _homeMode === 'live') {
+      window._homeLiveContext = null;
+      homeSetMode('all');
+    }
+    // Also re-render if radar was in live filter mode
+    if (typeof _homeRadarFilter !== 'undefined' && _homeRadarFilter === 'live') {
+      filterRadarHome('all');
+    }
+    // Refresh home banner
+    if (document.getElementById('screen-home')?.classList.contains('active')) {
+      loadLiveBanner();
+    }
   } catch (e) {
     logError('liveCheckout', e);
     showToast('Fejl ved checkout');

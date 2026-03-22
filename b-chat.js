@@ -223,20 +223,18 @@ async function bcLoadChatData(bubbleId) {
   var tabMembers = document.getElementById('bc-tab-members');
   if (tabMembers) tabMembers.textContent = (b.type === 'event' || b.type === 'live') ? 'Deltagere' : 'Medlemmer';
 
-  // Show Events tab for network bubbles (not for events themselves)
+  // Show Events tab for network bubbles with child events (alongside Opslag)
   var isEvent = b.type === 'event' || b.type === 'live';
   var tabEvents = document.getElementById('bc-tab-events');
   var tabPosts = document.getElementById('bc-tab-posts');
   if (!isEvent) {
-    // Check for child events
     var { count: evCount } = await sb.from('bubbles').select('*', { count: 'exact', head: true })
       .eq('parent_bubble_id', bubbleId).eq('type', 'event');
     if (tabEvents) tabEvents.style.display = (evCount > 0) ? '' : 'none';
-    if (tabPosts) tabPosts.style.display = (evCount > 0) ? 'none' : '';
   } else {
     if (tabEvents) tabEvents.style.display = 'none';
-    if (tabPosts) tabPosts.style.display = '';
   }
+  if (tabPosts) tabPosts.style.display = '';
 
   // Membership + role (parallel)
   var [upvoteRes, memberRes, roleRes] = await Promise.all([
