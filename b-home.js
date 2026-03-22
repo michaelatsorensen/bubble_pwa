@@ -108,21 +108,6 @@ function homeSetMode(mode) {
     if (tabAll) { tabAll.style.background = 'transparent'; tabAll.style.color = 'var(--muted)'; tabAll.style.fontWeight = '600'; }
     if (tabLive) { tabLive.style.background = 'linear-gradient(135deg,#1A9E8E,#10B981)'; tabLive.style.color = 'white'; tabLive.style.fontWeight = '700'; }
 
-    // Show live banner
-    if (banner) {
-      banner.style.display = 'block';
-      var nameEl = document.getElementById('home-live-banner-name');
-      var countEl = document.getElementById('home-live-banner-count');
-      if (nameEl) nameEl.textContent = _homeLiveContext.bubbleName;
-      if (countEl) countEl.textContent = _homeLiveContext.memberCount + ' her nu';
-    }
-
-    // Update checkout tray info
-    var coName = document.getElementById('live-checkout-name');
-    var coMeta = document.getElementById('live-checkout-meta');
-    if (coName) coName.textContent = _homeLiveContext.bubbleName;
-    if (coMeta) coMeta.textContent = 'Checked ind · udløber kl. ' + (_homeLiveContext.expiryStr || '—');
-
     // Load event members into dartboard
     loadEventDartboard();
   } else {
@@ -130,12 +115,28 @@ function homeSetMode(mode) {
     if (tabAll) { tabAll.style.background = 'var(--gradient-primary)'; tabAll.style.color = 'white'; tabAll.style.fontWeight = '700'; }
     if (tabLive) { tabLive.style.background = 'transparent'; tabLive.style.color = 'var(--muted)'; tabLive.style.fontWeight = '600'; }
 
-    // Hide live banner
-    if (banner) banner.style.display = 'none';
-
     // Reset filter chips to purple/default
     _homeRadarFilter = 'all';
     renderHomeDartboard();
+  }
+
+  // Live banner stays visible in BOTH modes as long as checked in
+  if (banner && _homeLiveContext) {
+    banner.style.display = 'block';
+    var nameEl = document.getElementById('home-live-banner-name');
+    var countEl = document.getElementById('home-live-banner-count');
+    if (nameEl) nameEl.textContent = _homeLiveContext.bubbleName;
+    if (countEl) countEl.textContent = _homeLiveContext.memberCount + ' her nu';
+  } else if (banner) {
+    banner.style.display = 'none';
+  }
+
+  // Update checkout tray info
+  if (_homeLiveContext) {
+    var coName = document.getElementById('live-checkout-name');
+    var coMeta = document.getElementById('live-checkout-meta');
+    if (coName) coName.textContent = _homeLiveContext.bubbleName;
+    if (coMeta) coMeta.textContent = 'Checked ind · udløber kl. ' + (_homeLiveContext.expiryStr || '—');
   }
   updateFilterChipStyle();
 }
@@ -1284,10 +1285,9 @@ function renderHomeDartboard() {
   if (profiles.length === 0) {
     av.innerHTML = '';
     if (_homeMode === 'live') {
-      av.innerHTML = '<div class="dartboard-empty" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:1.5rem">' +
-        '<div style="font-size:1.5rem;margin-bottom:0.4rem">📡</div>' +
-        '<div style="font-size:0.78rem;font-weight:600;color:var(--text)">Du er den første her!</div>' +
-        '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.2rem">Radaren viser deltagere efterhånden som de checker ind</div>' +
+      av.innerHTML = '<div class="dartboard-empty" style="position:absolute;left:0;right:0;bottom:15%;display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 1.5rem">' +
+        '<div style="font-size:0.82rem;font-weight:600;color:var(--text)">Du er den første her!</div>' +
+        '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.25rem;line-height:1.4">Radaren viser deltagere<br>efterhånden som de checker ind</div>' +
         '</div>';
     } else if (_homeRadarFilter !== 'all') {
       showDartboardEmpty(_homeRadarFilter);

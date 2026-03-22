@@ -1255,11 +1255,13 @@ function bcExpandPost(postId) {
   }
 
   var overlay = document.createElement('div');
+  overlay.className = 'bb-dynamic-overlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(30,27,46,0.25);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
-  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+  overlay.onclick = function() { overlay.remove(); };
 
   var sheet = document.createElement('div');
   sheet.style.cssText = 'width:100%;max-width:680px;max-height:85vh;overflow-y:auto;background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);border-radius:24px 24px 0 0;padding:1.5rem;color:var(--text);font-family:Figtree,sans-serif';
+  sheet.onclick = function(e) { e.stopPropagation(); };
   sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.08);margin:0 auto 1rem;cursor:pointer" onclick="this.closest(\'[style*=backdrop-filter]\').remove()"></div>' +
     '<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem">' + avatarHtml +
     '<div><div style="font-size:0.88rem;font-weight:700">' + name + '</div>' +

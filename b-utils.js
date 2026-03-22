@@ -204,6 +204,8 @@ function bbCloseAll() {
   if (gifPicker) gifPicker.classList.remove('open');
   if (gifOverlay) gifOverlay.classList.remove('open');
   document.querySelectorAll('.context-menu.open').forEach(function(el) { el.classList.remove('open'); });
+  // Dynamic overlays (post expand, etc)
+  document.querySelectorAll('.bb-dynamic-overlay').forEach(function(el) { el.remove(); });
   var reportTray = document.getElementById('event-report-tray');
   if (reportTray) { try { closeReportTray(); } catch(e) { reportTray.remove(); } }
 }
