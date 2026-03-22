@@ -345,7 +345,7 @@ async function _executeSetRole(bubbleId, userId, userName, role) {
   } catch(e) { logError('_executeSetRole', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
 }
 
-async function leaveBubble(bubbleId) {
+async function leaveBubble(bubbleId, btnEl) {
   // If user is owner, warn to transfer first
   if (bcBubbleData && bcBubbleData.created_by === currentUser.id) {
     var { count } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', bubbleId).neq('user_id', currentUser.id);
@@ -353,33 +353,19 @@ async function leaveBubble(bubbleId) {
       showToast('Du er ejer — overdrag ejerskab først under Info-fanen');
       return;
     }
-    // Owner is the only member — allow leaving (bubble becomes orphaned)
   }
-  // Show inline confirm tray in the action bar area
-  var bar = document.getElementById('bc-action-bar');
-  if (!bar) return;
-  if (bar.querySelector('.leave-confirm')) return; // already showing
-  // Save original content for restore on cancel
-  var originalHtml = bar.innerHTML;
-  var tray = document.createElement('div');
-  tray.className = 'leave-confirm';
-  tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:10px;gap:0.5rem;width:100%';
-  tray.innerHTML = '<span style="font-size:0.75rem;font-weight:600;color:var(--text)">Forlad boblen?</span><span style="font-size:0.65rem;color:var(--text-secondary);margin-left:0.2rem">Du mister adgang til chat og deltagere</span>' +
-    '<div style="display:flex;gap:0.3rem">' +
-    '<button style="font-size:0.7rem;padding:0.25rem 0.6rem;background:rgba(124,92,252,0.12);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600" onclick="confirmLeaveBubble(\'' + bubbleId + '\')">Forlad</button>' +
-    '<button style="font-size:0.7rem;padding:0.25rem 0.6rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit" onclick="cancelLeaveBubble()">Annuller</button>' +
-    '</div>';
-  bar.dataset.originalHtml = originalHtml;
-  bar.innerHTML = '';
-  bar.appendChild(tray);
+  var target = btnEl || document.querySelector('[data-action="leaveBubble"]');
+  if (!target) return;
+  bbConfirm(target, {
+    label: 'Du mister adgang til chat og deltagere',
+    confirmText: 'Ja, forlad',
+    confirmClass: 'bb-confirm-btn-danger',
+    onConfirm: "confirmLeaveBubble('" + bubbleId + "')"
+  });
 }
 
 function cancelLeaveBubble() {
-  var bar = document.getElementById('bc-action-bar');
-  if (bar && bar.dataset.originalHtml) {
-    bar.innerHTML = bar.dataset.originalHtml;
-    delete bar.dataset.originalHtml;
-  }
+  // Legacy — bbConfirm handles cancel via its own Annuller button
 }
 
 async function confirmLeaveBubble(bubbleId) {

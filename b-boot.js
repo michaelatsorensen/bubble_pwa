@@ -80,7 +80,7 @@ document.addEventListener('click', (e) => {
     case 'joinBubble': joinBubble(id); break;
     case 'requestJoin': requestJoin(id); break;
     case 'openQRModal': openQRModal(id); break;
-    case 'leaveBubble': leaveBubble(id); break;
+    case 'leaveBubble': leaveBubble(id, el); break;
     case 'openEditBubble': openEditBubble(id); break;
     case 'openBubbleChat': openBubbleChat(id, from); break;
   }

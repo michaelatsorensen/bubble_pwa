@@ -1285,7 +1285,7 @@ function renderHomeDartboard() {
   if (profiles.length === 0) {
     av.innerHTML = '';
     if (_homeMode === 'live') {
-      av.innerHTML = '<div class="dartboard-empty" style="position:absolute;left:0;right:0;bottom:15%;display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 1.5rem">' +
+      av.innerHTML = '<div class="dartboard-empty" style="position:absolute;left:0;right:0;top:22%;display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 2rem">' +
         '<div style="font-size:0.82rem;font-weight:600;color:var(--text)">Du er den første her!</div>' +
         '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.25rem;line-height:1.4">Radaren viser deltagere<br>efterhånden som de checker ind</div>' +
         '</div>';
