@@ -3,6 +3,18 @@
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 
+// ══════════════════════════════════════════════════════════
+//  APP MODE — Single source of truth for current context
+//  Returns: 'event' | 'live' | 'guest' | 'normal'
+//  Usage: if (getAppMode() === 'live') { ... }
+// ══════════════════════════════════════════════════════════
+function getAppMode() {
+  if (typeof flowGet === 'function' && flowGet('event_flow')) return 'event';
+  if (typeof currentLiveBubble !== 'undefined' && currentLiveBubble) return 'live';
+  if (!currentUser) return 'guest';
+  return 'normal';
+}
+
 // ── Match label system (v3 — tier-based thresholds) ──
 // Score 0-100 from tier-based calcMatchScore
 function matchLabel(score) {

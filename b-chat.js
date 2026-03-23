@@ -239,17 +239,40 @@ async function bcLoadChatData(bubbleId) {
   // Membership + role (parallel)
   var [upvoteRes, memberRes, roleRes] = await Promise.all([
     loadBubbleUpvotes().catch(function() {}),
-    sb.from('bubble_members').select('id').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle(),
+    sb.from('bubble_members').select('id,status').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle(),
     sb.from('bubble_members').select('role').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle()
   ]);
   var myMembership = memberRes?.data;
   var myRole = roleRes?.data;
+  var isPending = myMembership && myMembership.status === 'pending';
   var isOwner = b.created_by === currentUser.id;
   var isBubbleAdmin = myRole && myRole.role === 'admin';
   var canEdit = isOwner || isBubbleAdmin;
   bcBubbleData._isOwner = isOwner;
   bcBubbleData._isAdmin = isBubbleAdmin;
   bcBubbleData._canEdit = canEdit;
+  bcBubbleData._isPending = isPending;
+
+  // Pending membership banner
+  var pendingBanner = document.getElementById('bc-pending-banner');
+  if (!pendingBanner) {
+    var parentChip = document.getElementById('bc-parent-chip');
+    if (parentChip) {
+      var pb = document.createElement('div');
+      pb.id = 'bc-pending-banner';
+      pb.style.cssText = 'display:none;padding:0.55rem 1rem;margin:0.4rem 1.1rem 0;border-radius:10px;background:rgba(249,177,55,0.08);border:1px solid rgba(249,177,55,0.2);font-size:0.75rem;color:#854F0B;font-weight:600;text-align:center';
+      parentChip.insertAdjacentElement('afterend', pb);
+      pendingBanner = pb;
+    }
+  }
+  if (pendingBanner) {
+    if (isPending) {
+      pendingBanner.style.display = 'block';
+      pendingBanner.textContent = '⏳ Din anmodning afventer godkendelse fra ejeren';
+    } else {
+      pendingBanner.style.display = 'none';
+    }
+  }
 
   // Render action buttons
   bcRenderActions(b, myMembership, canEdit);

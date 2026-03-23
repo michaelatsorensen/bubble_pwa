@@ -38,36 +38,50 @@ function initServices() {
 }
 
 // Step 4: Resolve pending actions + navigate to correct screen
+// ══════════════════════════════════════════════════════════
+//  POST-AUTH ROUTING — Single source of truth
+//  Priority order (first match wins):
+//  1. banned? → signOut + screen-auth (handled in loadCurrentProfile)
+//  2. onboarding required? → screen-onboarding (handled in resolvePostAuth)
+//  3. pending contact? → save contact (checkPendingContact)
+//  4. event flow? → join event + show QR ready
+//  5. pending join? → join bubble
+//  6. default → screen-home
+// ══════════════════════════════════════════════════════════
 async function resolvePostAuthDestination() {
+  // Step 3: pending contact (from QR scan before auth)
   await checkPendingContact();
 
+  // Step 4: event flow (from event QR)
   var isEventFlow = flowGet('event_flow');
   var postTagsDest = flowGet('post_tags_destination');
 
   if (isEventFlow) {
-    await checkPendingJoin();
+    await checkPendingJoin(); // Step 5 inside event context
     var stillEventFlow = flowGet('event_flow');
     if (stillEventFlow) {
       flowRemove('event_flow');
       showEventReadyQR();
     }
-    // Mode A (self check-in) already navigated in checkPendingJoin
   } else if (postTagsDest === 'event_bubble') {
     flowRemove('post_tags_destination');
     eventReadyGoToEvent();
   } else {
+    // Step 5: pending join (from bubble invite link)
     await checkPendingJoin();
+    // Step 6: default
     goTo('screen-home');
   }
 }
 
 // Full orchestrator: single entry point after any successful auth
+// Steps 1-2 handled here, steps 3-6 delegated to resolvePostAuthDestination
 async function resolvePostAuth() {
-  await loadEssentials();
+  await loadEssentials(); // Step 1: banned check inside loadCurrentProfile
   var needsOnboarding = await maybeShowOnboarding();
-  if (needsOnboarding) return; // onboarding calls initServices + resolvePostAuthDestination when done
+  if (needsOnboarding) return; // Step 2: onboarding calls resolvePostAuthDestination when done
   initServices();
-  await resolvePostAuthDestination();
+  await resolvePostAuthDestination(); // Steps 3-6
 }
 
 // ══════════════════════════════════════════════════════════
