@@ -857,6 +857,34 @@ async function loadMyBubbles() {
     if (_navVersion !== myNav) return;
     bubbles.forEach(function(b) { b._contacts = contactMap[b.id] || []; });
 
+    // ── Smart auto-sort: live → upcoming events → recent activity ──
+    var liveId = currentLiveBubble ? currentLiveBubble.bubble_id : null;
+    // Fetch upcoming child events for sorting
+    var upcomingEventParents = {};
+    try {
+      var { data: upcoming } = await sb.from('bubbles')
+        .select('parent_bubble_id')
+        .eq('type', 'event')
+        .gte('event_date', new Date().toISOString())
+        .in('parent_bubble_id', ids);
+      (upcoming || []).forEach(function(e) { upcomingEventParents[e.parent_bubble_id] = true; });
+    } catch(e) {}
+
+    bubbles.sort(function(a, b) {
+      // 1. Currently live → top
+      var aLive = (a.id === liveId) ? 1 : 0;
+      var bLive = (b.id === liveId) ? 1 : 0;
+      if (aLive !== bLive) return bLive - aLive;
+      // 2. Has upcoming events → next
+      var aEvent = upcomingEventParents[a.id] ? 1 : 0;
+      var bEvent = upcomingEventParents[b.id] ? 1 : 0;
+      if (aEvent !== bEvent) return bEvent - aEvent;
+      // 3. Most recently updated → next
+      var aTime = new Date(a.updated_at || a.created_at).getTime();
+      var bTime = new Date(b.updated_at || b.created_at).getTime();
+      return bTime - aTime;
+    });
+
     const owned  = bubbles.filter(b => b.created_by === currentUser.id);
     const joined = bubbles.filter(b => b.created_by !== currentUser.id);
 
