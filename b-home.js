@@ -1156,7 +1156,10 @@ async function loadHomeDartboardData() {
     var { data: allProfiles } = await sb.from('profiles')
       .select('id,name,title,keywords,dynamic_keywords,bio,linkedin,is_anon,avatar_url')
       .neq('id', currentUser.id).neq('banned', true).limit(200);
-    if (!allProfiles || allProfiles.length === 0) { renderHomeDartboard(); return; }
+    if (!allProfiles || allProfiles.length === 0) {
+      if (_homeMode !== 'live') renderHomeDartboard();
+      return;
+    }
 
     var savedIds = [];
     try {
@@ -1177,17 +1180,18 @@ async function loadHomeDartboardData() {
       }
     } catch(e) {}
 
-    _homeDartboardProfiles = allProfiles.map(function(p) {
+    var scored = allProfiles.map(function(p) {
       var sharedBubbles = (bmMap[p.id] || []).length;
       var matchScore = (typeof calcMatchScore === 'function') ? calcMatchScore(currentProfile, p, sharedBubbles) : 0;
       return { id:p.id, name:p.name, title:p.title, keywords:p.keywords, is_anon:p.is_anon, bio:p.bio, linkedin:p.linkedin, avatar_url:p.avatar_url, matchScore:matchScore, sharedBubbles:sharedBubbles };
     }).sort(function(a,b) { return b.matchScore - a.matchScore; });
 
-    if (typeof proxAllProfiles !== 'undefined' && proxAllProfiles.length === 0) {
-      proxAllProfiles = _homeDartboardProfiles;
+    // Store all profiles for 'all' mode — but don't overwrite live dartboard
+    proxAllProfiles = scored;
+    if (_homeMode !== 'live') {
+      _homeDartboardProfiles = scored;
+      renderHomeDartboard();
     }
-
-    renderHomeDartboard();
   } catch(e) { logError('loadHomeDartboardData', e); }
 }
 
@@ -1285,9 +1289,9 @@ function renderHomeDartboard() {
   if (profiles.length === 0) {
     av.innerHTML = '';
     if (_homeMode === 'live') {
-      av.innerHTML = '<div class="dartboard-empty" style="position:absolute;left:0;right:0;top:22%;display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 2rem">' +
-        '<div style="font-size:0.82rem;font-weight:600;color:var(--text)">Du er den første her!</div>' +
-        '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.25rem;line-height:1.4">Radaren viser deltagere<br>efterhånden som de checker ind</div>' +
+      av.innerHTML = '<div class="dartboard-empty" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-140%);text-align:center;padding:0.6rem 1.2rem;background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:12px;border:1px solid var(--glass-border-subtle);box-shadow:0 2px 8px rgba(30,27,46,0.06);white-space:nowrap">' +
+        '<div style="font-size:0.78rem;font-weight:600;color:var(--text)">Du er den første her!</div>' +
+        '<div style="font-size:0.68rem;color:var(--muted);margin-top:0.15rem">Venter på deltagere...</div>' +
         '</div>';
     } else if (_homeRadarFilter !== 'all') {
       showDartboardEmpty(_homeRadarFilter);
