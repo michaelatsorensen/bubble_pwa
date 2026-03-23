@@ -1,5 +1,9 @@
 // ══════════════════════════════════════════════════════════
-//  BUBBLE — GLOBAL REALTIME HUB + CHAT SUBSCRIPTIONS
+//  BUBBLE — GLOBAL REALTIME HUB + DM CHAT
+//  DOMAIN: realtime
+//  OWNS: _globalRtChannels, chatSubscription, currentChatUser, currentChatName
+//  OWNS: initGlobalRealtime, rtHandleMemberChange, openChat, loadMessages
+//  READS: currentUser, currentLiveBubble, bcBubbleId, _homeMode, _homeRadarFilter
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 

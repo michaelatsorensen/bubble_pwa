@@ -1,5 +1,8 @@
 // ══════════════════════════════════════════════════════════
 //  BUBBLE — NAVIGATION (v5.9 Router)
+//  DOMAIN: nav
+//  OWNS: _activeScreen, _navStack, _navLock, _screenHooks
+//  OWNS: goTo (calls bbCloseAll + screen hooks)
 //  Screen hooks: each screen declares its own onEnter/onLeave
 //  NOTE: All hook functions use lazy lookup to avoid load-order issues
 // ══════════════════════════════════════════════════════════

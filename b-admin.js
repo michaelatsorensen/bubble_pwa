@@ -1,5 +1,8 @@
 // ══════════════════════════════════════════════════════════
 //  BUBBLE — ADMIN PANEL
+//  DOMAIN: admin
+//  OWNS: isAdmin, adminLoadStats, adminLoadReports, adminLoadBanned
+//  READS: currentUser, currentProfile (role check)
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 

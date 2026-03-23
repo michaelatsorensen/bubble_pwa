@@ -1,5 +1,8 @@
 // ══════════════════════════════════════════════════════════
 //  BUBBLE — NOTIFICATIONS + PUSH
+//  DOMAIN: notifications
+//  OWNS: loadNotifications, initPushNotifications, savePushSubscription
+//  READS: currentUser, currentProfile
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 

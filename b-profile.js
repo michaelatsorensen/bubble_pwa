@@ -1,5 +1,9 @@
 // ══════════════════════════════════════════════════════════
 //  BUBBLE — PROFILE + PERSON + SAVED CONTACTS + BLOCK & REPORT
+//  DOMAIN: profile
+//  OWNS: currentPerson, proxAllProfiles, matchPage, savedContactIdsCache
+//  OWNS: openPerson, loadSavedContacts, loadProximityMap, starGet/starSet/starRender
+//  READS: currentUser, currentProfile, bcBubbleId
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 

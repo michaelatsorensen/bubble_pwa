@@ -1,5 +1,9 @@
 // ══════════════════════════════════════════════════════════
 //  BUBBLE — ONBOARDING + TAG PICKER + WELCOME
+//  DOMAIN: onboarding
+//  OWNS: onboarding UI state, _selectedInterests, _setupSelectedLifestage
+//  OWNS: saveOnboarding, skipOnboarding, abortOnboarding
+//  READS: currentUser, currentProfile, flowGet/flowSet
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 

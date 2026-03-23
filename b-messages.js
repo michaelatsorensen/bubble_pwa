@@ -1,5 +1,9 @@
 // ══════════════════════════════════════════════════════════
-//  BUBBLE — MESSAGES + DM + CONVERSATIONS
+//  BUBBLE — MESSAGES + DM COMPOSER
+//  DOMAIN: messages
+//  OWNS: dmSending, convSelectedIds
+//  OWNS: sendMessage, startChat, convDeleteSelected
+//  READS: currentUser, currentPerson, currentChatUser
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 

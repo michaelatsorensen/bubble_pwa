@@ -1,5 +1,9 @@
 // ══════════════════════════════════════════════════════════
 //  BUBBLE — BUBBLE CHAT + GIF PICKER
+//  DOMAIN: chat
+//  OWNS: bcBubbleId, bcBubbleData, bcSubscription, bcEditingId, bcSending
+//  OWNS: openBubbleChat, bcLoadChatData, bcLoadMembers, bcLoadMessages, bcLoadEvents, bcLoadPosts, bcLoadInfo
+//  READS: currentUser, currentProfile, currentLiveBubble
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 
@@ -201,13 +205,34 @@ async function openBubbleChat(bubbleId, fromScreen) {
 }
 
 // ── Pure data loading: fetch bubble, membership, roles, render UI ──
+// Split into 4 clear phases for maintainability
 async function bcLoadChatData(bubbleId) {
-  // Fetch bubble
+  // Phase 1: Load bubble core data + render topbar
+  var b = await bcLoadBubbleCore(bubbleId);
+  if (!b) return false;
+
+  // Phase 2: Configure tabs (Events/Opslag visibility)
+  await bcConfigureTabs(b, bubbleId);
+
+  // Phase 3: Load membership + roles + render actions + pending banner
+  await bcLoadMembership(b, bubbleId);
+
+  // Phase 4: Load initial tab data (members + messages)
+  await Promise.all([
+    bcLoadMembers(),
+    bcLoadMessages()
+  ]);
+
+  return true;
+}
+
+// Phase 1: Fetch bubble, set bcBubbleData, render topbar
+async function bcLoadBubbleCore(bubbleId) {
   var { data: b, error: bErr } = await sb.from('bubbles').select('*').eq('id', bubbleId).maybeSingle();
-  if (!b || bErr) { showToast('Denne boble eksisterer ikke længere'); return false; }
+  if (!b || bErr) { showToast('Denne boble eksisterer ikke længere'); return null; }
   bcBubbleData = b;
 
-  // Render topbar
+  // Topbar
   document.getElementById('bc-emoji').innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:1.1rem;height:1.1rem;border-radius:4px;object-fit:cover">' : bubbleEmoji(b.type);
   document.getElementById('bc-name').textContent = b.name;
 
@@ -219,14 +244,18 @@ async function bcLoadChatData(bubbleId) {
   }
   document.getElementById('bc-members-count').textContent = memberCount + (b.type === 'event' || b.type === 'live' ? ' deltagere' : ' medlemmer');
 
-  // Dynamic tab label
-  var tabMembers = document.getElementById('bc-tab-members');
-  if (tabMembers) tabMembers.textContent = (b.type === 'event' || b.type === 'live') ? 'Deltagere' : 'Medlemmer';
+  return b;
+}
 
-  // Show Events tab for network bubbles with child events (alongside Opslag)
+// Phase 2: Show/hide tabs based on bubble type + child events
+async function bcConfigureTabs(b, bubbleId) {
   var isEvent = b.type === 'event' || b.type === 'live';
+  var tabMembers = document.getElementById('bc-tab-members');
   var tabEvents = document.getElementById('bc-tab-events');
   var tabPosts = document.getElementById('bc-tab-posts');
+
+  if (tabMembers) tabMembers.textContent = isEvent ? 'Deltagere' : 'Medlemmer';
+
   if (!isEvent) {
     var { count: evCount } = await sb.from('bubbles').select('*', { count: 'exact', head: true })
       .eq('parent_bubble_id', bubbleId).eq('type', 'event');
@@ -235,8 +264,10 @@ async function bcLoadChatData(bubbleId) {
     if (tabEvents) tabEvents.style.display = 'none';
   }
   if (tabPosts) tabPosts.style.display = '';
+}
 
-  // Membership + role (parallel)
+// Phase 3: Load membership, roles, pending state, action buttons
+async function bcLoadMembership(b, bubbleId) {
   var [upvoteRes, memberRes, roleRes] = await Promise.all([
     loadBubbleUpvotes().catch(function() {}),
     sb.from('bubble_members').select('id,status').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle(),
@@ -254,6 +285,14 @@ async function bcLoadChatData(bubbleId) {
   bcBubbleData._isPending = isPending;
 
   // Pending membership banner
+  bcRenderPendingBanner(isPending);
+
+  // Action buttons
+  bcRenderActions(b, myMembership, canEdit);
+}
+
+// Render or hide pending membership banner
+function bcRenderPendingBanner(isPending) {
   var pendingBanner = document.getElementById('bc-pending-banner');
   if (!pendingBanner) {
     var parentChip = document.getElementById('bc-parent-chip');
@@ -273,17 +312,6 @@ async function bcLoadChatData(bubbleId) {
       pendingBanner.style.display = 'none';
     }
   }
-
-  // Render action buttons
-  bcRenderActions(b, myMembership, canEdit);
-
-  // Load members tab + messages (parallel)
-  await Promise.all([
-    bcLoadMembers(),
-    bcLoadMessages()
-  ]);
-
-  return true;
 }
 
 // ── Render action buttons based on membership state ──

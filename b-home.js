@@ -1,5 +1,9 @@
 // ══════════════════════════════════════════════════════════
 //  BUBBLE — HOME SCREEN + DASHBOARD + CUSTOMIZATION
+//  DOMAIN: home
+//  OWNS: _homeMode, _homeLiveContext, _homeDartboardProfiles, _homeRadarFilter
+//  OWNS: loadHome, loadLiveBanner, homeSetMode, loadEventDartboard, renderHomeDartboard, filterRadarHome
+//  READS: currentUser, currentProfile, currentLiveBubble, proxAllProfiles
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 

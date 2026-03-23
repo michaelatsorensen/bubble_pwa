@@ -1,5 +1,9 @@
 // ══════════════════════════════════════════════════════════
 //  BUBBLE — AUTH + LOGIN + SIGNUP + TERMS + FEEDBACK
+//  DOMAIN: auth
+//  OWNS: currentUser (writes), currentProfile (writes via loadCurrentProfile)
+//  OWNS: resolvePostAuth, resolvePostAuthDestination, checkPendingContact, checkPendingJoin
+//  READS: flowGet/flowSet (pending states), goTo (navigation)
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 

@@ -1,5 +1,9 @@
 // ══════════════════════════════════════════════════════════
 //  BUBBLE — DISCOVER + BUBBLES + QR + PDF + INVITE
+//  DOMAIN: bubbles
+//  OWNS: inviteBubbleId, inviteSelected, cbChips, currentEditBubbleId
+//  OWNS: createBubble, openBubble, joinBubble, leaveBubble, openInviteModal, generateEventReport
+//  READS: currentUser, bcBubbleId, bcBubbleData (from chat domain)
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 

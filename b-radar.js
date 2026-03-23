@@ -1,5 +1,9 @@
 // ══════════════════════════════════════════════════════════
 //  BUBBLE — RADAR + SMART MATCH
+//  DOMAIN: radar
+//  OWNS: rpCurrentUserId, calcMatchScore, buildTagPopularity
+//  OWNS: renderRadarList, openRadarPerson, rpFullProfile, rpMessage
+//  READS: currentUser, currentProfile, proxAllProfiles
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 

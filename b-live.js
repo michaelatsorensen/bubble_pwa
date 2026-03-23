@@ -1,5 +1,9 @@
 // ══════════════════════════════════════════════════════════
-//  BUBBLE — LIVE BUBBLE + QR SCANNER
+//  BUBBLE — LIVE BUBBLE + QR SCANNER + CHECK-IN
+//  DOMAIN: live
+//  OWNS: currentLiveBubble (writes), _liveCheckedInIds, _liveQrStream, _scannerBubbleId
+//  OWNS: loadLiveBubbleStatus, liveCheckin, liveCheckout, liveScanConfirmPersonCheckin
+//  READS: currentUser, bcBubbleId, bcBubbleData
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 

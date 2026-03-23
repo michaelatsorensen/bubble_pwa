@@ -1,5 +1,9 @@
 // ══════════════════════════════════════════════════════════
 //  BUBBLE — BOOT + EVENT DELEGATION + ANALYTICS
+//  DOMAIN: boot
+//  OWNS: delegation handler (data-action), pull-to-refresh, deep link routing, SW registration
+//  ORCHESTRATES: checkAuth → resolvePostAuth → goTo
+//  READS: all domains (orchestrator role)
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 

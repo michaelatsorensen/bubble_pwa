@@ -1,5 +1,9 @@
 // ══════════════════════════════════════════════════════════
 //  BUBBLE — CONFIGURATION + ERROR HANDLING + SUPABASE
+//  DOMAIN: config
+//  OWNS: sb, currentUser, currentProfile, SUPABASE_URL, SUPABASE_ANON_KEY, BUILD_VERSION
+//  SETS: currentUser (declared), currentProfile (declared)
+//  NOTE: currentUser/currentProfile are SET by b-auth.js, declared here for load-order
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 
@@ -11,7 +15,7 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
 const BUILD_TIMESTAMP = '2026-03-19T18:00:00';
-const BUILD_VERSION  = 'v6.2.0';
+const BUILD_VERSION  = 'v6.2.1';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
