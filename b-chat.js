@@ -321,8 +321,11 @@ function bcRenderPendingBanner(isPending) {
 function bcRenderActions(b, myMembership, canEdit) {
   var actionArea = document.getElementById('bc-action-btns');
   var actionBar = document.getElementById('bc-action-bar');
+  var infoTab = document.getElementById('bc-tab-info');
 
   if (myMembership) {
+    // Members: move Info from tabs to action bar
+    if (infoTab) infoTab.style.display = 'none';
     actionArea.innerHTML =
       (canEdit ? `<button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" style="font-size:0.82rem;padding:0.3rem 0.4rem" title="Rediger">${icon("edit")}</button>` : '');
     if (actionBar) {
@@ -330,16 +333,21 @@ function bcRenderActions(b, myMembership, canEdit) {
       actionBar.innerHTML =
         `<button class="bc-bar-btn" onclick="openInviteModal('${b.id}')">${icon('user-plus')} Invitér</button>` +
         `<button class="bc-bar-btn${upvoted ? ' active' : ''}" id="bc-upvote-bar-btn" onclick="toggleBubbleUpvote('${b.id}')">${upvoted ? icon('checkCircle') : icon('rocket')} ${upvoted ? 'Anbefalet' : 'Anbefal'}</button>` +
+        `<button class="bc-bar-btn" id="bc-info-bar-btn" onclick="bcSwitchTab('info')">${icon('info')} Info</button>` +
         `<button class="bc-bar-btn" data-action="openQRModal" data-id="${b.id}">${icon('qrcode')} QR</button>`;
       actionBar.style.display = 'flex';
     }
   } else if (b.visibility === 'hidden') {
+    // Non-members keep Info in tabs
+    if (infoTab) infoTab.style.display = '';
     actionArea.innerHTML = `<span style="font-size:0.75rem;color:var(--muted)">${icon("eye")} Kun via invitation</span>`;
     if (actionBar) actionBar.style.display = 'none';
   } else if (b.visibility === 'private') {
+    if (infoTab) infoTab.style.display = '';
     actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="requestJoin" data-id="${b.id}">${icon("lock")} Anmod</button>`;
     if (actionBar) actionBar.style.display = 'none';
   } else {
+    if (infoTab) infoTab.style.display = '';
     actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="joinBubble" data-id="${b.id}">+ Join</button>`;
     if (actionBar) actionBar.style.display = 'none';
   }
@@ -443,6 +451,9 @@ function bcSwitchTab(tab) {
     }
     if (tabBtn) tabBtn.classList.toggle('active', t === tab);
   });
+  // Toggle info bar button active state (for members where info is in action bar)
+  var infoBarBtn = document.getElementById('bc-info-bar-btn');
+  if (infoBarBtn) infoBarBtn.classList.toggle('active', tab === 'info');
   if (tab === 'chat') {
     const badge = document.getElementById('bc-unread-badge');
     if (badge) badge.style.display = 'none';

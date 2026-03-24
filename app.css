@@ -1473,6 +1473,7 @@ a.person-action-btn { text-decoration:none; }
 .bc-bar-btn .ico { width:0.78rem; height:0.78rem; }
 .bc-bar-btn:active { background:rgba(30,27,46,0.05); transform:scale(0.97); }
 .bc-bar-btn.active { background:rgba(16,185,129,0.12); color:#10B981; }
+#bc-info-bar-btn.active { background:rgba(124,92,252,0.12); color:var(--accent); }
 
 /* Person sheet star rating */
 .ps-star-row { display:flex; align-items:center; justify-content:space-between; padding:0.5rem 0; margin:0 1.2rem; border-top:1px solid var(--glass-border-subtle); }
