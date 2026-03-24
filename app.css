@@ -294,7 +294,7 @@ textarea.input { min-height:80px; resize:vertical; }
 
 /* ── BUBBLE CHAT (group) ── */
 .bubble-tabs { display:flex; margin:0.4rem 1.1rem 0; background:#F4F3F9; backdrop-filter:blur(0px); border-radius:10px; padding:3px; gap:2px; flex-shrink:0; border:1px solid var(--glass-border-subtle); }
-.bubble-tab { flex:1 1 0; text-align:center; padding:0.4rem 0.2rem; border-radius:8px; font-size:0.68rem; font-weight:600; color:var(--muted); cursor:pointer; transition:all 0.2s; user-select:none; font-family:'Figtree',sans-serif; border:none; background:none; position:relative; min-width:0; overflow:hidden; }
+.bubble-tab { flex:1 1 auto; text-align:center; padding:0.4rem 0.2rem; border-radius:8px; font-size:0.68rem; font-weight:600; color:var(--muted); cursor:pointer; transition:all 0.2s; user-select:none; font-family:'Figtree',sans-serif; border:none; background:none; position:relative; min-width:0; }
 .bubble-tab.active { background:#FFFFFF; border:1px solid #D8D5E4; color:var(--text); box-shadow:0 1px 3px rgba(30,27,46,0.06); }
 .bubble-tab-badge { position:absolute; top:-2px; right:8px; min-width:14px; height:14px; border-radius:99px; background:var(--accent2); font-size:0.48rem; font-weight:800; color:white; display:none; align-items:center; justify-content:center; padding:0 3px; }
 
@@ -627,7 +627,7 @@ button {
   padding: 0.45rem 0.15rem;
   font-size: 0.72rem;
   min-width: 0;
-  flex: 1 1 0;
+  flex: 1 1 auto;
 }
 
 /* FIX 8: Chat section labels — bigger */
