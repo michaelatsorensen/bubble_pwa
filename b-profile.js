@@ -1051,6 +1051,9 @@ async function confirmDeclineInvite() {
 function openEditProfile() {
   if (!currentProfile) return;
   document.getElementById('ep-name').value = currentProfile.name || '';
+  // Show user's own email (read-only)
+  var epEmail = document.getElementById('ep-email');
+  if (epEmail) epEmail.textContent = currentUser?.email || 'Ikke tilgængelig';
   document.getElementById('ep-title').value = currentProfile.title || '';
   document.getElementById('ep-bio').value = currentProfile.bio || '';
   document.getElementById('ep-linkedin').value = currentProfile.linkedin || '';
