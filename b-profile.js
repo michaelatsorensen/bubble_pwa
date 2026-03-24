@@ -17,31 +17,12 @@ async function openPerson(userId, fromScreen) {
     goTo('screen-person');
     var myNav = _navVersion;
 
-    // Reset bubble-up confirmation from any previous profile
-    var bupBtn = document.getElementById('person-bubbleup-btn');
-    var bupConfirm = document.getElementById('person-bubbleup-confirm');
-    if (bupBtn) bupBtn.style.display = 'flex';
-    if (bupConfirm) bupConfirm.classList.remove('show');
-    // Reset other stateful UI
-    var starSec = document.getElementById('person-star-section');
-    if (starSec) starSec.style.display = 'none';
-    var matchEl = document.getElementById('person-match-label');
-    if (matchEl) { matchEl.textContent = ''; matchEl.style.display = 'none'; }
+    // Reset all stateful UI from previous profile
+    _personReset();
 
     const { data: p } = await sb.from('profiles').select('*').eq('id', userId).single();
     if (!p || _navVersion !== myNav) {
-      // Profile doesn't exist or was deleted
-      if (!p && _navVersion === myNav) {
-        var personAvEl = document.getElementById('person-avatar');
-        if (personAvEl) personAvEl.textContent = '?';
-        document.getElementById('person-name').textContent = 'Profil ikke tilgængelig';
-        document.getElementById('person-role').textContent = 'Denne profil eksisterer ikke længere';
-        document.getElementById('person-overlap').innerHTML = '';
-        var bioS = document.getElementById('person-bio-inline'); if (bioS) bioS.style.display = 'none';
-        var tagS = document.getElementById('person-tags-section'); if (tagS) tagS.style.display = 'none';
-        var bubS = document.getElementById('person-bubbles-section'); if (bubS) bubS.style.display = 'none';
-        document.getElementById('person-dynamic-keywords').innerHTML = '';
-      }
+      if (!p && _navVersion === myNav) _personRenderEmpty();
       return;
     }
 
@@ -50,123 +31,170 @@ async function openPerson(userId, fromScreen) {
       sb.from('profile_views').insert({ viewer_id: currentUser.id, viewed_id: userId }).then(function() {}).catch(function() {});
     }
 
-    const initials = p.is_anon ? '?' : (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    var personAvEl = document.getElementById('person-avatar');
-    if (personAvEl) {
-      if (p.avatar_url && !p.is_anon) { personAvEl.innerHTML = '<img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
-      else { personAvEl.textContent = initials; personAvEl.innerHTML = initials; }
-    }
-    document.getElementById('person-name').textContent = p.is_anon ? 'Anonym bruger' : (p.name || '?');
-    document.getElementById('person-role').textContent = p.is_anon ? '' : ((p.title || '') + (p.workplace ? ' · ' + p.workplace : ''));
+    // Render identity: avatar, name, title, live badge, bio, linkedin
+    _personRenderIdentity(p);
+    await _personRenderLive(p, userId);
 
-    // Check live presence
-    var personLiveEl = document.getElementById('person-live-badge');
-    if (personLiveEl) {
-      var expCut = new Date(Date.now() - LIVE_EXPIRE_HOURS * 3600000).toISOString();
-      var { data: pLive } = await sb.from('bubble_members')
-        .select('checked_in_at, bubbles(name)')
-        .eq('user_id', userId)
-        .not('checked_in_at', 'is', null)
-        .is('checked_out_at', null)
-        .gte('checked_in_at', expCut)
-        .order('checked_in_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (pLive) {
-        personLiveEl.innerHTML = '<span class="live-badge-mini">LIVE</span> ' + escHtml(pLive.bubbles?.name || '');
-        personLiveEl.style.display = 'block';
-      } else {
-        personLiveEl.style.display = 'none';
-      }
-    }
+    // Render match: score label + shared interests
+    await _personRenderMatch(p, userId, myNav);
 
-    const myKw = (currentProfile?.keywords || []).map(k => k.toLowerCase());
-    const theirKw = (p.keywords || []).map(k => k.toLowerCase());
-    const overlap = myKw.filter(k => theirKw.includes(k));
-    // Smart match score (v2)
-    const { data: sharedBubs } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
-    var myBIds = (sharedBubs || []).map(b => b.bubble_id);
-    var sharedCount = 0;
-    if (myBIds.length > 0) {
-      var { count: sc } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('user_id', userId).in('bubble_id', myBIds);
-      sharedCount = sc || 0;
-    }
-    const score = calcMatchScore(currentProfile || {}, p, sharedCount);
-    var ml = matchLabel(score);
-    var matchEl = document.getElementById('person-match-label');
-    matchEl.textContent = ml.text;
-    matchEl.style.background = ml.color;
-    matchEl.style.display = ml.text ? '' : 'none';
-
-    // Hide full tags section — only show in edit profile
-    var tagsSection = document.getElementById('person-tags-section');
-    if (tagsSection) tagsSection.style.display = 'none';
-
-    document.getElementById('person-bio').textContent = p.bio || '';
-    var bioInline = document.getElementById('person-bio-inline');
-    if (bioInline) bioInline.style.display = p.bio ? 'block' : 'none';
-
-    // LinkedIn button
-    const liBtn = document.getElementById('person-linkedin-btn');
-    if (p.linkedin && !p.is_anon) {
-      liBtn.style.display = 'flex';
-      liBtn.style.flexDirection = 'column';
-      liBtn.href = p.linkedin.startsWith('http') ? p.linkedin : 'https://' + p.linkedin;
-    } else {
-      liBtn.style.display = 'none';
-    }
-
-    // Shared interests — collapsible (show 6, expand to all)
-    const overlapEl = document.getElementById('person-overlap');
-    if (overlap.length) {
-      var INITIAL_SHOW = 6;
-      var allTagsHtml = overlap.map(function(k) {
-        var original = (p.keywords || []).find(function(t) { return t.toLowerCase() === k; }) || k;
-        return '<span class="tag mint">' + icon("check") + ' ' + escHtml(original) + '</span>';
-      });
-      var visibleHtml = allTagsHtml.slice(0, INITIAL_SHOW).join('');
-      var hiddenHtml = allTagsHtml.slice(INITIAL_SHOW).join('');
-      var hasMore = overlap.length > INITIAL_SHOW;
-      
-      overlapEl.innerHTML = '<div class="person-section-title" style="margin-bottom:0.4rem">Fælles interesser · ' + overlap.length + '</div>' +
-        '<div id="person-tags-visible">' + visibleHtml + '</div>' +
-        (hasMore ? '<div id="person-tags-hidden" style="display:none">' + hiddenHtml + '</div>' +
-          '<button id="person-tags-toggle" onclick="togglePersonTags()" style="font-size:0.7rem;font-weight:600;color:var(--accent);background:none;border:none;padding:0.4rem 0;cursor:pointer;font-family:inherit">Vis alle ' + overlap.length + ' →</button>' : '');
-    } else {
-      overlapEl.innerHTML = '<span class="fs-085 text-muted">Ingen fælles interesser fundet</span>';
-    }
-
-    const dynEl = document.getElementById('person-dynamic-keywords');
-    if ((p.dynamic_keywords||[]).length) {
-      dynEl.innerHTML = '<div class="person-section-title">Søger nu</div>' + p.dynamic_keywords.map(k => `<span class="tag gold">${icon("fire")} ${escHtml(k)}</span>`).join('');
-    } else { dynEl.innerHTML = ''; }
-
-    // Public bubbles (identity badges) — fire-and-forget async
+    // Render content: dynamic keywords + public bubbles
+    _personRenderDynamic(p);
     loadPersonBubbles(userId, myNav);
 
-    // Update bubble-up label with person's first name
+    // Render bubble-up label
     var firstName = p.is_anon ? 'personen' : (p.name || '').split(' ')[0] || 'personen';
     var bupLabel = document.getElementById('person-bubbleup-label');
     if (bupLabel) bupLabel.textContent = 'Opret boble med ' + firstName;
 
-    // Check if saved
-    const { data: savedCheck } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
-    document.getElementById('save-btn').innerHTML = savedCheck ? icon('checkCircle') + '<span>Gemt</span>' : icon('bookmark') + '<span>Gem</span>';
-    // Star rating section (only for saved contacts)
-    var starSection = document.getElementById('person-star-section');
-    var starRatingEl = document.getElementById('person-star-rating');
-    if (starSection && starRatingEl) {
-      if (savedCheck) {
-        starSection.style.display = 'block';
-        var r = starGet(userId);
-        starRatingEl.innerHTML = [1,2,3].map(function(n) {
-          return '<div class="ps-star ' + (n <= r ? 'filled' : 'empty') + '" onclick="personSetStar(\'' + userId + '\',' + n + ')">\u2605</div>';
-        }).join('');
-      } else {
-        starSection.style.display = 'none';
-      }
-    }
+    // Render saved state + stars
+    await _personRenderSaved(userId);
   } catch(e) { logError("openPerson", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+// ── Person sub-renderers ──
+
+function _personReset() {
+  var bupBtn = document.getElementById('person-bubbleup-btn');
+  var bupConfirm = document.getElementById('person-bubbleup-confirm');
+  if (bupBtn) bupBtn.style.display = 'flex';
+  if (bupConfirm) bupConfirm.classList.remove('show');
+  var starSec = document.getElementById('person-star-section');
+  if (starSec) starSec.style.display = 'none';
+  var matchEl = document.getElementById('person-match-label');
+  if (matchEl) { matchEl.textContent = ''; matchEl.style.display = 'none'; }
+  var bubSec = document.getElementById('person-bubbles-section');
+  if (bubSec) bubSec.style.display = 'none';
+}
+
+function _personRenderEmpty() {
+  var personAvEl = document.getElementById('person-avatar');
+  if (personAvEl) personAvEl.textContent = '?';
+  document.getElementById('person-name').textContent = 'Profil ikke tilgængelig';
+  document.getElementById('person-role').textContent = 'Denne profil eksisterer ikke længere';
+  document.getElementById('person-overlap').innerHTML = '';
+  var bioS = document.getElementById('person-bio-inline'); if (bioS) bioS.style.display = 'none';
+  var tagS = document.getElementById('person-tags-section'); if (tagS) tagS.style.display = 'none';
+  var bubS = document.getElementById('person-bubbles-section'); if (bubS) bubS.style.display = 'none';
+  document.getElementById('person-dynamic-keywords').innerHTML = '';
+}
+
+function _personRenderIdentity(p) {
+  // Avatar
+  var initials = p.is_anon ? '?' : (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  var personAvEl = document.getElementById('person-avatar');
+  if (personAvEl) {
+    if (p.avatar_url && !p.is_anon) { personAvEl.innerHTML = '<img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+    else { personAvEl.textContent = initials; personAvEl.innerHTML = initials; }
+  }
+  // Name + title
+  document.getElementById('person-name').textContent = p.is_anon ? 'Anonym bruger' : (p.name || '?');
+  document.getElementById('person-role').textContent = p.is_anon ? '' : ((p.title || '') + (p.workplace ? ' · ' + p.workplace : ''));
+  // Bio (inline under name)
+  document.getElementById('person-bio').textContent = p.bio || '';
+  var bioInline = document.getElementById('person-bio-inline');
+  if (bioInline) bioInline.style.display = p.bio ? 'block' : 'none';
+  // LinkedIn
+  var liBtn = document.getElementById('person-linkedin-btn');
+  if (p.linkedin && !p.is_anon) {
+    liBtn.style.display = 'flex';
+    liBtn.style.flexDirection = 'column';
+    liBtn.href = p.linkedin.startsWith('http') ? p.linkedin : 'https://' + p.linkedin;
+  } else {
+    liBtn.style.display = 'none';
+  }
+  // Tags section hidden — only show in edit profile
+  var tagsSection = document.getElementById('person-tags-section');
+  if (tagsSection) tagsSection.style.display = 'none';
+}
+
+async function _personRenderLive(p, userId) {
+  var personLiveEl = document.getElementById('person-live-badge');
+  if (!personLiveEl) return;
+  var expCut = new Date(Date.now() - LIVE_EXPIRE_HOURS * 3600000).toISOString();
+  var { data: pLive } = await sb.from('bubble_members')
+    .select('checked_in_at, bubbles(name)')
+    .eq('user_id', userId)
+    .not('checked_in_at', 'is', null)
+    .is('checked_out_at', null)
+    .gte('checked_in_at', expCut)
+    .order('checked_in_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (pLive) {
+    personLiveEl.innerHTML = '<span class="live-badge-mini">LIVE</span> ' + escHtml(pLive.bubbles?.name || '');
+    personLiveEl.style.display = 'block';
+  } else {
+    personLiveEl.style.display = 'none';
+  }
+}
+
+async function _personRenderMatch(p, userId, myNav) {
+  var myKw = (currentProfile?.keywords || []).map(k => k.toLowerCase());
+  var theirKw = (p.keywords || []).map(k => k.toLowerCase());
+  var overlap = myKw.filter(k => theirKw.includes(k));
+
+  // Shared bubble count
+  var { data: sharedBubs } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+  var myBIds = (sharedBubs || []).map(b => b.bubble_id);
+  var sharedCount = 0;
+  if (myBIds.length > 0) {
+    var { count: sc } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('user_id', userId).in('bubble_id', myBIds);
+    sharedCount = sc || 0;
+  }
+
+  // Match score label
+  var score = calcMatchScore(currentProfile || {}, p, sharedCount);
+  var ml = matchLabel(score);
+  var matchEl = document.getElementById('person-match-label');
+  matchEl.textContent = ml.text;
+  matchEl.style.background = ml.color;
+  matchEl.style.display = ml.text ? '' : 'none';
+
+  // Shared interests — collapsible (show 6, expand to all)
+  var overlapEl = document.getElementById('person-overlap');
+  if (overlap.length) {
+    var INITIAL_SHOW = 6;
+    var allTagsHtml = overlap.map(function(k) {
+      var original = (p.keywords || []).find(function(t) { return t.toLowerCase() === k; }) || k;
+      return '<span class="tag mint">' + icon("check") + ' ' + escHtml(original) + '</span>';
+    });
+    var visibleHtml = allTagsHtml.slice(0, INITIAL_SHOW).join('');
+    var hiddenHtml = allTagsHtml.slice(INITIAL_SHOW).join('');
+    var hasMore = overlap.length > INITIAL_SHOW;
+    
+    overlapEl.innerHTML = '<div class="person-section-title" style="margin-bottom:0.4rem">Fælles interesser · ' + overlap.length + '</div>' +
+      '<div id="person-tags-visible">' + visibleHtml + '</div>' +
+      (hasMore ? '<div id="person-tags-hidden" style="display:none">' + hiddenHtml + '</div>' +
+        '<button id="person-tags-toggle" onclick="togglePersonTags()" style="font-size:0.7rem;font-weight:600;color:var(--accent);background:none;border:none;padding:0.4rem 0;cursor:pointer;font-family:inherit">Vis alle ' + overlap.length + ' →</button>' : '');
+  } else {
+    overlapEl.innerHTML = '<span class="fs-085 text-muted">Ingen fælles interesser fundet</span>';
+  }
+}
+
+function _personRenderDynamic(p) {
+  var dynEl = document.getElementById('person-dynamic-keywords');
+  if ((p.dynamic_keywords||[]).length) {
+    dynEl.innerHTML = '<div class="person-section-title">Søger nu</div>' + p.dynamic_keywords.map(k => `<span class="tag gold">${icon("fire")} ${escHtml(k)}</span>`).join('');
+  } else { dynEl.innerHTML = ''; }
+}
+
+async function _personRenderSaved(userId) {
+  var { data: savedCheck } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
+  document.getElementById('save-btn').innerHTML = savedCheck ? icon('checkCircle') + '<span>Gemt</span>' : icon('bookmark') + '<span>Gem</span>';
+  var starSection = document.getElementById('person-star-section');
+  var starRatingEl = document.getElementById('person-star-rating');
+  if (starSection && starRatingEl) {
+    if (savedCheck) {
+      starSection.style.display = 'block';
+      var r = starGet(userId);
+      starRatingEl.innerHTML = [1,2,3].map(function(n) {
+        return '<div class="ps-star ' + (n <= r ? 'filled' : 'empty') + '" onclick="personSetStar(\'' + userId + '\',' + n + ')">\u2605</div>';
+      }).join('');
+    } else {
+      starSection.style.display = 'none';
+    }
+  }
 }
 
 async function saveContact() {

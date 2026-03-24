@@ -1,8 +1,10 @@
 // ══════════════════════════════════════════════════════════
 //  BUBBLE — LIVE BUBBLE + QR SCANNER + CHECK-IN
 //  DOMAIN: live
+//  SUB-DOMAINS:
+//    Check-in/out — loadLiveBubbleStatus, liveCheckin, liveCheckout, checkin list
+//    QR Scanner — startLiveCamera, stopLiveCamera, liveScanConfirmPersonCheckin, liveScanAutoResolve
 //  OWNS: currentLiveBubble (writes), _liveCheckedInIds, _liveQrStream, _scannerBubbleId
-//  OWNS: loadLiveBubbleStatus, liveCheckin, liveCheckout, liveScanConfirmPersonCheckin
 //  READS: currentUser, bcBubbleId, bcBubbleData
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
@@ -412,10 +414,11 @@ function openLiveBubble() {
 }
 
 // ══════════════════════════════════════════════════════════
-
-
-// ══════════════════════════════════════════════════════════
-//  LIVE QR SCANNER (integrated in live bubble card)
+//  QR SCANNER SUB-DOMAIN
+//  OWNS: _liveQrStream, _liveQrFrame, _liveQrFound, _barcodeDetector
+//  OWNS: startLiveCamera, stopLiveCamera, pauseLiveCamera, liveQrPreviewLoop
+//  OWNS: liveScanConfirmPersonCheckin, liveScanAutoResolve, liveScanConfirmJoin, liveScanReset
+//  READS: currentUser, bcBubbleId, bcBubbleData
 // ══════════════════════════════════════════════════════════
 var _liveQrStream = null;
 var _liveQrFrame = null;

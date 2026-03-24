@@ -390,7 +390,7 @@ function bcSubscribeRealtime() {
       () => { bcLoadMembers(); })
     .on('postgres_changes', {event:'DELETE', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
       () => { bcLoadMembers(); })
-    .subscribe();
+    .subscribe(typeof _rtStatusCallback === 'function' ? _rtStatusCallback('bc-' + bcBubbleId) : undefined);
 }
 
 async function bcLoadBubbleInfo() {

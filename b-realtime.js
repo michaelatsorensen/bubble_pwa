@@ -3,17 +3,139 @@
 //  DOMAIN: realtime
 //  OWNS: _globalRtChannels, chatSubscription, currentChatUser, currentChatName
 //  OWNS: initGlobalRealtime, rtHandleMemberChange, openChat, loadMessages
+//  OWNS: _rtState, rtSetState, rtReconnect (connection lifecycle)
 //  READS: currentUser, currentLiveBubble, bcBubbleId, _homeMode, _homeRadarFilter
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 
 // ══════════════════════════════════════════════════════════
+//  CONNECTION STATE + RECONNECT
+//  States: connected | disconnected | reconnecting
+//  Banner shows when not connected. Auto-hides 2s after reconnect.
+// ══════════════════════════════════════════════════════════
+var _rtState = 'connected';
+var _rtReconnectTimer = null;
+var _rtReconnectAttempt = 0;
+var _rtReconnectMax = 10;
+var _rtHideBannerTimer = null;
+var _rtChannelStates = {};
+
+function rtSetState(newState) {
+  if (_rtState === newState) return;
+  var prev = _rtState;
+  _rtState = newState;
+  console.debug('[rt] state:', prev, '→', newState);
+
+  var banner = document.getElementById('rt-connection-banner');
+  var text = document.getElementById('rt-connection-text');
+  if (!banner || !text) return;
+
+  clearTimeout(_rtHideBannerTimer);
+
+  if (newState === 'disconnected') {
+    text.textContent = 'Forbindelsen blev afbrudt — forsøger at genoprette...';
+    banner.setAttribute('data-state', 'disconnected');
+    banner.style.display = 'block';
+  } else if (newState === 'reconnecting') {
+    text.textContent = 'Genopretter forbindelse... (forsøg ' + _rtReconnectAttempt + ')';
+    banner.setAttribute('data-state', 'reconnecting');
+    banner.style.display = 'block';
+  } else if (newState === 'connected') {
+    if (prev !== 'connected') {
+      text.textContent = 'Forbindelse genoprettet ✓';
+      banner.setAttribute('data-state', 'connected');
+      banner.style.display = 'block';
+      _rtHideBannerTimer = setTimeout(function() {
+        banner.style.display = 'none';
+        banner.removeAttribute('data-state');
+      }, 2000);
+    } else {
+      banner.style.display = 'none';
+    }
+    _rtReconnectAttempt = 0;
+  }
+}
+
+function _rtEvalState() {
+  var states = Object.values(_rtChannelStates);
+  if (states.length === 0) return;
+  var subscribed = states.filter(function(s) { return s === 'SUBSCRIBED'; }).length;
+  var errored = states.filter(function(s) { return s === 'CHANNEL_ERROR' || s === 'TIMED_OUT' || s === 'CLOSED'; }).length;
+
+  if (subscribed === states.length) {
+    rtSetState('connected');
+  } else if (errored > 0 && subscribed === 0) {
+    rtSetState('disconnected');
+    _rtScheduleReconnect();
+  } else if (errored > 0) {
+    rtSetState('reconnecting');
+    _rtScheduleReconnect();
+  }
+}
+
+function _rtScheduleReconnect() {
+  if (_rtReconnectTimer) return;
+  if (_rtReconnectAttempt >= _rtReconnectMax) {
+    console.warn('[rt] max reconnect attempts reached');
+    var text = document.getElementById('rt-connection-text');
+    if (text) text.textContent = 'Kunne ikke genoprette — prøv at genindlæse appen';
+    return;
+  }
+  var delay = Math.min(2000 * Math.pow(2, _rtReconnectAttempt), 30000);
+  _rtReconnectAttempt++;
+  rtSetState('reconnecting');
+  console.debug('[rt] reconnect in', delay, 'ms (attempt', _rtReconnectAttempt, ')');
+  _rtReconnectTimer = setTimeout(function() {
+    _rtReconnectTimer = null;
+    rtReconnect();
+  }, delay);
+}
+
+function rtReconnect() {
+  console.debug('[rt] reconnecting...');
+  if (!currentUser) return;
+  rtUnsubscribeAll();
+  _rtChannelStates = {};
+  initGlobalRealtime();
+  // Re-subscribe DM chat if open
+  if (chatSubscription && currentChatUser) subscribeToChat();
+  // Re-subscribe bubble chat if open
+  if (typeof bcSubscription !== 'undefined' && bcSubscription && typeof bcBubbleId !== 'undefined' && bcBubbleId) {
+    if (typeof bcSubscribeRealtime === 'function') bcSubscribeRealtime();
+  }
+}
+
+// Subscribe status callback — shared by all channels
+function _rtStatusCallback(channelName) {
+  return function(status) {
+    console.debug('[rt] channel', channelName, ':', status);
+    _rtChannelStates[channelName] = status;
+    _rtEvalState();
+  };
+}
+
+// Browser online/offline — fast path for network changes
+window.addEventListener('online', function() {
+  console.debug('[rt] browser online');
+  if (_rtState !== 'connected') {
+    _rtReconnectAttempt = 0;
+    clearTimeout(_rtReconnectTimer);
+    _rtReconnectTimer = null;
+    rtReconnect();
+  }
+});
+window.addEventListener('offline', function() {
+  console.debug('[rt] browser offline');
+  rtSetState('disconnected');
+});
+
+// ══════════════════════════════════════════════════════════
 //  GLOBAL REALTIME HUB
-//  Alle live opdateringer samlet ét sted.
 //  Kanal 1: messages       → nav badge + conv liste preview
 //  Kanal 2: bubble_members → live-boble kort + bc-members
 //  Kanal 3: invitations    → notif badge + notif-skærm
 //  Kanal 4: saved_contacts → notif badge
+//  Kanal 5: checkin        → broadcast greeting
 // ══════════════════════════════════════════════════════════
 
 var _globalRtChannels = [];
@@ -24,6 +146,8 @@ var _radarScreenActive = false;
 function rtUnsubscribeAll() {
   _globalRtChannels.forEach(function(ch) { try { ch.unsubscribe(); } catch(e) {} });
   _globalRtChannels = [];
+  _rtChannelStates = {};
+  if (_rtReconnectTimer) { clearTimeout(_rtReconnectTimer); _rtReconnectTimer = null; }
   rtStopRadarPolling();
 }
 
@@ -188,7 +312,7 @@ function initGlobalRealtime() {
       // read_at just got set → update ✓✓ in open DM
       if (m && m.read_at) dmUpdateReceipts([m.id]);
     })
-    .subscribe();
+    .subscribe(_rtStatusCallback('rt-messages'));
   _globalRtChannels.push(chMessages);
 
   // ── Kanal 2: Boble-medlemmer — filter på user_id så RLS virker ──
@@ -199,7 +323,7 @@ function initGlobalRealtime() {
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'bubble_members',
       filter: 'user_id=eq.' + currentUser.id },
       function(payload) { rtHandleMemberChange(payload); })
-    .subscribe();
+    .subscribe(_rtStatusCallback('rt-members'));
   _globalRtChannels.push(chMembers);
 
   // ── Kanal 3: Invitationer ──
@@ -211,7 +335,7 @@ function initGlobalRealtime() {
         loadNotifications();
       }
     })
-    .subscribe();
+    .subscribe(_rtStatusCallback('rt-invites'));
   _globalRtChannels.push(chInvites);
 
   // ── Kanal 4: Gemte kontakter (nogen gemte dig) ──
@@ -223,7 +347,7 @@ function initGlobalRealtime() {
         loadNotifications();
       }
     })
-    .subscribe();
+    .subscribe(_rtStatusCallback('rt-saved'));
   _globalRtChannels.push(chSaved);
 
   // ── Kanal 5: Check-in broadcast (bypasses RLS — direct user notification) ──
@@ -238,7 +362,7 @@ function initGlobalRealtime() {
         }
       });
     })
-    .subscribe();
+    .subscribe(_rtStatusCallback('rt-checkin'));
   _globalRtChannels.push(chCheckin);
 }
 
@@ -504,7 +628,7 @@ function subscribeToChat() {
         .then(function(res) { if (res.error) logError('dm:read_at_changes', res.error); });
       updateUnreadBadge();
     })
-    .subscribe();
+    .subscribe(_rtStatusCallback('dm-chat'));
 }
 
 // ── DM message context menu (⋯) ──

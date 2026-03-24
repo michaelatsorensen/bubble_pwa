@@ -1997,3 +1997,12 @@ input[type="range"] {
 .dartboard-empty .de-title { font-size: 0.82rem; font-weight: 600; color: var(--muted); }
 .dartboard-empty .de-sub { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.2rem; line-height: 1.4; }
 .dartboard-empty .de-link { font-size: 0.72rem; color: var(--accent); font-weight: 600; margin-top: 0.4rem; cursor: pointer; }
+
+/* ══════════════════════════════════════════════════════════
+   REALTIME CONNECTION STATUS BANNER
+   ══════════════════════════════════════════════════════════ */
+.rt-banner { position:fixed; top:0; left:0; right:0; z-index:999; padding:0.4rem 1rem; font-size:0.72rem; font-weight:600; text-align:center; transition:transform 0.3s ease, opacity 0.3s ease; }
+.rt-banner[data-state="disconnected"] { background:rgba(224,96,112,0.95); color:white; display:block; }
+.rt-banner[data-state="reconnecting"] { background:rgba(249,177,55,0.95); color:#412402; display:block; }
+.rt-banner[data-state="connected"] { background:rgba(26,158,142,0.95); color:white; display:block; }
+@media (display-mode: standalone) { .rt-banner { padding-top:calc(0.4rem + env(safe-area-inset-top, 0px)); } }

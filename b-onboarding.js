@@ -1,9 +1,13 @@
 // ══════════════════════════════════════════════════════════
 //  BUBBLE — ONBOARDING + TAG PICKER + WELCOME
 //  DOMAIN: onboarding
+//  SUB-DOMAINS:
+//    ob* — Onboarding tag picker (new user flow)
+//    ep* — Edit profile tag picker (mirrors ob* pattern)
 //  OWNS: onboarding UI state, _selectedInterests, _setupSelectedLifestage
 //  OWNS: saveOnboarding, skipOnboarding, abortOnboarding
 //  READS: currentUser, currentProfile, flowGet/flowSet
+//  NOTE: ob* and ep* share the same tag-picker pattern. Future: unify into shared picker.
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 
@@ -906,6 +910,13 @@ document.addEventListener('click', function(e) {
     if (sug2) sug2.style.display = 'none';
   }
 });
+
+// ══════════════════════════════════════════════════════════
+//  EDIT PROFILE TAG PICKER (ep*)
+//  Mirrors ob* pattern for the profile edit flow.
+//  OWNS: epSelectedTags, epTagSearch, epAddTag, epRemoveTag, epRenderCategories
+//  Future: unify ob* and ep* into a shared createTagPicker() factory.
+// ══════════════════════════════════════════════════════════
 
 // ── Edit Profile tag picker (mirrors OB pattern) ──
 function epTagSearch(q) {
