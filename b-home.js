@@ -851,6 +851,17 @@ async function loadMyBubbles() {
     if (_navVersion !== myNav) return;
     bubbles.forEach(function(b) { b._contacts = contactMap[b.id] || []; });
 
+    // Enrich bubbles with parent name (for ↳ display)
+    var parentIds = [...new Set(bubbles.filter(function(b) { return b.parent_bubble_id; }).map(function(b) { return b.parent_bubble_id; }))];
+    if (parentIds.length > 0) {
+      try {
+        var { data: parents } = await sb.from('bubbles').select('id,name').in('id', parentIds);
+        var parentMap = {};
+        (parents || []).forEach(function(p) { parentMap[p.id] = p.name; });
+        bubbles.forEach(function(b) { if (b.parent_bubble_id && parentMap[b.parent_bubble_id]) b._parentName = parentMap[b.parent_bubble_id]; });
+      } catch(e) { /* silent — parent ref is optional */ }
+    }
+
     // ── Smart auto-sort: live → upcoming events → recent activity ──
     var liveId = currentLiveBubble ? currentLiveBubble.bubble_id : null;
     // Fetch upcoming child events for sorting
@@ -906,6 +917,7 @@ async function loadMyBubbles() {
           <div style="flex:1">
             <div class="fw-600 fs-09">${escHtml(b.name)}</div>
             <div class="fs-075 text-muted">${visIcon} ${b.type_label||b.type}${b.location ? ' · '+escHtml(b.location) : ''}</div>
+            ${b._parentName ? '<div style="display:inline-flex;align-items:center;gap:3px;margin-top:0.15rem;font-size:0.62rem;color:#534AB7">\u21B3 ' + escHtml(b._parentName) + '</div>' : ''}
             ${cHtml}
           </div>
           <div style="display:flex;gap:0.4rem;align-items:center">
@@ -957,6 +969,7 @@ async function loadMyBubbles() {
             '<div style="flex:1;min-width:0">' +
               '<div class="fw-600 fs-09">' + escHtml(b.name) + '</div>' +
               '<div class="fs-075 text-muted">' + (b.created_by === currentUser.id ? icon('crown') + ' Ejer' : 'Aktiv') + ' · ' + visibilityBadge(b.visibility) + (b.location ? ' · ' + escHtml(b.location) : '') + '</div>' +
+              (b._parentName ? '<div style="display:inline-flex;align-items:center;gap:3px;margin-top:0.15rem;font-size:0.62rem;color:#534AB7">\u21B3 ' + escHtml(b._parentName) + '</div>' : '') +
               cHtml +
             '</div>' +
             '<div class="icon-muted">›</div>' +
@@ -1066,12 +1079,14 @@ function bubbleCard(b, joined) {
 
   var memberLabel = (b.member_count || 0) > 0 ? '<div class="fw-700" style="font-size:0.75rem">' + ico('users') + ' ' + b.member_count + '</div>' : '';
   var visBadge = visibilityBadge(b.visibility);
+  var parentRef = b._parentName ? '<div style="display:inline-flex;align-items:center;gap:3px;margin-top:0.15rem;font-size:0.62rem;color:#534AB7">\u21B3 ' + escHtml(b._parentName) + '</div>' : '';
 
   return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}">
     <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};color:${bubbleColor(b.type, 0.9)}">${bubbleEmoji(b.type)}</div>
     <div style="flex:1;min-width:0">
       <div class="fw-600 fs-09">${escHtml(b.name)}</div>
       <div style="font-size:0.75rem;color:var(--text-secondary);display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap">${escHtml(b.type_label || b.type)} ${b.location ? '<span>·</span> <span>' + escHtml(b.location) + '</span>' : ''} <span>·</span> ${visBadge}</div>
+      ${parentRef}
       ${contactHtml}
     </div>
     <div class="flex-col-end" style="align-items:flex-end;gap:0.15rem">

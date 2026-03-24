@@ -442,6 +442,45 @@ function openCreateEventFromBubble(parentBubbleId) {
   }, 50);
 }
 
+function openCreateSubBubble(parentBubbleId) {
+  // Create a sub-bubble (network type) under a parent
+  cbChips = [];
+  document.getElementById('cb-name').value = '';
+  document.getElementById('cb-desc').value = '';
+  document.getElementById('cb-location').value = '';
+  renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
+  var modal = document.getElementById('bb-sheet-create-bubble');
+  if (modal) modal.dataset.parentBubbleId = parentBubbleId;
+  bbOpen('create-bubble');
+  setTimeout(function() {
+    initInputConfirmButtons();
+    var typeSelect = document.getElementById('cb-type');
+    if (typeSelect) typeSelect.value = 'network';
+    cbRenderPillSelect('cb-type', [
+      { value: 'network', icon: 'bubble', label: 'Netværk' }
+    ]);
+    cbRenderPillSelect('cb-visibility', [
+      { value: 'public',  icon: 'globe', label: 'Offentlig' },
+      { value: 'private', icon: 'lock',  label: 'Privat' },
+      { value: 'hidden',  icon: 'eye',   label: 'Skjult' }
+    ]);
+    var parentLabel = document.getElementById('cb-parent-label');
+    if (parentLabel) parentLabel.style.display = 'block';
+    // Hide event-specific fields
+    var cmg = document.getElementById('cb-checkin-mode-group');
+    if (cmg) cmg.style.display = 'none';
+    var edg = document.getElementById('cb-event-date-group');
+    var etg = document.getElementById('cb-event-time-group');
+    if (edg) edg.style.display = 'none';
+    if (etg) etg.style.display = 'none';
+    sb.from('bubbles').select('name').eq('id', parentBubbleId).maybeSingle().then(function(r) {
+      if (r.data && parentLabel) {
+        parentLabel.textContent = 'Sub-boble under: ' + r.data.name;
+      }
+    }).catch(function() {});
+  }, 50);
+}
+
 function openCreateNetworkModal() {
   cbChips = [];
   document.getElementById('cb-name').value = '';

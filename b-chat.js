@@ -247,7 +247,7 @@ async function bcLoadBubbleCore(bubbleId) {
   return b;
 }
 
-// Phase 2: Show/hide tabs based on bubble type + child events
+// Phase 2: Show/hide tabs based on bubble type + children
 async function bcConfigureTabs(b, bubbleId) {
   var isEvent = b.type === 'event' || b.type === 'live';
   var tabMembers = document.getElementById('bc-tab-members');
@@ -257,9 +257,12 @@ async function bcConfigureTabs(b, bubbleId) {
   if (tabMembers) tabMembers.textContent = isEvent ? 'Deltagere' : 'Medlemmer';
 
   if (!isEvent) {
-    var { count: evCount } = await sb.from('bubbles').select('*', { count: 'exact', head: true })
-      .eq('parent_bubble_id', bubbleId).eq('type', 'event');
-    if (tabEvents) tabEvents.style.display = (evCount > 0) ? '' : 'none';
+    var { count: childCount } = await sb.from('bubbles').select('*', { count: 'exact', head: true })
+      .eq('parent_bubble_id', bubbleId);
+    if (tabEvents) {
+      tabEvents.textContent = 'Tilknyttet';
+      tabEvents.style.display = (childCount > 0) ? '' : 'none';
+    }
   } else {
     if (tabEvents) tabEvents.style.display = 'none';
   }
@@ -455,50 +458,69 @@ async function bcLoadEvents() {
   if (!list || !bcBubbleId) return;
   list.innerHTML = skelCards(3);
   try {
-    var { data: events } = await sb.from('bubbles')
+    var { data: children } = await sb.from('bubbles')
       .select('id, name, type, created_at, event_date, visibility, checkin_mode, bubble_members(count)')
       .eq('parent_bubble_id', bcBubbleId)
-      .eq('type', 'event')
       .order('event_date', { ascending: true, nullsFirst: false })
-      .limit(20);
-    if (!events || events.length === 0) {
+      .limit(30);
+    if (!children || children.length === 0) {
       var canEdit = bcBubbleData?._canEdit;
       list.innerHTML = '<div class="empty-state">' +
-        '<div class="empty-icon">' + icon('calendar') + '</div>' +
-        '<div class="empty-text">Ingen events endnu</div>' +
-        (canEdit ? '<div class="empty-cta"><button class="btn-primary" onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="font-size:0.82rem;padding:0.6rem 1.2rem">' + icon('calendar') + ' Opret event</button></div>' : '') +
+        '<div class="empty-icon">' + icon('bubble') + '</div>' +
+        '<div class="empty-text">Ingen tilknyttede endnu</div>' +
+        (canEdit ? '<div class="empty-cta">' +
+          '<button class="btn-primary" onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="font-size:0.82rem;padding:0.6rem 1.2rem;margin-bottom:0.4rem">' + icon('calendar') + ' Opret event</button>' +
+          '<button class="btn-secondary" onclick="openCreateSubBubble(\'' + bcBubbleId + '\')" style="font-size:0.78rem;padding:0.5rem 1rem">' + icon('bubble') + ' Opret sub-boble</button>' +
+          '</div>' : '') +
         '</div>';
       return;
     }
     var now = new Date();
-    var html = events.map(function(ev) {
-      var mc = ev.bubble_members?.[0]?.count || 0;
-      var evDate = ev.event_date ? new Date(ev.event_date) : null;
-      var isPast = evDate && evDate < now;
-      var dateStr = evDate
-        ? evDate.toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' }) +
-          (evDate.getHours() > 0 ? ' kl. ' + evDate.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '')
-        : new Date(ev.created_at).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
-      var badge = isPast
-        ? '<span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(30,27,46,0.06);color:var(--muted)">Afsluttet</span>'
-        : '<span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(46,207,207,0.1);color:#0F6E56">Kommende</span>';
-      return '<div class="card" style="padding:0.75rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="openBubbleChat(\'' + ev.id + '\',\'screen-bubble-chat\')">' +
-        '<div style="display:flex;align-items:center;gap:0.6rem">' +
-        '<div style="width:38px;height:38px;border-radius:10px;background:' + (isPast ? 'rgba(30,27,46,0.04)' : 'rgba(46,207,207,0.08)') + ';display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0">' + icon('calendar') + '</div>' +
-        '<div style="flex:1;min-width:0">' +
-        '<div style="display:flex;align-items:center;gap:0.4rem"><span class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(ev.name) + '</span>' + badge + '</div>' +
-        '<div class="fs-072 text-muted">' + dateStr + ' · ' + mc + ' deltager' + (mc !== 1 ? 'e' : '') + '</div>' +
-        '</div>' +
-        '<div style="font-size:0.88rem;color:var(--muted)">›</div></div></div>';
+    var html = children.map(function(ch) {
+      var mc = ch.bubble_members?.[0]?.count || 0;
+      var isEvent = ch.type === 'event' || ch.type === 'live';
+
+      if (isEvent) {
+        var evDate = ch.event_date ? new Date(ch.event_date) : null;
+        var isPast = evDate && evDate < now;
+        var dateStr = evDate
+          ? evDate.toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' }) +
+            (evDate.getHours() > 0 ? ' kl. ' + evDate.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '')
+          : new Date(ch.created_at).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+        var badge = isPast
+          ? '<span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(30,27,46,0.06);color:var(--muted)">Afsluttet</span>'
+          : '<span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(46,207,207,0.1);color:#0F6E56">Kommende</span>';
+        return '<div class="card" style="padding:0.75rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')">' +
+          '<div style="display:flex;align-items:center;gap:0.6rem">' +
+          '<div style="width:38px;height:38px;border-radius:10px;background:' + (isPast ? 'rgba(30,27,46,0.04)' : 'rgba(46,207,207,0.08)') + ';display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0">' + icon('calendar') + '</div>' +
+          '<div style="flex:1;min-width:0">' +
+          '<div style="display:flex;align-items:center;gap:0.4rem"><span class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(ch.name) + '</span>' + badge + '</div>' +
+          '<div class="fs-072 text-muted">' + dateStr + ' · ' + mc + ' deltager' + (mc !== 1 ? 'e' : '') + '</div>' +
+          '</div>' +
+          '<div style="font-size:0.88rem;color:var(--muted)">›</div></div></div>';
+      } else {
+        // Sub-bubble (network type)
+        return '<div class="card" style="padding:0.75rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')">' +
+          '<div style="display:flex;align-items:center;gap:0.6rem">' +
+          '<div style="width:38px;height:38px;border-radius:10px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0">' + bubbleEmoji(ch.type) + '</div>' +
+          '<div style="flex:1;min-width:0">' +
+          '<div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(ch.name) + '</div>' +
+          '<div class="fs-072 text-muted">' + typeLabel(ch.type) + ' · ' + mc + ' medlem' + (mc !== 1 ? 'mer' : '') + '</div>' +
+          '</div>' +
+          '<div style="font-size:0.88rem;color:var(--muted)">›</div></div></div>';
+      }
     }).join('');
-    // Add create button for owners
+    // Add create buttons for owners
     if (bcBubbleData?._canEdit) {
-      html += '<button onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="width:100%;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem;margin-top:0.3rem">' + icon('calendar') + ' Opret event</button>';
+      html += '<div style="display:flex;gap:0.4rem;margin-top:0.3rem">' +
+        '<button onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('calendar') + ' Event</button>' +
+        '<button onclick="openCreateSubBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('bubble') + ' Sub-boble</button>' +
+        '</div>';
     }
     list.innerHTML = html;
   } catch(e) {
     logError('bcLoadEvents', e);
-    showRetryState('bc-events-list', 'bcLoadEvents', 'Kunne ikke hente events');
+    showRetryState('bc-events-list', 'bcLoadEvents', 'Kunne ikke hente tilknyttede');
   }
 }
 
@@ -1041,9 +1063,9 @@ async function bcLoadInfo() {
     var iconBg = isEvent ? 'rgba(46,207,207,0.1)' : 'rgba(124,92,252,0.1)';
     var heroIcon = isEvent ? icon('calendar') : ico('bubble');
 
-    // ── Parent reference (only for events with parent_bubble_id) ──
+    // ── Parent reference (for any bubble with parent_bubble_id) ──
     var parentHtml = '';
-    if (isEvent && b.parent_bubble_id) {
+    if (b.parent_bubble_id) {
       try {
         var { data: parent } = await sb.from('bubbles').select('id,name').eq('id', b.parent_bubble_id).maybeSingle();
         if (parent) {
@@ -1055,42 +1077,54 @@ async function bcLoadInfo() {
       } catch(e) { /* silent */ }
     }
 
-    // ── Child events (only for network bubbles) ──
+    // ── Child bubbles + events (only for non-event bubbles) ──
     var eventsHtml = '';
     if (!isEvent) {
       try {
-        var { data: childEvents } = await sb.from('bubbles')
+        var { data: childBubbles } = await sb.from('bubbles')
           .select('id, name, type, created_at, event_date, bubble_members(count)')
           .eq('parent_bubble_id', b.id)
-          .eq('type', 'event')
           .order('event_date', { ascending: true, nullsFirst: false })
           .limit(10);
-        if (childEvents && childEvents.length > 0) {
-          var eventCards = childEvents.map(function(ev) {
-            var evMc = ev.bubble_members?.[0]?.count || 0;
-            var dateStr = ev.event_date
-              ? new Date(ev.event_date).toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' }) +
-                (new Date(ev.event_date).getHours() > 0 ? ' kl. ' + new Date(ev.event_date).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '')
-              : new Date(ev.created_at).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
-            return '<div onclick="openBubble(\'' + ev.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.65rem;border-radius:12px;background:rgba(46,207,207,0.04);border:1px solid rgba(46,207,207,0.12);cursor:pointer">' +
-              '<div style="width:34px;height:34px;border-radius:10px;background:rgba(46,207,207,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + icon('calendar') + '</div>' +
-              '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:600;color:var(--text)">' + escHtml(ev.name) + '</div>' +
-              '<div style="font-size:0.68rem;color:var(--muted)">' + dateStr + ' · ' + evMc + ' tilmeldt</div></div>' +
-              '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+        if (childBubbles && childBubbles.length > 0) {
+          var childCards = childBubbles.map(function(ch) {
+            var chMc = ch.bubble_members?.[0]?.count || 0;
+            var chIsEvent = ch.type === 'event' || ch.type === 'live';
+            if (chIsEvent) {
+              var dateStr = ch.event_date
+                ? new Date(ch.event_date).toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' }) +
+                  (new Date(ch.event_date).getHours() > 0 ? ' kl. ' + new Date(ch.event_date).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '')
+                : new Date(ch.created_at).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+              return '<div onclick="openBubble(\'' + ch.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.65rem;border-radius:12px;background:rgba(46,207,207,0.04);border:1px solid rgba(46,207,207,0.12);cursor:pointer">' +
+                '<div style="width:34px;height:34px;border-radius:10px;background:rgba(46,207,207,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + icon('calendar') + '</div>' +
+                '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:600;color:var(--text)">' + escHtml(ch.name) + '</div>' +
+                '<div style="font-size:0.68rem;color:var(--muted)">' + dateStr + ' · ' + chMc + ' tilmeldt</div></div>' +
+                '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+            } else {
+              return '<div onclick="openBubble(\'' + ch.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.65rem;border-radius:12px;background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.1);cursor:pointer">' +
+                '<div style="width:34px;height:34px;border-radius:10px;background:rgba(124,92,252,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + bubbleEmoji(ch.type) + '</div>' +
+                '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:600;color:var(--text)">' + escHtml(ch.name) + '</div>' +
+                '<div style="font-size:0.68rem;color:var(--muted)">' + typeLabel(ch.type) + ' · ' + chMc + ' medlem' + (chMc !== 1 ? 'mer' : '') + '</div></div>' +
+                '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+            }
           }).join('');
           eventsHtml = '<div style="margin-bottom:0.9rem">' +
             '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">' +
-            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">Events</div>' +
-            '<div style="font-size:0.68rem;color:#0F6E56;font-weight:600">' + childEvents.length + ' kommende</div></div>' +
-            '<div style="display:flex;flex-direction:column;gap:0.4rem">' + eventCards + '</div>' +
-            (canEdit ? '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="width:100%;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem;margin-top:0.4rem">' + icon('calendar') + ' Opret event</button>' : '') +
+            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">Tilknyttet</div>' +
+            '<div style="font-size:0.68rem;color:#0F6E56;font-weight:600">' + childBubbles.length + ' tilknyttet</div></div>' +
+            '<div style="display:flex;flex-direction:column;gap:0.4rem">' + childCards + '</div>' +
+            (canEdit ? '<div style="display:flex;gap:0.4rem;margin-top:0.4rem">' +
+              '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('calendar') + ' Event</button>' +
+              '<button onclick="openCreateSubBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('bubble') + ' Sub-boble</button></div>' : '') +
             '</div>';
         } else if (canEdit) {
           eventsHtml = '<div style="margin-bottom:0.9rem">' +
-            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Events</div>' +
-            '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="width:100%;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('calendar') + ' Opret event</button></div>';
+            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Tilknyttet</div>' +
+            '<div style="display:flex;gap:0.4rem">' +
+            '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('calendar') + ' Event</button>' +
+            '<button onclick="openCreateSubBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('bubble') + ' Sub-boble</button></div></div>';
         }
-      } catch(e) { logError('bcLoadInfo:childEvents', e); }
+      } catch(e) { logError('bcLoadInfo:children', e); }
     }
 
     // ── Quick actions ──
