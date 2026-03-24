@@ -284,11 +284,6 @@ function bubbleEmoji(type) {
   if (t === 'event' || t === 'live') return ico('calendar');
   return ico('bubble'); // network, topic, local, company, standard → all "network"
 }
-function bubbleIcon(type) {
-  var t = (type || '').toLowerCase();
-  if (t === 'event' || t === 'live') return icon('calendar');
-  return icon('bubble');
-}
 
 function bubbleColor(type, alpha) {
   var t = (type || '').toLowerCase();
@@ -431,13 +426,6 @@ function skelMessages(count) {
       '</div>';
   }
   return html;
-}
-
-// ── Success feedback ──
-function showSuccessPulse(element) {
-  if (!element) return;
-  element.classList.add('success-pulse');
-  setTimeout(function() { element.classList.remove('success-pulse'); }, 500);
 }
 
 // ── Time ago helper (for conversations) ──

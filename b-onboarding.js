@@ -284,19 +284,6 @@ async function confirmAbortOnboarding() {
   } catch(e) { logError("confirmAbortOnboarding", e); }
 }
 
-function obToggleBoost() {
-  var content = document.getElementById('ob-boost-content');
-  var arrow = document.getElementById('ob-boost-arrow');
-  if (!content) return;
-  if (content.style.display === 'none') {
-    content.style.display = 'block';
-    if (arrow) arrow.textContent = '−';
-  } else {
-    content.style.display = 'none';
-    if (arrow) arrow.textContent = '＋';
-  }
-}
-
 function obSelectLifestage(btn) {
   // Deselect all
   document.querySelectorAll('.ob-lifestage-btn').forEach(function(b) { b.classList.remove('selected'); });
@@ -390,74 +377,6 @@ function welcomeGo(target) {
     goTo('screen-home');
     loadHome();
   }
-}
-
-function showGettingStarted() {
-  var dismissed = localStorage.getItem('bubble_gs_dismissed');
-  var el = document.getElementById('home-getting-started');
-  if (!el) return;
-  // Show if not dismissed and user has fewer than 2 saved contacts
-  if (dismissed) { el.style.display = 'none'; return; }
-  el.style.display = 'block';
-}
-
-function dismissGettingStarted() {
-  localStorage.setItem('bubble_gs_dismissed', '1');
-  var el = document.getElementById('home-getting-started');
-  if (el) { el.style.transition = 'opacity 0.3s, transform 0.3s'; el.style.opacity = '0'; el.style.transform = 'translateY(-10px)'; setTimeout(function() { el.style.display = 'none'; }, 300); }
-}
-
-// ══════════════════════════════════════════════════════════
-//  PROGRESSIVE ONBOARDING (v4.0)
-// ══════════════════════════════════════════════════════════
-async function showProgressiveOnboarding() {
-  if (!currentProfile || !currentUser) return;
-  var container = document.getElementById('home-progressive-onboarding');
-  var cardsEl = document.getElementById('gs-v4-cards');
-  if (!container || !cardsEl) return;
-
-  // Check current profile state
-  var hasPhoto = !!currentProfile.avatar_url;
-  var hasTitle = !!(currentProfile.title && currentProfile.workplace);
-  var hasTags = (currentProfile.keywords || []).length >= 3;
-
-  // Check bubble membership (async)
-  var hasBubble = false;
-  try {
-    var { count } = await sb.from('bubble_members')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', currentUser.id);
-    hasBubble = (count || 0) > 0;
-  } catch(e) { /* silent */ }
-
-  var steps = [
-    { key: 'tags', svgIco: 'target', color: 'var(--green)', softColor: 'rgba(26,158,142,0.08)', title: 'Vælg interesser', sub: 'Aktiverer matching', done: hasTags, action: 'reRunOnboarding()' },
-    { key: 'title', svgIco: 'briefcase', color: 'var(--accent)', softColor: 'rgba(124,92,252,0.06)', title: 'Tilføj titel & arbejdsplads', sub: 'Unlock 5+ flere matches', done: hasTitle, action: "goTo('screen-profile');setTimeout(function(){profSwitchTab('edit')},200)" },
-    { key: 'photo', svgIco: 'camera', color: '#3B82F6', softColor: 'rgba(59,130,246,0.06)', title: 'Tilføj profilbillede', sub: '3x flere kontakter', done: hasPhoto, action: "goTo('screen-profile');setTimeout(function(){profSwitchTab('edit')},200)" },
-    { key: 'bubble', svgIco: 'bubble', color: '#E879A8', softColor: 'rgba(232,121,168,0.06)', title: 'Join din første boble', sub: 'Åbn for endnu flere profiler', done: hasBubble, action: "goTo('screen-bubbles');bbSwitchTab('explore')" }
-  ];
-
-  // Only show incomplete steps
-  var incomplete = steps.filter(function(s) { return !s.done; });
-
-  // All done — hide entire section
-  if (incomplete.length === 0) {
-    container.style.display = 'none';
-    return;
-  }
-
-  // Render only incomplete steps
-  cardsEl.innerHTML = incomplete.map(function(s, i) {
-    var highlight = i === 0;
-    return '<div class="gs-v4-card' + (highlight ? ' highlight' : '') + '" onclick="' + s.action + '">' +
-      '<div class="gs-v4-icon" style="background:' + s.softColor + ';color:' + s.color + '">' + ico(s.svgIco) + '</div>' +
-      '<div class="gs-v4-text"><div class="gs-v4-title">' + s.title + '</div>' +
-      '<div class="gs-v4-sub">' + s.sub + '</div></div>' +
-      '<div style="color:var(--accent);font-size:0.75rem;font-weight:600">\u2192</div>' +
-      '</div>';
-  }).join('');
-
-  container.style.display = 'block';
 }
 
 

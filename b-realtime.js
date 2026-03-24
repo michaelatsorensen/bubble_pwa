@@ -366,8 +366,6 @@ function initGlobalRealtime() {
   _globalRtChannels.push(chCheckin);
 }
 
-// Legacy alias — some code still calls this
-function subscribeToIncoming() { initGlobalRealtime(); }
 
 var _messagesLoading = false;
 async function loadMessages() {

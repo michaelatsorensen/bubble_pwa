@@ -183,7 +183,7 @@ async function loadLiveCheckinList() {
       list.innerHTML = '<div style="text-align:center;padding:1rem 0">' +
         '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.3rem">Ingen steder i n\u00E6rheden</div>' +
         '<div style="font-size:0.68rem;color:var(--text-secondary);margin-bottom:0.6rem">Scan en QR-kode ovenfor, eller opdag bobler med lokationer</div>' +
-        '<button onclick="closeModal(\'modal-live-checkin\');goTo(\'screen-discover\');loadDiscover()" style="font-size:0.75rem;padding:0.45rem 1rem;background:rgba(124,92,252,0.12);color:var(--accent);border:1px solid rgba(124,92,252,0.25);border-radius:10px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler \u2192</button>' +
+        '<button onclick="closeModal(\'modal-live-checkin\');goTo(\'screen-bubbles\');bbSwitchTab(\'explore\')" style="font-size:0.75rem;padding:0.45rem 1rem;background:rgba(124,92,252,0.12);color:var(--accent);border:1px solid rgba(124,92,252,0.25);border-radius:10px;cursor:pointer;font-family:inherit;font-weight:600">Opdag bobler \u2192</button>' +
         '</div>';
       return;
     }

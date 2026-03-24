@@ -538,8 +538,6 @@ function openCreateLiveModal() {
   setTimeout(function() { if (nameInput) nameInput.focus(); }, 300);
 }
 
-function showQuickLiveForm() { openCreateLiveModal(); }
-function hideQuickLiveForm() { closeModal('modal-create-live'); }
 
 async function submitQuickLive() {
   var name = (document.getElementById('ql-name')?.value || '').trim();
@@ -579,10 +577,6 @@ async function submitQuickLive() {
     loadLiveBubbleStatus();
     loadLiveCheckinList();
   } catch(e) { logError('submitQuickLive', e); showToast('Kunne ikke oprette'); }
-}
-
-async function openQuickLiveBubble() {
-  openCreateLiveModal();
 }
 
 // ── Bubble invite actions (from bubbles screen) ──

@@ -1732,6 +1732,8 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
   document.getElementById('ps-bio').textContent = '';
   document.getElementById('ps-bubbleup-btn').style.display = 'flex';
   document.getElementById('ps-bubbleup-confirm').classList.remove('show');
+  var psLabel = document.getElementById('ps-bubbleup-label');
+  if (psLabel) psLabel.textContent = 'Opret boble med ' + ((name || '').split(' ')[0] || 'personen');
   // Fetch full profile for bio + LinkedIn + avatar
   const liBtn = document.getElementById('ps-linkedin-btn');
   liBtn.style.display = 'none';
