@@ -17,7 +17,6 @@ var _rtState = 'connected';
 var _rtReconnectTimer = null;
 var _rtReconnectAttempt = 0;
 var _rtReconnectMax = 10;
-var _rtHideBannerTimer = null;
 var _rtChannelStates = {};
 
 function rtSetState(newState) {
@@ -26,32 +25,22 @@ function rtSetState(newState) {
   _rtState = newState;
   console.debug('[rt] state:', prev, '→', newState);
 
-  var banner = document.getElementById('rt-connection-banner');
-  var text = document.getElementById('rt-connection-text');
-  if (!banner || !text) return;
-
-  clearTimeout(_rtHideBannerTimer);
+  var dot = document.getElementById('rt-status-dot');
+  var text = document.getElementById('rt-status-text');
+  if (!dot || !text) return;
 
   if (newState === 'disconnected') {
-    text.textContent = 'Forbindelsen blev afbrudt — forsøger at genoprette...';
-    banner.setAttribute('data-state', 'disconnected');
-    banner.style.display = 'block';
+    dot.style.background = '#D06070';
+    text.textContent = 'Afbrudt — genopretter...';
+    text.style.color = '#D06070';
   } else if (newState === 'reconnecting') {
-    text.textContent = 'Genopretter forbindelse... (forsøg ' + _rtReconnectAttempt + ')';
-    banner.setAttribute('data-state', 'reconnecting');
-    banner.style.display = 'block';
+    dot.style.background = '#F59E0B';
+    text.textContent = 'Genopretter... (forsøg ' + _rtReconnectAttempt + ')';
+    text.style.color = '#92400E';
   } else if (newState === 'connected') {
-    if (prev !== 'connected') {
-      text.textContent = 'Forbindelse genoprettet ✓';
-      banner.setAttribute('data-state', 'connected');
-      banner.style.display = 'block';
-      _rtHideBannerTimer = setTimeout(function() {
-        banner.style.display = 'none';
-        banner.removeAttribute('data-state');
-      }, 2000);
-    } else {
-      banner.style.display = 'none';
-    }
+    dot.style.background = '#1A9E8E';
+    text.textContent = 'Forbundet';
+    text.style.color = '';
     _rtReconnectAttempt = 0;
   }
 }
@@ -77,8 +66,8 @@ function _rtScheduleReconnect() {
   if (_rtReconnectTimer) return;
   if (_rtReconnectAttempt >= _rtReconnectMax) {
     console.warn('[rt] max reconnect attempts reached');
-    var text = document.getElementById('rt-connection-text');
-    if (text) text.textContent = 'Kunne ikke genoprette — prøv at genindlæse appen';
+    var text = document.getElementById('rt-status-text');
+    if (text) { text.textContent = 'Ikke forbundet'; text.style.color = '#D06070'; }
     return;
   }
   var delay = Math.min(2000 * Math.pow(2, _rtReconnectAttempt), 30000);

@@ -9,35 +9,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=6204">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=6204">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=6204">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=6204">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=6204">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=6204">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=6204">
+<link rel="manifest" href="manifest.json?v=6206">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=6206">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=6206">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=6206">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=6206">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=6206">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=6206">
 
-<link rel="stylesheet" href="app.css?v=6204">
+<link rel="stylesheet" href="app.css?v=6206">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=6204" defer></script>
-<script src="tag-data.js?v=6204" defer></script>
-<script src="b-config.js?v=6204" defer></script>
-<script src="b-utils.js?v=6204" defer></script>
-<script src="b-auth.js?v=6204" defer></script>
-<script src="b-home.js?v=6204" defer></script>
-<script src="b-bubbles.js?v=6204" defer></script>
-<script src="b-profile.js?v=6204" defer></script>
-<script src="b-radar.js?v=6204" defer></script>
-<script src="b-messages.js?v=6204" defer></script>
-<script src="b-realtime.js?v=6204" defer></script>
-<script src="b-onboarding.js?v=6204" defer></script>
-<script src="b-chat.js?v=6204" defer></script>
-<script src="b-notifications.js?v=6204" defer></script>
-<script src="b-live.js?v=6204" defer></script>
-<script src="b-admin.js?v=6204" defer></script>
-<script src="b-navigation.js?v=6204" defer></script>
-<script src="b-boot.js?v=6204" defer></script>
+<script src="bubble-icons.js?v=6206" defer></script>
+<script src="tag-data.js?v=6206" defer></script>
+<script src="b-config.js?v=6206" defer></script>
+<script src="b-utils.js?v=6206" defer></script>
+<script src="b-auth.js?v=6206" defer></script>
+<script src="b-home.js?v=6206" defer></script>
+<script src="b-bubbles.js?v=6206" defer></script>
+<script src="b-profile.js?v=6206" defer></script>
+<script src="b-radar.js?v=6206" defer></script>
+<script src="b-messages.js?v=6206" defer></script>
+<script src="b-realtime.js?v=6206" defer></script>
+<script src="b-onboarding.js?v=6206" defer></script>
+<script src="b-chat.js?v=6206" defer></script>
+<script src="b-notifications.js?v=6206" defer></script>
+<script src="b-live.js?v=6206" defer></script>
+<script src="b-admin.js?v=6206" defer></script>
+<script src="b-navigation.js?v=6206" defer></script>
+<script src="b-boot.js?v=6206" defer></script>
   
 
 
@@ -139,11 +139,6 @@
 <!-- ═══ APP SHELL (only screens + nav) ═══ -->
 <div id="app-shell">
 <div id="screens-wrap">
-
-<!-- Connection status banner (managed by b-realtime.js) -->
-<div id="rt-connection-banner" class="rt-banner" style="display:none">
-  <span id="rt-connection-text">Forbindelsen blev afbrudt — forsøger at genoprette...</span>
-</div>
 
 <!-- ════════════════════════════════════════
      SCREEN: LOADING
@@ -1365,7 +1360,13 @@
       </div>
     </div>
 
-    <div style="text-align:center;margin-top:2rem;margin-bottom:1rem;font-size:0.62rem;color:var(--muted)" id="version-label"></div>
+    <div style="text-align:center;margin-top:2rem;margin-bottom:1rem">
+      <div style="font-size:0.62rem;color:var(--muted)" id="version-label"></div>
+      <div id="rt-connection-status" style="display:inline-flex;align-items:center;gap:0.3rem;margin-top:0.3rem;font-size:0.62rem;color:var(--muted)">
+        <div id="rt-status-dot" style="width:6px;height:6px;border-radius:50%;background:#1A9E8E"></div>
+        <span id="rt-status-text">Forbundet</span>
+      </div>
+    </div>
     </div>
 
   </div><!-- /scroll area -->

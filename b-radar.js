@@ -351,10 +351,6 @@ function buildTagPopularity(allProfiles) {
   _ensureTagClusters();
 }
 
-function getTagRarity(tagLower) {
-  return 1.0;
-}
-
 function calcMatchScore(myProfile, theirProfile, sharedBubbleCount) {
   _ensureTagClusters();
   var score = 0;

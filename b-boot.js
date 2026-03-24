@@ -607,13 +607,6 @@ function eventSignupEmail() {
   setTimeout(function() { if (typeof switchToSignup === 'function') switchToSignup(); }, 200);
 }
 
-function eventSignupApple() {
-  flowSet('event_flow', 'true');
-  goTo('screen-auth');
-  showAuthForms();
-  setTimeout(function() { handleAppleLogin(); }, 200);
-}
-
 function eventLoginExisting() {
   flowSet('event_flow', 'true');
   goTo('screen-auth');
@@ -663,18 +656,6 @@ async function showEventReadyQR() {
     
     trackEvent('event_qr_shown', { bubble_id: flowGet('pending_join') || '' });
   } catch(e) { logError('showEventReadyQR', e); }
-}
-
-function eventReadyGoToTags() {
-  // Check if user has tags — if not, show onboarding for tag selection
-  var hasTags = (currentProfile?.keywords || []).length >= 3;
-  if (!hasTags) {
-    flowSet('post_tags_destination', 'event_bubble');
-    reRunOnboarding();
-    showToast('Vælg mindst 3 interesser for bedre matches');
-    return;
-  }
-  eventReadyGoToEvent();
 }
 
 function eventReadyGoToEvent() {

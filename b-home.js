@@ -1099,14 +1099,6 @@ function hsSavePrefs(prefs) {
   try { localStorage.setItem('bubble_hs_prefs', JSON.stringify(prefs)); } catch(e) {}
 }
 
-function hsReset() {
-  hsSavePrefs(Object.assign({}, hsDefaults));
-  try { localStorage.setItem('bubble_hs_notif_view', 'card'); } catch(e) {}
-  hsUpdateAllToggles();
-  hsApplyToHome();
-  showToast('Hjem-skærm nulstillet');
-}
-
 function hsUpdatePreview() {
   var prefs = hsGetPrefs();
   var labels = { live: 'Live', saved: 'Gemte', bubbles: 'Bobler', notifs: 'Notif.', radar: 'Radar' };
