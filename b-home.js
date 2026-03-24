@@ -1307,7 +1307,7 @@ function renderHomeDartboard() {
   if (profiles.length === 0) {
     av.innerHTML = '';
     if (_homeMode === 'live') {
-      av.innerHTML = '<div class="dartboard-empty" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-140%);text-align:center;padding:0.6rem 1.2rem;background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:12px;border:1px solid var(--glass-border-subtle);box-shadow:0 2px 8px rgba(30,27,46,0.06);white-space:nowrap">' +
+      av.innerHTML = '<div class="dartboard-empty" style="position:absolute;top:50%;left:50%;transform:translate(-50%, calc(-100% - 40px));text-align:center;padding:0.6rem 1.2rem;background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:12px;border:1px solid var(--glass-border-subtle);box-shadow:0 2px 8px rgba(30,27,46,0.06);white-space:nowrap">' +
         '<div style="font-size:0.78rem;font-weight:600;color:var(--text)">Du er den første her!</div>' +
         '<div style="font-size:0.68rem;color:var(--muted);margin-top:0.15rem">Venter på deltagere...</div>' +
         '</div>';
