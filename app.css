@@ -232,6 +232,14 @@ textarea.input { min-height:80px; resize:vertical; }
 .person-display-name { font-size:1.15rem; font-weight:800; letter-spacing:-0.03em; text-align:center; margin-top:0.5rem; }
 .person-display-title { font-size:0.75rem; color:var(--text-secondary); text-align:center; }
 .person-bio-text { font-size:0.78rem; color:var(--text-secondary); line-height:1.55; }
+.person-bubble-pill { display:flex; align-items:center; gap:0.6rem; background:rgba(124,92,252,0.06); border-radius:12px; padding:0.55rem 0.7rem; cursor:pointer; transition:background 0.15s; margin-bottom:0.35rem; }
+.person-bubble-pill:active { background:rgba(124,92,252,0.12); }
+.person-bubble-pill-icon { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; flex-shrink:0; }
+.person-bubble-pill-info { flex:1; min-width:0; }
+.person-bubble-pill-name { font-size:0.8rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.person-bubble-pill-meta { font-size:0.68rem; color:var(--text-secondary); }
+.person-bubble-pill-chevron { font-size:0.88rem; color:var(--muted); flex-shrink:0; }
+.person-bubbles-more { display:block; width:100%; background:none; border:none; padding:0.4rem 0; font-size:0.72rem; font-weight:600; color:var(--accent); cursor:pointer; font-family:inherit; text-align:left; }
 .person-action-bar { display:flex; gap:0.5rem; padding:0.75rem 1.25rem; flex-wrap:wrap; }
 .person-action-btn { flex:1; padding:0.65rem 0.3rem; border-radius:var(--radius-sm); font-size:0.78rem; font-family:'Figtree',sans-serif; font-weight:600; cursor:pointer; background:#FFFFFF; border:1.5px solid var(--glass-border-subtle); color:var(--text); text-align:center; transition:all 0.2s; display:flex; flex-direction:column; align-items:center; gap:0.25rem; box-shadow:0 1px 3px rgba(30,27,46,0.05); }
 .person-action-btn.primary { background:var(--gradient-primary); border:1px solid var(--gradient-btn-border); color:white; }
@@ -388,7 +396,7 @@ textarea.input { min-height:80px; resize:vertical; }
 .thread-input { flex:1; background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-pill); padding:0.4rem 0.75rem; font-size:0.75rem; font-family:'Figtree',sans-serif; color:var(--text); outline:none; }
 
 /* ── BUBBLE UP ── */
-.bubble-up-btn { width:100%; padding:0.65rem 1rem; border-radius:var(--radius-sm); background:linear-gradient(135deg,rgba(124,92,252,0.12),rgba(26,122,138,0.08)); border:1px solid rgba(124,92,252,0.25); color:var(--text); font-size:0.82rem; font-family:'Figtree',sans-serif; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem; transition:all 0.2s; }
+.bubble-up-btn { width:100%; padding:0.65rem 1rem; border-radius:var(--radius-sm); background:rgba(124,92,252,0.06); border:1px dashed rgba(124,92,252,0.35); color:var(--accent); font-size:0.82rem; font-family:'Figtree',sans-serif; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem; transition:all 0.2s; }
 .bubble-up-btn:hover { border-color:rgba(124,92,252,0.4); }
 .bubble-up-sub-text { font-size:0.65rem; color:var(--text-secondary); margin-top:0.15rem; }
 .bubble-up-confirm { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius); padding:1rem; text-align:center; }

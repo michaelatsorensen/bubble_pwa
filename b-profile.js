@@ -37,8 +37,9 @@ async function openPerson(userId, fromScreen) {
         document.getElementById('person-name').textContent = 'Profil ikke tilgængelig';
         document.getElementById('person-role').textContent = 'Denne profil eksisterer ikke længere';
         document.getElementById('person-overlap').innerHTML = '';
-        var bioS = document.getElementById('person-bio-section'); if (bioS) bioS.style.display = 'none';
+        var bioS = document.getElementById('person-bio-inline'); if (bioS) bioS.style.display = 'none';
         var tagS = document.getElementById('person-tags-section'); if (tagS) tagS.style.display = 'none';
+        var bubS = document.getElementById('person-bubbles-section'); if (bubS) bubS.style.display = 'none';
         document.getElementById('person-dynamic-keywords').innerHTML = '';
       }
       return;
@@ -102,8 +103,8 @@ async function openPerson(userId, fromScreen) {
     if (tagsSection) tagsSection.style.display = 'none';
 
     document.getElementById('person-bio').textContent = p.bio || '';
-    var bioSection = document.getElementById('person-bio-section');
-    if (bioSection) bioSection.style.display = p.bio ? 'block' : 'none';
+    var bioInline = document.getElementById('person-bio-inline');
+    if (bioInline) bioInline.style.display = p.bio ? 'block' : 'none';
 
     // LinkedIn button
     const liBtn = document.getElementById('person-linkedin-btn');
@@ -139,6 +140,14 @@ async function openPerson(userId, fromScreen) {
     if ((p.dynamic_keywords||[]).length) {
       dynEl.innerHTML = '<div class="person-section-title">Søger nu</div>' + p.dynamic_keywords.map(k => `<span class="tag gold">${icon("fire")} ${escHtml(k)}</span>`).join('');
     } else { dynEl.innerHTML = ''; }
+
+    // Public bubbles (identity badges) — fire-and-forget async
+    loadPersonBubbles(userId, myNav);
+
+    // Update bubble-up label with person's first name
+    var firstName = p.is_anon ? 'personen' : (p.name || '').split(' ')[0] || 'personen';
+    var bupLabel = document.getElementById('person-bubbleup-label');
+    if (bupLabel) bupLabel.textContent = 'Opret boble med ' + firstName;
 
     // Check if saved
     const { data: savedCheck } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
@@ -1402,6 +1411,88 @@ async function sendBubbleUpInvitation(toUserId) {
       to_user_id: toUserId
     });
   } catch(e) { logError("sendBubbleUpInvitation", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  PUBLIC BUBBLES ON PERSON PROFILE (identity badges)
+//  Shows public, non-event bubbles the person is a member of.
+//  Rules: only visibility=public, no events (parent_bubble_id IS NULL, type != event),
+//  max 5 shown + "Se alle" link, respects show_bubbles toggle.
+// ══════════════════════════════════════════════════════════
+var PERSON_BUBBLES_MAX = 5;
+
+async function loadPersonBubbles(userId, navRef) {
+  var section = document.getElementById('person-bubbles-section');
+  var list = document.getElementById('person-bubbles-list');
+  var title = document.getElementById('person-bubbles-title');
+  if (!section || !list) return;
+
+  // Reset
+  section.style.display = 'none';
+  list.innerHTML = '';
+
+  try {
+    // Check if user has show_bubbles = false
+    var { data: prof } = await sb.from('profiles').select('show_bubbles').eq('id', userId).single();
+    if (prof && prof.show_bubbles === false) return;
+
+    // Stale nav check
+    if (navRef && _navVersion !== navRef) return;
+
+    // Get user's bubble memberships
+    var { data: memberships } = await sb.from('bubble_members')
+      .select('bubble_id')
+      .eq('user_id', userId);
+    if (!memberships || memberships.length === 0) return;
+
+    var bubbleIds = memberships.map(function(m) { return m.bubble_id; });
+
+    // Fetch public, non-event bubbles
+    var { data: bubbles } = await sb.from('bubbles')
+      .select('id, name, type, icon_url, visibility, parent_bubble_id, bubble_members(count)')
+      .in('id', bubbleIds)
+      .eq('visibility', 'public')
+      .is('parent_bubble_id', null)
+      .neq('type', 'event')
+      .order('created_at', { ascending: false });
+
+    if (!bubbles || bubbles.length === 0) return;
+    if (navRef && _navVersion !== navRef) return;
+
+    // Render
+    var total = bubbles.length;
+    var shown = bubbles.slice(0, PERSON_BUBBLES_MAX);
+    if (title) title.textContent = 'Bobler · ' + total;
+
+    var html = shown.map(function(b) {
+      var memberCount = (b.bubble_members && b.bubble_members[0]) ? b.bubble_members[0].count : 0;
+      var colorBg = bubbleColor(b.type, 0.15);
+      var colorFg = bubbleColor(b.type, 0.9);
+      var emojiHtml = b.icon_url
+        ? '<img src="' + escHtml(b.icon_url) + '" style="width:1.2rem;height:1.2rem;border-radius:4px;object-fit:cover">'
+        : bubbleEmoji(b.type);
+      return '<div class="person-bubble-pill" data-action="openBubble" data-id="' + b.id + '" data-from="screen-person">' +
+        '<div class="person-bubble-pill-icon" style="background:' + colorBg + ';color:' + colorFg + '">' + emojiHtml + '</div>' +
+        '<div class="person-bubble-pill-info">' +
+          '<div class="person-bubble-pill-name">' + escHtml(b.name) + '</div>' +
+          '<div class="person-bubble-pill-meta">' + memberCount + ' medlemmer</div>' +
+        '</div>' +
+        '<div class="person-bubble-pill-chevron">›</div>' +
+      '</div>';
+    }).join('');
+
+    if (total > PERSON_BUBBLES_MAX) {
+      html += '<button class="person-bubbles-more" onclick="showAllPersonBubbles(\'' + userId + '\')">Se alle ' + total + ' →</button>';
+    }
+
+    list.innerHTML = html;
+    section.style.display = 'block';
+  } catch(e) { logError('loadPersonBubbles', e); }
+}
+
+function showAllPersonBubbles(userId) {
+  // For now: show a toast — future: expand list or navigate
+  showToast('Kommer snart: Se alle bobler');
 }
 
 

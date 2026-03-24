@@ -9,35 +9,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=6202">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=6202">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=6202">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=6202">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=6202">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=6202">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=6202">
+<link rel="manifest" href="manifest.json?v=6203">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=6203">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=6203">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=6203">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=6203">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=6203">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=6203">
 
-<link rel="stylesheet" href="app.css?v=6202">
+<link rel="stylesheet" href="app.css?v=6203">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=6202" defer></script>
-<script src="tag-data.js?v=6202" defer></script>
-<script src="b-config.js?v=6202" defer></script>
-<script src="b-utils.js?v=6202" defer></script>
-<script src="b-auth.js?v=6202" defer></script>
-<script src="b-home.js?v=6202" defer></script>
-<script src="b-bubbles.js?v=6202" defer></script>
-<script src="b-profile.js?v=6202" defer></script>
-<script src="b-radar.js?v=6202" defer></script>
-<script src="b-messages.js?v=6202" defer></script>
-<script src="b-realtime.js?v=6202" defer></script>
-<script src="b-onboarding.js?v=6202" defer></script>
-<script src="b-chat.js?v=6202" defer></script>
-<script src="b-notifications.js?v=6202" defer></script>
-<script src="b-live.js?v=6202" defer></script>
-<script src="b-admin.js?v=6202" defer></script>
-<script src="b-navigation.js?v=6202" defer></script>
-<script src="b-boot.js?v=6202" defer></script>
+<script src="bubble-icons.js?v=6203" defer></script>
+<script src="tag-data.js?v=6203" defer></script>
+<script src="b-config.js?v=6203" defer></script>
+<script src="b-utils.js?v=6203" defer></script>
+<script src="b-auth.js?v=6203" defer></script>
+<script src="b-home.js?v=6203" defer></script>
+<script src="b-bubbles.js?v=6203" defer></script>
+<script src="b-profile.js?v=6203" defer></script>
+<script src="b-radar.js?v=6203" defer></script>
+<script src="b-messages.js?v=6203" defer></script>
+<script src="b-realtime.js?v=6203" defer></script>
+<script src="b-onboarding.js?v=6203" defer></script>
+<script src="b-chat.js?v=6203" defer></script>
+<script src="b-notifications.js?v=6203" defer></script>
+<script src="b-live.js?v=6203" defer></script>
+<script src="b-admin.js?v=6203" defer></script>
+<script src="b-navigation.js?v=6203" defer></script>
+<script src="b-boot.js?v=6203" defer></script>
   
 
 
@@ -896,6 +896,10 @@
         <div id="person-live-badge" style="display:none;font-size:0.68rem;color:#1A9E8E;margin-top:0.25rem"></div>
       </div>
     </div>
+    <!-- Bio (inline, under name — hidden if empty) -->
+    <div id="person-bio-inline" style="display:none;padding:0.35rem 1.5rem 0;text-align:center">
+      <div class="person-bio-text" id="person-bio"></div>
+    </div>
     <!-- Action bar -->
     <div class="person-action-bar">
       <button class="person-action-btn" onclick="startChat()">
@@ -917,11 +921,6 @@
     <div class="person-section" id="person-overlap-section">
       <div id="person-overlap"></div>
     </div>
-    <!-- Bio -->
-    <div class="person-section" id="person-bio-section" style="display:none">
-      <div class="person-section-title">Om</div>
-      <div class="person-bio-text" id="person-bio"></div>
-    </div>
     <!-- Tags / Interesser -->
     <div class="person-section" id="person-tags-section">
       <div class="person-section-title">Interesser</div>
@@ -929,11 +928,15 @@
     </div>
     <!-- Dynamic keywords -->
     <div id="person-dynamic-keywords" style="padding:0 1.25rem 1rem"></div>
+    <!-- Public bubbles (identity badges) -->
+    <div id="person-bubbles-section" class="person-section" style="display:none">
+      <div class="person-section-title" id="person-bubbles-title">Bobler</div>
+      <div id="person-bubbles-list"></div>
+    </div>
     <!-- Bubble-up -->
     <div style="padding:0.5rem 1.25rem 1.5rem">
       <button class="bubble-up-btn" id="person-bubbleup-btn" onclick="personTriggerBubbleUp()">
-        <svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg><span class="fw-600">Bubble up</span>
-        <span style="font-size:0.68rem;color:var(--text-secondary)">· Opret en privat boble</span>
+        <svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg><span class="fw-600" id="person-bubbleup-label">Opret boble</span>
       </button>
       <div class="bubble-up-confirm" id="person-bubbleup-confirm" style="margin-top:0.65rem">
         <div class="bubble-up-confirm-text">Send en boble-invitation til <span class="bubble-up-confirm-name" id="person-bubbleup-name"></span>?<br>De skal acceptere — begge bliver ejere.</div>
@@ -1348,7 +1351,7 @@
       <!-- Onboarding test tools -->
       <div style="background:rgba(46,207,207,0.06);border:1px solid rgba(46,207,207,0.15);border-radius:12px;padding:0.8rem;margin-top:0.5rem">
         <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.2rem">Test signup + onboarding</div>
-        <div style="font-size:0.65rem;color:var(--text-secondary);margin-bottom:0.6rem;line-height:1.4">Sletter <strong>test@bubbleme.dk</strong> helt fra auth og logger dig ud. Du tester signup + onboarding fra scratch.</div>
+        <div style="font-size:0.65rem;color:var(--text-secondary);margin-bottom:0.6rem;line-height:1.4">Sletter <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="75011006013517001717191018105b111e">[email&#160;protected]</a></strong> helt fra auth og logger dig ud. Du tester signup + onboarding fra scratch.</div>
         <div style="display:flex;flex-direction:column;gap:0.35rem">
           <button class="btn-sm" onclick="testOnboardingReset('organic')" style="background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.15);color:var(--accent);font-weight:600;padding:0.45rem 0.6rem;border-radius:10px;font-family:var(--font);cursor:pointer;text-align:left;font-size:0.72rem">Organisk → signup → onboarding → home</button>
           <button class="btn-sm" onclick="testOnboardingReset('qr')" style="background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.15);color:var(--accent);font-weight:600;padding:0.45rem 0.6rem;border-radius:10px;font-family:var(--font);cursor:pointer;text-align:left;font-size:0.72rem">Personlig QR → profil-preview → signup → onboarding</button>
@@ -1820,9 +1823,4 @@
     <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg></span>Hjem</button>
     <button class="nav-item" onclick="goTo('screen-bubbles')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></span>Bobler</button>
     <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span>Beskeder</button>
-    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span>Profil</button>
-  </div>
-</div><!-- /global-nav -->
-</div><!-- /app-shell -->
-</body>
-</html>
+    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.
