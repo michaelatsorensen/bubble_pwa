@@ -213,6 +213,9 @@ function bbCloseAll() {
   document.querySelectorAll('.bb-sheet.open').forEach(function(el) { el.classList.remove('open'); });
   // Close legacy overlays (not yet migrated)
   document.querySelectorAll('.modal-overlay.open').forEach(function(el) { el.classList.remove('open'); });
+  // Close dynamic overlays
+  document.querySelectorAll('.bb-dyn-overlay').forEach(function(el) { bbDynClose(el); });
+  // Close person sheets, radar sheets, gif picker, context menus
   document.querySelectorAll('.person-sheet.open,.person-sheet-overlay.open').forEach(function(el) { el.classList.remove('open'); el.style.transform = ''; });
   document.querySelectorAll('.radar-person-sheet.open,.radar-person-overlay.open').forEach(function(el) { el.classList.remove('open'); el.style.transform = ''; });
   var gifPicker = document.getElementById('gif-picker');
@@ -220,10 +223,33 @@ function bbCloseAll() {
   if (gifPicker) gifPicker.classList.remove('open');
   if (gifOverlay) gifOverlay.classList.remove('open');
   document.querySelectorAll('.context-menu.open').forEach(function(el) { el.classList.remove('open'); });
-  // Dynamic overlays (post expand, etc)
+  // Legacy dynamic overlays
   document.querySelectorAll('.bb-dynamic-overlay').forEach(function(el) { el.remove(); });
   var reportTray = document.getElementById('event-report-tray');
   if (reportTray) { try { closeReportTray(); } catch(e) { reportTray.remove(); } }
+}
+
+// ── Dynamic overlay: animated create + destroy ──
+// Returns { overlay, sheet } — append content to sheet, then let animation handle the rest
+function bbDynOpen(opts) {
+  opts = opts || {};
+  var overlay = document.createElement('div');
+  overlay.className = 'bb-dyn-overlay' + (opts.center ? ' bb-dyn-center' : '');
+  overlay.onclick = function(e) { if (e.target === overlay) bbDynClose(overlay); };
+  var sheet = document.createElement('div');
+  sheet.className = 'bb-dyn-sheet';
+  if (opts.center) { sheet.style.borderRadius = '20px'; sheet.style.maxWidth = '360px'; sheet.style.margin = '0 1rem'; }
+  sheet.onclick = function(e) { e.stopPropagation(); };
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+  requestAnimationFrame(function() { requestAnimationFrame(function() { overlay.classList.add('open'); }); });
+  return { overlay: overlay, sheet: sheet };
+}
+
+function bbDynClose(overlay) {
+  if (!overlay || !overlay.classList.contains('bb-dyn-overlay')) return;
+  overlay.classList.remove('open');
+  setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 380);
 }
 
 // Helper: create inline confirm tray (standardized)

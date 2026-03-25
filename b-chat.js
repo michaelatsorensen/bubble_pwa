@@ -1470,15 +1470,8 @@ function bcExpandPost(postId) {
     deleteBtn = '<button onclick="bcDeletePost(\'' + postId + '\')" style="width:100%;margin-top:0.6rem;padding:0.5rem;border-radius:10px;border:1px solid rgba(232,121,168,0.2);background:none;color:var(--accent2);font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer">Slet opslag</button>';
   }
 
-  var overlay = document.createElement('div');
-  overlay.className = 'bb-dynamic-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(30,27,46,0.25);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
-  overlay.onclick = function() { overlay.remove(); };
-
-  var sheet = document.createElement('div');
-  sheet.style.cssText = 'width:100%;max-width:680px;max-height:85vh;overflow-y:auto;background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);border-radius:24px 24px 0 0;padding:1.5rem;color:var(--text);font-family:Figtree,sans-serif';
-  sheet.onclick = function(e) { e.stopPropagation(); };
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.08);margin:0 auto 1rem;cursor:pointer" onclick="this.closest(\'[style*=backdrop-filter]\').remove()"></div>' +
+  var { overlay, sheet } = bbDynOpen();
+  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.08);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
     '<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem">' + avatarHtml +
     '<div><div style="font-size:0.88rem;font-weight:700">' + name + '</div>' +
     '<div style="font-size:0.65rem;color:var(--muted)">' + timeAgo(post.created_at) + '</div></div></div>' +
@@ -1488,11 +1481,8 @@ function bcExpandPost(postId) {
     '<div class="bp-like-row" style="margin-top:1rem;padding-top:0.6rem;border-top:0.5px solid rgba(30,27,46,0.06)">' +
     '<button class="bp-like-btn' + (expandLiked ? ' liked' : '') + '" id="bp-expand-like-' + post.id + '" onclick="bcTogglePostLike(\'' + post.id + '\')">' + (expandLiked ? '❤️' : '🤍') + '</button>' +
     '<span class="bp-like-count" id="bp-expand-like-count-' + post.id + '">' + (expandLikeCount > 0 ? expandLikeCount : '') + '</span></div>' +
-    '<button onclick="this.closest(\'[style*=backdrop-filter]\').remove()" style="width:100%;margin-top:0.8rem;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer">Luk</button>' +
+    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:0.8rem;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer">Luk</button>' +
     deleteBtn;
-
-  overlay.appendChild(sheet);
-  document.body.appendChild(overlay);
 
   // Fetch event name async if linked
   if (post.event_id) {
@@ -1595,9 +1585,9 @@ async function bcSubmitPost() {
 
 async function bcDeletePost(postId) {
   try {
-    var overlay = document.querySelector('[style*="backdrop-filter"]');
+    var overlay = document.querySelector('.bb-dyn-overlay');
     if (!overlay) return;
-    var target = overlay.querySelector('.modal-sheet, div[style*="border-radius:24px"]');
+    var target = overlay.querySelector('.bb-dyn-sheet');
     if (target) {
       bbConfirm(target, {
         label: 'Slet dette opslag?',
@@ -1612,9 +1602,8 @@ async function bcDeletePost(postId) {
 async function bcConfirmDeletePost(postId) {
   try {
     await sb.from('bubble_posts').delete().eq('id', postId);
-    // Close expand tray
-    var overlay = document.querySelector('[style*="backdrop-filter"]');
-    if (overlay) overlay.remove();
+    var overlay = document.querySelector('.bb-dyn-overlay');
+    if (overlay) bbDynClose(overlay);
     showSuccessToast('Opslag slettet');
     bcLoadPosts();
   } catch(e) {

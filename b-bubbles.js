@@ -196,15 +196,10 @@ var _memberSheetEl = null;
 
 function _buildMemberSheet(title, subtitle, members, actionFn) {
   // Reusable member picker sheet
-  if (_memberSheetEl) _memberSheetEl.remove();
+  if (_memberSheetEl) bbDynClose(_memberSheetEl);
 
-  var overlay = document.createElement('div');
+  var { overlay, sheet } = bbDynOpen();
   overlay.id = 'member-action-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(30,27,46,0.25);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
-  overlay.onclick = function(e) { if (e.target === overlay) { overlay.remove(); _memberSheetEl = null; } };
-
-  var sheet = document.createElement('div');
-  sheet.style.cssText = 'width:100%;max-width:680px;max-height:70vh;background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);border-radius:24px 24px 0 0;padding:1.5rem;color:var(--text);font-family:Figtree,sans-serif;overflow-y:auto';
 
   var avColors = proxColors || ['linear-gradient(135deg,#6366F1,#7C5CFC)'];
 
@@ -229,13 +224,11 @@ function _buildMemberSheet(title, subtitle, members, actionFn) {
     '</div>' +
     '<div id="member-sheet-tray" style="display:none"></div>';
 
-  overlay.appendChild(sheet);
-  document.body.appendChild(overlay);
   _memberSheetEl = overlay;
 }
 
 function closeMemberSheet() {
-  if (_memberSheetEl) { _memberSheetEl.remove(); _memberSheetEl = null; }
+  if (_memberSheetEl) { bbDynClose(_memberSheetEl); _memberSheetEl = null; }
 }
 
 function _showMemberTray(userId, userName, confirmText, cancelText, onConfirm) {
