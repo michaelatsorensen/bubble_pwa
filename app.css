@@ -77,6 +77,17 @@ body {
 
 /* ── TOPBAR ── */
 .topbar { display:flex; align-items:center; padding:0.6rem 1.2rem; padding-top:calc(0.6rem + env(safe-area-inset-top,0px)); gap:0.65rem; flex-shrink:0; background:rgba(255,255,255,0.95); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-bottom:1px solid #D8D5E4; z-index:5; }
+.chat-topbar-cards { display:flex; align-items:stretch; gap:5px; padding:0.45rem 0.7rem; padding-top:calc(0.45rem + env(safe-area-inset-top,0px)); flex-shrink:0; background:rgba(255,255,255,0.95); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-bottom:1px solid #D8D5E4; z-index:5; }
+.chat-topbar-back { width:38px; border-radius:10px; background:white; border:0.5px solid rgba(30,27,46,0.1); display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; color:var(--text-secondary); font-family:inherit; }
+.chat-topbar-back:active { background:var(--glass-bg); }
+.chat-topbar-identity { flex:1; display:flex; align-items:center; gap:10px; padding:7px 10px; background:white; border-radius:10px; border:0.5px solid rgba(30,27,46,0.1); cursor:pointer; min-width:0; }
+.chat-topbar-identity:active { background:rgba(124,92,252,0.03); }
+.chat-topbar-icon { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.chat-topbar-avatar { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#7C5CFC,#6366F1); display:flex; align-items:center; justify-content:center; font-size:0.65rem; font-weight:700; color:white; flex-shrink:0; overflow:hidden; }
+.chat-topbar-text { flex:1; min-width:0; }
+.chat-topbar-name { font-size:0.82rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chat-topbar-sub { font-size:0.6rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chat-topbar-info-icon { flex-shrink:0; color:var(--muted); }
 .topbar-logo { font-size:1.4rem; font-weight:900; letter-spacing:-0.05em; padding-right:0.05em; background:linear-gradient(135deg,#2ECFCF 0%,#6B8BFF 40%,#8B5CF6 70%,#E879A8 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 .topbar-title { font-size:1rem; font-weight:800; letter-spacing:-0.03em; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.25; }
 .topbar-badge { position:absolute;top:4px;right:4px;min-width:14px;height:14px;border-radius:7px;background:var(--accent2);color:white;font-size:0.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1;box-shadow:0 0 0 2px #FFFFFF; }
@@ -315,6 +326,7 @@ textarea.input { min-height:80px; resize:vertical; }
 
 .chat-messages { flex:1; padding:0.75rem; display:flex; flex-direction:column; gap:0.4rem; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .chat-date-sep { text-align:center; font-size:0.52rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin:0.4rem 0; }
+.chat-scroll-fab { position:absolute; bottom:4.5rem; right:1rem; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.95); border:1px solid var(--glass-border-subtle); color:var(--accent); font-size:0.9rem; font-weight:700; cursor:pointer; z-index:15; display:flex; align-items:center; justify-content:center; font-family:inherit; }
 /* ══ Bubble Chat Messages ══ */
 .bc-msg { display:flex; gap:0.5rem; padding:0.35rem 0; max-width:100%; }
 .bc-msg.me { flex-direction:row-reverse; }
@@ -1473,7 +1485,6 @@ a.person-action-btn { text-decoration:none; }
 .bc-bar-btn .ico { width:0.78rem; height:0.78rem; }
 .bc-bar-btn:active { background:rgba(30,27,46,0.05); transform:scale(0.97); }
 .bc-bar-btn.active { background:rgba(16,185,129,0.12); color:#10B981; }
-#bc-info-bar-btn.active { background:rgba(124,92,252,0.12); color:var(--accent); }
 
 /* Person sheet star rating */
 .ps-star-row { display:flex; align-items:center; justify-content:space-between; padding:0.5rem 0; margin:0 1.2rem; border-top:1px solid var(--glass-border-subtle); }

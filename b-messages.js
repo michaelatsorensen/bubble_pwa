@@ -153,16 +153,20 @@ async function sendMessage() {
       dmEditingId = null;
       input.value = '';
     } else {
-      input.value = '';
       const { data: newMsg, error } = await sb.from('messages').insert({
         sender_id: currentUser.id,
         receiver_id: currentChatUser,
         content
       }).select().single();
-      if (error) { logError('sendMessage:insert', error); showToast('Besked fejlede: ' + (error.message || 'ukendt')); input.value = content; return; }
+      if (error) { logError('sendMessage:insert', error); showToast('Besked fejlede: ' + (error.message || 'ukendt')); return; }
+      input.value = '';
       if (newMsg) {
         const el = document.getElementById('chat-messages');
         if (el && !el.querySelector('[data-msg-id="' + newMsg.id + '"]')) {
+          // Clear empty-chat hero if present
+          var emptyHero = el.querySelector('[style*="flex-direction:column"]');
+          if (emptyHero && !el.querySelector('.msg-row')) emptyHero.remove();
+          _dmMaybeInsertDateSep(el, newMsg.created_at);
           el.insertAdjacentHTML('beforeend', dmRenderMsg(newMsg));
           el.scrollTop = el.scrollHeight;
         }

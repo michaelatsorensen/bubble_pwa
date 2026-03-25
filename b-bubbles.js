@@ -603,9 +603,12 @@ async function createBubble() {
     // If created as child event, refresh parent bubble's info tab
     if (parentBubbleId && typeof bcLoadInfo === 'function' && bcBubbleId === parentBubbleId) {
       bcLoadInfo();
+      bcLoadEvents();
     }
     loadHome();
     loadDiscover();
+    // Open the new bubble
+    setTimeout(function() { openBubbleChat(bubble.id, 'screen-bubbles'); }, 400);
   } catch(e) { logError("createBubble", e); showToast(e.message || "Ukendt fejl"); }
 }
 

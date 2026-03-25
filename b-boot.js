@@ -50,6 +50,20 @@ window.addEventListener('load', () => {
 
   // DM file input: handled via inline onchange in HTML (more reliable on iOS PWA)
 
+  // Scroll-to-bottom FAB: show when scrolled up, hide when near bottom
+  ['chat-messages', 'bc-messages'].forEach(function(scrollId) {
+    var scrollEl = document.getElementById(scrollId);
+    var fabId = scrollId === 'chat-messages' ? 'dm-scroll-bottom' : 'bc-scroll-bottom';
+    if (scrollEl) {
+      scrollEl.addEventListener('scroll', function() {
+        var fab = document.getElementById(fabId);
+        if (!fab) return;
+        var atBottom = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 80;
+        fab.style.display = atBottom ? 'none' : 'flex';
+      });
+    }
+  });
+
   // Onboarding strength meter — listen on all fields
   ['ob-name','ob-title','ob-bio','ob-linkedin','ob-workplace'].forEach(function(id) {
     var el = document.getElementById(id);

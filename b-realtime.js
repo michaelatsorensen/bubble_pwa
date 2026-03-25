@@ -398,7 +398,9 @@ async function loadMessages() {
       const p = profileMap[partnerId] || {};
       const initials = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const isUnread = lastMsg.receiver_id === currentUser.id && !lastMsg.read_at;
-      const preview = lastMsg.file_url ? '📎 Billede' : escHtml((lastMsg.content||'').slice(0,50));
+      const isMine = lastMsg.sender_id === currentUser.id;
+      const previewText = lastMsg.file_url ? '📎 Billede' : escHtml((lastMsg.content||'').slice(0,50));
+      const preview = isMine ? '<span style="color:var(--muted)">Du:</span> ' + previewText : previewText;
       const time = timeAgo(lastMsg.created_at);
       const convAvatar = p.avatar_url ?
         '<div class="avatar" style="width:44px;height:44px;overflow:hidden;border-radius:50%"><img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover"></div>' :
@@ -454,6 +456,17 @@ async function openChat(userId, fromScreen) {
   } catch(e) { logError("openChat", e); showToast(e.message || "Ukendt fejl"); }
 }
 
+
+// ── Date separator: insert if last message in DOM is from a different day ──
+function _dmMaybeInsertDateSep(container, createdAt) {
+  if (!container || !createdAt) return;
+  var newDate = new Date(createdAt).toLocaleDateString('da-DK', {weekday:'long', day:'numeric', month:'short'});
+  var lastSep = container.querySelector('.chat-date-sep:last-of-type');
+  var lastDate = lastSep ? lastSep.textContent : '';
+  if (newDate.toUpperCase() !== lastDate) {
+    container.insertAdjacentHTML('beforeend', '<div class="chat-date-sep">' + newDate.toUpperCase() + '</div>');
+  }
+}
 
 function dmRenderMsg(m) {
   const sent = m.sender_id === currentUser.id;
@@ -519,7 +532,34 @@ async function loadChatMessages() {
     
     const sorted = (msgs||[]).reverse();
 
-    el.innerHTML = sorted.map(m => dmRenderMsg(m)).join('');
+    if (sorted.length === 0) {
+      // Empty chat hero
+      var partnerName = currentChatName || 'Ukendt';
+      var partnerAvatar = window._chatPartnerAvatar;
+      var partnerInit = partnerName.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var avHtml = partnerAvatar
+        ? '<img src="' + escHtml(partnerAvatar) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        : partnerInit;
+      el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;padding:3rem 1.5rem 1rem;text-align:center">' +
+        '<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#7C5CFC);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:white;overflow:hidden">' + avHtml + '</div>' +
+        '<div style="font-size:0.92rem;font-weight:700;margin-top:0.6rem">' + escHtml(partnerName) + '</div>' +
+        '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.2rem">Skriv den første besked</div>' +
+        '</div>';
+      return;
+    }
+
+    // Render with date separators
+    var html = '';
+    var lastDate = '';
+    sorted.forEach(function(m) {
+      var d = new Date(m.created_at).toLocaleDateString('da-DK', {weekday:'long', day:'numeric', month:'short'});
+      if (d !== lastDate) {
+        html += '<div class="chat-date-sep">' + d.toUpperCase() + '</div>';
+        lastDate = d;
+      }
+      html += dmRenderMsg(m);
+    });
+    el.innerHTML = html;
     el.scrollTop = el.scrollHeight;
   } catch(e) { logError("loadChatMessages", e); showToast(e.message || "Ukendt fejl"); }
 }
@@ -581,6 +621,7 @@ function subscribeToChat() {
       var el = document.getElementById('chat-messages');
       if (!el || el.querySelector('[data-msg-id="' + m.id + '"]')) return;
       dmHideTyping();
+      _dmMaybeInsertDateSep(el, m.created_at);
       el.insertAdjacentHTML('beforeend', dmRenderMsg(m));
       el.scrollTop = el.scrollHeight;
       if (m.receiver_id === currentUser.id) {
@@ -609,6 +650,7 @@ function subscribeToChat() {
       var el = document.getElementById('chat-messages');
       if (!el || el.querySelector('[data-msg-id="' + m.id + '"]')) return;
       dmHideTyping();
+      _dmMaybeInsertDateSep(el, m.created_at);
       el.insertAdjacentHTML('beforeend', dmRenderMsg(m));
       el.scrollTop = el.scrollHeight;
       sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', m.id)
