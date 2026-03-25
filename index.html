@@ -1505,6 +1505,21 @@
       <div class="input-label">Lokation (valgfrit)</div>
       <input class="input" id="eb-location" placeholder="f.eks. København">
     </div>
+    <div class="input-group" id="eb-checkin-mode-group" style="display:none">
+      <div class="input-label">Check-in metode</div>
+      <select class="input" id="eb-checkin-mode">
+        <option value="self">Selvbetjening (deltagere checker sig selv ind)</option>
+        <option value="scan">Reverse QR (arrangør scanner deltagere)</option>
+      </select>
+    </div>
+    <div class="input-group" id="eb-event-date-group" style="display:none">
+      <div class="input-label">Dato</div>
+      <input class="input" type="date" id="eb-event-date">
+    </div>
+    <div class="input-group" id="eb-event-time-group" style="display:none">
+      <div class="input-label">Tidspunkt (valgfrit)</div>
+      <input class="input" type="time" id="eb-event-time">
+    </div>
 
     <button class="btn-primary" onclick="saveEditBubble()">Gem ændringer</button>
     <button class="btn-secondary" onclick="closeModal('modal-edit-bubble')">Annuller</button>
@@ -1514,24 +1529,19 @@
 <!-- ════════════════════════════════════════
      MODAL: CREATE BUBBLE
 ════════════════════════════════════════ -->
-<!-- TYPE PICKER: Live Event vs Network -->
+<!-- TYPE PICKER: Event vs Network -->
 <div class="modal-overlay" id="modal-create-picker" onclick="if(event.target===this)closeModal('modal-create-picker')">
   <div class="modal-sheet" style="max-height:65vh">
     <div class="modal-handle"></div>
     <div class="modal-title">Hvad vil du oprette?</div>
     <div style="display:flex;flex-direction:column;gap:0.6rem;margin-top:0.5rem">
-      <div onclick="closeModal('modal-create-picker');openCreateLiveModal()" style="background:#FFFFFF;border:1.5px solid rgba(46,207,207,0.2);border-radius:var(--radius);padding:1.1rem;cursor:pointer;box-shadow:0 1px 3px rgba(30,27,46,0.06);transition:all 0.15s">
+      <div onclick="closeModal('modal-create-picker');openCreateEventModal()" style="background:#FFFFFF;border:1.5px solid rgba(46,207,207,0.2);border-radius:var(--radius);padding:1.1rem;cursor:pointer;box-shadow:0 1px 3px rgba(30,27,46,0.06);transition:all 0.15s">
         <div style="display:flex;align-items:center;gap:0.75rem">
-          <div style="width:44px;height:44px;border-radius:12px;background:rgba(46,207,207,0.1);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">📡</div>
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(46,207,207,0.1);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">📅</div>
           <div style="flex:1">
-            <div style="font-size:0.92rem;font-weight:700;color:var(--text)">Live Event</div>
-            <div style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.15rem;line-height:1.4">Tidsbestemt med QR check-in og deltager-scanning. Til konferencer, meetups, workshops.</div>
+            <div style="font-size:0.92rem;font-weight:700;color:var(--text)">Event</div>
+            <div style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.15rem;line-height:1.4">Konference, meetup, workshop eller fest. Med dato, check-in og QR scanning.</div>
           </div>
-        </div>
-        <div style="display:flex;gap:0.35rem;margin-top:0.6rem;flex-wrap:wrap">
-          <span style="font-size:0.6rem;padding:0.15rem 0.5rem;background:rgba(46,207,207,0.08);color:#2ECFCF;border-radius:99px;font-weight:600">QR Scanner</span>
-          <span style="font-size:0.6rem;padding:0.15rem 0.5rem;background:rgba(46,207,207,0.08);color:#2ECFCF;border-radius:99px;font-weight:600">Live Check-in</span>
-          <span style="font-size:0.6rem;padding:0.15rem 0.5rem;background:rgba(46,207,207,0.08);color:#2ECFCF;border-radius:99px;font-weight:600">Gæste-QR</span>
         </div>
       </div>
       <div onclick="closeModal('modal-create-picker');openCreateNetworkModal()" style="background:#FFFFFF;border:1.5px solid rgba(124,92,252,0.15);border-radius:var(--radius);padding:1.1rem;cursor:pointer;box-shadow:0 1px 3px rgba(30,27,46,0.06);transition:all 0.15s">
@@ -1740,7 +1750,7 @@
 
     <!-- Create button right under scanner -->
     <div style="display:flex;justify-content:center;margin:0.4rem 0 0.2rem">
-      <button onclick="openCreateLiveModal()" style="font-size:0.68rem;padding:0.3rem 0.8rem;background:none;border:1px solid var(--glass-border-subtle);border-radius:8px;color:var(--accent);cursor:pointer;font-family:inherit;font-weight:600">+ Opret nyt event</button>
+      <button onclick="openCreateEventModal()" style="font-size:0.68rem;padding:0.3rem 0.8rem;background:none;border:1px solid var(--glass-border-subtle);border-radius:8px;color:var(--accent);cursor:pointer;font-family:inherit;font-weight:600">+ Opret nyt event</button>
     </div>
 
     <!-- Confirmation after scan (replaces status) -->

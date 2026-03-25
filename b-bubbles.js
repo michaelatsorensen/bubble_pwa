@@ -376,6 +376,8 @@ async function confirmLeaveBubble(bubbleId) {
   try {
     await sb.from('bubble_members').delete().eq('bubble_id', bubbleId).eq('user_id', currentUser.id);
     showToast('Du har forladt boblen');
+    loadHome();
+    loadMyBubbles();
     // Navigate back using stored fromScreen
     var backBtn = document.getElementById('bc-back-btn');
     if (backBtn) { backBtn.click(); } else { goTo(_activeScreen || 'screen-home'); }
@@ -389,6 +391,43 @@ async function confirmLeaveBubble(bubbleId) {
 // ══════════════════════════════════════════════════════════
 function openCreateBubble() {
   openModal('modal-create-picker');
+}
+
+function openCreateEventModal() {
+  // Use standard create-bubble sheet with event type pre-selected
+  cbChips = [];
+  document.getElementById('cb-name').value = '';
+  document.getElementById('cb-desc').value = '';
+  document.getElementById('cb-location').value = '';
+  renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
+  var modal = document.getElementById('bb-sheet-create-bubble');
+  if (modal) delete modal.dataset.parentBubbleId;
+  var parentLabel = document.getElementById('cb-parent-label');
+  if (parentLabel) { parentLabel.style.display = 'none'; parentLabel.textContent = ''; }
+  bbOpen('create-bubble');
+  setTimeout(function() {
+    initInputConfirmButtons();
+    var typeSelect = document.getElementById('cb-type');
+    if (typeSelect) typeSelect.value = 'event';
+    cbRenderPillSelect('cb-type', [
+      { value: 'event',   icon: 'calendar', label: 'Event' },
+      { value: 'network', icon: 'bubble',   label: 'Netværk' }
+    ]);
+    cbRenderPillSelect('cb-visibility', [
+      { value: 'public',  icon: 'globe', label: 'Offentlig' },
+      { value: 'private', icon: 'lock',  label: 'Privat' },
+      { value: 'hidden',  icon: 'eye',   label: 'Skjult' }
+    ]);
+    // Show event fields
+    var cmg = document.getElementById('cb-checkin-mode-group');
+    var edg = document.getElementById('cb-event-date-group');
+    var etg = document.getElementById('cb-event-time-group');
+    if (cmg) cmg.style.display = 'block';
+    if (edg) edg.style.display = 'block';
+    if (etg) etg.style.display = 'block';
+    var dateInput = document.getElementById('cb-event-date');
+    if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+  }, 50);
 }
 
 function openCreateEventFromBubble(parentBubbleId) {
@@ -651,6 +690,25 @@ async function openEditBubble(bubbleId) {
       if (b.icon_url) { iconPrev.innerHTML = '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:12px">'; }
       else { iconPrev.innerHTML = bubbleEmoji(b.type); }
     }
+    // Event-specific fields
+    var isEvent = b.type === 'event' || b.type === 'live';
+    var cmg = document.getElementById('eb-checkin-mode-group');
+    var edg = document.getElementById('eb-event-date-group');
+    var etg = document.getElementById('eb-event-time-group');
+    if (cmg) cmg.style.display = isEvent ? 'block' : 'none';
+    if (edg) edg.style.display = isEvent ? 'block' : 'none';
+    if (etg) etg.style.display = isEvent ? 'block' : 'none';
+    if (isEvent) {
+      var cmEl = document.getElementById('eb-checkin-mode');
+      if (cmEl) cmEl.value = b.checkin_mode || 'self';
+      var edEl = document.getElementById('eb-event-date');
+      var etEl = document.getElementById('eb-event-time');
+      if (b.event_date) {
+        var evD = new Date(b.event_date);
+        if (edEl) edEl.value = evD.toISOString().slice(0, 10);
+        if (etEl && evD.getHours() > 0) etEl.value = evD.toTimeString().slice(0, 5);
+      }
+    }
 
     _pendingBubbleIcon = b.icon_url || null;
     openModal('modal-edit-bubble');
@@ -691,25 +749,26 @@ async function saveEditBubble() {
     const desc       = document.getElementById('eb-desc').value.trim();
     const location   = document.getElementById('eb-location').value.trim();
     if (!name) return showToast('Navn er påkrævet');
-    // Show confirmation tray
-    var saveBtn = document.querySelector('#modal-edit-bubble .btn-primary[onclick="saveEditBubble()"]');
-    if (saveBtn && !saveBtn.dataset.confirmed) {
-      saveBtn.dataset.confirmed = 'pending';
-      saveBtn.textContent = 'Bekræft ændringer';
-      saveBtn.style.background = 'var(--green)';
-      setTimeout(function() { saveBtn.dataset.confirmed = ''; saveBtn.textContent = 'Gem ændringer'; saveBtn.style.background = ''; }, 4000);
-      return;
-    }
     var updateObj = {
       name, type, type_label: typeLabel(type),
       visibility, description: desc, location, keywords: ebChips
     };
     if (_pendingBubbleIcon) updateObj.icon_url = _pendingBubbleIcon;
+    // Event date/time
+    if (type === 'event' || type === 'live') {
+      var checkinMode = document.getElementById('eb-checkin-mode')?.value;
+      if (checkinMode) updateObj.checkin_mode = checkinMode;
+      var dateVal = document.getElementById('eb-event-date')?.value;
+      var timeVal = document.getElementById('eb-event-time')?.value;
+      if (dateVal) {
+        var eventDateTime = timeVal ? dateVal + 'T' + timeVal : dateVal + 'T00:00';
+        updateObj.event_date = new Date(eventDateTime).toISOString();
+      }
+    }
     const { error } = await sb.from('bubbles').update(updateObj).eq('id', currentEditBubbleId).eq('created_by', currentUser.id);
     if (error) return showToast('Fejl: ' + error.message);
     closeModal('modal-edit-bubble');
     showSuccessToast('Boble opdateret');
-    if (saveBtn) { saveBtn.dataset.confirmed = ''; saveBtn.textContent = 'Gem ændringer'; saveBtn.style.background = ''; }
     await bcLoadBubbleInfo();
     await bcLoadMembers();
   } catch(e) { logError("saveEditBubble", e); showToast(e.message || "Ukendt fejl"); }

@@ -599,6 +599,7 @@ async function bbConfirmAccept(inviteId, fromUserId) {
       await sb.from('bubble_members').insert({ bubble_id: inv.bubble_id, user_id: currentUser.id });
       showSuccessToast('Du er nu med i boblen!');
       loadMyBubbles();
+      setTimeout(function() { openBubbleChat(inv.bubble_id, 'screen-bubbles'); }, 800);
     }
   } catch(e) { logError('bbConfirmAccept', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
 }
