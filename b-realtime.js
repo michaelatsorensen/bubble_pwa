@@ -88,10 +88,10 @@ function rtReconnect() {
   rtUnsubscribeAll();
   _rtChannelStates = {};
   initGlobalRealtime();
-  // Re-subscribe DM chat if open
-  if (chatSubscription && currentChatUser) subscribeToChat();
-  // Re-subscribe bubble chat if open
-  if (typeof bcSubscription !== 'undefined' && bcSubscription && typeof bcBubbleId !== 'undefined' && bcBubbleId) {
+  // Re-subscribe DM chat if screen is open (not subscription-dependent)
+  if (_activeScreen === 'screen-chat' && currentChatUser) subscribeToChat();
+  // Re-subscribe bubble chat if screen is open (not subscription-dependent)
+  if (_activeScreen === 'screen-bubble-chat' && typeof bcBubbleId !== 'undefined' && bcBubbleId) {
     if (typeof bcSubscribeRealtime === 'function') bcSubscribeRealtime();
   }
 }
