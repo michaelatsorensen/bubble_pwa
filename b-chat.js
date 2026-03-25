@@ -236,15 +236,14 @@ async function openBubbleChat(bubbleId, fromScreen) {
       _bcBackFn();
     }
   };
-  goTo('screen-bubble-chat');
-  // Reset topbar immediately — prevents previous bubble flashing
+
+  // Reset ALL visible state BEFORE showing screen — prevents previous bubble flashing
   document.getElementById('bc-name').textContent = '';
   document.getElementById('bc-members-count').textContent = '';
   var iconEl = document.getElementById('bc-topbar-icon');
   if (iconEl) iconEl.innerHTML = '';
   var actionBtns = document.getElementById('bc-action-btns');
   if (actionBtns) { actionBtns.innerHTML = ''; actionBtns.style.display = 'none'; }
-  // Hide all panels + tabs + tab bar until membership is known — skeleton shows instead
   var tabBar = document.querySelector('#screen-bubble-chat .bubble-tabs');
   if (tabBar) tabBar.style.display = 'none';
   ['chat','members','info','posts','events'].forEach(function(t) {
@@ -256,7 +255,8 @@ async function openBubbleChat(bubbleId, fromScreen) {
   var actionBar = document.getElementById('bc-action-bar');
   if (actionBar) actionBar.style.display = 'none';
 
-  // Show skeleton loader while data loads
+  // NOW show the clean screen + skeleton
+  goTo('screen-bubble-chat');
   _bcShowSkeleton();
 
   // 2. Load all data
