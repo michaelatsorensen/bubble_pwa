@@ -290,8 +290,8 @@ async function bcLoadMembership(b, bubbleId) {
   // Pending membership banner
   bcRenderPendingBanner(isPending);
 
-  // Action buttons
-  bcRenderActions(b, myMembership, canEdit);
+  // Action buttons + tab gating
+  bcRenderActions(b, myMembership, canEdit, isPending);
 }
 
 // Render or hide pending membership banner
@@ -318,14 +318,21 @@ function bcRenderPendingBanner(isPending) {
 }
 
 // ── Render action buttons based on membership state ──
-function bcRenderActions(b, myMembership, canEdit) {
+function bcRenderActions(b, myMembership, canEdit, isPending) {
   var actionArea = document.getElementById('bc-action-btns');
   var actionBar = document.getElementById('bc-action-bar');
   var infoTab = document.getElementById('bc-tab-info');
+  var chatTab = document.getElementById('bc-tab-chat');
+  var postsTab = document.getElementById('bc-tab-posts');
+  var eventsTab = document.getElementById('bc-tab-events');
+  var isActiveMember = myMembership && !isPending;
 
-  if (myMembership) {
-    // Members: move Info from tabs to action bar
+  if (isActiveMember) {
+    // Active members: move Info from tabs to action bar, show all content tabs
     if (infoTab) infoTab.style.display = 'none';
+    if (chatTab) chatTab.style.display = '';
+    if (postsTab) postsTab.style.display = '';
+    // eventsTab visibility handled by bcConfigureTabs
     actionArea.innerHTML =
       (canEdit ? `<button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" style="font-size:0.82rem;padding:0.3rem 0.4rem" title="Rediger">${icon("edit")}</button>` : '');
     if (actionBar) {
@@ -337,19 +344,23 @@ function bcRenderActions(b, myMembership, canEdit) {
         `<button class="bc-bar-btn" data-action="openQRModal" data-id="${b.id}">${icon('qrcode')} QR</button>`;
       actionBar.style.display = 'flex';
     }
-  } else if (b.visibility === 'hidden') {
-    // Non-members keep Info in tabs
-    if (infoTab) infoTab.style.display = '';
-    actionArea.innerHTML = `<span style="font-size:0.75rem;color:var(--muted)">${icon("eye")} Kun via invitation</span>`;
-    if (actionBar) actionBar.style.display = 'none';
-  } else if (b.visibility === 'private') {
-    if (infoTab) infoTab.style.display = '';
-    actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="requestJoin" data-id="${b.id}">${icon("lock")} Anmod</button>`;
-    if (actionBar) actionBar.style.display = 'none';
   } else {
+    // Non-members + pending: only Medlemmer + Info tabs
     if (infoTab) infoTab.style.display = '';
-    actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="joinBubble" data-id="${b.id}">+ Join</button>`;
+    if (chatTab) chatTab.style.display = 'none';
+    if (postsTab) postsTab.style.display = 'none';
+    if (eventsTab) eventsTab.style.display = 'none';
     if (actionBar) actionBar.style.display = 'none';
+
+    if (isPending) {
+      actionArea.innerHTML = '';
+    } else if (b.visibility === 'hidden') {
+      actionArea.innerHTML = `<span style="font-size:0.75rem;color:var(--muted)">${icon("eye")} Kun via invitation</span>`;
+    } else if (b.visibility === 'private') {
+      actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="requestJoin" data-id="${b.id}">${icon("lock")} Anmod</button>`;
+    } else {
+      actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="joinBubble" data-id="${b.id}">+ Join</button>`;
+    }
   }
 }
 
