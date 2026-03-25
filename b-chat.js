@@ -237,6 +237,13 @@ async function openBubbleChat(bubbleId, fromScreen) {
     }
   };
   goTo('screen-bubble-chat');
+  // Reset topbar immediately — prevents previous bubble flashing
+  document.getElementById('bc-name').textContent = '';
+  document.getElementById('bc-members-count').textContent = '';
+  var iconEl = document.getElementById('bc-topbar-icon');
+  if (iconEl) iconEl.innerHTML = '';
+  var actionBtns = document.getElementById('bc-action-btns');
+  if (actionBtns) { actionBtns.innerHTML = ''; actionBtns.style.display = 'none'; }
   // Hide all panels + tabs + tab bar until membership is known — skeleton shows instead
   var tabBar = document.querySelector('#screen-bubble-chat .bubble-tabs');
   if (tabBar) tabBar.style.display = 'none';
