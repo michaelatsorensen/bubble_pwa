@@ -529,57 +529,6 @@ async function updateNotifNavBadge() {
   updateTopbarNotifBadge();
 }
 
-// ── Bubbles screen tabs ──
-function openCreateLiveModal() {
-  var nameInput = document.getElementById('ql-name');
-  var locInput = document.getElementById('ql-location');
-  if (nameInput) nameInput.value = '';
-  if (locInput) locInput.value = '';
-  openModal('modal-create-live');
-  setTimeout(function() { if (nameInput) nameInput.focus(); }, 300);
-}
-
-
-async function submitQuickLive() {
-  var name = (document.getElementById('ql-name')?.value || '').trim();
-  if (!name) { showToast('Giv dit event et navn'); return; }
-  var location = (document.getElementById('ql-location')?.value || '').trim();
-  try {
-    showToast('Opretter...');
-    var { data: bubble, error } = await sb.from('bubbles').insert({
-      name: name,
-      type: 'event',
-      visibility: 'public',
-      location: location,
-      created_by: currentUser.id
-    }).select().single();
-    if (error) { showToast('Fejl: ' + error.message); return; }
-    // Auto-join + check-in
-    await sb.from('bubble_members').upsert({
-      user_id: currentUser.id,
-      bubble_id: bubble.id,
-      joined_at: new Date().toISOString(),
-      checked_in_at: new Date().toISOString()
-    });
-    closeModal('modal-create-live');
-    // Show confirmed state in checkin sheet
-    var scanConfirmed = document.getElementById('live-scan-confirmed');
-    if (scanConfirmed) {
-      scanConfirmed.style.display = 'flex';
-      var nameEl = document.getElementById('live-scan-confirmed-name');
-      if (nameEl) nameEl.textContent = 'Checked ind \u2014 ' + name + '!';
-      var metaEl = document.getElementById('live-scan-confirmed-meta');
-      if (metaEl) metaEl.innerHTML = '<div style="display:flex;gap:0.3rem;margin-top:0.4rem">' +
-        '<button onclick="closeLiveCheckinModal();openBubble(\'' + bubble.id + '\')" style="flex:1;font-size:0.72rem;padding:0.35rem 0.8rem;background:rgba(124,92,252,0.08);color:var(--accent);border:1px solid rgba(124,92,252,0.2);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Se hvem der er her \u2192</button>' +
-        '<button onclick="liveCheckout();closeLiveCheckinModal()" style="font-size:0.72rem;padding:0.35rem 0.6rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Check ud</button>' +
-        '</div>';
-    }
-    showToast('\uD83D\uDCCD ' + name + ' oprettet!');
-    loadLiveBubbleStatus();
-    loadLiveCheckinList();
-  } catch(e) { logError('submitQuickLive', e); showToast('Kunne ikke oprette'); }
-}
-
 // ── Bubble invite actions (from bubbles screen) ──
 function bbAcceptInvite(inviteId, fromUserId) {
   var card = document.getElementById('bb-inv-' + inviteId);

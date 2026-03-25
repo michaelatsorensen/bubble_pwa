@@ -173,6 +173,16 @@ async function openBubbleChat(bubbleId, fromScreen) {
   var prevBubbleId = (fromScreen === 'screen-bubble-chat' && bcBubbleId) ? bcBubbleId : null;
   bcUnsubscribe();
   bcBubbleId = bubbleId;
+
+  // Persist route state for browser back/restore
+  try {
+    sessionStorage.setItem('bb_route', JSON.stringify({
+      bubbleId: bubbleId,
+      parentBubbleId: prevBubbleId || null,
+      backTarget: fromScreen || 'screen-home'
+    }));
+  } catch(e) {}
+
   var backBtn = document.getElementById('bc-back-btn');
   var _bcBackFn;
   if (prevBubbleId) {

@@ -23,9 +23,17 @@ window.addEventListener('popstate', function() {
     if (prev) {
       // For bubble-chat, we need to reopen the bubble
       if (prev === 'screen-bubble-chat' && typeof openBubbleChat === 'function') {
-        // Can't reopen without bubbleId — fall back to home
-        goTo('screen-home');
-        _navStack = ['screen-home'];
+        // Restore bubble from route state
+        var route = null;
+        try { route = JSON.parse(sessionStorage.getItem('bb_route')); } catch(e) {}
+        if (route && route.parentBubbleId) {
+          openBubbleChat(route.parentBubbleId, route.backTarget || 'screen-bubbles');
+        } else if (route && route.backTarget) {
+          goTo(route.backTarget);
+        } else {
+          goTo('screen-home');
+        }
+        _navStack = [_navStack[_navStack.length - 1] || 'screen-home'];
       } else {
         goTo(prev);
       }
@@ -73,6 +81,7 @@ function _navLeaveChat() {
   if (typeof dmEditingId !== 'undefined') dmEditingId = null;
 }
 function _navLeaveBubbleChat() {
+  try { sessionStorage.removeItem('bb_route'); } catch(e) {}
   try { if (typeof bcSubscription !== 'undefined' && bcSubscription) { bcSubscription.unsubscribe(); bcSubscription = null; } } catch(e) {}
   if (typeof bcEditingId !== 'undefined') bcEditingId = null;
   if (typeof bcCurrentMsgId !== 'undefined') bcCurrentMsgId = null;

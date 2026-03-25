@@ -18,25 +18,13 @@ var myUpvotes = {};     // { bubbleId: true }
 
 async function loadBubbleUpvotes() {
   try {
-    // Try loading from bubble_upvotes table
     var { data: all, error } = await sb.from('bubble_upvotes').select('bubble_id');
-    if (error) {
-      // Table might not exist yet — use localStorage fallback
-      console.warn('bubble_upvotes table not found, using local fallback');
-      var local = {};
-      try { local = JSON.parse(localStorage.getItem('bubble_upvotes_local') || '{}'); } catch(e) {}
-      bubbleUpvotes = local;
-      var myLocal = {};
-      try { myLocal = JSON.parse(localStorage.getItem('bubble_my_upvotes') || '{}'); } catch(e) {}
-      myUpvotes = myLocal;
-      return;
-    }
-    // Count per bubble
+    if (error) { logError('loadBubbleUpvotes', error); return; }
     bubbleUpvotes = {};
     (all || []).forEach(function(row) {
       bubbleUpvotes[row.bubble_id] = (bubbleUpvotes[row.bubble_id] || 0) + 1;
     });
-    // Check which ones I upvoted
+    if (!currentUser) return;
     var { data: mine } = await sb.from('bubble_upvotes').select('bubble_id').eq('user_id', currentUser.id);
     myUpvotes = {};
     (mine || []).forEach(function(row) { myUpvotes[row.bubble_id] = true; });
@@ -46,30 +34,16 @@ async function loadBubbleUpvotes() {
 async function toggleBubbleUpvote(bubbleId) {
   try {
     if (myUpvotes[bubbleId]) {
-      // Remove upvote
       var { error } = await sb.from('bubble_upvotes').delete().eq('user_id', currentUser.id).eq('bubble_id', bubbleId);
-      if (error) {
-        // Fallback: localStorage
-        delete myUpvotes[bubbleId];
-        bubbleUpvotes[bubbleId] = Math.max((bubbleUpvotes[bubbleId] || 1) - 1, 0);
-        try { localStorage.setItem('bubble_upvotes_local', JSON.stringify(bubbleUpvotes)); localStorage.setItem('bubble_my_upvotes', JSON.stringify(myUpvotes)); } catch(e) {}
-      } else {
-        delete myUpvotes[bubbleId];
-        bubbleUpvotes[bubbleId] = Math.max((bubbleUpvotes[bubbleId] || 1) - 1, 0);
-      }
+      if (error) { showToast('Kunne ikke fjerne anbefaling'); return; }
+      delete myUpvotes[bubbleId];
+      bubbleUpvotes[bubbleId] = Math.max((bubbleUpvotes[bubbleId] || 1) - 1, 0);
       showToast('Anbefaling fjernet');
     } else {
-      // Add upvote
       var { error } = await sb.from('bubble_upvotes').insert({ user_id: currentUser.id, bubble_id: bubbleId });
-      if (error) {
-        // Fallback: localStorage
-        myUpvotes[bubbleId] = true;
-        bubbleUpvotes[bubbleId] = (bubbleUpvotes[bubbleId] || 0) + 1;
-        try { localStorage.setItem('bubble_upvotes_local', JSON.stringify(bubbleUpvotes)); localStorage.setItem('bubble_my_upvotes', JSON.stringify(myUpvotes)); } catch(e) {}
-      } else {
-        myUpvotes[bubbleId] = true;
-        bubbleUpvotes[bubbleId] = (bubbleUpvotes[bubbleId] || 0) + 1;
-      }
+      if (error) { showToast('Kunne ikke anbefale'); return; }
+      myUpvotes[bubbleId] = true;
+      bubbleUpvotes[bubbleId] = (bubbleUpvotes[bubbleId] || 0) + 1;
       showToast('Anbefalet \u2713');
     }
     // Re-render discover if visible
