@@ -174,12 +174,20 @@ async function openBubbleChat(bubbleId, fromScreen) {
   bcUnsubscribe();
   bcBubbleId = bubbleId;
   var backBtn = document.getElementById('bc-back-btn');
+  var _bcBackFn;
   if (prevBubbleId) {
-    // Back reopens the parent bubble
-    backBtn.onclick = function() { openBubbleChat(prevBubbleId, 'screen-bubbles'); };
+    _bcBackFn = function() { openBubbleChat(prevBubbleId, 'screen-bubbles'); };
   } else {
-    backBtn.onclick = function() { goTo(fromScreen || 'screen-home'); };
+    _bcBackFn = function() { goTo(fromScreen || 'screen-home'); };
   }
+  // If on info tab (opened via topbar tap), back returns to previous tab first
+  backBtn.onclick = function() {
+    if (_bcActiveTab === 'info' && _bcPrevTab && _bcPrevTab !== 'info') {
+      bcSwitchTab(_bcPrevTab);
+    } else {
+      _bcBackFn();
+    }
+  };
   goTo('screen-bubble-chat');
   bcSwitchTab('members');
 
@@ -466,7 +474,21 @@ async function bcLoadBubbleInfo() {
   } catch(e) { logError("bcLoadBubbleInfo", e); showToast(e.message || "Ukendt fejl"); }
 }
 
+var _bcActiveTab = 'members';
+
+function bcToggleInfo() {
+  if (_bcActiveTab === 'info') {
+    // Already on info → go back to previous content tab
+    bcSwitchTab(_bcPrevTab || 'members');
+  } else {
+    _bcPrevTab = _bcActiveTab;
+    bcSwitchTab('info');
+  }
+}
+var _bcPrevTab = 'members';
+
 function bcSwitchTab(tab) {
+  _bcActiveTab = tab;
   ['chat','members','info','posts','events'].forEach(t => {
     const panel = document.getElementById('bc-panel-'+t);
     const tabBtn = document.getElementById('bc-tab-'+t);
