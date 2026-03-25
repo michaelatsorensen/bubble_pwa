@@ -41,7 +41,10 @@ async function loadHome() {
     // Post-load: apply visibility toggles, show nudge
     hsApplyToHome();
     showProfileSetupCTA();
-  } catch(e) { logError("loadHome", e); }
+  } catch(e) {
+    logError("loadHome", e);
+    showToast('Kunne ikke indlæse — træk ned for at prøve igen');
+  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -318,7 +321,7 @@ async function saveSetupTitle() {
     loadHomeDartboardData();
     // Auto-open next sheet after brief delay
     setTimeout(function() { openNextProfileSetupSheet(); }, 400);
-  } catch(e) { showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { errorToast('save', e); }
 }
 
 // ── INTERESTS SHEET ──
@@ -380,7 +383,7 @@ async function saveSetupInterests() {
     showProfileSetupCTA();
     loadHomeDartboardData();
     setTimeout(function() { openNextProfileSetupSheet(); }, 400);
-  } catch(e) { showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { errorToast('save', e); }
 }
 
 // ── LIFESTAGE SHEET ──
@@ -421,7 +424,7 @@ async function saveSetupLifestage() {
     showSuccessToast('Profil klar!');
     showProfileSetupCTA();
     loadHomeDartboardData();
-  } catch(e) { showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { errorToast('save', e); }
 }
 
 // ── SKIP + BOOST ──
@@ -519,7 +522,7 @@ async function bbConfirmAccept(inviteId, fromUserId) {
       loadMyBubbles();
       setTimeout(function() { openBubbleChat(inv.bubble_id, 'screen-bubbles'); }, 800);
     }
-  } catch(e) { logError('bbConfirmAccept', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('bbConfirmAccept', e); errorToast('save', e); }
 }
 
 function bbDeclineInvite(inviteId) {
@@ -539,7 +542,7 @@ async function bbConfirmDecline(inviteId) {
     var card = document.getElementById('bb-inv-' + inviteId);
     if (card) { card.style.transition = 'opacity 0.2s'; card.style.opacity = '0'; setTimeout(function() { card.remove(); }, 200); }
     showToast('Invitation afvist');
-  } catch(e) { logError('bbConfirmDecline', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('bbConfirmDecline', e); errorToast('save', e); }
 }
 
 function bbSwitchTab(tab) {

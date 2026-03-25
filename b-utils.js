@@ -292,6 +292,28 @@ function showToast(msg, duration) {
   toastTimer = setTimeout(() => t.classList.remove('show'), ms);
 }
 
+// ── Human-readable error toast — strips technical Supabase/JS errors ──
+function errorToast(context, error) {
+  var msg = (error && error.message) ? error.message : String(error || '');
+  // Map known technical errors to human messages
+  if (msg.includes('row-level security') || msg.includes('policy')) return showToast('Du har ikke tilladelse til dette');
+  if (msg.includes('JWT') || msg.includes('token') || msg.includes('refresh_token')) return showToast('Din session er udløbet — log ind igen');
+  if (msg.includes('duplicate') || msg.includes('unique')) return showToast('Det er allerede gjort');
+  if (msg.includes('network') || msg.includes('fetch') || msg.includes('Failed to fetch')) return showToast('Ingen forbindelse — tjek dit netværk');
+  if (msg.includes('timeout') || msg.includes('TIMEOUT')) return showToast('Serveren svarer ikke — prøv igen');
+  // Default: friendly context message
+  var friendly = {
+    'login': 'Login fejlede — tjek email og kodeord',
+    'signup': 'Oprettelse fejlede — prøv igen',
+    'save': 'Kunne ikke gemme — prøv igen',
+    'send': 'Beskeden blev ikke sendt — prøv igen',
+    'upload': 'Upload fejlede — prøv igen',
+    'delete': 'Kunne ikke slette — prøv igen',
+    'load': 'Kunne ikke hente data — prøv igen'
+  };
+  showToast(friendly[context] || 'Noget gik galt — prøv igen');
+}
+
 
 // ══════════════════════════════════════════════════════════
 //  HELPERS

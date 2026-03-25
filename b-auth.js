@@ -149,7 +149,7 @@ async function loadCurrentProfile() {
       currentProfile = data;
       updateHomeAvatar();
     }
-  } catch(e) { logError("loadCurrentProfile", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("loadCurrentProfile", e); errorToast("load", e); }
 }
 
 // ── Avatar helper: returns <img> or initials ──
@@ -204,7 +204,7 @@ async function handleAvatarUpload(input) {
     updateAllAvatars();
     showToast('Profilbillede opdateret! 📸');
     input.value = '';
-  } catch(e) { logError('handleAvatarUpload', e); showToast('Upload fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('handleAvatarUpload', e); errorToast('upload', e); }
 }
 
 // Resize image to max dimension, returns Blob
@@ -275,10 +275,10 @@ async function handleLogin() {
     if (!email || !pass) return showToast('Udfyld email og adgangskode');
     showToast('Logger ind...');
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-    if (error) return showToast('Fejl: ' + error.message);
+    if (error) return errorToast('login', error);
     currentUser = data.user;
     await resolvePostAuth();
-  } catch(e) { logError("handleLogin", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("handleLogin", e); errorToast("login", e); }
 }
 
 async function handleSignup() {
@@ -298,7 +298,7 @@ async function handleSignup() {
         data: { name: name }
       }
     });
-    if (error) return showToast('Fejl: ' + error.message);
+    if (error) return errorToast('login', error);
 
     // Check if email confirmation is required
     if (data.user && data.user.identities && data.user.identities.length === 0) {
@@ -340,7 +340,7 @@ async function handleSignup() {
 
     await resolvePostAuth();
     showSuccessToast('Velkommen til Bubble');
-  } catch(e) { logError("handleSignup", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("handleSignup", e); errorToast("signup", e); }
 }
 
 async function handleLogout() {
@@ -351,7 +351,7 @@ async function handleLogout() {
     await sb.auth.signOut();
     currentUser = null; currentProfile = null;
     goTo('screen-auth');
-  } catch(e) { logError("handleLogout", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("handleLogout", e); errorToast("load", e); }
 }
 
 async function handleForgotPassword() {
@@ -362,9 +362,9 @@ async function handleForgotPassword() {
     var { error } = await sb.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin
     });
-    if (error) return showToast('Fejl: ' + error.message);
+    if (error) return errorToast('login', error);
     showToast('Tjek din indbakke for nulstillingslink ✉️');
-  } catch(e) { logError('handleForgotPassword', e); showToast(e.message || 'Ukendt fejl'); }
+  } catch(e) { logError('handleForgotPassword', e); errorToast('login', e); }
 }
 
 function switchToSignup() {
@@ -483,7 +483,7 @@ async function submitFeedback() {
     var dyn = document.querySelector('.bb-dyn-overlay');
     if (dyn) bbDynClose(dyn);
     showToast('Tak for din feedback! 💜');
-  } catch(e) { logError('submitFeedback', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('submitFeedback', e); errorToast('send', e); }
 }
 
 
@@ -499,8 +499,8 @@ async function handleGoogleLogin() {
         queryParams: { access_type: 'offline', prompt: 'consent' }
       }
     });
-    if (error) showToast('Google login fejl: ' + error.message);
-  } catch(e) { logError("handleGoogleLogin", e); showToast(e.message || "Ukendt fejl"); }
+    if (error) errorToast('login', error);
+  } catch(e) { logError("handleGoogleLogin", e); errorToast("login", e); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -514,8 +514,8 @@ async function handleLinkedInLogin() {
         redirectTo: window.location.origin + window.location.pathname
       }
     });
-    if (error) showToast('LinkedIn login fejl: ' + error.message);
-  } catch(e) { logError("handleLinkedInLogin", e); showToast(e.message || "Ukendt fejl"); }
+    if (error) errorToast('login', error);
+  } catch(e) { logError("handleLinkedInLogin", e); errorToast("login", e); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -529,8 +529,8 @@ async function handleAppleLogin() {
         redirectTo: window.location.origin + window.location.pathname
       }
     });
-    if (error) showToast('Apple login fejl: ' + error.message);
-  } catch(e) { logError("handleAppleLogin", e); showToast(e.message || "Ukendt fejl"); }
+    if (error) errorToast('login', error);
+  } catch(e) { logError("handleAppleLogin", e); errorToast("login", e); }
 }
 
 // ══════════════════════════════════════════════════════════

@@ -80,7 +80,7 @@ async function maybeShowOnboarding() {
     goTo('screen-onboarding');
     setTimeout(initInputConfirmButtons, 50);
     return true;
-  } catch(e) { logError("maybeShowOnboarding", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("maybeShowOnboarding", e); errorToast("load", e); }
 }
 
 function reRunOnboarding() {
@@ -221,7 +221,7 @@ async function skipOnboarding() {
     await resolvePostAuthDestination();
   } catch(e) {
     logError('skipOnboarding', e);
-    showToast('Fejl: ' + (e.message || 'ukendt'));
+    errorToast('save', e);
   }
 }
 
@@ -953,14 +953,14 @@ async function saveOnboarding() {
       dynamic_keywords: obDynChips, is_anon: false,
       lifestage: obLifestage || null
     });
-    if (error) return showToast('Fejl: ' + error.message);
+    if (error) return errorToast('save', error);
     persistCustomTitle(title);
     await loadCurrentProfile();
     showSuccessToast('Profil oprettet');
     trackEvent('onboarding_complete');
     initServices();
     await resolvePostAuthDestination();
-  } catch(e) { logError("saveOnboarding", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("saveOnboarding", e); errorToast("save", e); }
 }
 
 

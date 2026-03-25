@@ -49,7 +49,7 @@ async function openPerson(userId, fromScreen) {
 
     // Render saved state + stars
     await _personRenderSaved(userId);
-  } catch(e) { logError("openPerson", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("openPerson", e); errorToast("load", e); }
 }
 
 // ── Person sub-renderers ──
@@ -207,7 +207,7 @@ async function saveContact() {
     showSuccessToast('Kontakt gemt');
     trackEvent('contact_saved', { contact_id: currentPerson });
     loadSavedContacts();
-  } catch(e) { logError("saveContact", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("saveContact", e); errorToast("save", e); }
 }
 
 let pendingRemoveSavedId = null;
@@ -259,7 +259,7 @@ async function confirmRemoveSaved() {
       loadSavedContacts();
     }
     showToast('Kontakt fjernet');
-  } catch(e) { logError("confirmRemoveSaved", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("confirmRemoveSaved", e); errorToast("delete", e); }
   } catch(e) { logError("confirmRemoveSaved", e); }
 }
 
@@ -697,7 +697,7 @@ async function psSaveContact() {
       showSuccessToast('Kontakt gemt');
     }
     loadSavedContacts();
-  } catch(e) { logError("psSaveContact", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("psSaveContact", e); errorToast("save", e); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -998,7 +998,7 @@ async function profAcceptInvite(inviteId, fromUserId) {
       loadProfileInvitations();
       setTimeout(() => openBubbleChat(inv.bubble_id, 'screen-profile'), 800);
     }
-  } catch(e) { logError("profAcceptInvite", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("profAcceptInvite", e); errorToast("save", e); }
 }
 
 let pendingDeclineInviteId = null;
@@ -1045,7 +1045,7 @@ async function confirmDeclineInvite() {
       loadProfileInvitations();
     }
     showToast('Invitation afvist');
-  } catch(e) { logError("confirmDeclineInvite", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("confirmDeclineInvite", e); errorToast("save", e); }
   } catch(e) { logError("confirmDeclineInvite", e); }
 }
 
@@ -1089,12 +1089,12 @@ async function saveProfile() {
       id: currentUser.id, name, title, bio, linkedin, workplace,
       keywords: epSelectedTags, dynamic_keywords: epDynChips, is_anon: isAnon
     });
-    if (error) return showToast('Fejl: ' + error.message);
+    if (error) return errorToast('save', error);
     await loadCurrentProfile();
     closeModal('modal-edit-profile');
     loadProfile();
     showSuccessToast('Profil gemt');
-  } catch(e) { logError("saveProfile", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("saveProfile", e); errorToast("save", e); }
 }
 
 function toggleAnon() {
@@ -1149,7 +1149,7 @@ async function psBlockUser() {
     // Refresh visible lists
     if (typeof loadProximityMap === 'function') loadProximityMap();
     if (typeof loadSavedContacts === 'function') loadSavedContacts();
-  } catch(e) { logError('psBlockUser', e, { blocked: userId }); showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('psBlockUser', e, { blocked: userId }); errorToast('save', e); }
   } catch(e) { logError("psBlockUser", e); }
 }
 
@@ -1177,7 +1177,7 @@ async function psReportUser() {
     // Also send email alert
     logError('USER_REPORT', new Error('Bruger rapporteret: ' + userName), { reported_id: userId, reporter_id: currentUser.id });
     showToast('Tak — ' + userName + ' er rapporteret. Vi kigger på det.');
-  } catch(e) { logError('psReportUser', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('psReportUser', e); errorToast('send', e); }
   } catch(e) { logError("psReportUser", e); }
 }
 
@@ -1194,7 +1194,7 @@ async function reportMessage(msgId, context) {
     });
     logError('MSG_REPORT', new Error('Besked rapporteret'), { msg_id: msgId, context: context, reporter: currentUser.id });
     showToast('Besked rapporteret. Tak!');
-  } catch(e) { logError('reportMessage', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('reportMessage', e); errorToast('send', e); }
 }
 
 // Simple chat word filter
@@ -1383,7 +1383,7 @@ async function psConfirmBubbleUp() {
     await sendBubbleUpInvitation(toUserId);
     psClose();
     showToast('🫧 Invitation sendt til ' + name + '!');
-  } catch(e) { logError("psConfirmBubbleUp", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("psConfirmBubbleUp", e); errorToast("send", e); }
 }
 
 // Bubble-up from screen-person
@@ -1406,7 +1406,7 @@ async function personConfirmBubbleUp() {
     await sendBubbleUpInvitation(currentPerson);
     personCancelBubbleUp();
     showToast('🫧 Invitation sendt til ' + name + '!');
-  } catch(e) { logError("personConfirmBubbleUp", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("personConfirmBubbleUp", e); errorToast("send", e); }
 }
 
 async function sendBubbleUpInvitation(toUserId) {
@@ -1442,7 +1442,7 @@ async function sendBubbleUpInvitation(toUserId) {
       from_user_id: currentUser.id,
       to_user_id: toUserId
     });
-  } catch(e) { logError("sendBubbleUpInvitation", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("sendBubbleUpInvitation", e); errorToast("send", e); }
 }
 
 // ══════════════════════════════════════════════════════════

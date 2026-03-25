@@ -146,7 +146,7 @@ async function convConfirmDelete() {
     showToast(ids.length + (ids.length === 1 ? ' samtale slettet' : ' samtaler slettet'));
     convToggleSelectMode();
     renderUnreadBadge();
-  } catch(e) { logError('convConfirmDelete', e); showToast(e.message || 'Fejl ved sletning'); }
+  } catch(e) { logError('convConfirmDelete', e); errorToast('delete', e); }
 }
 
 
@@ -177,7 +177,7 @@ async function sendMessage() {
         receiver_id: currentChatUser,
         content
       }).select().single();
-      if (error) { logError('sendMessage:insert', error); showToast('Besked fejlede: ' + (error.message || 'ukendt')); return; }
+      if (error) { logError('sendMessage:insert', error); errorToast('send', error); return; }
       input.value = '';
       if (newMsg) {
         const el = document.getElementById('chat-messages');
@@ -197,7 +197,7 @@ async function sendMessage() {
       }
       input.focus();
     }
-  } catch(e) { logError("sendMessage", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("sendMessage", e); errorToast("send", e); }
   finally { dmSending = false; if (sendBtn) { sendBtn.disabled = false; } }
 }
 
@@ -208,7 +208,7 @@ async function sendDirectMessage(toId, content) {
       receiver_id: toId,
       content
     });
-  } catch(e) { logError("sendDirectMessage", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("sendDirectMessage", e); errorToast("send", e); }
 }
 
 function startChat() {
@@ -259,7 +259,7 @@ async function dmHandleFile(input) {
       file_type: file.type
     }).select().single();
 
-    if (error) { logError('dmHandleFile:insert', error); showToast('Besked fejlede: ' + (error.message || 'ukendt')); input.value = ''; return; }
+    if (error) { logError('dmHandleFile:insert', error); errorToast('upload', error); input.value = ''; return; }
     if (newMsg) {
       const el = document.getElementById('chat-messages');
       if (el && !el.querySelector('[data-msg-id="' + newMsg.id + '"]')) {
@@ -269,7 +269,7 @@ async function dmHandleFile(input) {
       showToast('Fil sendt!');
     }
     input.value = '';
-  } catch(e) { logError("dmHandleFile", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("dmHandleFile", e); errorToast("upload", e); }
 }
 
 

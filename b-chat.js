@@ -106,7 +106,7 @@ async function selectGif(idx) {
         bubble_id: bcBubbleId, user_id: currentUser.id,
         content: '', file_url: gifUrl, file_name: 'gif.gif', file_type: 'image/gif'
       }).select('id, bubble_id, user_id, content, file_url, file_name, file_size, file_type, edited, created_at').single();
-      if (error) { logError('selectGif:bc', error); showToast('GIF fejl: ' + (error.message || 'ukendt')); return; }
+      if (error) { logError('selectGif:bc', error); errorToast('send', error); return; }
       if (msg) {
         msg.profiles = { id: currentUser.id, name: currentProfile?.name || '?' };
         var msgEl2 = document.getElementById('bc-messages');
@@ -133,7 +133,7 @@ async function selectGif(idx) {
       logError('selectGif', 'Unknown mode: ' + mode);
       showToast('GIF fejl: ukendt kontekst');
     }
-  } catch(e) { logError('selectGif', e, { mode: mode }); showToast('GIF fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('selectGif', e, { mode: mode }); errorToast('send', e); }
   } catch(e) { logError("selectGif", e); }
 }
 
@@ -765,7 +765,7 @@ async function bcLoadMessages() {
       el.appendChild(bcRenderMsg(m));
     });
     bcScrollToBottom();
-  } catch(e) { logError("bcLoadMessages", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("bcLoadMessages", e); errorToast("load", e); }
 }
 
 function bcRenderMsg(m) {
@@ -880,7 +880,7 @@ async function bcSendMessage() {
 
       if (error) {
         console.error('bcSendMessage insert error:', error);
-        showToast('Fejl: ' + (error.message || error.code || 'ukendt'));
+        errorToast('send', error);
         inp.value = text;
         return;
       }
@@ -898,7 +898,7 @@ async function bcSendMessage() {
         bcScrollToBottom();
       }
     }
-  } catch(e) { logError("bcSendMessage", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("bcSendMessage", e); errorToast("send", e); }
   finally { bcSending = false; var sb3 = document.getElementById("bc-send-btn"); if (sb3) { sb3.disabled = false; } }
   } catch(e) { logError("bcSendMessage", e); }
 }
@@ -976,7 +976,7 @@ async function bcHandleFile(input) {
       showToast('Fil sendt! 📎');
     }
     input.value = '';
-  } catch(e) { logError("bcHandleFile", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("bcHandleFile", e); errorToast("upload", e); }
 }
 
 function bcOpenContext(e, btn, isMe, msgId) {
@@ -1024,7 +1024,7 @@ async function bcReact(emoji) {
       await sb.from('bubble_message_reactions').insert({ message_id: bcCurrentMsgId, user_id: currentUser.id, emoji });
     }
     await bcLoadReactions(bcCurrentMsgId);
-  } catch(e) { logError("bcReact", e); showToast(e.message || "Reaktion fejlede"); }
+  } catch(e) { logError("bcReact", e); }
 }
 
 async function bcLoadReactions(msgId) {
@@ -1086,7 +1086,7 @@ async function bcDeleteMessage() {
     await sb.from('bubble_messages').delete().eq('id', bcCurrentMsgId).eq('user_id', currentUser.id);
     document.getElementById('bc-msg-' + bcCurrentMsgId)?.remove();
     showToast('Besked slettet');
-  } catch(e) { logError("bcDeleteMessage", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("bcDeleteMessage", e); errorToast("delete", e); }
 }
 
 async function bcShowHistory(msgId) {
@@ -1105,7 +1105,7 @@ async function bcShowHistory(msgId) {
       </div>`;
     }).join('') + `<div style="padding:0.55rem 0"><div style="font-size:0.62rem;color:var(--muted);margin-bottom:0.2rem;font-family:monospace">Nuværende</div><div style="font-size:0.82rem">${escHtml(current?.content||'')}</div></div>`;
     openModal('modal-edit-history');
-  } catch(e) { logError("bcShowHistory", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("bcShowHistory", e); errorToast("load", e); }
 }
 
 function bcCreateHistoryModal() {
@@ -1207,7 +1207,7 @@ async function bcLoadMembers() {
       html = '<div style="padding:0 0 0.4rem"><input class="input" type="search" id="bc-member-search" placeholder="Søg medlemmer..." oninput="bcFilterMembers()" style="font-size:0.75rem;padding:0.4rem 0.75rem;border-radius:10px"></div>' + html;
     }
     list.innerHTML = html;
-  } catch(e) { logError("bcLoadMembers", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("bcLoadMembers", e); errorToast("load", e); }
 }
 
 // ── Bubble owner: kick/remove member (inline confirm tray) ──
@@ -1231,7 +1231,7 @@ async function bcConfirmKick(userId, userName) {
     if (error) throw error;
     showToast(userName + ' er fjernet fra boblen');
     bcLoadMembers();
-  } catch(e) { logError('bcConfirmKick', e, { bubbleId: bcBubbleId, userId: userId }); showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('bcConfirmKick', e, { bubbleId: bcBubbleId, userId: userId }); errorToast('save', e); }
 }
 
 function bcFilterMembers() {
@@ -1452,7 +1452,7 @@ async function bcLoadInfo() {
       adminHtml +
       bottomHtml;
 
-  } catch(e) { logError("bcLoadInfo", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("bcLoadInfo", e); errorToast("load", e); }
 }
 
 // ── Checkout from event (within bubble chat view) ──
@@ -1751,7 +1751,7 @@ async function bcSubmitPost() {
     bcLoadPosts();
   } catch(e) {
     logError('bcSubmitPost', e);
-    showToast('Fejl: ' + (e.message || 'ukendt'));
+    errorToast('save', e);
   }
 }
 
@@ -1780,7 +1780,7 @@ async function bcConfirmDeletePost(postId) {
     bcLoadPosts();
   } catch(e) {
     logError('bcConfirmDeletePost', e);
-    showToast('Fejl: ' + (e.message || 'ukendt'));
+    errorToast('save', e);
   }
 }
 

@@ -62,7 +62,7 @@ async function toggleBubbleUpvote(bubbleId) {
       barBtn.innerHTML = (up ? icon('checkCircle') : icon('rocket')) + ' ' + (up ? 'Anbefalet' : 'Anbefal');
       barBtn.classList.toggle('active', !!up);
     }
-  } catch(e) { logError('toggleBubbleUpvote', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('toggleBubbleUpvote', e); errorToast('save', e); }
 }
 
 async function loadDiscover() {
@@ -149,7 +149,7 @@ async function openBubble(bubbleId, fromScreen) {
     // Auto-detect current screen if not provided
     if (!fromScreen) fromScreen = _activeScreen || 'screen-home';
     await openBubbleChat(bubbleId, fromScreen);
-  } catch(e) { logError("openBubble", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("openBubble", e); errorToast("load", e); }
 }
 
 // loadBubbleMembers removed — integrated into screen-bubble-chat bcLoadMembers
@@ -162,7 +162,7 @@ async function joinBubble(bubbleId) {
     await openBubble(bubbleId);
     loadHome();
     trackEvent('bubble_joined', { bubble_id: bubbleId });
-  } catch(e) { logError("joinBubble", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("joinBubble", e); errorToast("save", e); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -242,7 +242,7 @@ async function openTransferOwnership(bubbleId) {
         _selectTransferTarget(bubbleId, row.dataset.uid, row.dataset.name);
       };
     });
-  } catch(e) { logError('openTransferOwnership', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('openTransferOwnership', e); errorToast('load', e); }
 }
 
 function _selectTransferTarget(bubbleId, userId, userName) {
@@ -254,13 +254,13 @@ function _selectTransferTarget(bubbleId, userId, userName) {
 async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
   try {
     var { error } = await sb.from('bubbles').update({ created_by: newOwnerId }).eq('id', bubbleId).eq('created_by', currentUser.id);
-    if (error) { showToast('Fejl: ' + error.message); return; }
+    if (error) { errorToast('save', error); return; }
     closeMemberSheet();
     showSuccessToast('Ejerskab overdraget til ' + newOwnerName);
     trackEvent('bubble_ownership_transferred', { bubble_id: bubbleId, new_owner: newOwnerId });
     await bcLoadBubbleInfo();
     bcLoadInfo();
-  } catch(e) { logError('_executeTransfer', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('_executeTransfer', e); errorToast('save', e); }
 }
 
 // ── Admin designation ──
@@ -288,7 +288,7 @@ async function openAdminDesignation(bubbleId) {
         }
       };
     });
-  } catch(e) { logError('openAdminDesignation', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('openAdminDesignation', e); errorToast('load', e); }
 }
 
 function _selectMakeAdmin(bubbleId, userId, userName) {
@@ -306,7 +306,7 @@ function _selectRemoveAdmin(bubbleId, userId, userName) {
 async function _executeSetRole(bubbleId, userId, userName, role) {
   try {
     var { error } = await sb.from('bubble_members').update({ role: role }).eq('bubble_id', bubbleId).eq('user_id', userId);
-    if (error) { showToast('Fejl: ' + error.message); return; }
+    if (error) { errorToast('save', error); return; }
     closeMemberSheet();
     if (role === 'admin') {
       showSuccessToast(userName + ' er nu admin');
@@ -315,7 +315,7 @@ async function _executeSetRole(bubbleId, userId, userName, role) {
     }
     trackEvent('bubble_role_changed', { bubble_id: bubbleId, user_id: userId, role: role });
     await bcLoadMembers();
-  } catch(e) { logError('_executeSetRole', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('_executeSetRole', e); errorToast('save', e); }
 }
 
 async function leaveBubble(bubbleId, btnEl) {
@@ -356,7 +356,7 @@ async function confirmLeaveBubble(bubbleId) {
     loadMyBubbles();
     var backBtn = document.getElementById('bc-back-btn');
     if (backBtn) { backBtn.click(); } else { goTo(_activeScreen || 'screen-home'); }
-  } catch(e) { logError("confirmLeaveBubble", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("confirmLeaveBubble", e); errorToast("save", e); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -609,7 +609,7 @@ async function createBubble() {
       }
     }
     const { data: bubble, error } = await sb.from('bubbles').insert(insertData).select().single();
-    if (error) return showToast('Fejl: ' + error.message);
+    if (error) return errorToast('save', error);
     // Auto-join
     await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id });
     bbClose('create-bubble');
@@ -623,7 +623,7 @@ async function createBubble() {
     loadDiscover();
     // Open the new bubble
     setTimeout(function() { openBubbleChat(bubble.id, 'screen-bubbles'); }, 400);
-  } catch(e) { logError("createBubble", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("createBubble", e); errorToast("save", e); }
 }
 
 
@@ -636,10 +636,10 @@ async function requestJoin(bubbleId) {
     const { error } = await sb.from('bubble_members').insert({
       bubble_id: bubbleId, user_id: currentUser.id, status: 'pending'
     });
-    if (error && !String(error.message || '').includes('duplicate')) return showToast('Fejl: ' + error.message);
+    if (error && !String(error.message || '').includes('duplicate')) return errorToast('save', error);
     showToast('Anmodning sendt! Ejeren skal godkende 🔒');
     await openBubble(bubbleId);
-  } catch(e) { logError("requestJoin", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("requestJoin", e); errorToast("save", e); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -688,7 +688,7 @@ async function openEditBubble(bubbleId) {
     _pendingBubbleIcon = b.icon_url || null;
     openModal('modal-edit-bubble');
     setTimeout(initInputConfirmButtons, 50);
-  } catch(e) { logError("openEditBubble", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("openEditBubble", e); errorToast("load", e); }
 }
 
 var _pendingBubbleIcon = null;
@@ -711,7 +711,7 @@ async function handleBubbleIconUpload(input) {
     if (prev) prev.innerHTML = '<img src="' + _pendingBubbleIcon + '" style="width:100%;height:100%;object-fit:cover;border-radius:12px">';
     showToast('Ikon uploadet! 📸');
     input.value = '';
-  } catch(e) { logError('handleBubbleIconUpload', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('handleBubbleIconUpload', e); errorToast('upload', e); }
 }
 
 
@@ -741,12 +741,12 @@ async function saveEditBubble() {
       }
     }
     const { error } = await sb.from('bubbles').update(updateObj).eq('id', currentEditBubbleId).eq('created_by', currentUser.id);
-    if (error) return showToast('Fejl: ' + error.message);
+    if (error) return errorToast('save', error);
     closeModal('modal-edit-bubble');
     showSuccessToast('Boble opdateret');
     await bcLoadBubbleInfo();
     await bcLoadMembers();
-  } catch(e) { logError("saveEditBubble", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("saveEditBubble", e); errorToast("save", e); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -780,7 +780,7 @@ async function openQRModal(bubbleId) {
     });
 
     openModal('modal-qr');
-  } catch(e) { logError("openQRModal", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("openQRModal", e); errorToast("load", e); }
 }
 
 let _jsPdfLoaded = false;
@@ -913,7 +913,7 @@ async function downloadQRPdf() {
   const filename = `bubble-qr-${b.name.toLowerCase().replace(/\s+/g,'-')}.pdf`;
   doc.save(filename);
   showToast('PDF downloadet! 🖨️');
-  } catch(e) { showToast('PDF fejl: ' + (e.message || 'Ukendt')); }
+  } catch(e) { errorToast('load', e); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -944,7 +944,7 @@ async function checkQRJoin() {
       showSuccessToast('Du er checket ind');
       await openBubble(joinId, 'screen-home');
     }
-  } catch(e) { logError("checkQRJoin", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("checkQRJoin", e); errorToast("load", e); }
 }
 
 async function checkPendingJoin() {
@@ -957,7 +957,7 @@ async function checkPendingJoin() {
     const { error } = await sb.from('bubble_members')
       .insert({ bubble_id: joinId, user_id: currentUser.id });
     if (error && !String(error.message || '').includes('duplicate')) {
-      showToast('Fejl ved join: ' + (error.message || 'ukendt'));
+      errorToast('save', error);
       return;
     }
 
@@ -991,7 +991,7 @@ async function checkPendingJoin() {
       showSuccessToast('Du er med i ' + (bubble ? bubble.name : 'boblen') + '!');
       await openBubble(joinId, 'screen-home');
     }
-  } catch(e) { logError("checkPendingJoin", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("checkPendingJoin", e); errorToast("save", e); }
 }
 
 
@@ -1240,7 +1240,7 @@ async function downloadMembersPdf(bubbleId) {
     showToast('PDF downloadet! 📋');
     trackEvent('members_pdf_export', { bubble_id: bubbleId, member_count: totalMembers });
 
-  } catch(e) { logError('downloadMembersPdf', e); showToast('PDF fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('downloadMembersPdf', e); errorToast('load', e); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1624,7 +1624,7 @@ async function generateEventReport(bubbleId) {
 
     trackEvent('event_report_generated', { bubble_id: bubbleId, member_count: totalMembers });
 
-  } catch(e) { logError('generateEventReport', e); showToast('Rapport fejl: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('generateEventReport', e); errorToast('load', e); }
 }
 
 function closeReportTray() {
@@ -1675,7 +1675,7 @@ async function exportReportEmail(bubbleId) {
       window.location.href = 'mailto:' + email + '?subject=' + subject + '&body=' + body;
       showToast('Mail-app åbnet');
     }
-  } catch(e) { logError('exportReportEmail', e); showToast('Kunne ikke sende: ' + (e.message || 'ukendt')); }
+  } catch(e) { logError('exportReportEmail', e); errorToast('send', e); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1793,7 +1793,7 @@ async function sendBubbleInvites() {
   } catch(e) {
     logError('sendBubbleInvites', e);
     closeInviteModal();
-    showToast('Kunne ikke sende: ' + (e.message || 'ukendt fejl'));
+    errorToast('send', e);
   }
 }
 
@@ -1917,11 +1917,11 @@ async function popBubble(bubbleId) {
     await sb.from('bubble_members').delete().eq('bubble_id', bubbleId);
     await sb.from('bubble_invitations').delete().eq('bubble_id', bubbleId);
     var { error } = await sb.from('bubbles').delete().eq('id', bubbleId).eq('created_by', currentUser.id);
-    if (error) { showToast('Fejl: ' + error.message); return; }
+    if (error) { errorToast('save', error); return; }
     showSuccessToast('Boble slettet');
     goTo('screen-home');
     loadHome();
-  } catch(e) { logError('popBubble', e); showToast(e.message || 'Ukendt fejl'); }
+  } catch(e) { logError('popBubble', e); errorToast('delete', e); }
 }
 
 

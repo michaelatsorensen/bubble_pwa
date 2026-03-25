@@ -442,7 +442,7 @@ async function openChat(userId, fromScreen) {
       }
     }
     if (unreadIds.length > 0) unreadDecrement(unreadIds.length);
-  } catch(e) { logError("openChat", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("openChat", e); errorToast("load", e); }
 }
 
 
@@ -583,7 +583,7 @@ async function loadChatMessages() {
     });
     el.innerHTML = html;
     el.scrollTop = el.scrollHeight;
-  } catch(e) { logError("loadChatMessages", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("loadChatMessages", e); errorToast("load", e); }
 }
 
 // ── DM Realtime: Broadcast for instant delivery + typing indicator ──

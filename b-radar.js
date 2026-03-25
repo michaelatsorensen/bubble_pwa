@@ -201,7 +201,7 @@ async function openRadarPerson(userId) {
     saveBtn.dataset.saved = savedCheck ? '1' : '0';
     document.getElementById('radar-person-overlay').classList.add('open');
     setTimeout(function(){ document.getElementById('radar-person-sheet').classList.add('open'); }, 10);
-  } catch(e) { logError("openRadarPerson", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("openRadarPerson", e); errorToast("load", e); }
 }
 
 function closeRadarPerson() {
@@ -224,7 +224,7 @@ async function rpSaveContact() {
     proxAllProfiles = proxAllProfiles.filter(function(p) { return p.id !== savedId; });
     closeRadarPerson();
     if (radarCurrentView === 'map') renderProximityDots(); else renderRadarList();
-  } catch(e) { logError("rpSaveContact", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("rpSaveContact", e); errorToast("save", e); }
 }
 function rpFullProfile() {
   var uid = rpCurrentUserId; closeRadarPerson(); closeRadarSheet();

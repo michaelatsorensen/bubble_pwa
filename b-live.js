@@ -190,7 +190,7 @@ async function liveCheckin(bubbleId) {
     if (typeof loadLiveBanner === 'function') loadLiveBanner();
   } catch (e) {
     logError('liveCheckin', e);
-    showToast('Fejl ved check-in: ' + (e.message || 'ukendt'));
+    errorToast('save', e);
   }
 }
 
@@ -488,7 +488,7 @@ async function liveScanConfirmPersonCheckin() {
       liveQrPreviewLoop();
     }, 3000);
   } catch(e) {
-    showToast('Check-in fejl: ' + (e.message || 'ukendt'));
+    errorToast('save', e);
     if (status) { status.textContent = 'Fejl ved check-in'; status.className = 'live-scan-status error'; status.style.display = ''; }
     setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
   }
@@ -729,7 +729,7 @@ async function liveScanConfirmJoin() {
     setTimeout(function() { closeLiveCheckinModal(); }, 2500);
   } catch(e) {
     logError('liveScanConfirmJoin', e);
-    showToast(e.message || 'Fejl ved check-in');
+    errorToast('save', e);
   }
   _liveQrPending = false;
   _liveQrResolvedBubble = null;

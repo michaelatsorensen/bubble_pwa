@@ -341,7 +341,7 @@ async function confirmAcceptInvite(inviteId) {
       loadNotifications();
       setTimeout(() => openBubbleChat(inv.bubble_id, 'screen-notifications'), 800);
     }
-  } catch(e) { logError("confirmAcceptInvite", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("confirmAcceptInvite", e); errorToast("save", e); }
 }
 
 function declineBubbleInvite(inviteId) {
@@ -361,7 +361,7 @@ async function confirmDeclineInvite(inviteId) {
     var card = document.getElementById('invite-' + inviteId);
     if (card) { card.style.transition = 'opacity 0.2s'; card.style.opacity = '0'; setTimeout(function() { card.remove(); }, 200); }
     showToast('Invitation afvist');
-  } catch(e) { logError("confirmDeclineInvite", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("confirmDeclineInvite", e); errorToast("save", e); }
 }
 
 
