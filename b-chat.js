@@ -199,7 +199,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
     }
   };
   goTo('screen-bubble-chat');
-  bcSwitchTab('members');
+  // Don't switch tab yet — wait for membership check in bcLoadChatData
 
   // 2. Load all data
   var backTarget = prevBubbleId ? 'screen-bubbles' : (fromScreen || 'screen-home');
@@ -318,6 +318,7 @@ async function bcLoadMembership(b, bubbleId) {
   bcBubbleData._isAdmin = isBubbleAdmin;
   bcBubbleData._canEdit = canEdit;
   bcBubbleData._isPending = isPending;
+  bcBubbleData._isMember = !!myMembership && !isPending;
 
   // Pending membership banner
   bcRenderPendingBanner(isPending);
@@ -364,6 +365,8 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
     if (infoTab) infoTab.style.display = 'none';
     if (chatTab) chatTab.style.display = '';
     if (postsTab) postsTab.style.display = '';
+    // Set initial tab for members
+    bcSwitchTab('members');
     // Edit button as topbar card
     actionArea.innerHTML =
       (canEdit ? `<button class="chat-topbar-back" data-action="openEditBubble" data-id="${b.id}" title="Rediger"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg></button>` : '');
@@ -1292,28 +1295,46 @@ async function bcLoadInfo() {
         '<div style="border-radius:12px;border:1px solid var(--glass-border-subtle);overflow:hidden">' + adminItems + '</div></div>';
     }
 
-    // ── Check user's live status for checkout button ──
-    var myCheckinLive = false;
-    if (isEvent) {
-      try {
-        var { data: myCheckin } = await sb.from('bubble_members')
-          .select('checked_in_at, checked_out_at')
-          .eq('bubble_id', b.id).eq('user_id', currentUser.id).maybeSingle();
-        myCheckinLive = myCheckin && myCheckin.checked_in_at && !myCheckin.checked_out_at &&
-          (Date.now() - new Date(myCheckin.checked_in_at).getTime() < 6 * 3600000);
-      } catch(e) {}
-    }
+    // ── Bottom actions: member-aware ──
+    var isMember = bcBubbleData._isMember;
+    var bottomHtml = '';
 
-    // ── Destructive actions ──
-    var checkoutBtn = '';
-    if (isEvent && myCheckinLive) {
-      checkoutBtn = '<button onclick="bcCheckout()" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.2);color:#085041;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">Check ud af event</button>';
+    if (isMember) {
+      // Check live status for checkout button
+      var myCheckinLive = false;
+      if (isEvent) {
+        try {
+          var { data: myCheckin } = await sb.from('bubble_members')
+            .select('checked_in_at, checked_out_at')
+            .eq('bubble_id', b.id).eq('user_id', currentUser.id).maybeSingle();
+          myCheckinLive = myCheckin && myCheckin.checked_in_at && !myCheckin.checked_out_at &&
+            (Date.now() - new Date(myCheckin.checked_in_at).getTime() < 6 * 3600000);
+        } catch(e) {}
+      }
+
+      var checkoutBtn = '';
+      if (isEvent && myCheckinLive) {
+        checkoutBtn = '<button onclick="bcCheckout()" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.2);color:#085041;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">Check ud af event</button>';
+      }
+      bottomHtml = '<div style="display:flex;flex-direction:column;gap:0.4rem;border-top:1px solid var(--glass-border-subtle);padding-top:0.8rem">' +
+        checkoutBtn +
+        '<button data-action="leaveBubble" data-id="' + b.id + '" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.1);color:#A32D2D;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">Forlad ' + (isEvent ? 'event' : 'boblen') + '</button>' +
+        (isOwner ? '<button onclick="confirmPopBubble(\'' + b.id + '\')" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.1);color:#791F1F;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">Slet ' + (isEvent ? 'event' : 'boble') + '</button>' : '') +
+        '</div>';
+    } else if (bcBubbleData._isPending) {
+      bottomHtml = '<div style="text-align:center;padding:0.8rem 0;font-size:0.8rem;color:#854F0B;font-weight:600">⏳ Din anmodning afventer godkendelse</div>';
+    } else {
+      // Non-member: show Join or Anmod CTA
+      var joinBtn = '';
+      if (b.visibility === 'hidden') {
+        joinBtn = '<div style="text-align:center;padding:0.6rem 0;font-size:0.78rem;color:var(--muted)">' + icon('eye') + ' Kun via invitation</div>';
+      } else if (b.visibility === 'private') {
+        joinBtn = '<button data-action="requestJoin" data-id="' + b.id + '" style="width:100%;padding:0.7rem;border-radius:12px;background:var(--gradient-primary);border:none;color:white;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font)">' + icon('lock') + ' Anmod om adgang</button>';
+      } else {
+        joinBtn = '<button data-action="joinBubble" data-id="' + b.id + '" style="width:100%;padding:0.7rem;border-radius:12px;background:var(--gradient-primary);border:none;color:white;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font)">+ Join ' + (isEvent ? 'event' : 'boble') + '</button>';
+      }
+      bottomHtml = '<div style="padding-top:0.8rem;border-top:1px solid var(--glass-border-subtle)">' + joinBtn + '</div>';
     }
-    var destructHtml = '<div style="display:flex;flex-direction:column;gap:0.4rem;border-top:1px solid var(--glass-border-subtle);padding-top:0.8rem">' +
-      checkoutBtn +
-      '<button data-action="leaveBubble" data-id="' + b.id + '" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.1);color:#A32D2D;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">Forlad ' + (isEvent ? 'event' : 'boblen') + '</button>' +
-      (isOwner ? '<button onclick="confirmPopBubble(\'' + b.id + '\')" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.1);color:#791F1F;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">Slet ' + (isEvent ? 'event' : 'boble') + '</button>' : '') +
-      '</div>';
 
     // ── Assemble ──
     list.innerHTML =
@@ -1327,7 +1348,7 @@ async function bcLoadInfo() {
       '</div>' +
       eventsHtml +
       adminHtml +
-      destructHtml;
+      bottomHtml;
 
   } catch(e) { logError("bcLoadInfo", e); showToast(e.message || "Ukendt fejl"); }
 }

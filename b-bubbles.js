@@ -18,6 +18,7 @@ var myUpvotes = {};     // { bubbleId: true }
 
 async function loadBubbleUpvotes() {
   try {
+    if (!currentUser) return;
     var { data: all, error } = await sb.from('bubble_upvotes').select('bubble_id');
     if (error) { logError('loadBubbleUpvotes', error); return; }
     bubbleUpvotes = {};

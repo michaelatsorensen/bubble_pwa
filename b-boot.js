@@ -24,50 +24,6 @@ async function preloadAllData() {
 // ══════════════════════════════════════════════════════════
 //  CHAT INPUT EVENT LISTENERS (bind exactly once on load)
 // ══════════════════════════════════════════════════════════
-window.addEventListener('load', () => {
-  const bcInput = document.getElementById('bc-input');
-  if (bcInput) {
-    bcInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        bcSendMessage();
-      }
-    }, { passive: false });
-  }
-
-  const dmInput = document.getElementById('chat-input');
-  if (dmInput) {
-    dmInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        if (!currentChatUser) return;
-        sendMessage();
-      }
-    }, { passive: false });
-  }
-
-  // DM file input: handled via inline onchange in HTML (more reliable on iOS PWA)
-
-  // Scroll-to-bottom FAB: show when scrolled up, hide when near bottom
-  ['chat-messages', 'bc-messages'].forEach(function(scrollId) {
-    var scrollEl = document.getElementById(scrollId);
-    var fabId = scrollId === 'chat-messages' ? 'dm-scroll-bottom' : 'bc-scroll-bottom';
-    if (scrollEl) {
-      scrollEl.addEventListener('scroll', function() {
-        var fab = document.getElementById(fabId);
-        if (!fab) return;
-        var atBottom = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 80;
-        fab.style.display = atBottom ? 'none' : 'flex';
-      });
-    }
-  });
-
-  // Onboarding strength meter — listen on all fields
-  ['ob-name','ob-title','ob-bio','ob-linkedin','ob-workplace'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.addEventListener('input', updateObStrength);
-  });
-});
 // Login/signup Enter key handling
 document.getElementById('login-password')?.addEventListener('keydown', function(e) {
   if (e.key === 'Enter') { e.preventDefault(); handleLogin(); }
@@ -684,58 +640,6 @@ function eventReadyGoToEvent() {
   }
 }
 
-// ══════════════════════════════════════════════════════════
-//  MANUAL CHECK-IN — organizer adds guest by name
-// ══════════════════════════════════════════════════════════
-async function manualCheckinGuest() {
-  var nameInput = document.getElementById('manual-checkin-name');
-  var name = (nameInput?.value || '').trim();
-  if (!name) { showToast('Indtast deltagerens navn'); return; }
-  
-  // Find the current live bubble
-  var bubbleId = _liveQrResolvedBubble?.id || _currentLiveBubbleId;
-  if (!bubbleId && window.bcBubbleData) bubbleId = bcBubbleData.id;
-  
-  // Try from live status
-  if (!bubbleId) {
-    try {
-      var expCut = new Date(Date.now() - 6 * 3600000).toISOString();
-      var { data: myLive } = await sb.from('bubble_members')
-        .select('bubble_id')
-        .eq('user_id', currentUser.id)
-        .not('checked_in_at', 'is', null)
-        .is('checked_out_at', null)
-        .gte('checked_in_at', expCut)
-        .limit(1)
-        .maybeSingle();
-      if (myLive) bubbleId = myLive.bubble_id;
-    } catch(e) {}
-  }
-  
-  if (!bubbleId) { showToast('Check ind i en boble først'); return; }
-  
-  try {
-    var guestId = crypto.randomUUID ? crypto.randomUUID() : 'g-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
-    var { error } = await sb.from('guest_checkins').insert({
-      id: guestId,
-      bubble_id: bubbleId,
-      name: name,
-      checked_in_at: new Date().toISOString()
-    });
-    if (error) { showToast('Fejl: ' + error.message); return; }
-    
-    if (nameInput) nameInput.value = '';
-    showSuccessToast(name + ' tilføjet! ✓');
-    trackEvent('manual_checkin', { bubble_id: bubbleId, guest_name: name });
-    
-    // Refresh checkin list
-    if (typeof loadLiveCheckinList === 'function') loadLiveCheckinList();
-  } catch(e) {
-    logError('manualCheckinGuest', e);
-    showToast('Fejl: ' + (e.message || 'ukendt'));
-  }
-}
-
 //  APP BOOT
 // ══════════════════════════════════════════════════════════
 // ── Lyt på beskeder fra Service Worker ──
@@ -821,6 +725,29 @@ window.addEventListener('load', async () => {
   // Init swipe-to-close on all sheets/modals
   initAllSwipeClose();
   initInputConfirmButtons();
+
+  // Chat keyboard Enter handlers
+  var bcInput = document.getElementById('bc-input');
+  if (bcInput) bcInput.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); bcSendMessage(); } }, { passive: false });
+  var dmInput = document.getElementById('chat-input');
+  if (dmInput) dmInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); if (!currentChatUser) return; sendMessage(); } }, { passive: false });
+
+  // Scroll-to-bottom FAB
+  ['chat-messages', 'bc-messages'].forEach(function(scrollId) {
+    var scrollEl = document.getElementById(scrollId);
+    var fabId = scrollId === 'chat-messages' ? 'dm-scroll-bottom' : 'bc-scroll-bottom';
+    if (scrollEl) scrollEl.addEventListener('scroll', function() {
+      var fab = document.getElementById(fabId);
+      if (!fab) return;
+      fab.style.display = (scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 80) ? 'none' : 'flex';
+    });
+  });
+
+  // Onboarding strength meter
+  ['ob-name','ob-title','ob-bio','ob-linkedin','ob-workplace'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateObStrength);
+  });
 
   // iOS keyboard dismiss: blur active input when tapping outside inputs
   document.addEventListener('touchstart', function(e) {
