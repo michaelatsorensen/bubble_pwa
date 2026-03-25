@@ -52,7 +52,9 @@ function _rtEvalState() {
   var errored = states.filter(function(s) { return s === 'CHANNEL_ERROR' || s === 'TIMED_OUT' || s === 'CLOSED'; }).length;
 
   if (subscribed === states.length) {
+    var wasDisconnected = _rtState !== 'connected';
     rtSetState('connected');
+    if (wasDisconnected && typeof _unreadRecount === 'function') _unreadRecount();
   } else if (errored > 0 && subscribed === 0) {
     rtSetState('disconnected');
     _rtScheduleReconnect();
@@ -285,8 +287,8 @@ function initGlobalRealtime() {
       var chatIsOpenWithSender = chatScreenActive && currentChatUser === m.sender_id;
 
       if (!chatIsOpenWithSender) {
-        // Invalidate → recount from DB (handles missed events, drift)
-        updateUnreadBadge();
+        // Instant local increment (no DB roundtrip)
+        unreadIncrement();
       }
 
       // Update conversations preview instantly
@@ -452,7 +454,7 @@ async function openChat(userId, fromScreen) {
         try { chatSubscription.send({ type: 'broadcast', event: 'read_receipt', payload: { msgIds: unreadIds } }); } catch(e) { logError("dm:read_receipt_broadcast", e); }
       }
     }
-    await updateUnreadBadge();
+    if (unreadIds.length > 0) unreadDecrement(unreadIds.length);
   } catch(e) { logError("openChat", e); showToast(e.message || "Ukendt fejl"); }
 }
 
@@ -660,7 +662,6 @@ function subscribeToChat() {
       if (m.receiver_id === currentUser.id) {
         sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', m.id)
           .then(function(res) { if (res.error) logError('dm:read_at_broadcast', res.error); });
-        updateUnreadBadge();
         try { chatSubscription.send({ type: 'broadcast', event: 'read_receipt', payload: { msgIds: [m.id] } }); } catch(e) { logError("dm:inline_read_receipt", e); }
       }
     })
@@ -688,7 +689,6 @@ function subscribeToChat() {
       el.scrollTop = el.scrollHeight;
       sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', m.id)
         .then(function(res) { if (res.error) logError('dm:read_at_changes', res.error); });
-      updateUnreadBadge();
     })
     .subscribe(_rtStatusCallback('dm-chat'));
 }

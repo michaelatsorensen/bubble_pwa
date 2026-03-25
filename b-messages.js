@@ -8,24 +8,38 @@
 // ══════════════════════════════════════════════════════════
 
 // ══════════════════════════════════════════════════════════
-//  MESSAGES
+//  MESSAGES — Hybrid unread badge
+//  _unreadRecount: full DB count (boot, reconnect, drift)
+//  _unreadRender: DOM update from local counter
+//  unreadIncrement/unreadDecrement: instant local adjustments
 // ══════════════════════════════════════════════════════════
-async function updateUnreadBadge() {
+var _unreadCount = 0;
+
+function _unreadRender() {
+  var label = _unreadCount > 9 ? '9+' : (_unreadCount > 0 ? _unreadCount : '');
+  document.querySelectorAll('.msg-unread-badge').forEach(function(b) {
+    if (_unreadCount > 0) { b.textContent = label; b.style.display = 'flex'; }
+    else { b.style.display = 'none'; }
+  });
+}
+
+async function _unreadRecount() {
   try {
-    const { count } = await sb.from('messages')
+    if (!currentUser) return;
+    var { count } = await sb.from('messages')
       .select('*', { count: 'exact', head: true })
       .eq('receiver_id', currentUser.id)
       .is('read_at', null);
-    document.querySelectorAll('.msg-unread-badge').forEach(b => {
-      if (count && count > 0) {
-        b.textContent = count > 9 ? '9+' : count;
-        b.style.display = 'flex';
-      } else {
-        b.style.display = 'none';
-      }
-    });
-  } catch(e) { logError("updateUnreadBadge", e); showToast(e.message || "Ukendt fejl"); }
+    _unreadCount = count || 0;
+    _unreadRender();
+  } catch(e) { logError('_unreadRecount', e); }
 }
+
+function unreadIncrement() { _unreadCount++; _unreadRender(); }
+function unreadDecrement(n) { _unreadCount = Math.max(0, _unreadCount - (n || 1)); _unreadRender(); }
+
+// Compat alias — old callers that did full recount now just render local
+async function updateUnreadBadge() { _unreadRender(); }
 
 
 // ══════════════════════════════════════════════════════════

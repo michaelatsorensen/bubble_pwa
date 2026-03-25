@@ -35,7 +35,7 @@ async function loadEssentials() {
 function initServices() {
   preloadAllData();
   initGlobalRealtime();
-  updateUnreadBadge();
+  _unreadRecount();
   updateNotifNavBadge();
   loadLiveBubbleStatus();
   initPushNotifications();

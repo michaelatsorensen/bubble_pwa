@@ -12,12 +12,10 @@
 // ══════════════════════════════════════════════════════════
 async function preloadAllData() {
   try {
+    // Core: messages (badge) + bubbles (nav). Discover + proximity load lazily on screen open.
     await Promise.all([
-      loadDiscover(),
       loadMessages(),
-      loadMyBubbles(),
-      loadSavedContacts(),
-      loadProximityMap()
+      loadMyBubbles()
     ].map(function(p) { return p.catch(function(e) { logError('preload', e); }); }));
   } catch(e) { logError('preloadAllData', e); }
 }

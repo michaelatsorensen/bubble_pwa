@@ -385,6 +385,7 @@ async function liveCheckout() {
     }).eq('bubble_id', currentLiveBubble.bubble_id).eq('user_id', currentUser.id);
 
     currentLiveBubble = null;
+    appMode.clearLive();
     showToast('Checked ud 👋');
     await loadLiveBubbleStatus();
 

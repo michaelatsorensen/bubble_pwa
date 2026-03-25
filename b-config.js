@@ -15,7 +15,7 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
 const BUILD_TIMESTAMP = '2026-03-19T18:00:00';
-const BUILD_VERSION  = 'v6.4.2';
+const BUILD_VERSION  = 'v6.4.3';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -176,4 +176,31 @@ function flowClear() {
     });
   } catch(e) {}
 }
+
+// ══════════════════════════════════════════════════════════
+//  APP MODE — centralized state for home/radar/CTAs/notifs
+//  Modes: 'normal' | 'live' | 'event' | 'guest'
+//  Writers: appMode.set() from b-home.js and b-live.js only
+//  Readers: anyone via appMode.is(), appMode.get(), appMode.live
+// ══════════════════════════════════════════════════════════
+var appMode = {
+  _mode: 'normal',
+  _liveCtx: null, // { bubbleId, bubbleName, memberCount, expiryStr }
+
+  // Read
+  get: function() { return this._mode; },
+  is: function(m) { return this._mode === m; },
+  get live() { return this._liveCtx; },
+
+  // Write
+  set: function(mode, ctx) {
+    this._mode = mode || 'normal';
+    if (mode === 'live' && ctx) { this._liveCtx = ctx; }
+    else if (mode !== 'live') { this._liveCtx = null; }
+  },
+  clearLive: function() {
+    this._mode = 'normal';
+    this._liveCtx = null;
+  }
+};
 

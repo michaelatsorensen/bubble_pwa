@@ -84,12 +84,14 @@ async function loadLiveBanner() {
         memberCount: liveCount || 0,
         expiryStr: expiryStr
       };
+      appMode.set('live', _homeLiveContext);
 
       // Show tabs — auto-switch to live on first load
       if (tabs) tabs.style.display = 'block';
       homeSetMode('live');
     } else {
       _homeLiveContext = null;
+      appMode.set('normal');
       if (tabs) tabs.style.display = 'none';
       if (banner) banner.style.display = 'none';
       homeSetMode('all');
@@ -97,6 +99,7 @@ async function loadLiveBanner() {
   } catch(e) {
     logError('loadLiveBanner', e);
     _homeLiveContext = null;
+    appMode.set('normal');
     if (tabs) tabs.style.display = 'none';
     if (banner) banner.style.display = 'none';
   }
