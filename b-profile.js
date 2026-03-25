@@ -780,6 +780,7 @@ function starRender(contactId) {
 
 async function loadSavedContacts() {
   try {
+    if (!currentUser) return;
     clearSavedContactIdsCache(); // Invalidate shared cache
     const savedEl = document.getElementById('saved-contacts');
 

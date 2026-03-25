@@ -231,11 +231,12 @@ async function _notifNewMembers() {
       var avatarHtml = p.avatar_url ?
         '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
         '<div class="notif-avatar" style="background:linear-gradient(135deg,#2ECFCF,#7C5CFC)">' + initials + '</div>';
-      return '<div class="notif-card">' +
+      var bubbleName = m.bubbles?.name || '';
+      return '<div class="notif-card" onclick="openBubbleChat(\'' + m.bubble_id + '\',\'screen-notifications\')" style="cursor:pointer">' +
         '<div class="notif-header">' + avatarHtml +
         '<div>' +
-        '<div class="notif-title">' + escHtml(p.name||'Ukendt') + ' joined</div>' +
-        '<div class="notif-sub">' + escHtml(m.bubbles?.name||'') + ' · ' + time + '</div>' +
+        '<div class="notif-title">' + escHtml(p.name||'Ukendt') + ' blev medlem</div>' +
+        '<div class="notif-sub">' + (bubbleName ? escHtml(bubbleName) + ' · ' : '') + time + '</div>' +
         '</div></div></div>';
     }).join('');
   } catch(e) { logError('_notifNewMembers', e); return ''; }

@@ -237,17 +237,15 @@ var _abortConfirmed = false;
 function abortOnboarding() {
   if (!_abortConfirmed) {
     _abortConfirmed = true;
-    // Show confirm overlay
-    var overlay = document.createElement('div');
+    var { overlay } = bbDynOpen({ center: true });
     overlay.id = 'abort-confirm-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(30,27,46,0.2);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)';
-    overlay.innerHTML = '<div style="background:rgba(255,255,255,0.98);border:1px solid var(--glass-border);border-radius:20px;padding:1.5rem;max-width:320px;text-align:center;font-family:Figtree,sans-serif">' +
+    var s = overlay.querySelector('.bb-dyn-sheet');
+    s.style.textAlign = 'center';
+    s.innerHTML =
       '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">Afbryd opsætning?</div>' +
       '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">Alt du har udfyldt nulstilles og du vender tilbage til login-skærmen.</div>' +
       '<button onclick="confirmAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid rgba(26,122,138,0.3);background:rgba(26,122,138,0.1);color:var(--accent2);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.4rem">Ja, afbryd og nulstil</button>' +
-      '<button onclick="cancelAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Fortsæt opsætning</button>' +
-      '</div>';
-    document.body.appendChild(overlay);
+      '<button onclick="cancelAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Fortsæt opsætning</button>';
     return;
   }
 }
@@ -255,14 +253,14 @@ function abortOnboarding() {
 function cancelAbortOnboarding() {
   _abortConfirmed = false;
   var overlay = document.getElementById('abort-confirm-overlay');
-  if (overlay) overlay.remove();
+  if (overlay) bbDynClose(overlay);
 }
 
 async function confirmAbortOnboarding() {
   try {
   _abortConfirmed = false;
   var overlay = document.getElementById('abort-confirm-overlay');
-  if (overlay) overlay.remove();
+  if (overlay) bbDynClose(overlay);
   try {
     // Clear onboarding inputs
     ['ob-name','ob-title','ob-bio','ob-linkedin','ob-workplace'].forEach(function(id) {

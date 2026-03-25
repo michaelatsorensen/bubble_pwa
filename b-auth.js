@@ -243,8 +243,9 @@ function viewAvatarFull(el) {
   var img = el.querySelector('img');
   if (!img || !img.src) return;
   var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(30,27,46,0.25);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
-  overlay.onclick = function() { overlay.remove(); };
+  overlay.className = 'bb-dyn-overlay bb-dyn-center';
+  overlay.style.cursor = 'pointer';
+  overlay.onclick = function() { bbDynClose(overlay); };
   var bigImg = document.createElement('img');
   bigImg.src = img.src;
   bigImg.style.cssText = 'max-width:90vw;max-height:80vh;border-radius:16px;box-shadow:0 20px 60px rgba(30,27,46,0.15);object-fit:contain';
@@ -254,6 +255,7 @@ function viewAvatarFull(el) {
   closeBtn.style.cssText = 'position:absolute;top:1.5rem;right:1.5rem;width:36px;height:36px;border-radius:50%;background:rgba(30,27,46,0.06);color:white;display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer';
   overlay.appendChild(closeBtn);
   document.body.appendChild(overlay);
+  requestAnimationFrame(function() { requestAnimationFrame(function() { overlay.classList.add('open'); }); });
 }
 
 function updateHomeAvatar() {
@@ -419,13 +421,8 @@ var _selectedInterests = (function() {
 })();
 
 function showTerms() {
-  var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(30,27,46,0.25);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
-  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
-
-  var sheet = document.createElement('div');
-  sheet.style.cssText = 'width:100%;max-width:680px;max-height:85vh;background:rgba(255,255,255,0.98);border-radius:24px 24px 0 0;padding:1.5rem;overflow-y:auto;color:var(--text);font-family:Figtree,sans-serif';
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.08);margin:0 auto 1rem;cursor:pointer" onclick="this.parentElement.parentElement.remove()"></div>' +
+  var { overlay, sheet } = bbDynOpen();
+  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.08);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
     '<h2 style="font-size:1.2rem;font-weight:800;margin-bottom:0.8rem">Betingelser & Privatlivspolitik</h2>' +
     '<div style="font-size:0.78rem;line-height:1.7;color:var(--text-secondary)">' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">1. Hvad er Bubble?</h3>' +
@@ -457,29 +454,19 @@ function showTerms() {
     '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">7. Kontakt</h3>' +
     '<p>Spørgsmål? Kontakt os på <strong>hello@bubble.app</strong></p>' +
     '</div>' +
-    '<button onclick="this.parentElement.parentElement.remove()" style="width:100%;margin-top:1.2rem;padding:0.7rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Luk</button>';
-
-  overlay.appendChild(sheet);
-  document.body.appendChild(overlay);
+    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:1.2rem;padding:0.7rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Luk</button>';
 }
 
 function openFeedback() {
-  var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(30,27,46,0.25);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
-  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
-
-  var sheet = document.createElement('div');
-  sheet.style.cssText = 'width:100%;max-width:680px;background:rgba(255,255,255,0.98);border-radius:24px 24px 0 0;padding:1.5rem;color:var(--text);font-family:Figtree,sans-serif';
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.08);margin:0 auto 1rem;cursor:pointer" onclick="this.parentElement.parentElement.remove()"></div>' +
+  var { overlay, sheet } = bbDynOpen();
+  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.08);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
     '<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem">Giv feedback</h2>' +
     '<p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Vi er i beta — din feedback er guld værd og hjælper os med at bygge det bedste produkt.</p>' +
     '<textarea id="feedback-text" placeholder="Hvad virker godt? Hvad kan gøres bedre? Har du oplevet fejl?" style="width:100%;height:120px;background:rgba(30,27,46,0.03);border:1px solid var(--glass-border);border-radius:12px;padding:0.7rem;font-family:Figtree,sans-serif;font-size:0.82rem;color:var(--text);resize:none;outline:none"></textarea>' +
     '<button onclick="submitFeedback()" style="width:100%;margin-top:0.8rem;padding:0.7rem;border-radius:12px;border:none;background:var(--gradient-accent);color:white;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Send feedback →</button>' +
-    '<button onclick="this.parentElement.parentElement.remove()" style="width:100%;margin-top:0.4rem;padding:0.5rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--muted);font-family:inherit;font-size:0.78rem;cursor:pointer">Annuller</button>';
+    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:0.4rem;padding:0.5rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--muted);font-family:inherit;font-size:0.78rem;cursor:pointer">Annuller</button>';
 
-  overlay.appendChild(sheet);
-  document.body.appendChild(overlay);
-  setTimeout(function(){ var ta = document.getElementById('feedback-text'); if(ta) ta.focus(); }, 100);
+  setTimeout(function(){ var ta = document.getElementById('feedback-text'); if(ta) ta.focus(); }, 300);
 }
 
 async function submitFeedback() {
@@ -493,7 +480,8 @@ async function submitFeedback() {
       reason: text
     });
     logError('USER_FEEDBACK', new Error('Feedback modtaget'), { text: text, user: currentUser.id, name: currentProfile?.name });
-    document.querySelector('[style*="backdrop-filter"]')?.remove();
+    var dyn = document.querySelector('.bb-dyn-overlay');
+    if (dyn) bbDynClose(dyn);
     showToast('Tak for din feedback! 💜');
   } catch(e) { logError('submitFeedback', e); showToast('Fejl: ' + (e.message || 'ukendt')); }
 }
@@ -571,21 +559,14 @@ async function openMyQR() {
     ? window.location.origin + window.location.pathname + '?qrt=' + token
     : window.location.origin + window.location.pathname + '?profile=' + currentUser.id;
   
-  var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(30,27,46,0.25);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
-  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
-  
-  var sheet = document.createElement('div');
-  sheet.style.cssText = 'width:100%;max-width:680px;background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);border-radius:24px 24px 0 0;padding:1.5rem;text-align:center;color:var(--text);font-family:Figtree,sans-serif';
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.12);margin:0 auto 1rem;cursor:pointer" onclick="this.parentElement.parentElement.remove()"></div>' +
+  var { overlay, sheet } = bbDynOpen();
+  sheet.style.textAlign = 'center';
+  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.12);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
     '<div style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem">Min QR-kode</div>' +
     '<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Gyldig i 10 minutter · opdateres automatisk</div>' +
     '<div id="my-qr-container" style="display:flex;justify-content:center;margin-bottom:1rem"></div>' +
     '<div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.8rem">' + escHtml(currentProfile.name) + ' · ' + escHtml(currentProfile.title || '') + '</div>' +
     '<button onclick="navigator.clipboard.writeText(\'' + url + '\');this.textContent=\'Kopieret! ✓\';setTimeout(()=>this.textContent=\'Del profil\',2000)" style="width:100%;padding:0.7rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer">Del profil</button>';
-  
-  overlay.appendChild(sheet);
-  document.body.appendChild(overlay);
   
   setTimeout(function() {
     var container = document.getElementById('my-qr-container');

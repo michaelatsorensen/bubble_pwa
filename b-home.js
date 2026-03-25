@@ -16,6 +16,7 @@ var _homeLiveContext = null; // { bubbleId, bubbleName, memberCount }
 
 async function loadHome() {
   try {
+    if (!currentUser) return;
     if (!currentProfile) await loadCurrentProfile();
     updateHomeAvatar();
 
@@ -763,6 +764,7 @@ async function bbLoadLivePanel() {
 
 async function loadMyBubbles() {
   try {
+    if (!currentUser) return;
     var myNav = _navVersion;
     // Mark bubbles as seen — clears badge on home screen
     localStorage.setItem('bubble_bubbles_seen', new Date().toISOString());

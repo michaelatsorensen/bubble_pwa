@@ -357,6 +357,7 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
     // Edit button as topbar card
     actionArea.innerHTML =
       (canEdit ? `<button class="chat-topbar-back" data-action="openEditBubble" data-id="${b.id}" title="Rediger"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg></button>` : '');
+    actionArea.style.display = canEdit ? 'flex' : 'none';
     if (actionBar) {
       var upvoted = myUpvotes[b.id];
       actionBar.innerHTML =
@@ -372,6 +373,7 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
     if (postsTab) postsTab.style.display = 'none';
     if (eventsTab) eventsTab.style.display = 'none';
     if (actionBar) actionBar.style.display = 'none';
+    actionArea.style.display = 'none';
 
     if (isPending) {
       actionArea.innerHTML = '';
@@ -1234,19 +1236,6 @@ async function bcLoadInfo() {
       } catch(e) { logError('bcLoadInfo:children', e); }
     }
 
-    // ── Quick actions ──
-    var quickActions = '<div style="display:flex;gap:0.4rem;margin-bottom:0.9rem">' +
-      '<div onclick="toggleBubbleUpvote(\'' + b.id + '\')" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:0.25rem;padding:0.65rem 0.4rem;border-radius:14px;background:' + accentBg + '0.04);border:1px solid ' + accentBg + '0.1);cursor:pointer">' +
-        '<span style="width:16px;height:16px;display:flex;align-items:center;justify-content:center;color:' + accentStroke + '">' + (myUpvotes[b.id] ? icon('checkCircle') : icon('rocket')) + '</span>' +
-        '<div style="font-size:0.68rem;font-weight:600;color:' + accentTxt + '">' + (myUpvotes[b.id] ? 'Anbefalet' : 'Anbefal') + '</div></div>' +
-      '<div data-action="openQRModal" data-id="' + b.id + '" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:0.25rem;padding:0.65rem 0.4rem;border-radius:14px;background:' + accentBg + '0.04);border:1px solid ' + accentBg + '0.1);cursor:pointer">' +
-        '<span style="width:16px;height:16px;display:flex;align-items:center;justify-content:center;color:' + accentStroke + '">' + icon('qrcode') + '</span>' +
-        '<div style="font-size:0.68rem;font-weight:600;color:' + accentTxt + '">Del QR</div></div>' +
-      '<div onclick="openInviteModal(\'' + b.id + '\')" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:0.25rem;padding:0.65rem 0.4rem;border-radius:14px;background:' + accentBg + '0.04);border:1px solid ' + accentBg + '0.1);cursor:pointer">' +
-        '<span style="width:16px;height:16px;display:flex;align-items:center;justify-content:center;color:' + accentStroke + '">' + icon('user-plus') + '</span>' +
-        '<div style="font-size:0.68rem;font-weight:600;color:' + accentTxt + '">Inviter</div></div>' +
-    '</div>';
-
     // ── Admin section (role-aware, type-aware) ──
     var adminHtml = '';
     if (canEdit) {
@@ -1309,7 +1298,6 @@ async function bcLoadInfo() {
         (b.description ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;line-height:1.5;text-align:left">' + escHtml(b.description) + '</div>' : '') +
         (tagsHtml ? '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.5rem;justify-content:center">' + tagsHtml + '</div>' : '') +
       '</div>' +
-      quickActions +
       eventsHtml +
       adminHtml +
       destructHtml;
