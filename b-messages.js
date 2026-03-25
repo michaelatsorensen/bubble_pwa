@@ -104,24 +104,25 @@ function convUpdateSelectCount() {
   }
 }
 
-var _convDeleteConfirmed = false;
 async function convDeleteSelected() {
   if (convSelectedIds.length === 0) return;
-  if (!_convDeleteConfirmed) {
-    _convDeleteConfirmed = true;
-    showToast('Tryk Slet igen for at bekr\u00e6fte');
-    setTimeout(function() { _convDeleteConfirmed = false; }, 3000);
-    return;
-  }
-  _convDeleteConfirmed = false;
+  var btn = document.getElementById('conv-delete-btn');
+  if (!btn) return;
+  bbConfirm(btn, {
+    label: convSelectedIds.length + ' samtale' + (convSelectedIds.length > 1 ? 'r' : '') + ' slettes permanent',
+    confirmText: 'Slet',
+    confirmClass: 'bb-confirm-btn-danger',
+    onConfirm: 'convConfirmDelete()'
+  });
+}
+
+async function convConfirmDelete() {
   try {
     var ids = convSelectedIds.slice();
     for (var i = 0; i < ids.length; i++) {
       var partnerId = ids[i];
-      // Delete all messages in this conversation (both directions)
       await sb.from('messages').delete().or('and(sender_id.eq.' + currentUser.id + ',receiver_id.eq.' + partnerId + '),and(sender_id.eq.' + partnerId + ',receiver_id.eq.' + currentUser.id + ')');
     }
-    // Remove from DOM
     var list = document.getElementById('conversations-list');
     ids.forEach(function(id) {
       var card = list ? list.querySelector('[data-conv-id="' + id + '"]') : null;
@@ -129,7 +130,8 @@ async function convDeleteSelected() {
     });
     showToast(ids.length + (ids.length === 1 ? ' samtale slettet' : ' samtaler slettet'));
     convToggleSelectMode();
-  } catch(e) { logError('convDeleteSelected', e); showToast(e.message || 'Fejl ved sletning'); }
+    updateUnreadBadge();
+  } catch(e) { logError('convConfirmDelete', e); showToast(e.message || 'Fejl ved sletning'); }
 }
 
 
@@ -152,6 +154,8 @@ async function sendMessage() {
       if (bubble) bubble.textContent = content;
       dmEditingId = null;
       input.value = '';
+      var editBar = document.getElementById('dm-edit-bar');
+      if (editBar) editBar.style.display = 'none';
     } else {
       const { data: newMsg, error } = await sb.from('messages').insert({
         sender_id: currentUser.id,

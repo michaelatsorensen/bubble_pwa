@@ -30,6 +30,7 @@ async function loadNotifications() {
   try {
     var myNav = _navVersion;
     localStorage.setItem('bubble_notifs_seen', new Date().toISOString());
+    updateTopbarNotifBadge();
     const list = document.getElementById('notifications-list');
     if (!list) return;
     list.innerHTML = skelCards(4);

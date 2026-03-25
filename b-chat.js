@@ -1068,6 +1068,10 @@ async function bcLoadMembers() {
         ${isOwnerRow ? '<span class="chat-member-role">' + roleLabel + '</span>' : (isOwner && !isOwnerRow ? '<button class="bc-kick-btn" onclick="event.stopPropagation();bcShowKickConfirm(this,\'' + m.user_id + '\',\'' + escHtml(p.name||'Ukendt').replace(/'/g,'') + '\')" title="Fjern fra boble">' + icon('x') + '</button>' : '')}
       </div>`;
     });
+    // Add search field when 5+ members
+    if (sorted.length >= 5) {
+      html = '<div style="padding:0 0 0.4rem"><input class="input" type="search" id="bc-member-search" placeholder="Søg medlemmer..." oninput="bcFilterMembers()" style="font-size:0.75rem;padding:0.4rem 0.75rem;border-radius:10px"></div>' + html;
+    }
     list.innerHTML = html;
   } catch(e) { logError("bcLoadMembers", e); showToast(e.message || "Ukendt fejl"); }
 }

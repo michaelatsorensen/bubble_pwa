@@ -516,7 +516,7 @@ function dmRenderMsg(m) {
     <div class="msg-avatar"${avatarClick} style="background:${avatarGrad};overflow:hidden${sent?'':';cursor:pointer'}">${avatarInner}</div>
     <div class="msg-body">
       <div class="msg-head"><span class="msg-name">${escHtml(name)}</span><span class="msg-time">${time}${edited}${receipt}</span></div>
-      <div class="msg-content">${bubble}${sent && !m.file_url ? `<span class="msg-actions"><button class="msg-dots" onpointerdown="event.stopPropagation()" onclick="dmOpenMsgMenu(event,'${m.id}')" title="Mere">⋯</button></span>` : ''}</div>
+      <div class="msg-content">${bubble}<span class="msg-actions"><button class="msg-dots" onpointerdown="event.stopPropagation()" onclick="dmOpenMsgMenu(event,'${m.id}',${sent})" title="Mere">⋯</button></span></div>
     </div>
   </div>`;
 }
@@ -661,9 +661,8 @@ function subscribeToChat() {
 }
 
 // ── DM message context menu (⋯) ──
-function dmOpenMsgMenu(e, msgId) {
+function dmOpenMsgMenu(e, msgId, isMine) {
   e.stopPropagation();
-  // Remove any existing menu
   var existing = document.getElementById('dm-msg-menu');
   if (existing) { existing.remove(); if (existing.dataset.msgId === msgId) return; }
 
@@ -675,11 +674,17 @@ function dmOpenMsgMenu(e, msgId) {
   menu.dataset.msgId = msgId;
   menu.style.cssText = `position:fixed;z-index:9999;background:var(--glass-bg-strong);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);border-radius:12px;padding:0.35rem 0;min-width:130px;box-shadow:0 8px 32px rgba(30,27,46,0.12);right:${Math.max(8, window.innerWidth - rect.right + rect.width/2 - 65)}px;top:${rect.bottom + 6}px`;
 
-  menu.innerHTML = `
-    <button onclick="dmEditMsg('${msgId}');document.getElementById('dm-msg-menu')?.remove()" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.55rem 1rem;background:none;border:none;color:var(--text);font-size:0.82rem;cursor:pointer;text-align:left">✎ Rediger</button>
-    <div style="height:1px;background:var(--glass-border);margin:0.2rem 0"></div>
-    <button onclick="dmDeleteMsg('${msgId}');document.getElementById('dm-msg-menu')?.remove()" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.55rem 1rem;background:none;border:none;color:var(--accent2);font-size:0.82rem;cursor:pointer;text-align:left">✕ Slet</button>
-  `;
+  var items = '';
+  if (isMine) {
+    items += `<button onclick="dmEditMsg('${msgId}');document.getElementById('dm-msg-menu')?.remove()" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.55rem 1rem;background:none;border:none;color:var(--text);font-size:0.82rem;cursor:pointer;text-align:left">✎ Rediger</button>`;
+    items += '<div style="height:1px;background:var(--glass-border);margin:0.2rem 0"></div>';
+  }
+  items += `<button onclick="dmCopyMsg('${msgId}');document.getElementById('dm-msg-menu')?.remove()" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.55rem 1rem;background:none;border:none;color:var(--text);font-size:0.82rem;cursor:pointer;text-align:left">📋 Kopiér</button>`;
+  if (isMine) {
+    items += '<div style="height:1px;background:var(--glass-border);margin:0.2rem 0"></div>';
+    items += `<button onclick="dmDeleteMsg('${msgId}');document.getElementById('dm-msg-menu')?.remove()" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.55rem 1rem;background:none;border:none;color:var(--accent2);font-size:0.82rem;cursor:pointer;text-align:left">✕ Slet</button>`;
+  }
+  menu.innerHTML = items;
 
   document.body.appendChild(menu);
 
@@ -699,6 +704,27 @@ function dmEditMsg(msgId) {
   const input = document.getElementById('chat-input');
   input.value = bubble.textContent;
   input.focus();
+  var editBar = document.getElementById('dm-edit-bar');
+  if (editBar) editBar.style.display = 'flex';
+}
+
+function dmCancelEdit() {
+  dmEditingId = null;
+  var input = document.getElementById('chat-input');
+  if (input) input.value = '';
+  var editBar = document.getElementById('dm-edit-bar');
+  if (editBar) editBar.style.display = 'none';
+}
+
+function dmCopyMsg(msgId) {
+  var bubble = document.getElementById('dm-bubble-' + msgId);
+  if (!bubble) return;
+  var text = bubble.textContent || '';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function() { showToast('Kopieret'); }).catch(function() { showToast('Kunne ikke kopiere'); });
+  } else {
+    showToast('Kopiering ikke understøttet');
+  }
 }
 
 async function dmDeleteMsg(msgId) {
