@@ -1074,6 +1074,18 @@ async function bcConfirmKick(userId, userName) {
   } catch(e) { logError('bcConfirmKick', e, { bubbleId: bcBubbleId, userId: userId }); showToast('Fejl: ' + (e.message || 'ukendt')); }
 }
 
+function bcFilterMembers() {
+  var q = (document.getElementById('bc-member-search')?.value || '').toLowerCase();
+  var rows = document.querySelectorAll('#bc-members-list .chat-member-row');
+  var labels = document.querySelectorAll('#bc-members-list .chat-section-label');
+  rows.forEach(function(row) {
+    var text = (row.textContent || '').toLowerCase();
+    row.style.display = !q || text.includes(q) ? '' : 'none';
+  });
+  // Hide section labels when filtering
+  labels.forEach(function(l) { l.style.display = q ? 'none' : ''; });
+}
+
 async function bcLoadInfo() {
   try {
     const list = document.getElementById('bc-info-list');
@@ -1308,6 +1320,20 @@ async function bcLoadPosts() {
       (events || []).forEach(function(e) { eventMap[e.id] = e; });
     }
 
+    // Fetch like counts + user's likes
+    var postIds = _bcPostsCache.map(function(p) { return p.id; });
+    var _postLikeCounts = {};
+    var _postMyLikes = {};
+    try {
+      var { data: allLikes } = await sb.from('bubble_post_reactions').select('post_id, user_id').in('post_id', postIds);
+      (allLikes || []).forEach(function(r) {
+        _postLikeCounts[r.post_id] = (_postLikeCounts[r.post_id] || 0) + 1;
+        if (r.user_id === currentUser.id) _postMyLikes[r.post_id] = true;
+      });
+    } catch(e) { /* table may not exist yet */ }
+    window._postLikeCounts = _postLikeCounts;
+    window._postMyLikes = _postMyLikes;
+
     // Render
     list.innerHTML = _bcPostsCache.map(function(post) {
       return bcRenderPostCard(post, _bcPostsProfileCache[post.author_id], eventMap[post.event_id]);
@@ -1340,6 +1366,13 @@ function bcRenderPostCard(post, author, event) {
       ico('calendar') + ' ' + escHtml(event.name) + ' ›</div>';
   }
 
+  var likeCount = (window._postLikeCounts || {})[post.id] || 0;
+  var myLike = (window._postMyLikes || {})[post.id];
+  var likeHtml = '<div class="bp-like-row" onclick="event.stopPropagation()">' +
+    '<button class="bp-like-btn' + (myLike ? ' liked' : '') + '" id="bp-like-' + post.id + '" onclick="bcTogglePostLike(\'' + post.id + '\')">' +
+    (myLike ? '❤️' : '🤍') + '</button>' +
+    '<span class="bp-like-count" id="bp-like-count-' + post.id + '">' + (likeCount > 0 ? likeCount : '') + '</span></div>';
+
   return '<div class="bp-card" onclick="bcExpandPost(\'' + post.id + '\')">' +
     '<div class="bp-header">' +
     avatarHtml +
@@ -1350,6 +1383,7 @@ function bcRenderPostCard(post, author, event) {
     '<div class="bp-preview">' + preview + '</div>' +
     (hasMore ? '<div class="bp-readmore">Læs mere ›</div>' : '') +
     eventChip +
+    likeHtml +
     '</div>';
 }
 
@@ -1378,6 +1412,8 @@ function bcExpandPost(postId) {
 
   // Delete button for owner/admin
   var deleteBtn = '';
+  var expandLikeCount = (window._postLikeCounts || {})[post.id] || 0;
+  var expandLiked = (window._postMyLikes || {})[post.id];
   var canDelete = bcBubbleData && (bcBubbleData._isOwner || bcBubbleData._isAdmin || post.author_id === currentUser.id);
   if (canDelete) {
     deleteBtn = '<button onclick="bcDeletePost(\'' + postId + '\')" style="width:100%;margin-top:0.6rem;padding:0.5rem;border-radius:10px;border:1px solid rgba(232,121,168,0.2);background:none;color:var(--accent2);font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer">Slet opslag</button>';
@@ -1398,7 +1434,10 @@ function bcExpandPost(postId) {
     '<div style="font-size:1.05rem;font-weight:800;margin-bottom:0.6rem">' + escHtml(post.title) + '</div>' +
     '<div style="font-size:0.88rem;color:var(--text-secondary);line-height:1.65">' + contentHtml + '</div>' +
     eventCard +
-    '<button onclick="this.closest(\'[style*=backdrop-filter]\').remove()" style="width:100%;margin-top:1.2rem;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer">Luk</button>' +
+    '<div class="bp-like-row" style="margin-top:1rem;padding-top:0.6rem;border-top:0.5px solid rgba(30,27,46,0.06)">' +
+    '<button class="bp-like-btn' + (expandLiked ? ' liked' : '') + '" id="bp-expand-like-' + post.id + '" onclick="bcTogglePostLike(\'' + post.id + '\')">' + (expandLiked ? '❤️' : '🤍') + '</button>' +
+    '<span class="bp-like-count" id="bp-expand-like-count-' + post.id + '">' + (expandLikeCount > 0 ? expandLikeCount : '') + '</span></div>' +
+    '<button onclick="this.closest(\'[style*=backdrop-filter]\').remove()" style="width:100%;margin-top:0.8rem;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer">Luk</button>' +
     deleteBtn;
 
   overlay.appendChild(sheet);
@@ -1534,3 +1573,33 @@ async function bcConfirmDeletePost(postId) {
 }
 
 
+// ── Post reactions: toggle like ──
+async function bcTogglePostLike(postId) {
+  if (!currentUser) return;
+  var btn = document.getElementById('bp-like-' + postId);
+  var countEl = document.getElementById('bp-like-count-' + postId);
+  var liked = (window._postMyLikes || {})[postId];
+  try {
+    if (liked) {
+      await sb.from('bubble_post_reactions').delete().eq('post_id', postId).eq('user_id', currentUser.id);
+      delete window._postMyLikes[postId];
+      window._postLikeCounts[postId] = Math.max((window._postLikeCounts[postId] || 1) - 1, 0);
+    } else {
+      await sb.from('bubble_post_reactions').insert({ post_id: postId, user_id: currentUser.id });
+      if (!window._postMyLikes) window._postMyLikes = {};
+      window._postMyLikes[postId] = true;
+      window._postLikeCounts[postId] = (window._postLikeCounts[postId] || 0) + 1;
+    }
+    // Update UI
+    if (btn) btn.innerHTML = window._postMyLikes[postId] ? '❤️' : '🤍';
+    if (btn) btn.classList.toggle('liked', !!window._postMyLikes[postId]);
+    var c = window._postLikeCounts[postId] || 0;
+    if (countEl) countEl.textContent = c > 0 ? c : '';
+    // Update expanded view if open
+    var expandBtn = document.getElementById('bp-expand-like-' + postId);
+    var expandCount = document.getElementById('bp-expand-like-count-' + postId);
+    if (expandBtn) expandBtn.innerHTML = window._postMyLikes[postId] ? '❤️' : '🤍';
+    if (expandBtn) expandBtn.classList.toggle('liked', !!window._postMyLikes[postId]);
+    if (expandCount) expandCount.textContent = c > 0 ? c : '';
+  } catch(e) { logError('bcTogglePostLike', e); }
+}

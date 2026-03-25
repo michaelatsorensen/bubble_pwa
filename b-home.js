@@ -1082,7 +1082,9 @@ function bubbleCard(b, joined) {
   var visBadge = visibilityBadge(b.visibility);
   var parentRef = b._parentName ? '<div style="display:inline-flex;align-items:center;gap:3px;margin-top:0.15rem;font-size:0.62rem;color:#534AB7">\u21B3 ' + escHtml(b._parentName) + '</div>' : '';
 
-  return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}">
+  var cardBorder = b.visibility === 'private' ? 'border-left:3px solid rgba(124,92,252,0.4);' : (b.visibility === 'hidden' ? 'border-left:3px solid rgba(30,27,46,0.15);' : '');
+
+  return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}" style="${cardBorder}">
     <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};color:${bubbleColor(b.type, 0.9)}">${bubbleEmoji(b.type)}</div>
     <div style="flex:1;min-width:0">
       <div class="fw-600 fs-09">${escHtml(b.name)}</div>

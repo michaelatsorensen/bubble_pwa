@@ -315,6 +315,10 @@ textarea.input { min-height:80px; resize:vertical; }
 .bp-card.bp-new { border-color:rgba(124,92,252,0.2); background:rgba(124,92,252,0.02); }
 .bp-card .bp-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem; }
 .bp-card .bp-avatar { width:26px; height:26px; border-radius:50%; font-size:0.5rem; font-weight:800; color:white; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.bp-like-row { display:flex; align-items:center; gap:0.3rem; margin-top:0.4rem; }
+.bp-like-btn { border:none; background:none; font-size:0.82rem; cursor:pointer; padding:0.15rem 0.25rem; border-radius:6px; transition:transform 0.15s; }
+.bp-like-btn:active { transform:scale(1.3); }
+.bp-like-count { font-size:0.68rem; font-weight:600; color:var(--muted); min-width:0.8rem; }
 .bp-card .bp-meta { flex:1; min-width:0; }
 .bp-card .bp-author { font-size:0.72rem; font-weight:700; color:var(--text); }
 .bp-card .bp-time { font-size:0.6rem; color:var(--muted); }
