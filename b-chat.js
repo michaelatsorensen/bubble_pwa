@@ -434,6 +434,9 @@ async function bcRefreshMembership() {
 
 // ── Render action buttons based on membership state ──
 function bcRenderActions(b, myMembership, canEdit, isPending) {
+  // Remove skeleton atomically as real UI appears (no-op if already removed)
+  _bcHideSkeleton();
+
   var actionArea = document.getElementById('bc-action-btns');
   var actionBar = document.getElementById('bc-action-bar');
   var infoTab = document.getElementById('bc-tab-info');
