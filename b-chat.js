@@ -199,7 +199,11 @@ async function openBubbleChat(bubbleId, fromScreen) {
     }
   };
   goTo('screen-bubble-chat');
-  // Don't switch tab yet — wait for membership check in bcLoadChatData
+  // Hide all panels until membership is known — prevents tab flash
+  ['chat','members','info','posts','events'].forEach(function(t) {
+    var p = document.getElementById('bc-panel-' + t);
+    if (p) p.style.display = 'none';
+  });
 
   // 2. Load all data
   var backTarget = prevBubbleId ? 'screen-bubbles' : (fromScreen || 'screen-home');
@@ -218,8 +222,8 @@ async function openBubbleChat(bubbleId, fromScreen) {
     return;
   }
 
-  // 3. Subscribe AFTER data is ready
-  bcSubscribeRealtime();
+  // 3. Subscribe AFTER data is ready (members only — non-members just view static data)
+  if (bcBubbleData._isMember) bcSubscribeRealtime();
 }
 
 // ── Pure data loading: fetch bubble, membership, roles, render UI ──
@@ -235,11 +239,11 @@ async function bcLoadChatData(bubbleId) {
   // Phase 3: Load membership + roles + render actions + pending banner
   await bcLoadMembership(b, bubbleId);
 
-  // Phase 4: Load initial tab data (members + messages)
-  await Promise.all([
-    bcLoadMembers(),
-    bcLoadMessages()
-  ]);
+  // Phase 4: Load initial tab data
+  // Members: members + messages. Non-members: members only (chat tab hidden).
+  var phase4 = [bcLoadMembers()];
+  if (bcBubbleData._isMember) phase4.push(bcLoadMessages());
+  await Promise.all(phase4);
 
   return true;
 }
@@ -457,7 +461,16 @@ async function bcLoadBubbleInfo() {
   try {
     const { data: b } = await sb.from('bubbles').select('*').eq('id', bcBubbleId).maybeSingle();
     if (!b) return;
+    // Preserve membership flags when refreshing bubble data
+    var savedFlags = {};
+    if (bcBubbleData) {
+      ['_isMember','_isOwner','_isAdmin','_canEdit','_isPending'].forEach(function(k) {
+        if (bcBubbleData[k] !== undefined) savedFlags[k] = bcBubbleData[k];
+      });
+    }
     bcBubbleData = b;
+    Object.keys(savedFlags).forEach(function(k) { bcBubbleData[k] = savedFlags[k]; });
+
     var iconEl = document.getElementById('bc-topbar-icon');
     if (iconEl) {
       var isEv = b.type === 'event' || b.type === 'live';
@@ -471,8 +484,10 @@ async function bcLoadBubbleInfo() {
       var { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bcBubbleId);
       memberCount2 = count || 0;
     }
-    // Check my LIVE status
-    var statusText = memberCount2 + ' medlemmer';
+    var isEvent = b.type === 'event' || b.type === 'live';
+    var statusText = memberCount2 + (isEvent ? ' deltagere' : ' medlemmer');
+
+    // Check membership + live status for subtitle
     var { data: myM } = await sb.from('bubble_members').select('checked_in_at,checked_out_at').eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id).maybeSingle();
     var isLive = myM && myM.checked_in_at && !myM.checked_out_at && (Date.now() - new Date(myM.checked_in_at).getTime() < 6*3600000);
     var countEl = document.getElementById('bc-members-count');
@@ -482,11 +497,13 @@ async function bcLoadBubbleInfo() {
         var hh = expiry.getHours().toString().padStart(2,'0');
         var mm = expiry.getMinutes().toString().padStart(2,'0');
         countEl.innerHTML = statusText + ' · <span style="color:#1A9E8E">LIVE</span> <span style="opacity:0.6">udl. ' + hh + ':' + mm + '</span>';
-      } else {
+      } else if (myM) {
         countEl.textContent = statusText + ' · Medlem ✓';
+      } else {
+        countEl.textContent = statusText;
       }
     }
-  } catch(e) { logError("bcLoadBubbleInfo", e); showToast(e.message || "Ukendt fejl"); }
+  } catch(e) { logError("bcLoadBubbleInfo", e); }
 }
 
 var _bcActiveTab = 'members';
