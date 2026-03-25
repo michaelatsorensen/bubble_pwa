@@ -190,20 +190,25 @@ async function openBubbleChat(bubbleId, fromScreen) {
   } else {
     _bcBackFn = function() { goTo(fromScreen || 'screen-home'); };
   }
-  // If on info tab (opened via topbar tap), back returns to previous tab first
+  // If member tapped ⓘ to view info temporarily, back returns to previous tab
+  // For non-members, info IS the landing tab — back should navigate away
   backBtn.onclick = function() {
-    if (_bcActiveTab === 'info' && _bcPrevTab && _bcPrevTab !== 'info') {
+    if (_bcActiveTab === 'info' && _bcPrevTab && _bcPrevTab !== 'info' && bcBubbleData?._isMember) {
       bcSwitchTab(_bcPrevTab);
     } else {
       _bcBackFn();
     }
   };
   goTo('screen-bubble-chat');
-  // Hide all panels until membership is known — prevents tab flash
+  // Hide all panels + tabs until membership is known — prevents flash
   ['chat','members','info','posts','events'].forEach(function(t) {
     var p = document.getElementById('bc-panel-' + t);
     if (p) p.style.display = 'none';
+    var tab = document.getElementById('bc-tab-' + t);
+    if (tab) tab.style.display = 'none';
   });
+  var actionBar = document.getElementById('bc-action-bar');
+  if (actionBar) actionBar.style.display = 'none';
 
   // 2. Load all data
   var backTarget = prevBubbleId ? 'screen-bubbles' : (fromScreen || 'screen-home');
@@ -354,6 +359,35 @@ function bcRenderPendingBanner(isPending) {
   }
 }
 
+// ── Lightweight membership re-check (called by realtime INSERT/DELETE) ──
+async function bcRefreshMembership() {
+  if (!bcBubbleId || !bcBubbleData || !currentUser) return;
+  try {
+    var { data: myM } = await sb.from('bubble_members').select('id,status,role')
+      .eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id).maybeSingle();
+    var wasMember = bcBubbleData._isMember;
+    var isPending = myM && myM.status === 'pending';
+    var isMember = !!myM && !isPending;
+    bcBubbleData._isMember = isMember;
+    bcBubbleData._isPending = isPending;
+    bcBubbleData._isAdmin = myM && myM.role === 'admin';
+    bcBubbleData._canEdit = bcBubbleData._isOwner || bcBubbleData._isAdmin;
+
+    // If membership state changed, re-render full UI
+    if (wasMember !== isMember) {
+      bcRenderActions(bcBubbleData, myM, bcBubbleData._canEdit, isPending);
+      bcRenderPendingBanner(isPending);
+      if (_bcActiveTab === 'info') bcLoadInfo();
+      // If kicked: unsubscribe realtime, switch to info
+      if (wasMember && !isMember) {
+        if (bcSubscription) { bcSubscription.unsubscribe(); bcSubscription = null; }
+        bcSwitchTab('info');
+        showToast('Du er fjernet fra boblen');
+      }
+    }
+  } catch(e) { logError('bcRefreshMembership', e); }
+}
+
 // ── Render action buttons based on membership state ──
 function bcRenderActions(b, myMembership, canEdit, isPending) {
   var actionArea = document.getElementById('bc-action-btns');
@@ -363,12 +397,15 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
   var postsTab = document.getElementById('bc-tab-posts');
   var eventsTab = document.getElementById('bc-tab-events');
   var isActiveMember = myMembership && !isPending;
+  var membersTab = document.getElementById('bc-tab-members');
 
   if (isActiveMember) {
-    // Active members: Info accessed via topbar tap, hide Info tab
+    // Active members: Medlemmer + Opslag + Chat (+ Tilknyttet if set by Phase 2)
+    if (membersTab) membersTab.style.display = '';
     if (infoTab) infoTab.style.display = 'none';
     if (chatTab) chatTab.style.display = '';
     if (postsTab) postsTab.style.display = '';
+    // eventsTab visibility already set by bcConfigureTabs (Phase 2)
     // Set initial tab for members
     bcSwitchTab('members');
     // Edit button as topbar card
@@ -385,6 +422,7 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
     }
   } else {
     // Non-members + pending: only Medlemmer + Info tabs
+    if (membersTab) membersTab.style.display = '';
     if (infoTab) infoTab.style.display = '';
     if (chatTab) chatTab.style.display = 'none';
     if (postsTab) postsTab.style.display = 'none';
@@ -449,11 +487,11 @@ function bcSubscribeRealtime() {
         }
       })
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
-      () => { bcLoadMembers(); bcLoadBubbleInfo(); })
+      () => { bcLoadMembers(); bcLoadBubbleInfo(); bcRefreshMembership(); })
     .on('postgres_changes', {event:'UPDATE', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
       () => { bcLoadMembers(); bcLoadBubbleInfo(); })
     .on('postgres_changes', {event:'DELETE', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
-      () => { bcLoadMembers(); bcLoadBubbleInfo(); })
+      () => { bcLoadMembers(); bcLoadBubbleInfo(); bcRefreshMembership(); })
     .subscribe(typeof _rtStatusCallback === 'function' ? _rtStatusCallback('bc-' + bcBubbleId) : undefined);
 }
 
