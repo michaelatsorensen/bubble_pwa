@@ -412,7 +412,7 @@ function bcSubscribeRealtime() {
         const panel = document.getElementById('bc-panel-chat');
         if (panel.style.display !== 'none') {
           var msgContainer = document.getElementById('bc-messages');
-          var emptyS = msgContainer.querySelector('.empty-state') || (msgContainer.children.length === 1 && !msgContainer.querySelector('.bc-msg') ? msgContainer.firstChild : null);
+          var emptyS = msgContainer.querySelector('.empty-state') || (msgContainer.children.length === 1 && !msgContainer.querySelector('.msg-row') ? msgContainer.firstChild : null);
           if (emptyS && !emptyS.classList?.contains('chat-date-sep')) emptyS.remove();
           msgContainer.appendChild(bcRenderMsg(m));
           bcScrollToBottom();
@@ -442,11 +442,11 @@ function bcSubscribeRealtime() {
         }
       })
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
-      () => { bcLoadMembers(); })
+      () => { bcLoadMembers(); bcLoadBubbleInfo(); })
     .on('postgres_changes', {event:'UPDATE', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
-      () => { bcLoadMembers(); })
+      () => { bcLoadMembers(); bcLoadBubbleInfo(); })
     .on('postgres_changes', {event:'DELETE', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
-      () => { bcLoadMembers(); })
+      () => { bcLoadMembers(); bcLoadBubbleInfo(); })
     .subscribe(typeof _rtStatusCallback === 'function' ? _rtStatusCallback('bc-' + bcBubbleId) : undefined);
 }
 
@@ -1292,8 +1292,25 @@ async function bcLoadInfo() {
         '<div style="border-radius:12px;border:1px solid var(--glass-border-subtle);overflow:hidden">' + adminItems + '</div></div>';
     }
 
+    // ── Check user's live status for checkout button ──
+    var myCheckinLive = false;
+    if (isEvent) {
+      try {
+        var { data: myCheckin } = await sb.from('bubble_members')
+          .select('checked_in_at, checked_out_at')
+          .eq('bubble_id', b.id).eq('user_id', currentUser.id).maybeSingle();
+        myCheckinLive = myCheckin && myCheckin.checked_in_at && !myCheckin.checked_out_at &&
+          (Date.now() - new Date(myCheckin.checked_in_at).getTime() < 6 * 3600000);
+      } catch(e) {}
+    }
+
     // ── Destructive actions ──
+    var checkoutBtn = '';
+    if (isEvent && myCheckinLive) {
+      checkoutBtn = '<button onclick="bcCheckout()" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.2);color:#085041;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">Check ud af event</button>';
+    }
     var destructHtml = '<div style="display:flex;flex-direction:column;gap:0.4rem;border-top:1px solid var(--glass-border-subtle);padding-top:0.8rem">' +
+      checkoutBtn +
       '<button data-action="leaveBubble" data-id="' + b.id + '" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.1);color:#A32D2D;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">Forlad ' + (isEvent ? 'event' : 'boblen') + '</button>' +
       (isOwner ? '<button onclick="confirmPopBubble(\'' + b.id + '\')" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.1);color:#791F1F;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">Slet ' + (isEvent ? 'event' : 'boble') + '</button>' : '') +
       '</div>';
@@ -1313,6 +1330,40 @@ async function bcLoadInfo() {
       destructHtml;
 
   } catch(e) { logError("bcLoadInfo", e); showToast(e.message || "Ukendt fejl"); }
+}
+
+// ── Checkout from event (within bubble chat view) ──
+async function bcCheckout() {
+  if (!bcBubbleId || !currentUser) return;
+  try {
+    await sb.from('bubble_members').update({
+      checked_out_at: new Date().toISOString()
+    }).eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id);
+
+    // Clear global live state if this was the active live bubble
+    if (currentLiveBubble && currentLiveBubble.bubble_id === bcBubbleId) {
+      currentLiveBubble = null;
+      appMode.clearLive();
+    }
+
+    showSuccessToast('Du er checket ud');
+
+    // Refresh bubble chat UI
+    bcLoadBubbleInfo();
+    bcLoadMembers();
+    if (_bcActiveTab === 'info') bcLoadInfo();
+
+    // Refresh home if visible
+    if (typeof _homeViewMode !== 'undefined' && _homeViewMode === 'live') {
+      homeSetMode('all');
+    }
+    if (document.getElementById('screen-home')?.classList.contains('active')) {
+      loadLiveBanner();
+    }
+  } catch(e) {
+    logError('bcCheckout', e);
+    showToast('Fejl ved checkout');
+  }
 }
 
 // Person sheet from chat avatar

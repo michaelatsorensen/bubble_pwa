@@ -17,6 +17,7 @@ let currentLiveBubble = null; // { bubble_id, bubble_name, bubble_location, chec
 
 async function loadLiveBubbleStatus() {
   try {
+    if (!currentUser) return;
     // Find active check-in for current user (ANY bubble type)
     const expireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 60 * 60 * 1000).toISOString();
 
@@ -380,26 +381,32 @@ async function liveAutoCheckout() {
 async function liveCheckout() {
   try {
     if (!currentLiveBubble) return;
+    var checkoutBubbleId = currentLiveBubble.bubble_id;
     await sb.from('bubble_members').update({
       checked_out_at: new Date().toISOString()
-    }).eq('bubble_id', currentLiveBubble.bubble_id).eq('user_id', currentUser.id);
+    }).eq('bubble_id', checkoutBubbleId).eq('user_id', currentUser.id);
 
     currentLiveBubble = null;
     appMode.clearLive();
-    showToast('Checked ud 👋');
+    showSuccessToast('Du er checket ud');
     await loadLiveBubbleStatus();
 
     // Reset home to 'all' mode + re-render dartboard
     if (typeof _homeViewMode !== 'undefined' && _homeViewMode === 'live') {
       homeSetMode('all');
     }
-    // Also re-render if radar was in live filter mode
     if (typeof _homeRadarFilter !== 'undefined' && _homeRadarFilter === 'live') {
       filterRadarHome('all');
     }
-    // Refresh home banner
     if (document.getElementById('screen-home')?.classList.contains('active')) {
       loadLiveBanner();
+    }
+
+    // Refresh bubble chat if viewing this event
+    if (typeof bcBubbleId !== 'undefined' && bcBubbleId === checkoutBubbleId) {
+      bcLoadBubbleInfo();
+      bcLoadMembers();
+      if (typeof _bcActiveTab !== 'undefined' && _bcActiveTab === 'info') bcLoadInfo();
     }
   } catch (e) {
     logError('liveCheckout', e);

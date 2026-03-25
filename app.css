@@ -337,29 +337,7 @@ textarea.input { min-height:80px; resize:vertical; }
 .chat-date-sep { text-align:center; font-size:0.52rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin:0.4rem 0; }
 .chat-scroll-fab { position:absolute; bottom:4.5rem; right:1rem; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.95); border:1px solid var(--glass-border-subtle); color:var(--accent); font-size:0.9rem; font-weight:700; cursor:pointer; z-index:15; display:flex; align-items:center; justify-content:center; font-family:inherit; }
 /* ══ Bubble Chat Messages ══ */
-.bc-msg { display:flex; gap:0.5rem; padding:0.35rem 0; max-width:100%; }
-.bc-msg.me { flex-direction:row-reverse; }
-.bc-msg-avatar { width:30px; height:30px; border-radius:50%; font-size:0.55rem; font-weight:800; color:white; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; margin-top:0.15rem; transition:transform 0.15s; }
-.bc-msg-avatar:active { transform:scale(1.1); }
-.bc-msg-body { flex:1; min-width:0; max-width:80%; }
-.bc-msg.me .bc-msg-body { display:flex; flex-direction:column; align-items:flex-end; }
-.bc-msg-header { display:flex; align-items:baseline; gap:0.4rem; margin-bottom:0.15rem; flex-wrap:wrap; }
-.bc-msg.me .bc-msg-header { flex-direction:row-reverse; }
-.bc-msg-name { font-size:0.62rem; font-weight:700; color:var(--text-secondary); }
-.bc-msg-time { font-size:0.52rem; color:var(--muted); }
-.bc-msg-edited { font-size:0.52rem; color:var(--accent); cursor:pointer; }
-.bc-msg-content { position:relative; display:inline-flex; align-items:center; gap:0.2rem; max-width:100%; }
-.bc-msg.me .bc-msg-content { flex-direction:row-reverse; }
-.bc-msg-bubble { padding:0.5rem 0.75rem; border-radius:16px; font-size:0.8rem; line-height:1.45; word-break:break-word; min-width:4.5rem; }
-.bc-msg.them .bc-msg-bubble { background:var(--glass-bg-strong); backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border); border-top-left-radius:4px; color:var(--text); }
-.bc-msg.me .bc-msg-bubble { background:var(--gradient-primary); border:1px solid var(--gradient-btn-border); border-top-right-radius:4px; color:white; box-shadow:0 2px 12px rgba(124,92,252,0.2); }
-.bc-msg-img { max-width:240px; max-height:280px; border-radius:14px; display:block; }
-.bc-msg-file { display:flex; align-items:center; gap:0.4rem; padding:0.5rem 0.75rem; border-radius:12px; background:var(--glass-bg); border:1px solid var(--glass-border); font-size:0.75rem; color:var(--text); text-decoration:none; }
-.bc-msg-file .ico { width:1rem; height:1rem; pointer-events:none; }
-.bc-msg-file-size { font-size:0.6rem; color:var(--muted); }
-.bc-msg-dots { background:rgba(30,27,46,0.04); border:1px solid var(--glass-border-subtle); font-size:0.7rem; color:var(--text-secondary); cursor:pointer; padding:0.2rem 0.4rem; border-radius:6px; flex-shrink:0; transition:all 0.15s; line-height:1; }
-.bc-msg-dots:active { background:rgba(30,27,46,0.07); }
-.bc-msg-reactions { display:flex; flex-wrap:wrap; gap:0.2rem; margin-top:0.2rem; }
+/* (bc-msg rules removed — replaced by .msg-row system in v6.3.4) */
 
 /* Chat input */
 

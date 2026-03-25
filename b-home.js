@@ -12,7 +12,6 @@
 // ══════════════════════════════════════════════════════════
 
 // ── Live context: set when user is checked into an event ──
-var _homeLiveContext = null; // DEPRECATED — use appMode.live instead
 var _homeViewMode = 'all'; // UI tab toggle: 'all' or 'live'
 
 async function loadHome() {

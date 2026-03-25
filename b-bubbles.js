@@ -66,6 +66,7 @@ async function toggleBubbleUpvote(bubbleId) {
 
 async function loadDiscover() {
   try {
+    if (!currentUser) return;
     var myNav = _navVersion;
     const list = document.getElementById('all-bubbles-list');
     list.innerHTML = skelCards(4);
@@ -327,9 +328,10 @@ async function leaveBubble(bubbleId, btnEl) {
   }
   var target = btnEl || document.querySelector('[data-action="leaveBubble"]');
   if (!target) return;
+  var isEvent = bcBubbleData && (bcBubbleData.type === 'event' || bcBubbleData.type === 'live');
   bbConfirm(target, {
-    label: 'Du mister adgang til chat og deltagere',
-    confirmText: 'Ja, forlad',
+    label: isEvent ? 'Du fjernes fra deltagerlisten' : 'Du mister adgang til chat og deltagere',
+    confirmText: isEvent ? 'Ja, forlad event' : 'Ja, forlad',
     confirmClass: 'bb-confirm-btn-danger',
     onConfirm: "confirmLeaveBubble('" + bubbleId + "')"
   });
@@ -341,11 +343,16 @@ function cancelLeaveBubble() {
 
 async function confirmLeaveBubble(bubbleId) {
   try {
+    // Clear live state if checked into this bubble
+    if (currentLiveBubble && currentLiveBubble.bubble_id === bubbleId) {
+      currentLiveBubble = null;
+      appMode.clearLive();
+    }
     await sb.from('bubble_members').delete().eq('bubble_id', bubbleId).eq('user_id', currentUser.id);
-    showToast('Du har forladt boblen');
+    var isEvent = bcBubbleData && (bcBubbleData.type === 'event' || bcBubbleData.type === 'live');
+    showToast(isEvent ? 'Du har forladt eventet' : 'Du har forladt boblen');
     loadHome();
     loadMyBubbles();
-    // Navigate back using stored fromScreen
     var backBtn = document.getElementById('bc-back-btn');
     if (backBtn) { backBtn.click(); } else { goTo(_activeScreen || 'screen-home'); }
   } catch(e) { logError("confirmLeaveBubble", e); showToast(e.message || "Ukendt fejl"); }

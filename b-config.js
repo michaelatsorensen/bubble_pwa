@@ -15,7 +15,7 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
 const BUILD_TIMESTAMP = '2026-03-19T18:00:00';
-const BUILD_VERSION  = 'v6.4.4';
+const BUILD_VERSION  = 'v6.4.6';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -168,13 +168,6 @@ function flowSet(key, value) {
 function flowRemove(key) {
   try { sessionStorage.removeItem(_flowStatePrefix + key); }
   catch(e) {}
-}
-function flowClear() {
-  try {
-    ['pending_contact','pending_join','event_flow','post_tags_destination'].forEach(function(k) {
-      sessionStorage.removeItem(_flowStatePrefix + k);
-    });
-  } catch(e) {}
 }
 
 // ══════════════════════════════════════════════════════════

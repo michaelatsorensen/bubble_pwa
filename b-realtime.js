@@ -142,31 +142,17 @@ function rtUnsubscribeAll() {
   rtStopRadarPolling();
 }
 
-// ── Helpers: instant badge manipulation (no DB query needed) ──
-function dmBadgeGet() {
-  var el = document.querySelector('.msg-unread-badge');
-  return el ? (parseInt(el.textContent) || 0) : 0;
+// ── Helpers: instant badge manipulation ──
+function dmBadgeClear() {
+  document.querySelectorAll('.msg-unread-badge').forEach(function(b) { b.style.display = 'none'; });
 }
-function dmBadgeSet(n) {
-  document.querySelectorAll('.msg-unread-badge').forEach(function(b) {
-    if (n > 0) { b.textContent = n > 9 ? '9+' : String(n); b.style.display = 'flex'; }
-    else { b.style.display = 'none'; }
-  });
-}
-function dmBadgeIncrement() { dmBadgeSet(dmBadgeGet() + 1); }
-function dmBadgeClear()     { dmBadgeSet(0); }
 
-function notifBadgeGet() {
-  var el = document.getElementById('topbar-notif-badge');
-  return el ? (parseInt(el.textContent) || 0) : 0;
-}
 function notifBadgeSet(n) {
   var el = document.getElementById('topbar-notif-badge');
   if (!el) return;
   if (n > 0) { el.textContent = n > 9 ? '9+' : String(n); el.style.display = 'flex'; }
   else { el.style.display = 'none'; }
 }
-function notifBadgeIncrement() { notifBadgeSet(notifBadgeGet() + 1); }
 
 // ── Conversations list: update preview row without full reload ──
 function rtUpdateConversationPreview(msg) {
