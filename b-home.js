@@ -804,16 +804,23 @@ async function loadMyBubbles() {
 
     // Render pending invites at top
     if (inviteEl && pendingInvites.length > 0) {
+      // Fetch member avatars for invite bubbles
+      var invBIds = pendingInvites.map(function(inv) { return inv.bubble_id; });
+      var invMemberMap = {};
+      try { invMemberMap = await fetchMemberAvatarsForBubbles(invBIds, 4); } catch(e) {}
+
       inviteEl.innerHTML = '<div class="section-label" style="margin-top:0.25rem;color:var(--accent)">Invitationer</div>' +
         pendingInvites.map(function(inv) {
           var b = inv._bubble;
           var fromName = inv._from.name || 'Nogen';
+          var invAvStack = renderAvatarStack(invMemberMap[inv.bubble_id] || [], 0);
           return '<div id="bb-inv-' + inv.id + '" class="card" style="border:1.5px solid rgba(124,92,252,0.25);background:rgba(124,92,252,0.02);margin-bottom:0.4rem">' +
             '<div style="display:flex;align-items:center;gap:0.6rem">' +
             '<div class="bubble-icon" style="background:' + bubbleColor(b.type, 0.15) + ';color:' + bubbleColor(b.type, 0.9) + '">' + bubbleEmoji(b.type) + '</div>' +
             '<div style="flex:1;min-width:0">' +
             '<div class="fw-600 fs-09">' + escHtml(b.name || 'Boble') + '</div>' +
             '<div class="fs-072 text-muted">' + escHtml(fromName) + ' inviterer dig · ' + timeAgo(inv.created_at) + '</div>' +
+            invAvStack +
             '</div>' +
             '</div>' +
             '<div style="display:flex;gap:0.35rem;margin-top:0.5rem">' +

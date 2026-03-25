@@ -470,18 +470,14 @@ function _dmMaybeInsertDateSep(container, createdAt) {
 
 function dmRenderMsg(m) {
   const sent = m.sender_id === currentUser.id;
-  const time = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'});
-  const myInit = (currentProfile?.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  const theirInit = (currentChatName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  const initials = sent ? myInit : theirInit;
-  const name = sent ? (currentProfile?.name||'Mig') : (currentChatName||'?');
-  const edited = m.edited ? ' <span class="msg-edited">redigeret</span>' : '';
+  const gp = m._gp || 'single'; // single, first, cont, tail
+  const isCont = gp === 'cont';
 
-  // Read receipt: ✓ sent, ✓✓ read (teal)
+  // Read receipt on tail/single sent messages only
   let receipt = '';
-  if (sent && !m.file_url) {
+  if (sent && !m.file_url && (gp === 'tail' || gp === 'single')) {
     if (m.read_at) {
-      receipt = `<span class="msg-receipt read" id="dm-receipt-${m.id}" title="Læst ${new Date(m.read_at).toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'})}">✓✓</span>`;
+      receipt = `<span class="msg-receipt read" id="dm-receipt-${m.id}" title="Læst">✓✓</span>`;
     } else {
       receipt = `<span class="msg-receipt" id="dm-receipt-${m.id}" title="Sendt">✓</span>`;
     }
@@ -510,15 +506,45 @@ function dmRenderMsg(m) {
   let avatarInner;
   if (sent && myAvUrl) { avatarInner = '<img src="'+myAvUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
   else if (!sent && theirAvUrl) { avatarInner = '<img src="'+theirAvUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
-  else { avatarInner = initials; }
+  else {
+    const initials = sent
+      ? (currentProfile?.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
+      : (currentChatName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    avatarInner = initials;
+  }
 
-  return `<div class="msg-row${sent?' me':''}" id="dm-msg-${m.id}" data-msg-id="${m.id}">
+  var edited = m.edited ? ' <span class="msg-edited">redigeret</span>' : '';
+  var rowClass = 'msg-row' + (sent ? ' me' : '') + (isCont ? ' msg-cont' : '') + (gp === 'tail' ? ' msg-tail' : '');
+
+  return `<div class="${rowClass}" id="dm-msg-${m.id}" data-msg-id="${m.id}">
     <div class="msg-avatar"${avatarClick} style="background:${avatarGrad};overflow:hidden${sent?'':';cursor:pointer'}">${avatarInner}</div>
     <div class="msg-body">
-      <div class="msg-head"><span class="msg-name">${escHtml(name)}</span><span class="msg-time">${time}${edited}${receipt}</span></div>
+      <div class="msg-head"><span class="msg-name"></span><span class="msg-time">${edited}${receipt}</span></div>
       <div class="msg-content">${bubble}<span class="msg-actions"><button class="msg-dots" onpointerdown="event.stopPropagation()" onclick="dmOpenMsgMenu(event,'${m.id}',${sent})" title="Mere">⋯</button></span></div>
     </div>
   </div>`;
+}
+
+// Compute group positions for message list
+function _msgComputeGroups(msgs, senderKey) {
+  var GAP = 2 * 60 * 1000; // 2 min = same group
+  var TIME_SEP_GAP = 5 * 60 * 1000; // 5 min = show time separator
+  for (var i = 0; i < msgs.length; i++) {
+    var m = msgs[i];
+    var prev = i > 0 ? msgs[i-1] : null;
+    var next = i < msgs.length - 1 ? msgs[i+1] : null;
+    var t = new Date(m.created_at).getTime();
+    var samePrev = prev && prev[senderKey] === m[senderKey] && (t - new Date(prev.created_at).getTime()) < GAP;
+    var sameNext = next && next[senderKey] === m[senderKey] && (new Date(next.created_at).getTime() - t) < GAP;
+
+    if (samePrev && sameNext) m._gp = 'cont';
+    else if (samePrev && !sameNext) m._gp = 'tail';
+    else if (!samePrev && sameNext) m._gp = 'first';
+    else m._gp = 'single';
+
+    // Time separator: show if 5+ min gap from previous message (any sender)
+    m._showTimeSep = prev && (t - new Date(prev.created_at).getTime()) >= TIME_SEP_GAP;
+  }
 }
 
 async function loadChatMessages() {
@@ -533,7 +559,6 @@ async function loadChatMessages() {
     const sorted = (msgs||[]).reverse();
 
     if (sorted.length === 0) {
-      // Empty chat hero
       var partnerName = currentChatName || 'Ukendt';
       var partnerAvatar = window._chatPartnerAvatar;
       var partnerInit = partnerName.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
@@ -548,14 +573,22 @@ async function loadChatMessages() {
       return;
     }
 
-    // Render with date separators
+    // Compute grouping
+    _msgComputeGroups(sorted, 'sender_id');
+
     var html = '';
     var lastDate = '';
     sorted.forEach(function(m) {
+      // Date separator
       var d = new Date(m.created_at).toLocaleDateString('da-DK', {weekday:'long', day:'numeric', month:'short'});
       if (d !== lastDate) {
         html += '<div class="chat-date-sep">' + d.toUpperCase() + '</div>';
         lastDate = d;
+      }
+      // Time separator between groups with 5+ min gap
+      if (m._showTimeSep) {
+        var t = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'});
+        html += '<div class="msg-time-sep">' + t + '</div>';
       }
       html += dmRenderMsg(m);
     });

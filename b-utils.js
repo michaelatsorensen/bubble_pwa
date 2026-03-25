@@ -341,6 +341,49 @@ async function fetchContactAvatarsForBubbles(bubbleIds, savedIds) {
   return contactMap;
 }
 
+// Fetch first N member avatars for multiple bubbles (for preview stacks)
+async function fetchMemberAvatarsForBubbles(bubbleIds, max) {
+  var memberMap = {};
+  if (!bubbleIds || bubbleIds.length === 0) return memberMap;
+  max = max || 4;
+  try {
+    var { data: members } = await sb.from('bubble_members')
+      .select('bubble_id, user_id')
+      .in('bubble_id', bubbleIds)
+      .limit(bubbleIds.length * max);
+    if (!members || members.length === 0) return memberMap;
+    // Group by bubble, cap at max per bubble
+    var grouped = {};
+    members.forEach(function(m) {
+      if (!grouped[m.bubble_id]) grouped[m.bubble_id] = [];
+      if (grouped[m.bubble_id].length < max) grouped[m.bubble_id].push(m.user_id);
+    });
+    var allUserIds = [...new Set(members.map(function(m) { return m.user_id; }))];
+    var { data: profiles } = await sb.from('profiles').select('id, name, avatar_url').in('id', allUserIds);
+    var pMap = {};
+    (profiles || []).forEach(function(p) { pMap[p.id] = p; });
+    Object.keys(grouped).forEach(function(bId) {
+      memberMap[bId] = grouped[bId].map(function(uid) { return pMap[uid] || { name: '?' }; });
+    });
+  } catch(e) { logError('fetchMemberAvatarsForBubbles', e); }
+  return memberMap;
+}
+
+// Render compact avatar stack: up to 4 faces + "+N"
+function renderAvatarStack(members, totalCount) {
+  if (!members || members.length === 0) return '';
+  var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)'];
+  var avs = members.slice(0, 4).map(function(p, i) {
+    var ml = i > 0 ? 'margin-left:-6px;' : '';
+    var z = 'z-index:' + (5-i) + ';position:relative;';
+    if (p.avatar_url) return '<div style="width:22px;height:22px;border-radius:50%;overflow:hidden;border:1.5px solid white;' + ml + z + '"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
+    var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    return '<div style="width:22px;height:22px;border-radius:50%;background:' + avColors[i % 6] + ';display:flex;align-items:center;justify-content:center;font-size:0.38rem;font-weight:700;color:white;border:1.5px solid white;' + ml + z + '">' + ini + '</div>';
+  }).join('');
+  var extra = (totalCount || 0) > 4 ? '<div style="width:22px;height:22px;border-radius:50%;background:rgba(30,27,46,0.06);display:flex;align-items:center;justify-content:center;font-size:0.42rem;font-weight:700;color:var(--muted);border:1.5px solid white;margin-left:-6px;position:relative;z-index:0">+' + ((totalCount || 0) - 4) + '</div>' : '';
+  return '<div style="display:flex;align-items:center;margin-top:0.2rem">' + avs + extra + '</div>';
+}
+
 // ── Visibility label + icon for bubbles ──
 function visibilityBadge(visibility) {
   var iconStyle = 'style="width:0.6rem;height:0.6rem;flex-shrink:0"';

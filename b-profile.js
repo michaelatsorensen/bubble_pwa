@@ -1495,6 +1495,11 @@ async function loadPersonBubbles(userId, navRef) {
     var shown = bubbles.slice(0, PERSON_BUBBLES_MAX);
     if (title) title.textContent = 'Bobler · ' + total;
 
+    // Fetch member avatars for shown bubbles
+    var shownIds = shown.map(function(b) { return b.id; });
+    var personBubbleMemberMap = {};
+    try { personBubbleMemberMap = await fetchMemberAvatarsForBubbles(shownIds, 4); } catch(e) {}
+
     var html = shown.map(function(b) {
       var memberCount = (b.bubble_members && b.bubble_members[0]) ? b.bubble_members[0].count : 0;
       var colorBg = bubbleColor(b.type, 0.15);
@@ -1502,11 +1507,13 @@ async function loadPersonBubbles(userId, navRef) {
       var emojiHtml = b.icon_url
         ? '<img src="' + escHtml(b.icon_url) + '" style="width:1.2rem;height:1.2rem;border-radius:4px;object-fit:cover">'
         : bubbleEmoji(b.type);
+      var avStack = renderAvatarStack(personBubbleMemberMap[b.id] || [], memberCount);
       return '<div class="person-bubble-pill" data-action="openBubble" data-id="' + b.id + '" data-from="screen-person">' +
         '<div class="person-bubble-pill-icon" style="background:' + colorBg + ';color:' + colorFg + '">' + emojiHtml + '</div>' +
         '<div class="person-bubble-pill-info">' +
           '<div class="person-bubble-pill-name">' + escHtml(b.name) + '</div>' +
           '<div class="person-bubble-pill-meta">' + memberCount + ' medlemmer</div>' +
+          avStack +
         '</div>' +
         '<div class="person-bubble-pill-chevron">›</div>' +
       '</div>';

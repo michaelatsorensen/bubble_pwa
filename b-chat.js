@@ -537,9 +537,14 @@ async function bcLoadEvents() {
       return;
     }
     var now = new Date();
+    // Fetch member avatars for all children
+    var childIds = children.map(function(ch) { return ch.id; });
+    var memberMap = await fetchMemberAvatarsForBubbles(childIds, 4);
+
     var html = children.map(function(ch) {
       var mc = ch.bubble_members?.[0]?.count || 0;
       var isEvent = ch.type === 'event' || ch.type === 'live';
+      var avStack = renderAvatarStack(memberMap[ch.id] || [], mc);
 
       if (isEvent) {
         var evDate = ch.event_date ? new Date(ch.event_date) : null;
@@ -557,6 +562,7 @@ async function bcLoadEvents() {
           '<div style="flex:1;min-width:0">' +
           '<div style="display:flex;align-items:center;gap:0.4rem"><span class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(ch.name) + '</span>' + badge + '</div>' +
           '<div class="fs-072 text-muted">' + dateStr + ' · ' + mc + ' deltager' + (mc !== 1 ? 'e' : '') + '</div>' +
+          avStack +
           '</div>' +
           '<div style="font-size:0.88rem;color:var(--muted)">›</div></div></div>';
       } else {
@@ -567,6 +573,7 @@ async function bcLoadEvents() {
           '<div style="flex:1;min-width:0">' +
           '<div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(ch.name) + '</div>' +
           '<div class="fs-072 text-muted">' + typeLabel(ch.type) + ' · ' + mc + ' medlem' + (mc !== 1 ? 'mer' : '') + '</div>' +
+          avStack +
           '</div>' +
           '<div style="font-size:0.88rem;color:var(--muted)">›</div></div></div>';
       }
@@ -617,6 +624,10 @@ async function bcLoadMessages() {
 
     el.innerHTML = '';
     let lastDate = '';
+
+    // Compute grouping
+    _msgComputeGroups(msgs, 'user_id');
+
     msgs.forEach(m => {
       m.profiles = profileMap[m.user_id] || { name: '?' };
       const d = new Date(m.created_at).toLocaleDateString('da-DK', {weekday:'long', day:'numeric', month:'short'});
@@ -626,6 +637,13 @@ async function bcLoadMessages() {
         sep.textContent = d.toUpperCase();
         el.appendChild(sep);
         lastDate = d;
+      }
+      // Time separator between groups with 5+ min gap
+      if (m._showTimeSep) {
+        var ts = document.createElement('div');
+        ts.className = 'msg-time-sep';
+        ts.textContent = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'});
+        el.appendChild(ts);
       }
       el.appendChild(bcRenderMsg(m));
     });
@@ -638,15 +656,16 @@ function bcRenderMsg(m) {
   const p = m.profiles || {};
   const name = p.name || '?';
   const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  const time = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'});
   const gradients = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
   const color = gradients[Math.abs(name.charCodeAt(0)) % gradients.length];
+  const gp = m._gp || 'single';
+  const isCont = gp === 'cont';
+  const isTail = gp === 'tail';
 
   const row = document.createElement('div');
-  row.className = 'msg-row' + (isMe ? ' me' : '');
+  row.className = 'msg-row' + (isMe ? ' me' : '') + (isCont ? ' msg-cont' : '') + (isTail ? ' msg-tail' : '');
   row.id = 'bc-msg-' + m.id;
 
-  // Build content
   let bubble = '';
   if (m.file_url) {
     const safeUrl = escHtml(m.file_url);
@@ -665,15 +684,13 @@ function bcRenderMsg(m) {
   const editedTag = m.edited ? ` <span class="msg-edited" onclick="bcShowHistory('${m.id}')">redigeret</span>` : '';
   const nameHtml = escHtml(name);
   const safeTitle = escHtml(p.title||'');
-
-  // Avatar: use photo if available
   const bcAvUrl = isMe ? currentProfile?.avatar_url : (p.avatar_url || null);
   const bcAvInner = bcAvUrl ? '<img src="'+bcAvUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : initials;
 
   row.innerHTML =
     `<div class="msg-avatar" style="background:${color};overflow:hidden" onclick="bcOpenPerson('${m.user_id}','${nameHtml}','${safeTitle}','${color}')">${bcAvInner}</div>` +
     `<div class="msg-body">` +
-      `<div class="msg-head"><span class="msg-name">${nameHtml}</span><span class="msg-time">${time}${editedTag}</span></div>` +
+      `<div class="msg-head"><span class="msg-name">${nameHtml}</span><span class="msg-time">${editedTag}</span></div>` +
       `<div class="msg-content">${bubble}<button class="msg-dots" onclick="bcOpenContext(event,this,${isMe},'${m.id}')" aria-label="Mere">⋯</button></div>` +
       `<div class="msg-reactions" id="bc-reactions-${m.id}"></div>` +
     `</div>`;
@@ -1169,8 +1186,14 @@ async function bcLoadInfo() {
           .order('event_date', { ascending: true, nullsFirst: false })
           .limit(10);
         if (childBubbles && childBubbles.length > 0) {
+          // Fetch member avatars for child bubbles
+          var chIds = childBubbles.map(function(ch) { return ch.id; });
+          var chMemberMap = {};
+          try { chMemberMap = await fetchMemberAvatarsForBubbles(chIds, 4); } catch(e) {}
+
           var childCards = childBubbles.map(function(ch) {
             var chMc = ch.bubble_members?.[0]?.count || 0;
+            var chAvStack = renderAvatarStack(chMemberMap[ch.id] || [], chMc);
             var chIsEvent = ch.type === 'event' || ch.type === 'live';
             if (chIsEvent) {
               var dateStr = ch.event_date
@@ -1180,13 +1203,15 @@ async function bcLoadInfo() {
               return '<div onclick="openBubble(\'' + ch.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.65rem;border-radius:12px;background:rgba(46,207,207,0.04);border:1px solid rgba(46,207,207,0.12);cursor:pointer">' +
                 '<div style="width:34px;height:34px;border-radius:10px;background:rgba(46,207,207,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + icon('calendar') + '</div>' +
                 '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:600;color:var(--text)">' + escHtml(ch.name) + '</div>' +
-                '<div style="font-size:0.68rem;color:var(--muted)">' + dateStr + ' · ' + chMc + ' tilmeldt</div></div>' +
+                '<div style="font-size:0.68rem;color:var(--muted)">' + dateStr + ' · ' + chMc + ' tilmeldt</div>' +
+                chAvStack + '</div>' +
                 '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
             } else {
               return '<div onclick="openBubble(\'' + ch.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.65rem;border-radius:12px;background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.1);cursor:pointer">' +
                 '<div style="width:34px;height:34px;border-radius:10px;background:rgba(124,92,252,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + bubbleEmoji(ch.type) + '</div>' +
                 '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:600;color:var(--text)">' + escHtml(ch.name) + '</div>' +
-                '<div style="font-size:0.68rem;color:var(--muted)">' + typeLabel(ch.type) + ' · ' + chMc + ' medlem' + (chMc !== 1 ? 'mer' : '') + '</div></div>' +
+                '<div style="font-size:0.68rem;color:var(--muted)">' + typeLabel(ch.type) + ' · ' + chMc + ' medlem' + (chMc !== 1 ? 'mer' : '') + '</div>' +
+                chAvStack + '</div>' +
                 '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
             }
           }).join('');
