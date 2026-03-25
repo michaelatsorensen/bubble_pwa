@@ -38,8 +38,9 @@ async function _unreadRecount() {
 function unreadIncrement() { _unreadCount++; _unreadRender(); }
 function unreadDecrement(n) { _unreadCount = Math.max(0, _unreadCount - (n || 1)); _unreadRender(); }
 
-// Compat alias — old callers that did full recount now just render local
-async function updateUnreadBadge() { _unreadRender(); }
+// Compat alias — renamed for clarity: this only renders local state, does NOT recount from DB.
+// Use _unreadRecount() for a full DB refresh.
+async function renderUnreadBadge() { _unreadRender(); }
 
 
 // ══════════════════════════════════════════════════════════
@@ -144,7 +145,7 @@ async function convConfirmDelete() {
     });
     showToast(ids.length + (ids.length === 1 ? ' samtale slettet' : ' samtaler slettet'));
     convToggleSelectMode();
-    updateUnreadBadge();
+    renderUnreadBadge();
   } catch(e) { logError('convConfirmDelete', e); showToast(e.message || 'Fejl ved sletning'); }
 }
 

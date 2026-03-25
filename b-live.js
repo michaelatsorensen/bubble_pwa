@@ -48,6 +48,17 @@ async function loadLiveBubbleStatus() {
         checked_in_at: myLive.checked_in_at,
         member_count: count || 1
       };
+      // Sync appMode (single source of truth for live context)
+      var _checkinTime = new Date(myLive.checked_in_at).getTime();
+      var _expiryTime = new Date(_checkinTime + LIVE_EXPIRE_HOURS * 3600000);
+      var _expiryStr = _expiryTime.getHours().toString().padStart(2,'0') + ':' + _expiryTime.getMinutes().toString().padStart(2,'0');
+      appMode.set('live', {
+        bubbleId: myLive.bubble_id,
+        bubbleName: myLive.bubbles.name,
+        bubbleType: myLive.bubbles.type,
+        memberCount: count || 1,
+        expiryStr: _expiryStr
+      });
       // Fetch live member IDs for radar filtering
       try {
         var { data: liveMembers } = await sb.from('bubble_members')
@@ -60,6 +71,7 @@ async function loadLiveBubbleStatus() {
       } catch(e2) { window._liveCheckedInIds = []; }
     } else {
       currentLiveBubble = null;
+      appMode.set('normal');
       window._liveCheckedInIds = [];
     }
     // Show/hide Live radar chip
