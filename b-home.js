@@ -1,7 +1,7 @@
 // ══════════════════════════════════════════════════════════
 //  BUBBLE — HOME SCREEN + DASHBOARD + CUSTOMIZATION
 //  DOMAIN: home
-//  OWNS: _homeMode, _homeLiveContext, _homeDartboardProfiles, _homeRadarFilter
+//  OWNS: _homeDartboardProfiles, _homeRadarFilter
 //  OWNS: loadHome, loadLiveBanner, homeSetMode, loadEventDartboard, renderHomeDartboard, filterRadarHome
 //  READS: currentUser, currentProfile, currentLiveBubble, proxAllProfiles
 //  Auto-split from app.js · v3.7.0
@@ -12,7 +12,8 @@
 // ══════════════════════════════════════════════════════════
 
 // ── Live context: set when user is checked into an event ──
-var _homeLiveContext = null; // { bubbleId, bubbleName, memberCount }
+var _homeLiveContext = null; // DEPRECATED — use appMode.live instead
+var _homeViewMode = 'all'; // UI tab toggle: 'all' or 'live'
 
 async function loadHome() {
   try {
@@ -47,8 +48,6 @@ async function loadHome() {
 // ══════════════════════════════════════════════════════════
 //  LIVE BANNER + MODE TABS (Alle / Live)
 // ══════════════════════════════════════════════════════════
-var _homeMode = 'all'; // 'all' or 'live'
-
 async function loadLiveBanner() {
   var tabs = document.getElementById('home-mode-tabs');
   var banner = document.getElementById('home-live-banner');
@@ -72,25 +71,21 @@ async function loadLiveBanner() {
         .is('checked_out_at', null)
         .gte('checked_in_at', expCut);
 
-      // Calculate expiry time
       var checkinTime = new Date(myLive.checked_in_at).getTime();
       var expiryTime = new Date(checkinTime + 6 * 3600000);
       var expiryStr = expiryTime.getHours().toString().padStart(2,'0') + ':' + expiryTime.getMinutes().toString().padStart(2,'0');
 
-      _homeLiveContext = {
+      appMode.set('live', {
         bubbleId: myLive.bubble_id,
         bubbleName: myLive.bubbles.name,
         bubbleType: myLive.bubbles.type,
         memberCount: liveCount || 0,
         expiryStr: expiryStr
-      };
-      appMode.set('live', _homeLiveContext);
+      });
 
-      // Show tabs — auto-switch to live on first load
       if (tabs) tabs.style.display = 'block';
       homeSetMode('live');
     } else {
-      _homeLiveContext = null;
       appMode.set('normal');
       if (tabs) tabs.style.display = 'none';
       if (banner) banner.style.display = 'none';
@@ -98,7 +93,6 @@ async function loadLiveBanner() {
     }
   } catch(e) {
     logError('loadLiveBanner', e);
-    _homeLiveContext = null;
     appMode.set('normal');
     if (tabs) tabs.style.display = 'none';
     if (banner) banner.style.display = 'none';
@@ -106,45 +100,44 @@ async function loadLiveBanner() {
 }
 
 function homeSetMode(mode) {
-  _homeMode = mode;
+  _homeViewMode = mode; // 'all' or 'live' — UI tab state
+  // Sync appMode (mode='live'→appMode live, mode='all'→appMode normal)
+  if (mode === 'live' && !appMode.is('live')) appMode.set('live', appMode.live);
+  else if (mode !== 'live' && appMode.is('live')) {} // keep live context, just switch tab view
+
   var tabAll = document.getElementById('home-tab-all');
   var tabLive = document.getElementById('home-tab-live');
   var banner = document.getElementById('home-live-banner');
+  var ctx = appMode.live;
 
-  if (mode === 'live' && _homeLiveContext) {
-    // Live tab active
+  if (mode === 'live' && ctx) {
     if (tabAll) { tabAll.style.background = 'transparent'; tabAll.style.color = 'var(--muted)'; tabAll.style.fontWeight = '600'; }
     if (tabLive) { tabLive.style.background = 'linear-gradient(135deg,#1A9E8E,#10B981)'; tabLive.style.color = 'white'; tabLive.style.fontWeight = '700'; }
-
-    // Load event members into dartboard
     loadEventDartboard();
   } else {
-    // Alle tab active
     if (tabAll) { tabAll.style.background = 'var(--gradient-primary)'; tabAll.style.color = 'white'; tabAll.style.fontWeight = '700'; }
     if (tabLive) { tabLive.style.background = 'transparent'; tabLive.style.color = 'var(--muted)'; tabLive.style.fontWeight = '600'; }
-
-    // Reset filter chips to purple/default
     _homeRadarFilter = 'all';
     renderHomeDartboard();
   }
 
   // Live banner stays visible in BOTH modes as long as checked in
-  if (banner && _homeLiveContext) {
+  if (banner && ctx) {
     banner.style.display = 'block';
     var nameEl = document.getElementById('home-live-banner-name');
     var countEl = document.getElementById('home-live-banner-count');
-    if (nameEl) nameEl.textContent = _homeLiveContext.bubbleName;
-    if (countEl) countEl.textContent = _homeLiveContext.memberCount + ' her nu';
+    if (nameEl) nameEl.textContent = ctx.bubbleName;
+    if (countEl) countEl.textContent = ctx.memberCount + ' her nu';
   } else if (banner) {
     banner.style.display = 'none';
   }
 
   // Update checkout tray info
-  if (_homeLiveContext) {
+  if (ctx) {
     var coName = document.getElementById('live-checkout-name');
     var coMeta = document.getElementById('live-checkout-meta');
-    if (coName) coName.textContent = _homeLiveContext.bubbleName;
-    if (coMeta) coMeta.textContent = 'Checked ind · udløber kl. ' + (_homeLiveContext.expiryStr || '—');
+    if (coName) coName.textContent = ctx.bubbleName;
+    if (coMeta) coMeta.textContent = 'Checked ind · udløber kl. ' + (ctx.expiryStr || '—');
   }
   updateFilterChipStyle();
 }
@@ -152,19 +145,17 @@ function homeSetMode(mode) {
 function updateFilterChipStyle() {
   var chips = document.getElementById('home-filter-chips');
   if (!chips) return;
-  var isLive = _homeMode === 'live' && _homeLiveContext;
-  // Update first chip text
+  var isLive = appMode.is('live') && appMode.live;
   var firstChip = chips.querySelector('[data-filter="all"]');
   if (firstChip) {
     var countSpan = firstChip.querySelector('#radar-count-home') || firstChip.querySelector('span');
     if (isLive) {
       firstChip.childNodes[0].textContent = 'Alle deltagere ';
-      if (countSpan) countSpan.textContent = '· ' + (_homeLiveContext.memberCount || 0);
+      if (countSpan) countSpan.textContent = '· ' + (appMode.live.memberCount || 0);
     } else {
       firstChip.childNodes[0].textContent = 'Alle ';
     }
   }
-  // Reset ALL chip inline styles first, then apply to active
   chips.querySelectorAll('.radar-filter-chip').forEach(function(c) {
     c.style.background = '';
     c.style.borderColor = '';
@@ -181,12 +172,12 @@ function updateFilterChipStyle() {
 
 // ── Event-aware dartboard: load only event members ──
 async function loadEventDartboard() {
-  if (!_homeLiveContext) return;
+  if (!appMode.live) return;
   try {
     var expCut = new Date(Date.now() - 6 * 3600000).toISOString();
     var { data: members } = await sb.from('bubble_members')
       .select('user_id')
-      .eq('bubble_id', _homeLiveContext.bubbleId)
+      .eq('bubble_id', appMode.live.bubbleId)
       .not('checked_in_at', 'is', null)
       .is('checked_out_at', null)
       .gte('checked_in_at', expCut);
@@ -1154,7 +1145,7 @@ async function loadHomeDartboardData() {
       .select('id,name,title,keywords,dynamic_keywords,bio,linkedin,is_anon,avatar_url')
       .neq('id', currentUser.id).neq('banned', true).limit(200);
     if (!allProfiles || allProfiles.length === 0) {
-      if (_homeMode !== 'live') renderHomeDartboard();
+      if (_homeViewMode !== 'live') renderHomeDartboard();
       return;
     }
 
@@ -1185,7 +1176,7 @@ async function loadHomeDartboardData() {
 
     // Store all profiles for 'all' mode — but don't overwrite live dartboard
     proxAllProfiles = scored;
-    if (_homeMode !== 'live') {
+    if (_homeViewMode !== 'live') {
       _homeDartboardProfiles = scored;
       renderHomeDartboard();
     }
@@ -1195,7 +1186,7 @@ async function loadHomeDartboardData() {
 // ── Get filtered profiles based on active filter ──
 function _getFilteredProfiles() {
   // In live mode, ONLY use event dartboard profiles — never fall back to all
-  if (_homeMode === 'live') return _homeDartboardProfiles;
+  if (_homeViewMode === 'live') return _homeDartboardProfiles;
   var allP = _homeDartboardProfiles.length > 0 ? _homeDartboardProfiles : (proxAllProfiles || []);
   if (_homeRadarFilter === 'all') return allP;
   if (_homeRadarFilter === 'live') {
@@ -1285,7 +1276,7 @@ function renderHomeDartboard() {
 
   if (profiles.length === 0) {
     av.innerHTML = '';
-    if (_homeMode === 'live') {
+    if (_homeViewMode === 'live') {
       av.innerHTML = '<div class="dartboard-empty" style="position:absolute;top:50%;left:50%;transform:translate(-50%, calc(-100% - 40px));text-align:center;padding:0.6rem 1.2rem;background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:12px;border:1px solid var(--glass-border-subtle);box-shadow:0 2px 8px rgba(30,27,46,0.06);white-space:nowrap">' +
         '<div style="font-size:0.78rem;font-weight:600;color:var(--text)">Du er den første her!</div>' +
         '<div style="font-size:0.68rem;color:var(--muted);margin-top:0.15rem">Venter på deltagere...</div>' +

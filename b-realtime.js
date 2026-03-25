@@ -4,7 +4,7 @@
 //  OWNS: _globalRtChannels, chatSubscription, currentChatUser, currentChatName
 //  OWNS: initGlobalRealtime, rtHandleMemberChange, openChat, loadMessages
 //  OWNS: _rtState, rtSetState, rtReconnect (connection lifecycle)
-//  READS: currentUser, currentLiveBubble, bcBubbleId, _homeMode, _homeRadarFilter
+//  READS: currentUser, currentLiveBubble, bcBubbleId, _homeViewMode, _homeRadarFilter
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 
@@ -239,7 +239,7 @@ function rtHandleMemberChange(payload) {
       }
     });
     // Re-render dartboard if in live mode
-    if (typeof _homeMode !== 'undefined' && _homeMode === 'live') {
+    if (typeof _homeViewMode !== 'undefined' && _homeViewMode === 'live') {
       loadEventDartboard();
     }
   }
@@ -253,7 +253,7 @@ function rtStartRadarPolling() {
     if (!_radarScreenActive) { rtStopRadarPolling(); return; }
     if (!document.hidden) {
       console.debug('[rt] radar soft refresh');
-      if (typeof _homeMode !== 'undefined' && _homeMode === 'live') {
+      if (typeof _homeViewMode !== 'undefined' && _homeViewMode === 'live') {
         // In live mode: refresh event dartboard + live status
         loadLiveBubbleStatus();
         loadEventDartboard();

@@ -390,8 +390,7 @@ async function liveCheckout() {
     await loadLiveBubbleStatus();
 
     // Reset home to 'all' mode + re-render dartboard
-    if (typeof _homeMode !== 'undefined' && _homeMode === 'live') {
-      window._homeLiveContext = null;
+    if (typeof _homeViewMode !== 'undefined' && _homeViewMode === 'live') {
       homeSetMode('all');
     }
     // Also re-render if radar was in live filter mode
