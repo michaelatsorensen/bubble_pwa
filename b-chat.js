@@ -163,6 +163,43 @@ function bcUnsubscribeAll() {
   // NOTE: does NOT touch global realtime channels — use rtUnsubscribeAll() for full teardown
 }
 
+// ── Skeleton loader for bubble chat entry ──
+function _bcShowSkeleton() {
+  var existing = document.getElementById('bc-skeleton');
+  if (existing) existing.remove();
+  var skel = document.createElement('div');
+  skel.id = 'bc-skeleton';
+  skel.style.cssText = 'flex:1;display:flex;flex-direction:column;overflow:hidden;padding:0';
+  // Fake tab bar
+  skel.innerHTML =
+    '<div style="display:flex;margin:0.4rem 1.1rem 0;background:#F4F3F9;border-radius:10px;padding:3px;gap:2px;border:1px solid var(--glass-border-subtle)">' +
+      '<div class="skel" style="flex:1;height:28px;border-radius:8px"></div>' +
+      '<div class="skel" style="flex:1;height:28px;border-radius:8px"></div>' +
+      '<div class="skel" style="flex:1;height:28px;border-radius:8px"></div>' +
+    '</div>' +
+    // Fake action bar
+    '<div style="display:flex;gap:0.4rem;padding:0.5rem 1.1rem">' +
+      '<div class="skel" style="flex:1;height:32px;border-radius:10px"></div>' +
+      '<div class="skel" style="flex:1;height:32px;border-radius:10px"></div>' +
+      '<div class="skel" style="width:60px;height:32px;border-radius:10px"></div>' +
+    '</div>' +
+    // Fake member cards
+    '<div style="padding:0.4rem 1.1rem">' + skelCards(5) + '</div>';
+  // Insert after topbar
+  var screen = document.getElementById('screen-bubble-chat');
+  var tabs = screen ? screen.querySelector('.bubble-tabs') : null;
+  if (tabs) tabs.insertAdjacentElement('afterend', skel);
+  else if (screen) screen.appendChild(skel);
+}
+
+function _bcHideSkeleton() {
+  var skel = document.getElementById('bc-skeleton');
+  if (skel) skel.remove();
+  // Restore tab bar container (individual tab visibility handled by bcRenderActions)
+  var tabBar = document.querySelector('#screen-bubble-chat .bubble-tabs');
+  if (tabBar) tabBar.style.display = '';
+}
+
 async function openBubbleChat(bubbleId, fromScreen) {
   if (!currentUser || !bubbleId) { console.warn('openBubbleChat: missing user or bubbleId'); return; }
   console.debug('[bc] openBubbleChat:', bubbleId, 'from:', fromScreen);
@@ -200,7 +237,9 @@ async function openBubbleChat(bubbleId, fromScreen) {
     }
   };
   goTo('screen-bubble-chat');
-  // Hide all panels + tabs until membership is known — prevents flash
+  // Hide all panels + tabs + tab bar until membership is known — skeleton shows instead
+  var tabBar = document.querySelector('#screen-bubble-chat .bubble-tabs');
+  if (tabBar) tabBar.style.display = 'none';
   ['chat','members','info','posts','events'].forEach(function(t) {
     var p = document.getElementById('bc-panel-' + t);
     if (p) p.style.display = 'none';
@@ -210,16 +249,21 @@ async function openBubbleChat(bubbleId, fromScreen) {
   var actionBar = document.getElementById('bc-action-bar');
   if (actionBar) actionBar.style.display = 'none';
 
+  // Show skeleton loader while data loads
+  _bcShowSkeleton();
+
   // 2. Load all data
   var backTarget = prevBubbleId ? 'screen-bubbles' : (fromScreen || 'screen-home');
   try {
     var success = await bcLoadChatData(bubbleId);
+    _bcHideSkeleton();
     if (!success) {
       if (prevBubbleId) { openBubbleChat(prevBubbleId, 'screen-bubbles'); }
       else { goTo(backTarget); }
       return;
     }
   } catch(e) {
+    _bcHideSkeleton();
     logError("openBubbleChat:load", e);
     showToast('Kunne ikke åbne boblen');
     if (prevBubbleId) { openBubbleChat(prevBubbleId, 'screen-bubbles'); }
