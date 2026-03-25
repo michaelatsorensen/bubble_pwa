@@ -14,7 +14,7 @@
 // ══════════════════════════════════════════════════════════
 function getAppMode() {
   if (typeof flowGet === 'function' && flowGet('event_flow')) return 'event';
-  if (typeof currentLiveBubble !== 'undefined' && currentLiveBubble) return 'live';
+  if (typeof appMode !== 'undefined' && appMode.is('live')) return 'live';
   if (!currentUser) return 'guest';
   return 'normal';
 }

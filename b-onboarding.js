@@ -61,14 +61,6 @@ async function maybeShowOnboarding() {
     var obWp = document.getElementById('ob-workplace');
     if (obWp) obWp.value = currentProfile?.workplace || '';
 
-    // Auto-save avatar from OAuth if user doesn't have one
-    if (autoAvatar && !currentProfile?.avatar_url) {
-      try {
-        await sb.from('profiles').update({ avatar_url: autoAvatar }).eq('id', currentUser.id);
-        if (currentProfile) currentProfile.avatar_url = autoAvatar;
-      } catch(e) { /* silent */ }
-    }
-
     // Initialize tag picker with existing tags
     obSelectedTags = Array.isArray(currentProfile?.keywords) ? [...currentProfile.keywords] : [];
     obRenderSelectedTags();

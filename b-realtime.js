@@ -144,6 +144,7 @@ function rtUnsubscribeAll() {
 
 // ── Helpers: instant badge manipulation ──
 function dmBadgeClear() {
+  _unreadCount = 0;
   document.querySelectorAll('.msg-unread-badge').forEach(function(b) { b.style.display = 'none'; });
 }
 
