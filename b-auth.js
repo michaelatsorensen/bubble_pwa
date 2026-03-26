@@ -108,7 +108,8 @@ async function checkAuth() {
       await ensureProfileExists(session);
       await resolvePostAuth();
     } else {
-      goTo('screen-auth');
+      // No session — show landing page (or auth if no landing)
+      if (typeof showLanding === 'function') { showLanding(); } else { goTo('screen-auth'); }
     }
   } catch(e) {
     var el = document.getElementById('loading-msg');
