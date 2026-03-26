@@ -63,7 +63,7 @@ body {
 /* ── HERO ── */
 .hero {
   max-width: var(--max-w); margin: 0 auto;
-  padding: 64px 24px 40px;
+  padding: 56px 24px 40px;
   display: flex; align-items: center; gap: 48px;
   position: relative; overflow: visible;
 }
@@ -95,7 +95,7 @@ body {
 }
 .hero-sub {
   font-size: clamp(16px, 2.2vw, 19px); color: var(--text-secondary);
-  max-width: 420px; margin-bottom: 32px; line-height: 1.55;
+  max-width: 440px; margin-bottom: 24px; line-height: 1.55;
 }
 .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 .btn-primary {
@@ -231,21 +231,21 @@ body {
 /* ── SECTIONS ── */
 .section {
   max-width: var(--max-w); margin: 0 auto;
-  padding: 80px 24px;
+  padding: 64px 24px;
 }
-.section-alt { background: var(--bg-alt); }
-.section-alt .section { padding: 80px 24px; }
+.section-alt { background: var(--bg-alt); overflow: visible; }
+.section-alt .section { padding: 64px 24px; }
 .section-label {
   font-size: 12px; font-weight: 600; color: var(--accent);
-  text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;
+  text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px;
 }
 .section-title {
-  font-size: clamp(26px, 4vw, 36px); font-weight: 600; line-height: 1.2;
-  margin-bottom: 40px; max-width: 500px;
+  font-size: clamp(24px, 3.5vw, 32px); font-weight: 600; line-height: 1.2;
+  margin-bottom: 32px; max-width: 520px;
 }
 
 /* ── STEPS ── */
-.steps { display: flex; flex-direction: column; gap: 28px; max-width: 520px; }
+.steps { display: flex; flex-direction: column; gap: 24px; max-width: 520px; }
 .step { display: flex; gap: 16px; align-items: flex-start; }
 .step-num {
   min-width: 44px; height: 44px; border-radius: 12px;
@@ -260,11 +260,11 @@ body {
 
 /* ── FEATURES ── */
 .features-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
 }
 .feature-card {
-  background: var(--bg); border-radius: var(--radius); padding: 24px;
+  background: var(--bg); border-radius: var(--radius); padding: 20px;
   border: 1px solid var(--border); transition: transform 0.2s, box-shadow 0.2s;
 }
 .feature-card:hover {
@@ -301,10 +301,10 @@ body {
 /* ── FINAL CTA ── */
 .cta-section {
   text-align: center; max-width: var(--max-w); margin: 0 auto;
-  padding: 80px 24px 100px;
+  padding: 64px 24px 80px;
 }
 .cta-title {
-  font-size: clamp(28px, 4.5vw, 40px); font-weight: 600; line-height: 1.15;
+  font-size: clamp(24px, 4vw, 36px); font-weight: 600; line-height: 1.15;
   background: linear-gradient(135deg, var(--grad-start), var(--grad-mid), var(--grad-end));
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text; margin-bottom: 12px;
@@ -327,10 +327,10 @@ body {
 @media (max-width: 720px) {
   .hero {
     flex-direction: column; text-align: center;
-    padding: 32px 20px 24px; gap: 28px;
+    padding: 32px 20px 24px; gap: 24px;
   }
   .hero::before, .hero::after { display: none; }
-  .hero-tagline { font-size: 32px; margin-left: 0; }
+  .hero-tagline { font-size: 28px; margin-left: 0; }
   .hero-sub { margin-left: auto; margin-right: auto; font-size: 15px; }
   .hero-actions { justify-content: center; flex-wrap: wrap; }
   .btn-primary, .btn-secondary { padding: 12px 28px; font-size: 15px; }
@@ -340,17 +340,63 @@ body {
   .radar-dot { width: 26px; height: 26px; font-size: 9px; }
   .section { padding: 48px 20px; }
   .section-alt .section { padding: 48px 20px; }
-  .section-title { font-size: 24px; }
-  .features-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .section-title { font-size: 22px; margin-bottom: 24px; }
+  .features-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .feature-card { padding: 16px; }
+  .feature-name { font-size: 14px; }
+  .feature-desc { font-size: 13px; }
+  .cta-section { padding: 48px 20px 60px; }
   .footer { flex-direction: column; gap: 12px; text-align: center; }
 }
 @media (max-width: 400px) {
-  .hero { padding: 28px 16px 20px; }
-  .hero-tagline { font-size: 28px; }
+  .hero { padding: 24px 16px 20px; gap: 20px; }
+  .hero-tagline { font-size: 26px; }
   .phone-frame { width: 200px; }
   .radar-container { width: 120px; height: 120px; }
   .features-grid { grid-template-columns: 1fr; }
   .btn-primary, .btn-secondary { width: 100%; text-align: center; }
+  .section { padding: 40px 16px; }
+  .section-alt .section { padding: 40px 16px; }
+}
+
+/* ── BUBBLE TIPS — Messenger-style chat bubbles ── */
+.has-tips { position: relative; overflow: visible; }
+.bubble-tip {
+  position: absolute; opacity: 0; pointer-events: none; z-index: 2;
+  transition: opacity 0.8s ease;
+}
+.bubble-tip.visible { opacity: 1; pointer-events: auto; }
+.bt-group {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+}
+.bt-group.bt-left { align-items: flex-start; }
+.bt-bubble {
+  background: #7C5CFC; color: #fff; font-size: 13px; line-height: 1.4;
+  padding: 8px 14px; max-width: 200px;
+  border-radius: 18px 18px 4px 18px;
+}
+.bt-group .bt-bubble:first-child { border-radius: 18px 18px 4px 18px; }
+.bt-group .bt-bubble:last-child { border-radius: 18px 4px 18px 18px; }
+.bt-group .bt-bubble:only-child { border-radius: 18px; }
+.bt-group .bt-bubble:not(:first-child):not(:last-child) { border-radius: 18px 4px 4px 18px; }
+
+.bt-group.bt-left .bt-bubble { border-radius: 18px 18px 18px 4px; }
+.bt-group.bt-left .bt-bubble:first-child { border-radius: 18px 18px 18px 4px; }
+.bt-group.bt-left .bt-bubble:last-child { border-radius: 4px 18px 18px 18px; }
+.bt-group.bt-left .bt-bubble:only-child { border-radius: 18px; }
+.bt-group.bt-left .bt-bubble:not(:first-child):not(:last-child) { border-radius: 4px 18px 18px 4px; }
+
+.bt-float1 { animation: btFloat1 5s ease-in-out infinite; }
+.bt-float2 { animation: btFloat2 6s ease-in-out infinite; }
+@keyframes btFloat1 { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes btFloat2 { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+@media (max-width: 720px) {
+  .bubble-tip { display: none; }
+}
+
+@media (max-width: 720px) {
+  .bubble-tip { display: none; }
 }
 
 /* ── SCROLL ANIMATIONS ── */
@@ -386,12 +432,13 @@ body {
 <!-- HERO -->
 <section class="hero">
   <div class="hero-text">
-    <h1 class="hero-tagline">Mød dit netværk</h1>
-    <p class="hero-sub">Bubble forbinder dig til netværk omkring dig — på events, i dit lokalområde og i fællesskaber der betyder noget.</p>
+    <h1 class="hero-tagline">De rigtige mennesker<br>er allerede omkring dig</h1>
+    <p class="hero-sub">Bubble viser dig hvem du bør møde — og hvorfor det giver mening at tage den samtale.</p>
     <div class="hero-actions">
       <a href="./?auth=1" class="btn-primary">Kom i gang</a>
-      <a href="#how" class="btn-secondary">Se hvordan</a>
+      <a href="#how" class="btn-secondary">Se hvordan det virker</a>
     </div>
+    <div style="margin-top:16px;font-size:13px;color:var(--text-secondary)">Gratis at oprette profil · Virker direkte på mobilen</div>
   </div>
   <div class="hero-phone">
     <div class="phone-frame">
@@ -420,7 +467,7 @@ body {
             <div class="phone-card-name">Maria K.</div>
             <div class="phone-card-meta">UX Designer · 4 fælles interesser</div>
           </div>
-          <div class="phone-card-score">92%</div>
+          <div style="font-size:9px;font-weight:600;color:#1A9E8E;background:rgba(26,158,142,0.08);padding:3px 8px;border-radius:6px;white-space:nowrap">Stærkt match</div>
         </div>
         <div class="phone-nav">
           <div class="phone-nav-item"><div class="dot"></div>Hjem</div>
@@ -436,78 +483,87 @@ body {
 
 <!-- HOW IT WORKS -->
 <div class="section-alt" id="how">
-  <section class="section">
+  <section class="section has-tips">
     <div class="section-label reveal">Sådan virker det</div>
-    <h2 class="section-title reveal">Tre skridt til dit næste netværk</h2>
+    <h2 class="section-title reveal">Tre skridt. Under ét minut.</h2>
     <div class="steps">
       <div class="step reveal-left" style="transition-delay:0s">
         <div class="step-num">1</div>
         <div>
-          <div class="step-title">Opret din profil</div>
-          <div class="step-desc">Vælg dine interesser og hvad du leder efter. Det tager under et minut.</div>
+          <div class="step-title">Fortæl hvem du er</div>
+          <div class="step-desc">Interesser, rolle og hvad du leder efter.</div>
         </div>
       </div>
       <div class="step reveal-left" style="transition-delay:0.15s">
         <div class="step-num">2</div>
         <div>
-          <div class="step-title">Mød dine matches</div>
-          <div class="step-desc">Radaren viser hvem du bør møde — og hvorfor. Skriv direkte eller mød op.</div>
+          <div class="step-title">Se hvem du bør møde</div>
+          <div class="step-desc">Radaren viser hvem der er relevante — og hvorfor.</div>
         </div>
       </div>
       <div class="step reveal-left" style="transition-delay:0.3s">
         <div class="step-num">3</div>
         <div>
-          <div class="step-title">Check ind i en Bubble</div>
-          <div class="step-desc">Scan QR-koden ved et event eller join en lokal Bubble i dit område.</div>
+          <div class="step-title">Connect i det rigtige øjeblik</div>
+          <div class="step-desc">Skriv direkte, mød op, eller gem kontakten til senere.</div>
         </div>
+      </div>
+    </div>
+    <div class="bubble-tip bt-float1" style="right:15%;top:45%">
+      <div class="bt-group">
+        <div class="bt-bubble">Sign up med Google, LinkedIn eller email</div>
+        <div class="bt-bubble">Tager under 30 sekunder</div>
       </div>
     </div>
   </section>
 </div>
 
 <!-- FEATURES -->
-<section class="section">
-  <div class="section-label reveal">Features</div>
-  <h2 class="section-title reveal">Alt du behøver</h2>
+<section class="section has-tips">
+
+  <div class="section-label reveal">Hvor Bubble giver mening</div>
+  <h2 class="section-title reveal">Skabt til virkelige møder — ikke bare forbindelser</h2>
   <div class="features-grid">
     <div class="feature-card reveal-left" style="transition-delay:0s">
       <div class="feature-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18"/><path d="M8 2v4"/><path d="M16 2v4"/></svg>
       </div>
-      <div class="feature-name">Netværks radar</div>
-      <div class="feature-desc">Se hvem der matcher dig — ranket efter relevans med smart scoring.</div>
+      <div class="feature-name">Konferencer & events</div>
+      <div class="feature-desc">Se hvem der er her, og hvem du faktisk bør møde.</div>
     </div>
     <div class="feature-card reveal-right" style="transition-delay:0.1s">
       <div class="feature-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2ECFCF" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2ECFCF" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
       </div>
-      <div class="feature-name">Live Bubbles</div>
-      <div class="feature-desc">Real-time tilstedeværelse ved events og i lokale fællesskaber.</div>
+      <div class="feature-name">Lokale netværk</div>
+      <div class="feature-desc">Opdag relevante mennesker i dit område og dine fællesskaber.</div>
     </div>
     <div class="feature-card reveal-left" style="transition-delay:0.2s">
       <div class="feature-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E879A8" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E879A8" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
       </div>
-      <div class="feature-name">QR Connect</div>
-      <div class="feature-desc">Del din profil med et scan — virker som visitkort, uden apps.</div>
+      <div class="feature-name">Communities & faggrupper</div>
+      <div class="feature-desc">Saml mennesker i en Bubble og hold forbindelsen levende.</div>
     </div>
     <div class="feature-card reveal-right" style="transition-delay:0.3s">
       <div class="feature-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3"/><path d="M21 14v3h-3"/><path d="M14 21h7"/></svg>
       </div>
-      <div class="feature-name">Samtaler</div>
-      <div class="feature-desc">Direkte beskeder, gruppechat og eventchat — alt samlet ét sted.</div>
+      <div class="feature-name">Spontane forbindelser</div>
+      <div class="feature-desc">Del din profil med ét scan — uden LinkedIn-friktion.</div>
     </div>
   </div>
 </section>
 
 <!-- CREATE YOUR OWN -->
 <div class="section-alt">
-  <section class="section">
+
+  <section class="section has-tips">
     <div style="text-align:center">
       <div class="section-label reveal">Opret en Bubble</div>
-      <h2 class="section-title reveal" style="margin-left:auto;margin-right:auto">Saml dit netværk ét sted</h2>
-      <p style="font-size:15px;color:var(--text-secondary);max-width:460px;margin:0 auto 36px;line-height:1.55" class="reveal">En Bubble er et fællesskab du opretter — for din faggruppe, dit event, din forening eller bare din vennekreds. Alle i en Bubble kan se hinanden, chatte og matche.</p>
+      <h2 class="section-title reveal" style="margin-left:auto;margin-right:auto">Gør dit event eller community levende i Bubble</h2>
+      <p style="font-size:15px;color:var(--text-secondary);max-width:460px;margin:0 auto 28px;line-height:1.55" class="reveal">En Bubble er et fællesskab du opretter — for din faggruppe, dit event, din forening eller bare din vennekreds. Alle i en Bubble kan se hinanden, chatte og matche.</p>
+      <p style="font-size:14px;color:var(--accent);font-weight:500;margin-top:12px" class="reveal">Perfekt til arrangører, communities og netværk der vil skabe reelle forbindelser.</p>
     </div>
     <div class="features-grid" style="max-width:680px;margin:0 auto">
       <div class="feature-card reveal-left" style="transition-delay:0s">
@@ -532,30 +588,37 @@ body {
         <div class="feature-desc">Byg et netværk i dit lokalområde — nabolag, coworking space eller foreningsklub.</div>
       </div>
     </div>
+    <div class="bubble-tip bt-float2" style="right:20%;bottom:110px">
+      <div class="bt-group">
+        <div class="bt-bubble">Gem kontakter med 1–3 stjerner</div>
+        <div class="bt-bubble">Så du altid finder dem igen</div>
+      </div>
+    </div>
   </section>
 </div>
 
 <!-- EARLY ACCESS -->
 <div class="section-alt">
-  <section class="section" style="text-align:center">
+  <section class="section has-tips" style="text-align:center">
     <div class="section-label reveal">Tidlig beta</div>
-    <h2 class="section-title reveal" style="margin-left:auto;margin-right:auto">Vi er lige begyndt</h2>
-    <p class="quote reveal" style="font-style:normal;max-width:480px">Bubble er i en tidlig beta og bliver testet i lukkede netværk. Vi bygger noget nyt — og vi leder efter folk der vil være med fra starten.</p>
+    <h2 class="section-title reveal" style="margin-left:auto;margin-right:auto">Vi bygger Bubble sammen med dig</h2>
+    <p class="quote reveal" style="font-style:normal;max-width:480px">Bubble bliver lige nu testet i udvalgte netværk, events og fællesskaber. Vi bygger det tæt sammen med de første brugere — og justerer løbende på baggrund af deres feedback.</p>
   </section>
 </div>
 
 <!-- PWA INSTALL GUIDE -->
-<section class="section">
-  <div style="text-align:center">
+<section class="section has-tips">
+
+  <div style="max-width:65%">
     <div class="section-label reveal">Tilføj til hjemmeskærm</div>
-    <h2 class="section-title reveal" style="margin-left:auto;margin-right:auto">Brug Bubble som en app</h2>
-    <p style="font-size:15px;color:var(--text-secondary);max-width:440px;margin:0 auto 32px;line-height:1.5" class="reveal">Bubble er en webapp — ingen App Store nødvendig. Tilføj den til din hjemmeskærm for den bedste oplevelse.</p>
+    <h2 class="section-title reveal">Brug Bubble som en app</h2>
+    <p style="font-size:15px;color:var(--text-secondary);max-width:440px;margin:0 0 24px;line-height:1.5" class="reveal">Bubble er en webapp — ingen App Store nødvendig. Tilføj den til din hjemmeskærm for den bedste oplevelse.</p>
   </div>
-  <div style="display:flex;gap:12px;justify-content:center;margin-bottom:32px" class="reveal">
+  <div style="display:flex;gap:12px;margin-bottom:24px" class="reveal">
     <button onclick="showGuide('iphone')" id="tab-iphone" style="padding:10px 24px;border-radius:24px;background:linear-gradient(135deg,var(--accent),var(--accent-end));color:#fff;font-size:14px;font-weight:500;border:none;cursor:pointer;font-family:inherit">iPhone / Safari</button>
     <button onclick="showGuide('android')" id="tab-android" style="padding:10px 24px;border-radius:24px;background:transparent;border:1.5px solid var(--border);color:var(--text);font-size:14px;font-weight:500;cursor:pointer;font-family:inherit">Android / Chrome</button>
   </div>
-  <div style="max-width:520px;margin:0 auto">
+  <div style="max-width:520px">
     <div id="guide-iphone" class="reveal">
       <div class="step" style="margin-bottom:20px">
         <div class="step-num" style="min-width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;background:rgba(124,92,252,0.1);color:var(--accent)">1</div>
@@ -617,22 +680,33 @@ body {
       </div>
     </div>
   </div>
+  <div class="bubble-tip bt-float1" style="right:5%;top:35%">
+    <div class="bt-group">
+      <div class="bt-bubble">Ingen app nødvendig</div>
+      <div class="bt-bubble">Virker direkte i browseren</div>
+      <div class="bt-bubble">Tilføj til hjemmeskærm for fuld oplevelse</div>
+    </div>
+  </div>
+  <div class="bubble-tip bt-float2" style="right:8%;top:65%">
+    <div class="bt-group">
+      <div class="bt-bubble">Push notifikationer</div>
+      <div class="bt-bubble">Så du aldrig misser en invitation</div>
+    </div>
+  </div>
 </section>
-
-<!-- FINAL CTA -->
 <section class="cta-section">
-  <h2 class="cta-title reveal">Klar til at netværke smartere?</h2>
-  <p class="cta-sub reveal">Gratis. Ingen reklamer. Bygget i Danmark.</p>
+  <h2 class="cta-title reveal">Klar til at møde de rigtige mennesker omkring dig?</h2>
+  <p class="cta-sub reveal">Gratis · Ingen reklamer · Bygget i Danmark</p>
   <a href="./?auth=1" class="btn-primary reveal">Opret din profil</a>
   <p class="cta-note reveal" style="margin-top:24px">Virker på alle enheder · Ingen download krævet</p>
 </section>
 
 <!-- FOOTER -->
 <footer>
-  <div style="max-width:var(--max-w);margin:0 auto;padding:40px 24px 24px;border-top:1px solid var(--border)">
-    <div style="text-align:center;margin-bottom:32px">
+  <div style="max-width:var(--max-w);margin:0 auto;padding:32px 24px 20px;border-top:1px solid var(--border)">
+    <div style="text-align:center;margin-bottom:24px">
       <p style="font-size:16px;font-weight:500;color:var(--text);margin-bottom:8px">Synes du Bubble lyder spændende?</p>
-      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px">Skriv til os — vi vil gerne høre fra dig.</p>
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px">Skriv til os — vi vil gerne høre fra dig. <span style="opacity:0.7">(vi svarer hurtigt)</span></p>
       <a href="mailto:info@bubbleme.dk" style="font-size:15px;color:var(--accent);text-decoration:none;font-weight:500">info@bubbleme.dk</a>
     </div>
     <div class="footer" style="justify-content:center">
@@ -661,6 +735,20 @@ var obs = new IntersectionObserver(function(entries) {
   });
 }, { threshold: 0.15 });
 document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(function(el) { obs.observe(el); });
+
+var tipObs = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) {
+      var tips = e.target.querySelectorAll('.bubble-tip');
+      tips.forEach(function(t, i) {
+        setTimeout(function() { t.classList.add('visible'); }, 600 + i * 400);
+      });
+      tipObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.2 });
+document.querySelectorAll('.has-tips').forEach(function(el) { tipObs.observe(el); });
+
 </script>
 </body>
 </html>
