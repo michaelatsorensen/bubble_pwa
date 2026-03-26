@@ -13,7 +13,10 @@
 //  - ?auth=1 from landing → show auth screen directly
 //  - Deep links (?qrt=, ?event=, etc.) → bypass landing
 // ══════════════════════════════════════════════════════════
+var _cameFromLanding = false; // Set true in load handler if ?auth=1 was present
+
 function shouldBypassLanding() {
+  if (_cameFromLanding) return true;
   var params = new URLSearchParams(window.location.search);
   return params.has('qrt') || params.has('profile') || params.has('join') ||
          params.has('event') || params.has('push') || params.has('auth') ||
@@ -722,6 +725,9 @@ function showUpdateBanner() {
 }
 
 window.addEventListener('load', async () => {
+  // Save flag BEFORE cleaning URL — used by shouldBypassLanding() later
+  _cameFromLanding = new URLSearchParams(window.location.search).has('auth');
+
   // Clean ?auth=1 param from landing page redirect (keep other params)
   var _urlParams = new URLSearchParams(window.location.search);
   if (_urlParams.has('auth')) {
