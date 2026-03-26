@@ -8,28 +8,6 @@
 // ══════════════════════════════════════════════════════════
 
 // ══════════════════════════════════════════════════════════
-//  LANDING PAGE REDIRECT LOGIC
-//  - No session + no deep link → redirect to landing.html
-//  - ?auth=1 from landing → show auth screen directly
-//  - Deep links (?qrt=, ?event=, etc.) → bypass landing
-// ══════════════════════════════════════════════════════════
-var _cameFromLanding = false; // Set true in load handler if ?auth=1 was present
-
-function shouldBypassLanding() {
-  if (_cameFromLanding) return true;
-  var params = new URLSearchParams(window.location.search);
-  return params.has('qrt') || params.has('profile') || params.has('join') ||
-         params.has('event') || params.has('push') || params.has('auth') ||
-         (window.location.hash && window.location.hash.includes('access_token'));
-}
-
-function redirectToLanding() {
-  if (!window.location.pathname.includes('landing.html')) {
-    window.location.replace('landing.html');
-  }
-}
-
-// ══════════════════════════════════════════════════════════
 //  AGGRESSIVE PRELOAD — makes app feel instant
 // ══════════════════════════════════════════════════════════
 async function preloadAllData() {
@@ -725,17 +703,6 @@ function showUpdateBanner() {
 }
 
 window.addEventListener('load', async () => {
-  // Save flag BEFORE cleaning URL — used by shouldBypassLanding() later
-  _cameFromLanding = new URLSearchParams(window.location.search).has('auth');
-
-  // Clean ?auth=1 param from landing page redirect (keep other params)
-  var _urlParams = new URLSearchParams(window.location.search);
-  if (_urlParams.has('auth')) {
-    _urlParams.delete('auth');
-    var _cleanUrl = _urlParams.toString() ? window.location.pathname + '?' + _urlParams.toString() : window.location.pathname;
-    window.history.replaceState({}, document.title, _cleanUrl);
-  }
-
   // Check QR anon preview BEFORE auth (shows profile without login)
   if (initSupabase()) {
     var isGuest = await checkGuestEventRoute();

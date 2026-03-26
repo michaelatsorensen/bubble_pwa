@@ -108,11 +108,6 @@ async function checkAuth() {
       await ensureProfileExists(session);
       await resolvePostAuth();
     } else {
-      // No session — redirect to landing (unless user came from landing via ?auth=1 or deep link)
-      if (typeof shouldBypassLanding === 'function' && !shouldBypassLanding()) {
-        redirectToLanding();
-        return;
-      }
       goTo('screen-auth');
     }
   } catch(e) {
@@ -132,7 +127,7 @@ function setupAuthListener() {
       currentUser = null;
       currentProfile = null;
       _profileCache = {};
-      redirectToLanding();
+      goTo('screen-auth');
     } else if (event === 'TOKEN_REFRESHED' && session) {
       // Token refreshed — update user reference
       currentUser = session.user;
