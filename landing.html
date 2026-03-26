@@ -325,6 +325,7 @@ body {
 
 /* ── RESPONSIVE ── */
 @media (max-width: 720px) {
+  .desktop-br { display: none; }
   .hero {
     flex-direction: column; text-align: center;
     padding: 32px 20px 24px; gap: 24px;
@@ -432,13 +433,13 @@ body {
 <!-- HERO -->
 <section class="hero">
   <div class="hero-text">
-    <h1 class="hero-tagline">De rigtige mennesker<br>er allerede omkring dig</h1>
+    <h1 class="hero-tagline">De rigtige mennesker <br class="desktop-br">er allerede omkring dig</h1>
     <p class="hero-sub">Bubble viser dig hvem du bør møde — og hvorfor det giver mening at tage den samtale.</p>
     <div class="hero-actions">
       <a href="./?auth=1" class="btn-primary">Kom i gang</a>
       <a href="#how" class="btn-secondary">Se hvordan det virker</a>
     </div>
-    <div style="margin-top:16px;font-size:13px;color:var(--text-secondary)">Gratis at oprette profil · Virker direkte på mobilen</div>
+    <p style="margin-top:14px;font-size:13px;color:var(--text-secondary);line-height:1.4">Gratis at oprette profil · Virker direkte på mobilen</p>
   </div>
   <div class="hero-phone">
     <div class="phone-frame">
