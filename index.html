@@ -101,9 +101,31 @@
 .radar-filter-chip { padding:0.3rem 0.55rem; border-radius:20px; font-size:0.64rem; font-weight:600; font-family:var(--font); border:1px solid var(--glass-border-subtle); background:#FFFFFF; color:var(--text-secondary); cursor:pointer; flex-shrink:0; transition:all 0.15s; -webkit-tap-highlight-color:transparent; white-space:nowrap; }
 .radar-filter-chip.active { background:linear-gradient(135deg,#7C5CFC,#6366F1); color:#fff; border-color:transparent; }
 .radar-filter-chip:active { transform:scale(0.95); }
+/* ═══ Skeleton shimmer + screen transitions ═══ */
+@keyframes shimmer { 0% { background-position: -200px 0; } 100% { background-position: 200px 0; } }
+.skel { background: linear-gradient(90deg, rgba(30,27,46,0.04) 25%, rgba(30,27,46,0.08) 50%, rgba(30,27,46,0.04) 75%); background-size: 400px 100%; animation: shimmer 1.5s ease-in-out infinite; border-radius: 8px; }
+.screen { transition: opacity 0.2s ease; }
+
 </style>
 
 </head>
+<script>
+// Instant screen swap when coming from landing page — prevents loading screen flash
+(function() {
+  if (new URLSearchParams(window.location.search).has('auth')) {
+    document.addEventListener('DOMContentLoaded', function() {
+      var loading = document.getElementById('screen-loading');
+      var auth = document.getElementById('screen-auth');
+      var splash = document.getElementById('auth-splash');
+      var forms = document.getElementById('auth-forms');
+      if (loading) loading.classList.remove('active');
+      if (auth) auth.classList.add('active');
+      if (splash) splash.style.display = 'none';
+      if (forms) forms.style.display = '';
+    });
+  }
+})();
+</script>
 <body id="app-root">
 
 <!-- LANDSCAPE LOCK -->
@@ -144,10 +166,14 @@
      SCREEN: LOADING
 ════════════════════════════════════════ -->
 <div class="screen active" id="screen-loading">
-  <div style="text-align:center">
-    <div style="text-align:center"><img src="bubble-logo-splash.png" alt="bubble" style="height:36px;width:auto"></div>
-    <div class="spinner" style="margin-top:2rem"></div>
-    <div style="font-size:0.85rem;color:var(--muted);margin-top:1rem" id="loading-msg">Forbinder til server...</div>
+  <div style="text-align:center;padding:2rem 1.5rem 0">
+    <div style="text-align:center;margin-bottom:1.5rem"><img src="bubble-logo-splash.png" alt="bubble" style="height:36px;width:auto"></div>
+    <div class="skel" style="width:180px;height:16px;margin:0 auto 0.8rem"></div>
+    <div class="skel" style="width:240px;height:12px;margin:0 auto 2rem"></div>
+    <div class="skel" style="width:100%;max-width:300px;height:44px;margin:0 auto 0.8rem;border-radius:12px"></div>
+    <div class="skel" style="width:100%;max-width:300px;height:44px;margin:0 auto 0.8rem;border-radius:12px"></div>
+    <div class="skel" style="width:100%;max-width:300px;height:44px;margin:0 auto;border-radius:12px"></div>
+    <div style="font-size:0.78rem;color:var(--muted);margin-top:1.5rem" id="loading-msg">Forbinder...</div>
   </div>
 </div>
 

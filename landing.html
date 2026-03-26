@@ -708,7 +708,7 @@ body {
     <div style="text-align:center;margin-bottom:24px">
       <p style="font-size:16px;font-weight:500;color:var(--text);margin-bottom:8px">Synes du Bubble lyder spændende?</p>
       <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px">Skriv til os — vi vil gerne høre fra dig. <span style="opacity:0.7">(vi svarer hurtigt)</span></p>
-      <a href="/cdn-cgi/l/email-protection#caa3a4aca58aa8bfa8a8a6afa7afe4aea1" style="font-size:15px;color:var(--accent);text-decoration:none;font-weight:500"><span class="__cf_email__" data-cfemail="b7ded9d1d8f7d5c2d5d5dbd2dad299d3dc">[email&#160;protected]</span></a>
+      <a href="mailto:info@bubbleme.dk" style="font-size:15px;color:var(--accent);text-decoration:none;font-weight:500">info@bubbleme.dk</a>
     </div>
     <div class="footer" style="justify-content:center">
       <span>&copy; 2026 Bubble · <a href="#" style="color:var(--text-secondary);text-decoration:none">Privatlivspolitik</a></span>
@@ -716,7 +716,7 @@ body {
   </div>
 </footer>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 function showGuide(platform) {
   document.getElementById('guide-iphone').style.display = platform === 'iphone' ? 'block' : 'none';
   document.getElementById('guide-android').style.display = platform === 'android' ? 'block' : 'none';
@@ -742,4 +742,14 @@ var tipObs = new IntersectionObserver(function(entries) {
     if (e.isIntersecting) {
       var tips = e.target.querySelectorAll('.bubble-tip');
       tips.forEach(function(t, i) {
-        setTimeout(function() { t.c
+        setTimeout(function() { t.classList.add('visible'); }, 600 + i * 400);
+      });
+      tipObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.2 });
+document.querySelectorAll('.has-tips').forEach(function(el) { tipObs.observe(el); });
+
+</script>
+</body>
+</html>
