@@ -244,6 +244,13 @@ async function openBubbleChat(bubbleId, fromScreen) {
   if (iconEl) iconEl.innerHTML = '';
   var actionBtns = document.getElementById('bc-action-btns');
   if (actionBtns) { actionBtns.innerHTML = ''; actionBtns.style.display = 'none'; }
+  // Clear old content from ALL panels (sub-loaders will repopulate)
+  ['bc-members-list','bc-messages','bc-info-list','bc-posts-list','bc-events-list'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
+  var pendingBanner = document.getElementById('bc-pending-banner');
+  if (pendingBanner) pendingBanner.style.display = 'none';
   var tabBar = document.querySelector('#screen-bubble-chat .bubble-tabs');
   if (tabBar) tabBar.style.display = 'none';
   ['chat','members','info','posts','events'].forEach(function(t) {
@@ -1203,8 +1210,12 @@ async function bcLoadMembers() {
       // Role label
       var roleLabel = isEvent ? 'Arrangør' : 'Ejer';
 
+      var avatarInner = (p.avatar_url && !p.is_anon)
+        ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        : initials;
+
       html += `<div class="chat-member-row" data-member-uid="${m.user_id}" onclick="bcOpenPerson('${m.user_id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${color}')">
-        <div class="chat-member-avatar" style="background:${color}">${initials}${m._isLive ? '<span class="live-dot"></span>' : ''}</div>
+        <div class="chat-member-avatar" style="background:${color};overflow:hidden">${avatarInner}${m._isLive ? '<span class="live-dot"></span>' : ''}</div>
         <div style="flex:1;min-width:0"><div class="chat-member-name">${escHtml(p.name||'Ukendt')} ${liveBadge}</div><div class="chat-member-status">${statusText}</div></div>
         ${isOwnerRow ? '<span class="chat-member-role">' + roleLabel + '</span>' : (isOwner && !isOwnerRow ? '<button class="bc-kick-btn" onclick="event.stopPropagation();bcShowKickConfirm(this,\'' + m.user_id + '\',\'' + escHtml(p.name||'Ukendt').replace(/'/g,'') + '\')" title="Fjern fra boble">' + icon('x') + '</button>' : '')}
       </div>`;
