@@ -1637,7 +1637,7 @@ textarea ~ .input-confirm-btn { top:0.7rem; transform:none; }
 .ob-tag-section-label { font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin:0.3rem 0 0.2rem; }
 .ob-tag-section-label.recommended { color:rgba(124,92,252,0.6); }
 .ob-tag-section-label.other { color:var(--muted); }
-.tag-pick.other-tag { opacity:0.6; }
+.tag-pick.other-tag { opacity:1; }
 .tag-pick.other-tag.selected { opacity:1; }
 
 

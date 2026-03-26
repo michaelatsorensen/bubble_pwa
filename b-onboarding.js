@@ -600,7 +600,7 @@ function obRenderCategories() {
       visibleOthers.map(function(t) {
         var sel = obSelectedTags.indexOf(t) >= 0;
         return '<span class="tag-pick other-tag' + (sel ? ' selected' : '') + '" ' +
-          'style="border-color:' + info.color + '20;' + (sel ? 'background:' + info.color + '20;color:' + info.color : 'color:' + info.color + '80') + '" ' +
+          'style="border-color:' + info.color + '30;' + (sel ? 'background:' + info.color + '20;color:' + info.color : 'color:' + info.color + '99') + '" ' +
           'onclick="obTogglePickTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\',\'' + cat + '\',this)">' +
           escHtml(t) + '</span>';
       }).join('') +
@@ -891,7 +891,7 @@ function epRenderCategories() {
       visibleOthers.map(function(t) {
         var sel = epSelectedTags.indexOf(t) >= 0;
         return '<span class="tag-pick other-tag' + (sel ? ' selected' : '') + '" ' +
-          'style="border-color:' + info.color + '20;' + (sel ? 'background:' + info.color + '20;color:' + info.color : 'color:' + info.color + '80') + '" ' +
+          'style="border-color:' + info.color + '30;' + (sel ? 'background:' + info.color + '20;color:' + info.color : 'color:' + info.color + '99') + '" ' +
           'onclick="epTogglePickTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\',\'' + cat + '\',this)">' +
           escHtml(t) + '</span>';
       }).join('') +
