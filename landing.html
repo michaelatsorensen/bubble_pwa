@@ -48,7 +48,7 @@ body {
 .nav-inner {
   max-width: var(--max-w);
   margin: 0 auto;
-  padding: 14px 24px 14px 12px;
+  padding: 14px 24px 14px 0;
   display: flex; align-items: center; justify-content: space-between;
 }
 .nav-logo { height: 26px; width: auto; }
@@ -371,8 +371,8 @@ body {
 <!-- NAV -->
 <nav class="nav">
   <div class="nav-inner">
-    <img src="bubble-logo.png" alt="Bubble" class="nav-logo">
-    <a href="index.html?auth=1" class="nav-cta">Log ind</a>
+    <a href="#" style="display:flex;align-items:center"><img src="bubble-logo.png" alt="Bubble" class="nav-logo"></a>
+    <a href="./?auth=1" class="nav-cta">Log ind</a>
   </div>
 </nav>
 
@@ -382,7 +382,7 @@ body {
     <h1 class="hero-tagline">Mød dit netværk</h1>
     <p class="hero-sub">Bubble forbinder dig til netværk omkring dig — på events, i dit lokalområde og i fællesskaber der betyder noget.</p>
     <div class="hero-actions">
-      <a href="index.html?auth=1" class="btn-primary">Kom i gang</a>
+      <a href="./?auth=1" class="btn-primary">Kom i gang</a>
       <a href="#how" class="btn-secondary">Se hvordan</a>
     </div>
   </div>
@@ -616,7 +616,7 @@ body {
 <section class="cta-section">
   <h2 class="cta-title reveal">Klar til at netværke smartere?</h2>
   <p class="cta-sub reveal">Gratis. Ingen reklamer. Bygget i Danmark.</p>
-  <a href="index.html?auth=1" class="btn-primary reveal">Opret din profil</a>
+  <a href="./?auth=1" class="btn-primary reveal">Opret din profil</a>
   <p class="cta-note reveal" style="margin-top:24px">Virker på alle enheder · Ingen download krævet</p>
 </section>
 
