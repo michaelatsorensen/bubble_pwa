@@ -6,6 +6,7 @@
 const CACHE_NAME = 'bubble-v6.5.3';
 const CACHE_URLS = [
   './', './index.html', './app.css',
+  './landing.html', './bubble-logo.png',
   './bubble-icons.js', './tag-data.js',
   './b-config.js', './b-utils.js', './b-navigation.js',
   './b-auth.js', './b-home.js', './b-bubbles.js',

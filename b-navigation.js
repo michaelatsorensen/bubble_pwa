@@ -106,7 +106,15 @@ function _runHook(hookVal) {
 }
 
 // ── Main router ──
+var _publicScreens = ['screen-auth','screen-loading','screen-onboarding','screen-qr-preview','screen-qr-teaser','screen-social-proof','screen-guest-checkin','screen-event-ready','screen-welcome'];
+
 function goTo(screenId) {
+  // Auth guard: prevent navigation to protected screens without login
+  if (!currentUser && _publicScreens.indexOf(screenId) < 0) {
+    console.warn('[nav] auth guard: no user, redirecting to auth');
+    screenId = 'screen-auth';
+  }
+
   if (_activeScreen === screenId) return;
   if (_navLock) return;
   _navLock = true;
