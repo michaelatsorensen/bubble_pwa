@@ -1,66 +1,4 @@
 // ══════════════════════════════════════════════════════════
-//  LANDING PAGE ↔ APP SHELL SWITCHING
-// ══════════════════════════════════════════════════════════
-function showApp() {
-  var landing = document.getElementById('landing-page');
-  var app = document.getElementById('app-shell');
-  if (landing) landing.style.display = 'none';
-  if (app) app.style.display = '';
-}
-
-function showLanding() {
-  var landing = document.getElementById('landing-page');
-  var app = document.getElementById('app-shell');
-  if (landing) {
-    landing.style.display = '';
-    // Init landing scroll reveals
-    initLandingReveals();
-  } else {
-    // Fallback: no landing page in DOM, show auth screen directly
-    if (app) app.style.display = '';
-    goTo('screen-auth');
-  }
-}
-
-function enterApp() {
-  // Called from landing page "Kom i gang" / "Log ind" buttons
-  showApp();
-  goTo('screen-auth');
-}
-
-function initLandingReveals() {
-  var obs = new IntersectionObserver(function(entries) {
-    entries.forEach(function(e) {
-      if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
-    });
-  }, { threshold: 0.15 });
-  document.querySelectorAll('#landing-page .reveal, #landing-page .reveal-left, #landing-page .reveal-right').forEach(function(el) { obs.observe(el); });
-}
-
-function showGuide(platform) {
-  document.getElementById('guide-iphone').style.display = platform === 'iphone' ? 'block' : 'none';
-  document.getElementById('guide-android').style.display = platform === 'android' ? 'block' : 'none';
-  var ti = document.getElementById('tab-iphone');
-  var ta = document.getElementById('tab-android');
-  if (platform === 'iphone') {
-    ti.style.background = 'linear-gradient(135deg,#7C5CFC,#6366F1)'; ti.style.color = '#fff'; ti.style.border = 'none';
-    ta.style.background = 'transparent'; ta.style.color = '#1a1a2e'; ta.style.border = '1.5px solid rgba(0,0,0,0.06)';
-  } else {
-    ta.style.background = 'linear-gradient(135deg,#7C5CFC,#6366F1)'; ta.style.color = '#fff'; ta.style.border = 'none';
-    ti.style.background = 'transparent'; ti.style.color = '#1a1a2e'; ti.style.border = '1.5px solid rgba(0,0,0,0.06)';
-  }
-}
-
-// Check if URL has special params that should bypass landing
-function shouldBypassLanding() {
-  var params = new URLSearchParams(window.location.search);
-  return params.has('qrt') || params.has('profile') || params.has('join') ||
-         params.has('event') || params.has('push') ||
-         (window.location.hash && window.location.hash.includes('access_token'));
-}
-
-
-// ══════════════════════════════════════════════════════════
 //  BUBBLE — BOOT + EVENT DELEGATION + ANALYTICS
 //  DOMAIN: boot
 //  OWNS: delegation handler (data-action), pull-to-refresh, deep link routing, SW registration
@@ -68,6 +6,25 @@ function shouldBypassLanding() {
 //  READS: all domains (orchestrator role)
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════
+//  LANDING PAGE REDIRECT LOGIC
+//  - No session + no deep link → redirect to landing.html
+//  - ?auth=1 from landing → show auth screen directly
+//  - Deep links (?qrt=, ?event=, etc.) → bypass landing
+// ══════════════════════════════════════════════════════════
+function shouldBypassLanding() {
+  var params = new URLSearchParams(window.location.search);
+  return params.has('qrt') || params.has('profile') || params.has('join') ||
+         params.has('event') || params.has('push') || params.has('auth') ||
+         (window.location.hash && window.location.hash.includes('access_token'));
+}
+
+function redirectToLanding() {
+  if (!window.location.pathname.includes('landing.html')) {
+    window.location.replace('landing.html');
+  }
+}
 
 // ══════════════════════════════════════════════════════════
 //  AGGRESSIVE PRELOAD — makes app feel instant
@@ -765,8 +722,14 @@ function showUpdateBanner() {
 }
 
 window.addEventListener('load', async () => {
-  // Bypass landing for deep links / OAuth redirects
-  if (shouldBypassLanding()) { showApp(); }
+  // Clean ?auth=1 param from landing page redirect (keep other params)
+  var _urlParams = new URLSearchParams(window.location.search);
+  if (_urlParams.has('auth')) {
+    _urlParams.delete('auth');
+    var _cleanUrl = _urlParams.toString() ? window.location.pathname + '?' + _urlParams.toString() : window.location.pathname;
+    window.history.replaceState({}, document.title, _cleanUrl);
+  }
+
   // Check QR anon preview BEFORE auth (shows profile without login)
   if (initSupabase()) {
     var isGuest = await checkGuestEventRoute();
@@ -781,7 +744,6 @@ window.addEventListener('load', async () => {
     }
   }
   await checkAuth();
-  if (currentUser) { showApp(); }
   await checkQRJoin();
   if (currentUser) {
     // Realtime, badges, preload, pending actions already initialized by resolvePostAuth
