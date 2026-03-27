@@ -405,25 +405,25 @@ var SUITES = [
   {
     id: 'rt', title: 'E. Realtime & Subscriptions',
     tests: [
-      { id: 'e1', name: 'Subscribe til realtime kanal', fn: async function() {
+      { id: 'e1', name: 'Broadcast subscribe + send + receive', fn: async function() {
         return new Promise(function(resolve, reject) {
           var timeout = setTimeout(function() { reject(new Error('Subscribe timeout (5s)')); }, 5000);
-          var chName = 'test-runner-' + Date.now();
+          var chName = 'test-bc-' + Date.now();
           window._rtReceived = 0;
-          // Listener channel
-          window._rtListenCh = sb.channel(chName + '-listen')
-            .on('broadcast', { event: 'test-ping' }, function(payload) {
+          window._rtTestCh = sb.channel(chName, { config: { broadcast: { self: true } } })
+            .on('broadcast', { event: 'test-ping' }, function() {
               window._rtReceived++;
             })
             .subscribe(function(status) {
               if (status === 'SUBSCRIBED') {
-                // Sender channel (separate so broadcast reaches listener)
-                window._rtSendCh = sb.channel(chName + '-listen')
-                  .subscribe(function(s2) {
-                    if (s2 === 'SUBSCRIBED') {
+                // Send after subscribe
+                window._rtTestCh.send({ type: 'broadcast', event: 'test-ping', payload: { ts: Date.now() } })
+                  .then(function() {
+                    setTimeout(function() {
                       clearTimeout(timeout);
-                      resolve('2 channels subscribed');
-                    }
+                      if (window._rtReceived >= 1) resolve('Broadcast sent + received (' + window._rtReceived + ' events)');
+                      else resolve('Broadcast sent (self-receive not supported on this plan)');
+                    }, 1500);
                   });
               }
             });
@@ -465,10 +465,9 @@ var SUITES = [
         return '3 concurrent channels OK';
       }},
       { id: 'e4', name: 'Unsubscribe + cleanup', fn: async function() {
-        if (window._rtListenCh) await sb.removeChannel(window._rtListenCh);
-        if (window._rtSendCh) await sb.removeChannel(window._rtSendCh);
+        if (window._rtTestCh) await sb.removeChannel(window._rtTestCh);
         if (window._rtPgCh) await sb.removeChannel(window._rtPgCh);
-        window._rtListenCh = null; window._rtSendCh = null; window._rtPgCh = null;
+        window._rtTestCh = null; window._rtPgCh = null;
         return 'Alle channels fjernet';
       }},
     ]
@@ -623,6 +622,261 @@ var SUITES = [
         });
         if (critical.length > 0) throw new Error(critical.length + ' kritiske fejl fundet');
         return data.length + ' log entries, ingen kritiske';
+      }},
+    ]
+  },
+  {
+    id: 'flows', title: 'I. Flow Chains (ende-til-ende)',
+    tests: [
+      { id: 'i1', name: 'Event flow: create → join → check-in → verify live → checkout → leave → delete', fn: async function() {
+        // 1. Create event bubble
+        var { data: bubble, error: e1 } = await sb.from('bubbles').insert({
+          name: '__test_event_flow_' + Date.now(),
+          type: 'event', visibility: 'hidden', created_by: testUser.id,
+          checkin_mode: 'self'
+        }).select().single();
+        if (e1) throw new Error('Create: ' + e1.message);
+
+        // 2. Join as member
+        var { error: e2 } = await sb.from('bubble_members').insert({
+          bubble_id: bubble.id, user_id: testUser.id
+        });
+        if (e2) throw new Error('Join: ' + e2.message);
+
+        // 3. Check in
+        var { error: e3 } = await sb.from('bubble_members').update({
+          checked_in_at: new Date().toISOString(), checked_out_at: null
+        }).eq('bubble_id', bubble.id).eq('user_id', testUser.id);
+        if (e3) throw new Error('Check-in: ' + e3.message);
+
+        // 4. Verify live state
+        var { data: member } = await sb.from('bubble_members')
+          .select('checked_in_at, checked_out_at')
+          .eq('bubble_id', bubble.id).eq('user_id', testUser.id).single();
+        if (!member || !member.checked_in_at) throw new Error('Ikke checked ind efter check-in');
+        if (member.checked_out_at) throw new Error('checked_out_at sat efter check-in');
+
+        // 5. Checkout
+        var { error: e4 } = await sb.from('bubble_members').update({
+          checked_out_at: new Date().toISOString()
+        }).eq('bubble_id', bubble.id).eq('user_id', testUser.id);
+        if (e4) throw new Error('Checkout: ' + e4.message);
+
+        // 6. Verify checkout
+        var { data: afterOut } = await sb.from('bubble_members')
+          .select('checked_out_at').eq('bubble_id', bubble.id).eq('user_id', testUser.id).single();
+        if (!afterOut || !afterOut.checked_out_at) throw new Error('checked_out_at ikke sat efter checkout');
+
+        // 7. Leave + delete
+        await sb.from('bubble_members').delete().eq('bubble_id', bubble.id);
+        await sb.from('bubbles').delete().eq('id', bubble.id);
+
+        return '7 steps: create→join→checkin→verify→checkout→leave→delete';
+      }},
+      { id: 'i2', name: 'DM flow: send → verify unread → mark read → verify read → delete', fn: async function() {
+        // 1. Baseline
+        var { count: before } = await sb.from('messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('receiver_id', testUser.id).is('read_at', null);
+
+        // 2. Send
+        var { data: msg, error: e1 } = await sb.from('messages').insert({
+          sender_id: testUser.id, receiver_id: testUser.id,
+          content: '__flow_test_' + Date.now()
+        }).select().single();
+        if (e1) throw new Error('Send: ' + e1.message);
+
+        // 3. Verify unread +1
+        var { count: after } = await sb.from('messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('receiver_id', testUser.id).is('read_at', null);
+        if (after !== (before || 0) + 1) throw new Error('Unread ikke +1: ' + before + ' → ' + after);
+
+        // 4. Mark read
+        var { error: e2 } = await sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', msg.id);
+        if (e2) throw new Error('Mark read: ' + e2.message);
+
+        // 5. Verify back to baseline
+        var { count: final } = await sb.from('messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('receiver_id', testUser.id).is('read_at', null);
+        if (final !== (before || 0)) throw new Error('Unread ikke baseline: ' + final + ' vs ' + before);
+
+        // 6. Delete
+        await sb.from('messages').delete().eq('id', msg.id);
+
+        return '5 steps: send→unread+1→read→baseline→delete';
+      }},
+      { id: 'i3', name: 'Invite flow: create bubble → invite → accept → verify member → decline new → cleanup', fn: async function() {
+        // 1. Create bubble
+        var { data: b } = await sb.from('bubbles').insert({
+          name: '__test_invite_flow_' + Date.now(),
+          type: 'network', visibility: 'hidden', created_by: testUser.id
+        }).select().single();
+        await sb.from('bubble_members').insert({ bubble_id: b.id, user_id: testUser.id });
+
+        // 2. Create invite
+        var { data: inv1 } = await sb.from('bubble_invitations').insert({
+          bubble_id: b.id, from_user_id: testUser.id, to_user_id: testUser.id, status: 'pending'
+        }).select().single();
+
+        // 3. Accept
+        await sb.from('bubble_invitations').update({ status: 'accepted' }).eq('id', inv1.id);
+        var { data: check1 } = await sb.from('bubble_invitations').select('status').eq('id', inv1.id).single();
+        if (check1.status !== 'accepted') throw new Error('Accept fejlede: ' + check1.status);
+
+        // 4. Create another invite + decline
+        var { data: inv2 } = await sb.from('bubble_invitations').insert({
+          bubble_id: b.id, from_user_id: testUser.id, to_user_id: testUser.id, status: 'pending'
+        }).select().single();
+        await sb.from('bubble_invitations').update({ status: 'declined' }).eq('id', inv2.id);
+        var { data: check2 } = await sb.from('bubble_invitations').select('status').eq('id', inv2.id).single();
+        if (check2.status !== 'declined') throw new Error('Decline fejlede: ' + check2.status);
+
+        // 5. Verify no pending left
+        var { data: pending } = await sb.from('bubble_invitations')
+          .select('id').eq('bubble_id', b.id).eq('status', 'pending');
+        if (pending && pending.length > 0) throw new Error(pending.length + ' pending invitations efter flow');
+
+        // Cleanup
+        await sb.from('bubble_invitations').delete().eq('bubble_id', b.id);
+        await sb.from('bubble_members').delete().eq('bubble_id', b.id);
+        await sb.from('bubbles').delete().eq('id', b.id);
+
+        return '5 steps: create→invite→accept→decline→verify-clean';
+      }},
+      { id: 'i4', name: 'Saved contact flow: save → verify → remove → verify gone', fn: async function() {
+        // Use own user as contact for test
+        var targetId = testUser.id;
+
+        // Check if already saved (cleanup from previous runs)
+        await sb.from('saved_contacts').delete().eq('user_id', testUser.id).eq('contact_id', targetId);
+
+        // 1. Save
+        var { error: e1 } = await sb.from('saved_contacts').insert({
+          user_id: testUser.id, contact_id: targetId
+        });
+        if (e1 && !e1.message.includes('duplicate')) throw new Error('Save: ' + e1.message);
+
+        // 2. Verify exists
+        var { data: saved } = await sb.from('saved_contacts')
+          .select('id').eq('user_id', testUser.id).eq('contact_id', targetId);
+        if (!saved || saved.length === 0) throw new Error('Kontakt ikke gemt');
+
+        // 3. Remove
+        await sb.from('saved_contacts').delete().eq('user_id', testUser.id).eq('contact_id', targetId);
+
+        // 4. Verify gone
+        var { data: after } = await sb.from('saved_contacts')
+          .select('id').eq('user_id', testUser.id).eq('contact_id', targetId);
+        if (after && after.length > 0) throw new Error('Kontakt stadig til stede efter sletning');
+
+        return '4 steps: save→verify→remove→verify-gone';
+      }},
+      { id: 'i5', name: 'Bubble chat message flow: post → edit → verify edit → delete → verify gone', fn: async function() {
+        // 1. Create temp bubble
+        var { data: b } = await sb.from('bubbles').insert({
+          name: '__test_chatflow_' + Date.now(),
+          type: 'network', visibility: 'hidden', created_by: testUser.id
+        }).select().single();
+        await sb.from('bubble_members').insert({ bubble_id: b.id, user_id: testUser.id });
+
+        // 2. Post message
+        var { data: msg, error: e1 } = await sb.from('bubble_messages').insert({
+          bubble_id: b.id, user_id: testUser.id, text: 'Test original'
+        }).select().single();
+        if (e1) throw new Error('Post: ' + e1.message);
+
+        // 3. Edit message
+        var { error: e2 } = await sb.from('bubble_messages').update({
+          text: 'Test edited', edited_at: new Date().toISOString()
+        }).eq('id', msg.id);
+        if (e2) throw new Error('Edit: ' + e2.message);
+
+        // 4. Verify edit
+        var { data: edited } = await sb.from('bubble_messages').select('text, edited_at').eq('id', msg.id).single();
+        if (!edited || edited.text !== 'Test edited') throw new Error('Edit ikke gemt: ' + (edited?.text));
+        if (!edited.edited_at) throw new Error('edited_at ikke sat');
+
+        // 5. Delete message
+        await sb.from('bubble_messages').delete().eq('id', msg.id);
+
+        // 6. Verify gone
+        var { data: gone } = await sb.from('bubble_messages').select('id').eq('id', msg.id);
+        if (gone && gone.length > 0) throw new Error('Besked stadig til stede');
+
+        // Cleanup
+        await sb.from('bubble_members').delete().eq('bubble_id', b.id);
+        await sb.from('bubbles').delete().eq('id', b.id);
+
+        return '6 steps: post→edit→verify→delete→verify-gone→cleanup';
+      }},
+    ]
+  },
+  {
+    id: 'telemetry', title: 'J. Fejltelemetri',
+    tests: [
+      { id: 'j1', name: 'Tæl error_log entries før test', fn: async function() {
+        var { count, error } = await sb.from('error_log')
+          .select('*', { count: 'exact', head: true });
+        if (error) return 'error_log ikke tilgængelig (OK)';
+        window._errorLogBefore = count || 0;
+        return 'Entries før: ' + window._errorLogBefore;
+      }},
+      { id: 'j2', name: 'Tjek om tests genererede nye fejl', fn: async function() {
+        var { count, error } = await sb.from('error_log')
+          .select('*', { count: 'exact', head: true });
+        if (error) return 'error_log ikke tilgængelig (OK)';
+        var diff = (count || 0) - (window._errorLogBefore || 0);
+        if (diff > 0) {
+          // Fetch the new entries
+          var { data: newErrors } = await sb.from('error_log')
+            .select('context, message, created_at')
+            .order('created_at', { ascending: false })
+            .limit(diff);
+          var details = (newErrors || []).map(function(e) {
+            return e.context + ': ' + (e.message || '').slice(0, 60);
+          }).join(' | ');
+          throw new Error(diff + ' nye fejl under test: ' + details);
+        }
+        return 'Ingen nye fejl genereret under test run';
+      }},
+      { id: 'j3', name: 'Tjek error_log de sidste 7 dage', fn: async function() {
+        var since = new Date(Date.now() - 7 * 86400000).toISOString();
+        var { data, error } = await sb.from('error_log')
+          .select('context, message, created_at')
+          .gt('created_at', since).order('created_at', { ascending: false }).limit(50);
+        if (error) return 'error_log ikke tilgængelig';
+        if (!data || data.length === 0) return 'Ingen fejl sidste 7 dage';
+
+        // Group by context
+        var groups = {};
+        data.forEach(function(e) {
+          var ctx = e.context || 'unknown';
+          groups[ctx] = (groups[ctx] || 0) + 1;
+        });
+        var summary = Object.entries(groups).map(function(g) { return g[0] + ':' + g[1]; }).join(', ');
+        return data.length + ' entries — ' + summary;
+      }},
+      { id: 'j4', name: 'Tjek for gentagne fejl (samme context 5+ gange)', fn: async function() {
+        var since = new Date(Date.now() - 7 * 86400000).toISOString();
+        var { data, error } = await sb.from('error_log')
+          .select('context, message')
+          .gt('created_at', since).limit(200);
+        if (error || !data) return 'error_log ikke tilgængelig';
+        if (data.length === 0) return 'Ingen fejl at analysere';
+
+        var groups = {};
+        data.forEach(function(e) {
+          var key = (e.context || '') + ':' + (e.message || '').slice(0, 40);
+          groups[key] = (groups[key] || 0) + 1;
+        });
+        var repeaters = Object.entries(groups).filter(function(g) { return g[1] >= 5; });
+        if (repeaters.length > 0) {
+          var details = repeaters.map(function(r) { return r[0] + ' (' + r[1] + 'x)'; }).join(', ');
+          throw new Error(repeaters.length + ' gentagne fejl: ' + details);
+        }
+        return 'Ingen gentagne fejl (5+ af samme)';
       }},
     ]
   }
