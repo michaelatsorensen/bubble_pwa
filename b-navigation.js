@@ -17,6 +17,32 @@ window.addEventListener('popstate', function() {
   _navPopLock = true;
   setTimeout(function() { _navPopLock = false; }, 300);
 
+  // If any overlay/sheet/modal is open, close it instead of navigating
+  var dynOverlays = document.querySelectorAll('.bb-dyn-overlay');
+  if (dynOverlays.length > 0) {
+    dynOverlays.forEach(function(el) { if (typeof bbDynClose === 'function') bbDynClose(el); });
+    history.pushState(null, '');
+    return;
+  }
+  var psOverlay = document.getElementById('ps-overlay');
+  if (psOverlay && psOverlay.classList.contains('open')) {
+    if (typeof psClose === 'function') psClose();
+    history.pushState(null, '');
+    return;
+  }
+  var openModal = document.querySelector('.modal.open');
+  if (openModal) {
+    if (typeof closeModal === 'function') closeModal(openModal.id);
+    history.pushState(null, '');
+    return;
+  }
+  var openSheet = document.querySelector('.bb-overlay.open');
+  if (openSheet) {
+    if (typeof bbCloseAll === 'function') bbCloseAll();
+    history.pushState(null, '');
+    return;
+  }
+
   if (_navStack.length > 1) {
     _navStack.pop(); // Remove current
     var prev = _navStack[_navStack.length - 1]; // Peek at previous
