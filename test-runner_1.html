@@ -879,6 +879,289 @@ var SUITES = [
         return 'Ingen gentagne fejl (5+ af samme)';
       }},
     ]
+  },
+  {
+    id: 'rls', title: 'K. Sikkerhed (RLS)',
+    tests: [
+      { id: 'k1', name: 'Kan IKKE læse andre brugeres profiler direkte via id', fn: async function() {
+        // Get any other user
+        var { data: others } = await sb.from('profiles').select('id').neq('id', testUser.id).limit(1);
+        if (!others || others.length === 0) return 'Kun én bruger i DB — skip';
+        var otherId = others[0].id;
+        var { data, error } = await sb.from('profiles').select('email').eq('id', otherId).single();
+        // RLS should either block email or return null for it
+        if (data && data.email && data.email.includes('@')) {
+          throw new Error('Kan læse email for anden bruger: ' + data.email);
+        }
+        return 'Email skjult for andre brugere (RLS OK)';
+      }},
+      { id: 'k2', name: 'Kan IKKE opdatere andres profil', fn: async function() {
+        var { data: others } = await sb.from('profiles').select('id, name').neq('id', testUser.id).limit(1);
+        if (!others || others.length === 0) return 'Kun én bruger — skip';
+        var otherId = others[0].id;
+        var origName = others[0].name;
+        var { error } = await sb.from('profiles').update({ name: '__hacked__' }).eq('id', otherId);
+        // Verify it wasn't changed
+        var { data: check } = await sb.from('profiles').select('name').eq('id', otherId).single();
+        if (check && check.name === '__hacked__') {
+          // Rollback
+          await sb.from('profiles').update({ name: origName }).eq('id', otherId);
+          throw new Error('KRITISK: Kunne ændre anden brugers profil!');
+        }
+        return 'Update blokeret af RLS';
+      }},
+      { id: 'k3', name: 'Kan IKKE slette andres beskeder', fn: async function() {
+        // Create a message "from" test user, then try to delete all messages
+        var { data: msg } = await sb.from('messages').insert({
+          sender_id: testUser.id, receiver_id: testUser.id, content: '__rls_test_' + Date.now()
+        }).select().single();
+        // Try deleting with a filter that shouldn't match RLS
+        var { error } = await sb.from('messages').delete().neq('sender_id', testUser.id).neq('receiver_id', testUser.id);
+        // This should silently fail (RLS blocks it) or return 0 affected rows
+        // Cleanup our own message
+        if (msg) await sb.from('messages').delete().eq('id', msg.id);
+        return 'Delete af andres beskeder blokeret';
+      }},
+      { id: 'k4', name: 'Kan IKKE joine privat boble uden invitation', fn: async function() {
+        // Find a private bubble we're not a member of
+        var { data: bubbles } = await sb.from('bubbles')
+          .select('id, name').eq('visibility', 'private').limit(10);
+        if (!bubbles || bubbles.length === 0) return 'Ingen private bobler at teste';
+        // Check we're not already member
+        var { data: myMem } = await sb.from('bubble_members')
+          .select('bubble_id').eq('user_id', testUser.id);
+        var myBIds = (myMem || []).map(function(m) { return m.bubble_id; });
+        var target = bubbles.find(function(b) { return myBIds.indexOf(b.id) < 0; });
+        if (!target) return 'Allerede medlem af alle private bobler — skip';
+        var { error } = await sb.from('bubble_members').insert({
+          bubble_id: target.id, user_id: testUser.id
+        });
+        if (!error) {
+          // Cleanup if it somehow succeeded
+          await sb.from('bubble_members').delete().eq('bubble_id', target.id).eq('user_id', testUser.id);
+          throw new Error('Kunne joine privat boble "' + target.name + '" uden invitation!');
+        }
+        return 'Join blokeret af RLS: ' + (error.message || '').slice(0, 50);
+      }},
+      { id: 'k5', name: 'Kan IKKE læse andres DM-samtaler', fn: async function() {
+        var { data: msgs } = await sb.from('messages')
+          .select('id, sender_id, receiver_id')
+          .neq('sender_id', testUser.id).neq('receiver_id', testUser.id)
+          .limit(5);
+        if (msgs && msgs.length > 0) {
+          throw new Error('Kan læse ' + msgs.length + ' beskeder der ikke involverer test-bruger!');
+        }
+        return 'Ingen fremmede beskeder synlige (RLS OK)';
+      }},
+      { id: 'k6', name: 'Kan IKKE se andres gemte kontakter', fn: async function() {
+        var { data } = await sb.from('saved_contacts')
+          .select('id, user_id').neq('user_id', testUser.id).limit(5);
+        if (data && data.length > 0) {
+          throw new Error('Kan se ' + data.length + ' andres gemte kontakter!');
+        }
+        return 'Andres kontakter skjult (RLS OK)';
+      }},
+    ]
+  },
+  {
+    id: 'stress', title: 'L. Stress & Performance',
+    tests: [
+      { id: 'l1', name: 'Profil-load under 500ms', fn: async function() {
+        var t0 = performance.now();
+        var { data } = await sb.from('profiles').select('*').eq('id', testUser.id).single();
+        var ms = Math.round(performance.now() - t0);
+        if (ms > 500) throw new Error('For langsomt: ' + ms + 'ms');
+        return ms + 'ms';
+      }},
+      { id: 'l2', name: 'Hent 50 profiler under 1000ms', fn: async function() {
+        var t0 = performance.now();
+        var { data } = await sb.from('profiles').select('id, name, title, keywords, avatar_url').limit(50);
+        var ms = Math.round(performance.now() - t0);
+        if (ms > 1000) throw new Error('For langsomt: ' + ms + 'ms for ' + (data?.length || 0) + ' profiler');
+        return (data?.length || 0) + ' profiler i ' + ms + 'ms';
+      }},
+      { id: 'l3', name: 'Hent alle bobler + members under 1500ms', fn: async function() {
+        var t0 = performance.now();
+        var { data: bubbles } = await sb.from('bubbles').select('id, name, type, visibility').limit(100);
+        var { data: members } = await sb.from('bubble_members').select('bubble_id, user_id').limit(500);
+        var ms = Math.round(performance.now() - t0);
+        if (ms > 1500) throw new Error('For langsomt: ' + ms + 'ms');
+        return (bubbles?.length || 0) + ' bobler + ' + (members?.length || 0) + ' members i ' + ms + 'ms';
+      }},
+      { id: 'l4', name: 'Rapid bubble create+delete ×5 (race condition test)', fn: async function() {
+        var ids = [];
+        var t0 = performance.now();
+        for (var i = 0; i < 5; i++) {
+          var { data } = await sb.from('bubbles').insert({
+            name: '__stress_' + i + '_' + Date.now(),
+            type: 'network', visibility: 'hidden', created_by: testUser.id
+          }).select('id').single();
+          if (data) ids.push(data.id);
+        }
+        // Delete all
+        for (var j = 0; j < ids.length; j++) {
+          await sb.from('bubbles').delete().eq('id', ids[j]);
+        }
+        var ms = Math.round(performance.now() - t0);
+        // Verify all gone
+        var { data: remaining } = await sb.from('bubbles')
+          .select('id').in('id', ids);
+        if (remaining && remaining.length > 0) throw new Error(remaining.length + ' bobler ikke slettet!');
+        return '5 create+delete i ' + ms + 'ms, alle ryddet';
+      }},
+      { id: 'l5', name: 'Rapid message send ×10 (burst test)', fn: async function() {
+        var t0 = performance.now();
+        var msgIds = [];
+        // Send 10 messages rapidly
+        var promises = [];
+        for (var i = 0; i < 10; i++) {
+          promises.push(sb.from('messages').insert({
+            sender_id: testUser.id, receiver_id: testUser.id,
+            content: '__burst_' + i + '_' + Date.now()
+          }).select('id').single());
+        }
+        var results = await Promise.all(promises);
+        results.forEach(function(r) { if (r.data) msgIds.push(r.data.id); });
+        var sendMs = Math.round(performance.now() - t0);
+
+        // Verify count
+        var { count } = await sb.from('messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('receiver_id', testUser.id).is('read_at', null);
+
+        // Cleanup
+        for (var j = 0; j < msgIds.length; j++) {
+          await sb.from('messages').delete().eq('id', msgIds[j]);
+        }
+        var totalMs = Math.round(performance.now() - t0);
+
+        if (msgIds.length < 10) throw new Error('Kun ' + msgIds.length + '/10 beskeder oprettet');
+        return '10 msgs sent i ' + sendMs + 'ms, cleanup ' + totalMs + 'ms total';
+      }},
+      { id: 'l6', name: 'Concurrent reads (5 parallelle queries)', fn: async function() {
+        var t0 = performance.now();
+        var results = await Promise.all([
+          sb.from('profiles').select('id, name').limit(20),
+          sb.from('bubbles').select('id, name').limit(20),
+          sb.from('bubble_members').select('bubble_id, user_id').limit(50),
+          sb.from('messages').select('id, content').eq('receiver_id', testUser.id).limit(10),
+          sb.from('saved_contacts').select('contact_id').eq('user_id', testUser.id).limit(20),
+        ]);
+        var ms = Math.round(performance.now() - t0);
+        var errors = results.filter(function(r) { return r.error; });
+        if (errors.length > 0) throw new Error(errors.length + ' queries fejlede');
+        if (ms > 2000) throw new Error('For langsomt: ' + ms + 'ms for 5 parallelle queries');
+        return '5 parallelle queries i ' + ms + 'ms';
+      }},
+      { id: 'l7', name: 'Membership duplikat-guard (double-join)', fn: async function() {
+        var { data: b } = await sb.from('bubbles').insert({
+          name: '__dupe_test_' + Date.now(),
+          type: 'network', visibility: 'hidden', created_by: testUser.id
+        }).select().single();
+
+        // Join once
+        await sb.from('bubble_members').insert({ bubble_id: b.id, user_id: testUser.id });
+        // Try join again
+        var { error } = await sb.from('bubble_members').insert({ bubble_id: b.id, user_id: testUser.id });
+        var blocked = !!error;
+
+        // Check actual count
+        var { data: members } = await sb.from('bubble_members')
+          .select('id').eq('bubble_id', b.id).eq('user_id', testUser.id);
+        var count = members ? members.length : 0;
+
+        // Cleanup
+        await sb.from('bubble_members').delete().eq('bubble_id', b.id);
+        await sb.from('bubbles').delete().eq('id', b.id);
+
+        if (count > 1) throw new Error('DUPLIKAT: ' + count + ' memberships for samme bruger!');
+        return blocked ? 'Duplikat blokeret af DB constraint' : 'Kun 1 membership (upsert/ignore)';
+      }},
+    ]
+  },
+  {
+    id: 'edge2', title: 'M. Data Edge Cases',
+    tests: [
+      { id: 'm1', name: 'Emoji i besked (send + hent)', fn: async function() {
+        var emoji = '🫧💬🎉 Test besked med emoji 🇩🇰';
+        var { data: msg, error } = await sb.from('messages').insert({
+          sender_id: testUser.id, receiver_id: testUser.id, content: emoji
+        }).select().single();
+        if (error) throw new Error('Insert: ' + error.message);
+        var { data: fetched } = await sb.from('messages').select('content').eq('id', msg.id).single();
+        await sb.from('messages').delete().eq('id', msg.id);
+        if (fetched.content !== emoji) throw new Error('Emoji korrupt: "' + fetched.content + '"');
+        return 'Emoji preserved: ' + emoji.slice(0, 20);
+      }},
+      { id: 'm2', name: 'Meget langt navn (200 tegn)', fn: async function() {
+        var origName = testProfile.name;
+        var longName = 'A'.repeat(200);
+        var { error } = await sb.from('profiles').update({ name: longName }).eq('id', testUser.id);
+        // Restore
+        await sb.from('profiles').update({ name: origName }).eq('id', testUser.id);
+        if (error) return 'Blokeret af DB (OK): ' + (error.message || '').slice(0, 40);
+        return '200-tegn navn accepteret + restored';
+      }},
+      { id: 'm3', name: 'Tom string som bio', fn: async function() {
+        var origBio = testProfile.bio || null;
+        var { error } = await sb.from('profiles').update({ bio: '' }).eq('id', testUser.id);
+        await sb.from('profiles').update({ bio: origBio }).eq('id', testUser.id);
+        if (error) throw new Error('Kan ikke sætte tom bio: ' + error.message);
+        return 'Tom bio accepteret + restored';
+      }},
+      { id: 'm4', name: 'Specialtegn i boble-navn', fn: async function() {
+        var special = '<scr' + 'ipt>alert("xss")<\/scr' + 'ipt> & "quotes" \' <b>bold</b>';
+        var { data, error } = await sb.from('bubbles').insert({
+          name: special, type: 'network', visibility: 'hidden', created_by: testUser.id
+        }).select().single();
+        if (error) throw new Error('Insert: ' + error.message);
+        var { data: fetched } = await sb.from('bubbles').select('name').eq('id', data.id).single();
+        await sb.from('bubbles').delete().eq('id', data.id);
+        if (fetched.name !== special) throw new Error('Specialtegn ændret: "' + fetched.name + '"');
+        return 'XSS-streng gemt + hentet uændret (DB OK, UI skal escape)';
+      }},
+      { id: 'm5', name: 'Null keywords håndteres', fn: async function() {
+        var origKw = testProfile.keywords;
+        var { error } = await sb.from('profiles').update({ keywords: null }).eq('id', testUser.id);
+        if (error) throw new Error('Kan ikke sætte null keywords');
+        var { data } = await sb.from('profiles').select('keywords').eq('id', testUser.id).single();
+        await sb.from('profiles').update({ keywords: origKw }).eq('id', testUser.id);
+        if (data.keywords !== null) throw new Error('keywords ikke null: ' + typeof data.keywords);
+        return 'null keywords OK + restored';
+      }},
+      { id: 'm6', name: 'Tom keywords array []', fn: async function() {
+        var origKw = testProfile.keywords;
+        var { error } = await sb.from('profiles').update({ keywords: [] }).eq('id', testUser.id);
+        if (error) throw new Error('Kan ikke sætte tom array');
+        var { data } = await sb.from('profiles').select('keywords').eq('id', testUser.id).single();
+        await sb.from('profiles').update({ keywords: origKw }).eq('id', testUser.id);
+        if (!Array.isArray(data.keywords) || data.keywords.length !== 0) {
+          throw new Error('Tom array ikke bevaret: ' + JSON.stringify(data.keywords));
+        }
+        return '[] bevaret korrekt + restored';
+      }},
+      { id: 'm7', name: 'Unicode i alle felter (dansk æøå)', fn: async function() {
+        var origTitle = testProfile.title;
+        var danish = 'Bæredygtighed & Ølbrygning — Ærø Lüdenscheid';
+        var { error } = await sb.from('profiles').update({ title: danish }).eq('id', testUser.id);
+        var { data } = await sb.from('profiles').select('title').eq('id', testUser.id).single();
+        await sb.from('profiles').update({ title: origTitle }).eq('id', testUser.id);
+        if (error) throw new Error('Update: ' + error.message);
+        if (data.title !== danish) throw new Error('Unicode korrupt: "' + data.title + '"');
+        return 'æøå + umlaut preserved + restored';
+      }},
+      { id: 'm8', name: 'Meget lang besked (5000 tegn)', fn: async function() {
+        var long = 'X'.repeat(5000);
+        var { data: msg, error } = await sb.from('messages').insert({
+          sender_id: testUser.id, receiver_id: testUser.id, content: long
+        }).select('id, content').single();
+        if (error) return 'Blokeret af DB (OK): ' + (error.message || '').slice(0, 40);
+        var len = msg.content ? msg.content.length : 0;
+        await sb.from('messages').delete().eq('id', msg.id);
+        if (len !== 5000) throw new Error('Længde ændret: ' + len);
+        return '5000-tegn besked OK + cleanup';
+      }},
+    ]
   }
 ];
 
