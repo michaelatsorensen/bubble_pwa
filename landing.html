@@ -44,11 +44,12 @@ body {
   background: rgba(255,255,255,0.88);
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
+  padding-top: env(safe-area-inset-top, 0px);
 }
 .nav-inner {
   max-width: var(--max-w);
   margin: 0 auto;
-  padding: 14px 24px 14px 0;
+  padding: 14px 24px;
   display: flex; align-items: center; justify-content: space-between;
 }
 .nav-logo { height: 26px; width: auto; }
