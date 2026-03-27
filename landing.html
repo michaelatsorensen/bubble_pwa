@@ -422,7 +422,7 @@ body {
 <!-- NAV -->
 <nav class="nav">
   <div class="nav-inner">
-    <a href="#" style="display:flex;align-items:center"><img src="bubble-logo.png" alt="Bubble" class="nav-logo"></a>
+    <a href="#" style="display:flex;align-items:center"><img src="bubble-logo-topbar-v2.png" alt="Bubble" class="nav-logo"></a>
     <a href="./?auth=1" class="nav-cta">Log ind</a>
   </div>
 </nav>
@@ -443,7 +443,7 @@ body {
       <div class="phone-notch"></div>
       <div class="phone-screen">
         <div class="phone-header">
-          <img src="bubble-logo.png" alt="Bubble" style="height:18px;width:auto;">
+          <img src="bubble-logo-topbar-v2.png" alt="Bubble" style="height:18px;width:auto;">
         </div>
         <div class="phone-radar">
           <div class="radar-container">
@@ -755,4 +755,17 @@ document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(functi
 var tipObs = new IntersectionObserver(function(entries) {
   entries.forEach(function(e) {
     if (e.isIntersecting) {
- 
+      var tips = e.target.querySelectorAll('.bubble-tip');
+      tips.forEach(function(t, i) {
+        setTimeout(function() { t.classList.add('visible'); }, 300 + i * 200);
+      });
+      tipObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.2 });
+document.querySelectorAll('section').forEach(function(s) {
+  if (s.querySelector('.bubble-tip')) tipObs.observe(s);
+});
+</script>
+</body>
+</html>
