@@ -706,7 +706,7 @@ body {
     <div style="text-align:center;margin-bottom:24px">
       <p style="font-size:16px;font-weight:500;color:var(--text);margin-bottom:8px">Synes du Bubble lyder spændende?</p>
       <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px">Skriv til os — vi vil gerne høre fra dig. <span style="opacity:0.7">(vi svarer hurtigt)</span></p>
-      <a href="/cdn-cgi/l/email-protection#3c55525a537c5e495e5e50595159125857" style="font-size:15px;color:var(--accent);text-decoration:none;font-weight:500"><span class="__cf_email__" data-cfemail="b6dfd8d0d9f6d4c3d4d4dad3dbd398d2dd">[email&#160;protected]</span></a>
+      <a href="#" onclick="window.location='mai'+'lto:in'+'fo@bubb'+'leme.dk';return false" style="font-size:15px;color:var(--accent);text-decoration:none;font-weight:500"><span id="footer-email"></span></a>
     </div>
     <div class="footer" style="justify-content:center">
       <span>&copy; 2026 Bubble · <a href="#" onclick="event.preventDefault();var el=document.getElementById('privacy');el.style.display=el.style.display==='none'?'block':'none'" style="color:var(--text-secondary);text-decoration:none">Betingelser & Privatlivspolitik</a></span>
@@ -726,7 +726,7 @@ body {
       <h3 style="font-size:16px;font-weight:600;color:var(--text);margin:24px 0 8px">6. Ansvarsfraskrivelse</h3>
       <p>Bubble leveres "as is" uden garanti. Vi er ikke ansvarlige for tab af data under beta, handlinger foretaget af andre brugere eller resultat af forbindelser skabt via platformen. Brug af Bubble sker på eget ansvar.</p>
       <h3 style="font-size:16px;font-weight:600;color:var(--text);margin:24px 0 8px">7. Kontakt</h3>
-      <p>Spørgsmål? Kontakt os på <a href="/cdn-cgi/l/email-protection#b6dfd8d0d9f6d4c3d4d4dad3dbd398d2dd" style="color:var(--accent);text-decoration:none;font-weight:500"><span class="__cf_email__" data-cfemail="9bf2f5fdf4dbf9eef9f9f7fef6feb5fff0">[email&#160;protected]</span></a></p>
+      <p>Spørgsmål? Kontakt os på <a href="#" onclick="window.location='mai'+'lto:in'+'fo@bubb'+'leme.dk';return false" style="color:var(--accent);text-decoration:none;font-weight:500"><span class="dyn-email"></span></a></p>
     </div>
   </div>
 </footer>
@@ -766,6 +766,11 @@ var tipObs = new IntersectionObserver(function(entries) {
 document.querySelectorAll('section').forEach(function(s) {
   if (s.querySelector('.bubble-tip')) tipObs.observe(s);
 });
+// Set emails dynamically to bypass CloudFlare obfuscation
+var _e = 'in'+'fo@'+'bubb'+'leme'+'.dk';
+var fe = document.getElementById('footer-email');
+if (fe) fe.textContent = _e;
+document.querySelectorAll('.dyn-email').forEach(function(el) { el.textContent = _e; });
 </script>
 </body>
 </html>
