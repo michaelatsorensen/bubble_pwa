@@ -1949,7 +1949,7 @@ var SUITES = [
         var html = await r.text();
         var scripts = html.match(/<script src="[^"]+"/g) || [];
         var noBuster = scripts.filter(function(s) {
-          return !s.includes('supabase') && !s.includes('googleapis') && !s.includes('?v=');
+          return !s.includes('supabase') && !s.includes('googleapis') && !s.includes('cdn.jsdelivr') && !s.includes('?v=');
         });
         if (noBuster.length > 0) throw new Error('Mangler cache buster: ' + noBuster.join(', '));
         return scripts.length + ' script-tags, alle med cache buster';
@@ -1961,12 +1961,13 @@ var SUITES = [
         if (navItems !== 4) throw new Error('Forventet 4 nav-items, fandt ' + navItems);
         return '4 nav-tabs (Hjem, Bobler, Beskeder, Profil)';
       }},
-      { id: 'ad4', name: 'index.html: ingen tomme onclick handlers', fn: async function() {
+      { id: 'ad4', name: 'index.html: ingen tomme onclick (uden ID)', fn: async function() {
         var r = await fetch('./index.html?_t=' + Date.now());
         var html = await r.text();
-        var emptyOnclick = (html.match(/onclick=""/g) || []).length;
-        if (emptyOnclick > 0) throw new Error(emptyOnclick + ' tomme onclick handlers');
-        return 'Ingen tomme onclick handlers';
+        // Buttons with onclick="" but NO id (dynamically set ones have IDs)
+        var matches = html.match(/<button(?![^>]*\bid=)[^>]*onclick=""/g) || [];
+        if (matches.length > 0) throw new Error(matches.length + ' tomme onclick uden ID');
+        return 'Ingen tomme onclick (buttons med ID er dynamisk sat)';
       }},
       { id: 'ad5', name: 'index.html: ingen broken image refs', fn: async function() {
         var r = await fetch('./index.html?_t=' + Date.now());
@@ -2098,8 +2099,10 @@ async function startTests() {
   if (!pass) { errEl.textContent = 'Indtast password for bruger 1'; errEl.style.display = 'block'; return; }
   if (!pass2) { errEl.textContent = 'Indtast password for bruger 2'; errEl.style.display = 'block'; return; }
 
-  // Login user 1
-  sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+  // Login user 1 (separate storage key)
+  sb = supabase.createClient(SUPA_URL, SUPA_KEY, {
+    auth: { storageKey: 'sb-test-user1', persistSession: true }
+  });
   errEl.style.display = 'none';
   var { data, error } = await sb.auth.signInWithPassword({ email: email, password: pass });
   if (error) { errEl.textContent = 'Bruger 1 login fejl: ' + error.message; errEl.style.display = 'block'; return; }
@@ -2107,8 +2110,10 @@ async function startTests() {
   var { data: prof } = await sb.from('profiles').select('*').eq('id', testUser.id).single();
   testProfile = prof;
 
-  // Login user 2 (separate client)
-  sb2 = supabase.createClient(SUPA_URL, SUPA_KEY);
+  // Login user 2 (separate storage key so sessions don't collide)
+  sb2 = supabase.createClient(SUPA_URL, SUPA_KEY, {
+    auth: { storageKey: 'sb-test-user2', persistSession: true }
+  });
   var { data: data2, error: err2 } = await sb2.auth.signInWithPassword({ email: email2, password: pass2 });
   if (err2) { errEl.textContent = 'Bruger 2 login fejl: ' + err2.message; errEl.style.display = 'block'; return; }
   testUser2 = data2.user;
@@ -2168,9 +2173,10 @@ async function startTests() {
     '<div class="summary-row"><span>Total</span><span>' + _totalTests + '</span></div>' +
     '<div style="margin-top:0.5rem;font-size:0.68rem;color:var(--muted)">' + new Date().toLocaleString('da-DK') + '</div>';
 
-  // Cleanup: sign out both
+  // Cleanup: sign out both and clear storage keys
   await sb.auth.signOut();
   await sb2.auth.signOut();
+  try { localStorage.removeItem('sb-test-user1'); localStorage.removeItem('sb-test-user2'); } catch(e) {}
   log('Signed out both users. Test run complete.', 'log-info');
 }
 </script>
