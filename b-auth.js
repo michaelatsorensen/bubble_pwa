@@ -147,7 +147,7 @@ async function loadCurrentProfile() {
       // Check if user is banned
       if (data.banned) {
         await sb.auth.signOut();
-        showToast('Din konto er blevet suspenderet. Kontakt hello@bubble.app');
+        showToast('Din konto er blevet suspenderet. Kontakt info@bubbleme.dk');
         goTo('screen-auth');
         return;
       }
@@ -440,8 +440,8 @@ function showTerms() {
     '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">3. Dine data (GDPR)</h3>' +
     '<p>Vi indsamler kun det du selv indtaster:</p>' +
     '<p>• Navn, email, titel, arbejdsplads, bio, tags, profilbillede<br>' +
-    '• Beskeder du sender i chat og bobler<br>' +
     '• Hvilke bobler du joiner og kontakter du gemmer</p>' +
+    '<p>Beskeder i chat og bobler opbevares krypteret og læses ikke af os.</p>' +
     '<p>Vi sælger <strong>aldrig</strong> dine data til tredjepart. Data opbevares i EU via Supabase (GDPR-compliant hosting).</p>' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">4. Dine rettigheder</h3>' +
     '<p>Du kan til enhver tid:</p>' +
@@ -457,7 +457,7 @@ function showTerms() {
     '• Resultat af forbindelser skabt via platformen</p>' +
     '<p>Brug af Bubble sker på eget ansvar.</p>' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">7. Kontakt</h3>' +
-    '<p>Spørgsmål? Kontakt os på <strong>hello@bubble.app</strong></p>' +
+    '<p>Spørgsmål? Kontakt os på <strong>info@bubbleme.dk</strong></p>' +
     '</div>' +
     '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:1.2rem;padding:0.7rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Luk</button>';
 }
