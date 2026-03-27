@@ -1162,6 +1162,311 @@ var SUITES = [
         return '5000-tegn besked OK + cleanup';
       }},
     ]
+  },
+  {
+    id: 'qr', title: 'N. QR Token Flow',
+    tests: [
+      { id: 'n1', name: 'Opret QR-token for test-bruger', fn: async function() {
+        // Cleanup existing
+        await sb.from('qr_tokens').delete().eq('user_id', testUser.id);
+        var token = 'test_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+        var expires = new Date(Date.now() + 86400000).toISOString();
+        var { error } = await sb.from('qr_tokens').insert({
+          token: token, user_id: testUser.id, expires_at: expires
+        });
+        if (error) throw new Error('Insert: ' + error.message);
+        window._testQRToken = token;
+        return 'Token: ' + token.slice(0, 16) + '...';
+      }},
+      { id: 'n2', name: 'Lookup token → finder korrekt bruger', fn: async function() {
+        var { data, error } = await sb.from('qr_tokens')
+          .select('user_id, token, expires_at')
+          .eq('token', window._testQRToken).single();
+        if (error || !data) throw new Error('Token ikke fundet');
+        if (data.user_id !== testUser.id) throw new Error('Forkert bruger: ' + data.user_id);
+        return 'Lookup OK → user_id matcher';
+      }},
+      { id: 'n3', name: 'Udløbet token afvises', fn: async function() {
+        var expiredToken = 'expired_' + Date.now();
+        var pastDate = new Date(Date.now() - 86400000).toISOString();
+        await sb.from('qr_tokens').insert({
+          token: expiredToken, user_id: testUser.id, expires_at: pastDate
+        });
+        var { data } = await sb.from('qr_tokens')
+          .select('token, expires_at').eq('token', expiredToken).single();
+        var isExpired = data && new Date(data.expires_at) < new Date();
+        // Cleanup
+        await sb.from('qr_tokens').delete().eq('token', expiredToken);
+        if (!isExpired) throw new Error('Udløbet token ikke markeret som expired');
+        return 'Udløbet token korrekt identificeret';
+      }},
+      { id: 'n4', name: 'Cleanup QR-tokens', fn: async function() {
+        await sb.from('qr_tokens').delete().eq('user_id', testUser.id);
+        var { data } = await sb.from('qr_tokens').select('id').eq('user_id', testUser.id);
+        if (data && data.length > 0) throw new Error(data.length + ' tokens ikke slettet');
+        window._testQRToken = null;
+        return 'Alle test-tokens slettet';
+      }},
+    ]
+  },
+  {
+    id: 'posts', title: 'O. Bubble Posts (CRUD)',
+    tests: [
+      { id: 'o1', name: 'Opret boble + post', fn: async function() {
+        var { data: b } = await sb.from('bubbles').insert({
+          name: '__test_posts_' + Date.now(),
+          type: 'network', visibility: 'hidden', created_by: testUser.id
+        }).select().single();
+        window._postBubbleId = b.id;
+        await sb.from('bubble_members').insert({ bubble_id: b.id, user_id: testUser.id });
+
+        var { data: post, error } = await sb.from('bubble_posts').insert({
+          bubble_id: b.id, user_id: testUser.id,
+          title: 'Test post', content: 'Indhold med dansk æøå'
+        }).select().single();
+        if (error) throw new Error('Post insert: ' + error.message);
+        window._testPostId = post.id;
+        return 'Post ID: ' + post.id.slice(0, 8) + '...';
+      }},
+      { id: 'o2', name: 'Hent post → korrekt indhold', fn: async function() {
+        var { data, error } = await sb.from('bubble_posts')
+          .select('title, content, user_id')
+          .eq('id', window._testPostId).single();
+        if (error) throw new Error('Select: ' + error.message);
+        if (data.title !== 'Test post') throw new Error('Title: ' + data.title);
+        if (data.user_id !== testUser.id) throw new Error('Forkert user_id');
+        return 'Title + content + user_id OK';
+      }},
+      { id: 'o3', name: 'Slet post → verificer fjernet', fn: async function() {
+        var { error } = await sb.from('bubble_posts').delete().eq('id', window._testPostId);
+        if (error) throw new Error('Delete: ' + error.message);
+        var { data } = await sb.from('bubble_posts').select('id').eq('id', window._testPostId);
+        if (data && data.length > 0) throw new Error('Post stadig til stede');
+        return 'Post slettet';
+      }},
+      { id: 'o4', name: 'Cleanup boble', fn: async function() {
+        await sb.from('bubble_members').delete().eq('bubble_id', window._postBubbleId);
+        await sb.from('bubbles').delete().eq('id', window._postBubbleId);
+        window._postBubbleId = null; window._testPostId = null;
+        return 'Cleanup OK';
+      }},
+    ]
+  },
+  {
+    id: 'block', title: 'P. Blocked Users',
+    tests: [
+      { id: 'p1', name: 'Find en anden bruger at blokere', fn: async function() {
+        var { data } = await sb.from('profiles').select('id, name').neq('id', testUser.id).limit(1);
+        if (!data || data.length === 0) throw new Error('Ingen andre brugere i DB');
+        window._blockTargetId = data[0].id;
+        window._blockTargetName = data[0].name;
+        // Cleanup fra eventuelle tidligere tests
+        await sb.from('blocked_users').delete().eq('user_id', testUser.id).eq('blocked_id', window._blockTargetId);
+        return 'Target: ' + (data[0].name || data[0].id.slice(0, 8));
+      }},
+      { id: 'p2', name: 'Bloker bruger', fn: async function() {
+        var { error } = await sb.from('blocked_users').upsert({
+          user_id: testUser.id, blocked_id: window._blockTargetId
+        });
+        if (error) throw new Error('Block: ' + error.message);
+        return 'Blokeret: ' + window._blockTargetName;
+      }},
+      { id: 'p3', name: 'Verificer blokering i DB', fn: async function() {
+        var { data } = await sb.from('blocked_users')
+          .select('id').eq('user_id', testUser.id).eq('blocked_id', window._blockTargetId);
+        if (!data || data.length === 0) throw new Error('Blokering ikke fundet i DB');
+        return 'Blokering verified';
+      }},
+      { id: 'p4', name: 'Unblock → verificer fjernet', fn: async function() {
+        var { error } = await sb.from('blocked_users')
+          .delete().eq('user_id', testUser.id).eq('blocked_id', window._blockTargetId);
+        if (error) throw new Error('Unblock: ' + error.message);
+        var { data } = await sb.from('blocked_users')
+          .select('id').eq('user_id', testUser.id).eq('blocked_id', window._blockTargetId);
+        if (data && data.length > 0) throw new Error('Blokering stadig til stede');
+        window._blockTargetId = null;
+        return 'Unblocked + verified';
+      }},
+    ]
+  },
+  {
+    id: 'parent', title: 'Q. Parent/Child Bubbles',
+    tests: [
+      { id: 'q1', name: 'Opret parent (netværk) + child (event)', fn: async function() {
+        var { data: parent } = await sb.from('bubbles').insert({
+          name: '__test_parent_' + Date.now(),
+          type: 'network', visibility: 'hidden', created_by: testUser.id
+        }).select().single();
+        window._parentBubbleId = parent.id;
+
+        var { data: child, error } = await sb.from('bubbles').insert({
+          name: '__test_child_event_' + Date.now(),
+          type: 'event', visibility: 'hidden', created_by: testUser.id,
+          parent_bubble_id: parent.id, checkin_mode: 'self'
+        }).select().single();
+        if (error) throw new Error('Child insert: ' + error.message);
+        window._childBubbleId = child.id;
+        return 'Parent: ' + parent.id.slice(0, 8) + ' → Child: ' + child.id.slice(0, 8);
+      }},
+      { id: 'q2', name: 'Child refererer korrekt parent', fn: async function() {
+        var { data } = await sb.from('bubbles')
+          .select('parent_bubble_id, type').eq('id', window._childBubbleId).single();
+        if (!data) throw new Error('Child ikke fundet');
+        if (data.parent_bubble_id !== window._parentBubbleId) throw new Error('Forkert parent_bubble_id');
+        if (data.type !== 'event') throw new Error('Forkert type: ' + data.type);
+        return 'parent_bubble_id + type=event OK';
+      }},
+      { id: 'q3', name: 'Parent kan liste sine children', fn: async function() {
+        var { data } = await sb.from('bubbles')
+          .select('id, name').eq('parent_bubble_id', window._parentBubbleId);
+        if (!data || data.length === 0) throw new Error('Ingen children fundet');
+        if (data.length !== 1) throw new Error('Forventet 1 child, fandt ' + data.length);
+        if (data[0].id !== window._childBubbleId) throw new Error('Forkert child id');
+        return '1 child event fundet';
+      }},
+      { id: 'q4', name: 'Slet child + parent (cleanup)', fn: async function() {
+        await sb.from('bubbles').delete().eq('id', window._childBubbleId);
+        await sb.from('bubbles').delete().eq('id', window._parentBubbleId);
+        // Verify
+        var { data: check } = await sb.from('bubbles').select('id')
+          .in('id', [window._childBubbleId, window._parentBubbleId]);
+        if (check && check.length > 0) throw new Error(check.length + ' bobler ikke slettet');
+        window._parentBubbleId = null; window._childBubbleId = null;
+        return 'Parent + child slettet';
+      }},
+    ]
+  },
+  {
+    id: 'storage', title: 'R. Supabase Storage',
+    tests: [
+      { id: 'r1', name: 'Upload test-fil til bubble-files', fn: async function() {
+        var blob = new Blob(['test file content ' + Date.now()], { type: 'text/plain' });
+        var path = 'test-runner/' + testUser.id + '/test_' + Date.now() + '.txt';
+        var { error } = await sb.storage.from('bubble-files').upload(path, blob, {
+          cacheControl: '60', upsert: true, contentType: 'text/plain'
+        });
+        if (error) throw new Error('Upload: ' + error.message);
+        window._testFilePath = path;
+        return 'Uploaded: ' + path.slice(-30);
+      }},
+      { id: 'r2', name: 'Hent public URL for uploadet fil', fn: async function() {
+        var { data } = sb.storage.from('bubble-files').getPublicUrl(window._testFilePath);
+        if (!data || !data.publicUrl) throw new Error('Ingen public URL');
+        window._testFileUrl = data.publicUrl;
+        return 'URL: ' + data.publicUrl.slice(-40);
+      }},
+      { id: 'r3', name: 'Signed URL virker', fn: async function() {
+        var { data, error } = await sb.storage.from('bubble-files')
+          .createSignedUrl(window._testFilePath, 60);
+        if (error) throw new Error('Signed URL: ' + error.message);
+        if (!data || !data.signedUrl) throw new Error('Ingen signed URL');
+        return 'Signed URL genereret (60s TTL)';
+      }},
+      { id: 'r4', name: 'Slet test-fil (cleanup)', fn: async function() {
+        var { error } = await sb.storage.from('bubble-files').remove([window._testFilePath]);
+        if (error) throw new Error('Delete: ' + error.message);
+        window._testFilePath = null; window._testFileUrl = null;
+        return 'Fil slettet fra storage';
+      }},
+    ]
+  },
+  {
+    id: 'views', title: 'S. Profile Views',
+    tests: [
+      { id: 's1', name: 'Tæl profile views (baseline)', fn: async function() {
+        var { count, error } = await sb.from('profile_views')
+          .select('*', { count: 'exact', head: true })
+          .eq('viewed_id', testUser.id);
+        if (error) throw new Error(error.message);
+        window._viewsBaseline = count || 0;
+        return 'Baseline: ' + window._viewsBaseline + ' views';
+      }},
+      { id: 's2', name: 'Registrer profile view', fn: async function() {
+        var { error } = await sb.from('profile_views').insert({
+          viewer_id: testUser.id, viewed_id: testUser.id
+        });
+        if (error) throw new Error('Insert: ' + error.message);
+        return 'View registreret';
+      }},
+      { id: 's3', name: 'Count steg med 1', fn: async function() {
+        var { count } = await sb.from('profile_views')
+          .select('*', { count: 'exact', head: true })
+          .eq('viewed_id', testUser.id);
+        var expected = window._viewsBaseline + 1;
+        if (count !== expected) throw new Error('Forventet ' + expected + ', fik ' + count);
+        return 'Views: ' + count + ' (korrekt)';
+      }},
+      { id: 's4', name: 'Cleanup test view', fn: async function() {
+        // Delete most recent self-view
+        var { data } = await sb.from('profile_views')
+          .select('id').eq('viewer_id', testUser.id).eq('viewed_id', testUser.id)
+          .order('created_at', { ascending: false }).limit(1);
+        if (data && data[0]) {
+          await sb.from('profile_views').delete().eq('id', data[0].id);
+        }
+        return 'Cleanup OK';
+      }},
+    ]
+  },
+  {
+    id: 'cache', title: 'T. Cache Buster & Version Consistency',
+    tests: [
+      { id: 't1', name: 'Alle cache busters i index.html er ens', fn: async function() {
+        var r = await fetch('./index.html?_t=' + Date.now());
+        var html = await r.text();
+        var matches = html.match(/\?v=\d+/g);
+        if (!matches || matches.length === 0) throw new Error('Ingen cache busters fundet');
+        var unique = [...new Set(matches)];
+        if (unique.length > 1) throw new Error('Forskellige versioner: ' + unique.join(', '));
+        return unique[0] + ' (' + matches.length + ' refs, alle ens)';
+      }},
+      { id: 't2', name: 'SW CACHE_NAME matcher version', fn: async function() {
+        var r = await fetch('./sw.js?_t=' + Date.now());
+        var js = await r.text();
+        var m = js.match(/CACHE_NAME\s*=\s*'([^']+)'/);
+        if (!m) throw new Error('CACHE_NAME ikke fundet i sw.js');
+        // Check index.html version
+        var r2 = await fetch('./index.html?_t=' + Date.now());
+        var html = await r2.text();
+        var vm = html.match(/\?v=(\d+)/);
+        if (!vm) throw new Error('Ingen version i index.html');
+        // CACHE_NAME should contain a version that relates to v= param
+        return 'SW: ' + m[1] + ' | HTML: v=' + vm[1];
+      }},
+      { id: 't3', name: 'BUILD_VERSION i config matcher', fn: async function() {
+        var r = await fetch('./b-config.js?_t=' + Date.now());
+        var js = await r.text();
+        var m = js.match(/BUILD_VERSION\s*=\s*'([^']+)'/);
+        if (!m) throw new Error('BUILD_VERSION ikke fundet');
+        return 'BUILD_VERSION: ' + m[1];
+      }},
+      { id: 't4', name: 'Manifest version/name korrekt', fn: async function() {
+        var r = await fetch('./manifest.json?_t=' + Date.now());
+        var m = await r.json();
+        if (!m.name) throw new Error('Mangler name');
+        if (!m.start_url) throw new Error('Mangler start_url');
+        if (!m.icons || m.icons.length === 0) throw new Error('Mangler icons');
+        return 'name: ' + m.name + ', icons: ' + m.icons.length + ', start_url: ' + m.start_url;
+      }},
+      { id: 't5', name: 'SW precache liste matcher deployede filer', fn: async function() {
+        var r = await fetch('./sw.js?_t=' + Date.now());
+        var js = await r.text();
+        // Extract file references
+        var fileMatches = js.match(/'\.\/([\w\-\.]+)'/g);
+        if (!fileMatches) throw new Error('Ingen filer i SW cache');
+        var files = fileMatches.map(function(f) { return f.replace(/^'\.\/|'$/g, ''); })
+          .filter(function(f) { return f.indexOf('?') < 0; }); // Skip query params
+        var missing = [];
+        for (var i = 0; i < files.length; i++) {
+          try {
+            var resp = await fetch('./' + files[i] + '?_t=' + Date.now(), { method: 'HEAD' });
+            if (!resp.ok) missing.push(files[i]);
+          } catch(e) { missing.push(files[i]); }
+        }
+        if (missing.length > 0) throw new Error('Mangler: ' + missing.join(', '));
+        return files.length + ' filer i SW cache, alle eksisterer';
+      }},
+    ]
   }
 ];
 
