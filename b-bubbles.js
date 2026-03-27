@@ -704,7 +704,7 @@ async function handleBubbleIconUpload(input) {
     var resized = typeof resizeImage === 'function' ? await resizeImage(file, 256) : file;
     var path = 'bubbles/' + currentEditBubbleId + '/icon-' + Date.now() + '.jpg';
     var { error: upErr } = await sb.storage.from('bubble-files').upload(path, resized, { cacheControl: '3600', upsert: true, contentType: 'image/jpeg' });
-    if (upErr) { showToast('Upload fejlede: ' + (upErr.message || 'ukendt')); input.value = ''; return; }
+    if (upErr) { errorToast('upload', upErr); input.value = ''; return; }
     var { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
     _pendingBubbleIcon = urlData.publicUrl;
     var prev = document.getElementById('eb-icon-preview');

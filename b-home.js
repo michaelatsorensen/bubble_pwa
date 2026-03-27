@@ -14,9 +14,12 @@
 // ── Live context: set when user is checked into an event ──
 var _homeViewMode = 'all'; // UI tab toggle: 'all' or 'live'
 
+var _homeLoading = false;
 async function loadHome() {
+  if (_homeLoading) return;
+  _homeLoading = true;
   try {
-    if (!currentUser) return;
+    if (!currentUser) { _homeLoading = false; return; }
     if (!currentProfile) await loadCurrentProfile();
     updateHomeAvatar();
 
@@ -44,6 +47,8 @@ async function loadHome() {
   } catch(e) {
     logError("loadHome", e);
     showToast('Kunne ikke indlæse — træk ned for at prøve igen');
+  } finally {
+    _homeLoading = false;
   }
 }
 

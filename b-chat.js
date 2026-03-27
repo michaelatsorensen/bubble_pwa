@@ -121,7 +121,7 @@ async function selectGif(idx) {
         sender_id: currentUser.id, receiver_id: currentChatUser,
         content: '', file_url: gifUrl, file_name: 'gif.gif', file_type: 'image/gif'
       }).select().single();
-      if (err2) { logError('selectGif:dm', err2, { receiver: currentChatUser }); showToast('GIF fejl: ' + (err2.message || 'ukendt')); return; }
+      if (err2) { logError('selectGif:dm', err2, { receiver: currentChatUser }); errorToast('send', err2); return; }
       if (msg2) {
         var el = document.getElementById('chat-messages');
         if (el && !el.querySelector('[data-msg-id="' + msg2.id + '"]')) {
@@ -952,7 +952,7 @@ async function bcHandleFile(input) {
 
     if (uploadErr) {
       console.error('Upload error:', uploadErr);
-      showToast('Upload fejlede: ' + (uploadErr.message || uploadErr.error || 'ukendt fejl'));
+      errorToast('upload', uploadErr);
       input.value = '';
       return;
     }

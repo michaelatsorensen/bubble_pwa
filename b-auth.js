@@ -188,7 +188,7 @@ async function handleAvatarUpload(input) {
     var { error: upErr } = await sb.storage.from('bubble-files').upload(path, resized, { cacheControl: '3600', upsert: true, contentType: 'image/jpeg' });
     if (upErr) {
       logError('avatarUpload:storage', upErr, { path: path, size: file.size });
-      showToast('Upload fejlede: ' + (upErr.message || 'Tjek at bubble-files bucket er oprettet'));
+      errorToast('upload', upErr);
       input.value = '';
       return;
     }
@@ -199,7 +199,7 @@ async function handleAvatarUpload(input) {
     var { error: saveErr } = await sb.from('profiles').update({ avatar_url: avatarUrl }).eq('id', currentUser.id);
     if (saveErr) {
       logError('avatarUpload:save', saveErr);
-      showToast('Gem fejl: ' + saveErr.message + ' — kør: ALTER TABLE profiles ADD COLUMN avatar_url text;');
+      errorToast('save', saveErr);
       return;
     }
 

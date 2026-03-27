@@ -244,7 +244,7 @@ async function dmHandleFile(input) {
     const { error: uploadErr } = await sb.storage.from('bubble-files').upload(path, file, {
       cacheControl: '3600', upsert: false, contentType: file.type
     });
-    if (uploadErr) { showToast('Upload fejlede: ' + (uploadErr.message || 'ukendt')); input.value = ''; return; }
+    if (uploadErr) { errorToast('upload', uploadErr); input.value = ''; return; }
 
     // Use signed URL for privacy — DM files should not be publicly accessible
     const { data: urlData, error: urlErr } = await sb.storage.from('bubble-files').createSignedUrl(path, 604800); // 7 days
