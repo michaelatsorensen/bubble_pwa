@@ -74,9 +74,13 @@ h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: 0.3rem; }
 <div class="sub">v6.5.3 · Automatiseret sanity check mod live Supabase · <strong>Kør fra bubbleme.dk for fil-tests (Suite G)</strong></div>
 
 <div class="login-box" id="loginBox">
-  <div style="font-size:0.82rem;font-weight:700;margin-bottom:0.4rem">Log ind med test-konto</div>
+  <div style="font-size:0.82rem;font-weight:700;margin-bottom:0.4rem">Log ind med test-konti</div>
+  <div style="font-size:0.68rem;color:var(--muted);margin-bottom:0.3rem">Bruger 1 (primær)</div>
   <input id="testEmail" value="test@bubbleme.dk" placeholder="Email">
   <input id="testPass" type="password" placeholder="Password til test@bubbleme.dk">
+  <div style="font-size:0.68rem;color:var(--muted);margin-top:0.5rem;margin-bottom:0.3rem">Bruger 2 (cross-user tests)</div>
+  <input id="test2Email" value="test2@bubbleme.dk" placeholder="Email bruger 2">
+  <input id="test2Pass" type="password" placeholder="Password til test2@bubbleme.dk">
   <button onclick="startTests()">Kør alle tests</button>
   <div id="loginError" style="font-size:0.72rem;color:var(--red);margin-top:0.4rem;display:none"></div>
 </div>
@@ -99,8 +103,11 @@ h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: 0.3rem; }
 var SUPA_URL = 'https://pfxcsjjxvdtpsfltexka.supabase.co';
 var SUPA_KEY = 'sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A';
 var sb = null;
+var sb2 = null; // Second client for cross-user tests
 var testUser = null;
+var testUser2 = null;
 var testProfile = null;
+var testProfile2 = null;
 var _results = [];
 var _totalTests = 0;
 var _completedTests = 0;
@@ -245,10 +252,24 @@ var SUITES = [
         if (exp < new Date()) throw new Error('Session udløbet');
         return 'Udløber: ' + exp.toLocaleString('da-DK');
       }},
-      { id: 'a5', name: 'QR-token eksisterer', fn: async function() {
-        var { data } = await sb.from('qr_tokens').select('token').eq('user_id', testUser.id).single();
-        if (!data || !data.token) return 'Ingen token (OK — genereres ved "Min QR")';
-        return 'Token: ' + data.token.slice(0, 8) + '...';
+      { id: 'a5', name: 'QR-token: generér + lookup + verificér', fn: async function() {
+        // Cleanup any existing
+        await sb.from('qr_tokens').delete().eq('user_id', testUser.id);
+        // Generate
+        var token = 'a5_test_' + Date.now();
+        var expires = new Date(Date.now() + 86400000).toISOString();
+        var { error } = await sb.from('qr_tokens').insert({
+          token: token, user_id: testUser.id, expires_at: expires
+        });
+        if (error) throw new Error('Insert: ' + error.message);
+        // Lookup
+        var { data } = await sb.from('qr_tokens').select('user_id, expires_at').eq('token', token).single();
+        if (!data) throw new Error('Token ikke fundet efter insert');
+        if (data.user_id !== testUser.id) throw new Error('Forkert user_id');
+        if (new Date(data.expires_at) < new Date()) throw new Error('Token allerede udløbet');
+        // Cleanup
+        await sb.from('qr_tokens').delete().eq('user_id', testUser.id);
+        return 'Genereret → verified → cleaned';
       }},
     ]
   },
@@ -370,27 +391,26 @@ var SUITES = [
     ]
   },
   {
-    id: 'msg', title: 'D. Beskeder & Badge Integrity',
+    id: 'msg', title: 'D. Beskeder & Badge (cross-user)',
     tests: [
-      { id: 'd1', name: 'Tæl ulæste beskeder (baseline)', fn: async function() {
-        var { count, error } = await sb.from('messages')
+      { id: 'd1', name: 'Baseline: user1 unread count', fn: async function() {
+        var { count } = await sb.from('messages')
           .select('*', { count: 'exact', head: true })
           .eq('receiver_id', testUser.id).is('read_at', null);
-        if (error) throw new Error(error.message || JSON.stringify(error));
         window._baselineUnread = count || 0;
-        return 'Baseline unread: ' + window._baselineUnread;
+        return 'User1 unread baseline: ' + window._baselineUnread;
       }},
-      { id: 'd2', name: 'Send test-besked til sig selv', fn: async function() {
-        var { data, error } = await sb.from('messages').insert({
-          sender_id: testUser.id,
+      { id: 'd2', name: 'User2 sender besked til User1', fn: async function() {
+        var { data, error } = await sb2.from('messages').insert({
+          sender_id: testUser2.id,
           receiver_id: testUser.id,
-          content: '__test_msg_' + Date.now()
+          content: '__test_crossmsg_' + Date.now()
         }).select().single();
-        if (error) throw new Error(error.message || JSON.stringify(error));
+        if (error) throw new Error('User2 send: ' + (error.message || JSON.stringify(error)));
         window._testMsgId = data.id;
-        return 'Msg ID: ' + data.id;
+        return 'Msg fra ' + (testProfile2?.name || 'User2') + ' → ' + (testProfile?.name || 'User1');
       }},
-      { id: 'd3', name: 'Unread count steg med 1', fn: async function() {
+      { id: 'd3', name: 'User1 unread steg med 1', fn: async function() {
         var { count } = await sb.from('messages')
           .select('*', { count: 'exact', head: true })
           .eq('receiver_id', testUser.id).is('read_at', null);
@@ -398,19 +418,23 @@ var SUITES = [
         if (count !== expected) throw new Error('Forventet ' + expected + ', fik ' + count);
         return 'Unread: ' + count + ' (korrekt)';
       }},
-      { id: 'd4', name: 'Markér som læst', fn: async function() {
+      { id: 'd4', name: 'User1 markerer som læst → baseline', fn: async function() {
         var { error } = await sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', window._testMsgId);
-        if (error) throw new Error(error.message || JSON.stringify(error));
+        if (error) throw new Error(error.message);
         var { count } = await sb.from('messages')
           .select('*', { count: 'exact', head: true })
           .eq('receiver_id', testUser.id).is('read_at', null);
-        if (count !== window._baselineUnread) throw new Error('Forventet ' + window._baselineUnread + ' efter læst, fik ' + count);
+        if (count !== window._baselineUnread) throw new Error('Forventet ' + window._baselineUnread + ', fik ' + count);
         return 'Unread tilbage til baseline: ' + count;
       }},
-      { id: 'd5', name: 'Slet test-besked (cleanup)', fn: async function() {
-        if (!window._testMsgId) throw new Error('Ingen test-besked at slette');
-        var { error } = await sb.from('messages').delete().eq('id', window._testMsgId);
-        if (error) throw new Error(error.message || JSON.stringify(error));
+      { id: 'd5', name: 'User2 kan IKKE læse User1s beskeder', fn: async function() {
+        var { data } = await sb2.from('messages')
+          .select('id').eq('receiver_id', testUser.id).neq('sender_id', testUser2.id).limit(5);
+        if (data && data.length > 0) throw new Error('User2 kan se ' + data.length + ' af User1s private beskeder!');
+        return 'RLS: User2 ser kun egne beskeder';
+      }},
+      { id: 'd6', name: 'Cleanup besked', fn: async function() {
+        if (window._testMsgId) await sb.from('messages').delete().eq('id', window._testMsgId);
         window._testMsgId = null;
         return 'Cleanup OK';
       }},
@@ -487,39 +511,67 @@ var SUITES = [
     ]
   },
   {
-    id: 'invite', title: 'F. Invitation Flow',
+    id: 'invite', title: 'F. Invitation Flow (cross-user)',
     tests: [
-      { id: 'f1', name: 'Opret test-boble til invitation', fn: async function() {
+      { id: 'f1', name: 'User1 opretter privat boble', fn: async function() {
         var { data, error } = await sb.from('bubbles').insert({
           name: '__test_invite_' + Date.now(),
-          type: 'network', visibility: 'hidden', created_by: testUser.id
+          type: 'network', visibility: 'private', created_by: testUser.id
         }).select().single();
         if (error) throw error;
         window._invBubbleId = data.id;
-        // Add owner as member
         await sb.from('bubble_members').insert({ bubble_id: data.id, user_id: testUser.id });
-        return 'Boble oprettet';
+        return 'Privat boble: ' + data.id.slice(0, 8);
       }},
-      { id: 'f2', name: 'Opret invitation (self-invite for test)', fn: async function() {
+      { id: 'f2', name: 'User2 kan IKKE joine privat boble', fn: async function() {
+        var { error } = await sb2.from('bubble_members').insert({
+          bubble_id: window._invBubbleId, user_id: testUser2.id
+        });
+        if (!error) {
+          await sb2.from('bubble_members').delete().eq('bubble_id', window._invBubbleId).eq('user_id', testUser2.id);
+          throw new Error('User2 kunne joine privat boble uden invitation!');
+        }
+        return 'Join blokeret af RLS';
+      }},
+      { id: 'f3', name: 'User1 inviterer User2', fn: async function() {
         var { data, error } = await sb.from('bubble_invitations').insert({
           bubble_id: window._invBubbleId,
           from_user_id: testUser.id,
-          to_user_id: testUser.id,
+          to_user_id: testUser2.id,
           status: 'pending'
         }).select().single();
-        if (error) throw error;
+        if (error) throw new Error('Invite: ' + error.message);
         window._invId = data.id;
-        return 'Invitation ID: ' + data.id;
+        return 'Invitation sendt til ' + (testProfile2?.name || 'User2');
       }},
-      { id: 'f3', name: 'Accept invitation → status = accepted', fn: async function() {
-        var { error } = await sb.from('bubble_invitations').update({ status: 'accepted' }).eq('id', window._invId);
-        if (error) throw error;
-        var { data } = await sb.from('bubble_invitations').select('status').eq('id', window._invId).single();
-        if (data.status !== 'accepted') throw new Error('Status: ' + data.status);
-        return 'Status: accepted';
+      { id: 'f4', name: 'User2 ser pending invitation', fn: async function() {
+        var { data } = await sb2.from('bubble_invitations')
+          .select('id, status, bubble_id')
+          .eq('to_user_id', testUser2.id).eq('status', 'pending').eq('bubble_id', window._invBubbleId);
+        if (!data || data.length === 0) throw new Error('User2 ser ingen pending invitation');
+        return 'User2 ser invitation (pending)';
       }},
-      { id: 'f4', name: 'Cleanup: slet invitation + membership + boble', fn: async function() {
-        await sb.from('bubble_invitations').delete().eq('id', window._invId);
+      { id: 'f5', name: 'User2 accepterer → kan joine', fn: async function() {
+        await sb2.from('bubble_invitations').update({ status: 'accepted' }).eq('id', window._invId);
+        var { data: check } = await sb2.from('bubble_invitations').select('status').eq('id', window._invId).single();
+        if (!check || check.status !== 'accepted') throw new Error('Status: ' + check?.status);
+        // Now user2 should be able to join
+        var { error } = await sb2.from('bubble_members').insert({
+          bubble_id: window._invBubbleId, user_id: testUser2.id
+        });
+        if (error) throw new Error('Join efter accept fejlede: ' + error.message);
+        return 'Accepted + joined';
+      }},
+      { id: 'f6', name: 'User2 er member, User1 ser dem', fn: async function() {
+        var { data } = await sb.from('bubble_members')
+          .select('user_id').eq('bubble_id', window._invBubbleId);
+        if (!data) throw new Error('Ingen members');
+        var user2InList = data.some(function(m) { return m.user_id === testUser2.id; });
+        if (!user2InList) throw new Error('User2 ikke i member list');
+        return data.length + ' members (begge brugere)';
+      }},
+      { id: 'f7', name: 'Cleanup: invitation + members + boble', fn: async function() {
+        await sb.from('bubble_invitations').delete().eq('bubble_id', window._invBubbleId);
         await sb.from('bubble_members').delete().eq('bubble_id', window._invBubbleId);
         await sb.from('bubbles').delete().eq('id', window._invBubbleId);
         window._invBubbleId = null; window._invId = null;
@@ -2039,21 +2091,29 @@ var SUITES = [
 async function startTests() {
   var email = document.getElementById('testEmail').value;
   var pass = document.getElementById('testPass').value;
+  var email2 = document.getElementById('test2Email').value;
+  var pass2 = document.getElementById('test2Pass').value;
   var errEl = document.getElementById('loginError');
 
-  if (!pass) { errEl.textContent = 'Indtast password'; errEl.style.display = 'block'; return; }
+  if (!pass) { errEl.textContent = 'Indtast password for bruger 1'; errEl.style.display = 'block'; return; }
+  if (!pass2) { errEl.textContent = 'Indtast password for bruger 2'; errEl.style.display = 'block'; return; }
 
+  // Login user 1
   sb = supabase.createClient(SUPA_URL, SUPA_KEY);
-
-  // Test login first
   errEl.style.display = 'none';
   var { data, error } = await sb.auth.signInWithPassword({ email: email, password: pass });
-  if (error) { errEl.textContent = 'Login fejl: ' + error.message; errEl.style.display = 'block'; return; }
+  if (error) { errEl.textContent = 'Bruger 1 login fejl: ' + error.message; errEl.style.display = 'block'; return; }
   testUser = data.user;
-
-  // Load profile
   var { data: prof } = await sb.from('profiles').select('*').eq('id', testUser.id).single();
   testProfile = prof;
+
+  // Login user 2 (separate client)
+  sb2 = supabase.createClient(SUPA_URL, SUPA_KEY);
+  var { data: data2, error: err2 } = await sb2.auth.signInWithPassword({ email: email2, password: pass2 });
+  if (err2) { errEl.textContent = 'Bruger 2 login fejl: ' + err2.message; errEl.style.display = 'block'; return; }
+  testUser2 = data2.user;
+  var { data: prof2 } = await sb2.from('profiles').select('*').eq('id', testUser2.id).single();
+  testProfile2 = prof2;
 
   // Show test UI
   document.getElementById('loginBox').style.display = 'none';
@@ -2072,7 +2132,8 @@ async function startTests() {
   setTestResult('a1', 'pass', 'UID: ' + testUser.id.slice(0,8) + '...', 0);
   setTestResult('a2', 'pass', 'Navn: ' + (testProfile?.name || '(tomt)'), 0);
 
-  log('Starter test run med bruger: ' + email, 'log-info');
+  log('Starter test run med bruger 1: ' + email, 'log-info');
+  log('Bruger 2: ' + email2 + ' (UID: ' + testUser2.id.slice(0,8) + '...)', 'log-info');
   log('Total tests: ' + _totalTests, 'log-info');
 
   // Run all suites
@@ -2107,9 +2168,10 @@ async function startTests() {
     '<div class="summary-row"><span>Total</span><span>' + _totalTests + '</span></div>' +
     '<div style="margin-top:0.5rem;font-size:0.68rem;color:var(--muted)">' + new Date().toLocaleString('da-DK') + '</div>';
 
-  // Cleanup: sign out
+  // Cleanup: sign out both
   await sb.auth.signOut();
-  log('Signed out. Test run complete.', 'log-info');
+  await sb2.auth.signOut();
+  log('Signed out both users. Test run complete.', 'log-info');
 }
 </script>
 </body>
