@@ -2318,6 +2318,211 @@ var SUITES = [
         return 'Alle toasts er danske';
       }},
     ]
+  },
+  {
+    id: 'robust', title: 'AI. Robusthed & Stabilitet',
+    tests: [
+      { id: 'ai1', name: 'Rapid create→delete→recreate samme navn', fn: async function() {
+        var name = '__test_robust_' + Date.now();
+        // Create
+        var { data: b1 } = await sb.from('bubbles').insert({
+          name: name, type: 'network', visibility: 'hidden', created_by: testUser.id
+        }).select().single();
+        // Delete
+        await sb.from('bubbles').delete().eq('id', b1.id);
+        // Recreate same name
+        var { data: b2, error } = await sb.from('bubbles').insert({
+          name: name, type: 'network', visibility: 'hidden', created_by: testUser.id
+        }).select().single();
+        if (error) throw new Error('Recreate fejl: ' + error.message);
+        await sb.from('bubbles').delete().eq('id', b2.id);
+        if (b1.id === b2.id) throw new Error('Samme ID genbrugt!');
+        return 'Nyt ID efter delete+recreate';
+      }},
+      { id: 'ai2', name: 'Double check-in (idempotens)', fn: async function() {
+        var { data: b } = await sb.from('bubbles').insert({
+          name: '__test_idempotent_' + Date.now(),
+          type: 'event', visibility: 'hidden', created_by: testUser.id
+        }).select().single();
+        await sb.from('bubble_members').insert({ bubble_id: b.id, user_id: testUser.id });
+        var now = new Date().toISOString();
+        // Check-in #1
+        await sb.from('bubble_members').update({ checked_in_at: now, checked_out_at: null })
+          .eq('bubble_id', b.id).eq('user_id', testUser.id);
+        // Check-in #2 (same timestamp)
+        var { error } = await sb.from('bubble_members').update({ checked_in_at: now, checked_out_at: null })
+          .eq('bubble_id', b.id).eq('user_id', testUser.id);
+        if (error) throw new Error('Double check-in fejl: ' + error.message);
+        // Verify only 1 membership
+        var { data: members } = await sb.from('bubble_members')
+          .select('id').eq('bubble_id', b.id).eq('user_id', testUser.id);
+        if (members.length !== 1) throw new Error(members.length + ' memberships efter double check-in');
+        // Cleanup
+        await sb.from('bubble_members').delete().eq('bubble_id', b.id);
+        await sb.from('bubbles').delete().eq('id', b.id);
+        return 'Kun 1 membership, ingen duplikater';
+      }},
+      { id: 'ai3', name: 'Besked til ikke-eksisterende bruger', fn: async function() {
+        var fakeId = '00000000-0000-0000-0000-000000000000';
+        var { error } = await sb.from('messages').insert({
+          sender_id: testUser.id, receiver_id: fakeId,
+          content: '__test_ghost_' + Date.now()
+        });
+        if (!error) {
+          // Cleanup if it succeeded
+          await sb.from('messages').delete().eq('receiver_id', fakeId).eq('sender_id', testUser.id);
+          return WARN('Besked til fake UUID accepteret (ingen FK constraint)');
+        }
+        return 'Blokeret: ' + (error.message || '').slice(0, 50);
+      }},
+      { id: 'ai4', name: 'Join ikke-eksisterende boble', fn: async function() {
+        var fakeId = '00000000-0000-0000-0000-000000000000';
+        var { error } = await sb.from('bubble_members').insert({
+          bubble_id: fakeId, user_id: testUser.id
+        });
+        if (!error) {
+          await sb.from('bubble_members').delete().eq('bubble_id', fakeId).eq('user_id', testUser.id);
+          return WARN('Join til fake bubble UUID accepteret (ingen FK constraint)');
+        }
+        return 'Blokeret: ' + (error.message || '').slice(0, 50);
+      }},
+      { id: 'ai5', name: 'Operationer på slettet boble', fn: async function() {
+        var { data: b } = await sb.from('bubbles').insert({
+          name: '__test_deleted_' + Date.now(),
+          type: 'network', visibility: 'hidden', created_by: testUser.id
+        }).select().single();
+        var bid = b.id;
+        // Delete bubble
+        await sb.from('bubbles').delete().eq('id', bid);
+        // Try to update deleted bubble
+        var { error: e1 } = await sb.from('bubbles').update({ name: 'should-fail' }).eq('id', bid);
+        // Try to add member to deleted bubble
+        var { error: e2 } = await sb.from('bubble_members').insert({ bubble_id: bid, user_id: testUser.id });
+        // Try to read deleted bubble
+        var { data: gone } = await sb.from('bubbles').select('id').eq('id', bid);
+        if (gone && gone.length > 0) throw new Error('Slettet boble stadig synlig');
+        return 'Update: ' + (e1 ? 'blokeret' : 'no-op') + ', Join: ' + (e2 ? 'blokeret' : 'no-op') + ', Read: tom';
+      }},
+      { id: 'ai6', name: 'Concurrent besked-send (10 parallelle)', fn: async function() {
+        var ids = [];
+        var promises = [];
+        for (var i = 0; i < 10; i++) {
+          promises.push(sb.from('messages').insert({
+            sender_id: testUser.id, receiver_id: testUser.id,
+            content: '__test_concurrent_' + i + '_' + Date.now()
+          }).select('id').single());
+        }
+        var results = await Promise.all(promises);
+        var errors = results.filter(function(r) { return r.error; });
+        results.forEach(function(r) { if (r.data) ids.push(r.data.id); });
+        // Verify all unique
+        var uniqueIds = [...new Set(ids)];
+        if (uniqueIds.length !== ids.length) throw new Error('Duplikerede IDs!');
+        // Cleanup
+        for (var j = 0; j < ids.length; j++) await sb.from('messages').delete().eq('id', ids[j]);
+        if (errors.length > 0) throw new Error(errors.length + '/10 fejlede');
+        return '10 parallelle inserts, ' + uniqueIds.length + ' unikke IDs';
+      }},
+      { id: 'ai7', name: 'Session overlever heavy operations', fn: async function() {
+        // Run 5 sequential DB calls, then verify session still valid
+        await sb.from('profiles').select('id').eq('id', testUser.id).single();
+        await sb.from('bubbles').select('id').limit(5);
+        await sb.from('bubble_members').select('bubble_id').eq('user_id', testUser.id);
+        await sb.from('messages').select('id').eq('receiver_id', testUser.id).limit(5);
+        await sb.from('saved_contacts').select('contact_id').eq('user_id', testUser.id);
+        // Verify session
+        var { data: session } = await sb.auth.getSession();
+        if (!session || !session.session) throw new Error('Session tabt efter operationer');
+        return 'Session intakt efter 5 DB-calls';
+      }},
+      { id: 'ai8', name: 'Cross-user: User2 kan ikke ændre User1s boble', fn: async function() {
+        var { data: b } = await sb.from('bubbles').insert({
+          name: '__test_crossmod_' + Date.now(),
+          type: 'network', visibility: 'hidden', created_by: testUser.id
+        }).select().single();
+        // User2 tries to update User1's bubble
+        var { error } = await sb2.from('bubbles').update({ name: '__hacked__' }).eq('id', b.id);
+        // Verify unchanged
+        var { data: check } = await sb.from('bubbles').select('name').eq('id', b.id).single();
+        var wasChanged = check && check.name === '__hacked__';
+        await sb.from('bubbles').delete().eq('id', b.id);
+        if (wasChanged) throw new Error('KRITISK: User2 ændrede User1s boble!');
+        return 'User2 update blokeret af RLS';
+      }},
+      { id: 'ai9', name: 'Cross-user: User2 kan ikke slette User1s besked', fn: async function() {
+        var { data: msg } = await sb.from('messages').insert({
+          sender_id: testUser.id, receiver_id: testUser.id,
+          content: '__test_crossdel_' + Date.now()
+        }).select().single();
+        // User2 tries to delete
+        await sb2.from('messages').delete().eq('id', msg.id);
+        // Verify still exists
+        var { data: check } = await sb.from('messages').select('id').eq('id', msg.id);
+        var stillExists = check && check.length > 0;
+        // Cleanup
+        await sb.from('messages').delete().eq('id', msg.id);
+        if (!stillExists) throw new Error('KRITISK: User2 slettede User1s besked!');
+        return 'Besked beskyttet af RLS';
+      }},
+      { id: 'ai10', name: 'Cross-user: User2 kan ikke checke User1 ud', fn: async function() {
+        var { data: b } = await sb.from('bubbles').insert({
+          name: '__test_crosschk_' + Date.now(),
+          type: 'event', visibility: 'hidden', created_by: testUser.id
+        }).select().single();
+        await sb.from('bubble_members').insert({ bubble_id: b.id, user_id: testUser.id });
+        await sb.from('bubble_members').update({
+          checked_in_at: new Date().toISOString(), checked_out_at: null
+        }).eq('bubble_id', b.id).eq('user_id', testUser.id);
+        // User2 tries to check out User1
+        await sb2.from('bubble_members').update({
+          checked_out_at: new Date().toISOString()
+        }).eq('bubble_id', b.id).eq('user_id', testUser.id);
+        // Verify User1 still checked in
+        var { data: m } = await sb.from('bubble_members')
+          .select('checked_in_at, checked_out_at')
+          .eq('bubble_id', b.id).eq('user_id', testUser.id).single();
+        var wasForcedOut = m && m.checked_out_at;
+        // Cleanup
+        await sb.from('bubble_members').delete().eq('bubble_id', b.id);
+        await sb.from('bubbles').delete().eq('id', b.id);
+        if (wasForcedOut) throw new Error('KRITISK: User2 checkede User1 ud!');
+        return 'Check-in beskyttet af RLS';
+      }},
+      { id: 'ai11', name: 'Stor query: 200 profiler på én gang', fn: async function() {
+        var t0 = performance.now();
+        var { data, error } = await sb.from('profiles')
+          .select('id, name, title, keywords, avatar_url, workplace, bio')
+          .limit(200);
+        var ms = Math.round(performance.now() - t0);
+        if (error) throw new Error('Query: ' + error.message);
+        if (ms > 3000) throw new Error('For langsomt: ' + ms + 'ms for ' + (data?.length || 0) + ' profiler');
+        if (ms > 1500) return WARN((data?.length || 0) + ' profiler i ' + ms + 'ms — langsomt');
+        return (data?.length || 0) + ' profiler i ' + ms + 'ms';
+      }},
+      { id: 'ai12', name: 'Partial failure: boble oprettet men member fejler', fn: async function() {
+        var { data: b } = await sb.from('bubbles').insert({
+          name: '__test_partial_' + Date.now(),
+          type: 'network', visibility: 'hidden', created_by: testUser.id
+        }).select().single();
+        // Simulate member insert failure with fake user
+        var fakeUser = '00000000-0000-0000-0000-000000000001';
+        var { error } = await sb.from('bubble_members').insert({ bubble_id: b.id, user_id: fakeUser });
+        // Bubble should still exist (no cascading rollback)
+        var { data: check } = await sb.from('bubbles').select('id').eq('id', b.id).single();
+        if (!check) throw new Error('Boble forsvandt efter member-fejl (uventet rollback)');
+        // Verify no orphan member
+        var { data: members } = await sb.from('bubble_members')
+          .select('user_id').eq('bubble_id', b.id);
+        // Cleanup
+        if (members) {
+          for (var i = 0; i < members.length; i++) {
+            await sb.from('bubble_members').delete().eq('bubble_id', b.id).eq('user_id', members[i].user_id);
+          }
+        }
+        await sb.from('bubbles').delete().eq('id', b.id);
+        return 'Boble intakt, ' + (members?.length || 0) + ' orphan members, fejl: ' + (error ? 'ja' : 'nej');
+      }},
+    ]
   }
 ];
 
