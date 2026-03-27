@@ -783,20 +783,20 @@ var SUITES = [
 
         // 2. Post message
         var { data: msg, error: e1 } = await sb.from('bubble_messages').insert({
-          bubble_id: b.id, user_id: testUser.id, text: 'Test original'
+          bubble_id: b.id, user_id: testUser.id, content: 'Test original'
         }).select().single();
         if (e1) throw new Error('Post: ' + e1.message);
 
         // 3. Edit message
         var { error: e2 } = await sb.from('bubble_messages').update({
-          text: 'Test edited', edited_at: new Date().toISOString()
+          content: 'Test edited', edited: true, updated_at: new Date().toISOString()
         }).eq('id', msg.id);
         if (e2) throw new Error('Edit: ' + e2.message);
 
         // 4. Verify edit
-        var { data: edited } = await sb.from('bubble_messages').select('text, edited_at').eq('id', msg.id).single();
-        if (!edited || edited.text !== 'Test edited') throw new Error('Edit ikke gemt: ' + (edited?.text));
-        if (!edited.edited_at) throw new Error('edited_at ikke sat');
+        var { data: edited } = await sb.from('bubble_messages').select('content, edited').eq('id', msg.id).single();
+        if (!edited || edited.content !== 'Test edited') throw new Error('Edit ikke gemt: ' + (edited?.content));
+        if (!edited.edited) throw new Error('edited flag ikke sat');
 
         // 5. Delete message
         await sb.from('bubble_messages').delete().eq('id', msg.id);
