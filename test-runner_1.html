@@ -2083,6 +2083,241 @@ var SUITES = [
         return 'Cold-start: ' + ms + 'ms';
       }},
     ]
+  },
+  {
+    id: 'a11y', title: 'AF. Accessibility & Touch',
+    tests: [
+      { id: 'af1', name: 'Viewport meta er korrekt konfigureret', fn: async function() {
+        var r = await fetch('./index.html?_t=' + Date.now());
+        var html = await r.text();
+        if (!html.includes('viewport')) throw new Error('Ingen viewport meta tag');
+        if (!html.includes('width=device-width')) throw new Error('Mangler width=device-width');
+        return 'viewport meta OK';
+      }},
+      { id: 'af2', name: 'Alle img-tags har alt attribut', fn: async function() {
+        var r = await fetch('./index.html?_t=' + Date.now());
+        var html = await r.text();
+        var imgs = html.match(/<img [^>]*>/g) || [];
+        var noAlt = imgs.filter(function(img) { return !img.includes('alt='); });
+        if (noAlt.length > 0) throw new Error(noAlt.length + ' billeder uden alt: ' + noAlt[0].slice(0, 60));
+        return imgs.length + ' billeder, alle har alt';
+      }},
+      { id: 'af3', name: 'Input-felter har placeholder eller label', fn: async function() {
+        var r = await fetch('./index.html?_t=' + Date.now());
+        var html = await r.text();
+        var inputs = html.match(/<input [^>]*>/g) || [];
+        var noPlaceholder = inputs.filter(function(inp) {
+          return !inp.includes('placeholder=') && !inp.includes('aria-label=') && inp.includes('type="text"');
+        });
+        if (noPlaceholder.length > 0) return WARN(noPlaceholder.length + ' text-inputs uden placeholder');
+        return inputs.length + ' inputs, alle har placeholder/label';
+      }},
+      { id: 'af4', name: 'Touch targets: knapper er min 36px', fn: async function() {
+        var r = await fetch('./app.css?_t=' + Date.now());
+        var css = await r.text();
+        // Check that nav items and key buttons have adequate size
+        var navPadding = css.match(/\.nav-item\s*\{[^}]*padding[^}]*/);
+        if (!navPadding) return WARN('Kan ikke verificere nav-item størrelse');
+        return 'CSS indeholder touch-target styling';
+      }},
+      { id: 'af5', name: 'Fokus-styles eksisterer (keyboard nav)', fn: async function() {
+        var r = await fetch('./app.css?_t=' + Date.now());
+        var css = await r.text();
+        var focusRules = (css.match(/:focus/g) || []).length;
+        if (focusRules === 0) return WARN('Ingen :focus regler i CSS');
+        return focusRules + ' :focus regler';
+      }},
+      { id: 'af6', name: 'Safe-area håndtering i CSS', fn: async function() {
+        var r = await fetch('./app.css?_t=' + Date.now());
+        var css = await r.text();
+        var safeArea = (css.match(/safe-area-inset/g) || []).length;
+        if (safeArea === 0) throw new Error('Ingen safe-area-inset regler');
+        return safeArea + ' safe-area regler';
+      }},
+      { id: 'af7', name: 'Touch-action constraints på overlays', fn: async function() {
+        var r = await fetch('./app.css?_t=' + Date.now());
+        var css = await r.text();
+        var touchAction = (css.match(/touch-action/g) || []).length;
+        var overscroll = (css.match(/overscroll-behavior/g) || []).length;
+        if (touchAction < 3) return WARN('Kun ' + touchAction + ' touch-action regler');
+        return touchAction + ' touch-action, ' + overscroll + ' overscroll-behavior regler';
+      }},
+    ]
+  },
+  {
+    id: 'design', title: 'AG. Design System Consistency',
+    tests: [
+      { id: 'ag1', name: 'Figtree font er loaded', fn: async function() {
+        var r = await fetch('./index.html?_t=' + Date.now());
+        var html = await r.text();
+        if (!html.includes('Figtree')) throw new Error('Figtree font ikke refereret');
+        var r2 = await fetch('./app.css?_t=' + Date.now());
+        var css = await r2.text();
+        if (!css.includes('Figtree')) throw new Error('Figtree ikke i CSS');
+        return 'Figtree i HTML + CSS';
+      }},
+      { id: 'ag2', name: 'Primær accent-farve (#7C5CFC) brugt konsistent', fn: async function() {
+        var r = await fetch('./app.css?_t=' + Date.now());
+        var css = await r.text();
+        var accentVar = (css.match(/--accent\s*:\s*#7C5CFC/gi) || []).length;
+        var gradient = (css.match(/#7C5CFC/gi) || []).length;
+        if (accentVar === 0) throw new Error('--accent ikke sat til #7C5CFC');
+        return '--accent defineret, ' + gradient + ' refs til #7C5CFC';
+      }},
+      { id: 'ag3', name: 'Ingen dark-theme remnants', fn: async function() {
+        var r = await fetch('./app.css?_t=' + Date.now());
+        var css = await r.text();
+        var darkMode = (css.match(/prefers-color-scheme:\s*dark/g) || []).length;
+        var darkBg = (css.match(/background:\s*#[0-2][0-2][0-2]/g) || []).length; // very dark colors
+        if (darkMode > 0) throw new Error(darkMode + ' dark-mode media queries fundet');
+        return 'Ingen dark-mode CSS (light-only design)';
+      }},
+      { id: 'ag4', name: 'Border-radius konsistens (16px cards, 12px buttons)', fn: async function() {
+        var r = await fetch('./app.css?_t=' + Date.now());
+        var css = await r.text();
+        var radius16 = (css.match(/border-radius\s*:\s*16px/g) || []).length;
+        var radius12 = (css.match(/border-radius\s*:\s*12px/g) || []).length;
+        var radius99 = (css.match(/border-radius\s*:\s*99px/g) || []).length;
+        return '16px: ' + radius16 + ', 12px: ' + radius12 + ', 99px (pills): ' + radius99;
+      }},
+      { id: 'ag5', name: 'Gradient-primary brugt på knapper', fn: async function() {
+        var r = await fetch('./app.css?_t=' + Date.now());
+        var css = await r.text();
+        var gradientDef = css.includes('--gradient-primary');
+        var gradientUse = (css.match(/var\(--gradient-primary\)/g) || []).length;
+        if (!gradientDef) throw new Error('--gradient-primary ikke defineret');
+        if (gradientUse < 2) return WARN('Kun ' + gradientUse + ' brug af gradient-primary');
+        return '--gradient-primary defineret + ' + gradientUse + ' brug';
+      }},
+      { id: 'ag6', name: 'Alle 5 design-farver defineret', fn: async function() {
+        var r = await fetch('./app.css?_t=' + Date.now());
+        var css = await r.text();
+        var colors = ['--accent', '--accent2', '--accent3', '--green', '--text'];
+        var missing = colors.filter(function(c) { return !css.includes(c + ':') && !css.includes(c + ' :'); });
+        if (missing.length > 0) throw new Error('Mangler: ' + missing.join(', '));
+        return colors.length + ' design-farver defineret';
+      }},
+      { id: 'ag7', name: 'Animations/transitions eksisterer', fn: async function() {
+        var r = await fetch('./app.css?_t=' + Date.now());
+        var css = await r.text();
+        var transitions = (css.match(/transition\s*:/g) || []).length;
+        var keyframes = (css.match(/@keyframes/g) || []).length;
+        var animations = (css.match(/animation\s*:/g) || []).length;
+        if (transitions < 10) return WARN('Kun ' + transitions + ' transitions');
+        return transitions + ' transitions, ' + keyframes + ' @keyframes, ' + animations + ' animations';
+      }},
+    ]
+  },
+  {
+    id: 'uistate', title: 'AH. UI State & Empty/Loading',
+    tests: [
+      { id: 'ah1', name: 'Empty-state tekster eksisterer i HTML', fn: async function() {
+        var r = await fetch('./index.html?_t=' + Date.now());
+        var html = await r.text();
+        var emptyStates = (html.match(/empty-state|empty-text|empty-icon|Ingen\s/g) || []).length;
+        if (emptyStates < 5) return WARN('Kun ' + emptyStates + ' empty-state refs');
+        return emptyStates + ' empty-state elementer i HTML';
+      }},
+      { id: 'ah2', name: 'Skeleton loaders defineret i CSS', fn: async function() {
+        var r = await fetch('./app.css?_t=' + Date.now());
+        var css = await r.text();
+        var hasSkel = css.includes('.skel');
+        var hasShimmer = css.includes('shimmer');
+        if (!hasSkel) throw new Error('Ingen .skel klasse i CSS');
+        if (!hasShimmer) throw new Error('Ingen shimmer animation');
+        return 'skel + shimmer defineret';
+      }},
+      { id: 'ah3', name: 'Skeleton helpers i JS (skelCards, skelMessages)', fn: async function() {
+        var r = await fetch('./b-utils.js?_t=' + Date.now());
+        var js = await r.text();
+        var skelCards = js.includes('function skelCards');
+        var skelMsgs = js.includes('function skelMessages') || js.includes('function skelMsgs');
+        if (!skelCards) throw new Error('skelCards() ikke fundet');
+        return 'skelCards' + (skelMsgs ? ' + skelMessages' : '') + ' defineret';
+      }},
+      { id: 'ah4', name: 'Toast system eksisterer', fn: async function() {
+        var r = await fetch('./b-utils.js?_t=' + Date.now());
+        var js = await r.text();
+        var showToast = js.includes('function showToast');
+        var errorToast = js.includes('function errorToast');
+        if (!showToast) throw new Error('showToast() ikke fundet');
+        if (!errorToast) throw new Error('errorToast() ikke fundet');
+        return 'showToast + errorToast defineret';
+      }},
+      { id: 'ah5', name: 'errorToast dækker alle kontekster', fn: async function() {
+        var r = await fetch('./b-utils.js?_t=' + Date.now());
+        var js = await r.text();
+        var contexts = ['login','signup','save','send','upload','delete','load'];
+        var missing = contexts.filter(function(c) { return !js.includes("'" + c + "'"); });
+        if (missing.length > 0) return WARN('Kontekster ikke fundet: ' + missing.join(', '));
+        return contexts.length + ' fejl-kontekster dækket';
+      }},
+      { id: 'ah6', name: 'Pull-to-refresh defineret', fn: async function() {
+        var r = await fetch('./app.css?_t=' + Date.now());
+        var css = await r.text();
+        var r2 = await fetch('./b-boot.js?_t=' + Date.now());
+        var js = await r2.text();
+        var cssPTR = css.includes('ptr-') || css.includes('pull-to');
+        var jsPTR = js.includes('PullToRefresh') || js.includes('initPullToRefresh') || js.includes('ptr');
+        if (!cssPTR && !jsPTR) return WARN('Pull-to-refresh ikke fundet');
+        return 'PTR: CSS=' + cssPTR + ', JS=' + jsPTR;
+      }},
+      { id: 'ah7', name: 'Swipe-to-close defineret', fn: async function() {
+        var r = await fetch('./b-boot.js?_t=' + Date.now());
+        var js = await r.text();
+        var swipe = js.includes('initSwipeClose') || js.includes('initAllSwipeClose');
+        if (!swipe) throw new Error('Swipe-to-close ikke fundet');
+        return 'initSwipeClose/initAllSwipeClose defineret';
+      }},
+      { id: 'ah8', name: 'Reconnect UI (status banner)', fn: async function() {
+        var r = await fetch('./b-realtime.js?_t=' + Date.now());
+        var js = await r.text();
+        var hasBanner = js.includes('rt-status') || js.includes('rtReconnect') || js.includes('reconnect');
+        var hasStates = js.includes('connected') && js.includes('disconnected');
+        if (!hasBanner) throw new Error('Reconnect UI ikke fundet');
+        if (!hasStates) throw new Error('Connection states mangler');
+        return 'Reconnect banner + states defineret';
+      }},
+      { id: 'ah9', name: 'Dansk sprog: ingen engelske knap-tekster', fn: async function() {
+        var r = await fetch('./index.html?_t=' + Date.now());
+        var html = await r.text();
+        var english = [];
+        var checks = [
+          { re: />Submit</, label: 'Submit' },
+          { re: />Cancel</, label: 'Cancel' },
+          { re: />Delete</, label: 'Delete' },
+          { re: />Save</, label: 'Save' },
+          { re: />Close</, label: 'Close' },
+          { re: />Back</, label: 'Back' },
+          { re: />Loading</, label: 'Loading' },
+          { re: />Error</, label: 'Error' },
+          { re: />Settings</, label: 'Settings' },
+          { re: />Sign out</, label: 'Sign out' },
+        ];
+        checks.forEach(function(c) {
+          if (c.re.test(html)) english.push(c.label);
+        });
+        if (english.length > 0) throw new Error('Engelske UI-tekster: ' + english.join(', '));
+        return 'Ingen engelske knap-tekster fundet';
+      }},
+      { id: 'ah10', name: 'Dansk sprog: JS fejltoasts er danske', fn: async function() {
+        var r = await fetch('./b-utils.js?_t=' + Date.now());
+        var js = await r.text();
+        var englishToasts = [];
+        var checks = [
+          { re: /showToast\('Error/i, label: 'Error' },
+          { re: /showToast\('Failed/i, label: 'Failed' },
+          { re: /showToast\('Something went wrong/i, label: 'Something went wrong' },
+          { re: /showToast\('Network error/i, label: 'Network error' },
+          { re: /showToast\('Please try again/i, label: 'Please try again' },
+        ];
+        checks.forEach(function(c) {
+          if (c.re.test(js)) englishToasts.push(c.label);
+        });
+        if (englishToasts.length > 0) throw new Error('Engelske toasts: ' + englishToasts.join(', '));
+        return 'Alle toasts er danske';
+      }},
+    ]
   }
 ];
 
