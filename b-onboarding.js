@@ -182,8 +182,6 @@ function obCheckProgress() {
   if (saveBtn) {
     var canSave = name && workplace;
     saveBtn.disabled = !canSave;
-    saveBtn.style.opacity = canSave ? '1' : '0.3';
-    saveBtn.style.pointerEvents = canSave ? 'auto' : 'none';
   }
 
   // Render tag categories if not yet done
