@@ -1200,7 +1200,7 @@ function onDartboardTap(event) {
 function _homeDrawProxRings(canvas) {
   if (!canvas) return;
   var par = canvas.parentElement; if (!par) return;
-  var w = par.offsetWidth || 300, h = w;
+  var w = par.offsetWidth || 300, h = par.offsetHeight || w;
   canvas.width = w*2; canvas.height = h*2; canvas.style.width = w+'px'; canvas.style.height = h+'px';
   var ctx = canvas.getContext('2d'); ctx.scale(2,2); ctx.clearRect(0,0,w,h);
   var cx = w/2, cy = h/2, maxR = Math.min(cx,cy);
@@ -1271,7 +1271,8 @@ function renderHomeDartboard() {
 
   var map = canvas ? canvas.parentElement : null;
   var w = map ? (map.offsetWidth || 300) : 300;
-  var cx = w/2, cy = w/2, maxR = Math.min(cx,cy) - 24;
+  var h = map ? (map.offsetHeight || w) : w;
+  var cx = w/2, cy = h/2, maxR = Math.min(cx,cy) - 24;
 
   var colors = (typeof proxColors !== 'undefined' && proxColors) ? proxColors : [
     'linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)',
