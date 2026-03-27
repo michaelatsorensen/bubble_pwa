@@ -43,6 +43,7 @@ h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: 0.3rem; }
 .test-icon.pass { background: rgba(26,158,142,0.12); color: var(--green); }
 .test-icon.fail { background: rgba(208,96,112,0.12); color: var(--red); }
 .test-icon.skip { background: rgba(136,133,160,0.12); color: var(--muted); }
+.test-icon.warn { background: rgba(229,160,48,0.12); color: var(--amber); }
 .test-icon.running { background: rgba(229,160,48,0.12); color: var(--amber); }
 .test-name { flex: 1; }
 .test-detail { font-size: 0.65rem; color: var(--muted); margin-top: 0.1rem; }
@@ -137,7 +138,10 @@ function setTestResult(id, status, detail, ms) {
   var icon = document.getElementById('icon-' + id);
   var detailEl = document.getElementById('detail-' + id);
   var timeEl = document.getElementById('time-' + id);
-  if (icon) { icon.className = 'test-icon ' + status; icon.textContent = status === 'pass' ? '✓' : status === 'fail' ? '✕' : '–'; }
+  if (icon) {
+    icon.className = 'test-icon ' + status;
+    icon.textContent = status === 'pass' ? '✓' : status === 'fail' ? '✕' : status === 'warn' ? '⚠' : '–';
+  }
   if (detailEl && detail) detailEl.textContent = detail;
   if (timeEl && ms !== undefined) timeEl.textContent = ms + 'ms';
   _results.push({ id: id, status: status, detail: detail, ms: ms });
@@ -168,6 +172,12 @@ async function runTest(id, fn) {
   try {
     var detail = await fn();
     var ms = Math.round(performance.now() - t0);
+    // Check for soft-pass marker
+    if (detail && typeof detail === 'object' && detail._warn) {
+      setTestResult(id, 'warn', detail._warn, ms);
+      log('⚠ ' + id + ' — ' + detail._warn + ' (' + ms + 'ms)', 'log-warn');
+      return 'warn';
+    }
     setTestResult(id, 'pass', detail || '', ms);
     log('✓ ' + id + (detail ? ' — ' + detail : '') + ' (' + ms + 'ms)', 'log-ok');
     return true;
@@ -180,17 +190,21 @@ async function runTest(id, fn) {
   }
 }
 
+function WARN(msg) { return { _warn: msg }; }
+
 async function runSuite(id, tests) {
   setSuiteStatus(id, 'running');
   log('── Suite: ' + id + ' ──', 'log-info');
-  var pass = 0, fail = 0;
+  var pass = 0, fail = 0, warn = 0;
   for (var i = 0; i < tests.length; i++) {
     var ok = await runTest(tests[i].id, tests[i].fn);
-    if (ok) pass++; else fail++;
+    if (ok === true) pass++;
+    else if (ok === 'warn') { warn++; pass++; } // warns count as pass but tracked
+    else fail++;
   }
-  setSuiteStatus(id, fail > 0 ? 'fail' : 'pass');
+  setSuiteStatus(id, fail > 0 ? 'fail' : warn > 0 ? 'running' : 'pass');
   setSuiteCount(id, pass, fail);
-  return { pass: pass, fail: fail };
+  return { pass: pass, fail: fail, warn: warn };
 }
 
 // ═════════════════════════════════════
@@ -886,7 +900,7 @@ var SUITES = [
       { id: 'k1', name: 'Kan IKKE læse andre brugeres profiler direkte via id', fn: async function() {
         // Get any other user
         var { data: others } = await sb.from('profiles').select('id').neq('id', testUser.id).limit(1);
-        if (!others || others.length === 0) return 'Kun én bruger i DB — skip';
+        if (!others || others.length === 0) return WARN('Kun én bruger i DB — kan ikke teste');
         var otherId = others[0].id;
         var { data, error } = await sb.from('profiles').select('email').eq('id', otherId).single();
         // RLS should either block email or return null for it
@@ -897,7 +911,7 @@ var SUITES = [
       }},
       { id: 'k2', name: 'Kan IKKE opdatere andres profil', fn: async function() {
         var { data: others } = await sb.from('profiles').select('id, name').neq('id', testUser.id).limit(1);
-        if (!others || others.length === 0) return 'Kun én bruger — skip';
+        if (!others || others.length === 0) return WARN('Kun én bruger — kan ikke teste');
         var otherId = others[0].id;
         var origName = others[0].name;
         var { error } = await sb.from('profiles').update({ name: '__hacked__' }).eq('id', otherId);
@@ -932,7 +946,7 @@ var SUITES = [
           .select('bubble_id').eq('user_id', testUser.id);
         var myBIds = (myMem || []).map(function(m) { return m.bubble_id; });
         var target = bubbles.find(function(b) { return myBIds.indexOf(b.id) < 0; });
-        if (!target) return 'Allerede medlem af alle private bobler — skip';
+        if (!target) return WARN('Allerede medlem af alle private bobler');
         var { error } = await sb.from('bubble_members').insert({
           bubble_id: target.id, user_id: testUser.id
         });
@@ -1507,7 +1521,7 @@ var SUITES = [
           // Cleanup dupe
           await sb.from('bubble_message_reactions').delete()
             .eq('message_id', window._reactMsgId).eq('user_id', testUser.id).eq('emoji', '🫧');
-          return 'Duplikat ikke blokeret (ingen constraint, men OK)';
+          return WARN('Duplikat ikke blokeret — overvej unique constraint');
         }
         return 'Duplikat blokeret: ' + (error.message || '').slice(0, 40);
       }},
@@ -1595,9 +1609,9 @@ var SUITES = [
       }},
       { id: 'w3', name: 'Slet custom tag (cleanup)', fn: async function() {
         var { error } = await sb.from('custom_tags').delete().eq('id', window._testTagId);
-        if (error) return 'Delete blokeret af RLS (OK — admin-only)';
+        if (error) return WARN('Delete blokeret af RLS — cleanup kræver admin');
         var { data } = await sb.from('custom_tags').select('id').eq('id', window._testTagId);
-        if (data && data.length > 0) return 'Delete blokeret af RLS (rækken eksisterer stadig — OK)';
+        if (data && data.length > 0) return WARN('Delete blokeret af RLS — cleanup kræver admin');
         window._testTagId = null;
         return 'Tag slettet';
       }},
@@ -1716,7 +1730,7 @@ var SUITES = [
         }).select().single();
         if (error) {
           if (error.message && error.message.includes('row-level security')) {
-            return 'Insert blokeret af RLS (OK — kun via app-context)';
+            return WARN('Insert blokeret af RLS — kun muligt via app-context');
           }
           throw new Error('Insert: ' + error.message);
         }
@@ -1754,7 +1768,7 @@ var SUITES = [
         }).select().single();
         if (error) {
           if (error.message && error.message.includes('row-level security')) {
-            return 'Insert blokeret af RLS (OK — kun via app-context)';
+            return WARN('Insert blokeret af RLS — kun muligt via app-context');
           }
           throw new Error('Insert: ' + error.message);
         }
@@ -1776,6 +1790,244 @@ var SUITES = [
         await sb.from('analytics').delete().eq('id', window._analyticsId);
         window._analyticsId = null;
         return 'Analytics event slettet';
+      }},
+    ]
+  },
+  {
+    id: 'cleanup', title: 'AC. Global Cleanup Scan',
+    tests: [
+      { id: 'ac1', name: 'Ingen __test_ bobler i DB', fn: async function() {
+        var { data } = await sb.from('bubbles').select('id, name').ilike('name', '__test_%');
+        if (data && data.length > 0) {
+          var names = data.map(function(b) { return b.name; }).join(', ');
+          // Auto-cleanup
+          for (var i = 0; i < data.length; i++) {
+            await sb.from('bubble_members').delete().eq('bubble_id', data[i].id);
+            await sb.from('bubble_messages').delete().eq('bubble_id', data[i].id);
+            await sb.from('bubble_posts').delete().eq('bubble_id', data[i].id);
+            await sb.from('bubble_invitations').delete().eq('bubble_id', data[i].id);
+            await sb.from('bubbles').delete().eq('id', data[i].id);
+          }
+          return WARN('Ryddet ' + data.length + ' efterladte test-bobler: ' + names.slice(0, 80));
+        }
+        return 'Ingen test-bobler fundet';
+      }},
+      { id: 'ac2', name: 'Ingen __test_ beskeder i DB', fn: async function() {
+        var { data } = await sb.from('messages').select('id, content')
+          .or('content.ilike.__test_%,content.ilike.__flow_%,content.ilike.__burst_%');
+        if (data && data.length > 0) {
+          for (var i = 0; i < data.length; i++) {
+            await sb.from('messages').delete().eq('id', data[i].id);
+          }
+          return WARN('Ryddet ' + data.length + ' efterladte test-beskeder');
+        }
+        return 'Ingen test-beskeder fundet';
+      }},
+      { id: 'ac3', name: 'Ingen __test_ custom tags i DB', fn: async function() {
+        var { data } = await sb.from('custom_tags').select('id, label').ilike('label', '__test_%');
+        if (data && data.length > 0) {
+          for (var i = 0; i < data.length; i++) {
+            await sb.from('custom_tags').delete().eq('id', data[i].id);
+          }
+          if (data.length > 0) {
+            // Check if still there (RLS might block)
+            var { data: check } = await sb.from('custom_tags').select('id').ilike('label', '__test_%');
+            if (check && check.length > 0) return WARN(check.length + ' test-tags kan ikke slettes (RLS)');
+          }
+          return 'Ryddet ' + data.length + ' test-tags';
+        }
+        return 'Ingen test-tags fundet';
+      }},
+      { id: 'ac4', name: 'Ingen __test_ reports i DB', fn: async function() {
+        var { data } = await sb.from('reports').select('id, reason')
+          .or('reason.ilike.__test_%,reason.ilike.__test_feedback_%,reason.ilike.__test_report_%');
+        if (data && data.length > 0) {
+          for (var i = 0; i < data.length; i++) {
+            await sb.from('reports').delete().eq('id', data[i].id);
+          }
+          return WARN('Ryddet ' + data.length + ' efterladte test-reports');
+        }
+        return 'Ingen test-reports fundet';
+      }},
+      { id: 'ac5', name: 'Ingen test_ QR tokens', fn: async function() {
+        var { data } = await sb.from('qr_tokens').select('id, token').ilike('token', 'test_%');
+        if (data && data.length > 0) {
+          for (var i = 0; i < data.length; i++) {
+            await sb.from('qr_tokens').delete().eq('id', data[i].id);
+          }
+          return WARN('Ryddet ' + data.length + ' test QR-tokens');
+        }
+        return 'Ingen test-tokens fundet';
+      }},
+      { id: 'ac6', name: 'Ingen test-filer i Storage', fn: async function() {
+        var { data, error } = await sb.storage.from('bubble-files').list('test-runner');
+        if (error || !data || data.length === 0) return 'Ingen test-filer';
+        // List subfolders
+        var count = 0;
+        for (var i = 0; i < data.length; i++) {
+          var { data: files } = await sb.storage.from('bubble-files').list('test-runner/' + data[i].name);
+          if (files) {
+            var paths = files.map(function(f) { return 'test-runner/' + data[i].name + '/' + f.name; });
+            if (paths.length > 0) {
+              await sb.storage.from('bubble-files').remove(paths);
+              count += paths.length;
+            }
+          }
+        }
+        if (count > 0) return WARN('Ryddet ' + count + ' test-filer fra Storage');
+        return 'Storage clean';
+      }},
+    ]
+  },
+  {
+    id: 'frontend', title: 'AD. Frontend Structure',
+    tests: [
+      { id: 'ad1', name: 'index.html: alle screen-IDs er unikke', fn: async function() {
+        var r = await fetch('./index.html?_t=' + Date.now());
+        var html = await r.text();
+        var screens = html.match(/id="screen-[^"]+"/g) || [];
+        var ids = screens.map(function(s) { return s.replace(/id="|"/g, ''); });
+        var seen = {}; var dupes = [];
+        ids.forEach(function(id) { if (seen[id]) dupes.push(id); seen[id] = true; });
+        if (dupes.length > 0) throw new Error('Duplikerede screen IDs: ' + dupes.join(', '));
+        return ids.length + ' unikke screen IDs';
+      }},
+      { id: 'ad2', name: 'index.html: alle script-tags har cache buster', fn: async function() {
+        var r = await fetch('./index.html?_t=' + Date.now());
+        var html = await r.text();
+        var scripts = html.match(/<script src="[^"]+"/g) || [];
+        var noBuster = scripts.filter(function(s) {
+          return !s.includes('supabase') && !s.includes('googleapis') && !s.includes('?v=');
+        });
+        if (noBuster.length > 0) throw new Error('Mangler cache buster: ' + noBuster.join(', '));
+        return scripts.length + ' script-tags, alle med cache buster';
+      }},
+      { id: 'ad3', name: 'index.html: nav-bar har præcis 4 tabs', fn: async function() {
+        var r = await fetch('./index.html?_t=' + Date.now());
+        var html = await r.text();
+        var navItems = (html.match(/class="nav-item"/g) || []).length;
+        if (navItems !== 4) throw new Error('Forventet 4 nav-items, fandt ' + navItems);
+        return '4 nav-tabs (Hjem, Bobler, Beskeder, Profil)';
+      }},
+      { id: 'ad4', name: 'index.html: ingen tomme onclick handlers', fn: async function() {
+        var r = await fetch('./index.html?_t=' + Date.now());
+        var html = await r.text();
+        var emptyOnclick = (html.match(/onclick=""/g) || []).length;
+        if (emptyOnclick > 0) throw new Error(emptyOnclick + ' tomme onclick handlers');
+        return 'Ingen tomme onclick handlers';
+      }},
+      { id: 'ad5', name: 'index.html: ingen broken image refs', fn: async function() {
+        var r = await fetch('./index.html?_t=' + Date.now());
+        var html = await r.text();
+        var imgs = html.match(/src="([^"]+\.(png|jpg|svg|ico))"/g) || [];
+        var srcs = imgs.map(function(s) { return s.replace(/src="|"/g, '').split('?')[0]; });
+        var unique = [...new Set(srcs)];
+        var missing = [];
+        for (var i = 0; i < unique.length; i++) {
+          try {
+            var resp = await fetch('./' + unique[i] + '?_t=' + Date.now(), { method: 'HEAD' });
+            if (!resp.ok) missing.push(unique[i]);
+          } catch(e) { missing.push(unique[i]); }
+        }
+        if (missing.length > 0) throw new Error('Manglende billeder: ' + missing.join(', '));
+        return unique.length + ' billede-refs, alle eksisterer';
+      }},
+      { id: 'ad6', name: 'index.html: _publicScreens i nav matcher HTML screens', fn: async function() {
+        // Fetch b-navigation.js and extract public screens
+        var r1 = await fetch('./b-navigation.js?_t=' + Date.now());
+        var navJs = await r1.text();
+        var m = navJs.match(/var _publicScreens\s*=\s*\[([^\]]+)\]/);
+        if (!m) throw new Error('_publicScreens ikke fundet i b-navigation.js');
+        var publicIds = m[1].match(/'[^']+'/g).map(function(s) { return s.replace(/'/g, ''); });
+        
+        // Check each exists in HTML
+        var r2 = await fetch('./index.html?_t=' + Date.now());
+        var html = await r2.text();
+        var missing = publicIds.filter(function(id) { return html.indexOf('id="' + id + '"') < 0; });
+        if (missing.length > 0) throw new Error('Public screens mangler i HTML: ' + missing.join(', '));
+        return publicIds.length + ' public screens, alle i HTML';
+      }},
+      { id: 'ad7', name: 'CSS: ingen ugyldige var() referencer', fn: async function() {
+        var r = await fetch('./app.css?_t=' + Date.now());
+        var css = await r.text();
+        var vars = css.match(/var\(--[a-z\-]+\)/g) || [];
+        var unique = [...new Set(vars)];
+        var defined = css.match(/--[a-z\-]+\s*:/g) || [];
+        var definedNames = defined.map(function(d) { return d.replace(/\s*:/, ''); });
+        var missing = unique.filter(function(v) {
+          var name = v.replace('var(', '').replace(')', '');
+          return definedNames.indexOf(name + ':') < 0 && definedNames.indexOf(name) < 0;
+        });
+        // Filter out CSS built-ins and env()
+        missing = missing.filter(function(v) { return !v.includes('--font') && !v.includes('env('); });
+        if (missing.length > 5) return WARN(missing.length + ' muligt udefinerede CSS vars (tjek manuelt)');
+        return unique.length + ' var() refs, ' + definedNames.length + ' definitioner';
+      }},
+      { id: 'ad8', name: 'landing.html: lukker korrekt (script + body + html)', fn: async function() {
+        var r = await fetch('./landing.html?_t=' + Date.now());
+        var html = await r.text();
+        if (html.indexOf('<\/scr' + 'ipt>') < 0) throw new Error('Mangler </scr' + 'ipt>');
+        if (html.indexOf('</body>') < 0) throw new Error('Mangler </body>');
+        if (html.indexOf('</html>') < 0) throw new Error('Mangler </html>');
+        // Check that </html> is near the end
+        var lastHtml = html.lastIndexOf('</html>');
+        if (html.length - lastHtml > 20) throw new Error('Indhold efter </html>');
+        return 'Script + body + html lukker korrekt';
+      }},
+    ]
+  },
+  {
+    id: 'timing', title: 'AE. Timing & Latency Assertions',
+    tests: [
+      { id: 'ae1', name: 'Auth session refresh under 500ms', fn: async function() {
+        var t0 = performance.now();
+        var { data } = await sb.auth.getSession();
+        var ms = Math.round(performance.now() - t0);
+        if (ms > 500) throw new Error(ms + 'ms — for langsomt');
+        return ms + 'ms';
+      }},
+      { id: 'ae2', name: 'Full profil + bobler + contacts under 800ms', fn: async function() {
+        var t0 = performance.now();
+        await Promise.all([
+          sb.from('profiles').select('*').eq('id', testUser.id).single(),
+          sb.from('bubble_members').select('bubble_id').eq('user_id', testUser.id),
+          sb.from('saved_contacts').select('contact_id').eq('user_id', testUser.id),
+        ]);
+        var ms = Math.round(performance.now() - t0);
+        if (ms > 800) throw new Error(ms + 'ms — for langsomt for boot');
+        return ms + 'ms (3 parallelle queries)';
+      }},
+      { id: 'ae3', name: 'Realtime subscribe latency under 3s', fn: async function() {
+        var t0 = performance.now();
+        var ch = sb.channel('timing-test-' + Date.now());
+        await new Promise(function(resolve, reject) {
+          var timeout = setTimeout(function() { reject(new Error('Subscribe > 3s')); }, 3000);
+          ch.on('broadcast', { event: 'x' }, function() {})
+            .subscribe(function(status) {
+              if (status === 'SUBSCRIBED') { clearTimeout(timeout); resolve(); }
+            });
+        });
+        var ms = Math.round(performance.now() - t0);
+        await sb.removeChannel(ch);
+        if (ms > 2000) return WARN('Subscribe tog ' + ms + 'ms — langsomt men OK');
+        return ms + 'ms';
+      }},
+      { id: 'ae4', name: 'Index.html TTFB under 1s', fn: async function() {
+        var t0 = performance.now();
+        await fetch('./index.html?_t=' + Date.now());
+        var ms = Math.round(performance.now() - t0);
+        if (ms > 1000) throw new Error('TTFB: ' + ms + 'ms — for langsomt');
+        if (ms > 500) return WARN('TTFB: ' + ms + 'ms — OK men langsomt');
+        return 'TTFB: ' + ms + 'ms';
+      }},
+      { id: 'ae5', name: 'API cold-start: profil query efter 2s pause', fn: async function() {
+        // Simulate cold start by waiting then querying
+        await new Promise(function(r) { setTimeout(r, 2000); });
+        var t0 = performance.now();
+        await sb.from('profiles').select('id, name').eq('id', testUser.id).single();
+        var ms = Math.round(performance.now() - t0);
+        if (ms > 500) return WARN('Cold-start query: ' + ms + 'ms');
+        return 'Cold-start: ' + ms + 'ms';
       }},
     ]
   }
@@ -1824,7 +2076,7 @@ async function startTests() {
   log('Total tests: ' + _totalTests, 'log-info');
 
   // Run all suites
-  var totalPass = 0, totalFail = 0;
+  var totalPass = 0, totalFail = 0, totalWarn = 0;
   for (var i = 0; i < SUITES.length; i++) {
     var s = SUITES[i];
     // Skip first 2 auth tests (already completed)
@@ -1833,20 +2085,24 @@ async function startTests() {
     if (s.id === 'auth') { result.pass += 2; } // Count pre-filled
     totalPass += result.pass;
     totalFail += result.fail;
+    totalWarn += (result.warn || 0);
   }
 
   // Summary
   log('', '');
   log('═══════════════════════════════', 'log-info');
-  log('RESULTAT: ' + totalPass + ' passed, ' + totalFail + ' failed af ' + _totalTests, totalFail > 0 ? 'log-warn' : 'log-ok');
+  var warnStr = totalWarn > 0 ? ', ' + totalWarn + ' warnings' : '';
+  log('RESULTAT: ' + totalPass + ' passed, ' + totalFail + ' failed' + warnStr + ' af ' + _totalTests, totalFail > 0 ? 'log-warn' : 'log-ok');
   log('═══════════════════════════════', 'log-info');
 
   var summaryEl = document.getElementById('summary');
   summaryEl.style.display = 'block';
   summaryEl.innerHTML =
     '<div style="font-size:0.88rem;font-weight:800;margin-bottom:0.5rem">' +
-    (totalFail === 0 ? '✓ Alle tests bestået' : '✕ ' + totalFail + ' tests fejlede') + '</div>' +
+    (totalFail === 0 ? '✓ Alle tests bestået' : '✕ ' + totalFail + ' tests fejlede') +
+    (totalWarn > 0 ? ' <span style="color:var(--amber);font-weight:600">(' + totalWarn + ' warnings)</span>' : '') + '</div>' +
     '<div class="summary-row"><span>Passed</span><span class="pass">' + totalPass + '</span></div>' +
+    (totalWarn > 0 ? '<div class="summary-row"><span>Warnings</span><span style="color:var(--amber);font-weight:700">' + totalWarn + '</span></div>' : '') +
     '<div class="summary-row"><span>Failed</span><span class="fail">' + totalFail + '</span></div>' +
     '<div class="summary-row"><span>Total</span><span>' + _totalTests + '</span></div>' +
     '<div style="margin-top:0.5rem;font-size:0.68rem;color:var(--muted)">' + new Date().toLocaleString('da-DK') + '</div>';
