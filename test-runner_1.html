@@ -1613,8 +1613,9 @@ var SUITES = [
           type: 'event', visibility: 'hidden', created_by: testUser.id, checkin_mode: 'scan'
         }).select().single();
         window._guestBubbleId = b.id;
+        var guestId = crypto.randomUUID();
         var { data: guest, error } = await sb.from('guest_checkins').insert({
-          bubble_id: b.id, name: 'Test Gæst'
+          id: guestId, bubble_id: b.id, name: 'Test Gæst'
         }).select().single();
         if (error) throw new Error('Insert: ' + error.message);
         window._guestId = guest.id;
