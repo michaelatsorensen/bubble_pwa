@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bubble v6.5.3 — Automated Test Runner</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #F8F7FC; --card: #fff; --text: #1E1B2E; --muted: #8885A0;
+  --accent: #7C5CFC; --green: #1A9E8E; --red: #D06070; --amber: #E5A030;
+  --border: #E8E6F0;
+}
+body { font-family: 'Figtree', sans-serif; background: var(--bg); color: var(--text); padding: 1rem; min-height: 100vh; }
+h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: 0.3rem; }
+.sub { font-size: 0.72rem; color: var(--muted); margin-bottom: 1rem; }
+.login-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; }
+.login-box input { width: 100%; padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.82rem; margin: 0.3rem 0; }
+.login-box button { width: 100%; padding: 0.55rem; border: none; border-radius: 10px; background: linear-gradient(135deg, #7C5CFC, #6366F1); color: #fff; font-family: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer; margin-top: 0.4rem; }
+
+/* Progress */
+.progress-wrap { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; }
+.progress-bar { flex: 1; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 99px; background: var(--green); transition: width 0.3s; }
+.progress-label { font-size: 0.72rem; font-weight: 700; color: var(--green); min-width: 5rem; text-align: right; }
+
+/* Suite */
+.suite { margin-bottom: 0.8rem; }
+.suite-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0; cursor: pointer; }
+.suite-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); flex-shrink: 0; transition: background 0.3s; }
+.suite-dot.pass { background: var(--green); }
+.suite-dot.fail { background: var(--red); }
+.suite-dot.running { background: var(--amber); animation: pulse 1s infinite; }
+.suite-title { font-size: 0.82rem; font-weight: 700; flex: 1; }
+.suite-count { font-size: 0.65rem; color: var(--muted); font-weight: 600; }
+
+/* Test items */
+.tests { padding-left: 1.2rem; }
+.test-row { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.3rem 0; font-size: 0.75rem; border-bottom: 1px solid rgba(0,0,0,0.03); }
+.test-icon { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; flex-shrink: 0; margin-top: 1px; }
+.test-icon.pass { background: rgba(26,158,142,0.12); color: var(--green); }
+.test-icon.fail { background: rgba(208,96,112,0.12); color: var(--red); }
+.test-icon.skip { background: rgba(136,133,160,0.12); color: var(--muted); }
+.test-icon.running { background: rgba(229,160,48,0.12); color: var(--amber); }
+.test-name { flex: 1; }
+.test-detail { font-size: 0.65rem; color: var(--muted); margin-top: 0.1rem; }
+.test-time { font-size: 0.62rem; color: var(--muted); white-space: nowrap; }
+
+/* Log */
+.log-section { margin-top: 1.5rem; }
+.log-toggle { font-size: 0.75rem; font-weight: 600; color: var(--accent); cursor: pointer; background: none; border: none; font-family: inherit; padding: 0.3rem 0; }
+.log-box { display: none; background: #1E1B2E; color: #E8E6F0; border-radius: 10px; padding: 0.8rem; margin-top: 0.4rem; font-family: 'SF Mono', Monaco, monospace; font-size: 0.62rem; line-height: 1.5; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+.log-box.visible { display: block; }
+.log-err { color: #F87171; }
+.log-ok { color: #6EE7B7; }
+.log-info { color: #93C5FD; }
+.log-warn { color: #FCD34D; }
+
+/* Summary */
+.summary { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-top: 1rem; display: none; }
+.summary-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 0.2rem 0; }
+.summary-row .pass { color: var(--green); font-weight: 700; }
+.summary-row .fail { color: var(--red); font-weight: 700; }
+
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+</style>
+</head>
+<body>
+
+<h1>🫧 Bubble Test Runner</h1>
+<div class="sub">v6.5.3 · Automatiseret sanity check mod live Supabase · <strong>Kør fra bubbleme.dk for fil-tests (Suite G)</strong></div>
+
+<div class="login-box" id="loginBox">
+  <div style="font-size:0.82rem;font-weight:700;margin-bottom:0.4rem">Log ind med test-konto</div>
+  <input id="testEmail" value="test@bubbleme.dk" placeholder="Email">
+  <input id="testPass" type="password" placeholder="Password til test@bubbleme.dk">
+  <button onclick="startTests()">Kør alle tests</button>
+  <div id="loginError" style="font-size:0.72rem;color:var(--red);margin-top:0.4rem;display:none"></div>
+</div>
+
+<div id="testUI" style="display:none">
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-label" id="progressLabel">0 / 0</div>
+  </div>
+  <div id="suites"></div>
+  <div class="summary" id="summary"></div>
+  <div class="log-section">
+    <button class="log-toggle" onclick="document.getElementById('logBox').classList.toggle('visible')">Vis/skjul detaljeret log</button>
+    <div class="log-box" id="logBox"></div>
+  </div>
+</div>
+
+<script>
+// ── Supabase ──
+var SUPA_URL = 'https://pfxcsjjxvdtpsfltexka.supabase.co';
+var SUPA_KEY = 'sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A';
+var sb = null;
+var testUser = null;
+var testProfile = null;
+var _results = [];
+var _totalTests = 0;
+var _completedTests = 0;
+
+// ── Logging ──
+function log(msg, cls) {
+  var box = document.getElementById('logBox');
+  var line = document.createElement('div');
+  line.className = cls || '';
+  line.textContent = '[' + new Date().toLocaleTimeString('da-DK') + '] ' + msg;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ── Test Framework ──
+function addSuite(id, title, tests) {
+  var el = document.getElementById('suites');
+  var html = '<div class="suite" id="suite-' + id + '">' +
+    '<div class="suite-header">' +
+    '<div class="suite-dot" id="dot-' + id + '"></div>' +
+    '<div class="suite-title">' + title + '</div>' +
+    '<div class="suite-count" id="count-' + id + '"></div>' +
+    '</div><div class="tests" id="tests-' + id + '">';
+  tests.forEach(function(t) {
+    html += '<div class="test-row" id="row-' + t.id + '">' +
+      '<div class="test-icon" id="icon-' + t.id + '">·</div>' +
+      '<div class="test-name">' + t.name + '<div class="test-detail" id="detail-' + t.id + '"></div></div>' +
+      '<div class="test-time" id="time-' + t.id + '"></div></div>';
+  });
+  html += '</div></div>';
+  el.innerHTML += html;
+}
+
+function setTestResult(id, status, detail, ms) {
+  var icon = document.getElementById('icon-' + id);
+  var detailEl = document.getElementById('detail-' + id);
+  var timeEl = document.getElementById('time-' + id);
+  if (icon) { icon.className = 'test-icon ' + status; icon.textContent = status === 'pass' ? '✓' : status === 'fail' ? '✕' : '–'; }
+  if (detailEl && detail) detailEl.textContent = detail;
+  if (timeEl && ms !== undefined) timeEl.textContent = ms + 'ms';
+  _results.push({ id: id, status: status, detail: detail, ms: ms });
+  _completedTests++;
+  updateProgress();
+}
+
+function updateProgress() {
+  var pct = _totalTests > 0 ? Math.round(_completedTests / _totalTests * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = _completedTests + ' / ' + _totalTests;
+}
+
+function setSuiteStatus(id, status) {
+  var dot = document.getElementById('dot-' + id);
+  if (dot) dot.className = 'suite-dot ' + status;
+}
+
+function setSuiteCount(id, pass, fail) {
+  var el = document.getElementById('count-' + id);
+  if (el) el.textContent = pass + ' passed' + (fail > 0 ? ', ' + fail + ' failed' : '');
+}
+
+async function runTest(id, fn) {
+  var icon = document.getElementById('icon-' + id);
+  if (icon) { icon.className = 'test-icon running'; icon.textContent = '⟳'; }
+  var t0 = performance.now();
+  try {
+    var detail = await fn();
+    var ms = Math.round(performance.now() - t0);
+    setTestResult(id, 'pass', detail || '', ms);
+    log('✓ ' + id + (detail ? ' — ' + detail : '') + ' (' + ms + 'ms)', 'log-ok');
+    return true;
+  } catch(e) {
+    var ms = Math.round(performance.now() - t0);
+    var msg = e.message || String(e);
+    setTestResult(id, 'fail', msg, ms);
+    log('✕ ' + id + ' — ' + msg, 'log-err');
+    return false;
+  }
+}
+
+async function runSuite(id, tests) {
+  setSuiteStatus(id, 'running');
+  log('── Suite: ' + id + ' ──', 'log-info');
+  var pass = 0, fail = 0;
+  for (var i = 0; i < tests.length; i++) {
+    var ok = await runTest(tests[i].id, tests[i].fn);
+    if (ok) pass++; else fail++;
+  }
+  setSuiteStatus(id, fail > 0 ? 'fail' : 'pass');
+  setSuiteCount(id, pass, fail);
+  return { pass: pass, fail: fail };
+}
+
+// ═════════════════════════════════════
+//  TEST SUITES
+// ═════════════════════════════════════
+
+var SUITES = [
+  {
+    id: 'auth', title: 'A. Auth & Session',
+    tests: [
+      { id: 'a1', name: 'Login med test-konto', fn: async function() {
+        var { data, error } = await sb.auth.signInWithPassword({
+          email: document.getElementById('testEmail').value,
+          password: document.getElementById('testPass').value
+        });
+        if (error) throw error;
+        testUser = data.user;
+        return 'UID: ' + testUser.id.slice(0,8) + '...';
+      }},
+      { id: 'a2', name: 'Profil eksisterer i DB', fn: async function() {
+        var { data, error } = await sb.from('profiles').select('*').eq('id', testUser.id).single();
+        if (error) throw error;
+        testProfile = data;
+        return 'Navn: ' + (data.name || '(tomt)');
+      }},
+      { id: 'a3', name: 'Profil har påkrævede felter', fn: async function() {
+        var missing = [];
+        if (!testProfile.name) missing.push('name');
+        if (!testProfile.workplace) missing.push('workplace');
+        if (!testProfile.id) missing.push('id');
+        if (missing.length > 0) throw new Error('Mangler: ' + missing.join(', '));
+        return 'name + workplace + id OK';
+      }},
+      { id: 'a4', name: 'Session er valid', fn: async function() {
+        var { data } = await sb.auth.getSession();
+        if (!data.session) throw new Error('Ingen aktiv session');
+        var exp = new Date(data.session.expires_at * 1000);
+        if (exp < new Date()) throw new Error('Session udløbet');
+        return 'Udløber: ' + exp.toLocaleString('da-DK');
+      }},
+      { id: 'a5', name: 'QR-token eksisterer', fn: async function() {
+        var { data } = await sb.from('qr_tokens').select('token').eq('user_id', testUser.id).single();
+        if (!data || !data.token) return 'Ingen token (OK — genereres ved "Min QR")';
+        return 'Token: ' + data.token.slice(0, 8) + '...';
+      }},
+    ]
+  },
+  {
+    id: 'data', title: 'B. Data Integrity',
+    tests: [
+      { id: 'b1', name: 'Ingen orphaned bubble_members (missing profiles)', fn: async function() {
+        var { data: members } = await sb.from('bubble_members').select('user_id').limit(200);
+        if (!members || members.length === 0) return 'Ingen members fundet';
+        var userIds = [...new Set(members.map(function(m) { return m.user_id; }))];
+        var { data: profiles } = await sb.from('profiles').select('id').in('id', userIds);
+        var profileIds = (profiles || []).map(function(p) { return p.id; });
+        var orphaned = userIds.filter(function(id) { return profileIds.indexOf(id) < 0; });
+        if (orphaned.length > 0) throw new Error(orphaned.length + ' orphaned members');
+        return userIds.length + ' members, alle har profiler';
+      }},
+      { id: 'b2', name: 'Ingen orphaned messages (missing profiles)', fn: async function() {
+        var { data: msgs } = await sb.from('messages').select('sender_id, receiver_id').limit(100);
+        if (!msgs || msgs.length === 0) return 'Ingen beskeder';
+        var ids = new Set();
+        msgs.forEach(function(m) { ids.add(m.sender_id); ids.add(m.receiver_id); });
+        var allIds = [...ids];
+        var { data: profiles } = await sb.from('profiles').select('id').in('id', allIds);
+        var profileIds = (profiles || []).map(function(p) { return p.id; });
+        var missing = allIds.filter(function(id) { return profileIds.indexOf(id) < 0; });
+        if (missing.length > 0) throw new Error(missing.length + ' beskeder refererer missing profiler');
+        return msgs.length + ' beskeder, alle profiler OK';
+      }},
+      { id: 'b3', name: 'Ingen bobler uden owner', fn: async function() {
+        var { data: bubbles } = await sb.from('bubbles').select('id, name, created_by').limit(200);
+        if (!bubbles) return 'Ingen bobler';
+        var noOwner = bubbles.filter(function(b) { return !b.created_by; });
+        if (noOwner.length > 0) throw new Error(noOwner.length + ' bobler uden created_by');
+        return bubbles.length + ' bobler, alle har owner';
+      }},
+      { id: 'b4', name: 'Profiler med keywords er gyldige arrays', fn: async function() {
+        var { data } = await sb.from('profiles').select('id, keywords').not('keywords', 'is', null).limit(100);
+        if (!data) return 'Ingen profiler med keywords';
+        var bad = data.filter(function(p) { return !Array.isArray(p.keywords); });
+        if (bad.length > 0) throw new Error(bad.length + ' profiler har ugyldige keywords');
+        return data.length + ' profiler, keywords OK';
+      }},
+      { id: 'b5', name: 'Ingen duplikerede memberships', fn: async function() {
+        var { data } = await sb.from('bubble_members').select('bubble_id, user_id').limit(500);
+        if (!data) return 'Ingen memberships';
+        var seen = {};
+        var dupes = 0;
+        data.forEach(function(m) {
+          var key = m.bubble_id + ':' + m.user_id;
+          if (seen[key]) dupes++;
+          seen[key] = true;
+        });
+        if (dupes > 0) throw new Error(dupes + ' duplikerede memberships');
+        return data.length + ' memberships, ingen dupes';
+      }},
+    ]
+  },
+  {
+    id: 'bubble', title: 'C. Bubble CRUD & Membership',
+    tests: [
+      { id: 'c1', name: 'Opret test-boble', fn: async function() {
+        var { data, error } = await sb.from('bubbles').insert({
+          name: '__test_runner_' + Date.now(),
+          type: 'network',
+          visibility: 'hidden',
+          created_by: testUser.id,
+          description: 'Auto-test bubble'
+        }).select().single();
+        if (error) throw error;
+        window._testBubbleId = data.id;
+        return 'ID: ' + data.id.slice(0, 8) + '...';
+      }},
+      { id: 'c2', name: 'Join test-boble (membership)', fn: async function() {
+        var { error } = await sb.from('bubble_members').insert({
+          bubble_id: window._testBubbleId,
+          user_id: testUser.id
+        });
+        if (error) throw error;
+        var { data } = await sb.from('bubble_members')
+          .select('id').eq('bubble_id', window._testBubbleId).eq('user_id', testUser.id).single();
+        if (!data) throw new Error('Membership ikke fundet efter insert');
+        return 'Membership verified';
+      }},
+      { id: 'c3', name: 'Check-in (set checked_in_at)', fn: async function() {
+        var { error } = await sb.from('bubble_members')
+          .update({ checked_in_at: new Date().toISOString(), checked_out_at: null })
+          .eq('bubble_id', window._testBubbleId).eq('user_id', testUser.id);
+        if (error) throw error;
+        var { data } = await sb.from('bubble_members')
+          .select('checked_in_at').eq('bubble_id', window._testBubbleId).eq('user_id', testUser.id).single();
+        if (!data || !data.checked_in_at) throw new Error('checked_in_at ikke sat');
+        return 'Checked in: ' + data.checked_in_at.slice(11, 19);
+      }},
+      { id: 'c4', name: 'Checkout (set checked_out_at)', fn: async function() {
+        var { error } = await sb.from('bubble_members')
+          .update({ checked_out_at: new Date().toISOString() })
+          .eq('bubble_id', window._testBubbleId).eq('user_id', testUser.id);
+        if (error) throw error;
+        var { data } = await sb.from('bubble_members')
+          .select('checked_out_at').eq('bubble_id', window._testBubbleId).eq('user_id', testUser.id).single();
+        if (!data || !data.checked_out_at) throw new Error('checked_out_at ikke sat');
+        return 'Checked out OK';
+      }},
+      { id: 'c5', name: 'Leave test-boble', fn: async function() {
+        var { error } = await sb.from('bubble_members')
+          .delete().eq('bubble_id', window._testBubbleId).eq('user_id', testUser.id);
+        if (error) throw error;
+        var { data } = await sb.from('bubble_members')
+          .select('id').eq('bubble_id', window._testBubbleId).eq('user_id', testUser.id);
+        if (data && data.length > 0) throw new Error('Membership stadig til stede efter delete');
+        return 'Membership slettet';
+      }},
+      { id: 'c6', name: 'Slet test-boble (cleanup)', fn: async function() {
+        var { error } = await sb.from('bubbles').delete().eq('id', window._testBubbleId);
+        if (error) throw error;
+        window._testBubbleId = null;
+        return 'Cleanup OK';
+      }},
+    ]
+  },
+  {
+    id: 'msg', title: 'D. Beskeder & Badge Integrity',
+    tests: [
+      { id: 'd1', name: 'Tæl ulæste beskeder (baseline)', fn: async function() {
+        var { count, error } = await sb.from('messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('receiver_id', testUser.id).is('read_at', null);
+        if (error) throw new Error(error.message || JSON.stringify(error));
+        window._baselineUnread = count || 0;
+        return 'Baseline unread: ' + window._baselineUnread;
+      }},
+      { id: 'd2', name: 'Send test-besked til sig selv', fn: async function() {
+        var { data, error } = await sb.from('messages').insert({
+          sender_id: testUser.id,
+          receiver_id: testUser.id,
+          content: '__test_msg_' + Date.now()
+        }).select().single();
+        if (error) throw new Error(error.message || JSON.stringify(error));
+        window._testMsgId = data.id;
+        return 'Msg ID: ' + data.id;
+      }},
+      { id: 'd3', name: 'Unread count steg med 1', fn: async function() {
+        var { count } = await sb.from('messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('receiver_id', testUser.id).is('read_at', null);
+        var expected = window._baselineUnread + 1;
+        if (count !== expected) throw new Error('Forventet ' + expected + ', fik ' + count);
+        return 'Unread: ' + count + ' (korrekt)';
+      }},
+      { id: 'd4', name: 'Markér som læst', fn: async function() {
+        var { error } = await sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', window._testMsgId);
+        if (error) throw new Error(error.message || JSON.stringify(error));
+        var { count } = await sb.from('messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('receiver_id', testUser.id).is('read_at', null);
+        if (count !== window._baselineUnread) throw new Error('Forventet ' + window._baselineUnread + ' efter læst, fik ' + count);
+        return 'Unread tilbage til baseline: ' + count;
+      }},
+      { id: 'd5', name: 'Slet test-besked (cleanup)', fn: async function() {
+        if (!window._testMsgId) throw new Error('Ingen test-besked at slette');
+        var { error } = await sb.from('messages').delete().eq('id', window._testMsgId);
+        if (error) throw new Error(error.message || JSON.stringify(error));
+        window._testMsgId = null;
+        return 'Cleanup OK';
+      }},
+    ]
+  },
+  {
+    id: 'rt', title: 'E. Realtime & Subscriptions',
+    tests: [
+      { id: 'e1', name: 'Subscribe til realtime kanal', fn: async function() {
+        return new Promise(function(resolve, reject) {
+          var timeout = setTimeout(function() { reject(new Error('Subscribe timeout (5s)')); }, 5000);
+          var chName = 'test-runner-' + Date.now();
+          window._rtReceived = 0;
+          // Listener channel
+          window._rtListenCh = sb.channel(chName + '-listen')
+            .on('broadcast', { event: 'test-ping' }, function(payload) {
+              window._rtReceived++;
+            })
+            .subscribe(function(status) {
+              if (status === 'SUBSCRIBED') {
+                // Sender channel (separate so broadcast reaches listener)
+                window._rtSendCh = sb.channel(chName + '-listen')
+                  .subscribe(function(s2) {
+                    if (s2 === 'SUBSCRIBED') {
+                      clearTimeout(timeout);
+                      resolve('2 channels subscribed');
+                    }
+                  });
+              }
+            });
+        });
+      }},
+      { id: 'e2', name: 'Postgres_changes: subscribe + verify connection', fn: async function() {
+        // Test that we can subscribe to a postgres_changes channel
+        return new Promise(function(resolve, reject) {
+          var timeout = setTimeout(function() { reject(new Error('Subscribe timeout (5s)')); }, 5000);
+          window._rtPgCh = sb.channel('test-pg-' + Date.now())
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'receiver_id=eq.' + testUser.id }, function() {})
+            .subscribe(function(status) {
+              if (status === 'SUBSCRIBED') {
+                clearTimeout(timeout);
+                resolve('postgres_changes subscription OK');
+              }
+            });
+        });
+      }},
+      { id: 'e3', name: 'Concurrent subscriptions (3 kanaler samtidig)', fn: async function() {
+        var channels = [];
+        var results = [];
+        for (var i = 0; i < 3; i++) {
+          results.push(new Promise(function(resolve, reject) {
+            var ch = sb.channel('test-multi-' + Date.now() + '-' + Math.random());
+            channels.push(ch);
+            var t = setTimeout(function() { reject(new Error('Channel ' + i + ' timeout')); }, 5000);
+            ch.on('broadcast', { event: 'ping' }, function() {})
+              .subscribe(function(status) {
+                if (status === 'SUBSCRIBED') { clearTimeout(t); resolve(true); }
+              });
+          }));
+        }
+        await Promise.all(results);
+        // Cleanup
+        for (var j = 0; j < channels.length; j++) {
+          await sb.removeChannel(channels[j]);
+        }
+        return '3 concurrent channels OK';
+      }},
+      { id: 'e4', name: 'Unsubscribe + cleanup', fn: async function() {
+        if (window._rtListenCh) await sb.removeChannel(window._rtListenCh);
+        if (window._rtSendCh) await sb.removeChannel(window._rtSendCh);
+        if (window._rtPgCh) await sb.removeChannel(window._rtPgCh);
+        window._rtListenCh = null; window._rtSendCh = null; window._rtPgCh = null;
+        return 'Alle channels fjernet';
+      }},
+    ]
+  },
+  {
+    id: 'invite', title: 'F. Invitation Flow',
+    tests: [
+      { id: 'f1', name: 'Opret test-boble til invitation', fn: async function() {
+        var { data, error } = await sb.from('bubbles').insert({
+          name: '__test_invite_' + Date.now(),
+          type: 'network', visibility: 'hidden', created_by: testUser.id
+        }).select().single();
+        if (error) throw error;
+        window._invBubbleId = data.id;
+        // Add owner as member
+        await sb.from('bubble_members').insert({ bubble_id: data.id, user_id: testUser.id });
+        return 'Boble oprettet';
+      }},
+      { id: 'f2', name: 'Opret invitation (self-invite for test)', fn: async function() {
+        var { data, error } = await sb.from('bubble_invitations').insert({
+          bubble_id: window._invBubbleId,
+          from_user_id: testUser.id,
+          to_user_id: testUser.id,
+          status: 'pending'
+        }).select().single();
+        if (error) throw error;
+        window._invId = data.id;
+        return 'Invitation ID: ' + data.id;
+      }},
+      { id: 'f3', name: 'Accept invitation → status = accepted', fn: async function() {
+        var { error } = await sb.from('bubble_invitations').update({ status: 'accepted' }).eq('id', window._invId);
+        if (error) throw error;
+        var { data } = await sb.from('bubble_invitations').select('status').eq('id', window._invId).single();
+        if (data.status !== 'accepted') throw new Error('Status: ' + data.status);
+        return 'Status: accepted';
+      }},
+      { id: 'f4', name: 'Cleanup: slet invitation + membership + boble', fn: async function() {
+        await sb.from('bubble_invitations').delete().eq('id', window._invId);
+        await sb.from('bubble_members').delete().eq('bubble_id', window._invBubbleId);
+        await sb.from('bubbles').delete().eq('id', window._invBubbleId);
+        window._invBubbleId = null; window._invId = null;
+        return 'Cleanup OK';
+      }},
+    ]
+  },
+  {
+    id: 'sw', title: 'G. Service Worker & Assets',
+    tests: [
+      { id: 'g1', name: 'Alle JS-filer loader (200 OK)', fn: async function() {
+        var files = ['b-config.js','b-utils.js','b-navigation.js','b-auth.js','b-home.js',
+          'b-bubbles.js','b-profile.js','b-radar.js','b-messages.js','b-realtime.js',
+          'b-onboarding.js','b-chat.js','b-notifications.js','b-live.js','b-admin.js','b-boot.js'];
+        var failed = [];
+        for (var i = 0; i < files.length; i++) {
+          try {
+            var r = await fetch('./' + files[i] + '?_t=' + Date.now(), { method: 'HEAD' });
+            if (!r.ok) failed.push(files[i] + ' (' + r.status + ')');
+          } catch(e) { failed.push(files[i]); }
+        }
+        if (failed.length === files.length) throw new Error('Alle filer fejlede — kør fra bubbleme.dk, ikke lokalt');
+        if (failed.length > 0) throw new Error('Mangler: ' + failed.join(', '));
+        return files.length + ' filer OK';
+      }},
+      { id: 'g2', name: 'index.html loader', fn: async function() {
+        var r = await fetch('./index.html?_t=' + Date.now(), { method: 'HEAD' });
+        if (!r.ok) throw new Error('Status: ' + r.status);
+        return 'Status: 200';
+      }},
+      { id: 'g3', name: 'landing.html loader', fn: async function() {
+        var r = await fetch('./landing.html?_t=' + Date.now(), { method: 'HEAD' });
+        if (!r.ok) throw new Error('Status: ' + r.status);
+        return 'Status: 200';
+      }},
+      { id: 'g4', name: 'Manifest loader + har korrekt name', fn: async function() {
+        var r = await fetch('./manifest.json?_t=' + Date.now());
+        if (!r.ok) throw new Error('Status: ' + r.status);
+        var m = await r.json();
+        if (!m.name) throw new Error('Mangler name');
+        return 'Name: ' + m.name;
+      }},
+      { id: 'g5', name: 'tag-data.js eksisterer', fn: async function() {
+        var r = await fetch('./tag-data.js?_t=' + Date.now(), { method: 'HEAD' });
+        if (!r.ok) throw new Error('tag-data.js mangler! Status: ' + r.status);
+        return 'Exists';
+      }},
+      { id: 'g6', name: 'bubble-icons.js eksisterer', fn: async function() {
+        var r = await fetch('./bubble-icons.js?_t=' + Date.now(), { method: 'HEAD' });
+        if (!r.ok) throw new Error('bubble-icons.js mangler! Status: ' + r.status);
+        return 'Exists';
+      }},
+      { id: 'g7', name: 'Logo-filer eksisterer', fn: async function() {
+        var logos = ['bubble-logo-topbar-v2.png', 'bubble-logo-splash.png'];
+        var failed = [];
+        for (var i = 0; i < logos.length; i++) {
+          var r = await fetch('./' + logos[i] + '?_t=' + Date.now(), { method: 'HEAD' });
+          if (!r.ok) failed.push(logos[i]);
+        }
+        if (failed.length > 0) throw new Error('Mangler: ' + failed.join(', '));
+        return logos.length + ' logo-filer OK';
+      }},
+    ]
+  },
+  {
+    id: 'edge', title: 'H. Edge Cases & Consistency',
+    tests: [
+      { id: 'h1', name: 'Profil: keywords er array (ikke string)', fn: async function() {
+        if (testProfile.keywords && !Array.isArray(testProfile.keywords)) {
+          throw new Error('keywords er ' + typeof testProfile.keywords + ', forventet array');
+        }
+        return 'Type: ' + (testProfile.keywords ? 'array[' + testProfile.keywords.length + ']' : 'null');
+      }},
+      { id: 'h2', name: 'Ingen banned profiler der stadig er members', fn: async function() {
+        var { data: banned } = await sb.from('profiles').select('id').eq('banned', true);
+        if (!banned || banned.length === 0) return 'Ingen banned profiler';
+        var bannedIds = banned.map(function(p) { return p.id; });
+        var { data: members } = await sb.from('bubble_members').select('user_id').in('user_id', bannedIds);
+        if (members && members.length > 0) throw new Error(members.length + ' banned brugere er stadig members');
+        return 'Ingen banned brugere i bobler';
+      }},
+      { id: 'h3', name: 'Duplikat check: saved_contacts', fn: async function() {
+        var { data } = await sb.from('saved_contacts').select('user_id, contact_id').eq('user_id', testUser.id);
+        if (!data || data.length === 0) return 'Ingen gemte kontakter';
+        var seen = {};
+        var dupes = 0;
+        data.forEach(function(c) {
+          var key = c.contact_id;
+          if (seen[key]) dupes++;
+          seen[key] = true;
+        });
+        if (dupes > 0) throw new Error(dupes + ' duplikerede kontakter');
+        return data.length + ' kontakter, ingen dupes';
+      }},
+      { id: 'h4', name: 'Pending invitations har valid bubble_id', fn: async function() {
+        var { data: invs } = await sb.from('bubble_invitations').select('id, bubble_id').eq('status', 'pending').limit(50);
+        if (!invs || invs.length === 0) return 'Ingen pending invitations';
+        var bubbleIds = [...new Set(invs.map(function(i) { return i.bubble_id; }))];
+        var { data: bubbles } = await sb.from('bubbles').select('id').in('id', bubbleIds);
+        var validIds = (bubbles || []).map(function(b) { return b.id; });
+        var orphaned = bubbleIds.filter(function(id) { return validIds.indexOf(id) < 0; });
+        if (orphaned.length > 0) throw new Error(orphaned.length + ' invitations til slettede bobler');
+        return invs.length + ' invitations, alle bobler OK';
+      }},
+      { id: 'h5', name: 'Error log: ingen kritiske fejl (sidste 24h)', fn: async function() {
+        var since = new Date(Date.now() - 86400000).toISOString();
+        var { data, error } = await sb.from('error_log').select('context, message, created_at')
+          .gt('created_at', since).order('created_at', { ascending: false }).limit(20);
+        if (error) return 'error_log tabel ikke tilgængelig (OK)';
+        if (!data || data.length === 0) return 'Ingen fejl sidste 24h';
+        var critical = data.filter(function(e) {
+          return (e.message || '').toLowerCase().indexOf('crash') >= 0 ||
+                 (e.message || '').toLowerCase().indexOf('fatal') >= 0;
+        });
+        if (critical.length > 0) throw new Error(critical.length + ' kritiske fejl fundet');
+        return data.length + ' log entries, ingen kritiske';
+      }},
+    ]
+  }
+];
+
+// ═════════════════════════════════════
+//  MAIN
+// ═════════════════════════════════════
+async function startTests() {
+  var email = document.getElementById('testEmail').value;
+  var pass = document.getElementById('testPass').value;
+  var errEl = document.getElementById('loginError');
+
+  if (!pass) { errEl.textContent = 'Indtast password'; errEl.style.display = 'block'; return; }
+
+  sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+  // Test login first
+  errEl.style.display = 'none';
+  var { data, error } = await sb.auth.signInWithPassword({ email: email, password: pass });
+  if (error) { errEl.textContent = 'Login fejl: ' + error.message; errEl.style.display = 'block'; return; }
+  testUser = data.user;
+
+  // Load profile
+  var { data: prof } = await sb.from('profiles').select('*').eq('id', testUser.id).single();
+  testProfile = prof;
+
+  // Show test UI
+  document.getElementById('loginBox').style.display = 'none';
+  document.getElementById('testUI').style.display = 'block';
+
+  // Count total tests
+  _totalTests = 0;
+  SUITES.forEach(function(s) { _totalTests += s.tests.length; });
+
+  // Build UI (skip a1, a2 since already done)
+  SUITES.forEach(function(s) {
+    addSuite(s.id, s.title, s.tests);
+  });
+
+  // Pre-fill auth results (already done during login)
+  setTestResult('a1', 'pass', 'UID: ' + testUser.id.slice(0,8) + '...', 0);
+  setTestResult('a2', 'pass', 'Navn: ' + (testProfile?.name || '(tomt)'), 0);
+
+  log('Starter test run med bruger: ' + email, 'log-info');
+  log('Total tests: ' + _totalTests, 'log-info');
+
+  // Run all suites
+  var totalPass = 0, totalFail = 0;
+  for (var i = 0; i < SUITES.length; i++) {
+    var s = SUITES[i];
+    // Skip first 2 auth tests (already completed)
+    var testsToRun = s.id === 'auth' ? s.tests.slice(2) : s.tests;
+    var result = await runSuite(s.id, testsToRun);
+    if (s.id === 'auth') { result.pass += 2; } // Count pre-filled
+    totalPass += result.pass;
+    totalFail += result.fail;
+  }
+
+  // Summary
+  log('', '');
+  log('═══════════════════════════════', 'log-info');
+  log('RESULTAT: ' + totalPass + ' passed, ' + totalFail + ' failed af ' + _totalTests, totalFail > 0 ? 'log-warn' : 'log-ok');
+  log('═══════════════════════════════', 'log-info');
+
+  var summaryEl = document.getElementById('summary');
+  summaryEl.style.display = 'block';
+  summaryEl.innerHTML =
+    '<div style="font-size:0.88rem;font-weight:800;margin-bottom:0.5rem">' +
+    (totalFail === 0 ? '✓ Alle tests bestået' : '✕ ' + totalFail + ' tests fejlede') + '</div>' +
+    '<div class="summary-row"><span>Passed</span><span class="pass">' + totalPass + '</span></div>' +
+    '<div class="summary-row"><span>Failed</span><span class="fail">' + totalFail + '</span></div>' +
+    '<div class="summary-row"><span>Total</span><span>' + _totalTests + '</span></div>' +
+    '<div style="margin-top:0.5rem;font-size:0.68rem;color:var(--muted)">' + new Date().toLocaleString('da-DK') + '</div>';
+
+  // Cleanup: sign out
+  await sb.auth.signOut();
+  log('Signed out. Test run complete.', 'log-info');
+}
+</script>
+</body>
+</html>
