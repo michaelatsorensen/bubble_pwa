@@ -197,17 +197,18 @@ body {
 .radar-dot:nth-child(9) { top: 66%; left: 64%; background: #7C5CFC; opacity: 0.75; animation-delay: 0.9s; }
 
 .phone-card {
-  margin: 0 14px 14px; background: #f8f7ff; border-radius: 14px;
-  padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+  margin: 0 12px 12px; background: #f8f7ff; border-radius: 12px;
+  padding: 8px 10px; display: flex; align-items: center; gap: 8px;
+  text-align: left;
 }
 .phone-card-avatar {
-  width: 36px; height: 36px; border-radius: 50%; background: #E879A8;
+  width: 28px; height: 28px; border-radius: 50%; background: #E879A8;
   display: flex; align-items: center; justify-content: center;
-  font-size: 11px; color: #fff; font-weight: 600;
+  font-size: 9px; color: #fff; font-weight: 600; flex-shrink: 0;
 }
 .phone-card-info { flex: 1; }
-.phone-card-name { font-size: 12px; font-weight: 600; color: #333; }
-.phone-card-meta { font-size: 10px; color: #888; }
+.phone-card-name { font-size: 11px; font-weight: 600; color: #333; }
+.phone-card-meta { font-size: 9px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .phone-card-score { font-size: 11px; color: var(--accent); font-weight: 600; }
 
 .phone-nav {
@@ -464,11 +465,13 @@ body {
         </div>
         <div class="phone-card">
           <div class="phone-card-avatar">MK</div>
-          <div class="phone-card-info">
-            <div class="phone-card-name">Maria K.</div>
-            <div class="phone-card-meta">UX Designer · 4 fælles</div>
+          <div style="flex:1;min-width:0;text-align:left">
+            <div style="display:flex;align-items:center;gap:4px">
+              <div class="phone-card-name">Maria K.</div>
+              <div style="font-size:7px;font-weight:600;color:#1A9E8E;background:rgba(26,158,142,0.08);padding:1px 4px;border-radius:3px;flex-shrink:0">Match</div>
+            </div>
+            <div class="phone-card-meta">UX Designer · 4 fælles interesser</div>
           </div>
-          <div style="font-size:8px;font-weight:600;color:#1A9E8E;background:rgba(26,158,142,0.08);padding:2px 6px;border-radius:5px;white-space:nowrap;flex-shrink:0">Match</div>
         </div>
         <div class="phone-nav">
           <div class="phone-nav-item"><div class="dot"></div>Hjem</div>
