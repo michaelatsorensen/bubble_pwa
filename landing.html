@@ -709,7 +709,24 @@ body {
       <a href="mailto:info@bubbleme.dk" style="font-size:15px;color:var(--accent);text-decoration:none;font-weight:500">info@bubbleme.dk</a>
     </div>
     <div class="footer" style="justify-content:center">
-      <span>&copy; 2026 Bubble · <a href="#" style="color:var(--text-secondary);text-decoration:none">Privatlivspolitik</a></span>
+      <span>&copy; 2026 Bubble · <a href="#" onclick="event.preventDefault();var el=document.getElementById('privacy');el.style.display=el.style.display==='none'?'block':'none'" style="color:var(--text-secondary);text-decoration:none">Betingelser & Privatlivspolitik</a></span>
+    </div>
+    <div id="privacy" style="display:none;max-width:560px;margin:24px auto 0;text-align:left;font-size:14px;color:var(--text-secondary);line-height:1.6">
+      <h3 style="font-size:16px;font-weight:600;color:var(--text);margin:24px 0 8px">1. Hvad er Bubble?</h3>
+      <p>Bubble er en networking-platform i lukket beta udviklet i Sønderborg, Danmark. Appen forbinder mennesker baseret på professionelle interesser og nærhed.</p>
+      <h3 style="font-size:16px;font-weight:600;color:var(--text);margin:24px 0 8px">2. Beta-forbehold</h3>
+      <p>Bubble er i closed beta. Det betyder at funktioner kan ændres, tilføjes eller fjernes uden varsel. Der kan forekomme fejl, nedetid og datatab. Vi gør vores bedste, men giver ingen garantier for oppetid eller dataintegritet.</p>
+      <h3 style="font-size:16px;font-weight:600;color:var(--text);margin:24px 0 8px">3. Dine data (GDPR)</h3>
+      <p>Vi indsamler kun det du selv indtaster: navn, email, titel, arbejdsplads, bio, tags og profilbillede. Vi gemmer desuden hvilke bobler du joiner og kontakter du gemmer.</p>
+      <p style="margin-top:8px">Beskeder i chat og bobler opbevares krypteret og læses ikke af os. Vi sælger aldrig dine data til tredjepart. Al data opbevares i EU via Supabase (GDPR-compliant hosting).</p>
+      <h3 style="font-size:16px;font-weight:600;color:var(--text);margin:24px 0 8px">4. Dine rettigheder</h3>
+      <p>Du kan til enhver tid redigere eller slette din profil, blokere andre brugere og anmode om fuld sletning af dine data ved at kontakte os.</p>
+      <h3 style="font-size:16px;font-weight:600;color:var(--text);margin:24px 0 8px">5. Adfærd</h3>
+      <p>Vi forventer at alle brugere opfører sig respektfuldt. Chikane, spam, hadefuldt indhold eller upassende profilbilleder tolereres ikke og kan resultere i fjernelse fra platformen.</p>
+      <h3 style="font-size:16px;font-weight:600;color:var(--text);margin:24px 0 8px">6. Ansvarsfraskrivelse</h3>
+      <p>Bubble leveres "as is" uden garanti. Vi er ikke ansvarlige for tab af data under beta, handlinger foretaget af andre brugere eller resultat af forbindelser skabt via platformen. Brug af Bubble sker på eget ansvar.</p>
+      <h3 style="font-size:16px;font-weight:600;color:var(--text);margin:24px 0 8px">7. Kontakt</h3>
+      <p>Spørgsmål? Kontakt os på <a href="mailto:info@bubbleme.dk" style="color:var(--accent);text-decoration:none;font-weight:500">info@bubbleme.dk</a></p>
     </div>
   </div>
 </footer>
