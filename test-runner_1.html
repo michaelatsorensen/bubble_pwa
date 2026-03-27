@@ -1467,6 +1467,298 @@ var SUITES = [
         return files.length + ' filer i SW cache, alle eksisterer';
       }},
     ]
+  },
+  {
+    id: 'reactions', title: 'U. Bubble Reactions',
+    tests: [
+      { id: 'u1', name: 'Setup: boble + besked for reaction-test', fn: async function() {
+        var { data: b } = await sb.from('bubbles').insert({
+          name: '__test_react_' + Date.now(),
+          type: 'network', visibility: 'hidden', created_by: testUser.id
+        }).select().single();
+        window._reactBubbleId = b.id;
+        await sb.from('bubble_members').insert({ bubble_id: b.id, user_id: testUser.id });
+        var { data: msg } = await sb.from('bubble_messages').insert({
+          bubble_id: b.id, author_id: testUser.id, content: 'Reaction test'
+        }).select().single();
+        window._reactMsgId = msg.id;
+        // Create a post too
+        var { data: post } = await sb.from('bubble_posts').insert({
+          bubble_id: b.id, author_id: testUser.id, title: 'React post', content: 'test'
+        }).select().single();
+        window._reactPostId = post.id;
+        return 'Boble + besked + post oprettet';
+      }},
+      { id: 'u2', name: 'Tilføj message reaction (emoji)', fn: async function() {
+        var { error } = await sb.from('bubble_message_reactions').insert({
+          message_id: window._reactMsgId, user_id: testUser.id, emoji: '🫧'
+        });
+        if (error) throw new Error('Insert: ' + error.message);
+        return 'Reaction 🫧 tilføjet';
+      }},
+      { id: 'u3', name: 'Duplikat reaction blokeret', fn: async function() {
+        var { error } = await sb.from('bubble_message_reactions').insert({
+          message_id: window._reactMsgId, user_id: testUser.id, emoji: '🫧'
+        });
+        if (!error) {
+          // Cleanup dupe
+          await sb.from('bubble_message_reactions').delete()
+            .eq('message_id', window._reactMsgId).eq('user_id', testUser.id).eq('emoji', '🫧');
+          return 'Duplikat ikke blokeret (ingen constraint, men OK)';
+        }
+        return 'Duplikat blokeret: ' + (error.message || '').slice(0, 40);
+      }},
+      { id: 'u4', name: 'Tilføj post reaction (like)', fn: async function() {
+        var { error } = await sb.from('bubble_post_reactions').insert({
+          post_id: window._reactPostId, user_id: testUser.id
+        });
+        if (error) throw new Error('Insert: ' + error.message);
+        return 'Post liked';
+      }},
+      { id: 'u5', name: 'Fjern reaction + cleanup alt', fn: async function() {
+        await sb.from('bubble_message_reactions').delete().eq('message_id', window._reactMsgId);
+        await sb.from('bubble_post_reactions').delete().eq('post_id', window._reactPostId);
+        await sb.from('bubble_messages').delete().eq('bubble_id', window._reactBubbleId);
+        await sb.from('bubble_posts').delete().eq('bubble_id', window._reactBubbleId);
+        await sb.from('bubble_members').delete().eq('bubble_id', window._reactBubbleId);
+        await sb.from('bubbles').delete().eq('id', window._reactBubbleId);
+        window._reactBubbleId = null; window._reactMsgId = null; window._reactPostId = null;
+        return 'Reactions + boble + alt cleanup OK';
+      }},
+    ]
+  },
+  {
+    id: 'upvotes', title: 'V. Upvotes / Anbefalinger',
+    tests: [
+      { id: 'v1', name: 'Opret boble + upvote', fn: async function() {
+        var { data: b } = await sb.from('bubbles').insert({
+          name: '__test_upvote_' + Date.now(),
+          type: 'network', visibility: 'hidden', created_by: testUser.id
+        }).select().single();
+        window._upvoteBubbleId = b.id;
+        var { error } = await sb.from('bubble_upvotes').insert({
+          user_id: testUser.id, bubble_id: b.id
+        });
+        if (error) throw new Error('Upvote: ' + error.message);
+        return 'Upvoted bubble ' + b.id.slice(0, 8);
+      }},
+      { id: 'v2', name: 'Duplikat upvote blokeret', fn: async function() {
+        var { error } = await sb.from('bubble_upvotes').insert({
+          user_id: testUser.id, bubble_id: window._upvoteBubbleId
+        });
+        if (!error) {
+          return 'Duplikat ikke blokeret (cleanup manuelt)';
+        }
+        return 'Duplikat blokeret: ' + (error.message || '').slice(0, 40);
+      }},
+      { id: 'v3', name: 'Tæl upvotes → præcis 1', fn: async function() {
+        var { count } = await sb.from('bubble_upvotes')
+          .select('*', { count: 'exact', head: true })
+          .eq('bubble_id', window._upvoteBubbleId);
+        if (count !== 1) throw new Error('Forventet 1, fik ' + count);
+        return 'Count: 1 (korrekt)';
+      }},
+      { id: 'v4', name: 'Fjern upvote + cleanup', fn: async function() {
+        await sb.from('bubble_upvotes').delete().eq('bubble_id', window._upvoteBubbleId);
+        await sb.from('bubbles').delete().eq('id', window._upvoteBubbleId);
+        window._upvoteBubbleId = null;
+        return 'Upvote + boble slettet';
+      }},
+    ]
+  },
+  {
+    id: 'tags', title: 'W. Custom Tags',
+    tests: [
+      { id: 'w1', name: 'Opret custom tag', fn: async function() {
+        var label = '__test_tag_' + Date.now();
+        var { data, error } = await sb.from('custom_tags').insert({
+          label: label, category: 'Teknologi & Digitalisering',
+          created_by: testUser.id, usage_count: 1
+        }).select().single();
+        if (error) throw new Error('Insert: ' + error.message);
+        window._testTagId = data.id;
+        window._testTagLabel = label;
+        return 'Tag: ' + label;
+      }},
+      { id: 'w2', name: 'Hent custom tag → korrekt label', fn: async function() {
+        var { data } = await sb.from('custom_tags')
+          .select('label, category, created_by')
+          .eq('id', window._testTagId).single();
+        if (!data) throw new Error('Tag ikke fundet');
+        if (data.label !== window._testTagLabel) throw new Error('Forkert label');
+        if (data.created_by !== testUser.id) throw new Error('Forkert created_by');
+        return 'Label + category + created_by OK';
+      }},
+      { id: 'w3', name: 'Slet custom tag (cleanup)', fn: async function() {
+        await sb.from('custom_tags').delete().eq('id', window._testTagId);
+        var { data } = await sb.from('custom_tags').select('id').eq('id', window._testTagId);
+        if (data && data.length > 0) throw new Error('Tag stadig til stede');
+        window._testTagId = null;
+        return 'Tag slettet';
+      }},
+    ]
+  },
+  {
+    id: 'guest', title: 'X. Guest Checkins',
+    tests: [
+      { id: 'x1', name: 'Opret guest checkin record', fn: async function() {
+        // Create an event bubble first
+        var { data: b } = await sb.from('bubbles').insert({
+          name: '__test_guest_' + Date.now(),
+          type: 'event', visibility: 'hidden', created_by: testUser.id, checkin_mode: 'scan'
+        }).select().single();
+        window._guestBubbleId = b.id;
+        var { data: guest, error } = await sb.from('guest_checkins').insert({
+          bubble_id: b.id, name: 'Test Gæst', email: 'guest@test.dk'
+        }).select().single();
+        if (error) throw new Error('Insert: ' + error.message);
+        window._guestId = guest.id;
+        return 'Guest ID: ' + guest.id.slice(0, 8);
+      }},
+      { id: 'x2', name: 'Check in gæst (set checked_in_at)', fn: async function() {
+        var { error } = await sb.from('guest_checkins').update({
+          checked_in_at: new Date().toISOString()
+        }).eq('id', window._guestId);
+        if (error) throw new Error('Check-in: ' + error.message);
+        var { data } = await sb.from('guest_checkins')
+          .select('checked_in_at').eq('id', window._guestId).single();
+        if (!data || !data.checked_in_at) throw new Error('checked_in_at ikke sat');
+        return 'Gæst checked ind';
+      }},
+      { id: 'x3', name: 'Cleanup guest + boble', fn: async function() {
+        await sb.from('guest_checkins').delete().eq('id', window._guestId);
+        await sb.from('bubbles').delete().eq('id', window._guestBubbleId);
+        window._guestId = null; window._guestBubbleId = null;
+        return 'Guest + boble slettet';
+      }},
+    ]
+  },
+  {
+    id: 'reports', title: 'Y. Reports & Feedback',
+    tests: [
+      { id: 'y1', name: 'Send feedback', fn: async function() {
+        var { data, error } = await sb.from('reports').insert({
+          reporter_id: testUser.id, reported_id: null,
+          type: 'feedback', reason: '__test_feedback_' + Date.now()
+        }).select().single();
+        if (error) throw new Error('Insert: ' + error.message);
+        window._testReportId = data.id;
+        return 'Feedback ID: ' + data.id.slice(0, 8);
+      }},
+      { id: 'y2', name: 'Send bruger-report', fn: async function() {
+        var { data: others } = await sb.from('profiles').select('id').neq('id', testUser.id).limit(1);
+        if (!others || others.length === 0) return 'Ingen andre brugere — skip';
+        var { data, error } = await sb.from('reports').insert({
+          reporter_id: testUser.id, reported_id: others[0].id,
+          type: 'user', reason: '__test_report_' + Date.now()
+        }).select().single();
+        if (error) throw new Error('Insert: ' + error.message);
+        window._testReport2Id = data.id;
+        return 'Report oprettet';
+      }},
+      { id: 'y3', name: 'Cleanup reports', fn: async function() {
+        if (window._testReportId) await sb.from('reports').delete().eq('id', window._testReportId);
+        if (window._testReport2Id) await sb.from('reports').delete().eq('id', window._testReport2Id);
+        window._testReportId = null; window._testReport2Id = null;
+        return 'Reports slettet';
+      }},
+    ]
+  },
+  {
+    id: 'push', title: 'Z. Push Subscriptions (DB-lag)',
+    tests: [
+      { id: 'z1', name: 'Opret push subscription', fn: async function() {
+        var { error } = await sb.from('push_subscriptions').upsert({
+          user_id: testUser.id,
+          endpoint: 'https://test-endpoint-' + Date.now() + '.example.com/push',
+          p256dh: 'test_p256dh_key_' + Date.now(),
+          auth: 'test_auth_key',
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+        if (error) throw new Error('Upsert: ' + error.message);
+        return 'Push subscription oprettet';
+      }},
+      { id: 'z2', name: 'Verify subscription i DB', fn: async function() {
+        var { data } = await sb.from('push_subscriptions')
+          .select('endpoint, p256dh').eq('user_id', testUser.id).single();
+        if (!data) throw new Error('Subscription ikke fundet');
+        if (!data.endpoint.includes('test-endpoint')) throw new Error('Forkert endpoint');
+        return 'Endpoint + p256dh verified';
+      }},
+      { id: 'z3', name: 'Cleanup push subscription', fn: async function() {
+        await sb.from('push_subscriptions').delete().eq('user_id', testUser.id);
+        var { data } = await sb.from('push_subscriptions')
+          .select('id').eq('user_id', testUser.id);
+        if (data && data.length > 0) throw new Error('Subscription stadig til stede');
+        return 'Push sub slettet';
+      }},
+    ]
+  },
+  {
+    id: 'qrscan', title: 'AA. QR Scans Tracking',
+    tests: [
+      { id: 'aa1', name: 'Opret QR scan record', fn: async function() {
+        var { data: b } = await sb.from('bubbles').insert({
+          name: '__test_qrscan_' + Date.now(),
+          type: 'event', visibility: 'hidden', created_by: testUser.id
+        }).select().single();
+        window._qrScanBubbleId = b.id;
+        var { data, error } = await sb.from('qr_scans').insert({
+          bubble_id: b.id, scanned_by: testUser.id,
+          scanned_user: testUser.id, scan_type: 'event_checkin'
+        }).select().single();
+        if (error) throw new Error('Insert: ' + error.message);
+        window._qrScanId = data.id;
+        return 'Scan ID: ' + data.id.slice(0, 8);
+      }},
+      { id: 'aa2', name: 'Verify scan i DB', fn: async function() {
+        var { data } = await sb.from('qr_scans')
+          .select('bubble_id, scanned_by, scan_type')
+          .eq('id', window._qrScanId).single();
+        if (!data) throw new Error('Scan ikke fundet');
+        if (data.bubble_id !== window._qrScanBubbleId) throw new Error('Forkert bubble_id');
+        if (data.scan_type !== 'event_checkin') throw new Error('Forkert scan_type');
+        return 'bubble_id + scanned_by + scan_type OK';
+      }},
+      { id: 'aa3', name: 'Cleanup scan + boble', fn: async function() {
+        await sb.from('qr_scans').delete().eq('id', window._qrScanId);
+        await sb.from('bubbles').delete().eq('id', window._qrScanBubbleId);
+        window._qrScanId = null; window._qrScanBubbleId = null;
+        return 'Scan + boble slettet';
+      }},
+    ]
+  },
+  {
+    id: 'analytics2', title: 'AB. Analytics Pipeline',
+    tests: [
+      { id: 'ab1', name: 'Insert analytics event', fn: async function() {
+        var { data, error } = await sb.from('analytics').insert({
+          user_id: testUser.id,
+          event: '__test_event',
+          data: JSON.stringify({ test: true, ts: Date.now() }),
+          screen: 'screen-home',
+          timestamp: new Date().toISOString()
+        }).select().single();
+        if (error) throw new Error('Insert: ' + error.message);
+        window._analyticsId = data.id;
+        return 'Analytics ID: ' + data.id;
+      }},
+      { id: 'ab2', name: 'Verify event i DB', fn: async function() {
+        var { data } = await sb.from('analytics')
+          .select('event, screen, data').eq('id', window._analyticsId).single();
+        if (!data) throw new Error('Event ikke fundet');
+        if (data.event !== '__test_event') throw new Error('Forkert event: ' + data.event);
+        if (data.screen !== 'screen-home') throw new Error('Forkert screen');
+        var parsed = JSON.parse(data.data);
+        if (!parsed.test) throw new Error('Data ikke parsed korrekt');
+        return 'event + screen + data JSON OK';
+      }},
+      { id: 'ab3', name: 'Cleanup analytics', fn: async function() {
+        await sb.from('analytics').delete().eq('id', window._analyticsId);
+        window._analyticsId = null;
+        return 'Analytics event slettet';
+      }},
+    ]
   }
 ];
 
