@@ -1221,7 +1221,7 @@ var SUITES = [
         await sb.from('bubble_members').insert({ bubble_id: b.id, user_id: testUser.id });
 
         var { data: post, error } = await sb.from('bubble_posts').insert({
-          bubble_id: b.id, user_id: testUser.id,
+          bubble_id: b.id, author_id: testUser.id,
           title: 'Test post', content: 'Indhold med dansk æøå'
         }).select().single();
         if (error) throw new Error('Post insert: ' + error.message);
@@ -1230,12 +1230,12 @@ var SUITES = [
       }},
       { id: 'o2', name: 'Hent post → korrekt indhold', fn: async function() {
         var { data, error } = await sb.from('bubble_posts')
-          .select('title, content, user_id')
+          .select('title, content, author_id')
           .eq('id', window._testPostId).single();
         if (error) throw new Error('Select: ' + error.message);
         if (data.title !== 'Test post') throw new Error('Title: ' + data.title);
-        if (data.user_id !== testUser.id) throw new Error('Forkert user_id');
-        return 'Title + content + user_id OK';
+        if (data.author_id !== testUser.id) throw new Error('Forkert author_id');
+        return 'Title + content + author_id OK';
       }},
       { id: 'o3', name: 'Slet post → verificer fjernet', fn: async function() {
         var { error } = await sb.from('bubble_posts').delete().eq('id', window._testPostId);
