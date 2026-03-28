@@ -506,13 +506,24 @@ async function updateTopbarNotifBadge() {
     var badge = document.getElementById('topbar-notif-badge');
     if (!badge || !currentUser) return;
     var lastSeen = localStorage.getItem('bubble_notifs_seen') || '2000-01-01';
+    var ownedIds = [];
+    try {
+      var { data: ownedB } = await sb.from('bubbles').select('id').eq('created_by', currentUser.id);
+      ownedIds = (ownedB || []).map(function(b) { return b.id; });
+    } catch(e) {}
     var [invRes, saveRes] = await Promise.all([
       sb.from('bubble_invitations').select('*', { count: 'exact', head: true })
         .eq('to_user_id', currentUser.id).eq('status', 'pending'),
       sb.from('saved_contacts').select('*', { count: 'exact', head: true })
         .eq('contact_id', currentUser.id).gt('created_at', lastSeen)
     ]);
-    var total = (invRes.count || 0) + (saveRes.count || 0);
+    var pendingCount = 0;
+    if (ownedIds.length > 0) {
+      var { count: pc } = await sb.from('bubble_members').select('*', { count: 'exact', head: true })
+        .in('bubble_id', ownedIds).eq('status', 'pending');
+      pendingCount = pc || 0;
+    }
+    var total = (invRes.count || 0) + (saveRes.count || 0) + pendingCount;
     if (total > 0) {
       badge.textContent = total > 9 ? '9+' : total;
       badge.style.display = 'flex';
@@ -853,12 +864,29 @@ async function loadMyBubbles() {
     const owned  = bubbles.filter(b => b.created_by === currentUser.id);
     const joined = bubbles.filter(b => b.created_by !== currentUser.id);
 
+    // Fetch pending request counts for owned bubbles
+    var pendingCounts = {};
+    if (owned.length > 0) {
+      try {
+        var ownedIds2 = owned.map(function(b) { return b.id; });
+        var { data: pendingRows } = await sb.from('bubble_members')
+          .select('bubble_id')
+          .in('bubble_id', ownedIds2)
+          .eq('status', 'pending');
+        (pendingRows || []).forEach(function(r) {
+          pendingCounts[r.bubble_id] = (pendingCounts[r.bubble_id] || 0) + 1;
+        });
+      } catch(e) {}
+    }
+
     // Owned bubbles — show with visibility badge + edit shortcut
     if (owned.length === 0) {
       ownedList.innerHTML = '<div class="sub-muted" style="padding:0.5rem 0">Du har ikke oprettet nogen bobler endnu.</div>';
     } else {
       ownedList.innerHTML = owned.map(b => {
         const visIcon = b.visibility === 'private' ? icon('lock') : b.visibility === 'hidden' ? icon('eye') : icon('globe');
+        var pendingN = pendingCounts[b.id] || 0;
+        var pendingBadge = pendingN > 0 ? '<div style="display:inline-flex;align-items:center;gap:3px;margin-top:0.2rem;font-size:0.62rem;font-weight:700;color:#BA7517;background:rgba(249,177,55,0.1);padding:2px 7px;border-radius:6px">' + icon('lock') + ' ' + pendingN + ' anmod' + (pendingN > 1 ? 'ninger' : 'ning') + '</div>' : '';
         // Render contact avatars inline (same logic as bubbleCard)
         var cHtml = '';
         var cs = b._contacts || [];
@@ -879,6 +907,7 @@ async function loadMyBubbles() {
             <div class="fs-075 text-muted">${visIcon} ${b.type_label||b.type}${b.location ? ' · '+escHtml(b.location) : ''}</div>
             ${b._parentName ? '<div style="display:inline-flex;align-items:center;gap:3px;margin-top:0.15rem;font-size:0.62rem;color:#534AB7">\u21B3 ' + escHtml(b._parentName) + '</div>' : ''}
             ${cHtml}
+            ${pendingBadge}
           </div>
           <div style="display:flex;gap:0.4rem;align-items:center">
             <button class="btn-sm btn-ghost" data-action="openEditBubble" data-id="${b.id}" onclick="event.stopPropagation()" style="font-size:0.8rem;padding:0.3rem 0.5rem">${icon("edit")}</button>

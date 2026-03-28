@@ -36,18 +36,19 @@ async function loadNotifications() {
     list.innerHTML = skelCards(4);
 
     // Run all 6 sections in parallel — each uses its own TTL
-    var [inviteHtml, dmHtml, savedByHtml, liveHtml, matchHtml, newMemberHtml] = await Promise.all([
+    var [inviteHtml, dmHtml, savedByHtml, liveHtml, matchHtml, newMemberHtml, pendingHtml] = await Promise.all([
       _notifInvites(),
       _notifUnreadDMs(),
       _notifSavedBy(),
       _notifLiveContacts(),
       _notifStrongMatches(),
-      _notifNewMembers()
+      _notifNewMembers(),
+      _notifPendingRequests()
     ]);
 
     if (_navVersion !== myNav) return; // screen changed during load
 
-    var html = inviteHtml + dmHtml + matchHtml + liveHtml + savedByHtml + newMemberHtml;
+    var html = pendingHtml + inviteHtml + dmHtml + matchHtml + liveHtml + savedByHtml + newMemberHtml;
     if (!html) {
       html = '<div class="empty-state"><div class="empty-icon">' + icon('bell') + '</div><div class="empty-text">Ingen notifikationer endnu<br><span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400">Gem profiler og join bobler — så ser du aktivitet her</span></div></div>';
     }
@@ -240,6 +241,74 @@ async function _notifNewMembers() {
         '</div></div></div>';
     }).join('');
   } catch(e) { logError('_notifNewMembers', e); return ''; }
+}
+
+// ── "Anmodning om adgang" — pending join requests for bubbles you own ──
+async function _notifPendingRequests() {
+  try {
+    // Find bubbles owned by current user
+    var { data: ownedBubbles } = await sb.from('bubbles').select('id, name').eq('created_by', currentUser.id);
+    if (!ownedBubbles || ownedBubbles.length === 0) return '';
+    var ownedIds = ownedBubbles.map(function(b) { return b.id; });
+    var bubNameMap = {};
+    ownedBubbles.forEach(function(b) { bubNameMap[b.id] = b.name; });
+
+    // Find pending members in owned bubbles
+    var { data: pending } = await sb.from('bubble_members')
+      .select('user_id, bubble_id, joined_at')
+      .in('bubble_id', ownedIds)
+      .eq('status', 'pending')
+      .order('joined_at', { ascending: false });
+    if (!pending || pending.length === 0) return '';
+
+    // Fetch profiles
+    var pIds = [...new Set(pending.map(function(m) { return m.user_id; }))];
+    var { data: profiles } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', pIds);
+    var pMap = {};
+    (profiles || []).forEach(function(p) { pMap[p.id] = p; });
+
+    return '<div class="notif-section-label" style="color:#BA7517">' + icon('lock') + ' Adgangsanmodninger</div>' +
+      pending.map(function(m) {
+        var p = pMap[m.user_id] || {};
+        var ini = (p.name || '?').split(' ').map(function(w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
+        var bName = bubNameMap[m.bubble_id] || '';
+        var avatarHtml = p.avatar_url ?
+          '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
+          '<div class="notif-avatar" style="background:linear-gradient(135deg,#F59E0B,#EAB308)">' + ini + '</div>';
+        return '<div class="notif-card invite" style="border-left:3px solid #BA7517">' +
+          '<div class="notif-header">' + avatarHtml +
+          '<div>' +
+          '<div class="notif-title">' + escHtml(p.name || 'Ukendt') + ' anmoder om adgang</div>' +
+          '<div class="notif-sub">' + escHtml(bName) + (p.title ? ' \u00B7 ' + escHtml(p.title) : '') + '</div>' +
+          '</div></div>' +
+          '<div class="notif-actions">' +
+          '<button class="notif-btn accept" onclick="notifApproveJoin(\'' + m.bubble_id + '\',\'' + m.user_id + '\',this)">Godkend</button>' +
+          '<button class="notif-btn decline" onclick="notifRejectJoin(\'' + m.bubble_id + '\',\'' + m.user_id + '\',this)">Afvis</button>' +
+          '</div></div>';
+      }).join('');
+  } catch(e) { logError('_notifPendingRequests', e); return ''; }
+}
+
+async function notifApproveJoin(bubbleId, userId, btn) {
+  try {
+    var card = btn.closest('.notif-card');
+    var { error } = await sb.from('bubble_members').update({ status: 'active' })
+      .eq('bubble_id', bubbleId).eq('user_id', userId);
+    if (error) throw error;
+    if (card) { card.style.opacity = '0.4'; card.innerHTML = '<div style="padding:0.5rem;font-size:0.78rem;color:var(--green);font-weight:600">Godkendt \u2713</div>'; }
+    updateTopbarNotifBadge();
+  } catch(e) { errorToast('save', e); }
+}
+
+async function notifRejectJoin(bubbleId, userId, btn) {
+  try {
+    var card = btn.closest('.notif-card');
+    var { error } = await sb.from('bubble_members').delete()
+      .eq('bubble_id', bubbleId).eq('user_id', userId).eq('status', 'pending');
+    if (error) throw error;
+    if (card) card.remove();
+    updateTopbarNotifBadge();
+  } catch(e) { errorToast('save', e); }
 }
 
 // ── "Nyt stærkt match" — people with 80+ score who joined your bubbles recently ──
