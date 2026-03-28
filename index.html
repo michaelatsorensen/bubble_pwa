@@ -12,35 +12,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=6602">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=6602">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=6602">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=6602">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=6602">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=6602">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=6602">
+<link rel="manifest" href="manifest.json?v=6603">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=6603">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=6603">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=6603">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=6603">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=6603">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=6603">
 
-<link rel="stylesheet" href="app.css?v=6602">
+<link rel="stylesheet" href="app.css?v=6603">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=6602" defer></script>
-<script src="tag-data.js?v=6602" defer></script>
-<script src="b-config.js?v=6602" defer></script>
-<script src="b-utils.js?v=6602" defer></script>
-<script src="b-auth.js?v=6602" defer></script>
-<script src="b-home.js?v=6602" defer></script>
-<script src="b-bubbles.js?v=6602" defer></script>
-<script src="b-profile.js?v=6602" defer></script>
-<script src="b-radar.js?v=6602" defer></script>
-<script src="b-messages.js?v=6602" defer></script>
-<script src="b-realtime.js?v=6602" defer></script>
-<script src="b-onboarding.js?v=6602" defer></script>
-<script src="b-chat.js?v=6602" defer></script>
-<script src="b-notifications.js?v=6602" defer></script>
-<script src="b-live.js?v=6602" defer></script>
-<script src="b-admin.js?v=6602" defer></script>
-<script src="b-navigation.js?v=6602" defer></script>
-<script src="b-boot.js?v=6602" defer></script>
+<script src="bubble-icons.js?v=6603" defer></script>
+<script src="tag-data.js?v=6603" defer></script>
+<script src="b-config.js?v=6603" defer></script>
+<script src="b-utils.js?v=6603" defer></script>
+<script src="b-auth.js?v=6603" defer></script>
+<script src="b-home.js?v=6603" defer></script>
+<script src="b-bubbles.js?v=6603" defer></script>
+<script src="b-profile.js?v=6603" defer></script>
+<script src="b-radar.js?v=6603" defer></script>
+<script src="b-messages.js?v=6603" defer></script>
+<script src="b-realtime.js?v=6603" defer></script>
+<script src="b-onboarding.js?v=6603" defer></script>
+<script src="b-chat.js?v=6603" defer></script>
+<script src="b-notifications.js?v=6603" defer></script>
+<script src="b-live.js?v=6603" defer></script>
+<script src="b-admin.js?v=6603" defer></script>
+<script src="b-navigation.js?v=6603" defer></script>
+<script src="b-boot.js?v=6603" defer></script>
   
 
 
@@ -1252,10 +1252,10 @@
         <input type="file" id="dm-photo-input" style="display:none" accept="image/*" onchange="dmHandleFile(this)">
         <button class="chat-plus-btn" onclick="toggleChatMenu('dm')">+</button>
         <div class="chat-plus-menu" id="dm-plus-menu">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:4px">
-            <button onclick="closeChatMenu('dm');var f=document.getElementById('dm-photo-input');f.value='';f.click()" style="flex-direction:column;gap:4px;padding:10px 6px;border-radius:10px"><span style="font-size:1.1rem">📷</span><span style="font-size:0.68rem;color:var(--text-secondary)">Foto</span></button>
-            <button onclick="closeChatMenu('dm');toggleGifPicker('dm')" style="flex-direction:column;gap:4px;padding:10px 6px;border-radius:10px"><span style="font-size:0.82rem;font-weight:600;color:var(--accent)">GIF</span><span style="font-size:0.68rem;color:var(--text-secondary)">Tenor</span></button>
-            <button onclick="closeChatMenu('dm');var f=document.getElementById('dm-file-input');f.value='';f.click()" style="flex-direction:column;gap:4px;padding:10px 6px;border-radius:10px"><span style="font-size:1.1rem">📎</span><span style="font-size:0.68rem;color:var(--text-secondary)">Fil</span></button>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px;min-width:220px">
+            <button onclick="closeChatMenu('dm');var f=document.getElementById('dm-photo-input');f.value='';f.click()" style="flex-direction:column;gap:6px;padding:14px 8px;border-radius:12px;background:var(--glass-bg)"><span style="font-size:1.3rem">📷</span><span style="font-size:0.72rem;color:var(--text-secondary)">Foto</span></button>
+            <button onclick="closeChatMenu('dm');toggleGifPicker('dm')" style="flex-direction:column;gap:6px;padding:14px 8px;border-radius:12px;background:var(--glass-bg)"><span style="font-size:0.9rem;font-weight:700;color:var(--accent)">GIF</span><span style="font-size:0.72rem;color:var(--text-secondary)">Tenor</span></button>
+            <button onclick="closeChatMenu('dm');var f=document.getElementById('dm-file-input');f.value='';f.click()" style="flex-direction:column;gap:6px;padding:14px 8px;border-radius:12px;background:var(--glass-bg)"><span style="font-size:1.3rem">📎</span><span style="font-size:0.72rem;color:var(--text-secondary)">Fil</span></button>
           </div>
         </div>
         <input class="chat-composer-input" id="chat-input" placeholder="Skriv en besked..." oninput="dmOnInput()">

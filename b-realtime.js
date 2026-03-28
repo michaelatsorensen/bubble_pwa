@@ -462,9 +462,9 @@ function dmRenderMsg(m) {
   const sent = m.sender_id === currentUser.id;
   const gp = m._gp || 'single'; // single, first, cont, tail
 
-  // Read receipt: only on last sent message group (tail or single)
+  // Read receipt: only on the last sent message (marked by _showReceipt)
   let receipt = '';
-  if (sent && (gp === 'tail' || gp === 'single')) {
+  if (sent && m._showReceipt) {
     if (m.read_at) {
       receipt = '<div class="msg-receipt" id="dm-receipt-' + m.id + '">Læst</div>';
     }
@@ -563,19 +563,28 @@ async function loadChatMessages() {
     // Compute grouping
     _msgComputeGroups(sorted, 'sender_id');
 
-    var html = '';
-    var lastDate = '';
-    sorted.forEach(function(m) {
-      // Date separator
-      var d = new Date(m.created_at);
-      var dateStr = d.toLocaleDateString('da-DK', {weekday:'short', day:'numeric', month:'short'}).replace(/\./g, '.') + ', ' + d.toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'});
-      if (dateStr !== lastDate) {
-        html += '<div class="chat-date-sep">' + dateStr + '</div>';
-        lastDate = dateStr;
+    // Mark only the LAST sent message for read receipt
+    for (var ri = sorted.length - 1; ri >= 0; ri--) {
+      if (sorted[ri].sender_id === currentUser.id) {
+        sorted[ri]._showReceipt = true;
+        break;
       }
-      // Time separator between groups with 5+ min gap
+    }
+
+    var html = '';
+    var lastDateKey = '';
+    sorted.forEach(function(m) {
+      var d = new Date(m.created_at);
+      // Date separator: only when DAY changes
+      var dateKey = d.toLocaleDateString('da-DK');
+      if (dateKey !== lastDateKey) {
+        var dateLabel = d.toLocaleDateString('da-DK', {weekday:'short', day:'numeric', month:'short'});
+        html += '<div class="chat-date-sep">' + dateLabel + '</div>';
+        lastDateKey = dateKey;
+      }
+      // Time separator: 5+ min gap (but not right after a date sep)
       if (m._showTimeSep) {
-        var t = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'});
+        var t = d.toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'});
         html += '<div class="msg-time-sep">' + t + '</div>';
       }
       html += dmRenderMsg(m);

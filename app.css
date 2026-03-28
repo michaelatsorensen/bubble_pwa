@@ -333,7 +333,7 @@ textarea.input { min-height:80px; resize:vertical; }
 
 .chat-messages { flex:1; padding:0.75rem; display:flex; flex-direction:column; gap:0.4rem; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .chat-date-sep { text-align:center; font-size:0.56rem; font-weight:500; color:var(--muted); margin:0.6rem 0 0.3rem; }
-.chat-scroll-fab { position:absolute; bottom:4.5rem; right:1rem; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.95); border:1px solid var(--glass-border-subtle); color:var(--accent); font-size:0.9rem; font-weight:700; cursor:pointer; z-index:15; display:flex; align-items:center; justify-content:center; font-family:inherit; }
+.chat-scroll-fab { position:absolute; bottom:5.5rem; right:1rem; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.95); border:1px solid var(--glass-border-subtle); color:var(--accent); font-size:0.9rem; font-weight:700; cursor:pointer; z-index:15; display:flex; align-items:center; justify-content:center; font-family:inherit; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
 /* ══ Bubble Chat Messages ══ */
 /* (bc-msg rules removed — replaced by .msg-row system in v6.3.4) */
 
@@ -825,8 +825,8 @@ a.person-action-btn { text-decoration:none; }
 .msg-edited { font-size:0.5rem; color:var(--accent); cursor:pointer; margin-left:0.15rem; }
 .msg-content { display:inline-flex; align-items:center; gap:0; max-width:100%; }
 .msg-row.me .msg-content { flex-direction:row-reverse; }
-.msg-bubble { padding:0.5rem 0.8rem; border-radius:18px; font-size:0.82rem; line-height:1.45; word-break:break-word; min-width:2rem; background:white; border:0.5px solid rgba(0,0,0,0.08); color:var(--text); }
-.msg-bubble.sent { background:#EEEDFE; border:0.5px solid rgba(124,92,252,0.1); color:#26215C; }
+.msg-bubble { padding:0.5rem 0.8rem; border-radius:18px; font-size:0.82rem; line-height:1.45; word-break:break-word; min-width:2rem; background:#F0EFF5; color:var(--text); }
+.msg-bubble.sent { background:#DDD8F8; border:none; color:#1E1B2E; }
 .msg-img { max-width:220px; max-height:260px; border-radius:14px; display:block; }
 .msg-file { display:flex; align-items:center; gap:0.35rem; padding:0.5rem 0.75rem; border-radius:12px; background:var(--glass-bg); border:1px solid var(--glass-border); font-size:0.72rem; color:var(--text); text-decoration:none; }
 .msg-file .ico { width:0.9rem; height:0.9rem; }
