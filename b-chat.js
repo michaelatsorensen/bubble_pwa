@@ -472,7 +472,7 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
     // Edit button as topbar card
     actionArea.innerHTML =
       (canEdit ? `<button class="chat-topbar-back" data-action="openEditBubble" data-id="${b.id}" title="Rediger"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg></button>` : '') +
-      (canEdit && (b.type === 'event' || b.type === 'live') ? `<button class="chat-topbar-back" onclick="openBubbleScannerFromInfo('${b.id}')" title="Scanner" style="color:#1A9E8E"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>` : '');
+      (canEdit && (b.type === 'event' || b.type === 'live' || b.visibility === 'private' || b.visibility === 'hidden') ? `<button class="chat-topbar-back" onclick="openBubbleScannerFromInfo('${b.id}')" title="Scanner" style="color:#1A9E8E"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>` : '');
     actionArea.style.display = canEdit ? 'flex' : 'none';
     if (actionBar) {
       var upvoted = myUpvotes[b.id];
@@ -904,6 +904,7 @@ async function bcSendMessage() {
       bcCancelEdit();
     } else {
       inp.value = '';
+      inp.blur();
 
       const { data: newMsg, error } = await sb.from('bubble_messages').insert({
         bubble_id: bcBubbleId,

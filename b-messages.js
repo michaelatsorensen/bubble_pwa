@@ -193,7 +193,7 @@ async function sendMessage() {
         el.scrollTop = el.scrollHeight;
       }
       input.value = '';
-      input.focus();
+      input.blur();
 
       // DB insert
       const { data: newMsg, error } = await sb.from('messages').insert({

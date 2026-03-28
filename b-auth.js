@@ -381,6 +381,10 @@ async function handleLogout() {
     bcUnsubscribeAll();
     rtUnsubscribeAll();
     sb.removeAllChannels();
+    // Clear push subscription so this device stops receiving notifications for this user
+    try {
+      if (currentUser) await sb.from('push_subscriptions').delete().eq('user_id', currentUser.id);
+    } catch(e2) { console.debug('[logout] push cleanup:', e2); }
     await sb.auth.signOut();
     currentUser = null; currentProfile = null;
     goTo('screen-auth');
