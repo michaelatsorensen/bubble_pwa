@@ -12,35 +12,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=61090">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=61090">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=61090">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=61090">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=61090">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=61090">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=61090">
+<link rel="manifest" href="manifest.json?v=61100">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=61100">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=61100">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=61100">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=61100">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=61100">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=61100">
 
-<link rel="stylesheet" href="app.css?v=61090">
+<link rel="stylesheet" href="app.css?v=61100">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=61090" defer></script>
-<script src="tag-data.js?v=61090" defer></script>
-<script src="b-config.js?v=61090" defer></script>
-<script src="b-utils.js?v=61090" defer></script>
-<script src="b-auth.js?v=61090" defer></script>
-<script src="b-home.js?v=61090" defer></script>
-<script src="b-bubbles.js?v=61090" defer></script>
-<script src="b-profile.js?v=61090" defer></script>
-<script src="b-radar.js?v=61090" defer></script>
-<script src="b-messages.js?v=61090" defer></script>
-<script src="b-realtime.js?v=61090" defer></script>
-<script src="b-onboarding.js?v=61090" defer></script>
-<script src="b-chat.js?v=61090" defer></script>
-<script src="b-notifications.js?v=61090" defer></script>
-<script src="b-live.js?v=61090" defer></script>
-<script src="b-admin.js?v=61090" defer></script>
-<script src="b-navigation.js?v=61090" defer></script>
-<script src="b-boot.js?v=61090" defer></script>
+<script src="bubble-icons.js?v=61100" defer></script>
+<script src="tag-data.js?v=61100" defer></script>
+<script src="b-config.js?v=61100" defer></script>
+<script src="b-utils.js?v=61100" defer></script>
+<script src="b-auth.js?v=61100" defer></script>
+<script src="b-home.js?v=61100" defer></script>
+<script src="b-bubbles.js?v=61100" defer></script>
+<script src="b-profile.js?v=61100" defer></script>
+<script src="b-radar.js?v=61100" defer></script>
+<script src="b-messages.js?v=61100" defer></script>
+<script src="b-realtime.js?v=61100" defer></script>
+<script src="b-onboarding.js?v=61100" defer></script>
+<script src="b-chat.js?v=61100" defer></script>
+<script src="b-notifications.js?v=61100" defer></script>
+<script src="b-live.js?v=61100" defer></script>
+<script src="b-admin.js?v=61100" defer></script>
+<script src="b-navigation.js?v=61100" defer></script>
+<script src="b-boot.js?v=61100" defer></script>
   
 
 
@@ -169,13 +169,13 @@
      SCREEN: LOADING
 ════════════════════════════════════════ -->
 <div class="screen active" id="screen-loading">
-  <div style="text-align:center;padding:2rem 1.5rem 0">
-    <div style="text-align:center;margin-bottom:1.5rem"><img src="bubble-logo-splash.png" alt="bubble" style="height:36px;width:auto"></div>
-    <div class="skel" style="width:180px;height:16px;margin:0 auto 0.8rem"></div>
-    <div class="skel" style="width:240px;height:12px;margin:0 auto 2rem"></div>
-    <div class="skel" style="width:100%;max-width:300px;height:44px;margin:0 auto 0.8rem;border-radius:12px"></div>
-    <div class="skel" style="width:100%;max-width:300px;height:44px;margin:0 auto 0.8rem;border-radius:12px"></div>
-    <div class="skel" style="width:100%;max-width:300px;height:44px;margin:0 auto;border-radius:12px"></div>
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:2rem">
+    <div style="text-align:center;margin-bottom:2rem"><img src="bubble-logo-splash.png" alt="bubble" style="height:36px;width:auto"></div>
+    <div class="bubble-loader">
+      <div class="bubble-loader-dot"></div>
+      <div class="bubble-loader-dot"></div>
+      <div class="bubble-loader-dot"></div>
+    </div>
     <div style="font-size:0.78rem;color:var(--muted);margin-top:1.5rem" id="loading-msg">Forbinder...</div>
   </div>
 </div>
