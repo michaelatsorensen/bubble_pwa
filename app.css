@@ -1611,6 +1611,13 @@ a.person-action-btn { text-decoration:none; }
 .ob-role-suggestions { display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.5rem; }
 .ob-role-chip { border:1px solid var(--glass-border-subtle); background:rgba(30,27,46,0.025); color:var(--text-secondary); border-radius:99px; padding:0.32rem 0.65rem; font-size:0.72rem; font-family:'Figtree',sans-serif; cursor:pointer; transition:all 0.2s; font-weight:500; }
 .ob-role-chip:hover,.ob-role-chip:active { background:rgba(124,92,252,0.1); border-color:rgba(124,92,252,0.25); color:var(--text); }
+/* Onboarding consent checkbox */
+.ob-consent-row { display:flex; gap:0.5rem; align-items:flex-start; padding:0.6rem 0.7rem; margin:0.6rem 0 0; background:rgba(124,92,252,0.04); border:1px solid rgba(124,92,252,0.12); border-radius:10px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.ob-consent-check { width:20px; height:20px; border:1.5px solid var(--accent); border-radius:5px; flex-shrink:0; margin-top:1px; transition:all 0.15s; display:flex; align-items:center; justify-content:center; }
+.ob-consent-check.checked { background:var(--accent); }
+.ob-consent-check.checked::after { content:''; display:block; width:5px; height:10px; border:solid white; border-width:0 2px 2px 0; transform:rotate(45deg); margin-bottom:2px; }
+.ob-consent-text { font-size:0.68rem; color:var(--text-secondary); line-height:1.45; }
+.ob-consent-text a { color:var(--accent); text-decoration:underline; }
 .ob-role-chip.active { background:rgba(124,92,252,0.15); border-color:var(--accent); color:var(--accent); font-weight:600; }
 
 /* ═══ ONBOARDING OPEN CATEGORIES ═══ */

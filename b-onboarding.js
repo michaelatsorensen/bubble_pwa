@@ -202,14 +202,23 @@ var OB_LIFESTAGE_ROLES = {
 var obLifestage = null;
 
 // ── Progress check (simplified v5.6) ──
+var _obConsentGiven = false;
+
+function obToggleConsent() {
+  _obConsentGiven = !_obConsentGiven;
+  var el = document.getElementById('ob-consent-check');
+  if (el) el.classList.toggle('checked', _obConsentGiven);
+  obCheckProgress();
+}
+
 function obCheckProgress() {
   var name = (document.getElementById('ob-name')?.value || '').trim();
   var workplace = (document.getElementById('ob-workplace')?.value || '').trim();
 
-  // Save button: active when name + workplace filled
+  // Save button: active when name + workplace + consent
   var saveBtn = document.getElementById('ob-save-btn');
   if (saveBtn) {
-    var canSave = name && workplace;
+    var canSave = name && workplace && _obConsentGiven;
     saveBtn.disabled = !canSave;
   }
 
@@ -969,6 +978,7 @@ function epCustomTag(event, cat, input) {
 
 async function saveOnboarding() {
   try {
+    if (!_obConsentGiven) return showToast('Du skal acceptere betingelserne');
     const name      = document.getElementById('ob-name').value.trim();
     const title     = document.getElementById('ob-title').value.trim();
     const bio       = document.getElementById('ob-bio').value.trim();

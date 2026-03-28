@@ -12,35 +12,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=6806">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=6806">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=6806">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=6806">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=6806">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=6806">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=6806">
+<link rel="manifest" href="manifest.json?v=6807">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=6807">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=6807">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=6807">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=6807">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=6807">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=6807">
 
-<link rel="stylesheet" href="app.css?v=6806">
+<link rel="stylesheet" href="app.css?v=6807">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=6806" defer></script>
-<script src="tag-data.js?v=6806" defer></script>
-<script src="b-config.js?v=6806" defer></script>
-<script src="b-utils.js?v=6806" defer></script>
-<script src="b-auth.js?v=6806" defer></script>
-<script src="b-home.js?v=6806" defer></script>
-<script src="b-bubbles.js?v=6806" defer></script>
-<script src="b-profile.js?v=6806" defer></script>
-<script src="b-radar.js?v=6806" defer></script>
-<script src="b-messages.js?v=6806" defer></script>
-<script src="b-realtime.js?v=6806" defer></script>
-<script src="b-onboarding.js?v=6806" defer></script>
-<script src="b-chat.js?v=6806" defer></script>
-<script src="b-notifications.js?v=6806" defer></script>
-<script src="b-live.js?v=6806" defer></script>
-<script src="b-admin.js?v=6806" defer></script>
-<script src="b-navigation.js?v=6806" defer></script>
-<script src="b-boot.js?v=6806" defer></script>
+<script src="bubble-icons.js?v=6807" defer></script>
+<script src="tag-data.js?v=6807" defer></script>
+<script src="b-config.js?v=6807" defer></script>
+<script src="b-utils.js?v=6807" defer></script>
+<script src="b-auth.js?v=6807" defer></script>
+<script src="b-home.js?v=6807" defer></script>
+<script src="b-bubbles.js?v=6807" defer></script>
+<script src="b-profile.js?v=6807" defer></script>
+<script src="b-radar.js?v=6807" defer></script>
+<script src="b-messages.js?v=6807" defer></script>
+<script src="b-realtime.js?v=6807" defer></script>
+<script src="b-onboarding.js?v=6807" defer></script>
+<script src="b-chat.js?v=6807" defer></script>
+<script src="b-notifications.js?v=6807" defer></script>
+<script src="b-live.js?v=6807" defer></script>
+<script src="b-admin.js?v=6807" defer></script>
+<script src="b-navigation.js?v=6807" defer></script>
+<script src="b-boot.js?v=6807" defer></script>
   
 
 
@@ -319,6 +319,11 @@
       <div class="input-label">Arbejdsplads *</div>
       <input class="input" id="ob-workplace" placeholder="f.eks. Danfoss, SDU, selvstændig..." oninput="obCheckProgress()">
     </div>
+
+    <label class="ob-consent-row" id="ob-consent-row" onclick="obToggleConsent()">
+      <div class="ob-consent-check" id="ob-consent-check"></div>
+      <span class="ob-consent-text">Jeg accepterer Bubble's <a href="#" onclick="event.stopPropagation();showTerms()">betingelser</a> og <a href="#" onclick="event.stopPropagation();showTerms()">privatlivspolitik</a></span>
+    </label>
 
     <button class="btn-primary" id="ob-save-btn" onclick="saveOnboarding()" style="margin-top:0.5rem" disabled>Start Bubble</button>
     <div style="text-align:center;font-size:0.75rem;color:var(--muted);margin-top:0.4rem">Du kan udfylde resten inde i appen</div>
