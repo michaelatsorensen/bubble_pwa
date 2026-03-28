@@ -12,35 +12,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=6701">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=6701">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=6701">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=6701">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=6701">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=6701">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=6701">
+<link rel="manifest" href="manifest.json?v=6702">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=6702">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=6702">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=6702">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=6702">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=6702">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=6702">
 
-<link rel="stylesheet" href="app.css?v=6701">
+<link rel="stylesheet" href="app.css?v=6702">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=6701" defer></script>
-<script src="tag-data.js?v=6701" defer></script>
-<script src="b-config.js?v=6701" defer></script>
-<script src="b-utils.js?v=6701" defer></script>
-<script src="b-auth.js?v=6701" defer></script>
-<script src="b-home.js?v=6701" defer></script>
-<script src="b-bubbles.js?v=6701" defer></script>
-<script src="b-profile.js?v=6701" defer></script>
-<script src="b-radar.js?v=6701" defer></script>
-<script src="b-messages.js?v=6701" defer></script>
-<script src="b-realtime.js?v=6701" defer></script>
-<script src="b-onboarding.js?v=6701" defer></script>
-<script src="b-chat.js?v=6701" defer></script>
-<script src="b-notifications.js?v=6701" defer></script>
-<script src="b-live.js?v=6701" defer></script>
-<script src="b-admin.js?v=6701" defer></script>
-<script src="b-navigation.js?v=6701" defer></script>
-<script src="b-boot.js?v=6701" defer></script>
+<script src="bubble-icons.js?v=6702" defer></script>
+<script src="tag-data.js?v=6702" defer></script>
+<script src="b-config.js?v=6702" defer></script>
+<script src="b-utils.js?v=6702" defer></script>
+<script src="b-auth.js?v=6702" defer></script>
+<script src="b-home.js?v=6702" defer></script>
+<script src="b-bubbles.js?v=6702" defer></script>
+<script src="b-profile.js?v=6702" defer></script>
+<script src="b-radar.js?v=6702" defer></script>
+<script src="b-messages.js?v=6702" defer></script>
+<script src="b-realtime.js?v=6702" defer></script>
+<script src="b-onboarding.js?v=6702" defer></script>
+<script src="b-chat.js?v=6702" defer></script>
+<script src="b-notifications.js?v=6702" defer></script>
+<script src="b-live.js?v=6702" defer></script>
+<script src="b-admin.js?v=6702" defer></script>
+<script src="b-navigation.js?v=6702" defer></script>
+<script src="b-boot.js?v=6702" defer></script>
   
 
 
@@ -1020,7 +1020,7 @@
   <!-- CHAT TAB -->
   <div id="bc-panel-chat" class="chat-panel">
     <div class="chat-scroll" id="bc-messages"></div>
-    <button id="bc-scroll-bottom" class="chat-scroll-fab" style="display:none" onclick="var el=document.getElementById('bc-messages');el.scrollTop=el.scrollHeight">↓</button>
+    <button id="bc-scroll-bottom" class="chat-scroll-fab" style="display:none" onclick="var el=document.getElementById('bc-messages');el.scrollTo({top:el.scrollHeight,behavior:'smooth'})">↓</button>
     <div class="chat-composer">
       <div class="chat-edit-bar" id="bc-edit-bar">
         <span><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg> Redigerer besked</span>
@@ -1041,7 +1041,7 @@
             </button>
           </div>
         </div>
-        <input class="chat-composer-input" id="bc-input" placeholder="Skriv en besked...">
+        <input class="chat-composer-input" id="bc-input" placeholder="Skriv en besked..." enterkeyhint="send" autocomplete="off" autocorrect="on" spellcheck="true">
         <button class="chat-send-btn" id="bc-send-btn" ontouchstart="event.preventDefault()" ontouchend="event.preventDefault();bcSendMessage()" onclick="if(!('ontouchstart' in window))bcSendMessage()">→</button>
       </div>
     </div>
@@ -1239,7 +1239,7 @@
   </div>
   <div class="chat-panel" id="dm-panel">
     <div class="chat-scroll" id="chat-messages"></div>
-    <button id="dm-scroll-bottom" class="chat-scroll-fab" style="display:none" onclick="var el=document.getElementById('chat-messages');el.scrollTop=el.scrollHeight">↓</button>
+    <button id="dm-scroll-bottom" class="chat-scroll-fab" style="display:none" onclick="var el=document.getElementById('chat-messages');el.scrollTo({top:el.scrollHeight,behavior:'smooth'})">↓</button>
     <div id="dm-typing-indicator" class="dm-typing-indicator" style="display:none">
       <div class="dm-typing-avatar" id="dm-typing-avatar"></div>
       <div class="dm-typing-bubble">
@@ -1268,7 +1268,7 @@
             </button>
           </div>
         </div>
-        <input class="chat-composer-input" id="chat-input" placeholder="Skriv en besked..." oninput="dmOnInput()">
+        <input class="chat-composer-input" id="chat-input" placeholder="Skriv en besked..." oninput="dmOnInput()" enterkeyhint="send" autocomplete="off" autocorrect="on" spellcheck="true">
         <button class="chat-send-btn" id="chat-send-btn" ontouchstart="event.preventDefault()" ontouchend="event.preventDefault();sendMessage()" onclick="if(!('ontouchstart' in window))sendMessage()">→</button>
       </div>
     </div>
