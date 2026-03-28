@@ -11,6 +11,22 @@
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 
+// Download external avatar (LinkedIn/Google) to Supabase Storage → permanent URL
+async function _downloadAvatarToStorage(externalUrl, userId) {
+  try {
+    var res = await fetch(externalUrl);
+    if (!res.ok) return null;
+    var blob = await res.blob();
+    if (!blob.type.startsWith('image/')) return null;
+    var toUpload = (typeof resizeImage === 'function') ? await resizeImage(blob, 400) : blob;
+    var path = 'avatars/' + userId + '/' + Date.now() + '.jpg';
+    var { error: upErr } = await sb.storage.from('bubble-files').upload(path, toUpload, { cacheControl: '3600', upsert: true, contentType: 'image/jpeg' });
+    if (upErr) { console.warn('[avatar] upload failed:', upErr); return null; }
+    var { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
+    return urlData?.publicUrl || null;
+  } catch(e) { console.warn('[avatar] download failed:', e); return null; }
+}
+
 // ══════════════════════════════════════════════════════════
 //  ONBOARDING
 // ══════════════════════════════════════════════════════════
@@ -28,8 +44,21 @@ async function maybeShowOnboarding() {
     // Auto-save avatar from OAuth if user doesn't have one
     if (autoAvatar && !currentProfile?.avatar_url) {
       try {
-        await sb.from('profiles').update({ avatar_url: autoAvatar }).eq('id', currentUser.id);
-        if (currentProfile) currentProfile.avatar_url = autoAvatar;
+        var savedUrl = await _downloadAvatarToStorage(autoAvatar, currentUser.id);
+        var finalUrl = savedUrl || autoAvatar; // fallback to external URL if download fails (CORS)
+        await sb.from('profiles').update({ avatar_url: finalUrl }).eq('id', currentUser.id);
+        if (currentProfile) currentProfile.avatar_url = finalUrl;
+      } catch(e) { /* silent — avatar is optional */ }
+    }
+
+    // Repair: existing users with external avatar URLs (LinkedIn/Google expire)
+    if (currentProfile?.avatar_url && !currentProfile.avatar_url.includes('supabase')) {
+      try {
+        var repairedUrl = await _downloadAvatarToStorage(currentProfile.avatar_url, currentUser.id);
+        if (repairedUrl) {
+          await sb.from('profiles').update({ avatar_url: repairedUrl }).eq('id', currentUser.id);
+          currentProfile.avatar_url = repairedUrl;
+        }
       } catch(e) { /* silent */ }
     }
 
