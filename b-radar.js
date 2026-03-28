@@ -66,8 +66,8 @@ function renderRadarList() {
     var bubbleInfo = p.sharedBubbles > 0 ? '<span class="fs-065 text-muted">' + p.sharedBubbles + ' f\u00e6lles boble' + (p.sharedBubbles > 1 ? 'r' : '') + '</span>' : '';
     return '<div class="radar-list-card" data-uid="' + p.id + '" data-name="' + escHtml(name) + '" style="--card-delay:' + (i * 40) + 'ms">' +
       '<div class="flex-row-center" style="gap:0.7rem">' +
-        '<div class="radar-list-avatar" style="background:' + col + ';' + bd + '" onclick="openRadarPerson(\'' + p.id + '\')">' + escHtml(ini) + '</div>' +
-        '<div style="flex:1;min-width:0;cursor:pointer" onclick="openRadarPerson(\'' + p.id + '\')">' +
+        '<div class="radar-list-avatar" style="background:' + col + ';' + bd + '" onclick="openListPerson(\'' + p.id + '\')">' + escHtml(ini) + '</div>' +
+        '<div style="flex:1;min-width:0;cursor:pointer" onclick="openListPerson(\'' + p.id + '\')">' +
           '<div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(name) + '</div>' +
           (isA ? '' : '<div class="fs-072 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + '</div>') +
         '</div>' +
@@ -211,6 +211,15 @@ function closeRadarPerson() {
     document.getElementById('radar-person-overlay').classList.remove('open');
     setTimeout(function() { _radarSheetProtected = false; }, 400);
   }, 320);
+}
+
+// Open person-sheet directly from list view (stays on top of list, no mini card)
+function openListPerson(userId) {
+  _radarSheetProtected = true;
+  if (typeof dmOpenPersonSheet === 'function') {
+    dmOpenPersonSheet(userId);
+  }
+  setTimeout(function() { _radarSheetProtected = false; }, 800);
 }
 function rpMessage() { closeRadarPerson(); closeRadarSheet(); setTimeout(function(){ openChat(rpCurrentUserId, 'screen-home'); }, 400); }
 async function rpSaveContact() {
