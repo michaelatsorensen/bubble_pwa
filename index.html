@@ -12,35 +12,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=61080">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=61080">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=61080">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=61080">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=61080">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=61080">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=61080">
+<link rel="manifest" href="manifest.json?v=61090">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=61090">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=61090">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=61090">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=61090">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=61090">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=61090">
 
-<link rel="stylesheet" href="app.css?v=61080">
+<link rel="stylesheet" href="app.css?v=61090">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=61080" defer></script>
-<script src="tag-data.js?v=61080" defer></script>
-<script src="b-config.js?v=61080" defer></script>
-<script src="b-utils.js?v=61080" defer></script>
-<script src="b-auth.js?v=61080" defer></script>
-<script src="b-home.js?v=61080" defer></script>
-<script src="b-bubbles.js?v=61080" defer></script>
-<script src="b-profile.js?v=61080" defer></script>
-<script src="b-radar.js?v=61080" defer></script>
-<script src="b-messages.js?v=61080" defer></script>
-<script src="b-realtime.js?v=61080" defer></script>
-<script src="b-onboarding.js?v=61080" defer></script>
-<script src="b-chat.js?v=61080" defer></script>
-<script src="b-notifications.js?v=61080" defer></script>
-<script src="b-live.js?v=61080" defer></script>
-<script src="b-admin.js?v=61080" defer></script>
-<script src="b-navigation.js?v=61080" defer></script>
-<script src="b-boot.js?v=61080" defer></script>
+<script src="bubble-icons.js?v=61090" defer></script>
+<script src="tag-data.js?v=61090" defer></script>
+<script src="b-config.js?v=61090" defer></script>
+<script src="b-utils.js?v=61090" defer></script>
+<script src="b-auth.js?v=61090" defer></script>
+<script src="b-home.js?v=61090" defer></script>
+<script src="b-bubbles.js?v=61090" defer></script>
+<script src="b-profile.js?v=61090" defer></script>
+<script src="b-radar.js?v=61090" defer></script>
+<script src="b-messages.js?v=61090" defer></script>
+<script src="b-realtime.js?v=61090" defer></script>
+<script src="b-onboarding.js?v=61090" defer></script>
+<script src="b-chat.js?v=61090" defer></script>
+<script src="b-notifications.js?v=61090" defer></script>
+<script src="b-live.js?v=61090" defer></script>
+<script src="b-admin.js?v=61090" defer></script>
+<script src="b-navigation.js?v=61090" defer></script>
+<script src="b-boot.js?v=61090" defer></script>
   
 
 
@@ -1415,7 +1415,7 @@
       <div style="flex:1;height:5px;border-radius:3px;background:rgba(124,92,252,0.1)"><div id="setup-interest-bar" style="height:100%;border-radius:3px;background:var(--gradient-primary);transition:width 0.4s"></div></div>
       <div style="font-size:0.72rem;color:var(--muted);font-weight:600" id="setup-interest-pct">46%</div>
     </div>
-    <button class="btn-primary" id="setup-interest-save" onclick="saveSetupInterests()" style="width:100%;opacity:0.35;pointer-events:none">Vælg 3 mere</button>
+    <button class="btn-primary" id="setup-interest-save" onclick="saveSetupInterests()" style="width:100%" disabled>Vælg 3 mere</button>
     <div onclick="skipSetupSheet('interests')" style="text-align:center;margin-top:0.5rem;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:0.3rem">Spring over</div>
   </div>
 </div>
@@ -1440,7 +1440,7 @@
       <div style="flex:1;height:5px;border-radius:3px;background:rgba(124,92,252,0.1)"><div id="setup-ls-bar" style="height:100%;border-radius:3px;background:var(--gradient-primary);transition:width 0.4s"></div></div>
       <div style="font-size:0.72rem;color:var(--muted);font-weight:600" id="setup-ls-pct">59%</div>
     </div>
-    <button class="btn-primary" id="setup-ls-save" onclick="saveSetupLifestage()" style="width:100%;opacity:0.35;pointer-events:none">Vælg din type</button>
+    <button class="btn-primary" id="setup-ls-save" onclick="saveSetupLifestage()" style="width:100%" disabled>Vælg din type</button>
     <div onclick="skipSetupSheet('lifestage')" style="text-align:center;margin-top:0.5rem;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:0.3rem">Spring over</div>
   </div>
 </div>
@@ -1779,7 +1779,7 @@
   <div id="invite-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0"></div>
   <div style="display:flex;gap:0.5rem;margin-top:0.6rem;flex-shrink:0">
     <button onclick="bbClose('invite')" style="flex:1;padding:0.65rem;font-size:0.82rem;font-weight:600;border-radius:12px;border:1px solid var(--glass-border);cursor:pointer;font-family:inherit;color:var(--text-secondary);background:transparent">Annuller</button>
-    <button id="invite-send-btn" onclick="sendBubbleInvites()" style="flex:1;padding:0.65rem;font-size:0.82rem;font-weight:700;border-radius:12px;border:none;cursor:pointer;font-family:inherit;background:var(--gradient-primary);color:white;opacity:0.4;transition:opacity 0.2s" disabled>Send invitationer</button>
+    <button id="invite-send-btn" onclick="sendBubbleInvites()" style="flex:1;padding:0.65rem;font-size:0.82rem;font-weight:700;border-radius:12px;border:none;cursor:pointer;font-family:inherit;background:var(--gradient-primary);color:white;transition:opacity 0.2s" disabled>Send invitationer</button>
   </div>
 </div>
 
