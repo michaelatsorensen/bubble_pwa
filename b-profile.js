@@ -583,6 +583,9 @@ function openRadarSheet() {
 var _radarSheetProtected = false;
 
 function closeRadarSheet() {
+  // Never close the list while person-sheet is open on top
+  var psOverlay = document.getElementById('ps-overlay');
+  if (psOverlay && psOverlay.classList.contains('open')) return;
   if (_radarSheetProtected) return;
   document.body.style.overflow = '';
   var sheet = document.getElementById('radar-sheet');
