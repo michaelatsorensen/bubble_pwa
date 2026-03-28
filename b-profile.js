@@ -580,7 +580,10 @@ function openRadarSheet() {
   initSwipeClose(sheet, closeRadarSheet);
 }
 
+var _radarSheetProtected = false;
+
 function closeRadarSheet() {
+  if (_radarSheetProtected) return;
   document.body.style.overflow = '';
   var sheet = document.getElementById('radar-sheet');
   if (sheet) { sheet.style.transform = ''; sheet.classList.remove('open'); }

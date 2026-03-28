@@ -205,8 +205,12 @@ async function openRadarPerson(userId) {
 }
 
 function closeRadarPerson() {
+  _radarSheetProtected = true;
   document.getElementById('radar-person-sheet').classList.remove('open');
-  setTimeout(function(){ document.getElementById('radar-person-overlay').classList.remove('open'); }, 320);
+  setTimeout(function(){
+    document.getElementById('radar-person-overlay').classList.remove('open');
+    setTimeout(function() { _radarSheetProtected = false; }, 400);
+  }, 320);
 }
 function rpMessage() { closeRadarPerson(); closeRadarSheet(); setTimeout(function(){ openChat(rpCurrentUserId, 'screen-home'); }, 400); }
 async function rpSaveContact() {
