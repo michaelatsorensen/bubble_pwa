@@ -136,7 +136,10 @@ async function convConfirmDelete() {
     var ids = convSelectedIds.slice();
     for (var i = 0; i < ids.length; i++) {
       var partnerId = ids[i];
-      await sb.from('messages').delete().or('and(sender_id.eq.' + currentUser.id + ',receiver_id.eq.' + partnerId + '),and(sender_id.eq.' + partnerId + ',receiver_id.eq.' + currentUser.id + ')');
+      // Only delete messages WE sent — partner keeps their copy
+      await sb.from('messages').delete()
+        .eq('sender_id', currentUser.id)
+        .eq('receiver_id', partnerId);
     }
     var list = document.getElementById('conversations-list');
     ids.forEach(function(id) {

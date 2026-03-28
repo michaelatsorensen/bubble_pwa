@@ -761,11 +761,11 @@ async function bcLoadMessages() {
 
     msgs.forEach(m => {
       m.profiles = profileMap[m.user_id] || { name: '?' };
-      const d = new Date(m.created_at).toLocaleDateString('da-DK', {weekday:'long', day:'numeric', month:'short'});
+      const d = new Date(m.created_at).toLocaleDateString('da-DK', {weekday:'short', day:'numeric', month:'short'});
       if (d !== lastDate) {
         const sep = document.createElement('div');
         sep.className = 'chat-date-sep';
-        sep.textContent = d.toUpperCase();
+        sep.textContent = d;
         el.appendChild(sep);
         lastDate = d;
       }
@@ -787,15 +787,17 @@ function bcRenderMsg(m) {
   const p = m.profiles || {};
   const name = p.name || '?';
   const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  const gradients = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
-  const color = gradients[Math.abs(name.charCodeAt(0)) % gradients.length];
   const gp = m._gp || 'single';
-  const isCont = gp === 'cont';
-  const isTail = gp === 'tail';
+  const showAvatar = !isMe && (gp === 'tail' || gp === 'single');
+  const showName = !isMe && (gp === 'first' || gp === 'single');
 
   const row = document.createElement('div');
-  row.className = 'msg-row' + (isMe ? ' me' : '') + (isCont ? ' msg-cont' : '') + (isTail ? ' msg-tail' : '');
+  row.className = 'msg-row msg-' + gp + (isMe ? ' me' : '');
   row.id = 'bc-msg-' + m.id;
+  row.setAttribute('oncontextmenu', "event.preventDefault();bcLongPress('" + m.id + "'," + isMe + ")");
+  row.setAttribute('ontouchstart', "bcTouchStart(event,'" + m.id + "'," + isMe + ")");
+  row.setAttribute('ontouchend', 'bcTouchEnd()');
+  row.setAttribute('ontouchmove', 'bcTouchEnd()');
 
   let bubble = '';
   if (m.file_url) {
@@ -803,28 +805,47 @@ function bcRenderMsg(m) {
     const ext = m.file_name?.split('.').pop()?.toLowerCase() || '';
     const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext) || (m.file_type||'').startsWith('image/');
     if (isImg) {
-      bubble = `<a href="${safeUrl}" target="_blank" rel="noopener"><img class="msg-img" src="${safeUrl}" alt="${escHtml(m.file_name||'')}"></a>`;
+      bubble = '<a href="javascript:void(0)" onclick="chatLightbox(\'' + safeUrl + '\')"><img class="msg-img" src="' + safeUrl + '" alt="' + escHtml(m.file_name||'') + '"></a>';
     } else {
       const sz = m.file_size ? (m.file_size < 1048576 ? Math.round(m.file_size/1024)+'KB' : (m.file_size/1048576).toFixed(1)+'MB') : '';
-      bubble = `<a class="msg-file" href="${safeUrl}" target="_blank" rel="noopener">${icon('clip')} ${escHtml(m.file_name||'Fil')} <span class="msg-file-sz">${sz}</span></a>`;
+      bubble = '<a class="msg-file" href="' + safeUrl + '" target="_blank" rel="noopener">' + icon('clip') + ' ' + escHtml(m.file_name||'Fil') + ' <span class="msg-file-sz">' + sz + '</span></a>';
     }
   } else {
-    bubble = `<div class="msg-bubble${isMe ? ' sent' : ''}" id="bc-bubble-${m.id}">${escHtml(filterChatContent(m.content||''))}</div>`;
+    var content = m.content || '';
+    var edited = m.edited ? ' <span class="msg-edited" onclick="bcShowHistory(\'' + m.id + '\')">redigeret</span>' : '';
+    if (isEmojiOnly(content)) {
+      bubble = '<div class="msg-emoji" id="bc-bubble-' + m.id + '">' + escHtml(content) + '</div>';
+    } else {
+      bubble = '<div class="msg-bubble' + (isMe ? ' sent' : '') + '" id="bc-bubble-' + m.id + '">' + linkify(escHtml(filterChatContent(content))) + edited + '</div>';
+    }
   }
 
-  const editedTag = m.edited ? ` <span class="msg-edited" onclick="bcShowHistory('${m.id}')">redigeret</span>` : '';
-  const nameHtml = escHtml(name);
-  const safeTitle = escHtml(p.title||'');
-  const bcAvUrl = isMe ? currentProfile?.avatar_url : (p.avatar_url || null);
-  const bcAvInner = bcAvUrl ? '<img src="'+bcAvUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : initials;
+  var nameHtml = escHtml(name);
+  var safeTitle = escHtml(p.title||'');
+  var bcAvUrl = isMe ? currentProfile?.avatar_url : (p.avatar_url || null);
+  var bcAvInner = bcAvUrl ? '<img src="' + bcAvUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : initials;
+  var avatarColor = 'linear-gradient(135deg,#CECBF6,#AFA9EC)';
+  var avatarStyle = isMe ? 'display:none' : ('background:' + avatarColor + ';overflow:hidden' + (showAvatar ? ';cursor:pointer' : ';visibility:hidden'));
+  var avatarClick = showAvatar ? " onclick=\"bcOpenPerson('" + m.user_id + "','" + nameHtml + "','" + safeTitle + "','" + avatarColor + "')\"" : '';
+
+  // Timestamp on tail/single
+  var timeHtml = '';
+  if (gp === 'single' || gp === 'tail') {
+    var t = new Date(m.created_at);
+    timeHtml = '<div class="msg-timestamp">' + t.toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'}) + '</div>';
+  }
+
+  // Sender name on first/single (group chat context)
+  var nameRow = showName ? '<div class="msg-sender-name">' + nameHtml + '</div>' : '';
 
   row.innerHTML =
-    `<div class="msg-avatar" style="background:${color};overflow:hidden" onclick="bcOpenPerson('${m.user_id}','${nameHtml}','${safeTitle}','${color}')">${bcAvInner}</div>` +
-    `<div class="msg-body">` +
-      `<div class="msg-head"><span class="msg-name">${nameHtml}</span><span class="msg-time">${editedTag}</span></div>` +
-      `<div class="msg-content">${bubble}<button class="msg-dots" onclick="bcOpenContext(event,this,${isMe},'${m.id}')" aria-label="Mere">⋯</button></div>` +
-      `<div class="msg-reactions" id="bc-reactions-${m.id}"></div>` +
-    `</div>`;
+    '<div class="msg-avatar"' + avatarClick + ' style="' + avatarStyle + '">' + bcAvInner + '</div>' +
+    '<div class="msg-body">' +
+      nameRow +
+      '<div class="msg-content">' + bubble + '</div>' +
+      '<div class="msg-reactions" id="bc-reactions-' + m.id + '"></div>' +
+      timeHtml +
+    '</div>';
 
   setTimeout(() => bcLoadReactions(m.id), 80);
   return row;
@@ -991,6 +1012,108 @@ async function bcHandleFile(input) {
     }
     input.value = '';
   } catch(e) { logError("bcHandleFile", e); errorToast("upload", e); }
+}
+
+// ── BC Long-press context menu (matches DM pattern) ──
+var _bcLongPressTimer = null;
+
+function bcTouchStart(event, msgId, isMe) {
+  _bcLongPressTimer = setTimeout(function() { bcLongPress(msgId, isMe); }, 500);
+}
+
+function bcTouchEnd() {
+  if (_bcLongPressTimer) { clearTimeout(_bcLongPressTimer); _bcLongPressTimer = null; }
+}
+
+function bcLongPress(msgId, isMe) {
+  if (navigator.vibrate) navigator.vibrate(10);
+  var msgEl = document.getElementById('bc-msg-' + msgId);
+  if (!msgEl) return;
+
+  var overlay = document.createElement('div');
+  overlay.className = 'dm-ctx-overlay';
+  overlay.onclick = function() { overlay.remove(); };
+
+  var container = document.createElement('div');
+  container.style.cssText = 'position:absolute;display:flex;flex-direction:column;align-items:' + (isMe ? 'flex-end' : 'flex-start') + ';padding:0 1rem;';
+  var rect = msgEl.getBoundingClientRect();
+  container.style.top = Math.max(60, rect.top - 50) + 'px';
+  container.style.left = '0';
+  container.style.right = '0';
+
+  // Reaction bar
+  var reactions = document.createElement('div');
+  reactions.className = 'dm-ctx-reactions';
+  ['\u2764\uFE0F', '\uD83D\uDC4D', '\uD83D\uDE02', '\uD83D\uDE2E', '\uD83D\uDD25', '+'].forEach(function(emoji) {
+    var btn = document.createElement('button');
+    btn.textContent = emoji;
+    if (emoji === '+') { btn.style.fontSize = '14px'; btn.style.color = 'var(--muted)'; }
+    btn.onclick = function(e) {
+      e.stopPropagation();
+      if (emoji !== '+') bcReact(msgId, emoji);
+      overlay.remove();
+    };
+    reactions.appendChild(btn);
+  });
+  container.appendChild(reactions);
+
+  // Context menu
+  var menu = document.createElement('div');
+  menu.className = 'dm-ctx-menu';
+  var copyBtn = document.createElement('button');
+  copyBtn.textContent = 'Kopier';
+  copyBtn.onclick = function(e) { e.stopPropagation(); var b = document.getElementById('bc-bubble-' + msgId); if (b) navigator.clipboard.writeText(b.textContent).then(function(){ showToast('Kopieret'); }); overlay.remove(); };
+  menu.appendChild(copyBtn);
+  if (isMe) {
+    var editBtn = document.createElement('button');
+    editBtn.textContent = 'Rediger';
+    editBtn.onclick = function(e) { e.stopPropagation(); overlay.remove(); bcEditStart(msgId); };
+    menu.appendChild(editBtn);
+    var delBtn = document.createElement('button');
+    delBtn.className = 'danger';
+    delBtn.textContent = 'Slet';
+    delBtn.onclick = function(e) { e.stopPropagation(); overlay.remove(); bcDeleteConfirm(msgId); };
+    menu.appendChild(delBtn);
+  }
+  container.appendChild(menu);
+  overlay.appendChild(container);
+  document.body.appendChild(overlay);
+}
+
+function bcEditStart(msgId) {
+  bcCurrentMsgId = msgId;
+  var bubble = document.getElementById('bc-bubble-' + msgId);
+  if (!bubble) return;
+  var input = document.getElementById('bc-input');
+  if (input) { input.value = bubble.textContent; input.focus(); }
+  var editBar = document.getElementById('bc-edit-bar');
+  if (editBar) editBar.style.display = 'flex';
+}
+
+async function bcDeleteConfirm(msgId) {
+  try {
+    await sb.from('bubble_messages').delete().eq('id', msgId).eq('user_id', currentUser.id);
+    var el = document.getElementById('bc-msg-' + msgId);
+    if (el) { el.style.transition = 'opacity 0.2s'; el.style.opacity = '0'; setTimeout(function(){ el.remove(); }, 200); }
+    showToast('Besked slettet');
+  } catch(e) { logError('bcDeleteConfirm', e); errorToast('delete', e); }
+}
+
+// ── Shared image lightbox ──
+function chatLightbox(url) {
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;padding:1rem;cursor:pointer';
+  overlay.onclick = function() { overlay.remove(); };
+  var img = document.createElement('img');
+  img.src = url;
+  img.style.cssText = 'max-width:100%;max-height:100%;border-radius:8px;object-fit:contain';
+  var closeBtn = document.createElement('button');
+  closeBtn.textContent = '✕';
+  closeBtn.style.cssText = 'position:absolute;top:calc(16px + env(safe-area-inset-top,0px));right:16px;background:rgba(255,255,255,0.2);border:none;color:white;font-size:1.2rem;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center';
+  closeBtn.onclick = function(e) { e.stopPropagation(); overlay.remove(); };
+  overlay.appendChild(img);
+  overlay.appendChild(closeBtn);
+  document.body.appendChild(overlay);
 }
 
 function bcOpenContext(e, btn, isMe, msgId) {

@@ -489,6 +489,8 @@ function dmRenderMsg(m) {
   if (sent && m._showReceipt) {
     if (m.read_at) {
       receipt = '<div class="msg-receipt" id="dm-receipt-' + m.id + '">Læst</div>';
+    } else {
+      receipt = '<div class="msg-receipt msg-receipt-sent" id="dm-receipt-' + m.id + '">Sendt</div>';
     }
   }
 
@@ -505,7 +507,7 @@ function dmRenderMsg(m) {
     const ext = m.file_name?.split('.').pop()?.toLowerCase() || '';
     const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext) || (m.file_type||'').startsWith('image/');
     if (isImg) {
-      bubble = '<a href="' + safeUrl + '" target="_blank" rel="noopener"><img class="msg-img" src="' + safeUrl + '" alt="' + escHtml(m.file_name||'') + '"></a>';
+      bubble = '<a href="javascript:void(0)" onclick="chatLightbox(\'' + safeUrl + '\')"><img class="msg-img" src="' + safeUrl + '" alt="' + escHtml(m.file_name||'') + '"></a>';
     } else {
       const sz = m.file_size ? (m.file_size < 1048576 ? Math.round(m.file_size/1024)+'KB' : (m.file_size/1048576).toFixed(1)+'MB') : '';
       bubble = '<a class="msg-file" href="' + safeUrl + '" target="_blank" rel="noopener">' + icon('clip') + ' ' + escHtml(m.file_name||'Fil') + ' <span class="msg-file-sz">' + sz + '</span></a>';
@@ -806,7 +808,7 @@ function dmUpdateReceipts(msgIds) {
     var el = document.getElementById('dm-receipt-' + id);
     if (el) {
       el.textContent = 'Læst';
-      el.style.color = '#1A9E8E';
+      el.className = 'msg-receipt';
     }
   });
 }

@@ -854,9 +854,12 @@ a.person-action-btn { text-decoration:none; }
 .msg-row.msg-tail.me .msg-bubble { border-radius:18px 4px 18px 18px; }
 /* Read receipt */
 .msg-receipt { display:block; font-size:0.52rem; color:#1A9E8E; margin-top:0.1rem; text-align:right; }
+.msg-receipt-sent { color:var(--muted); }
 /* Message timestamp */
 .msg-timestamp { font-size:0.48rem; color:var(--muted); margin-top:0.1rem; }
 .msg-row.me .msg-timestamp { text-align:right; }
+/* Sender name in group/bubble chat */
+.msg-sender-name { font-size:0.58rem; font-weight:600; color:var(--accent); margin-bottom:0.1rem; }
 /* Emoji-only messages — no bubble, larger font */
 .msg-emoji { font-size:2rem; line-height:1.2; padding:0.1rem 0; }
 /* Send animation */

@@ -56,6 +56,29 @@ async function resolvePostAuthDestination() {
   // Step 3: pending contact (from QR scan before auth)
   await checkPendingContact();
 
+  // Push notification deep link
+  var pushParams = new URLSearchParams(window.location.search);
+  var pushAction = pushParams.get('push');
+  if (pushAction) {
+    // Clean URL
+    history.replaceState(null, '', window.location.pathname);
+    if (pushAction === 'chat' && pushParams.get('uid')) {
+      goTo('screen-home');
+      setTimeout(function() { openChat(pushParams.get('uid'), 'screen-messages'); }, 500);
+      return;
+    } else if (pushAction === 'messages') {
+      goTo('screen-messages');
+      return;
+    } else if (pushAction === 'notifications') {
+      goTo('screen-notifications');
+      return;
+    } else if (pushAction === 'bubble' && pushParams.get('id')) {
+      goTo('screen-home');
+      setTimeout(function() { openBubbleChat(pushParams.get('id')); }, 500);
+      return;
+    }
+  }
+
   // Step 4: event flow (from event QR)
   var isEventFlow = flowGet('event_flow');
   var postTagsDest = flowGet('post_tags_destination');
