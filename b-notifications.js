@@ -297,6 +297,14 @@ async function notifApproveJoin(bubbleId, userId, btn) {
     if (error) throw error;
     if (card) { card.style.opacity = '0.4'; card.innerHTML = '<div style="padding:0.5rem;font-size:0.78rem;color:var(--green);font-weight:600">Godkendt \u2713</div>'; }
     updateTopbarNotifBadge();
+    // Notify approved user via Broadcast
+    try {
+      var { data: bub } = await sb.from('bubbles').select('name').eq('id', bubbleId).single();
+      var ch = sb.channel('member-notify-' + userId);
+      await ch.subscribe();
+      await ch.send({ type: 'broadcast', event: 'approved', payload: { bubbleName: bub?.name || '', bubbleId: bubbleId } });
+      setTimeout(function() { ch.unsubscribe(); }, 2000);
+    } catch(e2) { console.debug('[approve] broadcast error:', e2); }
   } catch(e) { errorToast('save', e); }
 }
 

@@ -162,6 +162,16 @@ async function joinBubble(bubbleId) {
     await openBubble(bubbleId);
     loadHome();
     trackEvent('bubble_joined', { bubble_id: bubbleId });
+    // Notify owner via Broadcast
+    try {
+      var { data: bub } = await sb.from('bubbles').select('name, created_by').eq('id', bubbleId).single();
+      if (bub && bub.created_by && bub.created_by !== currentUser.id) {
+        var ch = sb.channel('member-notify-' + bub.created_by);
+        await ch.subscribe();
+        await ch.send({ type: 'broadcast', event: 'new_member', payload: { bubbleName: bub.name || '', bubbleId: bubbleId, memberName: currentProfile?.name || '' } });
+        setTimeout(function() { ch.unsubscribe(); }, 2000);
+      }
+    } catch(e2) { console.debug('[join] broadcast error:', e2); }
   } catch(e) { logError("joinBubble", e); errorToast("save", e); }
 }
 
@@ -639,6 +649,15 @@ async function requestJoin(bubbleId) {
     if (error && !String(error.message || '').includes('duplicate')) return errorToast('save', error);
     showToast('Anmodning sendt! Ejeren skal godkende 🔒');
     await openBubble(bubbleId);
+    // Notify owner via Broadcast
+    try {
+      if (b && b.created_by && b.created_by !== currentUser.id) {
+        var ch = sb.channel('member-notify-' + b.created_by);
+        await ch.subscribe();
+        await ch.send({ type: 'broadcast', event: 'join_request', payload: { bubbleName: b.name || '', bubbleId: bubbleId, memberName: currentProfile?.name || '' } });
+        setTimeout(function() { ch.unsubscribe(); }, 2000);
+      }
+    } catch(e2) { console.debug('[requestJoin] broadcast error:', e2); }
   } catch(e) { logError("requestJoin", e); errorToast("save", e); }
 }
 

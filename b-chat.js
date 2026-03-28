@@ -471,7 +471,8 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
     bcSwitchTab('members');
     // Edit button as topbar card
     actionArea.innerHTML =
-      (canEdit ? `<button class="chat-topbar-back" data-action="openEditBubble" data-id="${b.id}" title="Rediger"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg></button>` : '');
+      (canEdit ? `<button class="chat-topbar-back" data-action="openEditBubble" data-id="${b.id}" title="Rediger"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg></button>` : '') +
+      (canEdit && (b.type === 'event' || b.type === 'live') ? `<button class="chat-topbar-back" onclick="openBubbleScannerFromInfo('${b.id}')" title="Scanner" style="color:#1A9E8E"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>` : '');
     actionArea.style.display = canEdit ? 'flex' : 'none';
     if (actionBar) {
       var upvoted = myUpvotes[b.id];
@@ -1360,6 +1361,14 @@ async function bcApproveMember(userId) {
     if (error) throw error;
     showSuccessToast('Medlem godkendt');
     bcLoadMembers();
+    // Notify approved user via Broadcast
+    var bubbleName = bcBubbleData?.name || '';
+    try {
+      var ch = sb.channel('member-notify-' + userId);
+      await ch.subscribe();
+      await ch.send({ type: 'broadcast', event: 'approved', payload: { bubbleName: bubbleName, bubbleId: bcBubbleId } });
+      setTimeout(function() { ch.unsubscribe(); }, 2000);
+    } catch(e2) { console.debug('[approve] broadcast error:', e2); }
   } catch(e) { logError('bcApproveMember', e); errorToast('save', e); }
 }
 
@@ -1495,14 +1504,6 @@ async function bcLoadInfo() {
     var adminHtml = '';
     if (canEdit) {
       var adminItems = '';
-      // Event-only: scanner
-      if (isEvent) {
-        adminItems += '<div onclick="openBubbleScannerFromInfo(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;background:rgba(26,158,142,0.03);cursor:pointer">' +
-          '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:#1A9E8E">' + icon('camera') + '</span>' +
-          '<div style="flex:1;font-size:0.8rem;font-weight:600;color:#085041">Scan deltagere ind</div>' +
-          '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>' +
-          '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>';
-      }
       // Shared: admins
       if (isOwner) {
         adminItems += '<div onclick="openAdminDesignation(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +

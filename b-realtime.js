@@ -353,6 +353,28 @@ function initGlobalRealtime() {
     })
     .subscribe(_rtStatusCallback('rt-checkin'));
   _globalRtChannels.push(chCheckin);
+
+  // ── Kanal 6: Member notifications (approval, new joins) ──
+  var chMember = sb.channel('member-notify-' + currentUser.id)
+    .on('broadcast', { event: 'approved' }, function(msg) {
+      var data = msg.payload || {};
+      showSuccessToast('Du er godkendt i ' + (data.bubbleName || 'en boble') + ' — velkommen! ✓');
+      if (document.getElementById('screen-home')?.classList.contains('active')) {
+        loadHome();
+      }
+    })
+    .on('broadcast', { event: 'new_member' }, function(msg) {
+      var data = msg.payload || {};
+      showToast((data.memberName || 'Nogen') + ' er nu medlem af ' + (data.bubbleName || 'din boble'));
+      updateTopbarNotifBadge();
+    })
+    .on('broadcast', { event: 'join_request' }, function(msg) {
+      var data = msg.payload || {};
+      showToast((data.memberName || 'Nogen') + ' anmoder om adgang til ' + (data.bubbleName || 'din boble') + ' 🔒');
+      updateTopbarNotifBadge();
+    })
+    .subscribe(_rtStatusCallback('rt-member'));
+  _globalRtChannels.push(chMember);
 }
 
 
@@ -462,8 +484,8 @@ async function openChat(userId, fromScreen) {
       if (chatSubscription) {
         try { chatSubscription.send({ type: 'broadcast', event: 'read_receipt', payload: { msgIds: unreadIds } }); } catch(e) { logError("dm:read_receipt_broadcast", e); }
       }
+      unreadDecrement(unreadIds.length);
     }
-    if (unreadIds.length > 0) unreadDecrement(unreadIds.length);
   } catch(e) { logError("openChat", e); errorToast("load", e); }
 }
 
