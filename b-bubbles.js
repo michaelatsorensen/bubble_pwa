@@ -579,6 +579,15 @@ function cbRenderPillSelect(selectId, options) {
         if (edg) edg.style.display = isEvt ? 'block' : 'none';
         if (etg) etg.style.display = isEvt ? 'block' : 'none';
       }
+      if (selectId === 'eb-type') {
+        var isEvt2 = (opt.value === 'event' || opt.value === 'live');
+        var cmg2 = document.getElementById('eb-checkin-mode-group');
+        var edg2 = document.getElementById('eb-event-date-group');
+        var etg2 = document.getElementById('eb-event-time-group');
+        if (cmg2) cmg2.style.display = isEvt2 ? 'block' : 'none';
+        if (edg2) edg2.style.display = isEvt2 ? 'block' : 'none';
+        if (etg2) etg2.style.display = isEvt2 ? 'block' : 'none';
+      }
     };
     wrap.appendChild(btn);
   });
@@ -586,6 +595,7 @@ function cbRenderPillSelect(selectId, options) {
   select.style.display = 'none';
   select.parentNode.insertBefore(wrap, select.nextSibling);
 }
+var ebRenderPillSelect = cbRenderPillSelect;
 
 async function createBubble() {
   try {
@@ -705,6 +715,16 @@ async function openEditBubble(bubbleId) {
     }
 
     _pendingBubbleIcon = b.icon_url || null;
+    // Render pill selects for type + visibility (same as create form)
+    ebRenderPillSelect('eb-type', [
+      { value: 'event',   icon: 'calendar', label: 'Event' },
+      { value: 'network', icon: 'bubble',   label: 'Netværk' }
+    ]);
+    ebRenderPillSelect('eb-visibility', [
+      { value: 'public',  icon: 'globe', label: 'Offentlig' },
+      { value: 'private', icon: 'lock',  label: 'Privat' },
+      { value: 'hidden',  icon: 'eye',   label: 'Skjult' }
+    ]);
     openModal('modal-edit-bubble');
     setTimeout(initInputConfirmButtons, 50);
   } catch(e) { logError("openEditBubble", e); errorToast("load", e); }
