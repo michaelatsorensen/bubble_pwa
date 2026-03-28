@@ -1872,14 +1872,12 @@ async function dmOpenPersonSheet(userId) {
 
 
 function psClose() {
-  if (typeof _radarSheetProtected !== 'undefined') _radarSheetProtected = true;
   var sheet = document.getElementById('person-sheet-el');
   if (sheet) { sheet.classList.remove('open'); sheet.style.transform = ''; }
   document.getElementById('ps-bubbleup-btn').style.display = 'flex';
   document.getElementById('ps-bubbleup-confirm').classList.remove('show');
   setTimeout(function() {
     document.getElementById('ps-overlay').classList.remove('open');
-    setTimeout(function() { if (typeof _radarSheetProtected !== 'undefined') _radarSheetProtected = false; }, 400);
   }, 320);
 }
 

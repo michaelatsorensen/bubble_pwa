@@ -577,15 +577,20 @@ function openRadarSheet() {
     // Fallback: render from cache if fetch fails
     if (radarCurrentView === 'map') renderProximityDots(); else renderRadarList();
   });
-  initSwipeClose(sheet, safeCloseRadarSheet);
+  initSwipeClose(sheet, exitRadarList);
 }
 
 var _radarSheetProtected = false;
+var _radarBrowsing = false; // True while user is browsing profiles from list
 
 function safeCloseRadarSheet() {
-  // Never close if any overlay is on top
-  if (document.querySelector('#ps-overlay.open, #radar-person-overlay.open')) return;
-  if (_radarSheetProtected) return;
+  if (_radarBrowsing) return;
+  closeRadarSheet();
+}
+
+// Explicit exit — only called by user actions (X, swipe, "Besked")
+function exitRadarList() {
+  _radarBrowsing = false;
   closeRadarSheet();
 }
 

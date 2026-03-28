@@ -256,7 +256,7 @@ async function liveCheckout() {
 
 function openLiveBubble() {
   if (!currentLiveBubble) return;
-  closeRadarSheet();
+  exitRadarList();
   openBubbleChat(currentLiveBubble.bubble_id, 'screen-home');
 }
 
