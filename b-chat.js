@@ -534,16 +534,16 @@ function bcSubscribeRealtime() {
         const bubbleEl = document.getElementById('bc-bubble-' + m.id);
         if (bubbleEl) {
           bubbleEl.textContent = m.content || '';
-          const msgBody = bubbleEl.closest('.msg-body');
-          const msgHead = msgBody?.querySelector('.msg-head');
-          if (msgHead && !msgHead.querySelector('.msg-edited')) {
-            const e = document.createElement('span');
-            e.className = 'msg-edited';
-            e.style.cssText = 'font-size:0.6rem;color:var(--muted);margin-left:0.3rem;cursor:pointer';
-            e.textContent = 'redigeret';
-            const id = m.id;
-            e.onclick = () => bcShowHistory(id);
-            msgHead.appendChild(e);
+          if (m.edited) {
+            const msgBody = bubbleEl.closest('.msg-body');
+            if (msgBody && !msgBody.querySelector('.msg-edited')) {
+              const e = document.createElement('span');
+              e.className = 'msg-edited';
+              e.textContent = 'redigeret';
+              const id = m.id;
+              e.onclick = () => bcShowHistory(id);
+              bubbleEl.appendChild(e);
+            }
           }
         }
       })
@@ -891,16 +891,13 @@ async function bcSendMessage() {
       const bubbleEl = document.getElementById('bc-bubble-' + bcEditingId);
       if (bubbleEl) {
         bubbleEl.textContent = text;
-        const msgBody = bubbleEl.closest('.msg-body');
-        const msgHead = msgBody?.querySelector('.msg-head');
-        if (msgHead && !msgHead.querySelector('.msg-edited')) {
+        if (!bubbleEl.querySelector('.msg-edited')) {
           const e = document.createElement('span');
           e.className = 'msg-edited';
-          e.style.cssText = 'font-size:0.6rem;color:var(--muted);margin-left:0.3rem;cursor:pointer';
           const id = bcEditingId;
           e.textContent = 'redigeret';
           e.onclick = () => bcShowHistory(id);
-          msgHead.appendChild(e);
+          bubbleEl.appendChild(e);
         }
       }
       bcCancelEdit();
@@ -1116,38 +1113,9 @@ function chatLightbox(url) {
   document.body.appendChild(overlay);
 }
 
-function bcOpenContext(e, btn, isMe, msgId) {
-  e.stopPropagation();
-  bcCurrentMsgId = msgId;
-  document.getElementById('bc-ctx-edit').style.display = isMe ? 'flex' : 'none';
-  document.getElementById('bc-ctx-delete').style.display = isMe ? 'flex' : 'none';
-  // Show history if message was edited
-  const bubble = document.getElementById('bc-bubble-' + msgId);
-  const msgGroup = document.getElementById('bc-msg-' + msgId);
-  const wasEdited = msgGroup?.querySelector('.msg-edited, .chat-msg-edited');
-  document.getElementById('bc-ctx-history').style.display = wasEdited ? 'flex' : 'none';
-  const menu = document.getElementById('bc-context-menu');
-  menu.style.display = 'block';
-  menu.classList.add('open');
-  const r = btn.getBoundingClientRect();
-  let top = r.bottom + 4;
-  let left = isMe ? r.right - 200 : r.left - 5;
-  left = Math.max(8, Math.min(left, window.innerWidth - 210));
-  if (top + 200 > window.innerHeight) top = r.top - 200;
-  menu.style.top = top + 'px';
-  menu.style.left = left + 'px';
-  // Remove first to prevent stacking, then add
-  document.removeEventListener('click', _bcCloseContextHandler);
-  setTimeout(function() { document.addEventListener('click', _bcCloseContextHandler); }, 10);
-}
-
-function _bcCloseContextHandler() {
-  bcCloseContext();
-  document.removeEventListener('click', _bcCloseContextHandler);
-}
+// bcOpenContext removed — replaced by bcLongPress
 
 async function bcReact(emoji) {
-  bcCloseContext();
   if (!bcCurrentMsgId) return;
   try {
     // Check if user already reacted with this emoji
@@ -1191,23 +1159,7 @@ async function bcToggleReaction(msgId, emoji) {
   } catch(e) { logError("bcToggleReaction", e); }
 }
 
-function bcCloseContext() {
-  const m = document.getElementById('bc-context-menu');
-  m.classList.remove('open');
-  setTimeout(() => m.style.display='none', 150);
-}
-
-function bcStartEdit() {
-  if (!bcCurrentMsgId) return;
-  bcCloseContext();
-  bcEditingId = bcCurrentMsgId;
-  const bubbleEl = document.getElementById('bc-bubble-' + bcEditingId);
-  if (!bubbleEl) return;
-  document.getElementById('bc-input').value = bubbleEl.textContent;
-  document.getElementById('bc-input').focus();
-  document.getElementById('bc-edit-bar').classList.add('show');
-  document.getElementById('bc-send-btn').innerHTML = icon('check');
-}
+// bcCloseContext and bcStartEdit removed — replaced by bcLongPress context menu
 
 function bcCancelEdit() {
   bcEditingId = null;
@@ -1219,7 +1171,6 @@ function bcCancelEdit() {
 async function bcDeleteMessage() {
   try {
     if (!bcCurrentMsgId) return;
-    bcCloseContext();
     await sb.from('bubble_messages').delete().eq('id', bcCurrentMsgId).eq('user_id', currentUser.id);
     document.getElementById('bc-msg-' + bcCurrentMsgId)?.remove();
     showToast('Besked slettet');

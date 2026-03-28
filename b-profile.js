@@ -1100,7 +1100,7 @@ async function saveProfile() {
 function toggleAnon() {
   isAnon = !isAnon;
   updateAnonToggle();
-  sb.from('profiles').update({ is_anon: isAnon }).eq('id', currentUser.id).then();
+  sb.from('profiles').update({ is_anon: isAnon }).eq('id', currentUser.id).then(function(){}).catch(function(e){ logError('toggleAnon', e); });
 }
 
 

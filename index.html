@@ -12,35 +12,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=6809">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=6809">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=6809">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=6809">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=6809">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=6809">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=6809">
+<link rel="manifest" href="manifest.json?v=6900">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=6900">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=6900">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=6900">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=6900">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=6900">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=6900">
 
-<link rel="stylesheet" href="app.css?v=6809">
+<link rel="stylesheet" href="app.css?v=6900">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=6809" defer></script>
-<script src="tag-data.js?v=6809" defer></script>
-<script src="b-config.js?v=6809" defer></script>
-<script src="b-utils.js?v=6809" defer></script>
-<script src="b-auth.js?v=6809" defer></script>
-<script src="b-home.js?v=6809" defer></script>
-<script src="b-bubbles.js?v=6809" defer></script>
-<script src="b-profile.js?v=6809" defer></script>
-<script src="b-radar.js?v=6809" defer></script>
-<script src="b-messages.js?v=6809" defer></script>
-<script src="b-realtime.js?v=6809" defer></script>
-<script src="b-onboarding.js?v=6809" defer></script>
-<script src="b-chat.js?v=6809" defer></script>
-<script src="b-notifications.js?v=6809" defer></script>
-<script src="b-live.js?v=6809" defer></script>
-<script src="b-admin.js?v=6809" defer></script>
-<script src="b-navigation.js?v=6809" defer></script>
-<script src="b-boot.js?v=6809" defer></script>
+<script src="bubble-icons.js?v=6900" defer></script>
+<script src="tag-data.js?v=6900" defer></script>
+<script src="b-config.js?v=6900" defer></script>
+<script src="b-utils.js?v=6900" defer></script>
+<script src="b-auth.js?v=6900" defer></script>
+<script src="b-home.js?v=6900" defer></script>
+<script src="b-bubbles.js?v=6900" defer></script>
+<script src="b-profile.js?v=6900" defer></script>
+<script src="b-radar.js?v=6900" defer></script>
+<script src="b-messages.js?v=6900" defer></script>
+<script src="b-realtime.js?v=6900" defer></script>
+<script src="b-onboarding.js?v=6900" defer></script>
+<script src="b-chat.js?v=6900" defer></script>
+<script src="b-notifications.js?v=6900" defer></script>
+<script src="b-live.js?v=6900" defer></script>
+<script src="b-admin.js?v=6900" defer></script>
+<script src="b-navigation.js?v=6900" defer></script>
+<script src="b-boot.js?v=6900" defer></script>
   
 
 
@@ -1066,22 +1066,6 @@
   <!-- EVENTS TAB (for network bubbles) -->
   <div id="bc-panel-events" style="display:none;flex-direction:column;flex:1;overflow:hidden">
     <div class="scroll-area" id="bc-events-list" style="flex:1;overflow-y:auto;padding:0.8rem 1.1rem"></div>
-  </div>
-
-  <!-- Context menu -->
-  <div class="chat-context-menu" id="bc-context-menu">
-    <div class="chat-reaction-bar" id="bc-reaction-bar">
-      <button class="chat-reaction-btn" onclick="bcReact('👍')">👍</button>
-      <button class="chat-reaction-btn" onclick="bcReact('❤️')">❤️</button>
-      <button class="chat-reaction-btn" onclick="bcReact('😂')">😂</button>
-      <button class="chat-reaction-btn" onclick="bcReact('😮')">😮</button>
-      <button class="chat-reaction-btn" onclick="bcReact('🙏')">🙏</button>
-      <button class="chat-reaction-btn" onclick="bcReact('🔥')">🔥</button>
-    </div>
-    <div class="chat-context-item" id="bc-ctx-edit" style="display:none" onclick="bcStartEdit()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg> Rediger</div>
-    <div class="chat-context-item" id="bc-ctx-history" style="display:none" onclick="bcShowHistory(bcCurrentMsgId)"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Historik</div>
-    <div class="chat-context-divider"></div>
-    <div class="chat-context-item danger" id="bc-ctx-delete" style="display:none" onclick="bcDeleteMessage()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16M9 6.5V4.5a1.5 1.5 0 011.5-1.5h3A1.5 1.5 0 0115 4.5v2"/><path d="M18.5 6.5l-.8 13a2 2 0 01-2 1.8H8.3a2 2 0 01-2-1.8L5.5 6.5"/></svg> Slet</div>
   </div>
 
   <!-- Bottom nav -->
