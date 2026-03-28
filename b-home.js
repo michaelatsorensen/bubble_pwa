@@ -49,14 +49,6 @@ async function loadHome() {
     showToast('Kunne ikke indlæse — træk ned for at prøve igen');
   } finally {
     _homeLoading = false;
-    // Restore radar list view if returning from profile
-    if (window._returnToRadarList) {
-      window._returnToRadarList = false;
-      setTimeout(function() {
-        if (typeof radarSwitchView === 'function') radarSwitchView('list');
-        if (typeof openRadarSheet === 'function') openRadarSheet();
-      }, 300);
-    }
   }
 }
 

@@ -229,10 +229,10 @@ async function rpSaveContact() {
 function rpFullProfile() {
   var uid = rpCurrentUserId;
   closeRadarPerson();
-  // Remember list was open so we restore on back-nav
-  window._returnToRadarList = true;
-  closeRadarSheet();
-  setTimeout(function(){ openPerson(uid, 'screen-home'); }, 400);
+  // Open person sheet as overlay ON TOP of radar list (don't navigate away)
+  if (typeof dmOpenPersonSheet === 'function') {
+    setTimeout(function() { dmOpenPersonSheet(uid); }, 350);
+  }
 }
 
 
