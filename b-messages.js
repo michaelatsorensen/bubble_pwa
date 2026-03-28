@@ -172,30 +172,60 @@ async function sendMessage() {
       var editBar = document.getElementById('dm-edit-bar');
       if (editBar) editBar.style.display = 'none';
     } else {
-      const { data: newMsg, error } = await sb.from('messages').insert({
-        sender_id: currentUser.id,
-        receiver_id: currentChatUser,
-        content
-      }).select().single();
-      if (error) { logError('sendMessage:insert', error); errorToast('send', error); return; }
+      // Optimistic UI: show message instantly with pending state
+      var tempId = '_pending_' + Date.now();
+      var tempMsg = {
+        id: tempId, sender_id: currentUser.id, receiver_id: currentChatUser,
+        content: content, created_at: new Date().toISOString(),
+        _gp: 'single', file_url: null, edited: false, read_at: null
+      };
+      var el = document.getElementById('chat-messages');
+      if (el) {
+        var emptyHero = el.querySelector('[style*="flex-direction:column"]');
+        if (emptyHero && !el.querySelector('.msg-row')) emptyHero.remove();
+        _dmMaybeInsertDateSep(el, tempMsg.created_at);
+        el.insertAdjacentHTML('beforeend', dmRenderMsg(tempMsg));
+        var pendingRow = document.getElementById('dm-msg-' + tempId);
+        if (pendingRow) pendingRow.classList.add('msg-pending');
+        el.scrollTop = el.scrollHeight;
+      }
       input.value = '';
+      input.focus();
+
+      // DB insert
+      const { data: newMsg, error } = await sb.from('messages').insert({
+        sender_id: currentUser.id, receiver_id: currentChatUser, content
+      }).select().single();
+
+      if (error) {
+        // Remove optimistic message on failure
+        var failEl = document.getElementById('dm-msg-' + tempId);
+        if (failEl) failEl.remove();
+        logError('sendMessage:insert', error);
+        errorToast('send', error);
+        return;
+      }
+
       if (newMsg) {
-        const el = document.getElementById('chat-messages');
-        if (el && !el.querySelector('[data-msg-id="' + newMsg.id + '"]')) {
-          // Clear empty-chat hero if present
-          var emptyHero = el.querySelector('[style*="flex-direction:column"]');
-          if (emptyHero && !el.querySelector('.msg-row')) emptyHero.remove();
-          _dmMaybeInsertDateSep(el, newMsg.created_at);
-          el.insertAdjacentHTML('beforeend', dmRenderMsg(newMsg));
-          el.scrollTop = el.scrollHeight;
+        // Replace pending message with confirmed
+        var pendingEl = document.getElementById('dm-msg-' + tempId);
+        if (pendingEl) {
+          pendingEl.id = 'dm-msg-' + newMsg.id;
+          pendingEl.setAttribute('data-msg-id', newMsg.id);
+          pendingEl.classList.remove('msg-pending');
+          // Update long-press handlers with real ID
+          pendingEl.setAttribute('oncontextmenu', "event.preventDefault();dmLongPress('" + newMsg.id + "',true)");
+          pendingEl.setAttribute('ontouchstart', "dmTouchStart(event,'" + newMsg.id + "',true)");
+          // Update bubble ID
+          var bubble = pendingEl.querySelector('.msg-bubble');
+          if (bubble) bubble.id = 'dm-bubble-' + newMsg.id;
         }
-        // Broadcast to recipient for instant delivery
+        // Broadcast to recipient
         if (chatSubscription) {
           try { chatSubscription.send({ type: 'broadcast', event: 'new_message', payload: newMsg }); } catch(e) { logError("dm:new_message_broadcast", e); }
         }
         trackEvent('message_sent', { type: 'dm' });
       }
-      input.focus();
     }
   } catch(e) { logError("sendMessage", e); errorToast("send", e); }
   finally { dmSending = false; if (sendBtn) { sendBtn.disabled = false; } }

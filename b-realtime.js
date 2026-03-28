@@ -708,10 +708,25 @@ function dmChannelName() {
 
 function dmShowTyping(name) {
   var el = document.getElementById('dm-typing-indicator');
-  var nameEl = document.getElementById('dm-typing-name');
-  if (!el || !nameEl) return;
-  nameEl.textContent = name + ' skriver';
-  el.style.display = 'block';
+  if (!el) return;
+  // Set avatar
+  var avEl = document.getElementById('dm-typing-avatar');
+  if (avEl) {
+    var avUrl = window._chatPartnerAvatar;
+    if (avUrl) { avEl.innerHTML = '<img src="' + avUrl + '">'; }
+    else {
+      var init = (name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      avEl.textContent = init;
+      avEl.style.cssText = 'width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#CECBF6,#AFA9EC);display:flex;align-items:center;justify-content:center;font-size:0.45rem;font-weight:800;color:white';
+    }
+  }
+  el.style.display = 'flex';
+  // Auto-scroll to keep indicator visible
+  var chatScroll = document.getElementById('chat-messages');
+  if (chatScroll) {
+    var isNearBottom = chatScroll.scrollHeight - chatScroll.scrollTop - chatScroll.clientHeight < 80;
+    if (isNearBottom) setTimeout(function() { chatScroll.scrollTop = chatScroll.scrollHeight; }, 50);
+  }
   clearTimeout(_dmTypingTimer);
   _dmTypingTimer = setTimeout(function() { if (el) el.style.display = 'none'; }, 3000);
 }
@@ -737,8 +752,9 @@ function dmOnInput() {
 function dmUpdateReceipts(msgIds) {
   (msgIds || []).forEach(function(id) {
     var el = document.getElementById('dm-receipt-' + id);
-    if (el && !el.classList.contains('read')) {
-      el.classList.add('read'); el.textContent = '✓✓'; el.title = 'Læst';
+    if (el) {
+      el.textContent = 'Læst';
+      el.style.color = '#1A9E8E';
     }
   });
 }
