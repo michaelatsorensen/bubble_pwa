@@ -494,9 +494,9 @@ function dmRenderMsg(m) {
     }
   }
 
-  // Timestamp — shown on single/tail messages
+  // Timestamp — shown on single/tail messages, but not if time-sep already shown
   var timeHtml = '';
-  if (gp === 'single' || gp === 'tail') {
+  if ((gp === 'single' || gp === 'tail') && !m._showTimeSep) {
     var t = new Date(m.created_at);
     timeHtml = '<div class="msg-timestamp">' + t.toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'}) + '</div>';
   }

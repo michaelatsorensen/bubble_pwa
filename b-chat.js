@@ -828,9 +828,9 @@ function bcRenderMsg(m) {
   var avatarStyle = isMe ? 'display:none' : ('background:' + avatarColor + ';overflow:hidden' + (showAvatar ? ';cursor:pointer' : ';visibility:hidden'));
   var avatarClick = showAvatar ? " onclick=\"bcOpenPerson('" + m.user_id + "','" + nameHtml + "','" + safeTitle + "','" + avatarColor + "')\"" : '';
 
-  // Timestamp on tail/single
+  // Timestamp on tail/single — skip if time separator was just shown
   var timeHtml = '';
-  if (gp === 'single' || gp === 'tail') {
+  if ((gp === 'single' || gp === 'tail') && !m._showTimeSep) {
     var t = new Date(m.created_at);
     timeHtml = '<div class="msg-timestamp">' + t.toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'}) + '</div>';
   }

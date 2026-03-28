@@ -577,16 +577,19 @@ function openRadarSheet() {
     // Fallback: render from cache if fetch fails
     if (radarCurrentView === 'map') renderProximityDots(); else renderRadarList();
   });
-  initSwipeClose(sheet, closeRadarSheet);
+  initSwipeClose(sheet, safeCloseRadarSheet);
 }
 
 var _radarSheetProtected = false;
 
-function closeRadarSheet() {
-  // Never close the list while person-sheet is open on top
-  var psOverlay = document.getElementById('ps-overlay');
-  if (psOverlay && psOverlay.classList.contains('open')) return;
+function safeCloseRadarSheet() {
+  // Never close if any overlay is on top
+  if (document.querySelector('#ps-overlay.open, #radar-person-overlay.open')) return;
   if (_radarSheetProtected) return;
+  closeRadarSheet();
+}
+
+function closeRadarSheet() {
   document.body.style.overflow = '';
   var sheet = document.getElementById('radar-sheet');
   if (sheet) { sheet.style.transform = ''; sheet.classList.remove('open'); }
