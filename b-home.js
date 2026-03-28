@@ -1223,7 +1223,7 @@ async function loadHomeDartboardData() {
 function _getFilteredProfiles() {
   // In live mode, ONLY use event dartboard profiles — never fall back to all
   if (_homeViewMode === 'live') return _homeDartboardProfiles;
-  var allP = _homeDartboardProfiles.length > 0 ? _homeDartboardProfiles : (proxAllProfiles || []);
+  var allP = proxAllProfiles || [];
   if (_homeRadarFilter === 'all') return allP;
   if (_homeRadarFilter === 'live') {
     var liveIds = window._liveCheckedInIds || [];
