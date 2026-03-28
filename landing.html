@@ -27,7 +27,7 @@
   --max-w: 960px;
 }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
 
 body {
   font-family: 'Figtree', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -36,6 +36,7 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  overscroll-behavior: none;
 }
 
 /* ── NAV ── */
