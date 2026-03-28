@@ -669,23 +669,6 @@ function dmLongPress(msgId, isSent) {
   container.style.left = '0';
   container.style.right = '0';
 
-  // Reaction bar
-  var reactions = document.createElement('div');
-  reactions.className = 'dm-ctx-reactions';
-  var emojis = ['\u2764\uFE0F', '\uD83D\uDC4D', '\uD83D\uDE02', '\uD83D\uDE2E', '\uD83D\uDD25', '+'];
-  emojis.forEach(function(emoji) {
-    var btn = document.createElement('button');
-    btn.textContent = emoji;
-    if (emoji === '+') { btn.style.fontSize = '14px'; btn.style.color = 'var(--muted)'; }
-    btn.onclick = function(e) {
-      e.stopPropagation();
-      if (emoji !== '+') dmAddReaction(msgId, emoji);
-      overlay.remove();
-    };
-    reactions.appendChild(btn);
-  });
-  container.appendChild(reactions);
-
   // Context menu
   var menu = document.createElement('div');
   menu.className = 'dm-ctx-menu';
@@ -720,12 +703,6 @@ function dmLongPress(msgId, isSent) {
   container.appendChild(menu);
   overlay.appendChild(container);
   document.body.appendChild(overlay);
-}
-
-function dmAddReaction(msgId, emoji) {
-  // TODO: Save reaction to DB (bubble_message_reactions equivalent for DMs)
-  // For now, show toast
-  showToast(emoji);
 }
 
 function dmStartEdit(msgId) {

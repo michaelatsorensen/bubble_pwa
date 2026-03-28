@@ -541,67 +541,6 @@ function toggleProximityVisibility() {
   toggleAnon();
 }
 
-function openRadarSheet() {
-  var overlay = document.getElementById('radar-overlay');
-  var sheet = document.getElementById('radar-sheet');
-  if (overlay) overlay.classList.add('open');
-  if (sheet) sheet.classList.add('open');
-  document.body.style.overflow = 'hidden';
-  // Set initial toggle state visuals
-  var btn = document.getElementById('prox-toggle');
-  var d = document.getElementById('prox-toggle-dot');
-  var l = document.getElementById('prox-toggle-label');
-  if (d) d.style.background = proxVisible ? '#1A9E8E' : 'var(--muted)';
-  if (l) l.textContent = proxVisible ? 'Synlig' : 'Skjult';
-  if (btn) {
-    if (proxVisible) {
-      btn.style.background = 'rgba(26,158,142,0.12)';
-      btn.style.borderColor = 'rgba(26,158,142,0.3)';
-      btn.style.color = '#1A9E8E';
-    } else {
-      btn.style.background = 'rgba(30,27,46,0.04)';
-      btn.style.borderColor = 'var(--glass-border)';
-      btn.style.color = 'var(--muted)';
-    }
-  }
-  // Show loading state then fetch fresh data
-  var loadingEl = document.getElementById('prox-empty');
-  if (loadingEl) { loadingEl.style.display = 'block'; loadingEl.textContent = 'Finder relevante personer…'; }
-  // Always reload fresh data — loadProximityMap handles rendering
-  loadProximityMap().then(function() {
-    if (loadingEl) loadingEl.style.display = 'none';
-    // Ensure list view also renders if active
-    if (radarCurrentView === 'list') renderRadarList();
-  }).catch(function() {
-    if (loadingEl) loadingEl.style.display = 'none';
-    // Fallback: render from cache if fetch fails
-    if (radarCurrentView === 'map') renderProximityDots(); else renderRadarList();
-  });
-  initSwipeClose(sheet, exitRadarList);
-}
-
-var _radarSheetProtected = false;
-var _radarBrowsing = false; // True while user is browsing profiles from list
-
-function safeCloseRadarSheet() {
-  if (_radarBrowsing) return;
-  closeRadarSheet();
-}
-
-// Explicit exit — only called by user actions (X, swipe, "Besked")
-function exitRadarList() {
-  _radarBrowsing = false;
-  closeRadarSheet();
-}
-
-function closeRadarSheet() {
-  document.body.style.overflow = '';
-  var sheet = document.getElementById('radar-sheet');
-  if (sheet) { sheet.style.transform = ''; sheet.classList.remove('open'); }
-  var overlay = document.getElementById('radar-overlay');
-  if (overlay) overlay.classList.remove('open');
-}
-
 // ── Universal swipe-down-to-close for sheets/modals ──
 function initSwipeClose(sheetEl, closeFn) {
   if (isDesktop || !sheetEl || sheetEl._swipeInit) return;

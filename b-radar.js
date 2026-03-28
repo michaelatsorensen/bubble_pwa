@@ -140,10 +140,6 @@ var rpCurrentUserId = null;
 
 async function openRadarPerson(userId) {
   rpCurrentUserId = userId;
-  // If list is open, enter browse mode (prevents list from closing)
-  if (document.getElementById('radar-sheet')?.classList.contains('open')) {
-    _radarBrowsing = true;
-  }
   try {
     var { data: p } = await sb.from('profiles').select('*').eq('id', userId).single();
     if (!p) return;
@@ -213,7 +209,7 @@ function closeRadarPerson() {
   setTimeout(function(){ document.getElementById('radar-person-overlay').classList.remove('open'); }, 320);
 }
 
-function rpMessage() { closeRadarPerson(); closeHomeTray(); exitRadarList(); setTimeout(function(){ openChat(rpCurrentUserId, 'screen-home'); }, 400); }
+function rpMessage() { closeRadarPerson(); closeHomeTray(); setTimeout(function(){ openChat(rpCurrentUserId, 'screen-home'); }, 400); }
 async function rpSaveContact() {
   try {
     if (!rpCurrentUserId) return;

@@ -398,9 +398,6 @@ function welcomeGo(target) {
   if (target === 'discover') {
     goTo('screen-bubbles');bbSwitchTab('explore');
     loadDiscover();
-  } else if (target === 'radar') {
-    goTo('screen-home');
-    loadHome().then(function() { setTimeout(openRadarSheet, 500); });
   } else {
     goTo('screen-home');
     loadHome();

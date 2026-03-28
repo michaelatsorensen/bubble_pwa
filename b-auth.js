@@ -96,7 +96,12 @@ async function resolvePostAuthDestination() {
   } else {
     // Step 5: pending join (from bubble invite link)
     await checkPendingJoin();
-    // Step 6: default
+    // Step 6: welcome screen for first-time users
+    if (!localStorage.getItem('bubble_welcomed')) {
+      goTo('screen-welcome');
+      return;
+    }
+    // Step 7: default
     goTo('screen-home');
   }
 }

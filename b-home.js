@@ -60,11 +60,36 @@ async function loadLiveBanner() {
   var banner = document.getElementById('home-live-banner');
   if (!currentUser) return;
   try {
-    // Ensure live state is fresh (loadLiveBubbleStatus is the single DB writer)
-    await loadLiveBubbleStatus();
+    var expCut = new Date(Date.now() - 6 * 3600000).toISOString();
+    var { data: myLive } = await sb.from('bubble_members')
+      .select('bubble_id, checked_in_at, bubbles(id, name, type)')
+      .eq('user_id', currentUser.id)
+      .not('checked_in_at', 'is', null)
+      .is('checked_out_at', null)
+      .gte('checked_in_at', expCut)
+      .limit(1)
+      .maybeSingle();
 
-    var ctx = appMode.live;
-    if (ctx) {
+    if (myLive && myLive.bubbles) {
+      var { count: liveCount } = await sb.from('bubble_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('bubble_id', myLive.bubble_id)
+        .not('checked_in_at', 'is', null)
+        .is('checked_out_at', null)
+        .gte('checked_in_at', expCut);
+
+      var checkinTime = new Date(myLive.checked_in_at).getTime();
+      var expiryTime = new Date(checkinTime + 6 * 3600000);
+      var expiryStr = expiryTime.getHours().toString().padStart(2,'0') + ':' + expiryTime.getMinutes().toString().padStart(2,'0');
+
+      appMode.set('live', {
+        bubbleId: myLive.bubble_id,
+        bubbleName: myLive.bubbles.name,
+        bubbleType: myLive.bubbles.type,
+        memberCount: liveCount || 0,
+        expiryStr: expiryStr
+      });
+
       if (tabs) tabs.style.display = 'block';
       homeSetMode('live');
     } else {

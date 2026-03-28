@@ -146,16 +146,18 @@ async function liveCheckin(bubbleId) {
       .maybeSingle();
 
     if (existing) {
-      await sb.from('bubble_members').update({
+      var { error: upErr } = await sb.from('bubble_members').update({
         checked_in_at: new Date().toISOString(),
         checked_out_at: null
       }).eq('id', existing.id);
+      if (upErr) { errorToast('save', upErr); return; }
     } else {
-      await sb.from('bubble_members').insert({
+      var { error: insErr } = await sb.from('bubble_members').insert({
         bubble_id: bubbleId,
         user_id: currentUser.id,
         checked_in_at: new Date().toISOString()
       });
+      if (insErr) { errorToast('save', insErr); return; }
     }
 
     // 3. Get bubble name for display
@@ -208,9 +210,10 @@ async function liveAutoCheckout() {
     if (!activeCheckins || activeCheckins.length === 0) return;
 
     const ids = activeCheckins.map(m => m.id);
-    await sb.from('bubble_members').update({
+    var { error: coErr } = await sb.from('bubble_members').update({
       checked_out_at: new Date().toISOString()
     }).in('id', ids);
+    if (coErr) logError('liveAutoCheckout:update', coErr);
 
     // Note: this only sets checked_out_at — user remains a member
   } catch (e) {
@@ -222,9 +225,10 @@ async function liveCheckout() {
   try {
     if (!currentLiveBubble) return;
     var checkoutBubbleId = currentLiveBubble.bubble_id;
-    await sb.from('bubble_members').update({
+    var { error: coErr } = await sb.from('bubble_members').update({
       checked_out_at: new Date().toISOString()
     }).eq('bubble_id', checkoutBubbleId).eq('user_id', currentUser.id);
+    if (coErr) { errorToast('save', coErr); return; }
 
     currentLiveBubble = null;
     appMode.clearLive();
@@ -256,7 +260,6 @@ async function liveCheckout() {
 
 function openLiveBubble() {
   if (!currentLiveBubble) return;
-  exitRadarList();
   openBubbleChat(currentLiveBubble.bubble_id, 'screen-home');
 }
 
@@ -425,16 +428,30 @@ async function liveScanConfirmPersonCheckin() {
     var { data: existingMember } = await sb.from('bubble_members')
       .select('id').eq('bubble_id', p.bubbleId).eq('user_id', p.profile.id).maybeSingle();
     if (!existingMember) {
-      await sb.from('bubble_members').insert({
+      var { error: insErr } = await sb.from('bubble_members').insert({
         bubble_id: p.bubbleId,
         user_id: p.profile.id,
         checked_in_at: new Date().toISOString()
       });
+      if (insErr) {
+        logError('scanCheckin:insert', insErr);
+        showToast('Check-in fejlede — du kan ikke checke andre ind endnu');
+        if (status) { status.textContent = 'Check-in fejlede'; status.className = 'live-scan-status error'; status.style.display = ''; }
+        setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; } liveQrPreviewLoop(); }, 3000);
+        return;
+      }
     } else {
-      await sb.from('bubble_members').update({
+      var { error: upErr } = await sb.from('bubble_members').update({
         checked_in_at: new Date().toISOString(),
         checked_out_at: null
       }).eq('bubble_id', p.bubbleId).eq('user_id', p.profile.id);
+      if (upErr) {
+        logError('scanCheckin:update', upErr);
+        showToast('Check-in fejlede — du kan ikke checke andre ind endnu');
+        if (status) { status.textContent = 'Check-in fejlede'; status.className = 'live-scan-status error'; status.style.display = ''; }
+        setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; } liveQrPreviewLoop(); }, 3000);
+        return;
+      }
     }
     // Log scan
     try { sb.from('qr_scans').insert({ bubble_id: p.bubbleId, scanned_by: currentUser.id, scanned_user: p.profile.id, scan_type: 'event_checkin' }); } catch(e2) {}
@@ -699,18 +716,20 @@ async function liveScanConfirmJoin() {
 
     if (existing) {
       // Already member — just re-check-in
-      await sb.from('bubble_members').update({
+      var { error: upErr } = await sb.from('bubble_members').update({
         checked_in_at: new Date().toISOString(),
         checked_out_at: null
       }).eq('id', existing.id);
+      if (upErr) { errorToast('save', upErr); return; }
     } else {
       // New member + check-in
-      await sb.from('bubble_members').insert({
+      var { error: insErr } = await sb.from('bubble_members').insert({
         bubble_id: bubble.id,
         user_id: currentUser.id,
         role: 'member',
         checked_in_at: new Date().toISOString()
       });
+      if (insErr) { errorToast('save', insErr); return; }
     }
 
     stopLiveCamera();
