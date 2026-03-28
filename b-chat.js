@@ -330,7 +330,7 @@ async function bcLoadBubbleCore(bubbleId) {
   // Member count + parent ref in subtitle
   var memberCount = b.member_count;
   if (memberCount == null) {
-    var { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bubbleId);
+    var { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bubbleId).or('status.is.null,status.neq.pending');
     memberCount = count || 0;
   }
   var subText = memberCount + (isEvent ? ' deltagere' : ' medlemmer');
@@ -580,7 +580,7 @@ async function bcLoadBubbleInfo() {
 
     var memberCount2 = b.member_count;
     if (memberCount2 == null) {
-      var { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bcBubbleId);
+      var { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bcBubbleId).or('status.is.null,status.neq.pending');
       memberCount2 = count || 0;
     }
     var isEvent = b.type === 'event' || b.type === 'live';
@@ -1213,7 +1213,7 @@ async function bcLoadMembers() {
     const expireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 60 * 60 * 1000).toISOString();
 
     const { data: members } = await sb.from('bubble_members')
-      .select('user_id, joined_at, checked_in_at, checked_out_at')
+      .select('user_id, joined_at, checked_in_at, checked_out_at, status')
       .eq('bubble_id', bcBubbleId)
       .order('joined_at', {ascending:true});
 
@@ -1239,8 +1239,12 @@ async function bcLoadMembers() {
     const ownerId = bcBubbleData?.created_by;
     const isOwner = currentUser && ownerId === currentUser.id;
 
-    // Sort: owner first, then live members, then rest
-    const sorted = [...members].filter(m => !isBlocked(m.user_id)).sort((a, b) => {
+    // Separate pending from active members
+    var activeMembers = members.filter(m => m.status !== 'pending');
+    var pendingMembers = members.filter(m => m.status === 'pending');
+
+    // Sort active: owner first, then live members, then rest
+    const sorted = [...activeMembers].filter(m => !isBlocked(m.user_id)).sort((a, b) => {
       if (a.user_id === ownerId) return -1;
       if (b.user_id === ownerId) return 1;
       if (a._isLive && !b._isLive) return -1;
@@ -1248,11 +1252,33 @@ async function bcLoadMembers() {
       return 0;
     });
 
-    const liveCount = members.filter(m => m._isLive).length;
+    const liveCount = activeMembers.filter(m => m._isLive).length;
 
     // Section labels — event-aware terminology
     var isEvent = bcBubbleData?.type === 'event' || bcBubbleData?.type === 'live';
     let html = '';
+
+    // Pending requests section (only visible to owner/admin)
+    if (pendingMembers.length > 0 && (isOwner || bcBubbleData?._isAdmin)) {
+      html += '<div class="chat-section-label" style="color:#BA7517">Afventer godkendelse \u00B7 ' + pendingMembers.length + '</div>';
+      pendingMembers.forEach(function(m) {
+        var p = profileMap[m.user_id] || {};
+        var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+        var avHtml = p.avatar_url ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : ini;
+        html += '<div class="chat-member-row" style="background:rgba(249,177,55,0.04);border:1px solid rgba(249,177,55,0.15);border-radius:12px;margin-bottom:6px;padding:0.65rem 0.75rem">' +
+          '<div class="chat-member-avatar" style="background:linear-gradient(135deg,#F59E0B,#EAB308);overflow:hidden">' + avHtml + '</div>' +
+          '<div style="flex:1;min-width:0">' +
+            '<div class="chat-member-name">' + escHtml(p.name||'Ukendt') + '</div>' +
+            '<div class="chat-member-status">' + escHtml(p.title || '') + '</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:4px;flex-shrink:0">' +
+            '<button onclick="event.stopPropagation();bcApproveMember(\'' + m.user_id + '\')" style="padding:0.3rem 0.6rem;font-size:0.68rem;font-weight:700;border-radius:8px;border:none;background:#1A9E8E;color:white;cursor:pointer;font-family:inherit">Godkend</button>' +
+            '<button onclick="event.stopPropagation();bcRejectMember(\'' + m.user_id + '\')" style="padding:0.3rem 0.5rem;font-size:0.68rem;font-weight:700;border-radius:8px;border:1px solid rgba(239,68,68,0.25);background:rgba(239,68,68,0.06);color:#DC2626;cursor:pointer;font-family:inherit">Afvis</button>' +
+          '</div>' +
+        '</div>';
+      });
+    }
+
     let prevSection = '';
     sorted.forEach((m, i) => {
       const p = profileMap[m.user_id] || {};
@@ -1266,7 +1292,7 @@ async function bcLoadMembers() {
         if (section === 'owner') html += `<div class="chat-section-label">${isEvent ? 'Arrangør' : 'Ejer'}</div>`;
         else if (section === 'live') html += `<div class="chat-section-label" style="margin-top:0.8rem">${isEvent ? 'Til stede nu' : 'Her lige nu'} · ${liveCount}</div>`;
         else {
-          var restCount = members.length - liveCount - (ownerId ? 1 : 0);
+          var restCount = activeMembers.length - liveCount - (ownerId ? 1 : 0);
           html += `<div class="chat-section-label" style="margin-top:0.8rem">${isEvent ? 'Deltagere' : 'Medlemmer'} · ${restCount}</div>`;
         }
         prevSection = section;
@@ -1324,6 +1350,28 @@ async function bcConfirmKick(userId, userName) {
     showToast(userName + ' er fjernet fra boblen');
     bcLoadMembers();
   } catch(e) { logError('bcConfirmKick', e, { bubbleId: bcBubbleId, userId: userId }); errorToast('save', e); }
+}
+
+async function bcApproveMember(userId) {
+  if (!bcBubbleId) return;
+  try {
+    var { error } = await sb.from('bubble_members').update({ status: 'active' })
+      .eq('bubble_id', bcBubbleId).eq('user_id', userId);
+    if (error) throw error;
+    showSuccessToast('Medlem godkendt');
+    bcLoadMembers();
+  } catch(e) { logError('bcApproveMember', e); errorToast('save', e); }
+}
+
+async function bcRejectMember(userId) {
+  if (!bcBubbleId) return;
+  try {
+    var { error } = await sb.from('bubble_members').delete()
+      .eq('bubble_id', bcBubbleId).eq('user_id', userId).eq('status', 'pending');
+    if (error) throw error;
+    showToast('Anmodning afvist');
+    bcLoadMembers();
+  } catch(e) { logError('bcRejectMember', e); errorToast('save', e); }
 }
 
 function bcFilterMembers() {
