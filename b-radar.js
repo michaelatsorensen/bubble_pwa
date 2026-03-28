@@ -213,7 +213,7 @@ function closeRadarPerson() {
   setTimeout(function(){ document.getElementById('radar-person-overlay').classList.remove('open'); }, 320);
 }
 
-function rpMessage() { closeRadarPerson(); exitRadarList(); setTimeout(function(){ openChat(rpCurrentUserId, 'screen-home'); }, 400); }
+function rpMessage() { closeRadarPerson(); closeHomeTray(); exitRadarList(); setTimeout(function(){ openChat(rpCurrentUserId, 'screen-home'); }, 400); }
 async function rpSaveContact() {
   try {
     if (!rpCurrentUserId) return;
@@ -234,7 +234,8 @@ async function rpSaveContact() {
 function rpFullProfile() {
   var uid = rpCurrentUserId;
   closeRadarPerson();
-  // Open person sheet as overlay ON TOP of radar list (don't navigate away)
+  closeHomeTray();
+  // Open full person sheet
   if (typeof dmOpenPersonSheet === 'function') {
     setTimeout(function() { dmOpenPersonSheet(uid); }, 350);
   }

@@ -1366,7 +1366,7 @@ function renderHomeTrayList() {
     var avHtml = p.avatar_url && !p.is_anon
       ? '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>'
       : '<div style="width:40px;height:40px;border-radius:50%;background:' + col + ';display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;color:white;flex-shrink:0">' + escHtml(ini) + '</div>';
-    return '<div onclick="closeHomeTray();setTimeout(function(){openRadarPerson(\'' + p.id + '\')},100)" style="display:flex;align-items:center;gap:0.7rem;padding:0.6rem 0;border-bottom:1px solid var(--glass-border-subtle);cursor:pointer">' +
+    return '<div onclick="openRadarPerson(\'' + p.id + '\')" style="display:flex;align-items:center;gap:0.7rem;padding:0.6rem 0;border-bottom:1px solid var(--glass-border-subtle);cursor:pointer">' +
       avHtml +
       '<div style="flex:1;min-width:0">' +
         '<div style="display:flex;align-items:center;gap:0.4rem">' +
