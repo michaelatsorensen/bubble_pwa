@@ -137,6 +137,8 @@ function _navLeaveHome() {
 }
 
 function _navLeaveChat() {
+  // Close GIF picker if open
+  try { if (typeof closeGifPicker === 'function') closeGifPicker(); } catch(e) {}
   // Unsubscribe realtime
   try {
     if (typeof chatSubscription !== 'undefined' && chatSubscription) {
@@ -155,6 +157,8 @@ function _navLeaveChat() {
 }
 
 function _navLeaveBubbleChat() {
+  // Close GIF picker if open
+  try { if (typeof closeGifPicker === 'function') closeGifPicker(); } catch(e) {}
   try { sessionStorage.removeItem('bb_route'); } catch(e) {}
   // Unsubscribe realtime
   try {
