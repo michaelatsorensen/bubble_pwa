@@ -144,6 +144,11 @@ function _navLeaveChat() {
       chatSubscription = null;
     }
   } catch(e) {}
+  // Clear typing indicators and timers
+  try {
+    if (typeof dmHideTyping === 'function') dmHideTyping();
+    if (typeof _dmBroadcastTypingTimer !== 'undefined') { clearTimeout(_dmBroadcastTypingTimer); _dmBroadcastTypingTimer = null; }
+  } catch(e) {}
   // Reset DM state
   if (typeof dmEditingId !== 'undefined') dmEditingId = null;
   navState.chatTarget = null;
@@ -190,6 +195,15 @@ function _navGlobalCleanup() {
 
   // 3. Reset send-in-progress flags
   try { if (typeof bcSending !== 'undefined') bcSending = false; } catch(e) {}
+
+  // 4. Close long-press context overlays
+  try { document.querySelectorAll('.dm-ctx-overlay').forEach(function(el) { el.remove(); }); } catch(e) {}
+
+  // 5. Clear long-press timers
+  try {
+    if (typeof _dmLongPressTimer !== 'undefined' && _dmLongPressTimer) { clearTimeout(_dmLongPressTimer); _dmLongPressTimer = null; }
+    if (typeof _bcLongPressTimer !== 'undefined' && _bcLongPressTimer) { clearTimeout(_bcLongPressTimer); _bcLongPressTimer = null; }
+  } catch(e) {}
 }
 
 // ── Execute hook ──
