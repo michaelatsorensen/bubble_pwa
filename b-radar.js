@@ -227,7 +227,11 @@ async function rpSaveContact() {
   } catch(e) { logError("rpSaveContact", e); errorToast("save", e); }
 }
 function rpFullProfile() {
-  var uid = rpCurrentUserId; closeRadarPerson(); closeRadarSheet();
+  var uid = rpCurrentUserId;
+  closeRadarPerson();
+  // Remember list was open so we restore on back-nav
+  window._returnToRadarList = true;
+  closeRadarSheet();
   setTimeout(function(){ openPerson(uid, 'screen-home'); }, 400);
 }
 

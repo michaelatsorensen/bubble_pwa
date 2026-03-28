@@ -24,7 +24,7 @@ async function loadBubbleUpvotes() {
     bubbleUpvotes = {};
     (all || []).forEach(function(row) {
       bubbleUpvotes[row.bubble_id] = (bubbleUpvotes[row.bubble_id] || 0) + 1;
-    }).catch(function(e){ logError("psLoadDetail",e); });
+    });
     if (!currentUser) return;
     var { data: mine } = await sb.from('bubble_upvotes').select('bubble_id').eq('user_id', currentUser.id);
     myUpvotes = {};
@@ -111,7 +111,7 @@ async function loadDiscover() {
       if (b.upvote_count !== a.upvote_count) return b.upvote_count - a.upvote_count;
       if (b.member_count !== a.member_count) return b.member_count - a.member_count;
       return new Date(b.created_at) - new Date(a.created_at);
-    }).catch(function(e){ logError("psLoadDetail",e); });
+    });
     renderBubbleList(allBubbles);
   } catch(e) { logError("loadDiscover", e); showRetryState('all-bubbles-list', 'loadDiscover', 'Kunne ikke hente bobler — tjek din forbindelse'); }
 }
@@ -241,7 +241,7 @@ async function openTransferOwnership(bubbleId) {
       row.onclick = function() {
         _selectTransferTarget(bubbleId, row.dataset.uid, row.dataset.name);
       };
-    }).catch(function(e){ logError("psLoadDetail",e); });
+    });
   } catch(e) { logError('openTransferOwnership', e); errorToast('load', e); }
 }
 
@@ -287,7 +287,7 @@ async function openAdminDesignation(bubbleId) {
           _selectMakeAdmin(bubbleId, row.dataset.uid, row.dataset.name);
         }
       };
-    }).catch(function(e){ logError("psLoadDetail",e); });
+    });
   } catch(e) { logError('openAdminDesignation', e); errorToast('load', e); }
 }
 
@@ -555,7 +555,7 @@ function cbRenderPillSelect(selectId, options) {
         b.style.borderColor = 'var(--glass-border)';
         b.style.background = 'rgba(30,27,46,0.04)';
         b.style.color = 'var(--muted)';
-      }).catch(function(e){ logError("psLoadDetail",e); });
+      });
       btn.style.borderColor = 'rgba(124,92,252,0.5)';
       btn.style.background = 'rgba(124,92,252,0.12)';
       btn.style.color = 'var(--accent)';
@@ -635,7 +635,7 @@ async function requestJoin(bubbleId) {
     const { data: b } = await sb.from('bubbles').select('name,created_by').eq('id', bubbleId).single();
     const { error } = await sb.from('bubble_members').insert({
       bubble_id: bubbleId, user_id: currentUser.id, status: 'pending'
-    }).catch(function(e){ logError("psLoadDetail",e); });
+    });
     if (error && !String(error.message || '').includes('duplicate')) return errorToast('save', error);
     showToast('Anmodning sendt! Ejeren skal godkende 🔒');
     await openBubble(bubbleId);
@@ -777,7 +777,7 @@ async function openQRModal(bubbleId) {
       colorDark: '#0a0a0f',
       colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.H
-    }).catch(function(e){ logError("psLoadDetail",e); });
+    });
 
     openModal('modal-qr');
   } catch(e) { logError("openQRModal", e); errorToast("load", e); }
@@ -1116,7 +1116,7 @@ async function downloadMembersPdf(bubbleId) {
       doc.setFontSize(7);
       doc.setTextColor(110, 110, 140);
       doc.text(box.label, bx + boxW / 2, boxY + 14, { align: 'center' });
-    }).catch(function(e){ logError("psLoadDetail",e); });
+    });
 
     // ── Table header ──
     var tableY = boxY + boxH + 8;
@@ -1136,7 +1136,7 @@ async function downloadMembersPdf(bubbleId) {
 
     cols.forEach(function(col) {
       doc.text(col.label, col.x, tableY);
-    }).catch(function(e){ logError("psLoadDetail",e); });
+    });
 
     // Header underline
     doc.setDrawColor(50, 50, 70);
@@ -1154,7 +1154,7 @@ async function downloadMembersPdf(bubbleId) {
       if (!a.checked_in_at && b.checked_in_at) return 1;
       if (a.checked_in_at && b.checked_in_at) return new Date(a.checked_in_at) - new Date(b.checked_in_at);
       return new Date(a.joined_at) - new Date(b.joined_at);
-    }).catch(function(e){ logError("psLoadDetail",e); });
+    });
 
     sorted.forEach(function(m, i) {
       // New page if needed
@@ -1216,7 +1216,7 @@ async function downloadMembersPdf(bubbleId) {
 
       rowY += rowH;
       rowCount++;
-    }).catch(function(e){ logError("psLoadDetail",e); });
+    });
 
     // ── Footer ──
     var footerY = ph - 10;
@@ -1282,7 +1282,7 @@ async function generateEventReport(bubbleId) {
       connectionCount = (connections || []).length;
       (connections || []).forEach(function(c) {
         connectorsMap[c.user_id] = (connectorsMap[c.user_id] || 0) + 1;
-      }).catch(function(e){ logError("psLoadDetail",e); });
+      });
     } catch(e) {}
 
     // ── 4. Fetch profile views between members ──
@@ -1312,7 +1312,7 @@ async function generateEventReport(bubbleId) {
       var end = m.checked_out_at ? new Date(m.checked_out_at) : new Date();
       var mins = Math.round((end - new Date(m.checked_in_at)) / 60000);
       if (mins > 0 && mins < 1440) { totalMins += mins; stayCount++; }
-    }).catch(function(e){ logError("psLoadDetail",e); });
+    });
     var avgStay = stayCount > 0 ? Math.round(totalMins / stayCount) : 0;
     var avgStayLabel = avgStay < 60 ? avgStay + ' min' : Math.floor(avgStay / 60) + 't ' + (avgStay % 60) + 'min';
 
@@ -1325,21 +1325,21 @@ async function generateEventReport(bubbleId) {
     members.forEach(function(m) {
       var p = profileMap[m.user_id];
       if (p && p.keywords) p.keywords.forEach(function(k) { kwCount[k] = (kwCount[k] || 0) + 1; });
-    }).catch(function(e){ logError("psLoadDetail",e); });
+    });
     var topKeywords = Object.entries(kwCount).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 10);
 
     // Top connectors
     var topConnectors = Object.entries(connectorsMap).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 5).map(function(e) {
       var p = profileMap[e[0]] || {};
       return { name: p.name || 'Ukendt', title: p.title || '', connections: e[1], messages: msgPerUser[e[0]] || 0 };
-    }).catch(function(e){ logError("psLoadDetail",e); });
+    });
 
     // Join timeline (by hour)
     var hourBuckets = {};
     members.forEach(function(m) {
       var h = new Date(m.joined_at || m.checked_in_at || Date.now()).getHours();
       hourBuckets[h] = (hourBuckets[h] || 0) + 1;
-    }).catch(function(e){ logError("psLoadDetail",e); });
+    });
 
     // Event date
     var eventDate = new Date(b.created_at).toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -1559,7 +1559,7 @@ async function generateEventReport(bubbleId) {
           '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:700">' + escHtml(c.name) + '</div><div style="font-size:0.65rem;color:var(--muted)">' + escHtml(c.title) + '</div></div>' +
           '<div style="font-size:0.68rem;font-weight:700;color:#1A9E8E">' + c.connections + '</div>' +
         '</div>';
-      }).catch(function(e){ logError("psLoadDetail",e); });
+      });
       trayHtml += '</div>';
     }
 
@@ -1570,7 +1570,7 @@ async function generateEventReport(bubbleId) {
         '<div style="display:flex;flex-wrap:wrap;gap:0.25rem">';
       topKeywords.forEach(function(kw) {
         trayHtml += '<span class="tag">' + escHtml(kw[0]) + ' <span style="color:var(--muted);font-size:0.6rem">' + kw[1] + '</span></span>';
-      }).catch(function(e){ logError("psLoadDetail",e); });
+      });
       trayHtml += '</div></div>';
     }
 
@@ -1596,7 +1596,7 @@ async function generateEventReport(bubbleId) {
           (conn > 0 ? '<div style="font-size:0.58rem;color:var(--accent)">' + conn + ' connections</div>' : '') +
         '</div>' +
       '</div>';
-    }).catch(function(e){ logError("psLoadDetail",e); });
+    });
 
     trayHtml += '</div>';
 
@@ -1620,7 +1620,7 @@ async function generateEventReport(bubbleId) {
     requestAnimationFrame(function() {
       overlay.style.opacity = '1';
       tray.style.transform = 'translateX(0)';
-    }).catch(function(e){ logError("psLoadDetail",e); });
+    });
 
     trackEvent('event_report_generated', { bubble_id: bubbleId, member_count: totalMembers });
 
@@ -1666,7 +1666,7 @@ async function exportReportEmail(bubbleId) {
           'Check-ins: ' + stats.totalCheckedIn + '\n' +
           'Connection rate: ' + stats.connectionRate + '%\n\n' +
           'Fuld rapport er vedhæftet som PDF — download den fra appen via Event → Info → Event-rapport → PDF.'
-      }).catch(function(e){ logError("psLoadDetail",e); });
+      });
       showSuccessToast('Rapport sendt til ' + email);
     } else {
       // Fallback: open mailto
@@ -1778,7 +1778,7 @@ async function sendBubbleInvites() {
     if (newIds.length > 0) {
       var rows = newIds.map(function(uid) {
         return { bubble_id: inviteBubbleId, from_user_id: currentUser.id, to_user_id: uid, status: 'pending' };
-      }).catch(function(e){ logError("psLoadDetail",e); });
+      });
       var { error } = await sb.from('bubble_invitations').insert(rows);
       if (error) throw error;
     }
@@ -1839,7 +1839,7 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
       saveBtn.innerHTML = icon('bookmark') + ' Gem';
       sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle().then(({data}) => {
         if (data) saveBtn.innerHTML = icon('bookmarkFill') + ' Gemt';
-      }).catch(function(e){ logError("psLoadDetail",e); });
+      }).catch(function(){});
     }
   }
   if (modSection) modSection.style.display = isOwnProfile ? 'none' : '';
@@ -1857,7 +1857,7 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
       } else {
         starRow.style.display = 'none';
       }
-    }).catch(function(e){ logError("psLoadDetail",e); });
+    }).catch(function(){});
   }
   document.getElementById('ps-overlay').classList.add('open');
   setTimeout(() => document.getElementById('person-sheet-el').classList.add('open'), 10);

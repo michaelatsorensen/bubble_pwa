@@ -166,12 +166,12 @@ body {
 .msg-unread-badge { position:absolute; top:-2px; right:-4px; min-width:16px; height:16px; border-radius:99px; background:var(--accent2); font-size:0.52rem; font-weight:800; color:white; display:none; align-items:center; justify-content:center; padding:0 4px; }
 
 /* ── CARDS ── */
-.card { background:#FFFFFF; border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:0.85rem 1.1rem; margin-bottom:0.5rem; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 3px rgba(30,27,46,0.06), 0 1px 2px rgba(30,27,46,0.04); }
-.card:hover, .card:active { background:#FAFAFE; border-color:var(--glass-border); box-shadow:0 2px 6px rgba(30,27,46,0.08), 0 1px 3px rgba(30,27,46,0.05); }
-.main-nav-card, .card-bobler, .card-beskeder, .card-notif { background:#FFFFFF; border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:0.85rem 1.1rem; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 3px rgba(30,27,46,0.06), 0 1px 2px rgba(30,27,46,0.04); position:relative; overflow:visible; display:flex; align-items:center; gap:0.85rem; }
+.card { background:#FFFFFF; border:1px solid #D8D5E4; border-radius:var(--radius); padding:0.85rem 1.1rem; margin-bottom:0.5rem; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 4px rgba(30,27,46,0.08); }
+.card:hover, .card:active { background:#FAFAFE; border-color:#CCC8DC; box-shadow:0 2px 8px rgba(30,27,46,0.1); }
+.main-nav-card, .card-bobler, .card-beskeder, .card-notif { background:#FFFFFF; border:1px solid #D8D5E4; border-radius:var(--radius); padding:0.85rem 1.1rem; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 4px rgba(30,27,46,0.08); position:relative; overflow:visible; display:flex; align-items:center; gap:0.85rem; }
 .main-nav-card:hover, .card-bobler:hover, .card-beskeder:hover, .card-notif:hover { background:var(--glass-bg-hover); border-color:var(--glass-border); }
 .main-nav-card:active { transform:scale(0.985); }
-.radar-card { background:#FFFFFF; border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:0.85rem 1.1rem; box-shadow:0 1px 3px rgba(30,27,46,0.06), 0 1px 2px rgba(30,27,46,0.04); display:flex; align-items:center; gap:0.85rem; }
+.radar-card { background:#FFFFFF; border:1px solid #D8D5E4; border-radius:var(--radius); padding:0.85rem 1.1rem; box-shadow:0 1px 4px rgba(30,27,46,0.08); display:flex; align-items:center; gap:0.85rem; }
 .radar-card .live-dot { width:8px; height:8px; flex-shrink:0; margin:0; position:static; }
 
 /* ── BUTTONS ── */
