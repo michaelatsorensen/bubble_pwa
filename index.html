@@ -12,35 +12,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=6700">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=6700">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=6700">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=6700">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=6700">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=6700">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=6700">
+<link rel="manifest" href="manifest.json?v=6701">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=6701">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=6701">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=6701">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=6701">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=6701">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=6701">
 
-<link rel="stylesheet" href="app.css?v=6700">
+<link rel="stylesheet" href="app.css?v=6701">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=6700" defer></script>
-<script src="tag-data.js?v=6700" defer></script>
-<script src="b-config.js?v=6700" defer></script>
-<script src="b-utils.js?v=6700" defer></script>
-<script src="b-auth.js?v=6700" defer></script>
-<script src="b-home.js?v=6700" defer></script>
-<script src="b-bubbles.js?v=6700" defer></script>
-<script src="b-profile.js?v=6700" defer></script>
-<script src="b-radar.js?v=6700" defer></script>
-<script src="b-messages.js?v=6700" defer></script>
-<script src="b-realtime.js?v=6700" defer></script>
-<script src="b-onboarding.js?v=6700" defer></script>
-<script src="b-chat.js?v=6700" defer></script>
-<script src="b-notifications.js?v=6700" defer></script>
-<script src="b-live.js?v=6700" defer></script>
-<script src="b-admin.js?v=6700" defer></script>
-<script src="b-navigation.js?v=6700" defer></script>
-<script src="b-boot.js?v=6700" defer></script>
+<script src="bubble-icons.js?v=6701" defer></script>
+<script src="tag-data.js?v=6701" defer></script>
+<script src="b-config.js?v=6701" defer></script>
+<script src="b-utils.js?v=6701" defer></script>
+<script src="b-auth.js?v=6701" defer></script>
+<script src="b-home.js?v=6701" defer></script>
+<script src="b-bubbles.js?v=6701" defer></script>
+<script src="b-profile.js?v=6701" defer></script>
+<script src="b-radar.js?v=6701" defer></script>
+<script src="b-messages.js?v=6701" defer></script>
+<script src="b-realtime.js?v=6701" defer></script>
+<script src="b-onboarding.js?v=6701" defer></script>
+<script src="b-chat.js?v=6701" defer></script>
+<script src="b-notifications.js?v=6701" defer></script>
+<script src="b-live.js?v=6701" defer></script>
+<script src="b-admin.js?v=6701" defer></script>
+<script src="b-navigation.js?v=6701" defer></script>
+<script src="b-boot.js?v=6701" defer></script>
   
 
 
@@ -1027,13 +1027,19 @@
         <span class="chat-edit-cancel" onclick="bcCancelEdit()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17M7 7l10 10"/></svg></span>
       </div>
       <div class="chat-composer-row">
-        <input type="file" id="bc-file-input" style="display:none" accept="image/*,video/*,.pdf,.doc,.docx" onchange="bcHandleFile(this)">
-        <input type="file" id="bc-photo-input" style="display:none" accept="image/*" onchange="bcHandleFile(this)">
+        <input type="file" id="bc-file-input" style="display:none" accept="image/*,video/*,.pdf,.doc,.docx,.xlsx,.pptx" onchange="bcHandleFile(this)">
         <button class="chat-plus-btn" onclick="toggleChatMenu('bc')">+</button>
         <div class="chat-plus-menu" id="bc-plus-menu">
-          <button onclick="closeChatMenu('bc');var f=document.getElementById('bc-photo-input');f.value='';f.click()"><span class="chat-menu-icon">📷</span> Foto</button>
-          <button onclick="closeChatMenu('bc');toggleGifPicker('bc')"><span class="chat-menu-icon">GIF</span> GIF</button>
-          <button onclick="closeChatMenu('bc');var f=document.getElementById('bc-file-input');f.value='';f.click()"><span class="chat-menu-icon">📎</span> Fil</button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px;min-width:180px">
+            <button onclick="closeChatMenu('bc');var f=document.getElementById('bc-file-input');f.value='';f.click()" style="flex-direction:column;gap:6px;padding:14px 10px;border-radius:12px;background:var(--glass-bg)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              <span style="font-size:0.72rem;color:var(--text-secondary)">Billede / fil</span>
+            </button>
+            <button onclick="closeChatMenu('bc');toggleGifPicker('bc')" style="flex-direction:column;gap:6px;padding:14px 10px;border-radius:12px;background:var(--glass-bg)">
+              <div style="background:var(--accent);color:white;font-size:0.7rem;font-weight:800;padding:3px 8px;border-radius:6px;letter-spacing:0.5px">GIF</div>
+              <span style="font-size:0.72rem;color:var(--text-secondary)">Giphy</span>
+            </button>
+          </div>
         </div>
         <input class="chat-composer-input" id="bc-input" placeholder="Skriv en besked...">
         <button class="chat-send-btn" id="bc-send-btn" ontouchstart="event.preventDefault()" ontouchend="event.preventDefault();bcSendMessage()" onclick="if(!('ontouchstart' in window))bcSendMessage()">→</button>
@@ -1248,14 +1254,18 @@
         <span class="chat-edit-cancel" onclick="dmCancelEdit()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17M7 7l10 10"/></svg></span>
       </div>
       <div class="chat-composer-row">
-        <input type="file" id="dm-file-input" style="display:none" accept="image/*,video/*,.pdf,.doc,.docx" onchange="dmHandleFile(this)">
-        <input type="file" id="dm-photo-input" style="display:none" accept="image/*" onchange="dmHandleFile(this)">
+        <input type="file" id="dm-file-input" style="display:none" accept="image/*,video/*,.pdf,.doc,.docx,.xlsx,.pptx" onchange="dmHandleFile(this)">
         <button class="chat-plus-btn" onclick="toggleChatMenu('dm')">+</button>
         <div class="chat-plus-menu" id="dm-plus-menu">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px;min-width:220px">
-            <button onclick="closeChatMenu('dm');var f=document.getElementById('dm-photo-input');f.value='';f.click()" style="flex-direction:column;gap:6px;padding:14px 8px;border-radius:12px;background:var(--glass-bg)"><span style="font-size:1.3rem">📷</span><span style="font-size:0.72rem;color:var(--text-secondary)">Foto</span></button>
-            <button onclick="closeChatMenu('dm');toggleGifPicker('dm')" style="flex-direction:column;gap:6px;padding:14px 8px;border-radius:12px;background:var(--glass-bg)"><span style="font-size:0.9rem;font-weight:700;color:var(--accent)">GIF</span><span style="font-size:0.72rem;color:var(--text-secondary)">Giphy</span></button>
-            <button onclick="closeChatMenu('dm');var f=document.getElementById('dm-file-input');f.value='';f.click()" style="flex-direction:column;gap:6px;padding:14px 8px;border-radius:12px;background:var(--glass-bg)"><span style="font-size:1.3rem">📎</span><span style="font-size:0.72rem;color:var(--text-secondary)">Fil</span></button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px;min-width:180px">
+            <button onclick="closeChatMenu('dm');var f=document.getElementById('dm-file-input');f.value='';f.click()" style="flex-direction:column;gap:6px;padding:14px 10px;border-radius:12px;background:var(--glass-bg)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              <span style="font-size:0.72rem;color:var(--text-secondary)">Billede / fil</span>
+            </button>
+            <button onclick="closeChatMenu('dm');toggleGifPicker('dm')" style="flex-direction:column;gap:6px;padding:14px 10px;border-radius:12px;background:var(--glass-bg)">
+              <div style="background:var(--accent);color:white;font-size:0.7rem;font-weight:800;padding:3px 8px;border-radius:6px;letter-spacing:0.5px">GIF</div>
+              <span style="font-size:0.72rem;color:var(--text-secondary)">Giphy</span>
+            </button>
           </div>
         </div>
         <input class="chat-composer-input" id="chat-input" placeholder="Skriv en besked..." oninput="dmOnInput()">
