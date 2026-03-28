@@ -38,13 +38,7 @@
   --radius-pill: 99px;
 }
 
-html {
-  height: 100vh;
-  height: -webkit-fill-available;
-  overflow: hidden;
-  overscroll-behavior: none;
-  -webkit-overflow-scrolling: touch;
-}
+html { height:100vh; overflow:hidden; overscroll-behavior:none; }
 
 /* ── DESKTOP PHONE FRAME ── */
 
@@ -57,13 +51,8 @@ body {
   -webkit-text-size-adjust: 100%;
   margin: 0;
   height: 100vh;
-  height: -webkit-fill-available;
   overflow: hidden;
   overscroll-behavior: none;
-  position: fixed;
-  width: 100%;
-  top: 0;
-  left: 0;
 }
 
 /* ── ANIMATED BG ── */
