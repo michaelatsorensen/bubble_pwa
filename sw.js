@@ -3,7 +3,7 @@
 // ══════════════════════════════════════
 // Version managed by CACHE_NAME below
 
-const CACHE_NAME = 'bubble-v6.10.25';
+const CACHE_NAME = 'bubble-v6.10.27';
 const CACHE_URLS = [
   './', './index.html', './app.css',
   './landing.html',

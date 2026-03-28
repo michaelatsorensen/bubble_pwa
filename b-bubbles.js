@@ -394,10 +394,11 @@ function openCreateEventModal() {
     initInputConfirmButtons();
     var typeSelect = document.getElementById('cb-type');
     if (typeSelect) typeSelect.value = 'event';
-    cbRenderPillSelect('cb-type', [
-      { value: 'event',   icon: 'calendar', label: 'Event' },
-      { value: 'network', icon: 'bubble',   label: 'Netværk' }
-    ]);
+    // Hide type selector — already chosen in picker
+    var typeGroup = typeSelect?.closest('.input-group');
+    if (typeGroup) typeGroup.style.display = 'none';
+    var oldTypePills = document.getElementById('cb-type-pills');
+    if (oldTypePills) oldTypePills.remove();
     cbRenderPillSelect('cb-visibility', [
       { value: 'public',  icon: 'globe', label: 'Offentlig' },
       { value: 'private', icon: 'lock',  label: 'Privat' },
@@ -526,10 +527,13 @@ function openCreateNetworkModal() {
   bbOpen('create-bubble');
   setTimeout(function() {
     initInputConfirmButtons();
-    cbRenderPillSelect('cb-type', [
-      { value: 'network', icon: 'bubble',   label: 'Netværk' },
-      { value: 'event',   icon: 'calendar', label: 'Event' }
-    ]);
+    var typeSelect = document.getElementById('cb-type');
+    if (typeSelect) typeSelect.value = 'network';
+    // Hide type selector — already chosen in picker
+    var typeGroup = typeSelect?.closest('.input-group');
+    if (typeGroup) typeGroup.style.display = 'none';
+    var oldTypePills = document.getElementById('cb-type-pills');
+    if (oldTypePills) oldTypePills.remove();
     cbRenderPillSelect('cb-visibility', [
       { value: 'public',  icon: 'globe', label: 'Offentlig' },
       { value: 'private', icon: 'lock',  label: 'Privat' },
