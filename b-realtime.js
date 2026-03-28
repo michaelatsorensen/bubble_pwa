@@ -162,15 +162,26 @@ function rtUpdateConversationPreview(msg) {
   var partnerId = msg.sender_id === currentUser.id ? msg.receiver_id : msg.sender_id;
   var row = list.querySelector('[data-conv-id="' + partnerId + '"]');
   if (row) {
-    // Update preview text + unread dot
-    var preview = row.querySelector('.fs-078');
-    if (preview) preview.textContent = msg.content || '';
+    // Update preview text
+    var preview = row.querySelector('.conv-preview');
+    if (preview) {
+      var isMine = msg.sender_id === currentUser.id;
+      var text = msg.file_url ? '📎 Billede' : escHtml((msg.content || '').slice(0, 50));
+      preview.innerHTML = isMine ? '<span style="color:var(--muted)">Du:</span> ' + text : text;
+    }
+    // Update time
+    var timeEl = row.querySelector('.conv-time');
+    if (timeEl) timeEl.textContent = timeAgo(msg.created_at);
+    // Unread dot + bold name
     var isUnread = msg.receiver_id === currentUser.id && !msg.read_at;
-    if (isUnread && !row.querySelector('.live-dot')) {
-      var dot = document.createElement('div');
-      dot.className = 'live-dot';
-      row.appendChild(dot);
-      row.querySelector('.fw-600, .fw-700')?.classList.replace('fw-600', 'fw-700');
+    if (isUnread) {
+      row.classList.add('unread');
+      if (!row.querySelector('.conv-unread-dot')) {
+        var dot = document.createElement('div');
+        dot.className = 'conv-unread-dot';
+        var flexRow = row.querySelector('.flex-row-center');
+        if (flexRow) flexRow.appendChild(dot);
+      }
     }
     // Move row to top
     list.prepend(row);
@@ -379,7 +390,7 @@ async function loadMessages() {
     const partners = Array.from(partnerMap.values());
 
     const pIds = partners.map(p => p.partnerId);
-    const { data: profiles } = await sb.from('profiles').select('id,name,title,avatar_url').in('id', pIds);
+    const { data: profiles } = await sb.from('profiles').select('id,name,title,avatar_url,updated_at').in('id', pIds);
     if (_navVersion !== myNav) return;
     const profileMap = Object.fromEntries((profiles||[]).map(p=>[p.id,p]));
 
@@ -391,9 +402,11 @@ async function loadMessages() {
       const previewText = lastMsg.file_url ? '📎 Billede' : escHtml((lastMsg.content||'').slice(0,50));
       const preview = isMine ? '<span style="color:var(--muted)">Du:</span> ' + previewText : previewText;
       const time = timeAgo(lastMsg.created_at);
-      const convAvatar = p.avatar_url ?
+      const isOnline = p.updated_at && (Date.now() - new Date(p.updated_at).getTime()) < 300000;
+      const onlineDot = isOnline ? '<div class="conv-online-dot"></div>' : '';
+      const convAvatar = '<div class="conv-avatar-wrap">' + (p.avatar_url ?
         '<div class="avatar" style="width:44px;height:44px;overflow:hidden;border-radius:50%"><img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover"></div>' :
-        '<div class="avatar" style="background:linear-gradient(135deg,#6366F1,#7C5CFC);width:44px;height:44px">'+initials+'</div>';
+        '<div class="avatar" style="background:linear-gradient(135deg,#6366F1,#7C5CFC);width:44px;height:44px">'+initials+'</div>') + onlineDot + '</div>';
       return '<div class="card conv-card' + (isUnread ? ' unread' : '') + '" data-action="openChat" data-id="' + partnerId + '" data-from="screen-messages" data-conv-id="' + partnerId + '">' +
         '<div class="flex-row-center" style="gap:0.75rem">' + convAvatar +
         '<div style="flex:1;min-width:0">' +
@@ -418,6 +431,15 @@ async function openChat(userId, fromScreen) {
     window._chatPartnerAvatar = p?.avatar_url || null;
     document.getElementById('chat-name').textContent = currentChatName;
     document.getElementById('chat-role').textContent = p?.title || '';
+    // Online status — check if user was active recently
+    var lastActive = p?.updated_at || p?.last_sign_in_at;
+    var roleEl = document.getElementById('chat-role');
+    if (lastActive && (Date.now() - new Date(lastActive).getTime()) < 300000) {
+      roleEl.innerHTML = '<span style="color:#1A9E8E">● aktiv nu</span>';
+    }
+    // Personalized placeholder
+    var chatInput = document.getElementById('chat-input');
+    if (chatInput) chatInput.placeholder = 'Skriv til ' + (currentChatName.split(' ')[0] || 'dem') + '...';
     var dmAvatar = document.getElementById('dm-topbar-avatar');
     if (dmAvatar) {
       if (p?.avatar_url) { dmAvatar.innerHTML = '<img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
@@ -470,6 +492,13 @@ function dmRenderMsg(m) {
     }
   }
 
+  // Timestamp — shown on single/tail messages
+  var timeHtml = '';
+  if (gp === 'single' || gp === 'tail') {
+    var t = new Date(m.created_at);
+    timeHtml = '<div class="msg-timestamp">' + t.toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'}) + '</div>';
+  }
+
   let bubble = '';
   if (m.file_url) {
     const safeUrl = escHtml(m.file_url);
@@ -483,10 +512,16 @@ function dmRenderMsg(m) {
     }
   } else {
     var edited = m.edited ? ' <span class="msg-edited">redigeret</span>' : '';
-    bubble = '<div class="msg-bubble' + (sent ? ' sent' : '') + '" id="dm-bubble-' + m.id + '">' + escHtml(filterChatContent(m.content||'')) + edited + '</div>';
+    var content = m.content || '';
+    var emojiOnly = isEmojiOnly(content);
+    if (emojiOnly) {
+      bubble = '<div class="msg-emoji" id="dm-bubble-' + m.id + '">' + escHtml(content) + '</div>';
+    } else {
+      bubble = '<div class="msg-bubble' + (sent ? ' sent' : '') + '" id="dm-bubble-' + m.id + '">' + linkify(escHtml(filterChatContent(content))) + edited + '</div>';
+    }
   }
 
-  // Avatar: only show on tail and single
+  // Avatar: only show on tail and single (received only)
   const showAvatar = gp === 'tail' || gp === 'single';
   const theirAvUrl = window._chatPartnerAvatar;
   let avatarInner = '';
@@ -507,7 +542,7 @@ function dmRenderMsg(m) {
     '<div class="msg-avatar"' + avatarClick + ' style="' + avatarStyle + '">' + avatarInner + '</div>' +
     '<div class="msg-body">' +
     '<div class="msg-content">' + bubble + '</div>' +
-    receipt +
+    timeHtml + receipt +
     '</div>' +
   '</div>';
 }
@@ -748,13 +783,21 @@ function dmHideTyping() {
 
 var _dmBroadcastTypingTimer = null;
 function dmOnInput() {
+  // Send button active state
+  var input = document.getElementById('chat-input');
+  var sendBtn = document.getElementById('chat-send-btn');
+  if (input && sendBtn) {
+    var hasContent = input.value.trim().length > 0;
+    sendBtn.classList.toggle('chat-send-active', hasContent);
+  }
+  // Typing broadcast
   if (!chatSubscription) return;
   clearTimeout(_dmBroadcastTypingTimer);
   _dmBroadcastTypingTimer = setTimeout(function() {
     try {
       chatSubscription.send({ type: 'broadcast', event: 'typing',
         payload: { userId: currentUser.id, name: currentProfile?.name || 'Nogen' } });
-    } catch(e) { /* typing is fire-and-forget, log silently */ if (window._debugRt) console.warn('typing broadcast:', e); }
+    } catch(e) { if (window._debugRt) console.warn('typing broadcast:', e); }
   }, 300);
 }
 

@@ -320,6 +320,18 @@ function errorToast(context, error) {
 // ══════════════════════════════════════════════════════════
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
+function linkify(text) {
+  if (!text) return text;
+  return text.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">$1</a>');
+}
+
+function isEmojiOnly(text) {
+  if (!text) return false;
+  var stripped = text.replace(/[\uFE00-\uFE0F\u200D]/g, '');
+  var emojiPattern = /^[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2702}-\u{27B0}\u{FE00}-\u{FE0F}\u{200D}\s]{1,12}$/u;
+  return emojiPattern.test(stripped) && stripped.replace(/\s/g, '').length <= 12;
+}
+
 // Safe avatar <img> tag — escapes URL to prevent XSS
 function safeAvatarImg(url, style) {
   if (!url) return '';
