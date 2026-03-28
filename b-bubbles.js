@@ -1390,16 +1390,10 @@ async function generateEventReport(bubbleId) {
     // Member table rows
     var memberRows = members.map(function(m, i) {
       var p = profileMap[m.user_id] || {};
-      var conn = connectorsMap[m.user_id] || 0;
-      var msgs = msgPerUser[m.user_id] || 0;
-      var joinTime = m.joined_at ? new Date(m.joined_at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '–';
       return '<tr style="border-bottom:1px solid #F4F3F9">' +
         '<td style="padding:0.5rem 0.6rem;font-size:0.8rem;font-weight:600">' + (p.name || 'Ukendt') + '</td>' +
         '<td style="padding:0.5rem 0.4rem;font-size:0.75rem;color:#8C8A97">' + (p.title || '–') + '</td>' +
         '<td style="padding:0.5rem 0.4rem;font-size:0.75rem;color:#8C8A97">' + (p.workplace || '–') + '</td>' +
-        '<td style="padding:0.5rem 0.4rem;font-size:0.75rem;text-align:center">' + conn + '</td>' +
-        '<td style="padding:0.5rem 0.4rem;font-size:0.75rem;text-align:center">' + msgs + '</td>' +
-        '<td style="padding:0.5rem 0.4rem;font-size:0.72rem;color:#8C8A97;text-align:center">' + joinTime + '</td>' +
         '</tr>';
     }).join('');
 
@@ -1475,8 +1469,7 @@ async function generateEventReport(bubbleId) {
             return '<div class="connector-card">' +
               '<div class="connector-rank">' + (i + 1) + '</div>' +
               '<div style="flex:1;min-width:0">' +
-                '<div style="font-size:0.85rem;font-weight:700">' + c.name + '</div>' +
-                '<div style="font-size:0.72rem;color:#8C8A97">' + c.title + '</div>' +
+                '<div style="font-size:0.85rem;font-weight:700">Deltager #' + (i + 1) + '</div>' +
               '</div>' +
               '<div style="text-align:right">' +
                 '<div style="font-size:0.78rem;font-weight:700;color:#1A9E8E">' + c.connections + ' connections</div>' +
@@ -1508,7 +1501,7 @@ async function generateEventReport(bubbleId) {
         '<div class="section-title">Alle deltagere (' + totalMembers + ')</div>' +
         '<div class="card" style="overflow-x:auto;padding:0.5rem">' +
           '<table><thead><tr>' +
-            '<th>Navn</th><th>Titel</th><th>Virksomhed</th><th style="text-align:center">Connections</th><th style="text-align:center">Beskeder</th><th style="text-align:center">Joined</th>' +
+            '<th>Navn</th><th>Titel</th><th>Virksomhed</th>' +
           '</tr></thead><tbody>' + memberRows + '</tbody></table>' +
         '</div>' +
       '</div>' +
@@ -1575,8 +1568,8 @@ async function generateEventReport(bubbleId) {
       topConnectors.forEach(function(c, i) {
         trayHtml += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid var(--glass-border-subtle)">' +
           '<div style="width:22px;height:22px;border-radius:50%;background:var(--gradient-primary);color:white;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:800;flex-shrink:0">' + (i + 1) + '</div>' +
-          '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:700">' + escHtml(c.name) + '</div><div style="font-size:0.65rem;color:var(--muted)">' + escHtml(c.title) + '</div></div>' +
-          '<div style="font-size:0.68rem;font-weight:700;color:#1A9E8E">' + c.connections + '</div>' +
+          '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:700">Deltager #' + (i + 1) + '</div></div>' +
+          '<div style="font-size:0.68rem;font-weight:700;color:#1A9E8E">' + c.connections + ' conn.</div>' +
         '</div>';
       });
       trayHtml += '</div>';
@@ -1599,20 +1592,11 @@ async function generateEventReport(bubbleId) {
 
     members.forEach(function(m) {
       var p = profileMap[m.user_id] || {};
-      var conn = connectorsMap[m.user_id] || 0;
-      var checkinTime = m.checked_in_at ? new Date(m.checked_in_at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '';
-      var checkoutTime = m.checked_out_at ? new Date(m.checked_out_at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '';
-      var isLive = m.checked_in_at && !m.checked_out_at;
 
       trayHtml += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0;border-bottom:1px solid var(--glass-border-subtle)">' +
-        '<div style="width:6px;height:6px;border-radius:50%;background:' + (isLive ? '#1A9E8E' : m.checked_in_at ? 'var(--glass-border)' : 'transparent') + ';flex-shrink:0"></div>' +
         '<div style="flex:1;min-width:0">' +
           '<div style="font-size:0.78rem;font-weight:600">' + escHtml(p.name || 'Ukendt') + '</div>' +
           '<div style="font-size:0.62rem;color:var(--muted)">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
-        '</div>' +
-        '<div style="text-align:right;flex-shrink:0">' +
-          (checkinTime ? '<div style="font-size:0.62rem;color:#1A9E8E;font-weight:600">' + checkinTime + (checkoutTime ? ' – ' + checkoutTime : isLive ? ' →' : '') + '</div>' : '<div style="font-size:0.6rem;color:var(--muted)">Ikke checket ind</div>') +
-          (conn > 0 ? '<div style="font-size:0.58rem;color:var(--accent)">' + conn + ' connections</div>' : '') +
         '</div>' +
       '</div>';
     });
