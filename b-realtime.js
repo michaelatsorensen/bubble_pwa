@@ -449,26 +449,24 @@ async function openChat(userId, fromScreen) {
 // ── Date separator: insert if last message in DOM is from a different day ──
 function _dmMaybeInsertDateSep(container, createdAt) {
   if (!container || !createdAt) return;
-  var newDate = new Date(createdAt).toLocaleDateString('da-DK', {weekday:'long', day:'numeric', month:'short'});
+  var d = new Date(createdAt);
+  var newDate = d.toLocaleDateString('da-DK', {weekday:'short', day:'numeric', month:'short'}) + ', ' + d.toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'});
   var lastSep = container.querySelector('.chat-date-sep:last-of-type');
   var lastDate = lastSep ? lastSep.textContent : '';
-  if (newDate.toUpperCase() !== lastDate) {
-    container.insertAdjacentHTML('beforeend', '<div class="chat-date-sep">' + newDate.toUpperCase() + '</div>');
+  if (newDate !== lastDate) {
+    container.insertAdjacentHTML('beforeend', '<div class="chat-date-sep">' + newDate + '</div>');
   }
 }
 
 function dmRenderMsg(m) {
   const sent = m.sender_id === currentUser.id;
   const gp = m._gp || 'single'; // single, first, cont, tail
-  const isCont = gp === 'cont';
 
-  // Read receipt on tail/single sent messages only
+  // Read receipt: only on last sent message group (tail or single)
   let receipt = '';
-  if (sent && !m.file_url && (gp === 'tail' || gp === 'single')) {
+  if (sent && (gp === 'tail' || gp === 'single')) {
     if (m.read_at) {
-      receipt = `<span class="msg-receipt read" id="dm-receipt-${m.id}" title="Læst">✓✓</span>`;
-    } else {
-      receipt = `<span class="msg-receipt" id="dm-receipt-${m.id}" title="Sendt">✓</span>`;
+      receipt = '<div class="msg-receipt" id="dm-receipt-' + m.id + '">Læst</div>';
     }
   }
 
@@ -478,40 +476,40 @@ function dmRenderMsg(m) {
     const ext = m.file_name?.split('.').pop()?.toLowerCase() || '';
     const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext) || (m.file_type||'').startsWith('image/');
     if (isImg) {
-      bubble = `<a href="${safeUrl}" target="_blank" rel="noopener"><img class="msg-img" src="${safeUrl}" alt="${escHtml(m.file_name||'')}"></a>`;
+      bubble = '<a href="' + safeUrl + '" target="_blank" rel="noopener"><img class="msg-img" src="' + safeUrl + '" alt="' + escHtml(m.file_name||'') + '"></a>';
     } else {
       const sz = m.file_size ? (m.file_size < 1048576 ? Math.round(m.file_size/1024)+'KB' : (m.file_size/1048576).toFixed(1)+'MB') : '';
-      bubble = `<a class="msg-file" href="${safeUrl}" target="_blank" rel="noopener">${icon('clip')} ${escHtml(m.file_name||'Fil')} <span class="msg-file-sz">${sz}</span></a>`;
+      bubble = '<a class="msg-file" href="' + safeUrl + '" target="_blank" rel="noopener">' + icon('clip') + ' ' + escHtml(m.file_name||'Fil') + ' <span class="msg-file-sz">' + sz + '</span></a>';
     }
   } else {
-    bubble = `<div class="msg-bubble${sent?' sent':''}" id="dm-bubble-${m.id}">${escHtml(filterChatContent(m.content||''))}</div>`;
+    var edited = m.edited ? ' <span class="msg-edited">redigeret</span>' : '';
+    bubble = '<div class="msg-bubble' + (sent ? ' sent' : '') + '" id="dm-bubble-' + m.id + '">' + escHtml(filterChatContent(m.content||'')) + edited + '</div>';
   }
 
-  const myAvUrl = currentProfile?.avatar_url;
+  // Avatar: only show on tail and single
+  const showAvatar = gp === 'tail' || gp === 'single';
   const theirAvUrl = window._chatPartnerAvatar;
-  const avatarGrad = sent ? 'linear-gradient(135deg,#6366F1,#7C5CFC)' : 'linear-gradient(135deg,#2ECFCF,#22B8CF)';
-  const avatarClick = sent ? '' : ` onclick="dmOpenPersonSheet('${m.sender_id}')"`;
-
-  let avatarInner;
-  if (sent && myAvUrl) { avatarInner = '<img src="'+myAvUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
-  else if (!sent && theirAvUrl) { avatarInner = '<img src="'+theirAvUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
-  else {
-    const initials = sent
-      ? (currentProfile?.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
-      : (currentChatName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    avatarInner = initials;
+  let avatarInner = '';
+  if (!sent && showAvatar) {
+    if (theirAvUrl) {
+      avatarInner = '<img src="' + theirAvUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    } else {
+      avatarInner = (currentChatName||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    }
   }
 
-  var edited = m.edited ? ' <span class="msg-edited">redigeret</span>' : '';
-  var rowClass = 'msg-row' + (sent ? ' me' : '') + (isCont ? ' msg-cont' : '') + (gp === 'tail' ? ' msg-tail' : '');
+  var avatarStyle = sent ? 'display:none' : ('background:linear-gradient(135deg,#CECBF6,#AFA9EC);overflow:hidden' + (showAvatar ? ';cursor:pointer' : ';visibility:hidden'));
+  var avatarClick = (!sent && showAvatar) ? ' onclick="dmOpenPersonSheet(\'' + m.sender_id + '\')"' : '';
 
-  return `<div class="${rowClass}" id="dm-msg-${m.id}" data-msg-id="${m.id}">
-    <div class="msg-avatar"${avatarClick} style="background:${avatarGrad};overflow:hidden${sent?'':';cursor:pointer'}">${avatarInner}</div>
-    <div class="msg-body">
-      <div class="msg-head"><span class="msg-name"></span><span class="msg-time">${edited}${receipt}</span></div>
-      <div class="msg-content">${bubble}<span class="msg-actions"><button class="msg-dots" onpointerdown="event.stopPropagation()" onclick="dmOpenMsgMenu(event,'${m.id}',${sent})" title="Mere">⋯</button></span></div>
-    </div>
-  </div>`;
+  var rowClass = 'msg-row msg-' + gp + (sent ? ' me' : '');
+
+  return '<div class="' + rowClass + '" id="dm-msg-' + m.id + '" data-msg-id="' + m.id + '" oncontextmenu="event.preventDefault();dmLongPress(\'' + m.id + '\',' + sent + ')" ontouchstart="dmTouchStart(event,\'' + m.id + '\',' + sent + ')" ontouchend="dmTouchEnd()" ontouchmove="dmTouchEnd()">' +
+    '<div class="msg-avatar"' + avatarClick + ' style="' + avatarStyle + '">' + avatarInner + '</div>' +
+    '<div class="msg-body">' +
+    '<div class="msg-content">' + bubble + '</div>' +
+    receipt +
+    '</div>' +
+  '</div>';
 }
 
 // Compute group positions for message list
@@ -569,10 +567,11 @@ async function loadChatMessages() {
     var lastDate = '';
     sorted.forEach(function(m) {
       // Date separator
-      var d = new Date(m.created_at).toLocaleDateString('da-DK', {weekday:'long', day:'numeric', month:'short'});
-      if (d !== lastDate) {
-        html += '<div class="chat-date-sep">' + d.toUpperCase() + '</div>';
-        lastDate = d;
+      var d = new Date(m.created_at);
+      var dateStr = d.toLocaleDateString('da-DK', {weekday:'short', day:'numeric', month:'short'}).replace(/\./g, '.') + ', ' + d.toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'});
+      if (dateStr !== lastDate) {
+        html += '<div class="chat-date-sep">' + dateStr + '</div>';
+        lastDate = dateStr;
       }
       // Time separator between groups with 5+ min gap
       if (m._showTimeSep) {
@@ -588,6 +587,119 @@ async function loadChatMessages() {
 
 // ── DM Realtime: Broadcast for instant delivery + typing indicator ──
 var _dmTypingTimer = null;
+
+// ── Long-press context menu for DM messages ──
+var _dmLongPressTimer = null;
+var _dmLongPressId = null;
+
+function dmTouchStart(event, msgId, isSent) {
+  _dmLongPressTimer = setTimeout(function() {
+    dmLongPress(msgId, isSent);
+  }, 500);
+}
+
+function dmTouchEnd() {
+  if (_dmLongPressTimer) { clearTimeout(_dmLongPressTimer); _dmLongPressTimer = null; }
+}
+
+function dmLongPress(msgId, isSent) {
+  _dmLongPressId = msgId;
+  if (navigator.vibrate) navigator.vibrate(10);
+
+  // Get message element position
+  var msgEl = document.getElementById('dm-msg-' + msgId);
+  if (!msgEl) return;
+
+  var overlay = document.createElement('div');
+  overlay.className = 'dm-ctx-overlay';
+  overlay.onclick = function() { overlay.remove(); };
+
+  var container = document.createElement('div');
+  container.style.cssText = 'position:absolute;display:flex;flex-direction:column;align-items:' + (isSent ? 'flex-end' : 'flex-start') + ';padding:0 1rem;';
+
+  // Position near the message
+  var rect = msgEl.getBoundingClientRect();
+  container.style.top = Math.max(60, rect.top - 50) + 'px';
+  container.style.left = '0';
+  container.style.right = '0';
+
+  // Reaction bar
+  var reactions = document.createElement('div');
+  reactions.className = 'dm-ctx-reactions';
+  var emojis = ['\u2764\uFE0F', '\uD83D\uDC4D', '\uD83D\uDE02', '\uD83D\uDE2E', '\uD83D\uDD25', '+'];
+  emojis.forEach(function(emoji) {
+    var btn = document.createElement('button');
+    btn.textContent = emoji;
+    if (emoji === '+') { btn.style.fontSize = '14px'; btn.style.color = 'var(--muted)'; }
+    btn.onclick = function(e) {
+      e.stopPropagation();
+      if (emoji !== '+') dmAddReaction(msgId, emoji);
+      overlay.remove();
+    };
+    reactions.appendChild(btn);
+  });
+  container.appendChild(reactions);
+
+  // Context menu
+  var menu = document.createElement('div');
+  menu.className = 'dm-ctx-menu';
+
+  var copyBtn = document.createElement('button');
+  copyBtn.textContent = 'Kopier';
+  copyBtn.onclick = function(e) {
+    e.stopPropagation();
+    var bubble = document.getElementById('dm-bubble-' + msgId);
+    if (bubble) { navigator.clipboard.writeText(bubble.textContent).then(function() { showToast('Kopieret'); }); }
+    overlay.remove();
+  };
+  menu.appendChild(copyBtn);
+
+  if (isSent) {
+    var editBtn = document.createElement('button');
+    editBtn.textContent = 'Rediger';
+    editBtn.onclick = function(e) { e.stopPropagation(); overlay.remove(); dmStartEdit(msgId); };
+    menu.appendChild(editBtn);
+  }
+
+  var delBtn = document.createElement('button');
+  delBtn.className = 'danger';
+  delBtn.textContent = 'Slet';
+  delBtn.onclick = function(e) {
+    e.stopPropagation();
+    overlay.remove();
+    dmDeleteMsg(msgId);
+  };
+  menu.appendChild(delBtn);
+
+  container.appendChild(menu);
+  overlay.appendChild(container);
+  document.body.appendChild(overlay);
+}
+
+function dmAddReaction(msgId, emoji) {
+  // TODO: Save reaction to DB (bubble_message_reactions equivalent for DMs)
+  // For now, show toast
+  showToast(emoji);
+}
+
+function dmStartEdit(msgId) {
+  var bubble = document.getElementById('dm-bubble-' + msgId);
+  if (!bubble) return;
+  dmEditingId = msgId;
+  var input = document.getElementById('chat-input');
+  if (input) { input.value = bubble.textContent; input.focus(); }
+  var editBar = document.getElementById('dm-edit-bar');
+  if (editBar) editBar.style.display = 'flex';
+}
+
+async function dmDeleteMsg(msgId) {
+  try {
+    await sb.from('messages').delete().eq('id', msgId);
+    var el = document.getElementById('dm-msg-' + msgId);
+    if (el) { el.style.transition = 'opacity 0.2s'; el.style.opacity = '0'; setTimeout(function() { el.remove(); }, 200); }
+    showToast('Besked slettet');
+  } catch(e) { logError('dmDeleteMsg', e); errorToast('delete', e); }
+}
 
 function dmChannelName() {
   var ids = [currentUser.id, currentChatUser].sort();
@@ -681,52 +793,10 @@ function subscribeToChat() {
 }
 
 // ── DM message context menu (⋯) ──
-function dmOpenMsgMenu(e, msgId, isMine) {
-  e.stopPropagation();
-  var existing = document.getElementById('dm-msg-menu');
-  if (existing) { existing.remove(); if (existing.dataset.msgId === msgId) return; }
-
-  var btn = e.currentTarget;
-  var rect = btn.getBoundingClientRect();
-
-  var menu = document.createElement('div');
-  menu.id = 'dm-msg-menu';
-  menu.dataset.msgId = msgId;
-  menu.style.cssText = `position:fixed;z-index:9999;background:var(--glass-bg-strong);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);border-radius:12px;padding:0.35rem 0;min-width:130px;box-shadow:0 8px 32px rgba(30,27,46,0.12);right:${Math.max(8, window.innerWidth - rect.right + rect.width/2 - 65)}px;top:${rect.bottom + 6}px`;
-
-  var items = '';
-  if (isMine) {
-    items += `<button onclick="dmEditMsg('${msgId}');document.getElementById('dm-msg-menu')?.remove()" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.55rem 1rem;background:none;border:none;color:var(--text);font-size:0.82rem;cursor:pointer;text-align:left">✎ Rediger</button>`;
-    items += '<div style="height:1px;background:var(--glass-border);margin:0.2rem 0"></div>';
-  }
-  items += `<button onclick="dmCopyMsg('${msgId}');document.getElementById('dm-msg-menu')?.remove()" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.55rem 1rem;background:none;border:none;color:var(--text);font-size:0.82rem;cursor:pointer;text-align:left">📋 Kopiér</button>`;
-  if (isMine) {
-    items += '<div style="height:1px;background:var(--glass-border);margin:0.2rem 0"></div>';
-    items += `<button onclick="dmDeleteMsg('${msgId}');document.getElementById('dm-msg-menu')?.remove()" style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.55rem 1rem;background:none;border:none;color:var(--accent2);font-size:0.82rem;cursor:pointer;text-align:left">✕ Slet</button>`;
-  }
-  menu.innerHTML = items;
-
-  document.body.appendChild(menu);
-
-  // Close on outside tap
-  setTimeout(() => {
-    document.addEventListener('pointerdown', function closeMenu(ev) {
-      if (!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('pointerdown', closeMenu); }
-    });
-  }, 50);
-}
+// dmOpenMsgMenu removed — replaced by long-press context (dmLongPress)
 
 let dmEditingId = null;
-function dmEditMsg(msgId) {
-  dmEditingId = msgId;
-  const bubble = document.getElementById('dm-bubble-' + msgId);
-  if (!bubble) return;
-  const input = document.getElementById('chat-input');
-  input.value = bubble.textContent;
-  input.focus();
-  var editBar = document.getElementById('dm-edit-bar');
-  if (editBar) editBar.style.display = 'flex';
-}
+// dmEditMsg replaced by dmStartEdit in long-press handler
 
 function dmCancelEdit() {
   dmEditingId = null;
@@ -736,42 +806,6 @@ function dmCancelEdit() {
   if (editBar) editBar.style.display = 'none';
 }
 
-function dmCopyMsg(msgId) {
-  var bubble = document.getElementById('dm-bubble-' + msgId);
-  if (!bubble) return;
-  var text = bubble.textContent || '';
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(function() { showToast('Kopieret'); }).catch(function() { showToast('Kunne ikke kopiere'); });
-  } else {
-    showToast('Kopiering ikke understøttet');
-  }
-}
-
-async function dmDeleteMsg(msgId) {
-  try {
-    var el = document.getElementById('dm-msg-' + msgId);
-    if (!el) return;
-    // Use inline confirm tray instead of window.confirm()
-    if (el.querySelector('.dm-delete-confirm')) return; // already showing
-    var tray = document.createElement('div');
-    tray.className = 'dm-delete-confirm';
-    tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0.5rem;margin-top:0.25rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:8px;gap:0.4rem';
-    tray.innerHTML = '<span style="font-size:0.7rem;color:var(--text-secondary)">Slet besked?</span>' +
-      '<div style="display:flex;gap:0.25rem">' +
-      '<button style="font-size:0.68rem;padding:0.2rem 0.55rem;background:rgba(124,92,252,0.12);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600" onclick="dmConfirmDelete(\'' + msgId + '\')">Slet</button>' +
-      '<button style="font-size:0.68rem;padding:0.2rem 0.55rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:6px;cursor:pointer;font-family:inherit" onclick="this.closest(\'.dm-delete-confirm\').remove()">Annuller</button>' +
-      '</div>';
-    el.appendChild(tray);
-  } catch(e) { logError("dmDeleteMsg", e); showToast('Kunne ikke slette besked'); }
-}
-
-async function dmConfirmDelete(msgId) {
-  try {
-    await sb.from('messages').delete().eq('id', msgId).eq('sender_id', currentUser.id);
-    var el = document.getElementById('dm-msg-' + msgId);
-    if (el) el.remove();
-    showToast('Besked slettet');
-  } catch(e) { logError("dmConfirmDelete", e); showToast('Kunne ikke slette besked'); }
-}
+// dmCopyMsg and dmDeleteMsg handled by long-press context menu
 
 
