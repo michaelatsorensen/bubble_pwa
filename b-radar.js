@@ -140,6 +140,8 @@ var rpCurrentUserId = null;
 
 async function openRadarPerson(userId) {
   rpCurrentUserId = userId;
+  // Remember if list was open before we start async work
+  var _listWasOpen = document.getElementById('radar-sheet')?.classList.contains('open');
   try {
     var { data: p } = await sb.from('profiles').select('*').eq('id', userId).single();
     if (!p) return;
@@ -201,7 +203,25 @@ async function openRadarPerson(userId) {
     saveBtn.dataset.saved = savedCheck ? '1' : '0';
     document.getElementById('radar-person-overlay').classList.add('open');
     setTimeout(function(){ document.getElementById('radar-person-sheet').classList.add('open'); }, 10);
+    // Force radar list to stay open if it was open before
+    if (_listWasOpen) {
+      _keepRadarSheetOpen();
+      setTimeout(_keepRadarSheetOpen, 50);
+      setTimeout(_keepRadarSheetOpen, 150);
+      setTimeout(_keepRadarSheetOpen, 350);
+    }
   } catch(e) { logError("openRadarPerson", e); errorToast("load", e); }
+}
+
+function _keepRadarSheetOpen() {
+  // Only re-assert if person overlay is still showing
+  var personOpen = document.getElementById('radar-person-overlay');
+  if (!personOpen || !personOpen.classList.contains('open')) return;
+  var rs = document.getElementById('radar-sheet');
+  var ro = document.getElementById('radar-overlay');
+  if (rs && !rs.classList.contains('open')) { rs.classList.add('open'); rs.style.transform = 'translateY(0)'; }
+  if (ro && !ro.classList.contains('open')) ro.classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 
 function closeRadarPerson() {
