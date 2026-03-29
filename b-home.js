@@ -750,10 +750,7 @@ async function bbLoadLivePanel() {
 }
 
 async function loadMyBubbles() {
-  if (_bbActiveTab === 'mine') {
-    if (_bbActiveSub === 'evt') loadMyEvents();
-    else loadMyNetworks();
-  }
+  bbSwitchTab(_bbActiveTab);
 }
 
 // ── Accordion network view with Reddit-style threading ──
