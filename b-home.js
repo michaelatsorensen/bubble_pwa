@@ -821,7 +821,7 @@ async function loadMyNetworks() {
     var myIds = memberships.map(function(m) { return m.bubble_id; });
 
     // 2. Fetch my bubbles
-    var { data: allMyBubbles, error: fetchErr } = await sb.from('bubbles').select('id, name, type, visibility, created_by, parent_bubble_id, location, member_count').in('id', myIds);
+    var { data: allMyBubbles, error: fetchErr } = await sb.from('bubbles').select('*, bubble_members(count)').in('id', myIds);
     console.debug('[loadMyNetworks] fetched', (allMyBubbles||[]).length, 'bubbles, error:', fetchErr, 'types:', (allMyBubbles||[]).map(function(b){return b.type;}));
     if (fetchErr) { logError('loadMyNetworks:fetch', fetchErr); showRetryState('bb-net-list', 'loadMyNetworks', 'Kunne ikke hente netværk'); return; }
     if (_navVersion !== myNav) return;
@@ -839,7 +839,7 @@ async function loadMyNetworks() {
     var childrenMap = {};
     if (parentIds.length > 0) {
       var { data: children } = await sb.from('bubbles')
-        .select('id, name, type, visibility, created_by, parent_bubble_id, event_date, location, member_count')
+        .select('*, bubble_members(count)')
         .in('parent_bubble_id', parentIds)
         .order('event_date', { ascending: true, nullsFirst: false });
       if (_navVersion !== myNav) return;
@@ -859,7 +859,7 @@ async function loadMyNetworks() {
     var lvl3Map = {};
     if (lvl2NetIds.length > 0) {
       var { data: lvl3 } = await sb.from('bubbles')
-        .select('id, name, type, parent_bubble_id, event_date, location, member_count')
+        .select('id, name, type, parent_bubble_id, event_date, location')
         .in('parent_bubble_id', lvl2NetIds)
         .eq('type', 'event')
         .order('event_date', { ascending: true, nullsFirst: false });
@@ -891,7 +891,7 @@ async function loadMyNetworks() {
       var childNets = kids.filter(function(k) { return k.type !== 'event' && k.type !== 'live'; });
       var childEvents = kids.filter(function(k) { return k.type === 'event' || k.type === 'live'; });
       var totalChildren = childNets.length + childEvents.length;
-      var mc = net.member_count ?? 0;
+      var mc = net.member_count ?? net.bubble_members?.[0]?.count ?? 0;
       var badgeParts = [];
       if (childNets.length > 0) badgeParts.push(childNets.length + ' netv\u00E6rk');
       if (childEvents.length > 0) {
@@ -917,7 +917,7 @@ async function loadMyNetworks() {
 
         // Child networks (level 2)
         childNets.forEach(function(cn) {
-          var cnMc = cn.member_count ?? 0;
+          var cnMc = cn.member_count ?? cn.bubble_members?.[0]?.count ?? 0;
           var cnEvents = lvl3Map[cn.id] || [];
           var cnAccId = 'acc-' + cn.id.slice(0, 8);
 
@@ -968,7 +968,7 @@ async function loadMyNetworks() {
 
     // Issue 1: Render orphaned child networks as standalone cards
     orphanNets.forEach(function(net) {
-      var mc = net.member_count ?? 0;
+      var mc = net.member_count ?? net.bubble_members?.[0]?.count ?? 0;
       var parentName = orphanParentMap[net.parent_bubble_id] || '';
       var orphanEvents = lvl3Map[net.id] || [];
       var accId = 'acc-' + net.id.slice(0, 8);
