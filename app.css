@@ -216,8 +216,8 @@ textarea.input { min-height:80px; resize:vertical; }
 /* ── AVATARS ── */
 .avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; color:white; flex-shrink:0; }
 .avatar-lg { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:800; color:white; }
-.bubble-icon { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:inherit; }
-.bubble-icon svg { width:20px; height:20px; }
+.bubble-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:inherit; }
+.bubble-icon svg { width:18px; height:18px; }
 
 /* ── MATCH BAR ── */
 .match-bar-wrap { width:100%; height:4px; background:rgba(30,27,46,0.04); border-radius:99px; margin-top:0.35rem; }

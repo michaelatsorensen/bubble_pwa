@@ -1204,16 +1204,13 @@ function bubbleCard(b, joined) {
   }
 
   var memberLabel = (b.member_count || 0) > 0 ? '<div class="fw-700" style="font-size:0.75rem">' + ico('users') + ' ' + b.member_count + '</div>' : '';
-  var visBadge = visibilityBadge(b.visibility);
   var parentRef = b._parentName ? '<div style="display:inline-flex;align-items:center;gap:3px;margin-top:0.15rem;font-size:0.62rem;color:#534AB7">\u21B3 ' + escHtml(b._parentName) + '</div>' : '';
 
-  var cardBorder = b.visibility === 'private' ? 'border-left:3px solid rgba(124,92,252,0.4);' : (b.visibility === 'hidden' ? 'border-left:3px solid rgba(30,27,46,0.15);' : '');
-
-  return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}" style="${cardBorder}">
+  return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}">
     <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};color:${bubbleColor(b.type, 0.9)}">${bubbleEmoji(b.type)}</div>
     <div style="flex:1;min-width:0">
-      <div class="fw-600 fs-09">${escHtml(b.name)}</div>
-      <div style="font-size:0.75rem;color:var(--text-secondary);display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap">${escHtml(b.type_label || b.type)} ${b.location ? '<span>·</span> <span>' + escHtml(b.location) + '</span>' : ''} <span>·</span> ${visBadge}</div>
+      <div class="fw-600 fs-085">${escHtml(b.name)}</div>
+      <div style="font-size:0.68rem;color:var(--muted);display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap">${visIcon(b.visibility)} ${escHtml(b.type_label || b.type)} ${b.location ? '<span>·</span> <span>' + escHtml(b.location) + '</span>' : ''}</div>
       ${parentRef}
       ${contactHtml}
     </div>

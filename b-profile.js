@@ -899,9 +899,9 @@ async function loadProfileBubbles() {
       networks.forEach(function(b) {
         var mc = b.member_count ?? b.bubble_members?.[0]?.count ?? 0;
         html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem"><div style="display:flex;align-items:center;gap:0.6rem">';
-        html += '<div style="width:32px;height:32px;border-radius:8px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7C5CFC">' + ico('bubble') + '</div>';
-        html += '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:600">' + escHtml(b.name) + '</div>';
-        html += '<div style="font-size:0.65rem;color:var(--muted)">' + visIcon(b.visibility) + mc + ' medlemmer' + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div></div></div>';
+        html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7C5CFC">' + ico('bubble') + '</div>';
+        html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
+        html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(b.visibility) + mc + ' medlemmer' + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div></div></div>';
       });
     }
     if (events.length > 0) {
@@ -910,9 +910,9 @@ async function loadProfileBubbles() {
         var dateStr = b.event_date ? new Date(b.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) : '';
         var isPast = b.event_date && new Date(b.event_date) < new Date();
         html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5' : '') + '"><div style="display:flex;align-items:center;gap:0.6rem">';
-        html += '<div style="width:32px;height:32px;border-radius:8px;background:rgba(46,207,207,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E">' + ico('calendar') + '</div>';
-        html += '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:600">' + escHtml(b.name) + '</div>';
-        html += '<div style="font-size:0.65rem;color:var(--muted)">' + visIcon(b.visibility) + dateStr + '</div></div></div></div>';
+        html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E">' + ico('calendar') + '</div>';
+        html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
+        html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(b.visibility) + dateStr + '</div></div></div></div>';
       });
     }
     el.innerHTML = html;
