@@ -624,9 +624,9 @@ function cbRenderPillSelect(selectId, options) {
     var isActive = opt.value === current;
     btn.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;gap:0.35rem;padding:0.4rem 0.75rem;border-radius:99px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.15s;border:1.5px solid ' + (isActive ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)') + ';background:' + (isActive ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)') + ';color:' + (isActive ? 'var(--accent)' : 'var(--muted)');
     var ico = document.createElement('span');
-    ico.style.cssText = 'width:0.85rem;height:0.85rem;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0';
+    ico.style.cssText = 'width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0';
     var icoSvg = ICONS[opt.icon] || '';
-    if (icoSvg) ico.innerHTML = icoSvg.replace('<svg ', '<svg width="0.85rem" height="0.85rem" ');
+    if (icoSvg) ico.innerHTML = icoSvg.replace('<svg ', '<svg width="14" height="14" ');
     var lbl = document.createElement('span');
     lbl.textContent = opt.label;
     if (icoSvg) btn.appendChild(ico);
