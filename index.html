@@ -12,35 +12,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=72500">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=72500">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=72500">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=72500">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=72500">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=72500">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=72500">
+<link rel="manifest" href="manifest.json?v=72700">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=72700">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=72700">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=72700">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=72700">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=72700">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=72700">
 
-<link rel="stylesheet" href="app.css?v=72500">
+<link rel="stylesheet" href="app.css?v=72700">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=72500" defer></script>
-<script src="tag-data.js?v=72500" defer></script>
-<script src="b-config.js?v=72500" defer></script>
-<script src="b-utils.js?v=72500" defer></script>
-<script src="b-auth.js?v=72500" defer></script>
-<script src="b-home.js?v=72500" defer></script>
-<script src="b-bubbles.js?v=72500" defer></script>
-<script src="b-profile.js?v=72500" defer></script>
-<script src="b-radar.js?v=72500" defer></script>
-<script src="b-messages.js?v=72500" defer></script>
-<script src="b-realtime.js?v=72500" defer></script>
-<script src="b-onboarding.js?v=72500" defer></script>
-<script src="b-chat.js?v=72500" defer></script>
-<script src="b-notifications.js?v=72500" defer></script>
-<script src="b-live.js?v=72500" defer></script>
-<script src="b-admin.js?v=72500" defer></script>
-<script src="b-navigation.js?v=72500" defer></script>
-<script src="b-boot.js?v=72500" defer></script>
+<script src="bubble-icons.js?v=72700" defer></script>
+<script src="tag-data.js?v=72700" defer></script>
+<script src="b-config.js?v=72700" defer></script>
+<script src="b-utils.js?v=72700" defer></script>
+<script src="b-auth.js?v=72700" defer></script>
+<script src="b-home.js?v=72700" defer></script>
+<script src="b-bubbles.js?v=72700" defer></script>
+<script src="b-profile.js?v=72700" defer></script>
+<script src="b-radar.js?v=72700" defer></script>
+<script src="b-messages.js?v=72700" defer></script>
+<script src="b-realtime.js?v=72700" defer></script>
+<script src="b-onboarding.js?v=72700" defer></script>
+<script src="b-chat.js?v=72700" defer></script>
+<script src="b-notifications.js?v=72700" defer></script>
+<script src="b-live.js?v=72700" defer></script>
+<script src="b-admin.js?v=72700" defer></script>
+<script src="b-navigation.js?v=72700" defer></script>
+<script src="b-boot.js?v=72700" defer></script>
   
 
 
@@ -868,8 +868,8 @@
     <button class="bubble-tab" id="bb-tab-explore" onclick="bbSwitchTab('explore')">Opdag</button>
   </div>
   <div class="bubble-tabs bb-sub-tabs" id="bb-sub-tabs" style="margin:0.3rem 1.1rem 0">
-    <button class="bubble-tab bb-sub-tab active" id="bb-sub-net" onclick="bbSwitchSub('net')" style="font-size:0.62rem;padding:0.3rem 0.2rem">Netværk</button>
-    <button class="bubble-tab bb-sub-tab" id="bb-sub-evt" onclick="bbSwitchSub('evt')" style="font-size:0.62rem;padding:0.3rem 0.2rem">Events</button>
+    <button class="bubble-tab bb-sub-tab active" id="bb-sub-net" onclick="bbSwitchSub('net')">Netværk</button>
+    <button class="bubble-tab bb-sub-tab" id="bb-sub-evt" onclick="bbSwitchSub('evt')">Events</button>
   </div>
   <div class="scroll-area" style="padding-top:0.5rem">
     <div id="bb-panel-mine-net">
@@ -1561,7 +1561,7 @@
 <div class="bb-overlay" id="bb-overlay-create-bubble" onclick="if(event.target===this)bbClose('create-bubble')"></div>
 <div class="bb-sheet" id="bb-sheet-create-bubble" onclick="event.stopPropagation()">
     <div class="bb-sheet-handle"></div>
-    <div class="bb-sheet-title">Opret boble</div>
+    <div class="bb-sheet-title" id="cb-sheet-title">Opret boble</div>
     <div id="cb-parent-label" style="display:none;font-size:0.7rem;font-weight:700;color:#2ECFCF;background:rgba(46,207,207,0.08);border:1px solid rgba(46,207,207,0.2);border-radius:8px;padding:5px 10px;margin-bottom:8px"></div>
     <div class="input-group">
       <div class="input-label">Navn</div>

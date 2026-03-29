@@ -390,6 +390,8 @@ function openCreateEventModal() {
   var parentLabel = document.getElementById('cb-parent-label');
   if (parentLabel) { parentLabel.style.display = 'none'; parentLabel.textContent = ''; }
   bbOpen('create-bubble');
+  var _cbTitle = document.getElementById('cb-sheet-title');
+  if (_cbTitle) _cbTitle.textContent = 'Opret event';
   setTimeout(function() {
     initInputConfirmButtons();
     var typeSelect = document.getElementById('cb-type');
@@ -432,6 +434,8 @@ function openCreateEventFromBubble(parentBubbleId) {
   var modal = document.getElementById('bb-sheet-create-bubble');
   if (modal) modal.dataset.parentBubbleId = parentBubbleId;
   bbOpen('create-bubble');
+  var _cbTitle = document.getElementById('cb-sheet-title');
+  if (_cbTitle) _cbTitle.textContent = 'Opret event';
   setTimeout(function() {
     initInputConfirmButtons();
     // Force event type selected, hide type picker
@@ -477,6 +481,8 @@ function openCreateSubBubble(parentBubbleId) {
   var modal = document.getElementById('bb-sheet-create-bubble');
   if (modal) modal.dataset.parentBubbleId = parentBubbleId;
   bbOpen('create-bubble');
+  var _cbTitle = document.getElementById('cb-sheet-title');
+  if (_cbTitle) _cbTitle.textContent = 'Opret netv\u00E6rk';
   setTimeout(function() {
     initInputConfirmButtons();
     var typeSelect = document.getElementById('cb-type');
@@ -525,6 +531,8 @@ function openCreateNetworkModal() {
   if (edg) edg.style.display = 'none';
   if (etg) etg.style.display = 'none';
   bbOpen('create-bubble');
+  var _cbTitle = document.getElementById('cb-sheet-title');
+  if (_cbTitle) _cbTitle.textContent = 'Opret netv\u00E6rk';
   setTimeout(function() {
     initInputConfirmButtons();
     var typeSelect = document.getElementById('cb-type');

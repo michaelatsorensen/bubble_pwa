@@ -362,8 +362,8 @@ function typeLabel(type) {
 }
 
 function visIcon(v) {
-  if (v === 'hidden') return '<span style="display:inline-flex;width:12px;height:12px;vertical-align:-1px;opacity:0.55;margin-right:2px" title="Skjult">' + ico('eye') + '</span>';
-  if (v === 'private') return '<span style="display:inline-flex;width:12px;height:12px;vertical-align:-1px;opacity:0.55;margin-right:2px" title="Privat">' + ico('lock') + '</span>';
+  if (v === 'hidden') return '<span style="font-size:0.55rem;padding:1px 5px;border-radius:4px;background:rgba(239,68,68,0.08);color:#A32D2D;margin-right:3px">Skjult</span>';
+  if (v === 'private') return '<span style="font-size:0.55rem;padding:1px 5px;border-radius:4px;background:rgba(245,158,11,0.08);color:#854F0B;margin-right:3px">Privat</span>';
   return '';
 }
 
