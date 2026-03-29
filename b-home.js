@@ -820,21 +820,15 @@ async function loadMyNetworks() {
     }
     var myIds = memberships.map(function(m) { return m.bubble_id; });
 
-    // 2. Fetch my bubbles (all types — we need events count for issue 4)
+    // 2. Fetch my bubbles
     var { data: allMyBubbles, error: fetchErr } = await sb.from('bubbles').select('id, name, type, visibility, created_by, parent_bubble_id, location, member_count').in('id', myIds);
-    if (fetchErr) { logError('loadMyNetworks:fetch', fetchErr); }
+    console.debug('[loadMyNetworks] fetched', (allMyBubbles||[]).length, 'bubbles, error:', fetchErr, 'types:', (allMyBubbles||[]).map(function(b){return b.type;}));
+    if (fetchErr) { logError('loadMyNetworks:fetch', fetchErr); showRetryState('bb-net-list', 'loadMyNetworks', 'Kunne ikke hente netværk'); return; }
     if (_navVersion !== myNav) return;
     var allMy = allMyBubbles || [];
 
     var networks = allMy.filter(function(b) { return b.type !== 'event' && b.type !== 'live'; });
-    var eventCount = allMy.filter(function(b) { return b.type === 'event' || b.type === 'live'; }).length;
-
-    // Issue 4: If 0 networks but has events, auto-switch to events tab
-    if (networks.length === 0 && eventCount > 0) {
-      list.innerHTML = '';
-      bbSwitchSub('evt');
-      return;
-    }
+    console.debug('[loadMyNetworks] networks:', networks.length, 'parentNets will be:', networks.filter(function(b){return !b.parent_bubble_id;}).length, 'orphans:', networks.filter(function(b){return !!b.parent_bubble_id;}).length);
 
     // Split: parent networks (no parent_bubble_id) vs orphaned child networks (issue 1)
     var parentNets = networks.filter(function(b) { return !b.parent_bubble_id; });
@@ -1011,7 +1005,7 @@ async function loadMyNetworks() {
     });
 
     if (!html) {
-      html = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke med i nogen netv\u00E6rk endnu</div><div style="margin-top:1rem"><button class="btn-primary" onclick="bbSwitchTab(\'explore\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">Opdag netværk</button></div></div>';
+      html = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke med i nogen netv\u00E6rk endnu</div><div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:center"><button class="btn-primary" onclick="bbSwitchTab(\'explore\')" style="font-size:0.82rem;padding:0.6rem 1.2rem">Opdag netv\u00E6rk</button><button class="btn-secondary" onclick="bbSwitchSub(\'evt\')" style="font-size:0.82rem;padding:0.6rem 1.2rem">Se events</button></div></div>';
     }
     list.innerHTML = html;
   } catch(e) { logError("loadMyNetworks", e); showRetryState('bb-net-list', 'loadMyNetworks', 'Kunne ikke hente netv\u00E6rk'); }
