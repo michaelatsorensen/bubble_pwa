@@ -129,7 +129,7 @@ var _screenHooks = {
 };
 
 // ── Named hook helpers ──
-function _navGoDiscover() { goTo('screen-bubbles'); bbSwitchTab('explore'); }
+function _navGoDiscover() { _bbActiveTab = 'explore'; goTo('screen-bubbles'); }
 function _navEnterNotifs() { loadNotifications(); notifBadgeSet(0); localStorage.setItem('bubble_notifs_seen', new Date().toISOString()); }
 
 function _navLeaveHome() {

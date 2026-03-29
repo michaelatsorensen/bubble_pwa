@@ -72,6 +72,26 @@ async function toggleBubbleUpvote(bubbleId) {
 
 var _discoverLoaded = false;
 
+// Instant UI update after joining a bubble — removes from Discover, refreshes Mine
+function _bbAfterJoin(bubbleId) {
+  // 1. Remove from allBubbles array
+  allBubbles = allBubbles.filter(function(b) { return b.id !== bubbleId; });
+  _discoverLoaded = false;
+  // 2. Remove card from visible discover lists (instant DOM removal)
+  ['discover-net-list', 'discover-evt-list'].forEach(function(listId) {
+    var list = document.getElementById(listId);
+    if (!list) return;
+    var card = list.querySelector('[data-id="' + bubbleId + '"]');
+    if (card) { card.style.transition = 'opacity 0.2s,transform 0.2s'; card.style.opacity = '0'; card.style.transform = 'scale(0.95)'; setTimeout(function() { card.remove(); }, 200); }
+  });
+  // 3. Remove from pending invites if visible
+  var invCards = document.querySelectorAll('#bb-pending-invites .card');
+  invCards.forEach(function(c) {
+    var btn = c.querySelector('[onclick*="' + bubbleId + '"]');
+    if (btn) { c.style.transition = 'opacity 0.2s'; c.style.opacity = '0'; setTimeout(function() { c.remove(); }, 200); }
+  });
+}
+
 async function _fetchDiscoverData() {
   if (_discoverLoaded && allBubbles.length > 0) return;
   try {
@@ -196,6 +216,7 @@ async function joinBubble(bubbleId) {
     const { error } = await sb.from('bubble_members').insert({ bubble_id: bubbleId, user_id: currentUser.id });
     if (error && !String(error.message || '').includes('duplicate')) return showToast('Fejl ved joining');
     showSuccessToast('Du er nu i boblen');
+    _bbAfterJoin(bubbleId);
     await openBubble(bubbleId);
     loadHome();
     trackEvent('bubble_joined', { bubble_id: bubbleId });
@@ -399,6 +420,7 @@ async function confirmLeaveBubble(bubbleId) {
     await sb.from('bubble_members').delete().eq('bubble_id', bubbleId).eq('user_id', currentUser.id);
     var isEvent = bcBubbleData && (bcBubbleData.type === 'event' || bcBubbleData.type === 'live');
     showToast(isEvent ? 'Du har forladt eventet' : 'Du har forladt boblen');
+    _discoverLoaded = false;
     loadHome();
     loadMyBubbles();
     var backBtn = document.getElementById('bc-back-btn');
@@ -707,6 +729,7 @@ async function requestJoin(bubbleId) {
     });
     if (error && !String(error.message || '').includes('duplicate')) return errorToast('save', error);
     showToast('Anmodning sendt! Ejeren skal godkende 🔒');
+    _bbAfterJoin(bubbleId);
     await openBubble(bubbleId);
     // Notify owner via Broadcast
     try {
@@ -1077,6 +1100,7 @@ async function checkPendingJoin() {
       // Normal bubble join (not event)
       if (isEventFlow) flowRemove('event_flow');
       showSuccessToast('Du er med i ' + (bubble ? bubble.name : 'boblen') + '!');
+      _bbAfterJoin(joinId);
       await openBubble(joinId, 'screen-home');
     }
   } catch(e) { logError("checkPendingJoin", e); errorToast("save", e); }

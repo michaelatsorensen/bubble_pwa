@@ -993,12 +993,15 @@ async function loadProfileInvitations() {
 async function profAcceptInvite(inviteId, fromUserId) {
   try {
     await sb.from('bubble_invitations').update({ status: 'accepted' }).eq('id', inviteId);
+    var invCard = document.getElementById('prof-invite-' + inviteId);
+    if (invCard) { invCard.style.transition = 'opacity 0.2s'; invCard.style.opacity = '0'; setTimeout(function() { invCard.remove(); }, 200); }
     const { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).single();
     if (inv?.bubble_id) {
       await sb.from('bubble_members').insert({ bubble_id: inv.bubble_id, user_id: currentUser.id });
       showToast('Du er nu med i boblen!');
+      _bbAfterJoin(inv.bubble_id);
       loadProfileInvitations();
-      setTimeout(() => openBubbleChat(inv.bubble_id, 'screen-profile'), 800);
+      setTimeout(function() { openBubbleChat(inv.bubble_id, 'screen-profile'); }, 800);
     }
   } catch(e) { logError("profAcceptInvite", e); errorToast("save", e); }
 }

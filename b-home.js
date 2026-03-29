@@ -556,10 +556,13 @@ function bbAcceptInvite(inviteId, fromUserId) {
 async function bbConfirmAccept(inviteId, fromUserId) {
   try {
     await sb.from('bubble_invitations').update({ status: 'accepted' }).eq('id', inviteId);
+    var invCard = document.getElementById('bb-inv-' + inviteId);
+    if (invCard) { invCard.style.transition = 'opacity 0.2s'; invCard.style.opacity = '0'; setTimeout(function() { invCard.remove(); }, 200); }
     var { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).single();
     if (inv?.bubble_id) {
       await sb.from('bubble_members').insert({ bubble_id: inv.bubble_id, user_id: currentUser.id });
       showSuccessToast('Du er nu med i boblen!');
+      _bbAfterJoin(inv.bubble_id);
       loadMyBubbles();
       setTimeout(function() { openBubbleChat(inv.bubble_id, 'screen-bubbles'); }, 800);
     }
@@ -631,123 +634,6 @@ function _bbShowPanel(id) {
     var el = document.getElementById(pid);
     if (el) el.style.display = pid === 'bb-panel-' + id ? 'block' : 'none';
   });
-}
-
-async function bbLoadLivePanel() {
-  var list = document.getElementById('bb-live-list');
-  if (!list) return;
-  list.innerHTML = skelCards(3);
-  try {
-    // Get user's memberships for access check
-    var { data: myMem } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
-    var myBIds = (myMem || []).map(function(m) { return m.bubble_id; });
-
-    // Show location-based and event bubbles
-    var { data: placeBubbles } = await sb.from('bubbles')
-      .select('id, name, location, type, visibility, created_at')
-      .or('type.eq.live,type.eq.event')
-      .order('created_at', { ascending: false })
-      .limit(30);
-
-    // Also get bubbles with locations
-    var { data: locBubbles } = await sb.from('bubbles')
-      .select('id, name, location, type, visibility, created_at')
-      .not('location', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(30);
-
-    // Merge, deduplicate, and filter hidden
-    var allMap = {};
-    (placeBubbles || []).forEach(function(b) { allMap[b.id] = b; });
-    (locBubbles || []).forEach(function(b) { if (b.location && b.location.trim()) allMap[b.id] = b; });
-    var filtered = Object.values(allMap).filter(function(b) {
-      // Hidden bubbles only visible to members
-      if (b.visibility === 'hidden' && myBIds.indexOf(b.id) < 0) return false;
-      return true;
-    });
-
-    if (filtered.length === 0) {
-      list.innerHTML = '<div style="text-align:center;padding:2rem 1rem">' +
-        '<div style="width:44px;height:44px;margin:0 auto 0.7rem;opacity:0.4;color:var(--accent)">' + ico('pin') + '</div>' +
-        '<div style="font-size:0.85rem;font-weight:700;margin-bottom:0.25rem">Ingen events eller steder endnu</div>' +
-        '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.4">Opret en event-boble med lokation, eller scan en QR-kode for at checke ind.</div>' +
-        '<button onclick="openCreateBubble()" style="font-size:0.78rem;padding:0.55rem 1.3rem;background:rgba(124,92,252,0.08);color:var(--accent);border:1px solid rgba(124,92,252,0.2);border-radius:12px;cursor:pointer;font-family:inherit;font-weight:600">+ Opret event</button>' +
-        '</div>';
-      return;
-    }
-
-    // Get active check-in counts
-    var bubbleIds = filtered.map(function(b) { return b.id; });
-    var expireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 60 * 60 * 1000).toISOString();
-    var { data: activeMembers } = await sb.from('bubble_members')
-      .select('bubble_id, user_id')
-      .in('bubble_id', bubbleIds)
-      .not('checked_in_at', 'is', null)
-      .is('checked_out_at', null)
-      .gte('checked_in_at', expireCutoff);
-
-    var countMap = {};
-    var memberMap = {};
-    (activeMembers || []).forEach(function(m) {
-      countMap[m.bubble_id] = (countMap[m.bubble_id] || 0) + 1;
-      if (!memberMap[m.bubble_id]) memberMap[m.bubble_id] = [];
-      if (memberMap[m.bubble_id].length < 3) memberMap[m.bubble_id].push(m.user_id);
-    });
-
-    // Fetch avatar data
-    var allUserIds = [];
-    Object.values(memberMap).forEach(function(ids) {
-      ids.forEach(function(id) { if (allUserIds.indexOf(id) < 0) allUserIds.push(id); });
-    });
-    var profileMap = {};
-    if (allUserIds.length > 0) {
-      var { data: profiles } = await sb.from('profiles').select('id, name, avatar_url').in('id', allUserIds);
-      (profiles || []).forEach(function(p) { profileMap[p.id] = p; });
-    }
-
-    var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
-
-    // Sort: active first, events first, then date
-    filtered.sort(function(a, b) {
-      var aActive = countMap[a.id] || 0;
-      var bActive = countMap[b.id] || 0;
-      if (bActive !== aActive) return bActive - aActive;
-      return new Date(b.created_at) - new Date(a.created_at);
-    });
-
-    list.innerHTML = filtered.map(function(b) {
-      var cnt = countMap[b.id] || 0;
-      var isEvent = b.type === 'event' || b.type === 'live';
-
-      // Avatar preview
-      var avatarHtml = '';
-      if (cnt > 0 && memberMap[b.id]) {
-        var avs = memberMap[b.id].map(function(uid, i) {
-          var p = profileMap[uid];
-          if (!p) return '';
-          var ini = (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-          var ml = i > 0 ? 'margin-left:-6px;' : '';
-          if (p.avatar_url) return '<div style="width:24px;height:24px;border-radius:50%;overflow:hidden;border:1.5px solid var(--bg);' + ml + 'position:relative;z-index:' + (3-i) + '"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
-          return '<div style="width:24px;height:24px;border-radius:50%;background:' + avColors[i % 10] + ';display:flex;align-items:center;justify-content:center;font-size:0.5rem;font-weight:700;color:white;border:1.5px solid var(--bg);' + ml + 'position:relative;z-index:' + (3-i) + '">' + ini + '</div>';
-        }).join('');
-        avatarHtml = '<div style="display:flex;align-items:center;margin-right:0.4rem">' + avs + '</div>';
-      }
-
-      return '<div class="card flex-row-center" style="padding:0.85rem 1.1rem;margin-bottom:0.4rem;cursor:pointer" onclick="openBubble(\'' + b.id + '\')">' +
-        '<div class="bubble-icon" style="background:' + (isEvent ? 'rgba(124,92,252,0.12)' : 'rgba(46,207,207,0.15)') + ';color:' + (isEvent ? '#3B82F6' : '#2ECFCF') + '">' + ico(isEvent ? 'calendar' : 'pin') + '</div>' +
-        '<div style="flex:1;min-width:0">' +
-        '<div class="fw-600 fs-09">' + escHtml(b.name) + '</div>' +
-        '<div class="fs-075 text-muted">' + (isEvent ? 'Event' : 'Sted') + (b.location ? ' \u00B7 ' + escHtml(b.location) : '') + '</div>' +
-        '</div>' +
-        avatarHtml +
-        (cnt > 0 ? '<div style="display:flex;align-items:center;gap:0.3rem"><div class="live-dot" style="width:6px;height:6px"></div><span class="fs-075 fw-600">' + cnt + '</span></div>' : '') +
-        '<button onclick="event.stopPropagation();liveCheckin(\'' + b.id + '\')" style="font-size:0.62rem;padding:0.25rem 0.5rem;background:rgba(124,92,252,0.08);color:var(--accent);border:1px solid rgba(124,92,252,0.15);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0;margin-left:0.3rem">Check ind</button>' +
-        '</div>';
-    }).join('');
-  } catch(e) {
-    logError('bbLoadLivePanel', e);
-    list.innerHTML = '<div class="sub-muted">Kunne ikke hente steder</div>';
-  }
 }
 
 async function loadMyBubbles() {
