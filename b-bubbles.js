@@ -469,9 +469,11 @@ function openCreateEventModal() {
     var cmg = document.getElementById('cb-checkin-mode-group');
     var edg = document.getElementById('cb-event-date-group');
     var etg = document.getElementById('cb-event-time-row');
+    var etge = document.getElementById('cb-event-time-end-group');
     if (cmg) cmg.style.display = 'block';
     if (edg) edg.style.display = 'block';
     if (etg) etg.style.display = 'block';
+    if (etge) etge.style.display = 'block';
     var dateInput = document.getElementById('cb-event-date');
     if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
   }, 50);
@@ -516,8 +518,10 @@ function openCreateEventFromBubble(parentBubbleId) {
     if (cmg) cmg.style.display = 'block';
     var edg = document.getElementById('cb-event-date-group');
     var etg = document.getElementById('cb-event-time-row');
+    var etge = document.getElementById('cb-event-time-end-group');
     if (edg) edg.style.display = 'block';
     if (etg) etg.style.display = 'block';
+    if (etge) etge.style.display = 'block';
     // Default date to today
     var dateInput = document.getElementById('cb-event-date');
     if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
@@ -561,8 +565,10 @@ function openCreateSubBubble(parentBubbleId) {
     if (cmg) cmg.style.display = 'none';
     var edg = document.getElementById('cb-event-date-group');
     var etg = document.getElementById('cb-event-time-row');
+    var etge = document.getElementById('cb-event-time-end-group');
     if (edg) edg.style.display = 'none';
     if (etg) etg.style.display = 'none';
+    if (etge) etge.style.display = 'none';
     sb.from('bubbles').select('name').eq('id', parentBubbleId).maybeSingle().then(function(r) {
       if (r.data && parentLabel) {
         parentLabel.textContent = 'Sub-boble under: ' + r.data.name;
@@ -587,8 +593,10 @@ function openCreateNetworkModal() {
   if (cmg) cmg.style.display = 'none';
   var edg = document.getElementById('cb-event-date-group');
   var etg = document.getElementById('cb-event-time-row');
+  var etge = document.getElementById('cb-event-time-end-group');
   if (edg) edg.style.display = 'none';
   if (etg) etg.style.display = 'none';
+  if (etge) etge.style.display = 'none';
   bbOpen('create-bubble');
   var _cbTitle = document.getElementById('cb-sheet-title');
   if (_cbTitle) _cbTitle.textContent = 'Opret netv\u00E6rk';
@@ -647,18 +655,22 @@ function cbRenderPillSelect(selectId, options) {
         var cmg = document.getElementById('cb-checkin-mode-group');
         var edg = document.getElementById('cb-event-date-group');
         var etg = document.getElementById('cb-event-time-row');
+        var etge = document.getElementById('cb-event-time-end-group');
         if (cmg) cmg.style.display = isEvt ? 'block' : 'none';
         if (edg) edg.style.display = isEvt ? 'block' : 'none';
         if (etg) etg.style.display = isEvt ? 'block' : 'none';
+        if (etge) etge.style.display = isEvt ? 'block' : 'none';
       }
       if (selectId === 'eb-type') {
         var isEvt2 = (opt.value === 'event' || opt.value === 'live');
         var cmg2 = document.getElementById('eb-checkin-mode-group');
         var edg2 = document.getElementById('eb-event-date-group');
         var etg2 = document.getElementById('eb-event-time-row');
+        var etge2 = document.getElementById('eb-event-time-end-group');
         if (cmg2) cmg2.style.display = isEvt2 ? 'block' : 'none';
         if (edg2) edg2.style.display = isEvt2 ? 'block' : 'none';
         if (etg2) etg2.style.display = isEvt2 ? 'block' : 'none';
+        if (etge2) etge2.style.display = isEvt2 ? 'block' : 'none';
       }
     };
     wrap.appendChild(btn);
@@ -776,9 +788,11 @@ async function openEditBubble(bubbleId) {
     var cmg = document.getElementById('eb-checkin-mode-group');
     var edg = document.getElementById('eb-event-date-group');
     var etg = document.getElementById('eb-event-time-row');
+    var etge = document.getElementById('eb-event-time-end-group');
     if (cmg) cmg.style.display = isEvent ? 'block' : 'none';
     if (edg) edg.style.display = isEvent ? 'block' : 'none';
     if (etg) etg.style.display = isEvent ? 'block' : 'none';
+    if (etge) etge.style.display = isEvent ? 'block' : 'none';
     if (isEvent) {
       var cmEl = document.getElementById('eb-checkin-mode');
       if (cmEl) cmEl.value = b.checkin_mode || 'self';
