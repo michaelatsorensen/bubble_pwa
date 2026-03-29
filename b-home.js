@@ -597,15 +597,12 @@ function bbSwitchTab(tab) {
   if (tab === 'explore') {
     if (mineTab) mineTab.classList.remove('active');
     if (exploreTab) exploreTab.classList.add('active');
-    if (subTabs) subTabs.style.display = 'none';
-    _bbShowPanel('explore');
-    loadDiscover();
   } else {
     if (mineTab) mineTab.classList.add('active');
     if (exploreTab) exploreTab.classList.remove('active');
-    if (subTabs) subTabs.style.display = 'flex';
-    bbSwitchSub(_bbActiveSub);
   }
+  if (subTabs) subTabs.style.display = 'flex';
+  bbSwitchSub(_bbActiveSub);
 }
 
 function bbSwitchSub(sub) {
@@ -615,18 +612,22 @@ function bbSwitchSub(sub) {
   if (sub === 'evt') {
     if (netBtn) netBtn.classList.remove('active');
     if (evtBtn) evtBtn.classList.add('active');
-    _bbShowPanel('mine-evt');
-    loadMyEvents();
   } else {
     if (netBtn) netBtn.classList.add('active');
     if (evtBtn) evtBtn.classList.remove('active');
-    _bbShowPanel('mine-net');
-    loadMyNetworks();
+  }
+  // Route to correct panel based on active tab + sub
+  if (_bbActiveTab === 'explore') {
+    if (sub === 'evt') { _bbShowPanel('explore-evt'); loadDiscoverEvents(); }
+    else { _bbShowPanel('explore-net'); loadDiscoverNetworks(); }
+  } else {
+    if (sub === 'evt') { _bbShowPanel('mine-evt'); loadMyEvents(); }
+    else { _bbShowPanel('mine-net'); loadMyNetworks(); }
   }
 }
 
 function _bbShowPanel(id) {
-  ['bb-panel-mine-net','bb-panel-mine-evt','bb-panel-explore'].forEach(function(pid) {
+  ['bb-panel-mine-net','bb-panel-mine-evt','bb-panel-explore-net','bb-panel-explore-evt'].forEach(function(pid) {
     var el = document.getElementById(pid);
     if (el) el.style.display = pid === 'bb-panel-' + id ? 'block' : 'none';
   });

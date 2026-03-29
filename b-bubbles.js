@@ -48,7 +48,12 @@ async function toggleBubbleUpvote(bubbleId) {
       showToast('Anbefalet \u2713');
     }
     // Re-render discover if visible
-    if (allBubbles && allBubbles.length) renderBubbleList(allBubbles);
+    if (allBubbles && allBubbles.length) {
+      var nl = document.getElementById('discover-net-list');
+      var el = document.getElementById('discover-evt-list');
+      if (nl && nl.offsetParent) _renderDiscoverList(nl, allBubbles.filter(function(b){return b.type!=='event';}), 'netværk');
+      if (el && el.offsetParent) _renderDiscoverList(el, allBubbles.filter(function(b){return b.type==='event';}), 'events');
+    }
     // Update info panel button if open
     var recBtn = document.getElementById('bc-recommend-btn');
     if (recBtn && bcBubbleId === bubbleId) {
@@ -65,78 +70,110 @@ async function toggleBubbleUpvote(bubbleId) {
   } catch(e) { logError('toggleBubbleUpvote', e); errorToast('save', e); }
 }
 
-async function loadDiscover() {
+var _discoverLoaded = false;
+
+async function _fetchDiscoverData() {
+  if (_discoverLoaded && allBubbles.length > 0) return;
   try {
     if (!currentUser) return;
     var myNav = _navVersion;
-    const list = document.getElementById('all-bubbles-list');
-    list.innerHTML = skelCards(4);
     await loadBubbleUpvotes();
-    if (_navVersion !== myNav) return; // screen changed — abort
-
-    // Get user's memberships + saved contacts in parallel
-    var myBubbleIds = [];
-    var mySavedIds = [];
-    if (currentUser) {
-      var [membRes, savedRes] = await Promise.all([
-        sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id),
-        sb.from('saved_contacts').select('contact_id').eq('user_id', currentUser.id)
-      ]);
-      myBubbleIds = (membRes.data || []).map(function(m) { return m.bubble_id; });
-      mySavedIds = (savedRes.data || []).map(function(s) { return s.contact_id; });
-    }
     if (_navVersion !== myNav) return;
 
-    const { data: bubbles } = await sb.from('bubbles').select('*, bubble_members(count)').or('visibility.eq.public,visibility.eq.private,visibility.is.null').order('created_at', {ascending:false});
+    var myBubbleIds = [];
+    var mySavedIds = [];
+    var [membRes, savedRes] = await Promise.all([
+      sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id),
+      sb.from('saved_contacts').select('contact_id').eq('user_id', currentUser.id)
+    ]);
+    myBubbleIds = (membRes.data || []).map(function(m) { return m.bubble_id; });
+    mySavedIds = (savedRes.data || []).map(function(s) { return s.contact_id; });
+    if (_navVersion !== myNav) return;
+
+    var { data: bubbles } = await sb.from('bubbles').select('*, bubble_members(count)').or('visibility.eq.public,visibility.eq.private,visibility.is.null').order('created_at', {ascending:false});
     if (_navVersion !== myNav) return;
     allBubbles = (bubbles || []).filter(function(b) {
       return b.type !== 'live' && myBubbleIds.indexOf(b.id) < 0;
-    }).map(b => ({
-      ...b,
-      member_count: b.member_count ?? b.bubble_members?.[0]?.count ?? 0,
-      type_label: typeLabel(b.type),
-      upvote_count: bubbleUpvotes[b.id] || 0
-    }));
+    }).map(function(b) {
+      return Object.assign({}, b, {
+        member_count: b.member_count ?? b.bubble_members?.[0]?.count ?? 0,
+        type_label: typeLabel(b.type),
+        upvote_count: bubbleUpvotes[b.id] || 0
+      });
+    });
 
-    // Enrich with saved contact avatars (shared helper)
     var discoverBubbleIds = allBubbles.map(function(b) { return b.id; });
     var contactMemberMap = await fetchContactAvatarsForBubbles(discoverBubbleIds, mySavedIds);
     if (_navVersion !== myNav) return;
-
-    // Attach contact info to bubbles
     allBubbles.forEach(function(b) { b._contacts = contactMemberMap[b.id] || []; });
 
-    // Sort: upvotes first, then member count, then date
     allBubbles.sort(function(a, b) {
       if (b.upvote_count !== a.upvote_count) return b.upvote_count - a.upvote_count;
       if (b.member_count !== a.member_count) return b.member_count - a.member_count;
       return new Date(b.created_at) - new Date(a.created_at);
     });
-    renderBubbleList(allBubbles);
-  } catch(e) { logError("loadDiscover", e); showRetryState('all-bubbles-list', 'loadDiscover', 'Kunne ikke hente bobler — tjek din forbindelse'); }
+    _discoverLoaded = true;
+  } catch(e) { logError('_fetchDiscoverData', e); throw e; }
 }
 
-function renderBubbleList(bubbles) {
-  const list = document.getElementById('all-bubbles-list');
+async function loadDiscoverNetworks() {
+  var list = document.getElementById('discover-net-list');
+  if (!list) return;
+  list.innerHTML = skelCards(4);
+  try {
+    await _fetchDiscoverData();
+    var nets = allBubbles.filter(function(b) { return b.type !== 'event'; });
+    _renderDiscoverList(list, nets, 'netværk');
+  } catch(e) { showRetryState('discover-net-list', 'loadDiscoverNetworks', 'Kunne ikke hente netværk'); }
+}
+
+async function loadDiscoverEvents() {
+  var list = document.getElementById('discover-evt-list');
+  if (!list) return;
+  list.innerHTML = skelCards(4);
+  try {
+    await _fetchDiscoverData();
+    var evts = allBubbles.filter(function(b) { return b.type === 'event'; });
+    _renderDiscoverList(list, evts, 'events');
+  } catch(e) { showRetryState('discover-evt-list', 'loadDiscoverEvents', 'Kunne ikke hente events'); }
+}
+
+// Compat wrapper — called from pull-to-refresh and other places
+async function loadDiscover() {
+  _discoverLoaded = false;
+  if (_bbActiveSub === 'evt') loadDiscoverEvents();
+  else loadDiscoverNetworks();
+}
+
+function _renderDiscoverList(list, bubbles, label) {
   if (!bubbles.length) {
-    list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('search') + '</div><div class="empty-text">Ingen bobler endnu.<br>Opret den første!</div></div>';
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('search') + '</div><div class="empty-text">Ingen ' + label + ' at opdage endnu</div></div>';
     return;
   }
-  list.innerHTML = bubbles.map(b => bubbleCard(b, false)).join('');
+  list.innerHTML = bubbles.map(function(b) { return bubbleCard(b, false); }).join('');
 }
 
 let _filterTimer = null;
-function filterBubbles() {
+function filterBubbles(type) {
   clearTimeout(_filterTimer);
-  _filterTimer = setTimeout(() => {
-    const q = document.getElementById('bubble-search').value.toLowerCase();
-    const filtered = q ? allBubbles.filter(b =>
-      b.name.toLowerCase().includes(q) || (b.keywords || []).some(k => k.toLowerCase().includes(q))
-    ) : allBubbles;
+  _filterTimer = setTimeout(function() {
+    var searchId = type === 'evt' ? 'bubble-search-evt' : 'bubble-search-net';
+    var listId = type === 'evt' ? 'discover-evt-list' : 'discover-net-list';
+    var list = document.getElementById(listId);
+    var input = document.getElementById(searchId);
+    if (!list || !input) return;
+    var q = input.value.toLowerCase();
+    var source = type === 'evt'
+      ? allBubbles.filter(function(b) { return b.type === 'event'; })
+      : allBubbles.filter(function(b) { return b.type !== 'event'; });
+    var filtered = q ? source.filter(function(b) {
+      return b.name.toLowerCase().indexOf(q) >= 0 || (b.keywords || []).some(function(k) { return k.toLowerCase().indexOf(q) >= 0; });
+    }) : source;
+    var label = type === 'evt' ? 'events' : 'netværk';
     if (q && filtered.length === 0) {
-      document.getElementById('all-bubbles-list').innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('search') + '</div><div class="empty-text">Ingen bobler matcher "' + escHtml(q) + '"</div></div>';
+      list.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('search') + '</div><div class="empty-text">Ingen ' + label + ' matcher "' + escHtml(q) + '"</div></div>';
     } else {
-      renderBubbleList(filtered);
+      _renderDiscoverList(list, filtered, label);
     }
   }, 150);
 }
