@@ -906,7 +906,7 @@ async function loadMyNetworks() {
       html += '<div class="bb-acc-row">';
       html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7C5CFC">' + ico('bubble') + '</div>';
       html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(net.name) + '</div>';
-      html += '<div style="font-size:0.68rem;color:var(--muted)">' + mc + ' medlemmer' + (net.location ? ' \u00B7 ' + escHtml(net.location) : '') + '</div></div>';
+      html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(net.visibility) + mc + ' medlemmer' + (net.location ? ' \u00B7 ' + escHtml(net.location) : '') + '</div></div>';
       if (badgeText) html += '<div id="bdg-' + accId + '" style="font-size:0.58rem;font-weight:600;padding:2px 6px;border-radius:10px;background:rgba(46,207,207,0.1);color:#085041;flex-shrink:0;white-space:nowrap">' + badgeText + '</div>';
       html += '<div class="bb-acc-chev" id="chev-' + accId + '">\u203A</div>';
       html += '</div></div>';
@@ -923,7 +923,7 @@ async function loadMyNetworks() {
 
           html += '<div class="bb-thread-child th-purple" onclick="event.stopPropagation();bbAccToggle(\'' + cn.id + '\',\'' + cnAccId + '\',' + (cnEvents.length > 0 ? 'true' : 'false') + ')">';
           html += '<div style="width:26px;height:26px;border-radius:7px;background:rgba(124,92,252,0.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7C5CFC"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/></svg></div>';
-          html += '<div style="flex:1;min-width:0"><div style="font-size:0.72rem;font-weight:600">' + escHtml(cn.name) + '</div><div style="font-size:0.58rem;color:var(--muted)">' + cnMc + ' medl.</div></div>';
+          html += '<div style="flex:1;min-width:0"><div style="font-size:0.72rem;font-weight:600">' + escHtml(cn.name) + '</div><div style="font-size:0.58rem;color:var(--muted)">' + visIcon(cn.visibility) + cnMc + ' medl.</div></div>';
           if (cnEvents.length > 0) html += '<div id="bdg-' + cnAccId + '" style="font-size:0.55rem;font-weight:600;padding:2px 5px;border-radius:8px;background:rgba(46,207,207,0.1);color:#085041">' + cnEvents.length + ' events</div>';
           html += '<div class="bb-acc-chev" id="chev-' + cnAccId + '" style="font-size:0.72rem">\u203A</div>';
           html += '</div>';
@@ -979,7 +979,7 @@ async function loadMyNetworks() {
       html += '<div class="bb-acc-row">';
       html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7C5CFC">' + ico('bubble') + '</div>';
       html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(net.name) + '</div>';
-      html += '<div style="font-size:0.68rem;color:var(--muted)">' + mc + ' medlemmer' + (parentName ? ' \u00B7 \u21B3 ' + escHtml(parentName) : '') + '</div></div>';
+      html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(net.visibility) + mc + ' medlemmer' + (parentName ? ' \u00B7 \u21B3 ' + escHtml(parentName) : '') + '</div></div>';
       if (orphanEvents.length > 0) html += '<div id="bdg-' + accId + '" style="font-size:0.58rem;font-weight:600;padding:2px 6px;border-radius:10px;background:rgba(46,207,207,0.1);color:#085041;flex-shrink:0">' + orphanEvents.length + ' events</div>';
       html += '<div class="bb-acc-chev" id="chev-' + accId + '">\u203A</div>';
       html += '</div></div>';
@@ -1103,7 +1103,7 @@ function _bbEventCard(e, parentMap, isPast) {
     '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E">' + ico('calendar') + '</div>' +
     '<div style="flex:1;min-width:0">' +
     '<div style="font-size:0.85rem;font-weight:600">' + escHtml(e.name) + '</div>' +
-    '<div style="font-size:0.68rem;color:var(--muted);display:flex;align-items:center;flex-wrap:wrap;gap:2px">' + dateStr + parentBadge + '</div>' +
+    '<div style="font-size:0.68rem;color:var(--muted);display:flex;align-items:center;flex-wrap:wrap;gap:2px">' + visIcon(e.visibility) + dateStr + parentBadge + '</div>' +
     '</div></div></div>';
 }
 // ══════════════════════════════════════════════════════════

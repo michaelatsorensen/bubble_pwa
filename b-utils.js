@@ -361,6 +361,12 @@ function typeLabel(type) {
   return 'Netværk';
 }
 
+function visIcon(v) {
+  if (v === 'hidden') return '<span style="display:inline-flex;width:12px;height:12px;vertical-align:-1px;opacity:0.55;margin-right:2px" title="Skjult">' + ico('eye') + '</span>';
+  if (v === 'private') return '<span style="display:inline-flex;width:12px;height:12px;vertical-align:-1px;opacity:0.55;margin-right:2px" title="Privat">' + ico('lock') + '</span>';
+  return '';
+}
+
 // Clock removed — iPhone shows native status bar
 
 // ── Shared: saved contact IDs (cached per session) ──

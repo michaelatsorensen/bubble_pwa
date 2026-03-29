@@ -34,10 +34,9 @@ function redirectToLanding() {
 // ══════════════════════════════════════════════════════════
 async function preloadAllData() {
   try {
-    // Core: messages (badge) + bubbles (nav). Discover + proximity load lazily on screen open.
+    // Core: messages badge only. Bubbles load lazily on screen-bubbles enter via nav hook.
     await Promise.all([
-      loadMessages(),
-      loadMyBubbles()
+      loadMessages()
     ].map(function(p) { return p.catch(function(e) { logError('preload', e); }); }));
   } catch(e) { logError('preloadAllData', e); }
 }
