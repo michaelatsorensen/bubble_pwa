@@ -468,10 +468,10 @@ function openCreateEventModal() {
     // Show event fields
     var cmg = document.getElementById('cb-checkin-mode-group');
     var edg = document.getElementById('cb-event-date-group');
-    var etg = document.getElementById('cb-event-time-group');
+    var etg = document.getElementById('cb-event-time-row');
     if (cmg) cmg.style.display = 'block';
     if (edg) edg.style.display = 'block';
-    if (etg) etg.style.display = 'block';
+    if (etg) etg.style.display = 'flex';
     var dateInput = document.getElementById('cb-event-date');
     if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
   }, 50);
@@ -515,9 +515,9 @@ function openCreateEventFromBubble(parentBubbleId) {
     var cmg = document.getElementById('cb-checkin-mode-group');
     if (cmg) cmg.style.display = 'block';
     var edg = document.getElementById('cb-event-date-group');
-    var etg = document.getElementById('cb-event-time-group');
+    var etg = document.getElementById('cb-event-time-row');
     if (edg) edg.style.display = 'block';
-    if (etg) etg.style.display = 'block';
+    if (etg) etg.style.display = 'flex';
     // Default date to today
     var dateInput = document.getElementById('cb-event-date');
     if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
@@ -560,7 +560,7 @@ function openCreateSubBubble(parentBubbleId) {
     var cmg = document.getElementById('cb-checkin-mode-group');
     if (cmg) cmg.style.display = 'none';
     var edg = document.getElementById('cb-event-date-group');
-    var etg = document.getElementById('cb-event-time-group');
+    var etg = document.getElementById('cb-event-time-row');
     if (edg) edg.style.display = 'none';
     if (etg) etg.style.display = 'none';
     sb.from('bubbles').select('name').eq('id', parentBubbleId).maybeSingle().then(function(r) {
@@ -586,7 +586,7 @@ function openCreateNetworkModal() {
   var cmg = document.getElementById('cb-checkin-mode-group');
   if (cmg) cmg.style.display = 'none';
   var edg = document.getElementById('cb-event-date-group');
-  var etg = document.getElementById('cb-event-time-group');
+  var etg = document.getElementById('cb-event-time-row');
   if (edg) edg.style.display = 'none';
   if (etg) etg.style.display = 'none';
   bbOpen('create-bubble');
@@ -617,12 +617,12 @@ function cbRenderPillSelect(selectId, options) {
   var current = select.value;
   var wrap = document.createElement('div');
   wrap.id = selectId + '-pills';
-  wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.25rem';
+  wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.25rem;max-width:100%';
   options.forEach(function(opt) {
     var btn = document.createElement('button');
     btn.type = 'button';
     var isActive = opt.value === current;
-    btn.style.cssText = 'display:flex;align-items:center;gap:0.35rem;padding:0.4rem 0.75rem;border-radius:99px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.15s;border:1.5px solid ' + (isActive ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)') + ';background:' + (isActive ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)') + ';color:' + (isActive ? 'var(--accent)' : 'var(--muted)');
+    btn.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;gap:0.35rem;padding:0.4rem 0.75rem;border-radius:99px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.15s;border:1.5px solid ' + (isActive ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)') + ';background:' + (isActive ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)') + ';color:' + (isActive ? 'var(--accent)' : 'var(--muted)');
     var ico = document.createElement('span');
     ico.style.cssText = 'width:0.85rem;height:0.85rem;display:flex;align-items:center;justify-content:center';
     ico.innerHTML = ICONS[opt.icon] || '';
@@ -645,19 +645,19 @@ function cbRenderPillSelect(selectId, options) {
         var isEvt = (opt.value === 'event' || opt.value === 'live');
         var cmg = document.getElementById('cb-checkin-mode-group');
         var edg = document.getElementById('cb-event-date-group');
-        var etg = document.getElementById('cb-event-time-group');
+        var etg = document.getElementById('cb-event-time-row');
         if (cmg) cmg.style.display = isEvt ? 'block' : 'none';
         if (edg) edg.style.display = isEvt ? 'block' : 'none';
-        if (etg) etg.style.display = isEvt ? 'block' : 'none';
+        if (etg) etg.style.display = isEvt ? 'flex' : 'none';
       }
       if (selectId === 'eb-type') {
         var isEvt2 = (opt.value === 'event' || opt.value === 'live');
         var cmg2 = document.getElementById('eb-checkin-mode-group');
         var edg2 = document.getElementById('eb-event-date-group');
-        var etg2 = document.getElementById('eb-event-time-group');
+        var etg2 = document.getElementById('eb-event-time-row');
         if (cmg2) cmg2.style.display = isEvt2 ? 'block' : 'none';
         if (edg2) edg2.style.display = isEvt2 ? 'block' : 'none';
-        if (etg2) etg2.style.display = isEvt2 ? 'block' : 'none';
+        if (etg2) etg2.style.display = isEvt2 ? 'flex' : 'none';
       }
     };
     wrap.appendChild(btn);
@@ -694,9 +694,13 @@ async function createBubble() {
       // Event date/time
       var dateVal = document.getElementById('cb-event-date')?.value;
       var timeVal = document.getElementById('cb-event-time')?.value;
+      var timeEndVal = document.getElementById('cb-event-time-end')?.value;
       if (dateVal) {
         var eventDateTime = timeVal ? dateVal + 'T' + timeVal : dateVal + 'T00:00';
         insertData.event_date = new Date(eventDateTime).toISOString();
+        if (timeEndVal) {
+          insertData.event_end_date = new Date(dateVal + 'T' + timeEndVal).toISOString();
+        }
       }
     }
     const { data: bubble, error } = await sb.from('bubbles').insert(insertData).select().single();
@@ -770,19 +774,24 @@ async function openEditBubble(bubbleId) {
     var isEvent = b.type === 'event' || b.type === 'live';
     var cmg = document.getElementById('eb-checkin-mode-group');
     var edg = document.getElementById('eb-event-date-group');
-    var etg = document.getElementById('eb-event-time-group');
+    var etg = document.getElementById('eb-event-time-row');
     if (cmg) cmg.style.display = isEvent ? 'block' : 'none';
     if (edg) edg.style.display = isEvent ? 'block' : 'none';
-    if (etg) etg.style.display = isEvent ? 'block' : 'none';
+    if (etg) etg.style.display = isEvent ? 'flex' : 'none';
     if (isEvent) {
       var cmEl = document.getElementById('eb-checkin-mode');
       if (cmEl) cmEl.value = b.checkin_mode || 'self';
       var edEl = document.getElementById('eb-event-date');
       var etEl = document.getElementById('eb-event-time');
+      var etEndEl = document.getElementById('eb-event-time-end');
       if (b.event_date) {
         var evD = new Date(b.event_date);
         if (edEl) edEl.value = evD.toISOString().slice(0, 10);
         if (etEl && evD.getHours() > 0) etEl.value = evD.toTimeString().slice(0, 5);
+      }
+      if (b.event_end_date && etEndEl) {
+        var evE = new Date(b.event_end_date);
+        etEndEl.value = evE.toTimeString().slice(0, 5);
       }
     }
 
@@ -846,9 +855,11 @@ async function saveEditBubble() {
       if (checkinMode) updateObj.checkin_mode = checkinMode;
       var dateVal = document.getElementById('eb-event-date')?.value;
       var timeVal = document.getElementById('eb-event-time')?.value;
+      var timeEndVal = document.getElementById('eb-event-time-end')?.value;
       if (dateVal) {
         var eventDateTime = timeVal ? dateVal + 'T' + timeVal : dateVal + 'T00:00';
         updateObj.event_date = new Date(eventDateTime).toISOString();
+        updateObj.event_end_date = timeEndVal ? new Date(dateVal + 'T' + timeEndVal).toISOString() : null;
       }
     }
     const { error } = await sb.from('bubbles').update(updateObj).eq('id', currentEditBubbleId).eq('created_by', currentUser.id);
