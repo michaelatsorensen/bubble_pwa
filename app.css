@@ -340,8 +340,6 @@ input[type="date"], input[type="time"] { width:100%; max-width:100%; min-width:0
 .bubble-tab.active { background:#FFFFFF; border:1px solid rgba(124,92,252,0.25); color:var(--accent); font-weight:700; box-shadow:0 1px 6px rgba(124,92,252,0.1); }
 .bubble-tab-badge { position:absolute; top:-2px; right:8px; min-width:14px; height:14px; border-radius:99px; background:var(--accent2); font-size:0.48rem; font-weight:800; color:white; display:none; align-items:center; justify-content:center; padding:0 3px; }
 .bb-sub-tabs { display:flex; gap:0.3rem; }
-.bb-sub-tab { font-size:0.7rem; font-weight:500; padding:0.3rem 0.75rem; border-radius:99px; border:0.5px solid #D8D5E4; background:none; color:var(--muted); cursor:pointer; font-family:'Figtree',sans-serif; transition:all 0.15s; }
-.bb-sub-tab.active { background:rgba(124,92,252,0.08); color:var(--accent); border-color:rgba(124,92,252,0.3); font-weight:600; }
 .bb-accordion { margin-bottom:0.4rem; }
 .bb-acc-card { background:#FFFFFF; border:1px solid #D8D5E4; border-radius:var(--radius); padding:0.65rem 0.75rem; cursor:pointer; transition:all 0.12s; }
 .bb-acc-card:active { transform:scale(0.98); }
