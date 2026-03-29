@@ -753,6 +753,50 @@ async function loadMyBubbles() {
   bbSwitchTab(_bbActiveTab);
 }
 
+// ── Pending invitations for bubbles screen ──
+async function _bbLoadPendingInvites() {
+  var el = document.getElementById('bb-pending-invites');
+  if (!el || !currentUser) return;
+  try {
+    var { data: invites } = await sb.from('bubble_invitations')
+      .select('id, from_user_id, bubble_id, created_at')
+      .eq('to_user_id', currentUser.id)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+    if (!invites || invites.length === 0) { el.innerHTML = ''; return; }
+
+    var senderIds = invites.map(function(i) { return i.from_user_id; }).filter(function(v, i, a) { return a.indexOf(v) === i; });
+    var bubbleIds = invites.map(function(i) { return i.bubble_id; }).filter(Boolean).filter(function(v, i, a) { return a.indexOf(v) === i; });
+    var profileMap = {}, bubbleMap = {};
+    var { data: profiles } = await sb.from('profiles').select('id, name, avatar_url').in('id', senderIds);
+    (profiles || []).forEach(function(p) { profileMap[p.id] = p; });
+    if (bubbleIds.length > 0) {
+      var { data: bubbles } = await sb.from('bubbles').select('id, name').in('id', bubbleIds);
+      (bubbles || []).forEach(function(b) { bubbleMap[b.id] = b; });
+    }
+
+    var html = '<div style="margin-bottom:0.5rem">';
+    invites.forEach(function(inv) {
+      var p = profileMap[inv.from_user_id] || {};
+      var b = bubbleMap[inv.bubble_id] || {};
+      var ini = (p.name || '?').split(' ').map(function(w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
+      html += '<div class="card" style="padding:0.6rem 0.8rem;margin-bottom:0.4rem;border-left:2px solid var(--accent)" id="bb-inv-' + inv.id + '">';
+      html += '<div style="display:flex;align-items:center;gap:0.6rem">';
+      html += '<div class="avatar" style="width:32px;height:32px;font-size:0.65rem;flex-shrink:0">' + ini + '</div>';
+      html += '<div style="flex:1;min-width:0">';
+      html += '<div style="font-size:0.78rem;font-weight:600">' + escHtml(p.name || 'Ukendt') + '</div>';
+      if (b.name) html += '<div style="font-size:0.62rem;color:var(--muted)">' + icon('bubble') + ' ' + escHtml(b.name) + '</div>';
+      html += '</div>';
+      html += '<div style="display:flex;gap:0.3rem;flex-shrink:0">';
+      html += '<button class="btn-sm" style="padding:0.3rem 0.6rem;font-size:0.65rem;font-weight:600;background:var(--gradient-primary);color:white;border:none;border-radius:var(--radius-xs);cursor:pointer;font-family:inherit" onclick="event.stopPropagation();bbAcceptInvite(\'' + inv.id + '\',\'' + inv.from_user_id + '\')">Accepter</button>';
+      html += '<button class="btn-sm btn-ghost" style="padding:0.3rem 0.5rem;font-size:0.65rem" onclick="event.stopPropagation();bbDeclineInvite(\'' + inv.id + '\',this)">Afvis</button>';
+      html += '</div></div></div>';
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  } catch(e) { logError('_bbLoadPendingInvites', e); el.innerHTML = ''; }
+}
+
 // ── Accordion network view with Reddit-style threading ──
 var _bbAccordionOpen = {};
 
@@ -761,10 +805,11 @@ async function loadMyNetworks() {
     if (!currentUser) return;
     var myNav = _navVersion;
     var list = document.getElementById('bb-net-list');
-    var inviteEl = document.getElementById('bb-pending-invites');
     if (!list) return;
     list.innerHTML = skelCards(3);
-    if (inviteEl) inviteEl.innerHTML = '';
+
+    // Load pending invitations in parallel (issue 2)
+    _bbLoadPendingInvites();
 
     // 1. Fetch memberships
     var { data: memberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
@@ -775,20 +820,32 @@ async function loadMyNetworks() {
     }
     var myIds = memberships.map(function(m) { return m.bubble_id; });
 
-    // 2. Fetch my bubbles (networks only)
-    var { data: allBubbles } = await sb.from('bubbles').select('id, name, type, visibility, created_by, parent_bubble_id, location, member_count, bubble_members(count)').in('id', myIds);
+    // 2. Fetch my bubbles (all types — we need events count for issue 4)
+    var { data: allMyBubbles, error: fetchErr } = await sb.from('bubbles').select('id, name, type, visibility, created_by, parent_bubble_id, location, member_count').in('id', myIds);
+    if (fetchErr) { logError('loadMyNetworks:fetch', fetchErr); }
     if (_navVersion !== myNav) return;
-    var networks = (allBubbles || []).filter(function(b) { return b.type !== 'event' && b.type !== 'live'; });
+    var allMy = allMyBubbles || [];
 
-    // Split: parent networks (no parent_bubble_id) vs child networks
+    var networks = allMy.filter(function(b) { return b.type !== 'event' && b.type !== 'live'; });
+    var eventCount = allMy.filter(function(b) { return b.type === 'event' || b.type === 'live'; }).length;
+
+    // Issue 4: If 0 networks but has events, auto-switch to events tab
+    if (networks.length === 0 && eventCount > 0) {
+      list.innerHTML = '';
+      bbSwitchSub('evt');
+      return;
+    }
+
+    // Split: parent networks (no parent_bubble_id) vs orphaned child networks (issue 1)
     var parentNets = networks.filter(function(b) { return !b.parent_bubble_id; });
+    var parentIds = parentNets.map(function(b) { return b.id; });
+    var orphanNets = networks.filter(function(b) { return b.parent_bubble_id && parentIds.indexOf(b.parent_bubble_id) < 0; });
 
     // 3. Fetch ALL children for parent networks
-    var parentIds = parentNets.map(function(b) { return b.id; });
     var childrenMap = {};
     if (parentIds.length > 0) {
       var { data: children } = await sb.from('bubbles')
-        .select('id, name, type, visibility, created_by, parent_bubble_id, event_date, location, bubble_members(count)')
+        .select('id, name, type, visibility, created_by, parent_bubble_id, event_date, location, member_count')
         .in('parent_bubble_id', parentIds)
         .order('event_date', { ascending: true, nullsFirst: false });
       if (_navVersion !== myNav) return;
@@ -803,10 +860,12 @@ async function loadMyNetworks() {
     Object.values(childrenMap).forEach(function(kids) {
       kids.forEach(function(k) { if (k.type !== 'event' && k.type !== 'live') lvl2NetIds.push(k.id); });
     });
+    // Also include orphan network IDs for their children
+    orphanNets.forEach(function(o) { lvl2NetIds.push(o.id); });
     var lvl3Map = {};
     if (lvl2NetIds.length > 0) {
       var { data: lvl3 } = await sb.from('bubbles')
-        .select('id, name, type, parent_bubble_id, event_date, location, bubble_members(count)')
+        .select('id, name, type, parent_bubble_id, event_date, location, member_count')
         .in('parent_bubble_id', lvl2NetIds)
         .eq('type', 'event')
         .order('event_date', { ascending: true, nullsFirst: false });
@@ -815,6 +874,15 @@ async function loadMyNetworks() {
         if (!lvl3Map[e.parent_bubble_id]) lvl3Map[e.parent_bubble_id] = [];
         lvl3Map[e.parent_bubble_id].push(e);
       });
+    }
+
+    // Fetch parent names for orphans (issue 1)
+    var orphanParentIds = orphanNets.map(function(o) { return o.parent_bubble_id; }).filter(function(v, i, a) { return a.indexOf(v) === i; });
+    var orphanParentMap = {};
+    if (orphanParentIds.length > 0) {
+      var { data: opData } = await sb.from('bubbles').select('id, name').in('id', orphanParentIds);
+      if (_navVersion !== myNav) return;
+      (opData || []).forEach(function(p) { orphanParentMap[p.id] = p.name; });
     }
 
     // 5. Render accordion
@@ -829,7 +897,7 @@ async function loadMyNetworks() {
       var childNets = kids.filter(function(k) { return k.type !== 'event' && k.type !== 'live'; });
       var childEvents = kids.filter(function(k) { return k.type === 'event' || k.type === 'live'; });
       var totalChildren = childNets.length + childEvents.length;
-      var mc = net.member_count ?? net.bubble_members?.[0]?.count ?? 0;
+      var mc = net.member_count ?? 0;
       var badgeParts = [];
       if (childNets.length > 0) badgeParts.push(childNets.length + ' netv\u00E6rk');
       if (childEvents.length > 0) {
@@ -855,7 +923,7 @@ async function loadMyNetworks() {
 
         // Child networks (level 2)
         childNets.forEach(function(cn) {
-          var cnMc = cn.bubble_members?.[0]?.count ?? 0;
+          var cnMc = cn.member_count ?? 0;
           var cnEvents = lvl3Map[cn.id] || [];
           var cnAccId = 'acc-' + cn.id.slice(0, 8);
 
@@ -904,8 +972,46 @@ async function loadMyNetworks() {
       html += '</div>';
     });
 
+    // Issue 1: Render orphaned child networks as standalone cards
+    orphanNets.forEach(function(net) {
+      var mc = net.member_count ?? 0;
+      var parentName = orphanParentMap[net.parent_bubble_id] || '';
+      var orphanEvents = lvl3Map[net.id] || [];
+      var accId = 'acc-' + net.id.slice(0, 8);
+      var isOwner = net.created_by === currentUser.id;
+
+      html += '<div class="bb-accordion">';
+      html += '<div class="bb-acc-card" onclick="bbAccToggle(\'' + net.id + '\',\'' + accId + '\',' + (orphanEvents.length > 0 ? 'true' : 'false') + ')">';
+      html += '<div class="bb-acc-row">';
+      html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7C5CFC">' + ico('bubble') + '</div>';
+      html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(net.name) + '</div>';
+      html += '<div style="font-size:0.68rem;color:var(--muted)">' + mc + ' medlemmer' + (parentName ? ' \u00B7 \u21B3 ' + escHtml(parentName) : '') + '</div></div>';
+      if (orphanEvents.length > 0) html += '<div id="bdg-' + accId + '" style="font-size:0.58rem;font-weight:600;padding:2px 6px;border-radius:10px;background:rgba(46,207,207,0.1);color:#085041;flex-shrink:0">' + orphanEvents.length + ' events</div>';
+      html += '<div class="bb-acc-chev" id="chev-' + accId + '">\u203A</div>';
+      html += '</div></div>';
+
+      if (orphanEvents.length > 0) {
+        html += '<div class="bb-acc-tray" id="tray-' + accId + '">';
+        html += '<div class="bb-thread bb-thread-teal">';
+        orphanEvents.forEach(function(ev) {
+          var isPast = ev.event_date && new Date(ev.event_date) < now;
+          var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) : '';
+          html += '<div class="bb-thread-child th-teal" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
+          html += '<div style="width:22px;height:22px;border-radius:6px;background:rgba(46,207,207,0.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>';
+          html += '<div style="flex:1;min-width:0"><div style="font-size:0.68rem;font-weight:600">' + escHtml(ev.name) + '</div></div>';
+          html += '<div style="font-size:0.58rem;font-weight:500;color:' + (isPast ? 'var(--muted)' : '#085041') + '">' + dateStr + '</div>';
+          html += '</div>';
+        });
+        if (isOwner) {
+          html += '<div class="bb-thread-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + net.id + '\')"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Opret event</div>';
+        }
+        html += '</div></div>';
+      }
+      html += '</div>';
+    });
+
     if (!html) {
-      html = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke med i nogen netv\u00E6rk endnu</div></div>';
+      html = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke med i nogen netv\u00E6rk endnu</div><div style="margin-top:1rem"><button class="btn-primary" onclick="bbSwitchTab(\'explore\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">Opdag netværk</button></div></div>';
     }
     list.innerHTML = html;
   } catch(e) { logError("loadMyNetworks", e); showRetryState('bb-net-list', 'loadMyNetworks', 'Kunne ikke hente netv\u00E6rk'); }

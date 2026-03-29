@@ -676,7 +676,7 @@ async function loadProfile() {
     isAnon = currentProfile.is_anon || false;
     updateAnonToggle();
 
-    await Promise.all([loadSavedContacts(), loadMyBubbles(), loadProfileInvitations(), loadDashboard()]);
+    await Promise.all([loadSavedContacts(), loadProfileBubbles(), loadProfileInvitations(), loadDashboard()]);
 
     // Quick stats (always visible above tabs)
     var qs = document.getElementById('prof-quick-stats');
@@ -867,7 +867,56 @@ function profSwitchTab(tab) {
     if (tabBtn) tabBtn.classList.toggle('active', t === tab);
   });
   if (tab === 'dashboard') loadDashboard();
+  if (tab === 'bubbles') loadProfileBubbles();
   if (tab === 'settings') { updateAnonToggle(); hsUpdateAllToggles(); }
+}
+
+// Load user's bubbles into profile bubbles tab
+async function loadProfileBubbles() {
+  var el = document.getElementById('profile-bubbles');
+  if (!el || !currentUser) return;
+  try {
+    el.innerHTML = skelCards(3);
+    var { data: memberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+    if (!memberships || memberships.length === 0) {
+      el.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke med i nogen bobler endnu</div></div>';
+      return;
+    }
+    var myIds = memberships.map(function(m) { return m.bubble_id; });
+    var { data: bubbles } = await sb.from('bubbles')
+      .select('id, name, type, visibility, location, member_count, event_date')
+      .in('id', myIds)
+      .order('created_at', { ascending: false });
+    if (!bubbles || bubbles.length === 0) {
+      el.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke med i nogen bobler endnu</div></div>';
+      return;
+    }
+    var networks = bubbles.filter(function(b) { return b.type !== 'event' && b.type !== 'live'; });
+    var events = bubbles.filter(function(b) { return b.type === 'event' || b.type === 'live'; });
+    var html = '';
+    if (networks.length > 0) {
+      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Netværk (' + networks.length + ')</div>';
+      networks.forEach(function(b) {
+        var mc = b.member_count ?? 0;
+        html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem"><div style="display:flex;align-items:center;gap:0.6rem">';
+        html += '<div style="width:32px;height:32px;border-radius:8px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7C5CFC">' + ico('bubble') + '</div>';
+        html += '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:600">' + escHtml(b.name) + '</div>';
+        html += '<div style="font-size:0.65rem;color:var(--muted)">' + mc + ' medlemmer' + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div></div></div>';
+      });
+    }
+    if (events.length > 0) {
+      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin:0.6rem 0 0.4rem">Events (' + events.length + ')</div>';
+      events.forEach(function(b) {
+        var dateStr = b.event_date ? new Date(b.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) : '';
+        var isPast = b.event_date && new Date(b.event_date) < new Date();
+        html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5' : '') + '"><div style="display:flex;align-items:center;gap:0.6rem">';
+        html += '<div style="width:32px;height:32px;border-radius:8px;background:rgba(46,207,207,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E">' + ico('calendar') + '</div>';
+        html += '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:600">' + escHtml(b.name) + '</div>';
+        html += '<div style="font-size:0.65rem;color:var(--muted)">' + dateStr + '</div></div></div></div>';
+      });
+    }
+    el.innerHTML = html;
+  } catch(e) { logError('loadProfileBubbles', e); el.innerHTML = '<div class="empty-state" style="padding:1rem"><div class="empty-text">Kunne ikke hente bobler</div></div>'; }
 }
 
 // Load invitations into profile invitations tab
