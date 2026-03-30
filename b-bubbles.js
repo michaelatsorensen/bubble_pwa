@@ -509,7 +509,8 @@ function openCreateEventModal() {
 
 function openCreateEventFromBubble(parentBubbleId) {
   // Block creating events under events (only network bubbles can have child events)
-  if (bcBubbleData && (bcBubbleData.type === 'event' || bcBubbleData.type === 'live')) {
+  // Only check if we're currently in bubble-chat AND viewing the same bubble
+  if (_activeScreen === 'screen-bubble-chat' && bcBubbleId === parentBubbleId && bcBubbleData && (bcBubbleData.type === 'event' || bcBubbleData.type === 'live')) {
     showToast('Events kan kun oprettes under netværksbobler');
     return;
   }
