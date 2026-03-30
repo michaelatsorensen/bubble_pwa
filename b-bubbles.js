@@ -319,60 +319,60 @@ function _showMemberTray(userId, userName, confirmText, cancelText, onConfirm) {
 }
 
 // ── Transfer ownership ──
-function openTransferOwnership(bubbleId) {
-  // Step 1: Explicit warning before showing member picker
-  var btn = document.querySelector('[onclick*="openTransferOwnership"]');
-  if (!btn) btn = document.body;
-  bbConfirm(btn, {
-    label: 'Du er ved at overdrage ejerskab af denne boble. Du mister ejer-rettigheder.',
-    confirmText: 'Fortsæt',
-    confirmClass: 'bb-confirm-btn-danger',
-    onConfirm: '_doTransferPicker(\'' + bubbleId + '\')'
-  });
-}
-
-async function _doTransferPicker(bubbleId) {
+async function openTransferOwnership(bubbleId) {
   try {
-    // Fetch members (exclude self, exclude pending)
     var { data: allMem, error: memErr } = await sb.from('bubble_members')
       .select('user_id, role, status')
       .eq('bubble_id', bubbleId)
       .neq('user_id', currentUser.id);
-    if (memErr) { logError('_doTransferPicker:query', memErr); errorToast('load', memErr); return; }
-    // Filter out pending in JS (avoids Supabase .or() issues)
+    if (memErr) { logError('openTransferOwnership:query', memErr); errorToast('load', memErr); return; }
     var members = (allMem || []).filter(function(m) { return m.status !== 'pending'; });
     if (members.length === 0) { showToast('Ingen medlemmer at overdrage til — inviter nogen først'); return; }
-    // Fetch profiles separately
     var uIds = members.map(function(m) { return m.user_id; });
     var { data: profs } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', uIds);
     var pm = {}; (profs || []).forEach(function(p) { pm[p.id] = p; });
     members.forEach(function(m) { m.profiles = pm[m.user_id] || { name: 'Ukendt' }; });
-    // Step 2: Show member picker
+
     _buildMemberSheet(
       '<span style="display:inline-flex;align-items:center;gap:0.3rem">' + ico('crown').replace('<svg ','<svg style="width:1.1rem;height:1.1rem" ') + ' Overdrag ejerskab</span>',
-      'Vælg det nye medlem der skal overtage som ejer.',
+      'Vælg det nye medlem der skal overtage som ejer. Du mister ejer-rettigheder.',
       members,
-      '_selectTransferTarget'
+      'dummy'
     );
     document.querySelectorAll('#member-sheet-list .member-pick-row').forEach(function(row) {
       row.onclick = function() {
-        _selectTransferTarget(bubbleId, row.dataset.uid, row.dataset.name);
+        var uid = row.dataset.uid;
+        var uname = row.dataset.name;
+        // Show confirm tray
+        var list = document.getElementById('member-sheet-list');
+        var tray = document.getElementById('member-sheet-tray');
+        if (!list || !tray) return;
+        list.style.display = 'none';
+        tray.style.display = 'block';
+        tray.innerHTML = '<div style="text-align:center;padding:1rem 0">' +
+          '<div style="font-size:0.92rem;font-weight:700;margin-bottom:0.3rem">Overdrag ejerskab til <strong>' + escHtml(uname) + '</strong>?</div>' +
+          '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem">Du mister ejer-rettigheder. Denne handling kan ikke fortrydes.</div>' +
+          '<div id="transfer-confirm-btns" style="display:flex;gap:0.5rem;justify-content:center">' +
+          '<button id="transfer-confirm-yes" style="flex:1;padding:0.65rem;border-radius:12px;background:var(--gradient-primary);color:white;border:none;font-family:inherit;font-weight:700;font-size:0.82rem;cursor:pointer">Bekræft overdragelse</button>' +
+          '<button id="transfer-confirm-no" style="flex:1;padding:0.65rem;border-radius:12px;background:none;color:var(--text-secondary);border:1px solid var(--glass-border);font-family:inherit;font-weight:600;font-size:0.82rem;cursor:pointer">Annuller</button>' +
+          '</div></div>';
+        document.getElementById('transfer-confirm-yes').onclick = function() {
+          _executeTransfer(bubbleId, uid, uname);
+        };
+        document.getElementById('transfer-confirm-no').onclick = function() {
+          closeMemberSheet();
+        };
       };
     });
-  } catch(e) { logError('_doTransferPicker', e); errorToast('load', e); }
-}
-
-function _selectTransferTarget(bubbleId, userId, userName) {
-  // Step 3: Final confirmation with name
-  _showMemberTray(userId, userName, 'Overdrag ejerskab til {name}? Dette kan ikke fortrydes.',
-    'Annuller',
-    '_executeTransfer(\'' + bubbleId + '\',\'' + userId + '\',\'' + escHtml(userName).replace(/'/g,"\\'") + '\')');
+  } catch(e) { logError('openTransferOwnership', e); errorToast('load', e); }
 }
 
 async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
   try {
+    var confirmBtn = document.getElementById('transfer-confirm-yes');
+    if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Overdrager...'; }
     var { error } = await sb.from('bubbles').update({ created_by: newOwnerId }).eq('id', bubbleId).eq('created_by', currentUser.id);
-    if (error) { errorToast('save', error); return; }
+    if (error) { errorToast('save', error); if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Bekræft overdragelse'; } return; }
     closeMemberSheet();
     showSuccessToast('Ejerskab overdraget til ' + newOwnerName);
     trackEvent('bubble_ownership_transferred', { bubble_id: bubbleId, new_owner: newOwnerId });
