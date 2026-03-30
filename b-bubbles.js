@@ -287,7 +287,7 @@ function _buildMemberSheet(title, subtitle, members, actionFn) {
         '<div style="width:40px;height:40px;border-radius:50%;background:' + avColors[i % avColors.length] + ';display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>';
       var isAdmin = m.role === 'admin';
       var adminBadge = isAdmin ? '<span class="admin-badge" style="font-size:0.55rem;background:rgba(124,92,252,0.1);color:var(--accent);padding:0.1rem 0.35rem;border-radius:6px;font-weight:600">Admin</span>' : '';
-      return '<div class="member-pick-row" data-uid="' + m.user_id + '" data-name="' + escHtml(p.name||'?').replace(/"/g,'&quot;') + '" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border-radius:12px;border:1px solid var(--glass-border-subtle);margin-bottom:0.4rem;cursor:pointer;transition:all 0.15s" onclick="' + actionFn + '(\'' + m.user_id + '\',\'' + escHtml(p.name||'?').replace(/'/g,"\\'") + '\')">' +
+      return '<div class="member-pick-row" data-uid="' + m.user_id + '" data-name="' + escHtml(p.name||'?').replace(/"/g,'&quot;') + '" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border-radius:12px;border:1px solid var(--glass-border-subtle);margin-bottom:0.4rem;cursor:pointer;transition:all 0.15s">' +
         avHtml +
         '<div style="flex:1"><div style="font-weight:600;font-size:0.85rem;display:flex;align-items:center;gap:0.3rem">' + escHtml(p.name||'Ukendt') + ' ' + adminBadge + '</div><div style="font-size:0.72rem;color:var(--text-secondary)">' + escHtml(p.title||'') + '</div></div>' +
         '<div style="color:var(--accent);font-size:0.72rem;font-weight:600">Vælg</div>' +
@@ -320,16 +320,20 @@ function _showMemberTray(userId, userName, confirmText, cancelText, onConfirm) {
 
 // ── Transfer ownership ──
 async function openTransferOwnership(bubbleId) {
+  console.debug('[transfer] opening for bubble:', bubbleId);
   try {
     var { data: allMem, error: memErr } = await sb.from('bubble_members')
-      .select('user_id, role, status')
+      .select('*')
       .eq('bubble_id', bubbleId)
       .neq('user_id', currentUser.id);
+    console.debug('[transfer] query result:', allMem?.length, 'members, error:', memErr);
     if (memErr) { logError('openTransferOwnership:query', memErr); errorToast('load', memErr); return; }
     var members = (allMem || []).filter(function(m) { return m.status !== 'pending'; });
+    console.debug('[transfer] after pending filter:', members.length, 'members');
     if (members.length === 0) { showToast('Ingen medlemmer at overdrage til — inviter nogen først'); return; }
     var uIds = members.map(function(m) { return m.user_id; });
     var { data: profs } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', uIds);
+    console.debug('[transfer] profiles fetched:', profs?.length);
     var pm = {}; (profs || []).forEach(function(p) { pm[p.id] = p; });
     members.forEach(function(m) { m.profiles = pm[m.user_id] || { name: 'Ukendt' }; });
 
@@ -339,24 +343,26 @@ async function openTransferOwnership(bubbleId) {
       members,
       'dummy'
     );
+    console.debug('[transfer] member sheet built, rows:', document.querySelectorAll('#member-sheet-list .member-pick-row').length);
     document.querySelectorAll('#member-sheet-list .member-pick-row').forEach(function(row) {
       row.onclick = function() {
         var uid = row.dataset.uid;
         var uname = row.dataset.name;
-        // Show confirm tray
+        console.debug('[transfer] selected:', uname, uid);
         var list = document.getElementById('member-sheet-list');
         var tray = document.getElementById('member-sheet-tray');
-        if (!list || !tray) return;
+        if (!list || !tray) { console.debug('[transfer] list/tray missing!'); return; }
         list.style.display = 'none';
         tray.style.display = 'block';
         tray.innerHTML = '<div style="text-align:center;padding:1rem 0">' +
           '<div style="font-size:0.92rem;font-weight:700;margin-bottom:0.3rem">Overdrag ejerskab til <strong>' + escHtml(uname) + '</strong>?</div>' +
           '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem">Du mister ejer-rettigheder. Denne handling kan ikke fortrydes.</div>' +
-          '<div id="transfer-confirm-btns" style="display:flex;gap:0.5rem;justify-content:center">' +
+          '<div style="display:flex;gap:0.5rem;justify-content:center">' +
           '<button id="transfer-confirm-yes" style="flex:1;padding:0.65rem;border-radius:12px;background:var(--gradient-primary);color:white;border:none;font-family:inherit;font-weight:700;font-size:0.82rem;cursor:pointer">Bekræft overdragelse</button>' +
           '<button id="transfer-confirm-no" style="flex:1;padding:0.65rem;border-radius:12px;background:none;color:var(--text-secondary);border:1px solid var(--glass-border);font-family:inherit;font-weight:600;font-size:0.82rem;cursor:pointer">Annuller</button>' +
           '</div></div>';
         document.getElementById('transfer-confirm-yes').onclick = function() {
+          console.debug('[transfer] confirmed!', bubbleId, uid, uname);
           _executeTransfer(bubbleId, uid, uname);
         };
         document.getElementById('transfer-confirm-no').onclick = function() {
@@ -364,21 +370,28 @@ async function openTransferOwnership(bubbleId) {
         };
       };
     });
-  } catch(e) { logError('openTransferOwnership', e); errorToast('load', e); }
+  } catch(e) { console.error('[transfer] CAUGHT ERROR:', e); logError('openTransferOwnership', e); errorToast('load', e); }
 }
 
 async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
   try {
     var confirmBtn = document.getElementById('transfer-confirm-yes');
     if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Overdrager...'; }
-    var { error } = await sb.from('bubbles').update({ created_by: newOwnerId }).eq('id', bubbleId).eq('created_by', currentUser.id);
+    console.debug('[transfer] executing:', bubbleId, '→', newOwnerId, newOwnerName);
+    var { data: updated, error } = await sb.from('bubbles').update({ created_by: newOwnerId }).eq('id', bubbleId).select();
+    console.debug('[transfer] result:', updated, 'error:', error);
     if (error) { errorToast('save', error); if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Bekræft overdragelse'; } return; }
+    if (!updated || updated.length === 0) {
+      showToast('Kunne ikke overdrage — du er muligvis ikke ejer længere');
+      if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Bekræft overdragelse'; }
+      return;
+    }
     closeMemberSheet();
     showSuccessToast('Ejerskab overdraget til ' + newOwnerName);
     trackEvent('bubble_ownership_transferred', { bubble_id: bubbleId, new_owner: newOwnerId });
     if (typeof bcLoadBubbleInfo === 'function') bcLoadBubbleInfo();
     if (typeof bcLoadInfo === 'function') bcLoadInfo();
-  } catch(e) { logError('_executeTransfer', e); errorToast('save', e); }
+  } catch(e) { console.error('[transfer] execute error:', e); logError('_executeTransfer', e); errorToast('save', e); }
 }
 
 // ── Admin designation ──
