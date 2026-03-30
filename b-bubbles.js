@@ -319,22 +319,38 @@ function _showMemberTray(userId, userName, confirmText, cancelText, onConfirm) {
 }
 
 // ── Transfer ownership ──
-async function openTransferOwnership(bubbleId) {
+function openTransferOwnership(bubbleId) {
+  // Step 1: Explicit warning before showing member picker
+  var btn = document.querySelector('[onclick*="openTransferOwnership"]');
+  if (!btn) btn = document.body;
+  bbConfirm(btn, {
+    label: 'Du er ved at overdrage ejerskab af denne boble. Du mister ejer-rettigheder.',
+    confirmText: 'Fortsæt',
+    confirmClass: 'bb-confirm-btn-danger',
+    onConfirm: '_doTransferPicker(\'' + bubbleId + '\')'
+  });
+}
+
+async function _doTransferPicker(bubbleId) {
   try {
-    var { data: members, error: memErr } = await sb.from('bubble_members')
-      .select('user_id, role')
+    // Fetch members (exclude self, exclude pending)
+    var { data: allMem, error: memErr } = await sb.from('bubble_members')
+      .select('user_id, role, status')
       .eq('bubble_id', bubbleId)
-      .neq('user_id', currentUser.id)
-      .or('status.is.null,status.neq.pending');
-    if (memErr) { logError('openTransferOwnership:query', memErr); errorToast('load', memErr); return; }
-    if (!members || members.length === 0) { showToast('Ingen medlemmer at overdrage til — inviter nogen først'); return; }
+      .neq('user_id', currentUser.id);
+    if (memErr) { logError('_doTransferPicker:query', memErr); errorToast('load', memErr); return; }
+    // Filter out pending in JS (avoids Supabase .or() issues)
+    var members = (allMem || []).filter(function(m) { return m.status !== 'pending'; });
+    if (members.length === 0) { showToast('Ingen medlemmer at overdrage til — inviter nogen først'); return; }
+    // Fetch profiles separately
     var uIds = members.map(function(m) { return m.user_id; });
     var { data: profs } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', uIds);
     var pm = {}; (profs || []).forEach(function(p) { pm[p.id] = p; });
     members.forEach(function(m) { m.profiles = pm[m.user_id] || { name: 'Ukendt' }; });
+    // Step 2: Show member picker
     _buildMemberSheet(
       '<span style="display:inline-flex;align-items:center;gap:0.3rem">' + ico('crown').replace('<svg ','<svg style="width:1.1rem;height:1.1rem" ') + ' Overdrag ejerskab</span>',
-      'Vælg det nye medlem der skal overtage som ejer. Du beholder dit medlemskab.',
+      'Vælg det nye medlem der skal overtage som ejer.',
       members,
       '_selectTransferTarget'
     );
@@ -343,11 +359,12 @@ async function openTransferOwnership(bubbleId) {
         _selectTransferTarget(bubbleId, row.dataset.uid, row.dataset.name);
       };
     });
-  } catch(e) { logError('openTransferOwnership', e); errorToast('load', e); }
+  } catch(e) { logError('_doTransferPicker', e); errorToast('load', e); }
 }
 
 function _selectTransferTarget(bubbleId, userId, userName) {
-  _showMemberTray(userId, userName, 'Overdrag ejerskab til {name}?',
+  // Step 3: Final confirmation with name
+  _showMemberTray(userId, userName, 'Overdrag ejerskab til {name}? Dette kan ikke fortrydes.',
     'Annuller',
     '_executeTransfer(\'' + bubbleId + '\',\'' + userId + '\',\'' + escHtml(userName).replace(/'/g,"\\'") + '\')');
 }
@@ -359,21 +376,21 @@ async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
     closeMemberSheet();
     showSuccessToast('Ejerskab overdraget til ' + newOwnerName);
     trackEvent('bubble_ownership_transferred', { bubble_id: bubbleId, new_owner: newOwnerId });
-    await bcLoadBubbleInfo();
-    bcLoadInfo();
+    if (typeof bcLoadBubbleInfo === 'function') bcLoadBubbleInfo();
+    if (typeof bcLoadInfo === 'function') bcLoadInfo();
   } catch(e) { logError('_executeTransfer', e); errorToast('save', e); }
 }
 
 // ── Admin designation ──
 async function openAdminDesignation(bubbleId) {
   try {
-    var { data: members, error: memErr } = await sb.from('bubble_members')
-      .select('user_id, role')
+    var { data: allMem, error: memErr } = await sb.from('bubble_members')
+      .select('user_id, role, status')
       .eq('bubble_id', bubbleId)
-      .neq('user_id', currentUser.id)
-      .or('status.is.null,status.neq.pending');
+      .neq('user_id', currentUser.id);
     if (memErr) { logError('openAdminDesignation:query', memErr); errorToast('load', memErr); return; }
-    if (!members || members.length === 0) { showToast('Ingen medlemmer at udpege'); return; }
+    var members = (allMem || []).filter(function(m) { return m.status !== 'pending'; });
+    if (members.length === 0) { showToast('Ingen medlemmer at udpege'); return; }
     var uIds = members.map(function(m) { return m.user_id; });
     var { data: profs } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', uIds);
     var pm = {}; (profs || []).forEach(function(p) { pm[p.id] = p; });
