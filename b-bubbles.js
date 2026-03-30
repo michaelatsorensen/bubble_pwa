@@ -321,18 +321,23 @@ function _showMemberTray(userId, userName, confirmText, cancelText, onConfirm) {
 // ── Transfer ownership ──
 async function openTransferOwnership(bubbleId) {
   try {
-    var { data: members } = await sb.from('bubble_members')
-      .select('user_id, role, profiles(id,name,title,avatar_url)')
+    var { data: members, error: memErr } = await sb.from('bubble_members')
+      .select('user_id, role')
       .eq('bubble_id', bubbleId)
-      .neq('user_id', currentUser.id);
-    if (!members || members.length === 0) { showToast('Ingen medlemmer at overdrage til'); return; }
+      .neq('user_id', currentUser.id)
+      .or('status.is.null,status.neq.pending');
+    if (memErr) { logError('openTransferOwnership:query', memErr); errorToast('load', memErr); return; }
+    if (!members || members.length === 0) { showToast('Ingen medlemmer at overdrage til — inviter nogen først'); return; }
+    var uIds = members.map(function(m) { return m.user_id; });
+    var { data: profs } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', uIds);
+    var pm = {}; (profs || []).forEach(function(p) { pm[p.id] = p; });
+    members.forEach(function(m) { m.profiles = pm[m.user_id] || { name: 'Ukendt' }; });
     _buildMemberSheet(
       '<span style="display:inline-flex;align-items:center;gap:0.3rem">' + ico('crown').replace('<svg ','<svg style="width:1.1rem;height:1.1rem" ') + ' Overdrag ejerskab</span>',
       'Vælg det nye medlem der skal overtage som ejer. Du beholder dit medlemskab.',
       members,
-      '_selectTransferTarget.bind(null,\\\'' + bubbleId + '\\\')'
+      '_selectTransferTarget'
     );
-    // Override click handlers for cleaner binding
     document.querySelectorAll('#member-sheet-list .member-pick-row').forEach(function(row) {
       row.onclick = function() {
         _selectTransferTarget(bubbleId, row.dataset.uid, row.dataset.name);
@@ -362,18 +367,23 @@ async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
 // ── Admin designation ──
 async function openAdminDesignation(bubbleId) {
   try {
-    var { data: members } = await sb.from('bubble_members')
-      .select('user_id, role, profiles(id,name,title,avatar_url)')
+    var { data: members, error: memErr } = await sb.from('bubble_members')
+      .select('user_id, role')
       .eq('bubble_id', bubbleId)
-      .neq('user_id', currentUser.id);
+      .neq('user_id', currentUser.id)
+      .or('status.is.null,status.neq.pending');
+    if (memErr) { logError('openAdminDesignation:query', memErr); errorToast('load', memErr); return; }
     if (!members || members.length === 0) { showToast('Ingen medlemmer at udpege'); return; }
+    var uIds = members.map(function(m) { return m.user_id; });
+    var { data: profs } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', uIds);
+    var pm = {}; (profs || []).forEach(function(p) { pm[p.id] = p; });
+    members.forEach(function(m) { m.profiles = pm[m.user_id] || { name: 'Ukendt' }; });
     _buildMemberSheet(
       '<span style="display:inline-flex;align-items:center;gap:0.3rem">' + ico('crown').replace('<svg ','<svg style="width:1.1rem;height:1.1rem" ') + ' Udpeg admin</span>',
       'Admins kan redigere boblen, invitere og fjerne medlemmer.',
       members,
       'dummy'
     );
-    // Override click handlers
     document.querySelectorAll('#member-sheet-list .member-pick-row').forEach(function(row) {
       row.onclick = function() {
         var isAdmin = row.querySelector('.admin-badge');
