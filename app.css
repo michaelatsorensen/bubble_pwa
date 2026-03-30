@@ -340,6 +340,11 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 .bubble-tab.active { background:#FFFFFF; border:1px solid rgba(124,92,252,0.25); color:var(--accent); font-weight:700; box-shadow:0 1px 6px rgba(124,92,252,0.1); }
 .bubble-tab-badge { position:absolute; top:-2px; right:8px; min-width:14px; height:14px; border-radius:99px; background:var(--accent2); font-size:0.48rem; font-weight:800; color:white; display:none; align-items:center; justify-content:center; padding:0 3px; }
 .bb-sub-tabs { display:flex; gap:0.3rem; }
+.bb-breadcrumb { overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; margin-top:3px; display:flex; align-items:center; gap:3px; white-space:nowrap; }
+.bb-breadcrumb::-webkit-scrollbar { display:none; }
+.bb-bc-pill { font-size:0.55rem; padding:1px 6px; border-radius:4px; background:rgba(124,92,252,0.06); color:#534AB7; white-space:nowrap; flex-shrink:0; }
+.bb-bc-pill2 { font-size:0.55rem; padding:1px 6px; border-radius:4px; background:rgba(46,207,207,0.06); color:#085041; white-space:nowrap; flex-shrink:0; }
+.bb-bc-chev { font-size:0.5rem; color:var(--muted); flex-shrink:0; }
 .bb-accordion { margin-bottom:0.4rem; }
 .bb-acc-card { background:#FFFFFF; border:1px solid #D8D5E4; border-radius:var(--radius); padding:0.65rem 0.75rem; cursor:pointer; transition:all 0.12s; }
 .bb-acc-card:active { transform:scale(0.98); }

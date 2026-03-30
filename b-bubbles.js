@@ -127,6 +127,34 @@ async function _fetchDiscoverData() {
     if (_navVersion !== myNav) return;
     allBubbles.forEach(function(b) { b._contacts = contactMemberMap[b.id] || []; });
 
+    // Resolve parent + grandparent names for child bubbles
+    var parentIds = allBubbles.filter(function(b) { return b.parent_bubble_id; }).map(function(b) { return b.parent_bubble_id; }).filter(function(v, i, a) { return a.indexOf(v) === i; });
+    if (parentIds.length > 0) {
+      var { data: parents } = await sb.from('bubbles').select('id, name, parent_bubble_id').in('id', parentIds);
+      if (_navVersion !== myNav) return;
+      var parentMap = {};
+      (parents || []).forEach(function(p) { parentMap[p.id] = p; });
+
+      // Find grandparent IDs (parent's parent)
+      var gpIds = (parents || []).filter(function(p) { return p.parent_bubble_id; }).map(function(p) { return p.parent_bubble_id; }).filter(function(v, i, a) { return a.indexOf(v) === i; });
+      var gpMap = {};
+      if (gpIds.length > 0) {
+        var { data: gps } = await sb.from('bubbles').select('id, name').in('id', gpIds);
+        if (_navVersion !== myNav) return;
+        (gps || []).forEach(function(g) { gpMap[g.id] = g.name; });
+      }
+
+      allBubbles.forEach(function(b) {
+        if (b.parent_bubble_id && parentMap[b.parent_bubble_id]) {
+          var p = parentMap[b.parent_bubble_id];
+          b._parentName = p.name;
+          if (p.parent_bubble_id && gpMap[p.parent_bubble_id]) {
+            b._grandparentName = gpMap[p.parent_bubble_id];
+          }
+        }
+      });
+    }
+
     allBubbles.sort(function(a, b) {
       if (b.upvote_count !== a.upvote_count) return b.upvote_count - a.upvote_count;
       if (b.member_count !== a.member_count) return b.member_count - a.member_count;

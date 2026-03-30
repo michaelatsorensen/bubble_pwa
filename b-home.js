@@ -959,9 +959,16 @@ async function loadMyEvents() {
 
     var pIds = [...new Set(events.filter(function(e) { return e.parent_bubble_id; }).map(function(e) { return e.parent_bubble_id; }))];
     var parentMap = {};
+    var gpMap = {};
     if (pIds.length > 0) {
-      var { data: parents } = await sb.from('bubbles').select('id, name').in('id', pIds);
-      (parents || []).forEach(function(p) { parentMap[p.id] = p.name; });
+      var { data: parents } = await sb.from('bubbles').select('id, name, parent_bubble_id').in('id', pIds);
+      (parents || []).forEach(function(p) { parentMap[p.id] = p; });
+      // Grandparent lookup
+      var gpIds = (parents || []).filter(function(p) { return p.parent_bubble_id; }).map(function(p) { return p.parent_bubble_id; }).filter(function(v, i, a) { return a.indexOf(v) === i; });
+      if (gpIds.length > 0) {
+        var { data: gps } = await sb.from('bubbles').select('id, name').in('id', gpIds);
+        (gps || []).forEach(function(g) { gpMap[g.id] = g.name; });
+      }
     }
 
     var now = new Date();
@@ -971,26 +978,34 @@ async function loadMyEvents() {
     var html = '';
     if (upcoming.length > 0) {
       html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Kommende</div>';
-      html += upcoming.map(function(e) { return _bbEventCard(e, parentMap, false); }).join('');
+      html += upcoming.map(function(e) { return _bbEventCard(e, parentMap, gpMap, false); }).join('');
     }
     if (past.length > 0) {
       html += '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin:0.8rem 0 0.4rem">Afholdte</div>';
-      html += past.map(function(e) { return _bbEventCard(e, parentMap, true); }).join('');
+      html += past.map(function(e) { return _bbEventCard(e, parentMap, gpMap, true); }).join('');
     }
     list.innerHTML = html;
   } catch(e) { logError("loadMyEvents", e); showRetryState('bb-evt-list', 'loadMyEvents', 'Kunne ikke hente events'); }
 }
 
-function _bbEventCard(e, parentMap, isPast) {
+function _bbEventCard(e, parentMap, gpMap, isPast) {
   var dateStr = e.event_date ? new Date(e.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
-  var parentName = parentMap[e.parent_bubble_id] || '';
-  var parentBadge = parentName ? '<span style="font-size:0.55rem;padding:1px 5px;border-radius:4px;background:rgba(124,92,252,0.06);color:#534AB7;margin-left:3px">' + escHtml(parentName) + '</span>' : '';
+  var parent = parentMap[e.parent_bubble_id];
+  var parentName = parent ? parent.name : '';
+  var gpName = (parent && parent.parent_bubble_id && gpMap[parent.parent_bubble_id]) ? gpMap[parent.parent_bubble_id] : '';
+  var breadcrumb = '';
+  if (gpName && parentName) {
+    breadcrumb = '<div class="bb-breadcrumb"><span class="bb-bc-pill">\u21B3 ' + escHtml(gpName) + '</span><span class="bb-bc-chev">\u203A</span><span class="bb-bc-pill2">' + escHtml(parentName) + '</span></div>';
+  } else if (parentName) {
+    breadcrumb = '<div class="bb-breadcrumb"><span class="bb-bc-pill">\u21B3 ' + escHtml(parentName) + '</span></div>';
+  }
   return '<div class="card" data-action="openBubble" data-id="' + e.id + '" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5;' : 'border-left:2px solid #1A9E8E;border-radius:0 var(--radius) var(--radius) 0;') + '">' +
-    '<div style="display:flex;align-items:center;gap:0.6rem">' +
-    '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E">' + ico('calendar') + '</div>' +
+    '<div style="display:flex;align-items:flex-start;gap:0.6rem">' +
+    '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E;margin-top:2px">' + ico('calendar') + '</div>' +
     '<div style="flex:1;min-width:0">' +
     '<div style="font-size:0.85rem;font-weight:600">' + escHtml(e.name) + '</div>' +
-    '<div style="font-size:0.68rem;color:var(--muted);display:flex;align-items:center;flex-wrap:wrap;gap:2px">' + visIcon(e.visibility) + dateStr + parentBadge + '</div>' +
+    '<div style="font-size:0.68rem;color:var(--muted);display:flex;align-items:center;flex-wrap:wrap;gap:2px">' + visIcon(e.visibility) + dateStr + '</div>' +
+    breadcrumb +
     '</div></div></div>';
 }
 // ══════════════════════════════════════════════════════════
@@ -1091,7 +1106,12 @@ function bubbleCard(b, joined) {
   }
 
   var memberLabel = (b.member_count || 0) > 0 ? '<div class="fw-700" style="font-size:0.75rem">' + ico('users') + ' ' + b.member_count + '</div>' : '';
-  var parentRef = b._parentName ? '<div style="display:inline-flex;align-items:center;gap:3px;margin-top:0.15rem;font-size:0.62rem;color:#534AB7">\u21B3 ' + escHtml(b._parentName) + '</div>' : '';
+  var parentRef = '';
+  if (b._grandparentName && b._parentName) {
+    parentRef = '<div class="bb-breadcrumb"><span class="bb-bc-pill">↳ ' + escHtml(b._grandparentName) + '</span><span class="bb-bc-chev">›</span><span class="bb-bc-pill2">' + escHtml(b._parentName) + '</span></div>';
+  } else if (b._parentName) {
+    parentRef = '<div class="bb-breadcrumb"><span class="bb-bc-pill">↳ ' + escHtml(b._parentName) + '</span></div>';
+  }
 
   return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}">
     <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};color:${bubbleColor(b.type, 0.9)}">${bubbleEmoji(b.type)}</div>
