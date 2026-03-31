@@ -54,7 +54,7 @@ function initServices() {
 // ══════════════════════════════════════════════════════════
 async function resolvePostAuthDestination() {
   // Step 3: pending contact (from QR scan before auth)
-  await checkPendingContact();
+  var savedContactId = await checkPendingContact();
 
   // Push notification deep link
   var pushParams = new URLSearchParams(window.location.search);
@@ -63,8 +63,9 @@ async function resolvePostAuthDestination() {
     // Clean URL
     history.replaceState(null, '', window.location.pathname);
     if (pushAction === 'chat' && pushParams.get('uid')) {
+      var _pushUid = pushParams.get('uid');
       goTo('screen-home');
-      setTimeout(function() { openChat(pushParams.get('uid'), 'screen-messages'); }, 500);
+      requestAnimationFrame(function() { setTimeout(function() { openChat(_pushUid, 'screen-messages'); }, 100); });
       return;
     } else if (pushAction === 'messages') {
       goTo('screen-messages');
@@ -73,10 +74,18 @@ async function resolvePostAuthDestination() {
       goTo('screen-notifications');
       return;
     } else if (pushAction === 'bubble' && pushParams.get('id')) {
+      var _pushBid = pushParams.get('id');
       goTo('screen-home');
-      setTimeout(function() { openBubbleChat(pushParams.get('id')); }, 500);
+      requestAnimationFrame(function() { setTimeout(function() { openBubbleChat(_pushBid, 'screen-home'); }, 100); });
       return;
     }
+  }
+
+  // Step 3b: if contact was saved from QR → navigate directly to their profile
+  if (savedContactId) {
+    goTo('screen-home');
+    setTimeout(function() { openPerson(savedContactId, 'screen-home'); }, 400);
+    return;
   }
 
   // Step 4: event flow (from event QR)

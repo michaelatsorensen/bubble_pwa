@@ -1171,13 +1171,14 @@ async function checkPendingJoin() {
     var isSelfCheckin = !bubble || !bubble.checkin_mode || bubble.checkin_mode === 'self';
 
     if (isEventFlow && isEvent && isSelfCheckin) {
-      // Mode A: auto check-in
+      // Mode A: auto check-in → open event directly
       await sb.from('bubble_members')
         .update({ checked_in_at: new Date().toISOString(), checked_out_at: null })
         .eq('bubble_id', joinId).eq('user_id', currentUser.id);
       flowRemove('event_flow');
       showSuccessToast('Du er checked ind!');
       goTo('screen-home');
+      setTimeout(function() { openBubbleChat(joinId, 'screen-home'); }, 400);
       // Home will detect live context and show Live tab
     } else if (isEventFlow && isEvent) {
       // Mode B: show QR for organizer to scan

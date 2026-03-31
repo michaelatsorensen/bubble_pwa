@@ -452,11 +452,11 @@ function spContinueToSignup() {
 // ══════════════════════════════════════════════════════════
 async function checkPendingContact() {
   try {
-    if (!currentUser) return;
+    if (!currentUser) return null;
     var contactId = flowGet('pending_contact');
     if (!contactId || contactId === currentUser.id) {
       flowRemove('pending_contact');
-      return;
+      return null;
     }
     // Auto-save the contact
     var { error } = await sb.from('saved_contacts').upsert({
@@ -468,9 +468,11 @@ async function checkPendingContact() {
       showToast('Kontakt gemt fra QR-scan! ✓');
       trackEvent('qr_contact_saved', { contact_id: contactId });
     }
+    return contactId;
   } catch(e) {
     logError('checkPendingContact', e);
     flowRemove('pending_contact');
+    return null;
   }
 }
 

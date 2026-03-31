@@ -15,7 +15,7 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
 const BUILD_TIMESTAMP = '2026-03-29T14:00:00';
-const BUILD_VERSION  = 'v7.7.7';
+const BUILD_VERSION  = 'v7.8.0';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -152,22 +152,38 @@ function initSupabase() {
 var _navVersion = 0;
 var _activeScreen = null;
 
-// ── Centralized flow state (sessionStorage-backed for OAuth redirect survival) ──
+// ── Centralized flow state (dual storage for OAuth redirect survival) ──
 // Keys: pending_contact, pending_join, event_flow, post_tags_destination
-// Clean API wrapping sessionStorage — survives page reloads from OAuth redirects
+// Writes to BOTH sessionStorage and localStorage (with 5-min TTL)
+// Reads from sessionStorage first, falls back to localStorage
+// Survives: page reloads, OAuth redirects, Safari private mode
 var _flowStatePrefix = 'bf_'; // bf = bubble flow
+var _flowTTL = 5 * 60 * 1000; // 5 minutes
 
 function flowGet(key) {
-  try { return sessionStorage.getItem(_flowStatePrefix + key) || null; }
-  catch(e) { return null; }
+  var k = _flowStatePrefix + key;
+  // Try sessionStorage first
+  try { var v = sessionStorage.getItem(k); if (v) return v; } catch(e) {}
+  // Fallback to localStorage with TTL check
+  try {
+    var raw = localStorage.getItem(k);
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      if (parsed.exp > Date.now()) return parsed.val;
+      localStorage.removeItem(k); // expired
+    }
+  } catch(e) {}
+  return null;
 }
 function flowSet(key, value) {
-  try { sessionStorage.setItem(_flowStatePrefix + key, value); }
-  catch(e) { /* silent — private browsing may block storage */ }
+  var k = _flowStatePrefix + key;
+  try { sessionStorage.setItem(k, value); } catch(e) {}
+  try { localStorage.setItem(k, JSON.stringify({ val: value, exp: Date.now() + _flowTTL })); } catch(e) {}
 }
 function flowRemove(key) {
-  try { sessionStorage.removeItem(_flowStatePrefix + key); }
-  catch(e) {}
+  var k = _flowStatePrefix + key;
+  try { sessionStorage.removeItem(k); } catch(e) {}
+  try { localStorage.removeItem(k); } catch(e) {}
 }
 
 // ══════════════════════════════════════════════════════════
