@@ -1593,12 +1593,12 @@ async function bcLoadInfo() {
           sb.from('bubble_members').select('*', { count: 'exact', head: true }).in('bubble_id', allBubbleIds).not('checked_in_at', 'is', null)
         ]);
         // Register bubble-specific chart meta
-        _dashMeta['o-mem-' + b.id] = { title: '👥 Medlemsvækst', sub: 'Kumulativt for hele netværket', table: 'bubble_members', field: 'created_at', type: 'line', filter: allBubbleIds };
-        _dashMeta['o-msg-' + b.id] = { title: '💬 Chat-aktivitet', sub: 'Beskeder per uge', table: 'bubble_messages', field: 'created_at', type: 'bar', filter: allBubbleIds };
+        _dashMeta['o-mem-' + b.id] = { title: 'Medlemsvækst', sub: 'Kumulativt for hele netværket', table: 'bubble_members', field: 'created_at', type: 'line', filter: allBubbleIds, icon: 'users' };
+        _dashMeta['o-msg-' + b.id] = { title: 'Chat-aktivitet', sub: 'Beskeder per uge', table: 'bubble_messages', field: 'created_at', type: 'bar', filter: allBubbleIds, icon: 'chat' };
 
-        function oCard(id, ico, icoBg, icoCol, val, label, delta, color) {
+        function oCard(id, iconName, icoBg, icoCol, val, label, delta, color) {
           return '<div class="dash-card" data-color="' + color + '" onclick="dashToggle(this,\'' + id + '\',this.closest(\'.dash-pair\').querySelector(\'.dash-tray\').id)">' +
-            '<div class="dash-ico" style="background:' + icoBg + ';color:' + icoCol + '">' + ico + '</div>' +
+            '<div class="dash-ico" style="background:' + icoBg + ';color:' + icoCol + '">' + ico(iconName) + '</div>' +
             '<div><div class="dash-val">' + val + '</div><div class="dash-label">' + label + '</div>' +
             (delta ? '<div class="dash-delta">+' + delta + ' denne md.</div>' : '') + '</div></div>';
         }
@@ -1607,8 +1607,8 @@ async function bcLoadInfo() {
         statsHtml = '<div style="margin-bottom:0.9rem">' +
           '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Statistik</div>' +
           '<div class="dash-pair"><div class="dash-row">' +
-            oCard('o-mem-' + b.id, '👥', 'rgba(124,92,252,0.08)', 'var(--accent)', memTotal.count || 0, 'Medlemmer', memNew.count, 'accent') +
-            oCard('o-msg-' + b.id, '💬', 'rgba(232,121,168,0.08)', 'var(--pink)', msgTotal.count || 0, 'Beskeder', msgNew.count, 'pink') +
+            oCard('o-mem-' + b.id, 'users', 'rgba(124,92,252,0.08)', 'var(--accent)', memTotal.count || 0, 'Medlemmer', memNew.count, 'accent') +
+            oCard('o-msg-' + b.id, 'chat', 'rgba(232,121,168,0.08)', 'var(--pink)', msgTotal.count || 0, 'Beskeder', msgNew.count, 'pink') +
           '</div><div class="dash-tray" id="dtray-o1-' + b.id.slice(0,8) + '"><div class="dash-tray-collapse"><div class="dash-tray-inner" id="dti-o1"><div style="font-size:0.72rem;font-weight:700" id="dtitle-o1"></div><div style="font-size:0.55rem;color:var(--muted)" id="dsub-o1"></div><div class="dash-chart-wrap"><canvas id="dcv-o1"></canvas></div></div></div></div></div>' +
           '</div>';
       } catch(e) { logError('bcLoadInfo:stats', e); }

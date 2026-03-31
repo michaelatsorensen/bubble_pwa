@@ -73,48 +73,93 @@ async function adminLoadStats() {
   el.innerHTML = '<div class="spinner"></div>';
   try {
     // Parallel count queries
-    var [userRes, bubbleRes, memberRes, msgRes, bmsgRes, savedRes] = await Promise.all([
+    var d30 = new Date(Date.now() - 30*24*3600000).toISOString();
+    var d7 = new Date(Date.now() - 7*24*3600000).toISOString();
+    var d1 = new Date(Date.now() - 24*3600000).toISOString();
+    var liveExpiry = new Date(Date.now() - 4*3600000).toISOString();
+
+    var [userRes, bubbleRes, memberRes, dmRes, bmsgRes, savedRes,
+         uNew, bNew, mNew, dmNew, bmNew, sNew,
+         bannedRes, liveRes, viewsRes] = await Promise.all([
       sb.from('profiles').select('*', { count: 'exact', head: true }),
       sb.from('bubbles').select('*', { count: 'exact', head: true }),
       sb.from('bubble_members').select('*', { count: 'exact', head: true }),
       sb.from('messages').select('*', { count: 'exact', head: true }),
       sb.from('bubble_messages').select('*', { count: 'exact', head: true }),
-      sb.from('saved_contacts').select('*', { count: 'exact', head: true })
-    ]);
-    var uc = userRes.count || 0;
-    var bc = bubbleRes.count || 0;
-    var mc = memberRes.count || 0;
-    var msgc = (msgRes.count || 0) + (bmsgRes.count || 0);
-
-    // Recent deltas (30 days)
-    var d30 = new Date(Date.now() - 30*24*3600000).toISOString();
-    var [uNew, bNew, mNew, dmNew, bmNew] = await Promise.all([
+      sb.from('saved_contacts').select('*', { count: 'exact', head: true }),
       sb.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', d30),
       sb.from('bubbles').select('*', { count: 'exact', head: true }).gte('created_at', d30),
       sb.from('bubble_members').select('*', { count: 'exact', head: true }).gte('created_at', d30),
       sb.from('messages').select('*', { count: 'exact', head: true }).gte('created_at', d30),
-      sb.from('bubble_messages').select('*', { count: 'exact', head: true }).gte('created_at', d30)
+      sb.from('bubble_messages').select('*', { count: 'exact', head: true }).gte('created_at', d30),
+      sb.from('saved_contacts').select('*', { count: 'exact', head: true }).gte('created_at', d30),
+      sb.from('profiles').select('*', { count: 'exact', head: true }).eq('banned', true),
+      sb.from('bubble_members').select('*', { count: 'exact', head: true }).gt('last_active', liveExpiry),
+      sb.from('profile_views').select('*', { count: 'exact', head: true }).gte('created_at', d7)
     ]);
 
-    function dCard(id, ico, icoBg, icoCol, val, label, delta, color) {
+    var uc = userRes.count||0, bc = bubbleRes.count||0, mc = memberRes.count||0;
+    var dmc = dmRes.count||0, bmc = bmsgRes.count||0, sc = savedRes.count||0;
+    var fmtK = function(n) { return n > 999 ? (n/1000).toFixed(1)+'K' : n; };
+
+    function dCard(id, iconName, icoBg, icoCol, val, label, delta, color) {
       return '<div class="dash-card" data-color="' + color + '" onclick="dashToggle(this,\'' + id + '\',this.closest(\'.dash-pair\').querySelector(\'.dash-tray\').id)">' +
-        '<div class="dash-ico" style="background:' + icoBg + ';color:' + icoCol + '">' + ico + '</div>' +
+        '<div class="dash-ico" style="background:' + icoBg + ';color:' + icoCol + '">' + ico(iconName) + '</div>' +
         '<div><div class="dash-val">' + val + '</div><div class="dash-label">' + label + '</div>' +
         (delta ? '<div class="dash-delta">+' + delta + ' denne md.</div>' : '') + '</div></div>';
     }
+    function trayHtml(id) {
+      return '<div class="dash-tray" id="dtray-' + id + '"><div class="dash-tray-collapse"><div class="dash-tray-inner" id="dti-' + id + '">' +
+        '<div style="font-size:0.72rem;font-weight:700" id="dtitle-' + id + '"></div>' +
+        '<div style="font-size:0.55rem;color:var(--muted)" id="dsub-' + id + '"></div>' +
+        '<div class="dash-chart-wrap"><canvas id="dcv-' + id + '"></canvas></div></div></div></div>';
+    }
+
+    // DAU/WAU/MAU (quick inline)
+    var [dauRes, wauRes, mauRes] = await Promise.all([
+      sb.from('analytics').select('user_id').eq('event_type','app_open').gte('created_at',d1).then(function(r){return new Set((r.data||[]).map(function(a){return a.user_id})).size}).catch(function(){return 0}),
+      sb.from('analytics').select('user_id').eq('event_type','app_open').gte('created_at',d7).then(function(r){return new Set((r.data||[]).map(function(a){return a.user_id})).size}).catch(function(){return 0}),
+      sb.from('analytics').select('user_id').eq('event_type','app_open').gte('created_at',d30).then(function(r){return new Set((r.data||[]).map(function(a){return a.user_id})).size}).catch(function(){return 0})
+    ]);
 
     el.innerHTML =
+      // Row 1: Brugere + Bobler
       '<div class="dash-pair"><div class="dash-row">' +
-        dCard('s-users','👤','rgba(124,92,252,0.08)','var(--accent)', uc, 'Brugere', uNew.count, 'accent') +
-        dCard('s-bubbles','🫧','rgba(46,207,207,0.08)','var(--teal)', bc, 'Bobler', bNew.count, 'teal') +
-      '</div><div class="dash-tray" id="dtray-s1"><div class="dash-tray-collapse"><div class="dash-tray-inner" id="dti-s1"><div style="font-size:0.72rem;font-weight:700" id="dtitle-s1"></div><div style="font-size:0.55rem;color:var(--muted)" id="dsub-s1"></div><div class="dash-chart-wrap"><canvas id="dcv-s1"></canvas></div></div></div></div></div>' +
+        dCard('s-users','user','rgba(124,92,252,0.08)','var(--accent)', uc, 'Brugere', uNew.count, 'accent') +
+        dCard('s-bubbles','bubble','rgba(46,207,207,0.08)','var(--teal)', bc, 'Bobler', bNew.count, 'teal') +
+      '</div>' + trayHtml('s1') + '</div>' +
+      // Row 2: Medlemskaber + Boble-beskeder
       '<div class="dash-pair"><div class="dash-row">' +
-        dCard('s-members','🔗','rgba(124,92,252,0.08)','var(--accent)', mc, 'Medlemskaber', mNew.count, 'accent') +
-        dCard('s-msgs','💬','rgba(232,121,168,0.08)','var(--pink)', msgc > 999 ? (msgc/1000).toFixed(1)+'K' : msgc, 'Beskeder', (dmNew.count||0)+(bmNew.count||0), 'pink') +
-      '</div><div class="dash-tray" id="dtray-s2"><div class="dash-tray-collapse"><div class="dash-tray-inner" id="dti-s2"><div style="font-size:0.72rem;font-weight:700" id="dtitle-s2"></div><div style="font-size:0.55rem;color:var(--muted)" id="dsub-s2"></div><div class="dash-chart-wrap"><canvas id="dcv-s2"></canvas></div></div></div></div></div>';
+        dCard('s-members','link','rgba(124,92,252,0.08)','var(--accent)', mc, 'Medlemskaber', mNew.count, 'accent') +
+        dCard('s-msgs','chat','rgba(232,121,168,0.08)','var(--pink)', fmtK(bmc), 'Boble-chat', bmNew.count, 'pink') +
+      '</div>' + trayHtml('s2') + '</div>' +
+      // Row 3: Gemte kontakter + DMs
+      '<div class="dash-pair"><div class="dash-row">' +
+        dCard('s-saved','bookmark','rgba(46,207,207,0.08)','var(--teal)', sc, 'Forbindelser', sNew.count, 'teal') +
+        dCard('s-dms','send','rgba(232,121,168,0.08)','var(--pink)', fmtK(dmc), 'DMs', dmNew.count, 'pink') +
+      '</div>' + trayHtml('s3') + '</div>' +
+      // Summary: DAU/WAU/MAU + Live/Banned/Views
+      '<div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);margin:4px 0 6px">' + icon('target') + ' Aktivitet</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">' +
+        _adminMini(ico('fire'), 'DAU', dauRes, 'var(--teal)') +
+        _adminMini(ico('fire'), 'WAU', wauRes, 'var(--accent)') +
+        _adminMini(ico('fire'), 'MAU', mauRes, 'var(--pink)') +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">' +
+        _adminMini(ico('pin'), 'Live nu', liveRes.count||0, 'var(--teal)') +
+        _adminMini(ico('lock'), 'Bannede', bannedRes.count||0, '#EF4444') +
+        _adminMini(ico('eye'), 'Visninger /7d', viewsRes.count||0, 'var(--accent)') +
+      '</div>';
 
   } catch(e) { el.innerHTML = '<div style="color:var(--accent2)">Fejl: ' + escHtml(e.message) + '</div>'; }
   } catch(e) { logError("adminLoadStats", e); }
+}
+
+function _adminMini(icoHtml, label, val, color) {
+  return '<div style="background:rgba(30,27,46,0.02);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center">' +
+    '<div style="color:' + color + ';margin-bottom:2px">' + icoHtml + '</div>' +
+    '<div style="font-size:1rem;font-weight:800;color:' + color + '">' + val + '</div>' +
+    '<div style="font-size:0.52rem;color:var(--muted);font-weight:600;text-transform:uppercase">' + label + '</div></div>';
 }
 
 // ── Dashboard chart helpers ──
@@ -123,10 +168,12 @@ var _dashChartData = {};
 var _dashActiveChart = {};
 
 var _dashMeta = {
-  's-users': { title: '👤 Nye brugere', sub: 'Tilmeldinger per uge', table: 'profiles', field: 'created_at', type: 'bar' },
-  's-bubbles': { title: '🫧 Bobler oprettet', sub: 'Netværk + events per uge', table: 'bubbles', field: 'created_at', type: 'bar' },
-  's-members': { title: '🔗 Medlemskaber', sub: 'Kumulativ vækst over tid', table: 'bubble_members', field: 'created_at', type: 'line' },
-  's-msgs': { title: '💬 Beskeder', sub: 'Boble-chat beskeder per uge', table: 'bubble_messages', field: 'created_at', type: 'bar' }
+  's-users': { title: 'Nye brugere', sub: 'Tilmeldinger per uge', table: 'profiles', field: 'created_at', type: 'bar', icon: 'user' },
+  's-bubbles': { title: 'Bobler oprettet', sub: 'Netværk + events per uge', table: 'bubbles', field: 'created_at', type: 'bar', icon: 'bubble' },
+  's-members': { title: 'Medlemskaber', sub: 'Kumulativ vækst over tid', table: 'bubble_members', field: 'created_at', type: 'line', icon: 'link' },
+  's-msgs': { title: 'Boble-chat', sub: 'Beskeder per uge', table: 'bubble_messages', field: 'created_at', type: 'bar', icon: 'chat' },
+  's-saved': { title: 'Forbindelser', sub: 'Gemte kontakter per uge', table: 'saved_contacts', field: 'created_at', type: 'bar', icon: 'bookmark' },
+  's-dms': { title: 'DMs', sub: 'Direkte beskeder per uge', table: 'messages', field: 'created_at', type: 'bar', icon: 'send' }
 };
 
 var _dashColors = {
@@ -150,7 +197,7 @@ async function dashToggle(card, chartId, trayId) {
   var meta = _dashMeta[chartId] || {};
   var titleEl = tray.querySelector('[id^="dtitle"]');
   var subEl = tray.querySelector('[id^="dsub"]');
-  if (titleEl) titleEl.textContent = meta.title || '';
+  if (titleEl) titleEl.innerHTML = (meta.icon ? '<span style="vertical-align:middle;margin-right:4px">' + ico(meta.icon) + '</span>' : '') + escHtml(meta.title || '');
   if (subEl) subEl.textContent = meta.sub || '';
   tray.classList.add('open');
   // Destroy old chart
