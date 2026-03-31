@@ -279,7 +279,8 @@ function showProfileSetupCTA() {
 
   // Determine next step
   var nextLabel = '';
-  if (!currentProfile.title) nextLabel = 'Næste: Tilføj titel';
+  if (!currentProfile.workplace) nextLabel = 'Næste: Tilføj arbejdsplads';
+  else if (!currentProfile.title) nextLabel = 'Næste: Tilføj titel';
   else if (!currentProfile.keywords || currentProfile.keywords.length < 3) nextLabel = 'Næste: Vælg interesser';
   else if (!currentProfile.lifestage) nextLabel = 'Næste: Vælg din type';
   else nextLabel = 'Tilføj tags for bedre matches';
@@ -308,11 +309,40 @@ function showProfileSetupCTA() {
 
 function openNextProfileSetupSheet() {
   if (!currentProfile) return;
+  if (!currentProfile.workplace) { openSetupWorkplaceSheet(); return; }
   if (!currentProfile.title) { openSetupTitleSheet(); return; }
   if (!currentProfile.keywords || currentProfile.keywords.length < 3) { openSetupInterestsSheet(); return; }
   if (!currentProfile.lifestage) { openSetupLifestageSheet(); return; }
   // All done — open profile tab for tags
   openProfileSetupTags();
+}
+
+// ── WORKPLACE SHEET ──
+function openSetupWorkplaceSheet() {
+  var { overlay, sheet } = bbDynOpen();
+  sheet.innerHTML = '<div style="padding:1.2rem 1rem">' +
+    '<div style="font-size:1rem;font-weight:800;margin-bottom:0.3rem">Hvor arbejder du?</div>' +
+    '<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Andre kan se din arbejdsplads på din profil</div>' +
+    '<input class="input" id="setup-workplace-input" maxlength="80" placeholder="f.eks. Danfoss, SDU, selvstændig..." value="' + escHtml(currentProfile?.workplace || '') + '">' +
+    '<button class="btn-primary" onclick="saveSetupWorkplace()" style="width:100%;margin-top:0.8rem">Gem</button>' +
+    '</div>';
+  setTimeout(function() { var el = document.getElementById('setup-workplace-input'); if (el) el.focus(); }, 200);
+}
+
+async function saveSetupWorkplace() {
+  var input = document.getElementById('setup-workplace-input');
+  if (!input) return;
+  var val = input.value.trim();
+  if (!val) return showWarningToast('Virksomhed er påkrævet');
+  try {
+    var { error } = await sb.from('profiles').update({ workplace: val }).eq('id', currentUser.id);
+    if (error) return errorToast('save', error);
+    currentProfile.workplace = val;
+    showSuccessToast('Arbejdsplads gemt');
+    var ov = document.querySelector('.bb-dyn-overlay');
+    if (ov) bbDynClose(ov);
+    showProfileSetupCTA();
+  } catch(e) { errorToast('save', e); }
 }
 
 // ── TITLE SHEET ──

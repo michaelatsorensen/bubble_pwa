@@ -32,9 +32,6 @@ async function _downloadAvatarToStorage(externalUrl, userId) {
 // ══════════════════════════════════════════════════════════
 async function maybeShowOnboarding() {
   try {
-    // Skip onboarding if user arrived via deep-link — don't block their action
-    if (flowGet('pending_contact') || flowGet('pending_join') || flowGet('event_flow')) return false;
-
     // Don't re-trigger if user explicitly skipped
     if (currentProfile?.onboarding_skipped) return false;
 
@@ -44,14 +41,17 @@ async function maybeShowOnboarding() {
     var autoName = meta.full_name || meta.name || '';
     var autoAvatar = meta.avatar_url || meta.picture || '';
 
+    // Auto-extract workplace from OAuth metadata (LinkedIn provides this)
+    var autoWorkplace = meta.company || meta.organization || '';
+
     // Auto-save avatar from OAuth if user doesn't have one
     if (autoAvatar && !currentProfile?.avatar_url) {
       try {
         var savedUrl = await _downloadAvatarToStorage(autoAvatar, currentUser.id);
-        var finalUrl = savedUrl || autoAvatar; // fallback to external URL if download fails (CORS)
+        var finalUrl = savedUrl || autoAvatar;
         await sb.from('profiles').update({ avatar_url: finalUrl }).eq('id', currentUser.id);
         if (currentProfile) currentProfile.avatar_url = finalUrl;
-      } catch(e) { /* silent — avatar is optional */ }
+      } catch(e) {}
     }
 
     // Repair: existing users with external avatar URLs (LinkedIn/Google expire)
@@ -62,7 +62,7 @@ async function maybeShowOnboarding() {
           await sb.from('profiles').update({ avatar_url: repairedUrl }).eq('id', currentUser.id);
           currentProfile.avatar_url = repairedUrl;
         }
-      } catch(e) { /* silent */ }
+      } catch(e) {}
     }
 
     // Check if we already have what we need
@@ -71,15 +71,30 @@ async function maybeShowOnboarding() {
 
     // LinkedIn may provide enough to skip onboarding entirely
     if (!hasName && autoName) {
-      // Try auto-saving name from OAuth
       try {
         await sb.from('profiles').update({ name: autoName }).eq('id', currentUser.id);
         if (currentProfile) currentProfile.name = autoName;
         hasName = true;
-      } catch(e) { /* silent */ }
+      } catch(e) {}
     }
 
-    if (hasName && hasWorkplace) return false; // Good enough — profil-nudge handles the rest
+    // Auto-save workplace from OAuth if available
+    if (!hasWorkplace && autoWorkplace) {
+      try {
+        await sb.from('profiles').update({ workplace: autoWorkplace }).eq('id', currentUser.id);
+        if (currentProfile) currentProfile.workplace = autoWorkplace;
+        hasWorkplace = true;
+      } catch(e) {}
+    }
+
+    if (hasName && hasWorkplace) return false; // Good enough
+
+    // Deep-link users: show minimal onboarding (just missing fields), not full flow
+    var isDeepLink = flowGet('pending_contact') || flowGet('pending_join') || flowGet('event_flow');
+    if (isDeepLink) {
+      _showMinimalOnboarding(hasName, hasWorkplace, autoName);
+      return true;
+    }
 
     // Pre-fill from OAuth metadata
     var obName = document.getElementById('ob-name');
@@ -116,6 +131,104 @@ async function maybeShowOnboarding() {
 }
 
 function reRunOnboarding() {
+
+// ── Minimal onboarding for deep-link users (just name + workplace) ──
+var _miniObConsentGiven = false;
+
+function _showMinimalOnboarding(hasName, hasWorkplace, autoName) {
+  var existing = document.getElementById('mini-onboarding-overlay');
+  if (existing) existing.remove();
+
+  var contextLabel = '';
+  if (flowGet('event_flow')) contextLabel = 'Næsten klar — udfyld dit navn så andre kan finde dig';
+  else if (flowGet('pending_contact')) contextLabel = 'Ét felt og du kan se kontakten';
+  else if (flowGet('pending_join')) contextLabel = 'Ét felt og du er med i netværket';
+  else contextLabel = 'Næsten klar!';
+
+  var nameVal = autoName || currentProfile?.name || '';
+  var wpVal = currentProfile?.workplace || '';
+
+  var ov = document.createElement('div');
+  ov.id = 'mini-onboarding-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:550;background:var(--bg);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 2rem) 1.5rem 2rem';
+
+  ov.innerHTML =
+    '<div style="flex:1;display:flex;flex-direction:column;justify-content:center;max-width:400px;width:100%;margin:0 auto">' +
+      '<div style="text-align:center;margin-bottom:0.3rem"><img src="bubble-logo-splash.png" alt="bubble" style="height:20px;width:auto"></div>' +
+      '<div style="font-size:1.3rem;font-weight:800;text-align:center;margin-bottom:0.15rem">' + escHtml(contextLabel) + '</div>' +
+      '<div style="font-size:0.82rem;color:var(--text-secondary);text-align:center;margin-bottom:1.5rem">Du kan udfylde resten inde i appen</div>' +
+      (!hasName ? '<div class="input-group"><div class="input-label">Navn *</div><input class="input" id="mini-ob-name" maxlength="60" placeholder="Dit fulde navn" value="' + escHtml(nameVal) + '" oninput="_miniObCheck()"></div>' : '') +
+      (!hasWorkplace ? '<div class="input-group"><div class="input-label">Arbejdsplads *</div><input class="input" id="mini-ob-workplace" maxlength="80" placeholder="f.eks. Danfoss, SDU, selvstændig..." value="' + escHtml(wpVal) + '" oninput="_miniObCheck()"></div>' : '') +
+      '<label style="display:flex;align-items:flex-start;gap:0.5rem;margin:0.6rem 0;cursor:pointer" onclick="_miniObToggleConsent()">' +
+        '<div id="mini-ob-consent" style="width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s;margin-top:1px"></div>' +
+        '<span style="font-size:0.72rem;color:var(--text-secondary);line-height:1.4">Jeg accepterer Bubble\'s <a href="#" onclick="event.stopPropagation();showTerms()">betingelser</a> og <a href="#" onclick="event.stopPropagation();showTerms()">privatlivspolitik</a></span>' +
+      '</label>' +
+      '<button class="btn-primary" id="mini-ob-save" onclick="_miniObSave()" style="margin-top:0.8rem" disabled>Fortsæt</button>' +
+    '</div>';
+
+  document.body.appendChild(ov);
+
+  // Focus first empty field
+  setTimeout(function() {
+    var first = document.getElementById('mini-ob-name') || document.getElementById('mini-ob-workplace');
+    if (first && !first.value) first.focus();
+    _miniObCheck();
+  }, 100);
+}
+
+function _miniObToggleConsent() {
+  _miniObConsentGiven = !_miniObConsentGiven;
+  var el = document.getElementById('mini-ob-consent');
+  if (el) {
+    el.style.background = _miniObConsentGiven ? 'var(--accent)' : '';
+    el.style.borderColor = _miniObConsentGiven ? 'var(--accent)' : '';
+    el.innerHTML = _miniObConsentGiven ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' : '';
+  }
+  _miniObCheck();
+}
+
+function _miniObCheck() {
+  var nameEl = document.getElementById('mini-ob-name');
+  var wpEl = document.getElementById('mini-ob-workplace');
+  var name = nameEl ? nameEl.value.trim() : (currentProfile?.name || '');
+  var wp = wpEl ? wpEl.value.trim() : (currentProfile?.workplace || '');
+  var btn = document.getElementById('mini-ob-save');
+  if (btn) btn.disabled = !(name && wp && _miniObConsentGiven);
+}
+
+async function _miniObSave() {
+  var nameEl = document.getElementById('mini-ob-name');
+  var wpEl = document.getElementById('mini-ob-workplace');
+  var name = nameEl ? nameEl.value.trim() : currentProfile?.name;
+  var wp = wpEl ? wpEl.value.trim() : currentProfile?.workplace;
+  if (!name || !wp) return;
+  if (!_miniObConsentGiven) return showWarningToast('Du skal acceptere betingelserne');
+
+  var btn = document.getElementById('mini-ob-save');
+  if (btn) { btn.textContent = 'Gemmer...'; btn.disabled = true; }
+
+  try {
+    var update = {};
+    if (nameEl) update.name = name;
+    if (wpEl) update.workplace = wp;
+    var { error } = await sb.from('profiles').update(update).eq('id', currentUser.id);
+    if (error) { errorToast('save', error); if (btn) { btn.textContent = 'Fortsæt'; btn.disabled = false; } return; }
+    await loadCurrentProfile();
+    localStorage.setItem('bubble_welcomed', '1');
+
+    // Remove overlay
+    var ov = document.getElementById('mini-onboarding-overlay');
+    if (ov) ov.remove();
+
+    // Continue to pending action
+    initServices();
+    await resolvePostAuthDestination();
+  } catch(e) {
+    logError('miniObSave', e);
+    errorToast('save', e);
+    if (btn) { btn.textContent = 'Fortsæt'; btn.disabled = false; }
+  }
+}
   if (!currentProfile || !currentUser) return;
   // Pre-fill with existing data
   var obName = document.getElementById('ob-name');
