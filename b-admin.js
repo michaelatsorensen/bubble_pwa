@@ -157,7 +157,7 @@ async function adminLoadStats() {
 
 function _adminMini(icoHtml, label, val, color) {
   return '<div style="background:rgba(30,27,46,0.02);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center">' +
-    '<div style="color:' + color + ';margin-bottom:2px">' + icoHtml + '</div>' +
+    '<div style="color:' + color + ';margin-bottom:2px;display:flex;justify-content:center;font-size:16px;line-height:1">' + icoHtml + '</div>' +
     '<div style="font-size:1rem;font-weight:800;color:' + color + '">' + val + '</div>' +
     '<div style="font-size:0.52rem;color:var(--muted);font-weight:600;text-transform:uppercase">' + label + '</div></div>';
 }
@@ -197,7 +197,7 @@ async function dashToggle(card, chartId, trayId) {
   var meta = _dashMeta[chartId] || {};
   var titleEl = tray.querySelector('[id^="dtitle"]');
   var subEl = tray.querySelector('[id^="dsub"]');
-  if (titleEl) titleEl.innerHTML = (meta.icon ? '<span style="vertical-align:middle;margin-right:4px">' + ico(meta.icon) + '</span>' : '') + escHtml(meta.title || '');
+  if (titleEl) titleEl.innerHTML = (meta.icon ? '<span style="vertical-align:middle;margin-right:4px;font-size:12px;line-height:1">' + ico(meta.icon) + '</span>' : '') + escHtml(meta.title || '');
   if (subEl) subEl.textContent = meta.sub || '';
   tray.classList.add('open');
   // Destroy old chart

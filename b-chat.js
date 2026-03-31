@@ -1465,7 +1465,7 @@ async function bcLoadInfo() {
         var { data: parent } = await sb.from('bubbles').select('id,name').eq('id', b.parent_bubble_id).maybeSingle();
         if (parent) {
           parentHtml = '<div onclick="openBubble(\'' + parent.id + '\')" style="display:flex;align-items:center;gap:0.55rem;padding:0.55rem 0.7rem;border-radius:12px;background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.1);margin-bottom:0.9rem;cursor:pointer">' +
-            '<div style="width:24px;height:24px;border-radius:7px;background:rgba(124,92,252,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + ico('bubble') + '</div>' +
+            '<div style="width:24px;height:24px;border-radius:7px;background:rgba(124,92,252,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px">' + ico('bubble') + '</div>' +
             '<div style="flex:1"><div style="font-size:0.68rem;color:var(--muted)">Del af</div><div style="font-size:0.78rem;font-weight:600;color:#534AB7">' + escHtml(parent.name) + '</div></div>' +
             '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
         }
@@ -1716,7 +1716,7 @@ async function bcLoadInfo() {
     list.innerHTML =
       parentHtml +
       '<div style="text-align:center;padding:0.25rem 0 1rem">' +
-        '<div style="width:52px;height:52px;border-radius:15px;background:' + iconBg + ';display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;color:' + accentStroke + '">' + heroIcon + '</div>' +
+        '<div style="width:52px;height:52px;border-radius:15px;background:' + iconBg + ';display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;color:' + accentStroke + ';font-size:24px">' + heroIcon + '</div>' +
         '<div style="font-size:1rem;font-weight:800;color:var(--text)">' + escHtml(b.name) + '</div>' +
         '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.15rem">' + typeLabel(b.type) + (b.location ? ' · ' + escHtml(b.location) : '') + ' · ' + mc + ' ' + memberLabel + '</div>' +
         (b.description ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;line-height:1.5;text-align:left">' + escHtml(b.description) + '</div>' : '') +
@@ -1903,7 +1903,7 @@ function bcExpandPost(postId) {
   var eventCard = '';
   if (post.event_id) {
     eventCard = '<div onclick="openBubbleChat(\'' + post.event_id + '\',\'screen-bubble-chat\')" style="padding:0.6rem 0.8rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);display:flex;align-items:center;gap:0.5rem;margin-top:1rem;cursor:pointer">' +
-      '<div style="width:32px;height:32px;border-radius:10px;background:rgba(46,207,207,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green)">' + ico('calendar') + '</div>' +
+      '<div style="width:32px;height:32px;border-radius:10px;background:rgba(46,207,207,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green);font-size:16px">' + ico('calendar') + '</div>' +
       '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:700;color:var(--green)" id="bp-expand-event-name">Henter event...</div></div>' +
       '<div style="font-size:0.88rem;color:var(--green)">›</div></div>';
   }
