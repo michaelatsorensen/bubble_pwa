@@ -12,35 +12,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=76200">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=76200">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=76200">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=76200">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=76200">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=76200">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=76200">
+<link rel="manifest" href="manifest.json?v=76500">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=76500">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=76500">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=76500">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=76500">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=76500">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=76500">
 
-<link rel="stylesheet" href="app.css?v=76200">
+<link rel="stylesheet" href="app.css?v=76500">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=76200" defer></script>
-<script src="tag-data.js?v=76200" defer></script>
-<script src="b-config.js?v=76200" defer></script>
-<script src="b-utils.js?v=76200" defer></script>
-<script src="b-auth.js?v=76200" defer></script>
-<script src="b-home.js?v=76200" defer></script>
-<script src="b-bubbles.js?v=76200" defer></script>
-<script src="b-profile.js?v=76200" defer></script>
-<script src="b-radar.js?v=76200" defer></script>
-<script src="b-messages.js?v=76200" defer></script>
-<script src="b-realtime.js?v=76200" defer></script>
-<script src="b-onboarding.js?v=76200" defer></script>
-<script src="b-chat.js?v=76200" defer></script>
-<script src="b-notifications.js?v=76200" defer></script>
-<script src="b-live.js?v=76200" defer></script>
-<script src="b-admin.js?v=76200" defer></script>
-<script src="b-navigation.js?v=76200" defer></script>
-<script src="b-boot.js?v=76200" defer></script>
+<script src="bubble-icons.js?v=76500" defer></script>
+<script src="tag-data.js?v=76500" defer></script>
+<script src="b-config.js?v=76500" defer></script>
+<script src="b-utils.js?v=76500" defer></script>
+<script src="b-auth.js?v=76500" defer></script>
+<script src="b-home.js?v=76500" defer></script>
+<script src="b-bubbles.js?v=76500" defer></script>
+<script src="b-profile.js?v=76500" defer></script>
+<script src="b-radar.js?v=76500" defer></script>
+<script src="b-messages.js?v=76500" defer></script>
+<script src="b-realtime.js?v=76500" defer></script>
+<script src="b-onboarding.js?v=76500" defer></script>
+<script src="b-chat.js?v=76500" defer></script>
+<script src="b-notifications.js?v=76500" defer></script>
+<script src="b-live.js?v=76500" defer></script>
+<script src="b-admin.js?v=76500" defer></script>
+<script src="b-navigation.js?v=76500" defer></script>
+<script src="b-boot.js?v=76500" defer></script>
   
 
 
@@ -1129,12 +1129,13 @@
       <div style="flex:1;min-width:0">
         <div class="radar-person-name" id="rp-name">...</div>
         <div class="radar-person-sub" id="rp-sub">...</div>
-      <div id="rp-live-badge" style="display:none;font-size:0.68rem;color:#1A9E8E;margin-top:0.25rem"></div>
+        <div id="rp-live-badge" style="display:none;font-size:0.62rem;font-weight:600;color:#1A9E8E;background:rgba(46,207,207,0.08);padding:2px 8px;border-radius:99px;margin-top:3px;width:fit-content;display:none"></div>
       </div>
       <div class="radar-person-match" id="rp-match"></div>
       <button class="radar-person-close" onclick="closeRadarPerson()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M17 7L7 17M7 7l10 10"/></svg></button>
     </div>
     <div class="radar-person-bio" id="rp-bio"></div>
+    <div id="rp-shared-bubbles" style="display:none;margin:0.4rem 0"></div>
     <div class="radar-person-tags" id="rp-tags"></div>
     <div class="radar-person-overlap" id="rp-overlap"></div>
     <div class="radar-person-actions">

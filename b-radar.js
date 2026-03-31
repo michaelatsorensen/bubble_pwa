@@ -152,8 +152,10 @@ async function openRadarPerson(userId) {
       else { rpAvEl.textContent = ini; }
     }
     document.getElementById('rp-name').textContent = name;
-    document.getElementById('rp-sub').textContent = isA ? '' : (p.title || '');
-    // Check live presence
+    // Subtitle: title · workplace
+    var subParts = [p.title, p.workplace].filter(Boolean);
+    document.getElementById('rp-sub').textContent = isA ? '' : subParts.join(' \u00B7 ');
+    // Live presence
     var rpLiveEl = document.getElementById('rp-live-badge');
     if (rpLiveEl) {
       var expireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 3600000).toISOString();
@@ -167,38 +169,94 @@ async function openRadarPerson(userId) {
         .limit(1)
         .maybeSingle();
       if (liveCheck) {
-        rpLiveEl.innerHTML = '<span class="live-badge-mini">LIVE</span> ' + escHtml(liveCheck.bubbles?.name || '');
-        rpLiveEl.style.display = 'block';
+        rpLiveEl.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#1A9E8E;display:inline-block;animation:livePulse 1.5s infinite"></span> LIVE i ' + escHtml(liveCheck.bubbles?.name || '');
+        rpLiveEl.style.display = 'inline-flex';
+        rpLiveEl.style.alignItems = 'center';
+        rpLiveEl.style.gap = '4px';
       } else {
         rpLiveEl.style.display = 'none';
       }
     }
+    // Match score
     var myKw = (currentProfile?.keywords || []).map(function(k){ return k.toLowerCase(); });
     var theirKw = (p.keywords || []).map(function(k){ return k.toLowerCase(); });
     var overlap = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; });
-    // Use smart match from proxAllProfiles if available, otherwise calculate
     var proxData = proxAllProfiles.find(function(pp) { return pp.id === p.id; });
     var score = proxData ? proxData.matchScore : calcMatchScore(currentProfile || {}, p, 0);
     var ml = matchLabel(score);
     document.getElementById('rp-match').textContent = ml.text;
     document.getElementById('rp-match').style.color = ml.color;
+    // Bio
     document.getElementById('rp-bio').textContent = p.bio || '';
     document.getElementById('rp-bio').style.display = p.bio ? 'block' : 'none';
-    document.getElementById('rp-tags').innerHTML = '';
-    document.getElementById('rp-tags').style.display = 'none';
-    if (overlap.length > 0) {
-      document.getElementById('rp-overlap').innerHTML = '<div style="font-size:0.68rem;color:var(--muted);margin-bottom:0.3rem;font-weight:600">F\u00e6lles interesser \u00B7 ' + overlap.length + '</div>' +
-        overlap.slice(0, 8).map(function(k){ return '<span class="tag mint">' + icon('check') + ' ' + escHtml(k) + '</span>'; }).join('') +
-        (overlap.length > 8 ? '<span class="tag" style="opacity:0.5">+' + (overlap.length - 8) + ' mere</span>' : '');
-      document.getElementById('rp-overlap').style.display = 'block';
-    } else { document.getElementById('rp-overlap').style.display = 'none'; }
+    // All tags: shared marked, rest greyed
+    var tagsEl = document.getElementById('rp-tags');
+    var allTheirTags = (p.keywords || []);
+    if (allTheirTags.length > 0) {
+      // Sort: shared first, then rest
+      var sortedTags = allTheirTags.slice().sort(function(a, b) {
+        var aShared = myKw.indexOf(a.toLowerCase()) >= 0 ? 0 : 1;
+        var bShared = myKw.indexOf(b.toLowerCase()) >= 0 ? 0 : 1;
+        return aShared - bShared;
+      });
+      var maxTags = 12;
+      var visibleTags = sortedTags.slice(0, maxTags);
+      var hiddenCount = sortedTags.length - maxTags;
+      var tagLabel = overlap.length > 0 ? 'Interesser \u00B7 ' + overlap.length + ' f\u00e6lles' : 'Interesser';
+      tagsEl.innerHTML = '<div style="font-size:0.6rem;font-weight:600;color:var(--muted);margin-bottom:3px">' + tagLabel + '</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:4px">' +
+        visibleTags.map(function(k) {
+          var isShared = myKw.indexOf(k.toLowerCase()) >= 0;
+          return isShared
+            ? '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.08);color:#085041;font-weight:600">\u2713 ' + escHtml(k) + '</span>'
+            : '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(30,27,46,0.04);color:var(--muted)">' + escHtml(k) + '</span>';
+        }).join('') +
+        (hiddenCount > 0 ? '<span style="font-size:0.55rem;padding:2px 7px;color:var(--muted)">+' + hiddenCount + ' mere</span>' : '') +
+        '</div>';
+      tagsEl.style.display = 'block';
+    } else {
+      tagsEl.style.display = 'none';
+    }
+    // Hide old overlap section (merged into tags)
+    document.getElementById('rp-overlap').style.display = 'none';
+    // Shared bubbles (fire-and-forget, populate async)
+    var sharedEl = document.getElementById('rp-shared-bubbles');
+    if (sharedEl) {
+      sharedEl.style.display = 'none';
+      sharedEl.innerHTML = '';
+      Promise.all([
+        sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id),
+        sb.from('bubble_members').select('bubble_id').eq('user_id', userId)
+      ]).then(function(results) {
+        var myBids = (results[0].data || []).map(function(m) { return m.bubble_id; });
+        var theirBids = (results[1].data || []).map(function(m) { return m.bubble_id; });
+        var sharedIds = myBids.filter(function(id) { return theirBids.indexOf(id) >= 0; });
+        if (sharedIds.length === 0) return;
+        sb.from('bubbles').select('id, name, type').in('id', sharedIds).then(function(res) {
+          var bubbles = res.data || [];
+          if (bubbles.length === 0) return;
+          sharedEl.innerHTML = '<div style="font-size:0.6rem;font-weight:600;color:var(--muted);margin-bottom:3px">F\u00e6lles bobler \u00B7 ' + bubbles.length + '</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:4px">' +
+            bubbles.slice(0, 5).map(function(b) {
+              var isEvt = b.type === 'event' || b.type === 'live';
+              return '<span style="font-size:0.58rem;padding:2px 8px;border-radius:6px;font-weight:600;background:' + (isEvt ? 'rgba(46,207,207,0.06);color:#085041;border:1px solid rgba(46,207,207,0.1)' : 'rgba(124,92,252,0.06);color:#534AB7;border:1px solid rgba(124,92,252,0.08)') + '">' + (isEvt ? '\uD83D\uDCC5 ' : '\uD83D\uDD17 ') + escHtml(b.name) + '</span>';
+            }).join('') +
+            (bubbles.length > 5 ? '<span style="font-size:0.55rem;color:var(--muted)">+' + (bubbles.length - 5) + ' mere</span>' : '') +
+            '</div>';
+          sharedEl.style.display = 'block';
+        }).catch(function(){});
+      }).catch(function(){});
+    }
+    // LinkedIn
     var liBtn = document.getElementById('rp-linkedin-btn');
     if (p.linkedin && !isA) { liBtn.style.display = 'inline-flex'; liBtn.href = p.linkedin.startsWith('http') ? p.linkedin : 'https://' + p.linkedin; }
     else { liBtn.style.display = 'none'; }
+    // Save state
     var saveBtn = document.getElementById('rp-save-btn');
     var { data: savedCheck } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
     saveBtn.textContent = savedCheck ? 'Gemt \u2713' : 'Gem';
     saveBtn.dataset.saved = savedCheck ? '1' : '0';
+    // Open sheet
     document.getElementById('radar-person-overlay').classList.add('open');
     setTimeout(function(){ document.getElementById('radar-person-sheet').classList.add('open'); }, 10);
   } catch(e) { logError("openRadarPerson", e); errorToast("load", e); }

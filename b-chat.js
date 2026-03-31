@@ -1450,45 +1450,96 @@ async function bcLoadInfo() {
     if (!isEvent) {
       try {
         var { data: childBubbles } = await sb.from('bubbles')
-          .select('id, name, type, created_at, event_date, bubble_members(count)')
+          .select('id, name, type, created_at, event_date, visibility, bubble_members(count)')
           .eq('parent_bubble_id', b.id)
           .order('event_date', { ascending: true, nullsFirst: false })
-          .limit(10);
+          .limit(20);
         if (childBubbles && childBubbles.length > 0) {
-          // Fetch member avatars for child bubbles
-          var chIds = childBubbles.map(function(ch) { return ch.id; });
-          var chMemberMap = {};
-          try { chMemberMap = await fetchMemberAvatarsForBubbles(chIds, 4); } catch(e) {}
+          var _calIco = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+          var _netIco = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/></svg>';
+          var _chevSm = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>';
+          var _addIco = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>';
+          var now = new Date();
 
-          var childCards = childBubbles.map(function(ch) {
-            var chMc = ch.bubble_members?.[0]?.count || 0;
-            var chAvStack = renderAvatarStack(chMemberMap[ch.id] || [], chMc);
-            var chIsEvent = ch.type === 'event' || ch.type === 'live';
-            if (chIsEvent) {
-              var dateStr = ch.event_date
-                ? new Date(ch.event_date).toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' }) +
-                  (new Date(ch.event_date).getHours() > 0 ? ' kl. ' + new Date(ch.event_date).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '')
-                : new Date(ch.created_at).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
-              return '<div onclick="openBubble(\'' + ch.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.65rem;border-radius:12px;background:rgba(46,207,207,0.04);border:1px solid rgba(46,207,207,0.12);cursor:pointer">' +
-                '<div style="width:34px;height:34px;border-radius:10px;background:rgba(46,207,207,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + icon('calendar') + '</div>' +
-                '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:600;color:var(--text)">' + escHtml(ch.name) + '</div>' +
-                '<div style="font-size:0.68rem;color:var(--muted)">' + dateStr + ' · ' + chMc + ' tilmeldt</div>' +
-                chAvStack + '</div>' +
-                '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
-            } else {
-              return '<div onclick="openBubble(\'' + ch.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.65rem;border-radius:12px;background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.1);cursor:pointer">' +
-                '<div style="width:34px;height:34px;border-radius:10px;background:rgba(124,92,252,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + bubbleEmoji(ch.type) + '</div>' +
-                '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:600;color:var(--text)">' + escHtml(ch.name) + '</div>' +
-                '<div style="font-size:0.68rem;color:var(--muted)">' + typeLabel(ch.type) + ' · ' + chMc + ' medlem' + (chMc !== 1 ? 'mer' : '') + '</div>' +
-                chAvStack + '</div>' +
-                '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+          var childNets = childBubbles.filter(function(ch) { return ch.type !== 'event' && ch.type !== 'live'; });
+          var childEvents = childBubbles.filter(function(ch) { return ch.type === 'event' || ch.type === 'live'; });
+
+          // Fetch grandchildren (events under sub-networks)
+          var gcMap = {};
+          var childNetIds = childNets.map(function(cn) { return cn.id; });
+          if (childNetIds.length > 0) {
+            var { data: grandchildren } = await sb.from('bubbles')
+              .select('id, name, type, event_date, visibility, parent_bubble_id, bubble_members(count)')
+              .in('parent_bubble_id', childNetIds)
+              .order('event_date', { ascending: true, nullsFirst: false });
+            (grandchildren || []).forEach(function(gc) {
+              if (!gcMap[gc.parent_bubble_id]) gcMap[gc.parent_bubble_id] = [];
+              gcMap[gc.parent_bubble_id].push(gc);
+            });
+          }
+
+          var childCards = '';
+
+          // Sub-networks with fold-out
+          childNets.forEach(function(cn) {
+            var cnMc = cn.bubble_members?.[0]?.count || 0;
+            var cnGc = gcMap[cn.id] || [];
+            var cnAccId = 'bci-' + cn.id.slice(0, 8);
+
+            childCards += '<div style="margin-bottom:0.35rem">';
+            childCards += '<div class="bb-tree-net">';
+            childCards += '<div class="bb-tree-net-ico">' + _netIco + '</div>';
+            childCards += '<div class="bb-tree-body" onclick="openBubble(\'' + cn.id + '\')">';
+            childCards += '<div style="font-size:0.75rem;font-weight:600">' + escHtml(cn.name) + '</div>';
+            childCards += '<div style="font-size:0.58rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(cn.visibility) + cnMc + ' medl.' + (cnGc.length > 0 ? ' \u00B7 ' + cnGc.length + ' events' : '') + '</div>';
+            childCards += '</div>';
+            if (cnGc.length > 0) {
+              childCards += '<button class="bb-tree-toggle" id="tog-' + cnAccId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + cnAccId + '\')" style="width:24px;height:24px">' + _chevSm + '</button>';
             }
-          }).join('');
+            childCards += '</div>';
+
+            if (cnGc.length > 0) {
+              childCards += '<div class="bb-tree-leaves collapsed" id="trunk-' + cnAccId + '">';
+              cnGc.forEach(function(ev) {
+                var isPast = ev.event_date && new Date(ev.event_date) < now;
+                var evMc = ev.bubble_members?.[0]?.count || 0;
+                var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) : '';
+                childCards += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="openBubble(\'' + ev.id + '\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
+                childCards += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
+                childCards += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
+                childCards += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' tilmeldt' : '') + '</div></div>';
+                childCards += '<div class="bb-tree-go">\u203A</div>';
+                childCards += '</div></div>';
+              });
+              if (canEdit) {
+                childCards += '<div class="bb-tree-add" onclick="openCreateEventFromBubble(\'' + cn.id + '\')">' + _addIco + ' Opret event</div>';
+              }
+              childCards += '</div>';
+            }
+            childCards += '</div>';
+          });
+
+          // Direct child events (flat)
+          childEvents.forEach(function(ch) {
+            var chMc = ch.bubble_members?.[0]?.count || 0;
+            var isPast = ch.event_date && new Date(ch.event_date) < now;
+            var dateStr = ch.event_date
+              ? new Date(ch.event_date).toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' }) +
+                (new Date(ch.event_date).getHours() > 0 ? ' kl. ' + new Date(ch.event_date).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '')
+              : '';
+            childCards += '<div class="bb-tree-evt" onclick="openBubble(\'' + ch.id + '\')" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5' : '') + '">';
+            childCards += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
+            childCards += '<div style="flex:1;min-width:0"><div style="font-size:0.75rem;font-weight:600">' + escHtml(ch.name) + '</div>';
+            childCards += '<div style="font-size:0.58rem;color:var(--muted)">' + visIcon(ch.visibility) + dateStr + ' \u00B7 ' + chMc + ' tilmeldt</div></div>';
+            childCards += '<div class="bb-tree-go">\u203A</div>';
+            childCards += '</div>';
+          });
+
           eventsHtml = '<div style="margin-bottom:0.9rem">' +
             '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">' +
             '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">Tilknyttet</div>' +
             '<div style="font-size:0.68rem;color:#0F6E56;font-weight:600">' + childBubbles.length + ' tilknyttet</div></div>' +
-            '<div style="display:flex;flex-direction:column;gap:0.4rem">' + childCards + '</div>' +
+            '<div style="display:flex;flex-direction:column;gap:0.15rem">' + childCards + '</div>' +
             (canEdit ? '<div style="display:flex;gap:0.4rem;margin-top:0.4rem">' +
               '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('calendar') + ' Event</button>' +
               '<button onclick="openCreateSubBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('bubble') + ' Sub-boble</button></div>' : '') +
