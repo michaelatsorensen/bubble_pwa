@@ -1080,13 +1080,15 @@ function bcLongPress(msgId, isMe) {
 }
 
 function bcEditStart(msgId) {
-  bcCurrentMsgId = msgId;
+  bcEditingId = msgId;
   var bubble = document.getElementById('bc-bubble-' + msgId);
   if (!bubble) return;
   var input = document.getElementById('bc-input');
   if (input) { input.value = bubble.textContent; input.focus(); }
   var editBar = document.getElementById('bc-edit-bar');
-  if (editBar) editBar.style.display = 'flex';
+  if (editBar) editBar.classList.add('show');
+  var sendBtn = document.getElementById('bc-send-btn');
+  if (sendBtn) sendBtn.textContent = '✓';
 }
 
 async function bcDeleteConfirm(msgId) {

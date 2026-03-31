@@ -246,16 +246,17 @@ function resizeImage(file, maxDim) {
     var img = new Image();
     img.onload = function() {
       var w = img.width, h = img.height;
-      if (w <= maxDim && h <= maxDim) { resolve(file); return; }
+      if (w <= maxDim && h <= maxDim) { URL.revokeObjectURL(img.src); resolve(file); return; }
       var scale = Math.min(maxDim / w, maxDim / h);
       var canvas = document.createElement('canvas');
       canvas.width = Math.round(w * scale);
       canvas.height = Math.round(h * scale);
       var ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(img.src);
       canvas.toBlob(function(blob) { resolve(blob || file); }, 'image/jpeg', 0.85);
     };
-    img.onerror = function() { resolve(file); };
+    img.onerror = function() { URL.revokeObjectURL(img.src); resolve(file); };
     img.src = URL.createObjectURL(file);
   });
 }

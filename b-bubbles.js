@@ -266,7 +266,7 @@ async function joinBubble(bubbleId) {
 // ══════════════════════════════════════════════════════════
 var _memberSheetEl = null;
 
-function _buildMemberSheet(title, subtitle, members, actionFn) {
+function _buildMemberSheet(title, subtitle, members) {
   // Reusable member picker sheet
   if (_memberSheetEl) bbDynClose(_memberSheetEl);
 
@@ -320,38 +320,30 @@ function _showMemberTray(userId, userName, confirmText, cancelText, onConfirm) {
 
 // ── Transfer ownership ──
 async function openTransferOwnership(bubbleId) {
-  console.debug('[transfer] opening for bubble:', bubbleId);
   try {
     var { data: allMem, error: memErr } = await sb.from('bubble_members')
-      .select('*')
+      .select('user_id, role, status')
       .eq('bubble_id', bubbleId)
       .neq('user_id', currentUser.id);
-    console.debug('[transfer] query result:', allMem?.length, 'members, error:', memErr);
     if (memErr) { logError('openTransferOwnership:query', memErr); errorToast('load', memErr); return; }
     var members = (allMem || []).filter(function(m) { return m.status !== 'pending'; });
-    console.debug('[transfer] after pending filter:', members.length, 'members');
     if (members.length === 0) { showToast('Ingen medlemmer at overdrage til — inviter nogen først'); return; }
     var uIds = members.map(function(m) { return m.user_id; });
     var { data: profs } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', uIds);
-    console.debug('[transfer] profiles fetched:', profs?.length);
     var pm = {}; (profs || []).forEach(function(p) { pm[p.id] = p; });
     members.forEach(function(m) { m.profiles = pm[m.user_id] || { name: 'Ukendt' }; });
 
     _buildMemberSheet(
       '<span style="display:inline-flex;align-items:center;gap:0.3rem">' + ico('crown').replace('<svg ','<svg style="width:1.1rem;height:1.1rem" ') + ' Overdrag ejerskab</span>',
       'Vælg det nye medlem der skal overtage som ejer. Du mister ejer-rettigheder.',
-      members,
-      'dummy'
+      members
     );
-    console.debug('[transfer] member sheet built, rows:', document.querySelectorAll('#member-sheet-list .member-pick-row').length);
     document.querySelectorAll('#member-sheet-list .member-pick-row').forEach(function(row) {
       row.onclick = function() {
         var uid = row.dataset.uid;
         var uname = row.dataset.name;
-        console.debug('[transfer] selected:', uname, uid);
         var list = document.getElementById('member-sheet-list');
         var tray = document.getElementById('member-sheet-tray');
-        if (!list || !tray) { console.debug('[transfer] list/tray missing!'); return; }
         list.style.display = 'none';
         tray.style.display = 'block';
         tray.innerHTML = '<div style="text-align:center;padding:1rem 0">' +
@@ -362,7 +354,6 @@ async function openTransferOwnership(bubbleId) {
           '<button id="transfer-confirm-no" style="flex:1;padding:0.65rem;border-radius:12px;background:none;color:var(--text-secondary);border:1px solid var(--glass-border);font-family:inherit;font-weight:600;font-size:0.82rem;cursor:pointer">Annuller</button>' +
           '</div></div>';
         document.getElementById('transfer-confirm-yes').onclick = function() {
-          console.debug('[transfer] confirmed!', bubbleId, uid, uname);
           _executeTransfer(bubbleId, uid, uname);
         };
         document.getElementById('transfer-confirm-no').onclick = function() {
@@ -370,16 +361,14 @@ async function openTransferOwnership(bubbleId) {
         };
       };
     });
-  } catch(e) { console.error('[transfer] CAUGHT ERROR:', e); logError('openTransferOwnership', e); errorToast('load', e); }
+  } catch(e) { logError('openTransferOwnership', e); errorToast('load', e); }
 }
 
 async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
   try {
     var confirmBtn = document.getElementById('transfer-confirm-yes');
     if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Overdrager...'; }
-    console.debug('[transfer] executing:', bubbleId, '→', newOwnerId, newOwnerName);
     var { data: updated, error } = await sb.from('bubbles').update({ created_by: newOwnerId }).eq('id', bubbleId).select();
-    console.debug('[transfer] result:', updated, 'error:', error);
     if (error) { errorToast('save', error); if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Bekræft overdragelse'; } return; }
     if (!updated || updated.length === 0) {
       showToast('Kunne ikke overdrage — du er muligvis ikke ejer længere');
@@ -391,7 +380,7 @@ async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
     trackEvent('bubble_ownership_transferred', { bubble_id: bubbleId, new_owner: newOwnerId });
     if (typeof bcLoadBubbleInfo === 'function') bcLoadBubbleInfo();
     if (typeof bcLoadInfo === 'function') bcLoadInfo();
-  } catch(e) { console.error('[transfer] execute error:', e); logError('_executeTransfer', e); errorToast('save', e); }
+  } catch(e) { logError('_executeTransfer', e); errorToast('save', e); }
 }
 
 // ── Admin designation ──
@@ -411,8 +400,7 @@ async function openAdminDesignation(bubbleId) {
     _buildMemberSheet(
       '<span style="display:inline-flex;align-items:center;gap:0.3rem">' + ico('crown').replace('<svg ','<svg style="width:1.1rem;height:1.1rem" ') + ' Udpeg admin</span>',
       'Admins kan redigere boblen, invitere og fjerne medlemmer.',
-      members,
-      'dummy'
+      members
     );
     document.querySelectorAll('#member-sheet-list .member-pick-row').forEach(function(row) {
       row.onclick = function() {
@@ -946,7 +934,7 @@ async function saveEditBubble() {
         updateObj.event_end_date = timeEndVal ? new Date(dateVal + 'T' + timeEndVal).toISOString() : null;
       }
     }
-    const { error } = await sb.from('bubbles').update(updateObj).eq('id', currentEditBubbleId).eq('created_by', currentUser.id);
+    const { error } = await sb.from('bubbles').update(updateObj).eq('id', currentEditBubbleId);
     if (error) return errorToast('save', error);
     closeModal('modal-edit-bubble');
     showSuccessToast('Boble opdateret');

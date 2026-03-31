@@ -709,13 +709,11 @@ async function loadMyNetworks() {
 
     // 2. Fetch my bubbles
     var { data: allMyBubbles, error: fetchErr } = await sb.from('bubbles').select('*, bubble_members(count)').in('id', myIds);
-    console.debug('[loadMyNetworks] fetched', (allMyBubbles||[]).length, 'bubbles, error:', fetchErr, 'types:', (allMyBubbles||[]).map(function(b){return b.type;}));
     if (fetchErr) { logError('loadMyNetworks:fetch', fetchErr); showRetryState('bb-net-list', 'loadMyNetworks', 'Kunne ikke hente netværk'); return; }
     if (_navVersion !== myNav) return;
     var allMy = allMyBubbles || [];
 
     var networks = allMy.filter(function(b) { return b.type !== 'event' && b.type !== 'live'; });
-    console.debug('[loadMyNetworks] networks:', networks.length, 'parentNets will be:', networks.filter(function(b){return !b.parent_bubble_id;}).length, 'orphans:', networks.filter(function(b){return !!b.parent_bubble_id;}).length);
 
     // Split: parent networks (no parent_bubble_id) vs orphaned child networks (issue 1)
     var parentNets = networks.filter(function(b) { return !b.parent_bubble_id; });
@@ -766,9 +764,16 @@ async function loadMyNetworks() {
       (opData || []).forEach(function(p) { orphanParentMap[p.id] = p.name; });
     }
 
-    // 5. Render accordion
+    // 5. Render F2 tree
     var now = new Date();
     var html = '';
+    var _chevSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>';
+    var _chevSm = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>';
+    var _calIco = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+    var _netIco = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/></svg>';
+    var _netIcoSm = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/></svg>';
+    var _addIco = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>';
+
     parentNets.forEach(function(net) {
       var kids = childrenMap[net.id] || [];
       var isOwner = net.created_by === currentUser.id;
@@ -788,19 +793,22 @@ async function loadMyNetworks() {
       var badgeText = badgeParts.join(' \u00B7 ');
       var accId = 'acc-' + net.id.slice(0, 8);
 
+      // Root card
       html += '<div class="bb-accordion">';
-      html += '<div class="bb-acc-card" onclick="bbAccToggle(\'' + net.id + '\',\'' + accId + '\',' + (totalChildren > 0 ? 'true' : 'false') + ')">';
-      html += '<div class="bb-acc-row">';
-      html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7C5CFC">' + ico('bubble') + '</div>';
-      html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(net.name) + '</div>';
-      html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(net.visibility) + mc + ' medlemmer' + (net.location ? ' \u00B7 ' + escHtml(net.location) : '') + '</div></div>';
-      if (badgeText) html += '<div id="bdg-' + accId + '" style="font-size:0.58rem;font-weight:600;padding:2px 6px;border-radius:10px;background:rgba(46,207,207,0.1);color:#085041;flex-shrink:0;white-space:nowrap">' + badgeText + '</div>';
-      html += '<div class="bb-acc-chev" id="chev-' + accId + '">\u203A</div>';
-      html += '</div></div>';
-
+      html += '<div class="bb-tree-root">';
+      html += '<div class="bb-tree-root-ico">' + _netIco + '</div>';
+      html += '<div class="bb-tree-body" onclick="openBubbleChat(\'' + net.id + '\',\'screen-bubbles\')">';
+      html += '<div style="font-size:0.8rem;font-weight:700">' + escHtml(net.name) + '</div>';
+      html += '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px;flex-wrap:wrap">' + visIcon(net.visibility) + mc + ' medlemmer' + (badgeText ? ' \u00B7 ' + badgeText : '') + '</div>';
+      html += '</div>';
       if (totalChildren > 0) {
-        html += '<div class="bb-acc-tray" id="tray-' + accId + '">';
-        html += '<div class="bb-thread bb-thread-purple">';
+        html += '<button class="bb-tree-toggle" id="tog-' + accId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + accId + '\')">' + _chevSvg + '</button>';
+      }
+      html += '</div>';
+
+      // Children
+      if (totalChildren > 0) {
+        html += '<div class="bb-tree-trunk collapsed" id="trunk-' + accId + '">';
 
         // Child networks (level 2)
         childNets.forEach(function(cn) {
@@ -808,52 +816,62 @@ async function loadMyNetworks() {
           var cnEvents = lvl3Map[cn.id] || [];
           var cnAccId = 'acc-' + cn.id.slice(0, 8);
 
-          html += '<div class="bb-thread-child th-purple" onclick="event.stopPropagation();bbAccToggle(\'' + cn.id + '\',\'' + cnAccId + '\',' + (cnEvents.length > 0 ? 'true' : 'false') + ')">';
-          html += '<div style="width:26px;height:26px;border-radius:7px;background:rgba(124,92,252,0.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7C5CFC"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/></svg></div>';
-          html += '<div style="flex:1;min-width:0"><div style="font-size:0.72rem;font-weight:600">' + escHtml(cn.name) + '</div><div style="font-size:0.58rem;color:var(--muted)">' + visIcon(cn.visibility) + cnMc + ' medl.</div></div>';
-          if (cnEvents.length > 0) html += '<div id="bdg-' + cnAccId + '" style="font-size:0.55rem;font-weight:600;padding:2px 5px;border-radius:8px;background:rgba(46,207,207,0.1);color:#085041">' + cnEvents.length + ' events</div>';
-          html += '<div class="bb-acc-chev" id="chev-' + cnAccId + '" style="font-size:0.72rem">\u203A</div>';
+          html += '<div class="bb-tree-branch">';
+          html += '<div class="bb-tree-net">';
+          html += '<div class="bb-tree-net-ico">' + _netIcoSm + '</div>';
+          html += '<div class="bb-tree-body" onclick="event.stopPropagation();openBubbleChat(\'' + cn.id + '\',\'screen-bubbles\')">';
+          html += '<div style="font-size:0.75rem;font-weight:600">' + escHtml(cn.name) + '</div>';
+          html += '<div style="font-size:0.58rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(cn.visibility) + cnMc + ' medl.' + (cnEvents.length > 0 ? ' \u00B7 ' + cnEvents.length + ' events' : '') + '</div>';
+          html += '</div>';
+          if (cnEvents.length > 0) {
+            html += '<button class="bb-tree-toggle" id="tog-' + cnAccId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + cnAccId + '\')" style="width:24px;height:24px">' + _chevSm + '</button>';
+          }
           html += '</div>';
 
+          // Level 3 events
           if (cnEvents.length > 0) {
-            html += '<div class="bb-acc-tray" id="tray-' + cnAccId + '">';
-            html += '<div class="bb-thread bb-thread-teal" style="margin-left:14px">';
+            html += '<div class="bb-tree-leaves collapsed" id="trunk-' + cnAccId + '">';
             cnEvents.forEach(function(ev) {
               var isPast = ev.event_date && new Date(ev.event_date) < now;
+              var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
               var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) : '';
-              html += '<div class="bb-thread-child th-teal" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
-              html += '<div style="width:22px;height:22px;border-radius:6px;background:rgba(46,207,207,0.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>';
-              html += '<div style="flex:1;min-width:0"><div style="font-size:0.68rem;font-weight:600">' + escHtml(ev.name) + '</div></div>';
-              html += '<div style="font-size:0.58rem;font-weight:500;color:' + (isPast ? 'var(--muted)' : '#085041') + '">' + dateStr + '</div>';
-              html += '</div>';
+              html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
+              html += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
+              html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
+              html += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' tilmeldt' : '') + '</div></div>';
+              html += '<div class="bb-tree-go">\u203A</div>';
+              html += '</div></div>';
             });
             if (isOwner) {
-              html += '<div class="bb-thread-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + cn.id + '\')"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Opret event</div>';
+              html += '<div class="bb-tree-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + cn.id + '\')">' + _addIco + ' Opret event</div>';
             }
-            html += '</div></div>';
+            html += '</div>';
           }
+          html += '</div>';
         });
 
         // Direct child events (level 2)
         childEvents.forEach(function(ev) {
           var isPast = ev.event_date && new Date(ev.event_date) < now;
+          var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
           var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) : '';
-          html += '<div class="bb-thread-child th-teal" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
-          html += '<div style="width:22px;height:22px;border-radius:6px;background:rgba(46,207,207,0.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>';
-          html += '<div style="flex:1;min-width:0"><div style="font-size:0.68rem;font-weight:600">' + escHtml(ev.name) + '</div></div>';
-          html += '<div style="font-size:0.58rem;font-weight:500;color:' + (isPast ? 'var(--muted)' : '#085041') + '">' + dateStr + '</div>';
-          html += '</div>';
+          html += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
+          html += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
+          html += '<div style="flex:1;min-width:0"><div style="font-size:0.75rem;font-weight:600">' + escHtml(ev.name) + '</div>';
+          html += '<div style="font-size:0.58rem;color:var(--muted)">' + visIcon(ev.visibility) + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' tilmeldt' : '') + '</div></div>';
+          html += '<div class="bb-tree-go">\u203A</div>';
+          html += '</div></div>';
         });
 
         if (isOwner) {
-          html += '<div class="bb-thread-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + net.id + '\')"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Opret netv\u00E6rk / event</div>';
+          html += '<div class="bb-tree-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + net.id + '\')">' + _addIco + ' Opret netv\u00E6rk / event</div>';
         }
-        html += '</div></div>';
+        html += '</div>';
       }
       html += '</div>';
     });
 
-    // Issue 1: Render orphaned child networks as standalone cards
+    // Orphaned child networks
     orphanNets.forEach(function(net) {
       var mc = net.member_count ?? net.bubble_members?.[0]?.count ?? 0;
       var parentName = orphanParentMap[net.parent_bubble_id] || '';
@@ -862,31 +880,34 @@ async function loadMyNetworks() {
       var isOwner = net.created_by === currentUser.id;
 
       html += '<div class="bb-accordion">';
-      html += '<div class="bb-acc-card" onclick="bbAccToggle(\'' + net.id + '\',\'' + accId + '\',' + (orphanEvents.length > 0 ? 'true' : 'false') + ')">';
-      html += '<div class="bb-acc-row">';
-      html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7C5CFC">' + ico('bubble') + '</div>';
-      html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(net.name) + '</div>';
-      html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(net.visibility) + mc + ' medlemmer' + (parentName ? ' \u00B7 \u21B3 ' + escHtml(parentName) : '') + '</div></div>';
-      if (orphanEvents.length > 0) html += '<div id="bdg-' + accId + '" style="font-size:0.58rem;font-weight:600;padding:2px 6px;border-radius:10px;background:rgba(46,207,207,0.1);color:#085041;flex-shrink:0">' + orphanEvents.length + ' events</div>';
-      html += '<div class="bb-acc-chev" id="chev-' + accId + '">\u203A</div>';
-      html += '</div></div>';
+      html += '<div class="bb-tree-root">';
+      html += '<div class="bb-tree-root-ico">' + _netIco + '</div>';
+      html += '<div class="bb-tree-body" onclick="openBubbleChat(\'' + net.id + '\',\'screen-bubbles\')">';
+      html += '<div style="font-size:0.8rem;font-weight:700">' + escHtml(net.name) + '</div>';
+      html += '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(net.visibility) + mc + ' medlemmer' + (parentName ? ' \u00B7 \u21B3 ' + escHtml(parentName) : '') + '</div>';
+      html += '</div>';
+      if (orphanEvents.length > 0) {
+        html += '<button class="bb-tree-toggle" id="tog-' + accId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + accId + '\')">' + _chevSvg + '</button>';
+      }
+      html += '</div>';
 
       if (orphanEvents.length > 0) {
-        html += '<div class="bb-acc-tray" id="tray-' + accId + '">';
-        html += '<div class="bb-thread bb-thread-teal">';
+        html += '<div class="bb-tree-trunk collapsed" id="trunk-' + accId + '">';
         orphanEvents.forEach(function(ev) {
           var isPast = ev.event_date && new Date(ev.event_date) < now;
+          var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
           var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) : '';
-          html += '<div class="bb-thread-child th-teal" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
-          html += '<div style="width:22px;height:22px;border-radius:6px;background:rgba(46,207,207,0.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>';
-          html += '<div style="flex:1;min-width:0"><div style="font-size:0.68rem;font-weight:600">' + escHtml(ev.name) + '</div></div>';
-          html += '<div style="font-size:0.58rem;font-weight:500;color:' + (isPast ? 'var(--muted)' : '#085041') + '">' + dateStr + '</div>';
-          html += '</div>';
+          html += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
+          html += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
+          html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
+          html += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' tilmeldt' : '') + '</div></div>';
+          html += '<div class="bb-tree-go">\u203A</div>';
+          html += '</div></div>';
         });
         if (isOwner) {
-          html += '<div class="bb-thread-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + net.id + '\')"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Opret event</div>';
+          html += '<div class="bb-tree-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + net.id + '\')">' + _addIco + ' Opret event</div>';
         }
-        html += '</div></div>';
+        html += '</div>';
       }
       html += '</div>';
     });
@@ -898,33 +919,25 @@ async function loadMyNetworks() {
   } catch(e) { logError("loadMyNetworks", e); showRetryState('bb-net-list', 'loadMyNetworks', 'Kunne ikke hente netv\u00E6rk'); }
 }
 
-function bbAccToggle(bubbleId, accId, hasChildren) {
-  var tray = document.getElementById('tray-' + accId);
-  var chev = document.getElementById('chev-' + accId);
-  var bdg = document.getElementById('bdg-' + accId);
-
-  if (!hasChildren || !tray) {
-    openBubbleChat(bubbleId, 'screen-bubbles');
-    return;
-  }
-
-  var isOpen = tray.classList.contains('open');
+function bbTreeToggle(accId) {
+  var trunk = document.getElementById('trunk-' + accId);
+  var tog = document.getElementById('tog-' + accId);
+  if (!trunk) return;
+  var isOpen = tog && tog.classList.contains('open');
   if (isOpen) {
-    if (_bbAccordionOpen[accId] && Date.now() - _bbAccordionOpen[accId] > 500) {
-      openBubbleChat(bubbleId, 'screen-bubbles');
-      return;
-    }
-    tray.classList.remove('open');
-    tray.style.maxHeight = '0';
-    if (chev) chev.classList.remove('open');
-    if (bdg) bdg.style.display = '';
-    delete _bbAccordionOpen[accId];
+    trunk.style.maxHeight = trunk.scrollHeight + 'px';
+    requestAnimationFrame(function() {
+      trunk.style.maxHeight = '0';
+      trunk.style.opacity = '0';
+    });
+    trunk.classList.add('collapsed');
+    if (tog) tog.classList.remove('open');
   } else {
-    tray.classList.add('open');
-    tray.style.maxHeight = tray.scrollHeight + 500 + 'px';
-    if (chev) chev.classList.add('open');
-    if (bdg) bdg.style.display = 'none';
-    _bbAccordionOpen[accId] = Date.now();
+    trunk.classList.remove('collapsed');
+    trunk.style.maxHeight = trunk.scrollHeight + 'px';
+    trunk.style.opacity = '1';
+    if (tog) tog.classList.add('open');
+    setTimeout(function() { trunk.style.maxHeight = '2000px'; }, 300);
   }
 }
 
