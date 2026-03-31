@@ -2129,3 +2129,27 @@ input[type="range"] {
 .dartboard-empty .de-sub { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.2rem; line-height: 1.4; }
 .dartboard-empty .de-link { font-size: 0.72rem; color: var(--accent); font-weight: 600; margin-top: 0.4rem; cursor: pointer; }
 
+
+/* ── Dashboard accordion stats ── */
+.dash-row{display:flex;gap:8px}
+.dash-pair{margin-bottom:8px}
+.dash-card{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all 0.15s;padding:10px 12px;display:flex;align-items:center;gap:8px}
+.dash-card:active{transform:scale(0.97)}
+.dash-card.active-dash{transition:all 0.2s}
+.dash-card.active-dash[data-color="accent"]{border-color:rgba(124,92,252,0.3);background:#FBFAFF;box-shadow:0 2px 12px rgba(124,92,252,0.1)}
+.dash-card.active-dash[data-color="teal"]{border-color:rgba(46,207,207,0.3);background:#F8FEFE;box-shadow:0 2px 12px rgba(46,207,207,0.1)}
+.dash-card.active-dash[data-color="pink"]{border-color:rgba(232,121,168,0.3);background:#FEFBFC;box-shadow:0 2px 12px rgba(232,121,168,0.1)}
+.dash-row:has(.active-dash) .dash-card:not(.active-dash){opacity:0.45}
+.dash-ico{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px}
+.dash-val{font-size:1.15rem;font-weight:800;color:var(--text);line-height:1.1}
+.dash-label{font-size:0.55rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.02em}
+.dash-delta{font-size:0.5rem;font-weight:700;color:var(--teal)}
+.dash-tray{display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.35s ease;margin:0}
+.dash-tray.open{grid-template-rows:1fr}
+.dash-tray-collapse{overflow:hidden;min-height:0}
+.dash-tray-inner{border-radius:14px;padding:14px;margin-top:8px;border:1px solid transparent;transition:background 0.2s,border-color 0.2s}
+.dash-tray-inner.dtray-accent{background:#FBFAFF;border-color:rgba(124,92,252,0.3);box-shadow:0 2px 12px rgba(124,92,252,0.06)}
+.dash-tray-inner.dtray-teal{background:#F8FEFE;border-color:rgba(46,207,207,0.3);box-shadow:0 2px 12px rgba(46,207,207,0.06)}
+.dash-tray-inner.dtray-pink{background:#FEFBFC;border-color:rgba(232,121,168,0.3);box-shadow:0 2px 12px rgba(232,121,168,0.06)}
+.dash-chart-wrap{position:relative;height:160px}
+.dash-chart-wrap canvas{width:100%!important;height:100%!important}

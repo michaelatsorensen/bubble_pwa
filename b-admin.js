@@ -72,124 +72,143 @@ async function adminLoadStats() {
   if (!el) return;
   el.innerHTML = '<div class="spinner"></div>';
   try {
-    var { count: userCount } = await sb.from('profiles').select('*', { count: 'exact', head: true });
-    var { count: bannedCount } = await sb.from('profiles').select('*', { count: 'exact', head: true }).eq('banned', true);
-    var { count: bubbleCount } = await sb.from('bubbles').select('*', { count: 'exact', head: true });
-    var { count: publicBubbles } = await sb.from('bubbles').select('*', { count: 'exact', head: true }).eq('visibility', 'public');
-    var { count: privateBubbles } = await sb.from('bubbles').select('*', { count: 'exact', head: true }).eq('visibility', 'private');
-    var { count: hiddenBubbles } = await sb.from('bubbles').select('*', { count: 'exact', head: true }).eq('visibility', 'hidden');
-    var { count: msgCount } = await sb.from('messages').select('*', { count: 'exact', head: true });
-    var { count: reportCount } = await sb.from('reports').select('*', { count: 'exact', head: true });
-    var { count: feedbackCount } = await sb.from('reports').select('*', { count: 'exact', head: true }).eq('type', 'feedback');
+    // Parallel count queries
+    var [userRes, bubbleRes, memberRes, msgRes, bmsgRes, savedRes] = await Promise.all([
+      sb.from('profiles').select('*', { count: 'exact', head: true }),
+      sb.from('bubbles').select('*', { count: 'exact', head: true }),
+      sb.from('bubble_members').select('*', { count: 'exact', head: true }),
+      sb.from('messages').select('*', { count: 'exact', head: true }),
+      sb.from('bubble_messages').select('*', { count: 'exact', head: true }),
+      sb.from('saved_contacts').select('*', { count: 'exact', head: true })
+    ]);
+    var uc = userRes.count || 0;
+    var bc = bubbleRes.count || 0;
+    var mc = memberRes.count || 0;
+    var msgc = (msgRes.count || 0) + (bmsgRes.count || 0);
 
-    // Live users (checked in within last 4 hours)
-    var liveExpiry = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
-    var { count: liveCount } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).gt('last_active', liveExpiry);
-
-    // Members total
-    var { count: membershipCount } = await sb.from('bubble_members').select('*', { count: 'exact', head: true });
-
-    // Profiles with tags
-    var { data: profilesWithTags } = await sb.from('profiles').select('keywords');
-    var taggedCount = 0;
-    var totalTags = 0;
-    if (profilesWithTags) {
-      profilesWithTags.forEach(function(p) {
-        if (p.keywords && p.keywords.length > 0) { taggedCount++; totalTags += p.keywords.length; }
-      });
-    }
-    var avgTags = taggedCount > 0 ? (totalTags / taggedCount).toFixed(1) : '0';
-
-    // Saved contacts count
-    var { count: savedCount } = await sb.from('saved_contacts').select('*', { count: 'exact', head: true });
-
-    // ── Activity analytics ──
-    var now = new Date();
-    var day1 = new Date(now - 24*3600000).toISOString();
-    var day7 = new Date(now - 7*24*3600000).toISOString();
-    var day30 = new Date(now - 30*24*3600000).toISOString();
-
-    var [dauRes, wauRes, mauRes, viewsRes, connectionsRes, bcMsgRes, analyticsRes] = await Promise.all([
-      sb.from('analytics').select('user_id', { count: 'exact', head: false }).eq('event_type', 'app_open').gte('created_at', day1).then(function(r) { return new Set((r.data||[]).map(function(a){return a.user_id;})).size; }).catch(function(){return 0;}),
-      sb.from('analytics').select('user_id', { count: 'exact', head: false }).eq('event_type', 'app_open').gte('created_at', day7).then(function(r) { return new Set((r.data||[]).map(function(a){return a.user_id;})).size; }).catch(function(){return 0;}),
-      sb.from('analytics').select('user_id', { count: 'exact', head: false }).eq('event_type', 'app_open').gte('created_at', day30).then(function(r) { return new Set((r.data||[]).map(function(a){return a.user_id;})).size; }).catch(function(){return 0;}),
-      sb.from('profile_views').select('*', { count: 'exact', head: true }).gte('created_at', day7).then(function(r){return r;}).catch(function(){return {count:0};}),
-      sb.from('saved_contacts').select('*', { count: 'exact', head: true }).gte('created_at', day7).then(function(r){return r;}).catch(function(){return {count:0};}),
-      sb.from('bubble_messages').select('*', { count: 'exact', head: true }).gte('created_at', day7).then(function(r){return r;}).catch(function(){return {count:0};}),
-      sb.from('analytics').select('event_type').gte('created_at', day7).then(function(r) { return r.data || []; }).catch(function(){return [];})
+    // Recent deltas (30 days)
+    var d30 = new Date(Date.now() - 30*24*3600000).toISOString();
+    var [uNew, bNew, mNew, dmNew, bmNew] = await Promise.all([
+      sb.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', d30),
+      sb.from('bubbles').select('*', { count: 'exact', head: true }).gte('created_at', d30),
+      sb.from('bubble_members').select('*', { count: 'exact', head: true }).gte('created_at', d30),
+      sb.from('messages').select('*', { count: 'exact', head: true }).gte('created_at', d30),
+      sb.from('bubble_messages').select('*', { count: 'exact', head: true }).gte('created_at', d30)
     ]);
 
-    // Feature heatmap
-    var featureCount = {};
-    analyticsRes.forEach(function(a) { featureCount[a.event_type] = (featureCount[a.event_type] || 0) + 1; });
-    var featureList = Object.entries(featureCount).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
-    var featureHtml = featureList.map(function(f) {
-      var maxVal = featureList[0] ? featureList[0][1] : 1;
-      var pct = Math.round((f[1]/maxVal)*100);
-      return '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.2rem">' +
-        '<div style="width:100px;font-size:0.62rem;color:var(--text-secondary);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(f[0]) + '</div>' +
-        '<div style="flex:1;height:12px;background:var(--glass-bg-strong);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:var(--gradient-primary);border-radius:4px"></div></div>' +
-        '<div style="width:24px;font-size:0.62rem;font-weight:700;color:var(--accent);text-align:right">' + f[1] + '</div></div>';
-    }).join('');
+    function dCard(id, ico, icoBg, icoCol, val, label, delta, color) {
+      return '<div class="dash-card" data-color="' + color + '" onclick="dashToggle(this,\'' + id + '\',this.closest(\'.dash-pair\').querySelector(\'.dash-tray\').id)">' +
+        '<div class="dash-ico" style="background:' + icoBg + ';color:' + icoCol + '">' + ico + '</div>' +
+        '<div><div class="dash-val">' + val + '</div><div class="dash-label">' + label + '</div>' +
+        (delta ? '<div class="dash-delta">+' + delta + ' denne md.</div>' : '') + '</div></div>';
+    }
 
-    el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem">' +
-      adminStatCard('Brugere', userCount || 0, '#7C5CFC', 'Antal registrerede profiler.') +
-      adminStatCard('Live nu', liveCount || 0, '#1A9E8E', 'Checked ind inden for de sidste 4 timer.') +
-      adminStatCard('Bannede', bannedCount || 0, '#3B82F6', 'Bannede brugere.') +
-      '</div>' +
-      '<div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin:0.6rem 0 0.3rem">Aktivitet</div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem">' +
-      adminStatCard('DAU', dauRes, '#1A9E8E', 'Unikke brugere der åbnede appen de seneste 24 timer.') +
-      adminStatCard('WAU', wauRes, '#2ECFCF', 'Unikke brugere de seneste 7 dage.') +
-      adminStatCard('MAU', mauRes, '#7C5CFC', 'Unikke brugere de seneste 30 dage.') +
-      '</div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
-      adminStatCard('Visninger /7d', viewsRes.count || 0, '#E879A8', 'Profilvisninger de seneste 7 dage.') +
-      adminStatCard('Connections /7d', connectionsRes.count || 0, '#1A9E8E', 'Nye gemte kontakter de seneste 7 dage.') +
-      adminStatCard('Boble-msg /7d', bcMsgRes.count || 0, '#7C5CFC', 'Boble-chat beskeder de seneste 7 dage.') +
-      '</div>' +
-      '<div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin:0.6rem 0 0.3rem">Feature-brug (7 dage)</div>' +
-      '<div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:0.6rem 0.75rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">' + (featureHtml || '<div style="font-size:0.72rem;color:var(--muted)">Ingen analytics data</div>') + '</div>' +
-      '<div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin:0.6rem 0 0.3rem">System</div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem">' +
-      adminStatCard('Bobler', bubbleCount || 0, '#2ECFCF', 'Samlet antal bobler.') +
-      adminStatCard('Offentlige', publicBubbles || 0, '#2ECFCF', 'Synlige for alle.') +
-      adminStatCard('Private', (privateBubbles||0) + '+' + (hiddenBubbles||0), '#E879A8', 'Private + skjulte.') +
-      '</div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
-      adminStatCard('DMs', msgCount || 0, '#7C5CFC', 'Direkte beskeder.') +
-      adminStatCard('Medlemskaber', membershipCount || 0, '#2ECFCF', 'Boble-medlemskaber.') +
-      adminStatCard('Gemte', savedCount || 0, '#2ECFCF', 'Gemte kontakter.') +
-      '</div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;margin-top:0.3rem">' +
-      adminStatCard('Profiler m/ tags', taggedCount + '/' + (userCount||0), '#F5C35A', 'Profiler med mindst 1 tag.') +
-      adminStatCard('Gns. tags', avgTags, '#F5C35A', 'Gennemsnitligt antal tags.') +
-      '</div>';
+    el.innerHTML =
+      '<div class="dash-pair"><div class="dash-row">' +
+        dCard('s-users','👤','rgba(124,92,252,0.08)','var(--accent)', uc, 'Brugere', uNew.count, 'accent') +
+        dCard('s-bubbles','🫧','rgba(46,207,207,0.08)','var(--teal)', bc, 'Bobler', bNew.count, 'teal') +
+      '</div><div class="dash-tray" id="dtray-s1"><div class="dash-tray-collapse"><div class="dash-tray-inner" id="dti-s1"><div style="font-size:0.72rem;font-weight:700" id="dtitle-s1"></div><div style="font-size:0.55rem;color:var(--muted)" id="dsub-s1"></div><div class="dash-chart-wrap"><canvas id="dcv-s1"></canvas></div></div></div></div></div>' +
+      '<div class="dash-pair"><div class="dash-row">' +
+        dCard('s-members','🔗','rgba(124,92,252,0.08)','var(--accent)', mc, 'Medlemskaber', mNew.count, 'accent') +
+        dCard('s-msgs','💬','rgba(232,121,168,0.08)','var(--pink)', msgc > 999 ? (msgc/1000).toFixed(1)+'K' : msgc, 'Beskeder', (dmNew.count||0)+(bmNew.count||0), 'pink') +
+      '</div><div class="dash-tray" id="dtray-s2"><div class="dash-tray-collapse"><div class="dash-tray-inner" id="dti-s2"><div style="font-size:0.72rem;font-weight:700" id="dtitle-s2"></div><div style="font-size:0.55rem;color:var(--muted)" id="dsub-s2"></div><div class="dash-chart-wrap"><canvas id="dcv-s2"></canvas></div></div></div></div></div>';
+
   } catch(e) { el.innerHTML = '<div style="color:var(--accent2)">Fejl: ' + escHtml(e.message) + '</div>'; }
   } catch(e) { logError("adminLoadStats", e); }
 }
 
-function adminStatCard(label, count, color, info) {
-  var infoAttr = info ? ' onclick="adminShowInfo(this,\'' + escHtml(info).replace(/'/g,"\\'") + '\')" style="cursor:pointer"' : '';
-  return '<div style="background:rgba(30,27,46,0.025);border-radius:8px;padding:0.4rem 0.6rem;text-align:center;position:relative"' + infoAttr + '>' +
-    (info ? '<div style="position:absolute;top:0.2rem;right:0.3rem;font-size:0.5rem;color:rgba(30,27,46,0.08)">ⓘ</div>' : '') +
-    '<div style="font-size:1.1rem;font-weight:800;color:' + color + '">' + count + '</div>' +
-    '<div style="font-size:0.6rem;color:var(--muted)">' + label + '</div></div>';
+// ── Dashboard chart helpers ──
+var _dashChartInstances = {};
+var _dashChartData = {};
+var _dashActiveChart = {};
+
+var _dashMeta = {
+  's-users': { title: '👤 Nye brugere', sub: 'Tilmeldinger per uge', table: 'profiles', field: 'created_at', type: 'bar' },
+  's-bubbles': { title: '🫧 Bobler oprettet', sub: 'Netværk + events per uge', table: 'bubbles', field: 'created_at', type: 'bar' },
+  's-members': { title: '🔗 Medlemskaber', sub: 'Kumulativ vækst over tid', table: 'bubble_members', field: 'created_at', type: 'line' },
+  's-msgs': { title: '💬 Beskeder', sub: 'Boble-chat beskeder per uge', table: 'bubble_messages', field: 'created_at', type: 'bar' }
+};
+
+var _dashColors = {
+  accent: { solid: '#7C5CFC', bg: 'rgba(124,92,252,0.08)' },
+  teal: { solid: '#1A9E8E', bg: 'rgba(46,207,207,0.08)' },
+  pink: { solid: '#E879A8', bg: 'rgba(232,121,168,0.08)' }
+};
+
+async function dashToggle(card, chartId, trayId) {
+  var tray = document.getElementById(trayId);
+  var row = card.closest('.dash-row');
+  if (!tray || !row) return;
+  var wasActive = card.classList.contains('active-dash');
+  row.querySelectorAll('.dash-card').forEach(function(c) { c.classList.remove('active-dash'); });
+  if (wasActive) { tray.classList.remove('open'); _dashActiveChart[trayId] = null; return; }
+  card.classList.add('active-dash');
+  _dashActiveChart[trayId] = chartId;
+  var color = card.dataset.color || 'accent';
+  var inner = tray.querySelector('.dash-tray-inner');
+  if (inner) { inner.className = 'dash-tray-inner dtray-' + color; }
+  var meta = _dashMeta[chartId] || {};
+  var titleEl = tray.querySelector('[id^="dtitle"]');
+  var subEl = tray.querySelector('[id^="dsub"]');
+  if (titleEl) titleEl.textContent = meta.title || '';
+  if (subEl) subEl.textContent = meta.sub || '';
+  tray.classList.add('open');
+  // Destroy old chart
+  var cvId = tray.querySelector('canvas').id;
+  if (_dashChartInstances[cvId]) { _dashChartInstances[cvId].destroy(); _dashChartInstances[cvId] = null; }
+  // Fetch data if not cached
+  if (!_dashChartData[chartId]) {
+    try {
+      var cutoff = new Date(Date.now() - 90 * 24 * 3600000).toISOString();
+      var q = sb.from(meta.table).select(meta.field).gte(meta.field, cutoff).order(meta.field, { ascending: true });
+      if (meta.filter) q = q.in('bubble_id', meta.filter);
+      var { data } = await q;
+      _dashChartData[chartId] = _dashBucketWeeks(data || [], meta.field);
+    } catch(e) { _dashChartData[chartId] = { labels: [], values: [] }; }
+  }
+  setTimeout(function() { _dashRenderChart(cvId, chartId, color); }, 120);
 }
 
-function adminShowInfo(el, text) {
-  // Remove any existing info tray
-  var existing = document.querySelector('.admin-info-tray');
-  if (existing) existing.remove();
-  // Create tray below the card
-  var tray = document.createElement('div');
-  tray.className = 'admin-info-tray';
-  tray.innerHTML = '<div style="font-size:0.68rem;color:var(--text-secondary);line-height:1.4">' + text + '</div>' +
-    '<button onclick="this.parentElement.remove()" style="position:absolute;top:0.3rem;right:0.4rem;background:none;border:none;color:var(--muted);font-size:0.7rem;cursor:pointer;font-family:inherit">✕</button>';
-  tray.style.cssText = 'position:relative;background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.15);border-radius:8px;padding:0.5rem 0.7rem;margin-top:0.3rem;animation:fadeIn 0.2s ease';
-  // Insert after the stat grid row
-  var parent = el.parentElement;
-  if (parent) parent.insertAdjacentElement('afterend', tray);
+function _dashBucketWeeks(rows, field) {
+  var buckets = {};
+  rows.forEach(function(r) {
+    var d = new Date(r[field]);
+    var weekStart = new Date(d);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
+    var key = weekStart.toISOString().slice(0, 10);
+    buckets[key] = (buckets[key] || 0) + 1;
+  });
+  var keys = Object.keys(buckets).sort();
+  var labels = keys.map(function(k) {
+    var d = new Date(k);
+    return d.getDate() + '/' + (d.getMonth() + 1);
+  });
+  return { labels: labels, values: keys.map(function(k) { return buckets[k]; }) };
+}
+
+function _dashRenderChart(canvasId, chartId, color) {
+  var el = document.getElementById(canvasId);
+  if (!el || typeof Chart === 'undefined') return;
+  var d = _dashChartData[chartId] || { labels: [], values: [] };
+  var c = _dashColors[color] || _dashColors.accent;
+  var meta = _dashMeta[chartId] || {};
+  var cfg;
+  var baseOpts = {
+    responsive: true, maintainAspectRatio: false, animation: { duration: 400 },
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#9996A8' } },
+      y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 9 }, color: '#9996A8' }, beginAtZero: true }
+    }
+  };
+  if (meta.type === 'line') {
+    var cumValues = []; var sum = 0;
+    d.values.forEach(function(v) { sum += v; cumValues.push(sum); });
+    cfg = { type: 'line', data: { labels: d.labels, datasets: [{ data: cumValues, fill: true, backgroundColor: c.bg, borderColor: c.solid, borderWidth: 2, tension: 0.35, pointRadius: 3, pointBackgroundColor: c.solid }] }, options: baseOpts };
+  } else {
+    cfg = { type: 'bar', data: { labels: d.labels, datasets: [{ data: d.values, backgroundColor: c.solid, borderRadius: 4, barPercentage: 0.55 }] }, options: baseOpts };
+  }
+  _dashChartInstances[canvasId] = new Chart(el, cfg);
 }
 
 var _pendingBanUserId = null;
