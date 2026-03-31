@@ -46,7 +46,7 @@ async function loadHome() {
     showProfileSetupCTA();
   } catch(e) {
     logError("loadHome", e);
-    showToast('Kunne ikke indlæse — træk ned for at prøve igen');
+    _renderToast('Kunne ikke indlæse — træk ned for at prøve igen', 'error');
   } finally {
     _homeLoading = false;
   }
@@ -342,7 +342,7 @@ function pickSetupTitle(btn) {
 
 async function saveSetupTitle() {
   var title = (document.getElementById('setup-title-input')?.value || '').trim();
-  if (!title) { showToast('Skriv en titel'); return; }
+  if (!title) { showWarningToast('Skriv en titel'); return; }
   try {
     await sb.from('profiles').update({ title: title }).eq('id', currentUser.id);
     if (currentProfile) currentProfile.title = title;

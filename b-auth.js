@@ -184,7 +184,7 @@ async function loadCurrentProfile() {
       // Check if user is banned
       if (data.banned) {
         await sb.auth.signOut();
-        showToast('Din konto er blevet suspenderet. Kontakt info@bubbleme.dk');
+        _renderToast('Din konto er blevet suspenderet. Kontakt info@bubbleme.dk', 'error');
         goTo('screen-auth');
         return;
       }
@@ -206,13 +206,13 @@ async function handleAvatarUpload(input) {
     var maxSize = 2 * 1024 * 1024;
     if (file.size > maxSize) {
       var sizeMB = (file.size / 1024 / 1024).toFixed(1);
-      showToast('Billedet er ' + sizeMB + 'MB — maks 2MB. Prøv et mindre billede.');
+      showWarningToast('Billedet er ' + sizeMB + 'MB — maks 2MB. Prøv et mindre billede.');
       input.value = '';
       return;
     }
     var allowed = ['image/jpeg','image/png','image/webp'];
     if (allowed.indexOf(file.type) < 0) {
-      showToast('Format ikke understøttet (' + (file.type || 'ukendt') + '). Brug JPG, PNG eller WebP.');
+      showWarningToast('Format ikke understøttet (' + (file.type || 'ukendt') + '). Brug JPG, PNG eller WebP.');
       input.value = '';
       return;
     }
@@ -315,7 +315,7 @@ async function handleLogin() {
   try {
     const email = document.getElementById('login-email').value.trim();
     const pass = document.getElementById('login-password').value;
-    if (!email || !pass) return showToast('Udfyld email og adgangskode');
+    if (!email || !pass) return showWarningToast('Udfyld email og adgangskode');
     showToast('Logger ind...');
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) return errorToast('login', error);
@@ -330,8 +330,8 @@ async function handleSignup() {
     const email = document.getElementById('signup-email').value.trim();
     const pass  = document.getElementById('signup-password').value;
     const title = document.getElementById('signup-title').value.trim();
-    if (!name || !email || !pass) return showToast('Udfyld alle felter');
-    if (pass.length < 6) return showToast('Adgangskode skal være min. 6 tegn');
+    if (!name || !email || !pass) return showWarningToast('Udfyld alle felter');
+    if (pass.length < 6) return showWarningToast('Adgangskode skal være min. 6 tegn');
     showToast('Opretter konto...');
     const { data, error } = await sb.auth.signUp({
       email,
@@ -346,7 +346,7 @@ async function handleSignup() {
     // Check if email confirmation is required
     if (data.user && data.user.identities && data.user.identities.length === 0) {
       // Email already exists
-      showToast('Denne email er allerede registreret — prøv at logge ind');
+      showWarningToast('Denne email er allerede registreret — prøv at logge ind');
       return;
     }
 
@@ -411,7 +411,7 @@ async function handleLogout() {
 
 async function handleForgotPassword() {
   var email = document.getElementById('login-email').value.trim();
-  if (!email) return showToast('Indtast din email først');
+  if (!email) return showWarningToast('Indtast din email først');
   try {
     showToast('Sender nulstillingslink...');
     var { error } = await sb.auth.resetPasswordForEmail(email, {
@@ -526,7 +526,7 @@ function openFeedback() {
 
 async function submitFeedback() {
   var text = document.getElementById('feedback-text')?.value?.trim();
-  if (!text) { showToast('Skriv noget feedback først'); return; }
+  if (!text) { showWarningToast('Skriv noget feedback først'); return; }
   try {
     await sb.from('reports').insert({
       reporter_id: currentUser.id,
@@ -592,7 +592,7 @@ async function handleAppleLogin() {
 //  PERSONAL QR CODE
 // ══════════════════════════════════════════════════════════
 async function openMyQR() {
-  if (!currentUser || !currentProfile) { showToast('Log ind først'); return; }
+  if (!currentUser || !currentProfile) { _renderToast('Log ind først', 'error'); return; }
   
   // Generate short-lived token (10 min)
   var token = crypto.randomUUID ? crypto.randomUUID().split('-')[0] : Math.random().toString(36).slice(2,10);

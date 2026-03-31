@@ -282,25 +282,43 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
 //  TOAST
 // ══════════════════════════════════════════════════════════
 let toastTimer;
-function showToast(msg, duration) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
+// ── Toast system v2: color-coded, icon, top-positioned ──
+// Types: 'info' (purple), 'success' (teal), 'error' (red), 'warn' (amber)
+var _toastIcons = { info: 'ℹ', success: '✓', error: '✕', warn: '⚠' };
+var _toastDurations = { info: 2500, success: 2500, error: 4500, warn: 3500 };
+
+function _renderToast(msg, type) {
+  var t = document.getElementById('toast');
+  if (!t) return;
+  t.className = 'toast toast-' + type;
+  t.innerHTML = '<div class="toast-ico">' + _toastIcons[type] + '</div><div style="flex:1;min-width:0">' + escHtml(msg) + '</div>';
   t.classList.add('show');
-  const isError = /^(Fejl|❌|⚠️)/.test(msg);
-  const ms = duration || (isError ? 4500 : 2500);
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+  toastTimer = setTimeout(function() { t.classList.remove('show'); }, _toastDurations[type] || 2500);
+}
+
+function showToast(msg, duration) {
+  _renderToast(msg, 'info');
+  if (duration) { clearTimeout(toastTimer); toastTimer = setTimeout(function() { document.getElementById('toast').classList.remove('show'); }, duration); }
+}
+
+function showSuccessToast(message) {
+  _renderToast(message, 'success');
+}
+
+function showWarningToast(message) {
+  _renderToast(message, 'warn');
 }
 
 // ── Human-readable error toast — strips technical Supabase/JS errors ──
 function errorToast(context, error) {
   var msg = (error && error.message) ? error.message : String(error || '');
   // Map known technical errors to human messages
-  if (msg.includes('row-level security') || msg.includes('policy')) return showToast('Du har ikke tilladelse til dette');
-  if (msg.includes('JWT') || msg.includes('token') || msg.includes('refresh_token')) return showToast('Din session er udløbet — log ind igen');
-  if (msg.includes('duplicate') || msg.includes('unique')) return showToast('Det er allerede gjort');
-  if (msg.includes('network') || msg.includes('fetch') || msg.includes('Failed to fetch')) return showToast('Ingen forbindelse — tjek dit netværk');
-  if (msg.includes('timeout') || msg.includes('TIMEOUT')) return showToast('Serveren svarer ikke — prøv igen');
+  if (msg.includes('row-level security') || msg.includes('policy')) return _renderToast('Du har ikke tilladelse til dette', 'error');
+  if (msg.includes('JWT') || msg.includes('token') || msg.includes('refresh_token')) return _renderToast('Din session er udløbet — log ind igen', 'error');
+  if (msg.includes('duplicate') || msg.includes('unique')) return _renderToast('Det er allerede gjort', 'warn');
+  if (msg.includes('network') || msg.includes('fetch') || msg.includes('Failed to fetch')) return _renderToast('Ingen forbindelse — tjek dit netværk', 'error');
+  if (msg.includes('timeout') || msg.includes('TIMEOUT')) return _renderToast('Serveren svarer ikke — prøv igen', 'error');
   // Default: friendly context message
   var friendly = {
     'login': 'Login fejlede — tjek email og kodeord',
@@ -311,7 +329,7 @@ function errorToast(context, error) {
     'delete': 'Kunne ikke slette — prøv igen',
     'load': 'Kunne ikke hente data — prøv igen'
   };
-  showToast(friendly[context] || 'Noget gik galt — prøv igen');
+  _renderToast(friendly[context] || 'Noget gik galt — prøv igen', 'error');
 }
 
 
@@ -546,14 +564,7 @@ function timeAgo(dateStr) {
 }
 
 // ── Enhanced success toast with check animation ──
-function showSuccessToast(message) {
-  var toast = document.getElementById('toast');
-  if (!toast) { showToast(message); return; }
-  toast.innerHTML = '<span class="check-pop" style="display:inline-block;margin-right:0.3rem">✓</span> ' + escHtml(message);
-  toast.classList.add('show');
-  clearTimeout(window._toastTimer);
-  window._toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2500);
-}
+// showSuccessToast now defined in toast system v2 above
 
 // ══════════════════════════════════════════════════════════
 //  ESCALATOR SCROLL EFFECT v3

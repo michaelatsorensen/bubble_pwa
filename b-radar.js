@@ -272,7 +272,7 @@ async function rpSaveContact() {
   try {
     if (!rpCurrentUserId) return;
     var btn = document.getElementById('rp-save-btn');
-    if (btn.dataset.saved === '1') { showToast('Allerede gemt'); return; }
+    if (btn.dataset.saved === '1') { showWarningToast('Allerede gemt'); return; }
     await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: rpCurrentUserId });
     btn.textContent = 'Gemt \u2713'; btn.dataset.saved = '1';
     showSuccessToast('Kontakt gemt');

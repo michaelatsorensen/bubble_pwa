@@ -569,7 +569,7 @@ async function requestPushPermission() {
     return true;
   } catch(e) {
     logError('requestPushPermission', e);
-    showToast('Kunne ikke aktivere notifikationer');
+    _renderToast('Kunne ikke aktivere notifikationer', 'error');
     return false;
   }
 }

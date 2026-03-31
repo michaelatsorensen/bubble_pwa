@@ -36,13 +36,13 @@ async function toggleBubbleUpvote(bubbleId) {
   try {
     if (myUpvotes[bubbleId]) {
       var { error } = await sb.from('bubble_upvotes').delete().eq('user_id', currentUser.id).eq('bubble_id', bubbleId);
-      if (error) { showToast('Kunne ikke fjerne anbefaling'); return; }
+      if (error) { _renderToast('Kunne ikke fjerne anbefaling', 'error'); return; }
       delete myUpvotes[bubbleId];
       bubbleUpvotes[bubbleId] = Math.max((bubbleUpvotes[bubbleId] || 1) - 1, 0);
       showToast('Anbefaling fjernet');
     } else {
       var { error } = await sb.from('bubble_upvotes').insert({ user_id: currentUser.id, bubble_id: bubbleId });
-      if (error) { showToast('Kunne ikke anbefale'); return; }
+      if (error) { _renderToast('Kunne ikke anbefale', 'error'); return; }
       myUpvotes[bubbleId] = true;
       bubbleUpvotes[bubbleId] = (bubbleUpvotes[bubbleId] || 0) + 1;
       showToast('Anbefalet \u2713');
@@ -242,7 +242,7 @@ async function openBubble(bubbleId, fromScreen) {
 async function joinBubble(bubbleId) {
   try {
     const { error } = await sb.from('bubble_members').insert({ bubble_id: bubbleId, user_id: currentUser.id });
-    if (error && !String(error.message || '').includes('duplicate')) return showToast('Fejl ved joining');
+    if (error && !String(error.message || '').includes('duplicate')) return _renderToast('Fejl ved joining', 'error');
     showSuccessToast('Du er nu i boblen');
     _bbAfterJoin(bubbleId);
     await openBubble(bubbleId);
@@ -327,7 +327,7 @@ async function openTransferOwnership(bubbleId) {
       .neq('user_id', currentUser.id);
     if (memErr) { logError('openTransferOwnership:query', memErr); errorToast('load', memErr); return; }
     var members = (allMem || []).filter(function(m) { return m.status !== 'pending'; });
-    if (members.length === 0) { showToast('Ingen medlemmer at overdrage til — inviter nogen først'); return; }
+    if (members.length === 0) { showWarningToast('Ingen medlemmer at overdrage til — inviter nogen først'); return; }
     var uIds = members.map(function(m) { return m.user_id; });
     var { data: profs } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', uIds);
     var pm = {}; (profs || []).forEach(function(p) { pm[p.id] = p; });
@@ -371,7 +371,7 @@ async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
     var { data: updated, error } = await sb.from('bubbles').update({ created_by: newOwnerId }).eq('id', bubbleId).select();
     if (error) { errorToast('save', error); if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Bekræft overdragelse'; } return; }
     if (!updated || updated.length === 0) {
-      showToast('Kunne ikke overdrage — du er muligvis ikke ejer længere');
+      _renderToast('Kunne ikke overdrage — du er muligvis ikke ejer længere', 'error');
       if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Bekræft overdragelse'; }
       return;
     }
@@ -394,7 +394,7 @@ async function openAdminDesignation(bubbleId) {
       .neq('user_id', currentUser.id);
     if (memErr) { logError('openAdminDesignation:query', memErr); errorToast('load', memErr); return; }
     var members = (allMem || []).filter(function(m) { return m.status !== 'pending'; });
-    if (members.length === 0) { showToast('Ingen medlemmer at udpege'); return; }
+    if (members.length === 0) { showWarningToast('Ingen medlemmer at udpege'); return; }
     var uIds = members.map(function(m) { return m.user_id; });
     var { data: profs } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', uIds);
     var pm = {}; (profs || []).forEach(function(p) { pm[p.id] = p; });
@@ -451,7 +451,7 @@ async function leaveBubble(bubbleId, btnEl) {
   if (bcBubbleData && bcBubbleData.created_by === currentUser.id) {
     var { count } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', bubbleId).neq('user_id', currentUser.id);
     if (count > 0) {
-      showToast('Du er ejer — overdrag ejerskab først under Info-fanen');
+      showWarningToast('Du er ejer — overdrag ejerskab først under Info-fanen');
       return;
     }
   }
@@ -543,7 +543,7 @@ function openCreateEventFromBubble(parentBubbleId) {
   // Block creating events under events (only network bubbles can have child events)
   // Only check if we're currently in bubble-chat AND viewing the same bubble
   if (_activeScreen === 'screen-bubble-chat' && bcBubbleId === parentBubbleId && bcBubbleData && (bcBubbleData.type === 'event' || bcBubbleData.type === 'live')) {
-    showToast('Events kan kun oprettes under netværksbobler');
+    showWarningToast('Events kan kun oprettes under netværksbobler');
     return;
   }
   // Pre-fill create modal as event type, with parent bubble id stored
@@ -748,7 +748,7 @@ async function createBubble() {
     const type = document.getElementById('cb-type').value;
     const desc = document.getElementById('cb-desc').value.trim();
     const location = document.getElementById('cb-location').value.trim();
-    if (!name) return showToast('Navn er påkrævet');
+    if (!name) return showWarningToast('Navn er påkrævet');
     const visibility = document.getElementById('cb-visibility')?.value || 'public';
     // Pick up parent bubble id if set (from openCreateEventFromBubble)
     var modal = document.getElementById('bb-sheet-create-bubble');
@@ -893,9 +893,9 @@ async function handleBubbleIconUpload(input) {
   try {
     var file = input.files[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { showToast('Maks 2MB'); input.value = ''; return; }
+    if (file.size > 2 * 1024 * 1024) { showWarningToast('Maks 2MB'); input.value = ''; return; }
     var allowed = ['image/jpeg','image/png','image/webp'];
-    if (allowed.indexOf(file.type) < 0) { showToast('Brug JPG, PNG eller WebP'); input.value = ''; return; }
+    if (allowed.indexOf(file.type) < 0) { showWarningToast('Brug JPG, PNG eller WebP'); input.value = ''; return; }
     showToast('Uploader ikon...');
     var resized = typeof resizeImage === 'function' ? await resizeImage(file, 256) : file;
     var path = 'bubbles/' + currentEditBubbleId + '/icon-' + Date.now() + '.jpg';
@@ -919,7 +919,7 @@ async function saveEditBubble() {
     const visibility = document.getElementById('eb-visibility').value;
     const desc       = document.getElementById('eb-desc').value.trim();
     const location   = document.getElementById('eb-location').value.trim();
-    if (!name) return showToast('Navn er påkrævet');
+    if (!name) return showWarningToast('Navn er påkrævet');
     var updateObj = {
       name, type, type_label: typeLabel(type),
       visibility, description: desc, location, keywords: ebChips
@@ -1000,7 +1000,7 @@ async function downloadQRPdf() {
   try {
   await loadJsPdf();
   const { data: b, error } = await sb.from('bubbles').select('*').eq('id', currentQRBubble).single();
-  if (error || !b) return showToast('Kunne ikke hente boble-data');
+  if (error || !b) return _renderToast('Kunne ikke hente boble-data', 'error');
 
   showToast('Genererer PDF...');
 
@@ -1207,14 +1207,14 @@ async function downloadMembersPdf(bubbleId) {
 
     // ── Fetch data ──
     const { data: b } = await sb.from('bubbles').select('*').eq('id', bubbleId).single();
-    if (!b) { showToast('Kunne ikke hente boble-data'); return; }
+    if (!b) { _renderToast('Kunne ikke hente boble-data', 'error'); return; }
 
     const { data: members } = await sb.from('bubble_members')
       .select('user_id, joined_at, checked_in_at, checked_out_at')
       .eq('bubble_id', bubbleId)
       .order('checked_in_at', { ascending: true, nullsFirst: false });
 
-    if (!members || members.length === 0) { showToast('Ingen deltagere endnu'); return; }
+    if (!members || members.length === 0) { showWarningToast('Ingen deltagere endnu'); return; }
 
     const userIds = members.map(m => m.user_id);
     const { data: profiles } = await sb.from('profiles')
@@ -1460,13 +1460,13 @@ async function generateEventReport(bubbleId) {
     ]);
 
     var b = bubbleRes.data;
-    if (!b) { showToast('Boble ikke fundet'); return; }
+    if (!b) { _renderToast('Boble ikke fundet', 'error'); return; }
     var members = membersRes.data || [];
     var messages = messagesRes.data || [];
     var guests = guestsRes.data || [];
     var invites = invitesRes.data || [];
 
-    if (members.length === 0) { showToast('Ingen deltagere endnu'); return; }
+    if (members.length === 0) { showWarningToast('Ingen deltagere endnu'); return; }
 
     // ── 2. Fetch profiles for all members ──
     var userIds = members.map(function(m) { return m.user_id; });
@@ -1831,11 +1831,11 @@ async function exportReportEmail(bubbleId) {
   try {
     var b = window._lastReportBubble;
     var stats = window._lastReportStats;
-    if (!b || !stats) { showToast('Ingen rapport at sende'); return; }
+    if (!b || !stats) { showWarningToast('Ingen rapport at sende'); return; }
 
     // Ask for email
     var email = prompt('Indtast email-adresse til rapporten:');
-    if (!email || !email.includes('@')) { showToast('Ugyldig email'); return; }
+    if (!email || !email.includes('@')) { showWarningToast('Ugyldig email'); return; }
 
     showToast('Sender rapport...');
 
@@ -1945,7 +1945,7 @@ function toggleInvite(cb) {
 }
 
 async function sendBubbleInvites() {
-  if (inviteSelected.length === 0) return showToast('Vælg mindst én kontakt');
+  if (inviteSelected.length === 0) return showWarningToast('Vælg mindst én kontakt');
   try {
     var btn = document.getElementById('invite-send-btn');
     if (btn) { btn.textContent = 'Sender...'; btn.disabled = true; btn.classList.add('btn-loading'); }
@@ -1982,7 +1982,7 @@ async function sendBubbleInvites() {
     } else if (newIds.length > 0) {
       showSuccessToast(newIds.length + ' invitation' + (newIds.length > 1 ? 'er' : '') + ' sendt ✓');
     } else {
-      showToast('Alle er allerede inviteret');
+      showWarningToast('Alle er allerede inviteret');
     }
   } catch(e) {
     logError('sendBubbleInvites', e);

@@ -101,7 +101,7 @@ async function selectGif(idx) {
   if (!gifUrl) { logError('selectGif', 'No GIF URL at index ' + idx); return; }
   try {
     if (mode === 'bc') {
-      if (!bcBubbleId) { logError('selectGif', 'No bcBubbleId'); showToast('Fejl: ingen aktiv boble'); return; }
+      if (!bcBubbleId) { logError('selectGif', 'No bcBubbleId'); _renderToast('Fejl: ingen aktiv boble', 'error'); return; }
       var { data: msg, error } = await sb.from('bubble_messages').insert({
         bubble_id: bcBubbleId, user_id: currentUser.id,
         content: '', file_url: gifUrl, file_name: 'gif.gif', file_type: 'image/gif'
@@ -116,7 +116,7 @@ async function selectGif(idx) {
         bcScrollToBottom();
       }
     } else if (mode === 'dm') {
-      if (!currentChatUser) { logError('selectGif', 'No currentChatUser'); showToast('Fejl: ingen aktiv chat'); return; }
+      if (!currentChatUser) { logError('selectGif', 'No currentChatUser'); _renderToast('Fejl: ingen aktiv chat', 'error'); return; }
       var { data: msg2, error: err2 } = await sb.from('messages').insert({
         sender_id: currentUser.id, receiver_id: currentChatUser,
         content: '', file_url: gifUrl, file_name: 'gif.gif', file_type: 'image/gif'
@@ -131,7 +131,7 @@ async function selectGif(idx) {
       }
     } else {
       logError('selectGif', 'Unknown mode: ' + mode);
-      showToast('GIF fejl: ukendt kontekst');
+      _renderToast('GIF fejl: ukendt kontekst', 'error');
     }
   } catch(e) { logError('selectGif', e, { mode: mode }); errorToast('send', e); }
   } catch(e) { logError("selectGif", e); }
@@ -279,7 +279,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
   } catch(e) {
     _bcHideSkeleton();
     logError("openBubbleChat:load", e);
-    showToast('Kunne ikke åbne boblen');
+    _renderToast('Kunne ikke åbne boblen', 'error');
     if (prevBubbleId) { openBubbleChat(prevBubbleId, 'screen-bubbles'); }
     else { goTo(backTarget); }
     return;
@@ -314,7 +314,7 @@ async function bcLoadChatData(bubbleId) {
 // Phase 1: Fetch bubble, set bcBubbleData, render topbar
 async function bcLoadBubbleCore(bubbleId) {
   var { data: b, error: bErr } = await sb.from('bubbles').select('*').eq('id', bubbleId).maybeSingle();
-  if (!b || bErr) { showToast('Denne boble eksisterer ikke længere'); return null; }
+  if (!b || bErr) { _renderToast('Denne boble eksisterer ikke længere', 'error'); return null; }
   bcBubbleData = b;
 
   // Topbar
@@ -456,7 +456,7 @@ async function bcRefreshMembership() {
       if (wasMember && !isMember) {
         if (bcSubscription) { bcSubscription.unsubscribe(); bcSubscription = null; }
         bcSwitchTab('info');
-        showToast('Du er fjernet fra boblen');
+        _renderToast('Du er fjernet fra boblen', 'error');
       }
     }
   } catch(e) { logError('bcRefreshMembership', e); }
@@ -960,14 +960,14 @@ async function bcHandleFile(input) {
   try {
     const file = input.files[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) { showToast('Maks 10MB per fil'); return; }
+    if (file.size > 10 * 1024 * 1024) { showWarningToast('Maks 10MB per fil'); return; }
 
     // File type allowlist — block HTML/SVG/JS to prevent stored XSS
     var blockedTypes = ['text/html','application/xhtml+xml','image/svg+xml','application/javascript','text/javascript','application/x-httpd-php'];
     var blockedExts = ['html','htm','svg','js','php','exe','bat','cmd','sh','ps1'];
     var ext = (file.name || '').split('.').pop().toLowerCase();
     if (blockedTypes.indexOf(file.type) >= 0 || blockedExts.indexOf(ext) >= 0) {
-      showToast('Filtypen er ikke tilladt');
+      showWarningToast('Filtypen er ikke tilladt');
       input.value = '';
       return;
     }
@@ -998,7 +998,7 @@ async function bcHandleFile(input) {
 
     // Use signed URL for privacy
     const { data: urlData, error: urlErr } = await sb.storage.from('bubble-files').createSignedUrl(path, 604800); // 7 days
-    if (urlErr || !urlData?.signedUrl) { showToast('Kunne ikke generere fil-link'); input.value = ''; return; }
+    if (urlErr || !urlData?.signedUrl) { _renderToast('Kunne ikke generere fil-link', 'error'); input.value = ''; return; }
 
     const { data: newMsg, error: msgErr } = await sb.from('bubble_messages').insert({
       bubble_id: bcBubbleId,
@@ -1011,7 +1011,7 @@ async function bcHandleFile(input) {
 
     if (msgErr) {
       console.error('File message insert error:', msgErr);
-      showToast('Fil uploadet men besked fejlede');
+      _renderToast('Fil uploadet men besked fejlede', 'error');
       input.value = '';
       return;
     }
@@ -1205,7 +1205,7 @@ async function bcShowHistory(msgId) {
     const { data: edits } = await sb.from('bubble_message_edits')
       .select('content, edited_at').eq('message_id', msgId).order('edited_at', {ascending:true});
     const { data: current } = await sb.from('bubble_messages').select('content').eq('id', msgId).single();
-    if (!edits || edits.length === 0) { showToast('Ingen historik'); return; }
+    if (!edits || edits.length === 0) { showWarningToast('Ingen historik'); return; }
     const modal = document.getElementById('modal-edit-history') || bcCreateHistoryModal();
     const content = document.getElementById('edit-history-content');
     content.innerHTML = edits.map((e,i) => {
@@ -1366,7 +1366,7 @@ function bcShowKickConfirm(btn, userId, userName) {
 
 async function bcConfirmKick(userId, userName) {
   if (!bcBubbleId || !currentUser) return;
-  if (bcBubbleData?.created_by !== currentUser.id) { showToast('Kun ejeren kan fjerne medlemmer'); return; }
+  if (bcBubbleData?.created_by !== currentUser.id) { showWarningToast('Kun ejeren kan fjerne medlemmer'); return; }
   try {
     var { error } = await sb.from('bubble_members').delete()
       .eq('bubble_id', bcBubbleId).eq('user_id', userId);
@@ -1741,7 +1741,7 @@ async function bcCheckout() {
     }
   } catch(e) {
     logError('bcCheckout', e);
-    showToast('Fejl ved checkout');
+    _renderToast('Fejl ved checkout', 'error');
   }
 }
 
@@ -1985,7 +1985,7 @@ function bcSelectPostEvent(label, eventId) {
 async function bcSubmitPost() {
   var title = document.getElementById('bp-title').value.trim();
   var content = document.getElementById('bp-content').value.trim();
-  if (!title) { showToast('Titel er påkrævet'); return; }
+  if (!title) { showWarningToast('Titel er påkrævet'); return; }
 
   var picker = document.getElementById('bp-event-picker');
   var selectedEvent = picker ? picker._selectedEvent || null : null;

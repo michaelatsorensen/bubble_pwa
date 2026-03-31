@@ -390,8 +390,9 @@ async function loadQRProfilePreview(userId, bubbleId) {
       }
       goTo('screen-qr-preview');
     } else {
-      // Bubble join without profile - show teaser
+      // Bubble join without profile - show teaser with real profiles
       goTo('screen-qr-teaser');
+      loadTeaserProfiles(bubbleId);
     }
     window.history.replaceState({}, document.title, window.location.pathname);
   } catch(e) {
@@ -409,6 +410,69 @@ function qrPreviewSignup() {
 function qrTeaserSignup() {
   goTo('screen-auth');
   showAuthForms();
+}
+
+async function loadTeaserProfiles(bubbleId) {
+  var el = document.getElementById('qr-teaser-profiles');
+  if (!el) return;
+  try {
+    var profiles = [];
+    var colors = [
+      'linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#E879A8,#EC4899)',
+      'linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#1A9E8E,#10B981)',
+      'linear-gradient(135deg,#6366F1,#7C5CFC)'
+    ];
+
+    // Try bubble members first
+    if (bubbleId) {
+      var { data: members } = await sb.from('bubble_members')
+        .select('user_id, profiles:user_id(id,name,title,workplace,avatar_url)')
+        .eq('bubble_id', bubbleId).limit(5);
+      profiles = (members || []).map(function(m) { return m.profiles; }).filter(Boolean);
+    }
+
+    // Fallback: recent active profiles with title
+    if (profiles.length < 3) {
+      var { data: recent } = await sb.from('profiles')
+        .select('id,name,title,workplace,avatar_url')
+        .not('name', 'is', null)
+        .not('title', 'is', null)
+        .eq('banned', false)
+        .eq('is_anon', false)
+        .order('created_at', { ascending: false })
+        .limit(6);
+      var existingIds = profiles.map(function(p) { return p.id; });
+      (recent || []).forEach(function(p) {
+        if (profiles.length < 5 && existingIds.indexOf(p.id) < 0 && p.name && p.title) {
+          profiles.push(p);
+        }
+      });
+    }
+
+    if (profiles.length === 0) {
+      el.innerHTML = '<div style="text-align:center;padding:1rem;font-size:0.75rem;color:var(--muted)">Ingen profiler at vise endnu</div>';
+      return;
+    }
+
+    var countEl = document.getElementById('qr-teaser-count');
+    if (countEl) countEl.textContent = profiles.length + ' professionelle i dit område';
+
+    el.innerHTML = profiles.map(function(p, i) {
+      var ini = (p.name || '?').split(' ').map(function(w){return w[0]}).join('').slice(0,2).toUpperCase();
+      var subtitle = [p.title, p.workplace].filter(Boolean).join(' \u00B7 ');
+      var avHtml = p.avatar_url
+        ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        : ini;
+      var fade = i >= 3 ? 'opacity:' + (0.6 - (i - 3) * 0.2) : '';
+      return '<div class="card" style="margin:0 1.2rem;' + fade + '"><div style="display:flex;align-items:center;gap:0.6rem">' +
+        '<div class="avatar" style="width:36px;height:36px;background:' + colors[i % colors.length] + ';overflow:hidden">' + avHtml + '</div>' +
+        '<div><div style="font-size:0.82rem;font-weight:600">' + escHtml(p.name) + '</div>' +
+        '<div style="font-size:0.68rem;color:var(--text-secondary)">' + escHtml(subtitle) + '</div></div></div></div>';
+    }).join('');
+  } catch(e) {
+    logError('loadTeaserProfiles', e);
+    el.innerHTML = '';
+  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -512,7 +576,7 @@ async function checkGuestEventRoute() {
       }
     }
     
-    if (!bubble) { showToast('Event ikke fundet'); return false; }
+    if (!bubble) { _renderToast('Event ikke fundet', 'error'); return false; }
     
     _eventBubble = bubble;
     flowSet('pending_join', bubble.id);

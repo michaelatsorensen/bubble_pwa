@@ -209,7 +209,7 @@ async function saveContact() {
   try {
     if (!currentPerson) return;
     const { data: existing } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', currentPerson).maybeSingle();
-    if (existing) { showToast('Allerede gemt'); return; }
+    if (existing) { showWarningToast('Allerede gemt'); return; }
     await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: currentPerson });
     document.getElementById('save-btn').innerHTML = icon('checkCircle') + '<span>Gemt</span>';
     showSuccessToast('Kontakt gemt');
@@ -633,7 +633,7 @@ async function psSaveContact() {
   try {
     const userId = document.getElementById('person-sheet-el')?.dataset?.userId;
     if (!userId) return;
-    if (userId === currentUser.id) { showToast('Du kan ikke gemme dig selv'); return; }
+    if (userId === currentUser.id) { showWarningToast('Du kan ikke gemme dig selv'); return; }
     const { data: existing } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
     const btn = document.getElementById('ps-save-btn');
     if (existing) {
@@ -714,7 +714,7 @@ async function loadProfile() {
         adminPanel.style.display = 'none';
       }
     }
-  } catch(e) { logError("loadProfile", e); showToast('Kunne ikke hente profil — tjek forbindelsen'); }
+  } catch(e) { logError("loadProfile", e); _renderToast('Kunne ikke hente profil — tjek forbindelsen', 'error'); }
 }
 
 // Standalone saved contacts loader — called from loadProfile AND after save/remove
@@ -1097,7 +1097,7 @@ async function saveProfile() {
     const bio       = document.getElementById('ep-bio').value.trim();
     const linkedin  = (document.getElementById('ep-linkedin')?.value || '').trim();
     const workplace = (document.getElementById('ep-workplace')?.value || '').trim();
-    if (!name) return showToast('Navn er påkrævet');
+    if (!name) return showWarningToast('Navn er påkrævet');
     const { error } = await sb.from('profiles').upsert({
       id: currentUser.id, name, title, bio, linkedin, workplace,
       keywords: epSelectedTags, dynamic_keywords: epDynChips, is_anon: isAnon
@@ -1120,7 +1120,7 @@ function toggleAnon() {
     isAnon = !isAnon;
     updateAnonToggle();
     logError('toggleAnon', e);
-    showToast('Kunne ikke \u00e6ndre synlighed');
+    _renderToast('Kunne ikke \u00e6ndre synlighed', 'error');
   });
 }
 
@@ -1149,11 +1149,11 @@ async function psBlockUser() {
   var userId = document.getElementById('person-sheet-el')?.dataset?.userId;
   var userName = document.getElementById('person-sheet-el')?.dataset?.userName || 'bruger';
   if (!userId || !currentUser) return;
-  if (userId === currentUser.id) { showToast('Du kan ikke blokere dig selv'); return; }
+  if (userId === currentUser.id) { showWarningToast('Du kan ikke blokere dig selv'); return; }
   // Confirm
   if (_blockConfirm !== userId) {
     _blockConfirm = userId;
-    showToast('Blokér ' + userName + '? Tryk igen for at bekræfte');
+    showWarningToast('Blokér ' + userName + '? Tryk igen for at bekræfte');
     setTimeout(function() { _blockConfirm = null; }, 3000);
     return;
   }
@@ -1183,7 +1183,7 @@ async function psReportUser() {
   // Confirm
   if (_reportConfirm !== userId) {
     _reportConfirm = userId;
-    showToast('Rapportér ' + userName + '? Tryk igen for at bekræfte');
+    showWarningToast('Rapportér ' + userName + '? Tryk igen for at bekræfte');
     setTimeout(function() { _reportConfirm = null; }, 4000);
     return;
   }
@@ -1440,7 +1440,7 @@ async function sendBubbleUpInvitation(toUserId) {
       .eq('to_user_id', toUserId)
       .eq('status', 'pending')
       .maybeSingle();
-    if (existing) { showToast('Du har allerede sendt en invitation til denne person'); return; }
+    if (existing) { showWarningToast('Du har allerede sendt en invitation til denne person'); return; }
 
     // Create a hidden private bubble first
     const myName = currentProfile?.name || 'Min boble';
@@ -1453,7 +1453,7 @@ async function sendBubbleUpInvitation(toUserId) {
       description: 'Privat boble'
     }).select().single();
 
-    if (!bubble) { showToast('Noget gik galt'); return; }
+    if (!bubble) { _renderToast('Noget gik galt', 'error'); return; }
 
     // Add creator as member
     await sb.from('bubble_members').insert({bubble_id: bubble.id, user_id: currentUser.id});

@@ -489,8 +489,21 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 .notif-btn.decline { background:#FFFFFF; border:1px solid #D8D5E4; color:var(--text-secondary); box-shadow:0 1px 3px rgba(30,27,46,0.05); }
 
 /* ── TOAST ── */
-.toast { position:fixed; top:env(safe-area-inset-top,1rem); left:50%; transform:translateX(-50%) translateY(-20px); z-index:500; background:rgba(46,207,207,0.12); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); border:1px solid rgba(46,207,207,0.25); border-radius:var(--radius-sm); padding:0.55rem 1.2rem; font-size:0.78rem; font-weight:600; color:var(--accent3); box-shadow:0 8px 24px rgba(30,27,46,0.12); opacity:0; pointer-events:none; transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1); white-space:nowrap; }
-.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.toast { position:fixed; top:calc(env(safe-area-inset-top,0px) + 12px); left:12px; right:12px; z-index:500; display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:14px; font-size:0.75rem; font-weight:600; opacity:0; pointer-events:none; transform:translateY(-16px); transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+.toast.show { opacity:1; transform:translateY(0); pointer-events:auto; }
+.toast-ico { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; font-weight:700; }
+/* Info (default — purple) */
+.toast-info { background:#F0F0FF; border:1px solid rgba(124,92,252,0.2); color:#3B1F8A; }
+.toast-info .toast-ico { background:rgba(124,92,252,0.12); color:#7C5CFC; }
+/* Success (teal) */
+.toast-success { background:#EFFEFB; border:1px solid rgba(26,158,142,0.2); color:#085041; }
+.toast-success .toast-ico { background:rgba(26,158,142,0.12); color:#1A9E8E; }
+/* Error (red) */
+.toast-error { background:#FEF2F2; border:1px solid rgba(239,68,68,0.2); color:#7F1D1D; }
+.toast-error .toast-ico { background:rgba(239,68,68,0.12); color:#EF4444; }
+/* Warning (amber) */
+.toast-warn { background:#FFFBEB; border:1px solid rgba(245,158,11,0.2); color:#78350F; }
+.toast-warn .toast-ico { background:rgba(245,158,11,0.12); color:#F59E0B; }
 
 /* ── SPINNER ── */
 .spinner { width:28px; height:28px; border:2px solid #D8D5E4; border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; margin:2rem auto; }
@@ -1365,7 +1378,7 @@ a.person-action-btn { text-decoration:none; }
 
   /* Nav is in flow — inherits width from app-shell/body */
 
-  .toast { max-width: 540px; left:0; right:0; margin-left:auto; margin-right:auto; }
+  .toast { max-width: 540px; margin:0 auto; }
 
   .modal-overlay,
   .bb-overlay,
@@ -2153,3 +2166,6 @@ input[type="range"] {
 .dash-tray-inner.dtray-pink{background:#FEFBFC;border-color:rgba(232,121,168,0.3);box-shadow:0 2px 12px rgba(232,121,168,0.06)}
 .dash-chart-wrap{position:relative;height:160px}
 .dash-chart-wrap canvas{width:100%!important;height:100%!important}
+
+/* ── Connect scanner profile sheet ── */
+@keyframes connectSheetUp { from { transform:translateY(100%); } to { transform:translateY(0); } }

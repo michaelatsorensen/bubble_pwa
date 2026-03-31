@@ -32,6 +32,9 @@ async function _downloadAvatarToStorage(externalUrl, userId) {
 // ══════════════════════════════════════════════════════════
 async function maybeShowOnboarding() {
   try {
+    // Skip onboarding if user arrived via deep-link — don't block their action
+    if (flowGet('pending_contact') || flowGet('pending_join') || flowGet('event_flow')) return false;
+
     // Don't re-trigger if user explicitly skipped
     if (currentProfile?.onboarding_skipped) return false;
 
@@ -241,8 +244,8 @@ async function skipOnboarding() {
   if (!name && currentProfile?.name) name = currentProfile.name;
   if (!name && currentUser?.email) name = currentUser.email.split('@')[0];
   var workplace = (document.getElementById('ob-workplace')?.value || '').trim();
-  if (!name) { showToast('Skriv dit navn først'); return; }
-  if (!workplace) { showToast('Tilføj arbejdsplads — det er alt der mangler'); return; }
+  if (!name) { showWarningToast('Skriv dit navn først'); return; }
+  if (!workplace) { showWarningToast('Tilføj arbejdsplads — det er alt der mangler'); return; }
 
   try {
     await sb.from('profiles').upsert({
@@ -307,7 +310,7 @@ async function confirmAbortOnboarding() {
     currentUser = null;
     currentProfile = null;
     goTo('screen-auth');
-    showToast('Opsætning afbrudt');
+    showWarningToast('Opsætning afbrudt');
   } catch(e) { logError('abortOnboarding', e); goTo('screen-auth'); }
   } catch(e) { logError("confirmAbortOnboarding", e); }
 }
@@ -705,7 +708,7 @@ function obCustomTag(event, cat, input) {
   // Block inappropriate content
   var lower = val.toLowerCase();
   if (OB_BLOCKED_WORDS.some(function(w) { return lower.includes(w); })) {
-    showToast('Det tag er ikke tilladt');
+    showWarningToast('Det tag er ikke tilladt');
     input.value = '';
     return;
   }
@@ -956,7 +959,7 @@ function epCustomTag(event, cat, input) {
   var val = input.value.trim();
   if (!val || val.length < 2 || val.length > 40) { input.value = ''; return; }
   var lower = val.toLowerCase();
-  if (OB_BLOCKED_WORDS.some(function(w) { return lower.includes(w); })) { showToast('Det tag er ikke tilladt'); input.value = ''; return; }
+  if (OB_BLOCKED_WORDS.some(function(w) { return lower.includes(w); })) { showWarningToast('Det tag er ikke tilladt'); input.value = ''; return; }
   var exists = ALL_TAGS.find(function(t) { return t.label.toLowerCase() === lower; });
   if (exists) { epAddTag(exists.label, exists.category); input.value = ''; epRenderCategories(); return; }
   var formatted = val.charAt(0).toUpperCase() + val.slice(1);
@@ -975,14 +978,14 @@ function epCustomTag(event, cat, input) {
 
 async function saveOnboarding() {
   try {
-    if (!_obConsentGiven) return showToast('Du skal acceptere betingelserne');
+    if (!_obConsentGiven) return showWarningToast('Du skal acceptere betingelserne');
     const name      = document.getElementById('ob-name').value.trim();
     const title     = document.getElementById('ob-title').value.trim();
     const bio       = document.getElementById('ob-bio').value.trim();
     const linkedin  = document.getElementById('ob-linkedin').value.trim();
     const workplace = (document.getElementById('ob-workplace')?.value || '').trim();
-    if (!name)            return showToast('Navn er påkrævet');
-    if (!workplace)       return showToast('Virksomhed er påkrævet');
+    if (!name)            return showWarningToast('Navn er påkrævet');
+    if (!workplace)       return showWarningToast('Virksomhed er påkrævet');
     const { error } = await sb.from('profiles').upsert({
       id: currentUser.id, name, title, bio, linkedin, workplace,
       keywords: obSelectedTags.length > 0 ? obSelectedTags : [],

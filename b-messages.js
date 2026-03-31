@@ -165,7 +165,7 @@ async function sendMessage() {
   if (sendBtn) { sendBtn.disabled = true; }
   console.debug('[dm] sendMessage');
   try {
-    if (isBlocked(currentChatUser)) { showToast('Denne bruger er blokeret'); return; }
+    if (isBlocked(currentChatUser)) { _renderToast('Denne bruger er blokeret', 'error'); return; }
     const input = document.getElementById('chat-input');
     const content = filterChatContent(input.value.trim());
     if (!content) return;
@@ -259,14 +259,14 @@ async function dmHandleFile(input) {
   try {
     const file = input.files[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) { showToast('Maks 10MB per fil'); return; }
+    if (file.size > 10 * 1024 * 1024) { showWarningToast('Maks 10MB per fil'); return; }
 
     // File type blocklist — prevent stored XSS
     var blockedTypes = ['text/html','application/xhtml+xml','image/svg+xml','application/javascript','text/javascript','application/x-httpd-php'];
     var blockedExts = ['html','htm','svg','js','php','exe','bat','cmd','sh','ps1'];
     var ext = (file.name || '').split('.').pop().toLowerCase();
     if (blockedTypes.indexOf(file.type) >= 0 || blockedExts.indexOf(ext) >= 0) {
-      showToast('Filtypen er ikke tilladt');
+      showWarningToast('Filtypen er ikke tilladt');
       input.value = '';
       return;
     }
@@ -284,7 +284,7 @@ async function dmHandleFile(input) {
 
     // Use signed URL for privacy — DM files should not be publicly accessible
     const { data: urlData, error: urlErr } = await sb.storage.from('bubble-files').createSignedUrl(path, 604800); // 7 days
-    if (urlErr || !urlData?.signedUrl) { showToast('Kunne ikke generere fil-link'); input.value = ''; return; }
+    if (urlErr || !urlData?.signedUrl) { _renderToast('Kunne ikke generere fil-link', 'error'); input.value = ''; return; }
 
     const { data: newMsg, error } = await sb.from('messages').insert({
       sender_id: currentUser.id,

@@ -301,7 +301,7 @@ async function adminConfirmBan() {
     adminLoadReports();
     adminLoadBanned();
     adminLoadStats();
-  } catch(e) { showToast('Fejl: ' + e.message); }
+  } catch(e) { _renderToast('Fejl: ' + e.message, 'error'); }
 }
 
 function adminCancelBan(btn) {
@@ -318,7 +318,7 @@ async function adminUnbanUser(userId) {
     adminLoadReports();
     adminLoadBanned();
     adminLoadStats();
-  } catch(e) { showToast('Fejl: ' + e.message); }
+  } catch(e) { _renderToast('Fejl: ' + e.message, 'error'); }
 }
 
 var _adminSearchTimer = null;
@@ -373,8 +373,8 @@ function adminTimeAgo(dateStr) {
 var TEST_ACCOUNT_EMAIL = 'test@bubbleme.dk';
 
 async function testOnboardingReset(mode) {
-  if (!currentUser) { showToast('Ikke logget ind'); return; }
-  if (!isAdmin()) { showToast('Kun admin kan bruge test-tools'); return; }
+  if (!currentUser) { _renderToast('Ikke logget ind', 'error'); return; }
+  if (!isAdmin()) { showWarningToast('Kun admin kan bruge test-tools'); return; }
 
   try {
     showToast('Nulstiller testkonto...');
@@ -407,7 +407,7 @@ async function testOnboardingReset(mode) {
       if (adminToken) {
         redirectUrl = baseUrl + '?qrt=' + adminToken.token;
       } else {
-        showToast('Du har ingen QR-token. Åbn "Min QR" først.');
+        showWarningToast('Du har ingen QR-token. Åbn "Min QR" først.');
         return;
       }
     } else if (mode === 'event') {
@@ -424,7 +424,7 @@ async function testOnboardingReset(mode) {
         }
         redirectUrl = baseUrl + '?event=' + picked.id;
       } else {
-        showToast('Ingen events fundet');
+        showWarningToast('Ingen events fundet');
         return;
       }
     }
@@ -439,6 +439,6 @@ async function testOnboardingReset(mode) {
 
   } catch(e) {
     logError('testOnboardingReset', e);
-    showToast('Fejl: ' + (e.message || 'ukendt'));
+    _renderToast('Fejl: ' + (e.message || 'ukendt'), 'error');
   }
 }

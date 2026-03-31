@@ -126,9 +126,9 @@ async function liveCheckin(bubbleId) {
         .select('id').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle();
       if (!memCheck) {
         if (bCheck.visibility === 'hidden') {
-          showToast('Denne boble kræver en invitation');
+          _renderToast('Denne boble kræver en invitation', 'error');
         } else {
-          showToast('Denne boble kræver godkendelse');
+          _renderToast('Denne boble kræver godkendelse', 'error');
           requestJoin(bubbleId);
         }
         return;
@@ -254,7 +254,7 @@ async function liveCheckout() {
     }
   } catch (e) {
     logError('liveCheckout', e);
-    showToast('Fejl ved checkout');
+    _renderToast('Fejl ved checkout', 'error');
   }
 }
 
@@ -435,7 +435,7 @@ async function liveScanConfirmPersonCheckin() {
       });
       if (insErr) {
         logError('scanCheckin:insert', insErr);
-        showToast('Check-in fejlede — du kan ikke checke andre ind endnu');
+        _renderToast('Check-in fejlede — du kan ikke checke andre ind endnu', 'error');
         if (status) { status.textContent = 'Check-in fejlede'; status.className = 'live-scan-status error'; status.style.display = ''; }
         setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; } liveQrPreviewLoop(); }, 3000);
         return;
@@ -447,7 +447,7 @@ async function liveScanConfirmPersonCheckin() {
       }).eq('bubble_id', p.bubbleId).eq('user_id', p.profile.id);
       if (upErr) {
         logError('scanCheckin:update', upErr);
-        showToast('Check-in fejlede — du kan ikke checke andre ind endnu');
+        _renderToast('Check-in fejlede — du kan ikke checke andre ind endnu', 'error');
         if (status) { status.textContent = 'Check-in fejlede'; status.className = 'live-scan-status error'; status.style.display = ''; }
         setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; } liveQrPreviewLoop(); }, 3000);
         return;
@@ -776,5 +776,311 @@ document.addEventListener('visibilitychange', function() {
   if (document.hidden) {
     // App backgrounded — truly release camera to save battery
     if (_liveQrStream) stopLiveCamera();
+    if (_connectStream) closeConnectScanner();
   }
 });
+
+// ══════════════════════════════════════════════════════════
+//  CONNECT SCANNER — scan a person's QR to save contact
+//  Reuses jsQR / BarcodeDetector from live scanner
+// ══════════════════════════════════════════════════════════
+var _connectStream = null;
+var _connectFrame = null;
+var _connectPending = false;
+
+function openConnectScanner() {
+  if (!currentUser) { _renderToast('Log ind først', 'error'); return; }
+  // Create fullscreen overlay
+  var ov = document.getElementById('connect-scanner-overlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'connect-scanner-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:#000;display:flex;flex-direction:column';
+    ov.innerHTML =
+      '<div style="position:relative;flex:1;overflow:hidden">' +
+        '<video id="connect-qr-video" playsinline autoplay style="width:100%;height:100%;object-fit:cover"></video>' +
+        '<canvas id="connect-qr-canvas" style="display:none"></canvas>' +
+        '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">' +
+          '<div style="width:220px;height:220px;border:2px solid rgba(255,255,255,0.4);border-radius:24px;box-shadow:0 0 0 9999px rgba(0,0,0,0.5)"></div>' +
+        '</div>' +
+        '<div style="position:absolute;top:calc(env(safe-area-inset-top,12px) + 12px);left:16px;right:16px;display:flex;align-items:center;justify-content:space-between">' +
+          '<button onclick="closeConnectScanner()" style="width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,0.15);color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>' +
+          '<div style="font-size:0.8rem;font-weight:700;color:white">Scan en profil-QR</div>' +
+          '<div style="width:36px"></div>' +
+        '</div>' +
+        '<div id="connect-scan-status" style="position:absolute;bottom:calc(env(safe-area-inset-bottom,16px) + 80px);left:0;right:0;text-align:center;font-size:0.75rem;color:white;font-weight:600">Peg kameraet mod en Bubble QR-kode</div>' +
+        '<div id="connect-scan-result" style="position:absolute;bottom:0;left:0;right:0;display:none"></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+  }
+  ov.style.display = 'flex';
+  _connectPending = false;
+  startConnectCamera();
+}
+
+function closeConnectScanner() {
+  if (_connectFrame) { cancelAnimationFrame(_connectFrame); _connectFrame = null; }
+  if (_connectStream) {
+    _connectStream.getTracks().forEach(function(t) { t.stop(); });
+    _connectStream = null;
+  }
+  var ov = document.getElementById('connect-scanner-overlay');
+  if (ov) ov.style.display = 'none';
+  var video = document.getElementById('connect-qr-video');
+  if (video) video.srcObject = null;
+  _connectPending = false;
+}
+
+async function startConnectCamera() {
+  var video = document.getElementById('connect-qr-video');
+  var status = document.getElementById('connect-scan-status');
+  if (!video) return;
+  try {
+    if (typeof jsQR === 'undefined') {
+      if (status) status.textContent = 'Indlæser scanner...';
+      await new Promise(function(resolve, reject) {
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+        s.onload = resolve;
+        s.onerror = function() { reject(new Error('Scanner fejlede')); };
+        document.head.appendChild(s);
+      });
+    }
+    await initBarcodeDetector();
+    if (status) status.textContent = 'Starter kamera...';
+    _connectStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
+    });
+    video.srcObject = _connectStream;
+    await video.play();
+    if (status) status.textContent = 'Peg kameraet mod en Bubble QR-kode';
+    _connectScanLoop();
+  } catch(e) {
+    logError('connectCamera', e);
+    if (status) status.textContent = e.message || 'Kunne ikke starte kamera';
+  }
+}
+
+function _connectScanLoop() {
+  var video = document.getElementById('connect-qr-video');
+  if (!video || !_connectStream || _connectPending) return;
+  if (video.readyState < video.HAVE_ENOUGH_DATA) {
+    _connectFrame = requestAnimationFrame(_connectScanLoop);
+    return;
+  }
+  if (_useNativeDetector && _barcodeDetector) {
+    _barcodeDetector.detect(video).then(function(codes) {
+      if (codes && codes.length > 0 && codes[0].rawValue && !_connectPending) {
+        _connectResolve(codes[0].rawValue);
+        return;
+      }
+      setTimeout(function() { _connectFrame = requestAnimationFrame(_connectScanLoop); }, 100);
+    }).catch(function() {
+      setTimeout(function() { _connectFrame = requestAnimationFrame(_connectScanLoop); }, 200);
+    });
+  } else {
+    var canvas = document.getElementById('connect-qr-canvas');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    if (typeof jsQR !== 'undefined') {
+      var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
+      if (code && code.data && !_connectPending) {
+        _connectResolve(code.data);
+        return;
+      }
+    }
+    setTimeout(function() { _connectFrame = requestAnimationFrame(_connectScanLoop); }, 120);
+  }
+}
+
+async function _connectResolve(rawUrl) {
+  _connectPending = true;
+  if (_connectFrame) { cancelAnimationFrame(_connectFrame); _connectFrame = null; }
+  try {
+    // Parse URL to find profile ID or QR token
+    var url;
+    try { url = new URL(rawUrl); } catch(e) {
+      _renderToast('Ukendt QR-kode', 'warn');
+      _connectPending = false;
+      _connectScanLoop();
+      return;
+    }
+    var params = new URLSearchParams(url.search);
+    var profileId = params.get('profile');
+    var qrToken = params.get('qrt');
+    var eventId = params.get('event');
+    var joinId = params.get('join');
+
+    // Resolve QR token → profile ID
+    if (qrToken && !profileId) {
+      var { data: tokenData } = await sb.from('qr_tokens').select('user_id, expires_at').eq('token', qrToken).maybeSingle();
+      if (tokenData && new Date(tokenData.expires_at) > new Date()) {
+        profileId = tokenData.user_id;
+      } else {
+        _renderToast('QR-kode er udløbet', 'warn');
+        _connectPending = false;
+        _connectScanLoop();
+        return;
+      }
+    }
+
+    // Handle profile/contact QR → show profile sheet for confirmation
+    if (profileId) {
+      if (profileId === currentUser.id) {
+        _renderToast('Det er din egen QR-kode', 'warn');
+        _connectPending = false;
+        _connectScanLoop();
+        return;
+      }
+      // Fetch profile
+      var { data: p } = await sb.from('profiles').select('*').eq('id', profileId).single();
+      if (!p) {
+        _renderToast('Profil ikke fundet', 'error');
+        _connectPending = false;
+        _connectScanLoop();
+        return;
+      }
+      // Pause camera, show profile sheet
+      if (_connectFrame) { cancelAnimationFrame(_connectFrame); _connectFrame = null; }
+      var video = document.getElementById('connect-qr-video');
+      if (video) video.pause();
+      _connectShowProfileSheet(p, profileId);
+      return;
+    }
+
+    // Handle event QR
+    if (eventId) {
+      closeConnectScanner();
+      flowSet('pending_join', eventId);
+      flowSet('event_flow', 'true');
+      await checkPendingJoin();
+      return;
+    }
+
+    // Handle join QR
+    if (joinId) {
+      closeConnectScanner();
+      await sb.from('bubble_members').insert({ bubble_id: joinId, user_id: currentUser.id }).catch(function(){});
+      showSuccessToast('Du er med i boblen!');
+      setTimeout(function() { openBubbleChat(joinId, 'screen-home'); }, 300);
+      return;
+    }
+
+    _renderToast('Ikke en Bubble QR-kode', 'warn');
+    _connectPending = false;
+    _connectScanLoop();
+  } catch(e) {
+    logError('connectResolve', e);
+    _renderToast('Fejl ved scanning', 'error');
+    _connectPending = false;
+    _connectScanLoop();
+  }
+}
+
+// ── Profile sheet inside scanner overlay ──
+var _connectProfileId = null;
+
+function _connectShowProfileSheet(p, profileId) {
+  _connectProfileId = profileId;
+  var isAnon = p.is_anon;
+  var name = isAnon ? 'Anonym bruger' : (p.name || 'Ukendt');
+  var initials = isAnon ? '?' : name.split(' ').map(function(w){return w[0]}).join('').slice(0,2).toUpperCase();
+  var subtitle = [p.title, p.workplace].filter(Boolean).join(' \u00B7 ');
+  var bio = p.bio || '';
+
+  // Shared interests
+  var myKw = (currentProfile?.keywords || []).map(function(k){ return k.toLowerCase(); });
+  var theirKw = (p.keywords || []).map(function(k){ return k.toLowerCase(); });
+  var overlap = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; });
+  var tagsHtml = '';
+  if (overlap.length > 0) {
+    tagsHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">' +
+      overlap.slice(0, 6).map(function(k) {
+        return '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.1);color:#085041;font-weight:600">\u2713 ' + escHtml(k) + '</span>';
+      }).join('') +
+      (overlap.length > 6 ? '<span style="font-size:0.55rem;color:rgba(255,255,255,0.5)">+' + (overlap.length - 6) + ' mere</span>' : '') +
+      '</div>';
+  }
+
+  // Avatar
+  var avatarHtml = p.avatar_url && !isAnon
+    ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+    : '<span style="font-size:1.2rem;font-weight:700;color:white">' + initials + '</span>';
+
+  var resultEl = document.getElementById('connect-scan-result');
+  if (!resultEl) return;
+
+  resultEl.innerHTML =
+    '<div style="background:rgba(30,27,46,0.95);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-radius:24px 24px 0 0;padding:20px 20px calc(env(safe-area-inset-bottom,16px) + 20px);animation:connectSheetUp 0.35s ease">' +
+      '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 16px"></div>' +
+      // Profile card
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">' +
+        '<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#6366F1);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">' + avatarHtml + '</div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:1rem;font-weight:800;color:white">' + escHtml(name) + '</div>' +
+          (subtitle ? '<div style="font-size:0.75rem;color:rgba(255,255,255,0.6);margin-top:2px">' + escHtml(subtitle) + '</div>' : '') +
+          (overlap.length > 0 ? '<div style="font-size:0.65rem;color:rgba(46,207,207,0.9);font-weight:600;margin-top:3px">' + overlap.length + ' f\u00e6lles interesser</div>' : '') +
+        '</div>' +
+      '</div>' +
+      // Bio
+      (bio ? '<div style="font-size:0.75rem;color:rgba(255,255,255,0.7);line-height:1.45;margin-bottom:10px">' + escHtml(bio.length > 120 ? bio.slice(0,120) + '...' : bio) + '</div>' : '') +
+      // Shared tags
+      tagsHtml +
+      // Actions
+      '<div style="display:flex;gap:8px;margin-top:16px">' +
+        '<button onclick="_connectSaveContact()" style="flex:2;padding:12px;border-radius:14px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit">Gem kontakt</button>' +
+        '<button onclick="_connectDismissSheet()" style="flex:1;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.15);background:none;color:rgba(255,255,255,0.7);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">Annuller</button>' +
+      '</div>' +
+    '</div>';
+  resultEl.style.display = 'block';
+
+  // Hide status text
+  var status = document.getElementById('connect-scan-status');
+  if (status) status.style.display = 'none';
+}
+
+async function _connectSaveContact() {
+  if (!_connectProfileId || !currentUser) return;
+  var btn = document.querySelector('#connect-scan-result button');
+  if (btn) { btn.textContent = 'Gemmer...'; btn.disabled = true; }
+  try {
+    await sb.from('saved_contacts').upsert({ user_id: currentUser.id, contact_id: _connectProfileId });
+    clearSavedContactIdsCache();
+    trackEvent('qr_contact_saved', { contact_id: _connectProfileId });
+
+    // Transform sheet to confirmation
+    var resultEl = document.getElementById('connect-scan-result');
+    if (resultEl) {
+      var savedId = _connectProfileId;
+      resultEl.querySelector('div').innerHTML =
+        '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 16px"></div>' +
+        '<div style="text-align:center;padding:8px 0 4px">' +
+          '<div style="width:48px;height:48px;border-radius:50%;background:rgba(26,158,142,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:20px;color:#1A9E8E">\u2713</div>' +
+          '<div style="font-size:1rem;font-weight:800;color:white">Kontakt gemt!</div>' +
+          '<div style="font-size:0.72rem;color:rgba(255,255,255,0.5);margin-top:4px">Du kan finde dem under Gemte kontakter</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;margin-top:16px">' +
+          '<button onclick="closeConnectScanner();setTimeout(function(){openPerson(\'' + savedId + '\',\'screen-home\')},300)" style="flex:1;padding:12px;border-radius:14px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit">Se profil</button>' +
+          '<button onclick="closeConnectScanner();setTimeout(function(){openChat(\'' + savedId + '\',\'screen-home\')},300)" style="flex:1;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.15);background:none;color:rgba(255,255,255,0.7);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">Send besked</button>' +
+        '</div>';
+    }
+  } catch(e) {
+    logError('connectSave', e);
+    _renderToast('Kunne ikke gemme kontakt', 'error');
+  }
+}
+
+function _connectDismissSheet() {
+  var resultEl = document.getElementById('connect-scan-result');
+  if (resultEl) { resultEl.style.display = 'none'; resultEl.innerHTML = ''; }
+  var status = document.getElementById('connect-scan-status');
+  if (status) status.style.display = '';
+  _connectPending = false;
+  // Resume camera
+  var video = document.getElementById('connect-qr-video');
+  if (video && _connectStream) { video.play(); _connectScanLoop(); }
+}

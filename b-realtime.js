@@ -464,7 +464,7 @@ async function loadMessages() {
 
 async function openChat(userId, fromScreen) {
   console.debug('[dm] openChat:', userId, 'from:', fromScreen);
-  if (isBlocked(userId)) { showToast('Denne bruger er blokeret'); return; }
+  if (isBlocked(userId)) { _renderToast('Denne bruger er blokeret', 'error'); return; }
   try {
     currentChatUser = userId;
     const { data: p } = await sb.from('profiles').select('name,title,workplace,avatar_url').eq('id', userId).single();
