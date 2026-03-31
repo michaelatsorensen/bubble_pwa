@@ -752,7 +752,7 @@ async function bcLoadMessages() {
 
     // Hent unikke profiler separat
     const userIds = [...new Set(msgs.map(m => m.user_id))];
-    const { data: profiles } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', userIds);
+    const { data: profiles } = await sb.from('profiles').select('id, name, title, workplace, avatar_url').in('id', userIds);
     const profileMap = {};
     (profiles || []).forEach(p => profileMap[p.id] = p);
 
@@ -864,7 +864,7 @@ var _profileCache = {};
 async function getCachedProfile(userId) {
   try {
   if (_profileCache[userId]) return _profileCache[userId];
-  var { data: p } = await sb.from('profiles').select('name,title,avatar_url').eq('id', userId).maybeSingle();
+  var { data: p } = await sb.from('profiles').select('name,title,workplace,avatar_url').eq('id', userId).maybeSingle();
   if (p) _profileCache[userId] = p;
   return p || {};
   } catch(e) { logError("getCachedProfile", e); }
@@ -1231,7 +1231,7 @@ async function bcLoadMembers() {
 
     // Hent profiler separat
     const userIds = members.map(m => m.user_id);
-    const { data: profiles } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', userIds);
+    const { data: profiles } = await sb.from('profiles').select('id, name, title, workplace, avatar_url').in('id', userIds);
     const profileMap = {};
     (profiles || []).forEach(p => profileMap[p.id] = p);
 
@@ -1276,7 +1276,7 @@ async function bcLoadMembers() {
           '<div class="chat-member-avatar" style="background:linear-gradient(135deg,#F59E0B,#EAB308);overflow:hidden">' + avHtml + '</div>' +
           '<div style="flex:1;min-width:0">' +
             '<div class="chat-member-name">' + escHtml(p.name||'Ukendt') + '</div>' +
-            '<div class="chat-member-status">' + escHtml(p.title || '') + '</div>' +
+            '<div class="chat-member-status">' + escHtml([p.title, p.workplace].filter(Boolean).join(' \u00B7 ')) + '</div>' +
           '</div>' +
           '<div style="display:flex;gap:4px;flex-shrink:0">' +
             '<button onclick="event.stopPropagation();bcApproveMember(\'' + m.user_id + '\')" style="padding:0.3rem 0.6rem;font-size:0.68rem;font-weight:700;border-radius:8px;border:none;background:#1A9E8E;color:white;cursor:pointer;font-family:inherit">Godkend</button>' +
@@ -1308,7 +1308,7 @@ async function bcLoadMembers() {
       const liveBadge = m._isLive ? '<span class="live-badge-mini">LIVE</span>' : '';
 
       // Status line: for events, show check-in time; for networks, show title
-      var statusText = escHtml(p.title || '');
+      var statusText = escHtml([p.title, p.workplace].filter(Boolean).join(' \u00B7 '));
       if (isEvent && !isOwnerRow && !m._isLive && m.checked_in_at) {
         var checkinTime = new Date(m.checked_in_at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
         statusText = (statusText ? statusText + ' · ' : '') + '<span style="color:var(--muted)">Var her kl. ' + checkinTime + '</span>';

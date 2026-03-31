@@ -448,11 +448,11 @@ async function openChat(userId, fromScreen) {
   if (isBlocked(userId)) { showToast('Denne bruger er blokeret'); return; }
   try {
     currentChatUser = userId;
-    const { data: p } = await sb.from('profiles').select('name,title,avatar_url').eq('id', userId).single();
+    const { data: p } = await sb.from('profiles').select('name,title,workplace,avatar_url').eq('id', userId).single();
     currentChatName = p?.name || 'Ukendt';
     window._chatPartnerAvatar = p?.avatar_url || null;
     document.getElementById('chat-name').textContent = currentChatName;
-    document.getElementById('chat-role').textContent = p?.title || '';
+    document.getElementById('chat-role').textContent = [p?.title, p?.workplace].filter(Boolean).join(' \u00B7 ');
     // Online status — check if user was active recently
     var lastActive = p?.updated_at || p?.last_sign_in_at;
     var roleEl = document.getElementById('chat-role');

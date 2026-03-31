@@ -798,7 +798,7 @@ async function loadSavedContacts() {
           </div>
           <div style="flex:1;min-width:0">
             <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||'Ukendt')}</div>
-            <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.title||'')}</div>
+            <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml([p.title, p.workplace].filter(Boolean).join(' · '))}</div>
           </div>
           <div style="display:flex;gap:0.35rem;flex-shrink:0" onclick="event.stopPropagation()">
             <button class="saved-action-btn" onclick="openChat('${pid}','screen-profile')" title="Send besked">${icon('chat')}</button>
@@ -957,7 +957,7 @@ async function loadProfileInvitations() {
 
     // Fetch sender profiles separately — no FK dependency
     const senderIds = [...new Set(invites.map(i => i.from_user_id))];
-    const { data: profiles } = await sb.from('profiles').select('id, name, title, keywords, avatar_url').in('id', senderIds);
+    const { data: profiles } = await sb.from('profiles').select('id, name, title, workplace, keywords, avatar_url').in('id', senderIds);
     const profileMap = {};
     (profiles || []).forEach(p => { profileMap[p.id] = p; });
 
@@ -984,7 +984,7 @@ async function loadProfileInvitations() {
           <div class="avatar" style="background:${col};width:40px;height:40px;font-size:0.75rem;flex-shrink:0" data-action="openPerson" data-id="${inv.from_user_id}" data-from="screen-profile">${ini}</div>
           <div style="flex:1;min-width:0">
             <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||'Ukendt')}</div>
-            <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.title||'')}</div>
+            <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml([p.title, p.workplace].filter(Boolean).join(' · '))}</div>
             ${b.name ? `<div class="fs-065 text-muted" style="margin-top:0.15rem">${icon('bubble')} ${escHtml(b.name)} · ${time}</div>` : `<div class="fs-065 text-muted" style="margin-top:0.15rem">Bubble Up · ${time}</div>`}
             ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.25rem">${tags}</div>` : ''}
           </div>
