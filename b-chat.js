@@ -208,6 +208,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
   // If navigating from one bubble to another (e.g. parent → child event),
   // store previous bubble so back can reopen it
   var prevBubbleId = (fromScreen === 'screen-bubble-chat' && bcBubbleId) ? bcBubbleId : null;
+  var prevTab = prevBubbleId ? _bcActiveTab : null;
   bcUnsubscribe();
   bcBubbleId = bubbleId;
 
@@ -216,6 +217,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
     sessionStorage.setItem('bb_route', JSON.stringify({
       bubbleId: bubbleId,
       parentBubbleId: prevBubbleId || null,
+      parentTab: prevTab || null,
       backTarget: fromScreen || 'screen-home'
     }));
   } catch(e) {}
@@ -223,7 +225,11 @@ async function openBubbleChat(bubbleId, fromScreen) {
   var backBtn = document.getElementById('bc-back-btn');
   var _bcBackFn;
   if (prevBubbleId) {
-    _bcBackFn = function() { openBubbleChat(prevBubbleId, 'screen-bubbles'); };
+    _bcBackFn = function() {
+      openBubbleChat(prevBubbleId, 'screen-bubbles');
+      // Restore parent tab after bubble loads
+      if (prevTab) setTimeout(function() { bcSwitchTab(prevTab); }, 150);
+    };
   } else {
     _bcBackFn = function() { goTo(fromScreen || 'screen-home'); };
   }
@@ -1501,36 +1507,49 @@ async function bcLoadInfo() {
 
           var childCards = '';
 
-          // Sub-networks with fold-out
+          // Sub-networks with fold-out (same tree structure as home screen)
           childNets.forEach(function(cn) {
             var cnMc = cn.bubble_members?.[0]?.count || 0;
             var cnGc = gcMap[cn.id] || [];
+            var cnEvents = cnGc.filter(function(g) { return g.type === 'event' || g.type === 'live'; });
+            var cnNets = cnGc.filter(function(g) { return g.type !== 'event' && g.type !== 'live'; });
             var cnAccId = 'bci-' + cn.id.slice(0, 8);
+            var hasChildren = cnEvents.length > 0 || cnNets.length > 0;
 
-            childCards += '<div style="margin-bottom:0.35rem">';
+            childCards += '<div class="bb-tree-branch">';
             childCards += '<div class="bb-tree-net">';
             childCards += '<div class="bb-tree-net-ico">' + _netIco + '</div>';
-            childCards += '<div class="bb-tree-body" onclick="openBubble(\'' + cn.id + '\')">';
+            childCards += '<div class="bb-tree-body" onclick="openBubbleChat(\'' + cn.id + '\',\'screen-bubble-chat\')">';
             childCards += '<div style="font-size:0.75rem;font-weight:600">' + escHtml(cn.name) + '</div>';
             childCards += '<div style="font-size:0.58rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(cn.visibility) + cnMc + ' medl.' + (cnGc.length > 0 ? ' \u00B7 ' + cnGc.length + ' events' : '') + '</div>';
             childCards += '</div>';
-            if (cnGc.length > 0) {
+            if (hasChildren) {
               childCards += '<button class="bb-tree-toggle" id="tog-' + cnAccId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + cnAccId + '\')" style="width:24px;height:24px">' + _chevSm + '</button>';
             }
             childCards += '</div>';
 
-            if (cnGc.length > 0) {
+            if (hasChildren) {
               childCards += '<div class="bb-tree-leaves collapsed" id="trunk-' + cnAccId + '">';
               cnGc.forEach(function(ev) {
                 var isPast = ev.event_date && new Date(ev.event_date) < now;
                 var evMc = ev.bubble_members?.[0]?.count || 0;
                 var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) : '';
-                childCards += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="openBubble(\'' + ev.id + '\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
-                childCards += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
-                childCards += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
-                childCards += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' tilmeldt' : '') + '</div></div>';
-                childCards += '<div class="bb-tree-go">\u203A</div>';
-                childCards += '</div></div>';
+                var isEvt = ev.type === 'event' || ev.type === 'live';
+                if (isEvt) {
+                  childCards += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubble-chat\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
+                  childCards += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
+                  childCards += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
+                  childCards += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' tilmeldt' : '') + '</div></div>';
+                  childCards += '<div class="bb-tree-go">\u203A</div>';
+                  childCards += '</div></div>';
+                } else {
+                  childCards += '<div class="bb-tree-leaf"><div class="bb-tree-net" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubble-chat\')">';
+                  childCards += '<div class="bb-tree-net-ico">' + _netIco + '</div>';
+                  childCards += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
+                  childCards += '<div style="font-size:0.55rem;color:var(--muted)">' + visIcon(ev.visibility) + evMc + ' medl.</div></div>';
+                  childCards += '<div class="bb-tree-go">\u203A</div>';
+                  childCards += '</div></div>';
+                }
               });
               if (canEdit) {
                 childCards += '<div class="bb-tree-add" onclick="openCreateEventFromBubble(\'' + cn.id + '\')">' + _addIco + ' Opret event</div>';
@@ -1540,7 +1559,7 @@ async function bcLoadInfo() {
             childCards += '</div>';
           });
 
-          // Direct child events (flat)
+          // Direct child events
           childEvents.forEach(function(ch) {
             var chMc = ch.bubble_members?.[0]?.count || 0;
             var isPast = ch.event_date && new Date(ch.event_date) < now;
@@ -1548,12 +1567,12 @@ async function bcLoadInfo() {
               ? new Date(ch.event_date).toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' }) +
                 (new Date(ch.event_date).getHours() > 0 ? ' kl. ' + new Date(ch.event_date).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '')
               : '';
-            childCards += '<div class="bb-tree-evt" onclick="openBubble(\'' + ch.id + '\')" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5' : '') + '">';
+            childCards += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
             childCards += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
             childCards += '<div style="flex:1;min-width:0"><div style="font-size:0.75rem;font-weight:600">' + escHtml(ch.name) + '</div>';
             childCards += '<div style="font-size:0.58rem;color:var(--muted)">' + visIcon(ch.visibility) + dateStr + ' \u00B7 ' + chMc + ' tilmeldt</div></div>';
             childCards += '<div class="bb-tree-go">\u203A</div>';
-            childCards += '</div>';
+            childCards += '</div></div>';
           });
 
           eventsHtml = '<div style="margin-bottom:0.9rem">' +
