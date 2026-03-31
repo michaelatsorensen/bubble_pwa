@@ -2082,7 +2082,7 @@ function confirmPopBubble(bubbleId) {
   var tray = document.createElement('div');
   tray.id = 'pop-bubble-tray';
   tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.8rem;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:12px;margin-top:0.5rem;gap:0.5rem';
-  tray.innerHTML = '<div style="flex:1"><div style="font-size:0.78rem;font-weight:700;color:#EF4444">Slet denne boble?</div><div style="font-size:0.65rem;color:var(--text-secondary)">Chat, medlemmer og data slettes permanent</div></div>' +
+  tray.innerHTML = '<div style="flex:1"><div style="font-size:0.78rem;font-weight:700;color:#EF4444">Slet denne boble?</div><div style="font-size:0.65rem;color:var(--text-secondary)">Chat, medlemmer, tilknyttede sub-bobler og events slettes permanent</div></div>' +
     '<div style="display:flex;gap:0.3rem">' +
     '<button onclick="popBubble(\'' + bubbleId + '\')" style="font-size:0.72rem;padding:0.35rem 0.7rem;background:#EF4444;color:white;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700">Slet</button>' +
     '<button onclick="document.getElementById(\'pop-bubble-tray\').remove()" style="font-size:0.72rem;padding:0.35rem 0.7rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit">Annuller</button>' +
@@ -2093,7 +2093,18 @@ function confirmPopBubble(bubbleId) {
 async function popBubble(bubbleId) {
   try {
     showToast('Sletter boble...');
-    // Delete in order: messages, reactions, members, invitations, bubble
+    // S4: Check for child bubbles and cascade-delete
+    var { data: children } = await sb.from('bubbles').select('id').eq('parent_bubble_id', bubbleId);
+    if (children && children.length > 0) {
+      for (var i = 0; i < children.length; i++) {
+        var cid = children[i].id;
+        await sb.from('bubble_messages').delete().eq('bubble_id', cid);
+        await sb.from('bubble_members').delete().eq('bubble_id', cid);
+        await sb.from('bubble_invitations').delete().eq('bubble_id', cid);
+        await sb.from('bubbles').delete().eq('id', cid);
+      }
+    }
+    // Delete main bubble's data
     await sb.from('bubble_messages').delete().eq('bubble_id', bubbleId);
     await sb.from('bubble_members').delete().eq('bubble_id', bubbleId);
     await sb.from('bubble_invitations').delete().eq('bubble_id', bubbleId);

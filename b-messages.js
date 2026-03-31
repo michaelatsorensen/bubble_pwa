@@ -136,10 +136,13 @@ async function convConfirmDelete() {
     var ids = convSelectedIds.slice();
     for (var i = 0; i < ids.length; i++) {
       var partnerId = ids[i];
-      // Only delete messages WE sent — partner keeps their copy
+      // S5: Delete both directions — full conversation removal
       await sb.from('messages').delete()
         .eq('sender_id', currentUser.id)
         .eq('receiver_id', partnerId);
+      await sb.from('messages').delete()
+        .eq('sender_id', partnerId)
+        .eq('receiver_id', currentUser.id);
     }
     var list = document.getElementById('conversations-list');
     ids.forEach(function(id) {

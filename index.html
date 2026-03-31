@@ -12,35 +12,35 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=76500">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=76500">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=76500">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=76500">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=76500">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=76500">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=76500">
+<link rel="manifest" href="manifest.json?v=77000">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=77000">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=77000">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=77000">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=77000">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=77000">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=77000">
 
-<link rel="stylesheet" href="app.css?v=76500">
+<link rel="stylesheet" href="app.css?v=77000">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-<script src="bubble-icons.js?v=76500" defer></script>
-<script src="tag-data.js?v=76500" defer></script>
-<script src="b-config.js?v=76500" defer></script>
-<script src="b-utils.js?v=76500" defer></script>
-<script src="b-auth.js?v=76500" defer></script>
-<script src="b-home.js?v=76500" defer></script>
-<script src="b-bubbles.js?v=76500" defer></script>
-<script src="b-profile.js?v=76500" defer></script>
-<script src="b-radar.js?v=76500" defer></script>
-<script src="b-messages.js?v=76500" defer></script>
-<script src="b-realtime.js?v=76500" defer></script>
-<script src="b-onboarding.js?v=76500" defer></script>
-<script src="b-chat.js?v=76500" defer></script>
-<script src="b-notifications.js?v=76500" defer></script>
-<script src="b-live.js?v=76500" defer></script>
-<script src="b-admin.js?v=76500" defer></script>
-<script src="b-navigation.js?v=76500" defer></script>
-<script src="b-boot.js?v=76500" defer></script>
+<script src="bubble-icons.js?v=77000" defer></script>
+<script src="tag-data.js?v=77000" defer></script>
+<script src="b-config.js?v=77000" defer></script>
+<script src="b-utils.js?v=77000" defer></script>
+<script src="b-auth.js?v=77000" defer></script>
+<script src="b-home.js?v=77000" defer></script>
+<script src="b-bubbles.js?v=77000" defer></script>
+<script src="b-profile.js?v=77000" defer></script>
+<script src="b-radar.js?v=77000" defer></script>
+<script src="b-messages.js?v=77000" defer></script>
+<script src="b-realtime.js?v=77000" defer></script>
+<script src="b-onboarding.js?v=77000" defer></script>
+<script src="b-chat.js?v=77000" defer></script>
+<script src="b-notifications.js?v=77000" defer></script>
+<script src="b-live.js?v=77000" defer></script>
+<script src="b-admin.js?v=77000" defer></script>
+<script src="b-navigation.js?v=77000" defer></script>
+<script src="b-boot.js?v=77000" defer></script>
   
 
 
@@ -312,12 +312,12 @@
 
     <div class="input-group">
       <div class="input-label">Navn *</div>
-      <input class="input" id="ob-name" placeholder="Dit fulde navn" autocomplete="name" oninput="obCheckProgress()">
+      <input class="input" id="ob-name" maxlength="60" placeholder="Dit fulde navn" autocomplete="name" oninput="obCheckProgress()">
     </div>
 
     <div class="input-group">
       <div class="input-label">Arbejdsplads *</div>
-      <input class="input" id="ob-workplace" placeholder="f.eks. Danfoss, SDU, selvstændig..." oninput="obCheckProgress()">
+      <input class="input" id="ob-workplace" maxlength="80" placeholder="f.eks. Danfoss, SDU, selvstændig..." oninput="obCheckProgress()">
     </div>
 
     <label class="ob-consent-row" id="ob-consent-row" onclick="obToggleConsent()">
@@ -373,7 +373,7 @@
       <!-- Titel -->
       <div class="input-group">
         <div class="input-label">Titel / Rolle <span style="font-weight:400;color:var(--muted)">(valgfrit)</span></div>
-        <input class="input" id="ob-title" placeholder="f.eks. CTO, Salgschef, Studerende..." oninput="obCheckProgress()">
+        <input class="input" id="ob-title" maxlength="80" placeholder="f.eks. CTO, Salgschef, Studerende..." oninput="obCheckProgress()">
         <div class="ob-role-suggestions" id="ob-role-suggestions"></div>
       </div>
 
@@ -395,7 +395,7 @@
       <div class="ob-progressive-section" id="ob-sec-c">
         <div class="input-group">
           <div class="input-label">Om dig <span style="font-weight:400;color:var(--muted)">(valgfrit)</span></div>
-          <textarea class="input" id="ob-bio" placeholder="Hvem du er, hvad du arbejder med..."></textarea>
+          <textarea class="input" id="ob-bio" maxlength="300" placeholder="Hvem du er, hvad du arbejder med..."></textarea>
         </div>
         <div class="input-group">
           <div class="input-label">LinkedIn <span style="font-weight:400;color:var(--muted)">(valgfrit)</span></div>
@@ -1052,7 +1052,7 @@
             </button>
           </div>
         </div>
-        <input class="chat-composer-input" id="bc-input" placeholder="Skriv en besked..." enterkeyhint="send" autocomplete="off" autocorrect="on" spellcheck="true">
+        <input class="chat-composer-input" id="bc-input" maxlength="2000" placeholder="Skriv en besked..." enterkeyhint="send" autocomplete="off" autocorrect="on" spellcheck="true">
         <button class="chat-send-btn" id="bc-send-btn" ontouchstart="event.preventDefault()" ontouchend="event.preventDefault();bcSendMessage()" onclick="if(!('ontouchstart' in window))bcSendMessage()">→</button>
       </div>
     </div>
@@ -1472,7 +1472,7 @@
     </div>
     <div class="input-group">
       <div class="input-label">Navn</div>
-      <input class="input" id="eb-name" placeholder="Boble navn">
+      <input class="input" id="eb-name" maxlength="100" placeholder="Boble navn">
     </div>
     <div class="input-group">
       <div class="input-label">Type</div>
@@ -1491,7 +1491,7 @@
     </div>
     <div class="input-group">
       <div class="input-label">Beskrivelse</div>
-      <textarea class="input" id="eb-desc" placeholder="Hvad handler denne boble om?"></textarea>
+      <textarea class="input" id="eb-desc" maxlength="500" maxlength="500" placeholder="Hvad handler denne boble om?"></textarea>
     </div>
     <div class="input-group">
       <div class="input-label">Nøgleord</div>
@@ -1502,7 +1502,7 @@
     </div>
     <div class="input-group">
       <div class="input-label">Lokation (valgfrit)</div>
-      <input class="input" id="eb-location" placeholder="f.eks. København">
+      <input class="input" id="eb-location" maxlength="100" placeholder="f.eks. København">
     </div>
     <div class="input-group" id="eb-checkin-mode-group" style="display:none">
       <div class="input-label">Check-in metode</div>
@@ -1574,7 +1574,7 @@
     <div id="cb-parent-label" style="display:none;font-size:0.7rem;font-weight:700;color:#2ECFCF;background:rgba(46,207,207,0.08);border:1px solid rgba(46,207,207,0.2);border-radius:8px;padding:5px 10px;margin-bottom:8px"></div>
     <div class="input-group">
       <div class="input-label">Navn</div>
-      <input class="input" id="cb-name" placeholder="f.eks. Startup Sønderborg">
+      <input class="input" id="cb-name" maxlength="100" placeholder="f.eks. Startup Sønderborg">
     </div>
     <div class="input-group">
       <div class="input-label">Type</div>
@@ -1612,11 +1612,11 @@
     </div>
     <div class="input-group">
       <div class="input-label">Beskrivelse</div>
-      <textarea class="input" id="cb-desc" placeholder="Hvad handler denne boble om?"></textarea>
+      <textarea class="input" id="cb-desc" maxlength="500" placeholder="Hvad handler denne boble om?"></textarea>
     </div>
     <div class="input-group">
       <div class="input-label">Lokation (valgfrit)</div>
-      <input class="input" id="cb-location" placeholder="f.eks. København">
+      <input class="input" id="cb-location" maxlength="100" placeholder="f.eks. København">
     </div>
     <div class="input-group">
       <div class="input-label">Nøgleord</div>
@@ -1660,15 +1660,15 @@
     </div>
     <div class="input-group">
       <div class="input-label">Arbejdsplads / organisation</div>
-      <input class="input" id="ep-workplace" placeholder="f.eks. Danfoss, SDU, Sønderborg Kommune...">
+      <input class="input" id="ep-workplace" maxlength="80" placeholder="f.eks. Danfoss, SDU, Sønderborg Kommune...">
     </div>
     <div class="input-group">
       <div class="input-label">Titel / Rolle</div>
-      <input class="input" id="ep-title" placeholder="f.eks. Founder · Bubble">
+      <input class="input" id="ep-title" maxlength="80" placeholder="f.eks. Founder · Bubble">
     </div>
     <div class="input-group">
       <div class="input-label">Om dig</div>
-      <textarea class="input" id="ep-bio" placeholder="Skriv kort om dig selv og hvad du søger..."></textarea>
+      <textarea class="input" id="ep-bio" maxlength="300" placeholder="Skriv kort om dig selv og hvad du søger..."></textarea>
     </div>
     <div class="input-group">
       <div class="input-label">Tags</div>

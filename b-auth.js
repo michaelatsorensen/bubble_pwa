@@ -382,9 +382,17 @@ async function handleLogout() {
     bcUnsubscribeAll();
     rtUnsubscribeAll();
     sb.removeAllChannels();
-    // Clear push subscription so this device stops receiving notifications for this user
+    // R7: Clear radar refresh timer
+    if (typeof _radarRefreshTimer !== 'undefined' && _radarRefreshTimer) { clearInterval(_radarRefreshTimer); _radarRefreshTimer = null; }
+    // S6: Clear push subscription for THIS device only (preserve other devices)
     try {
-      if (currentUser) await sb.from('push_subscriptions').delete().eq('user_id', currentUser.id);
+      if (currentUser && 'serviceWorker' in navigator) {
+        var reg = await navigator.serviceWorker.ready;
+        var sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          await sb.from('push_subscriptions').delete().eq('user_id', currentUser.id).eq('endpoint', sub.endpoint);
+        }
+      }
     } catch(e2) { console.debug('[logout] push cleanup:', e2); }
     await sb.auth.signOut();
     currentUser = null; currentProfile = null;

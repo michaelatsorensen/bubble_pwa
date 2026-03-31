@@ -877,6 +877,7 @@ var _analyticsFlushTimer = null;
 
 function trackEvent(event, data) {
   if (!currentUser) return;
+  if (_analyticsQueue.length >= 100) _analyticsQueue.shift(); // R6: cap at 100
   _analyticsQueue.push({
     user_id: currentUser.id,
     event: event,
@@ -901,11 +902,9 @@ async function flushAnalytics() {
   }
 }
 
-// Flush on page unload
-window.addEventListener('beforeunload', function() {
-  // Flush any remaining analytics via normal SDK call
-  // (sendBeacon without auth headers would get 401 from Supabase)
-  if (_analyticsQueue.length > 0) {
+// O2: Flush on visibility change (more reliable than beforeunload)
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden && _analyticsQueue.length > 0) {
     flushAnalytics().catch(function() {});
   }
 });

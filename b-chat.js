@@ -558,6 +558,7 @@ function bcSubscribeRealtime() {
 }
 
 async function bcLoadBubbleInfo() {
+  if (_activeScreen !== 'screen-bubble-chat' || !bcBubbleId) return;
   try {
     const { data: b } = await sb.from('bubbles').select('*').eq('id', bcBubbleId).maybeSingle();
     if (!b) return;
@@ -648,7 +649,7 @@ function bcSwitchTab(tab) {
 
 async function bcLoadEvents() {
   var list = document.getElementById('bc-events-list');
-  if (!list || !bcBubbleId) return;
+  if (!list || !bcBubbleId || _activeScreen !== 'screen-bubble-chat') return;
   list.innerHTML = skelCards(3);
   try {
     var { data: children } = await sb.from('bubbles')
@@ -725,6 +726,7 @@ async function bcLoadEvents() {
 }
 
 async function bcLoadMessages() {
+  if (_activeScreen !== 'screen-bubble-chat' || !bcBubbleId) return;
   try {
     const el = document.getElementById('bc-messages');
     el.innerHTML = skelMessages(6);
@@ -1210,6 +1212,7 @@ function bcCreateHistoryModal() {
 }
 
 async function bcLoadMembers() {
+  if (_activeScreen !== 'screen-bubble-chat' || !bcBubbleId) return;
   try {
     const list = document.getElementById('bc-members-list');
     list.innerHTML = skelCards(4);
@@ -1399,6 +1402,7 @@ function bcFilterMembers() {
 }
 
 async function bcLoadInfo() {
+  if (_activeScreen !== 'screen-bubble-chat' || !bcBubbleId) return;
   try {
     const list = document.getElementById('bc-info-list');
     if (!bcBubbleData) await bcLoadBubbleInfo();

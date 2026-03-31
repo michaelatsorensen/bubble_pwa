@@ -263,8 +263,11 @@ function adminSearchUser(query) {
   if (!query || query.length < 2) { el.innerHTML = ''; return; }
   _adminSearchTimer = setTimeout(async function() {
     try {
+      // S3: Sanitize query — remove characters that could alter PostgREST filter
+      var safeQ = query.replace(/[%,().'"\\\s]/g, '');
+      if (!safeQ) { el.innerHTML = ''; return; }
       var { data } = await sb.from('profiles').select('id, name, email, banned, title')
-        .or('name.ilike.%' + query + '%,email.ilike.%' + query + '%')
+        .or('name.ilike.%' + safeQ + '%,email.ilike.%' + safeQ + '%')
         .limit(5);
       if (!data || data.length === 0) {
         el.innerHTML = '<div style="font-size:0.68rem;color:var(--muted);padding:0.3rem 0">Ingen resultater</div>';
