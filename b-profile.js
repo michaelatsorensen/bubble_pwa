@@ -1113,7 +1113,15 @@ async function saveProfile() {
 function toggleAnon() {
   isAnon = !isAnon;
   updateAnonToggle();
-  sb.from('profiles').update({ is_anon: isAnon }).eq('id', currentUser.id).then(function(){}).catch(function(e){ logError('toggleAnon', e); });
+  sb.from('profiles').update({ is_anon: isAnon }).eq('id', currentUser.id).then(function() {
+    showToast(isAnon ? '\uD83D\uDD12 Anonym tilstand aktiveret' : '\uD83D\uDC41 Du er nu synlig');
+  }).catch(function(e) {
+    // Revert on failure
+    isAnon = !isAnon;
+    updateAnonToggle();
+    logError('toggleAnon', e);
+    showToast('Kunne ikke \u00e6ndre synlighed');
+  });
 }
 
 
@@ -1243,6 +1251,7 @@ function psSetStar(userId, rating) {
   }
   // Refresh saved contacts list in background
   loadSavedContacts();
+  showToast(newRating > 0 ? '\u2605'.repeat(newRating) + ' Rating gemt' : 'Rating fjernet');
 }
 
 // ══════════════════════════════════════════════════════════

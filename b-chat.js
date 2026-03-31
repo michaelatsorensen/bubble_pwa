@@ -402,19 +402,35 @@ function bcRenderPendingBanner(isPending) {
     if (anchor) {
       var pb = document.createElement('div');
       pb.id = 'bc-pending-banner';
-      pb.style.cssText = 'display:none;padding:0.55rem 1rem;margin:0.4rem 1.1rem 0;border-radius:10px;background:rgba(249,177,55,0.08);border:1px solid rgba(249,177,55,0.2);font-size:0.75rem;color:#854F0B;font-weight:600;text-align:center';
+      pb.style.cssText = 'display:none;padding:0.55rem 1rem;margin:0.4rem 1.1rem 0;border-radius:10px;background:rgba(249,177,55,0.08);border:1px solid rgba(249,177,55,0.2);font-size:0.75rem;color:#854F0B;font-weight:600';
       anchor.insertAdjacentElement('afterend', pb);
       pendingBanner = pb;
     }
   }
   if (pendingBanner) {
     if (isPending) {
-      pendingBanner.style.display = 'block';
-      pendingBanner.textContent = '⏳ Din anmodning afventer godkendelse fra ejeren';
+      pendingBanner.style.display = 'flex';
+      pendingBanner.style.alignItems = 'center';
+      pendingBanner.style.justifyContent = 'space-between';
+      pendingBanner.style.gap = '0.5rem';
+      pendingBanner.innerHTML = '<div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#F59E0B;animation:livePulse 1.5s infinite;flex-shrink:0"></span> Afventer godkendelse</div>' +
+        '<button onclick="bcCancelPending()" style="font-size:0.65rem;padding:3px 10px;border-radius:6px;border:1px solid rgba(133,79,11,0.2);background:none;color:#854F0B;cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0">Annuller</button>';
     } else {
       pendingBanner.style.display = 'none';
     }
   }
+}
+
+async function bcCancelPending() {
+  if (!bcBubbleId || !currentUser) return;
+  try {
+    await sb.from('bubble_members').delete().eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id);
+    bcBubbleData._isPending = false;
+    bcBubbleData._isMember = false;
+    bcRenderPendingBanner(false);
+    bcRenderActions(bcBubbleData, null, false, false);
+    showToast('Anmodning annulleret');
+  } catch(e) { logError('bcCancelPending', e); errorToast('delete', e); }
 }
 
 // ── Lightweight membership re-check (called by realtime INSERT/DELETE) ──
@@ -904,6 +920,7 @@ async function bcSendMessage() {
         }
       }
       bcCancelEdit();
+      showToast('Besked opdateret');
     } else {
       inp.value = '';
       inp.blur();

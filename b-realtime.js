@@ -373,6 +373,25 @@ function initGlobalRealtime() {
       showToast((data.memberName || 'Nogen') + ' anmoder om adgang til ' + (data.bubbleName || 'din boble') + ' 🔒');
       updateTopbarNotifBadge();
     })
+    .on('broadcast', { event: 'invite' }, function(msg) {
+      var data = msg.payload || {};
+      showSuccessToast((data.senderName || 'Nogen') + ' inviterede dig til ' + (data.bubbleName || 'en boble') + ' 🫧');
+      updateTopbarNotifBadge();
+      if (document.getElementById('screen-profile')?.classList.contains('active')) {
+        loadProfileInvitations();
+      }
+    })
+    .on('broadcast', { event: 'ownership' }, function(msg) {
+      var data = msg.payload || {};
+      showSuccessToast('👑 Du er nu ejer af ' + (data.bubbleName || 'en boble'));
+      if (document.getElementById('screen-home')?.classList.contains('active')) {
+        loadHome();
+      }
+    })
+    .on('broadcast', { event: 'admin' }, function(msg) {
+      var data = msg.payload || {};
+      showSuccessToast('⭐ Du er nu admin i ' + (data.bubbleName || 'en boble'));
+    })
     .subscribe(_rtStatusCallback('rt-member'));
   _globalRtChannels.push(chMember);
 }

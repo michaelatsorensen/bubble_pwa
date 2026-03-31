@@ -378,6 +378,8 @@ async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
     closeMemberSheet();
     showSuccessToast('Ejerskab overdraget til ' + newOwnerName);
     trackEvent('bubble_ownership_transferred', { bubble_id: bubbleId, new_owner: newOwnerId });
+    // Notify new owner via broadcast
+    try { sb.channel('member-notify-' + newOwnerId).send({ type: 'broadcast', event: 'ownership', payload: { bubbleName: bcBubbleData?.name || '', senderName: currentProfile?.name || '', bubbleId: bubbleId } }); } catch(e2) {}
     if (typeof bcLoadBubbleInfo === 'function') bcLoadBubbleInfo();
     if (typeof bcLoadInfo === 'function') bcLoadInfo();
   } catch(e) { logError('_executeTransfer', e); errorToast('save', e); }
@@ -434,6 +436,8 @@ async function _executeSetRole(bubbleId, userId, userName, role) {
     closeMemberSheet();
     if (role === 'admin') {
       showSuccessToast(userName + ' er nu admin');
+      // Notify new admin via broadcast
+      try { sb.channel('member-notify-' + userId).send({ type: 'broadcast', event: 'admin', payload: { bubbleName: bcBubbleData?.name || '', senderName: currentProfile?.name || '', bubbleId: bubbleId } }); } catch(e2) {}
     } else {
       showToast(userName + ' er ikke længere admin');
     }
@@ -1960,15 +1964,25 @@ async function sendBubbleInvites() {
       });
       var { error } = await sb.from('bubble_invitations').insert(rows);
       if (error) throw error;
+      // Notify each recipient via broadcast
+      var bubbleName = bcBubbleData?.name || '';
+      var senderName = currentProfile?.name || '';
+      newIds.forEach(function(uid) {
+        try {
+          sb.channel('member-notify-' + uid).send({ type: 'broadcast', event: 'invite', payload: { bubbleName: bubbleName, senderName: senderName, bubbleId: inviteBubbleId } });
+        } catch(e2) {}
+      });
     }
 
     closeInviteModal();
     var skipped = inviteSelected.length - newIds.length;
-    var msg = newIds.length > 0
-      ? newIds.length + ' invitation' + (newIds.length > 1 ? 'er' : '') + ' sendt ✓'
-      : 'Allerede inviteret';
-    if (skipped > 0 && newIds.length > 0) msg += ' (' + skipped + ' allerede inviteret)';
-    showToast(msg);
+    if (newIds.length > 0 && skipped > 0) {
+      showToast(newIds.length + ' sendt · ' + skipped + ' allerede inviteret');
+    } else if (newIds.length > 0) {
+      showSuccessToast(newIds.length + ' invitation' + (newIds.length > 1 ? 'er' : '') + ' sendt ✓');
+    } else {
+      showToast('Alle er allerede inviteret');
+    }
   } catch(e) {
     logError('sendBubbleInvites', e);
     closeInviteModal();

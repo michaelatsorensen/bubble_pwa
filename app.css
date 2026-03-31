@@ -848,7 +848,8 @@ a.person-action-btn { text-decoration:none; }
 .chat-reactions { display:flex; flex-wrap:wrap; gap:0.25rem; padding:0.15rem 0; }
 .chat-reaction-pill { display:inline-flex; align-items:center; gap:0.2rem; padding:0.15rem 0.45rem; border-radius:99px; background:rgba(30,27,46,0.04); border:1px solid rgba(30,27,46,0.06); font-size:0.68rem; cursor:pointer; transition:all 0.15s; color:var(--text-secondary); }
 .chat-reaction-pill:hover { background:rgba(30,27,46,0.06); }
-.chat-reaction-pill.mine { background:rgba(124,92,252,0.15); border-color:rgba(124,92,252,0.3); color:var(--accent); }
+.chat-reaction-pill.mine { background:rgba(124,92,252,0.15); border-color:rgba(124,92,252,0.3); color:var(--accent); animation:reactPop 0.3s ease; }
+@keyframes reactPop { 0%{transform:scale(1)} 50%{transform:scale(1.2)} 100%{transform:scale(1)} }
 
 /* ══════════════════════════════════════
    CHAT LAYOUT — shared by bubble + DM
