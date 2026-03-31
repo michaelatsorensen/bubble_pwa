@@ -1012,14 +1012,13 @@ function _bbEventCard(e, parentMap, gpMap, isPast) {
   } else if (parentName) {
     breadcrumb = '<div class="bb-breadcrumb"><span class="bb-bc-pill">\u21B3 ' + escHtml(parentName) + '</span></div>';
   }
-  return '<div class="card" data-action="openBubble" data-id="' + e.id + '" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5;' : 'border-left:2px solid #1A9E8E;border-radius:0 var(--radius) var(--radius) 0;') + '">' +
-    '<div style="display:flex;align-items:flex-start;gap:0.6rem">' +
-    '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E;margin-top:2px">' + ico('calendar') + '</div>' +
+  return '<div class="bb-tree-evt" data-action="openBubble" data-id="' + e.id + '" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5;' : '') + '">' +
+    '<div class="bb-tree-evt-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>' +
     '<div style="flex:1;min-width:0">' +
-    '<div style="font-size:0.85rem;font-weight:600">' + escHtml(e.name) + '</div>' +
-    '<div style="font-size:0.68rem;color:var(--muted);display:flex;align-items:center;flex-wrap:wrap;gap:2px">' + visIcon(e.visibility) + dateStr + '</div>' +
+    '<div style="font-size:0.8rem;font-weight:600">' + escHtml(e.name) + '</div>' +
+    '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;flex-wrap:wrap;gap:2px">' + visIcon(e.visibility) + dateStr + '</div>' +
     breadcrumb +
-    '</div></div></div>';
+    '</div><div class="bb-tree-go">\u203A</div></div>';
 }
 // ══════════════════════════════════════════════════════════
 //  TOP MATCHES — "Vigtigste personer du bør møde"
