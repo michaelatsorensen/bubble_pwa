@@ -13,7 +13,15 @@ async function openPerson(userId, fromScreen) {
   try {
     currentPerson = userId;
     const backBtn = document.getElementById('person-back-btn');
-    backBtn.onclick = () => goTo(fromScreen || 'screen-home');
+    // Capture bubble ID before navigation clears it
+    var _backBubbleId = (fromScreen === 'screen-bubble-chat' && typeof bcBubbleId !== 'undefined') ? bcBubbleId : null;
+    backBtn.onclick = function() {
+      if (_backBubbleId) {
+        openBubbleChat(_backBubbleId, 'screen-bubbles');
+      } else {
+        goTo(fromScreen || 'screen-home');
+      }
+    };
     goTo('screen-person');
     var myNav = _navVersion;
 

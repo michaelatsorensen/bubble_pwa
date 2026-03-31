@@ -231,10 +231,7 @@ function rpFullProfile() {
   var uid = rpCurrentUserId;
   closeRadarPerson();
   closeHomeTray();
-  // Open full person sheet
-  if (typeof dmOpenPersonSheet === 'function') {
-    setTimeout(function() { dmOpenPersonSheet(uid); }, 350);
-  }
+  setTimeout(function() { openPerson(uid, 'screen-home'); }, 350);
 }
 
 

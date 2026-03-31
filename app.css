@@ -348,7 +348,7 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 .bb-accordion { margin-bottom:0.4rem; }
 
 /* ── F2 Tree: Root card ── */
-.bb-tree-root { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; background:white; border:1px solid rgba(124,92,252,0.12); box-shadow:0 2px 8px rgba(124,92,252,0.08), 0 0 0 1px rgba(124,92,252,0.03); }
+.bb-tree-root { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius); background:white; border:1px solid rgba(124,92,252,0.12); box-shadow:0 2px 8px rgba(124,92,252,0.08), 0 0 0 1px rgba(124,92,252,0.03); }
 .bb-tree-root-ico { width:30px; height:30px; border-radius:9px; background:rgba(124,92,252,0.08); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#7C5CFC; }
 .bb-tree-body { flex:1; min-width:0; cursor:pointer; }
 
@@ -369,7 +369,7 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 .bb-tree-branch::after { content:''; position:absolute; left:11px; top:calc(50% - 8px); width:13px; height:16px; border-left:2px solid rgba(124,92,252,0.08); border-bottom:2px solid rgba(124,92,252,0.08); border-radius:0 0 0 10px; }
 
 /* ── F2 Tree: Network card (purple) ── */
-.bb-tree-net { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; background:white; border:1px solid rgba(124,92,252,0.08); box-shadow:0 1px 5px rgba(124,92,252,0.05); border-left:3px solid rgba(124,92,252,0.35); }
+.bb-tree-net { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:var(--radius-sm); background:white; border:1px solid rgba(124,92,252,0.08); box-shadow:0 1px 5px rgba(124,92,252,0.05); border-left:3px solid rgba(124,92,252,0.35); }
 .bb-tree-net-ico { width:26px; height:26px; border-radius:8px; background:rgba(124,92,252,0.06); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#7C5CFC; }
 
 /* ── F2 Tree: Leaf structure (events under network) ── */
@@ -380,7 +380,7 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 .bb-tree-leaf::after { content:''; position:absolute; left:11px; top:calc(50% - 7px); width:13px; height:14px; border-left:2px solid rgba(46,207,207,0.12); border-bottom:2px solid rgba(46,207,207,0.12); border-radius:0 0 0 8px; }
 
 /* ── F2 Tree: Event card (teal) ── */
-.bb-tree-evt { display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:9px; background:white; border:1px solid rgba(46,207,207,0.06); box-shadow:0 1px 4px rgba(46,207,207,0.04); border-left:3px solid rgba(46,207,207,0.45); cursor:pointer; }
+.bb-tree-evt { display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:var(--radius-sm); background:white; border:1px solid rgba(46,207,207,0.06); box-shadow:0 1px 4px rgba(46,207,207,0.04); border-left:3px solid rgba(46,207,207,0.45); cursor:pointer; }
 .bb-tree-evt:active { transform:scale(0.98); }
 .bb-tree-evt-ico { width:22px; height:22px; border-radius:6px; background:rgba(46,207,207,0.06); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#1A9E8E; }
 
