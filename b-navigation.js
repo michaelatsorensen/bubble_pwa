@@ -31,6 +31,42 @@ var navState = {
   isOverlayOpen: function() { return !!(this.overlay || this.modal || this.personSheetId); }
 };
 
+// ── Programmatic back navigation ──
+function navBack() {
+  // Priority 1: Close overlays/sheets
+  var dynOverlays = document.querySelectorAll('.bb-dyn-overlay');
+  if (dynOverlays.length > 0) { dynOverlays.forEach(function(el) { bbDynClose(el); }); return; }
+  var psOverlay = document.getElementById('ps-overlay');
+  if (psOverlay && psOverlay.classList.contains('open')) { if (typeof psClose === 'function') psClose(); return; }
+  var openSheet = document.querySelector('.bb-overlay.open');
+  if (openSheet) { if (typeof bbCloseAll === 'function') bbCloseAll(); return; }
+
+  // Priority 2: Navigate back in stack
+  if (_navStack.length > 1) {
+    _navStack.pop();
+    var prev = _navStack[_navStack.length - 1];
+    if (prev) {
+      // Bubble-chat needs context restoration
+      if (prev === 'screen-bubble-chat' && typeof openBubbleChat === 'function') {
+        var route = null;
+        try { route = JSON.parse(sessionStorage.getItem('bb_route')); } catch(e) {}
+        if (route && route.parentBubbleId) {
+          openBubbleChat(route.parentBubbleId, route.backTarget || 'screen-bubbles');
+        } else {
+          goTo('screen-home');
+        }
+        _navStack = [_navStack[_navStack.length - 1] || 'screen-home'];
+      } else {
+        _navPopLock = true;
+        goTo(prev);
+        _navPopLock = false;
+      }
+    }
+  } else {
+    goTo('screen-home');
+  }
+}
+
 // ── Browser/Android back button handler ──
 window.addEventListener('popstate', function() {
   if (_navPopLock) return;
@@ -268,7 +304,7 @@ function goTo(screenId) {
 
   if (!_navPopLock) {
     _navStack.push(screenId);
-    if (_navStack.length > 20) _navStack = _navStack.slice(-15);
+    if (_navStack.length > 40) _navStack = _navStack.slice(-30);
     try { history.pushState({ screen: screenId }, ''); } catch(e) {}
   }
   try {
