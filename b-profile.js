@@ -895,7 +895,7 @@ function profSwitchTab(tab) {
   });
   if (tab === 'dashboard') loadDashboard();
   if (tab === 'bubbles') loadProfileBubbles();
-  if (tab === 'settings') { updateAnonToggle(); hsUpdateAllToggles(); }
+  if (tab === 'settings') { updateAnonToggle(); hsUpdateAllToggles(); _updateLangBtns(); }
 }
 
 // Load user's bubbles into profile bubbles tab
@@ -1129,14 +1129,18 @@ async function saveProfile() {
   } catch(e) { logError("saveProfile", e); errorToast("save", e); }
 }
 
-function switchAppLanguage(lang) {
-  setLang(lang);
-  translateStaticUI();
-  // Update language buttons
+function _updateLangBtns() {
+  var lang = getLang();
   var da = document.getElementById('lang-btn-da');
   var en = document.getElementById('lang-btn-en');
   if (da) { da.style.borderColor = lang === 'da' ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)'; da.style.background = lang === 'da' ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)'; da.style.color = lang === 'da' ? 'var(--accent)' : 'var(--muted)'; }
   if (en) { en.style.borderColor = lang === 'en' ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)'; en.style.background = lang === 'en' ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)'; en.style.color = lang === 'en' ? 'var(--accent)' : 'var(--muted)'; }
+}
+
+function switchAppLanguage(lang) {
+  setLang(lang);
+  translateStaticUI();
+  _updateLangBtns();
   // Refresh active screen to pick up new language
   if (_activeScreen === 'screen-home') loadHome();
   else if (_activeScreen === 'screen-bubbles') { loadMyBubbles(); }

@@ -46,7 +46,7 @@ async function loadHome() {
     showProfileSetupCTA();
   } catch(e) {
     logError("loadHome", e);
-    _renderToast('Kunne ikke indlæse — træk ned for at prøve igen', 'error');
+    // Silent fail on boot — no toast flash. User can pull-to-refresh.
   } finally {
     _homeLoading = false;
   }
