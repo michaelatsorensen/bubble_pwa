@@ -119,7 +119,74 @@ async function liveCheckin(bubbleId) {
   try {
     showToast(t('misc_loading'));
 
-    // 0. Check visibility — hidden/private bubbles require membership
+    // ── Try Edge Function first (single serverside transaction) ──
+    try {
+      var { data: { session } } = await sb.auth.getSession();
+      if (session) {
+        var resp = await fetch(SUPABASE_URL + '/functions/v1/checkin', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + session.access_token,
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({ bubble_id: bubbleId, action: 'checkin' })
+        });
+        var result = await resp.json();
+
+        if (result.success) {
+          // Update live state from server response
+          currentLiveBubble = {
+            bubble_id: bubbleId,
+            bubble_name: result.bubble_name,
+            bubble_location: result.bubble_location,
+            bubble_type: result.bubble_type,
+            checked_in_at: result.checked_in_at,
+            member_count: result.member_count
+          };
+          appMode.set('live', {
+            bubbleId: bubbleId,
+            bubbleName: result.bubble_name,
+            bubbleType: result.bubble_type,
+            memberCount: result.member_count
+          });
+          appMode.setCheckedInIds(result.checked_in_ids || []);
+
+          _showCheckinSuccess(bubbleId, result.bubble_name);
+          showToast('\uD83D\uDCCD ' + (result.bubble_name || t('toast_checkedin')));
+          trackEvent('live_checkin', { bubble_id: bubbleId, bubble_name: result.bubble_name, via: 'edge' });
+
+          loadLiveBubbleStatus().then(function() {
+            if (typeof filterRadarHome === 'function' && appMode.checkedInIds.length > 0) filterRadarHome('live');
+          });
+          if (typeof loadLiveBanner === 'function') loadLiveBanner();
+          return;
+        }
+
+        // Handle specific error codes
+        if (result.error === 'invite_required') { _renderToast(t('toast_invite_required'), 'error'); return; }
+        if (result.error === 'approval_required') { _renderToast(t('toast_approval_required'), 'error'); requestJoin(bubbleId); return; }
+        if (resp.status === 404) { _renderToast(t('toast_bubble_not_found'), 'error'); return; }
+
+        // Other errors — fall through to client-side fallback
+        console.debug('[checkin] Edge Function error, using fallback:', result.error);
+      }
+    } catch (edgeErr) {
+      console.debug('[checkin] Edge Function unavailable, using fallback:', edgeErr.message);
+    }
+
+    // ── Fallback: client-side check-in (for when Edge Function isn't deployed) ──
+    await _liveCheckinFallback(bubbleId);
+
+  } catch (e) {
+    logError('liveCheckin', e);
+    errorToast('save', e);
+  }
+}
+
+// Client-side fallback (original multi-query approach)
+async function _liveCheckinFallback(bubbleId) {
+    // 0. Check visibility
     var { data: bCheck } = await sb.from('bubbles').select('visibility').eq('id', bubbleId).single();
     if (bCheck && (bCheck.visibility === 'hidden' || bCheck.visibility === 'private')) {
       var { data: memCheck } = await sb.from('bubble_members')
@@ -135,65 +202,56 @@ async function liveCheckin(bubbleId) {
       }
     }
 
-    // 1. Auto-checkout from any current live bubble
+    // 1. Auto-checkout
     await liveAutoCheckout();
 
-    // 2. Check if already a member
+    // 2. Check membership + check-in
     const { data: existing } = await sb.from('bubble_members')
       .select('id, checked_in_at, checked_out_at')
-      .eq('bubble_id', bubbleId)
-      .eq('user_id', currentUser.id)
-      .maybeSingle();
+      .eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle();
 
     if (existing) {
       var { error: upErr } = await sb.from('bubble_members').update({
-        checked_in_at: new Date().toISOString(),
-        checked_out_at: null
+        checked_in_at: new Date().toISOString(), checked_out_at: null
       }).eq('id', existing.id);
       if (upErr) { errorToast('save', upErr); return; }
     } else {
       var { error: insErr } = await sb.from('bubble_members').insert({
-        bubble_id: bubbleId,
-        user_id: currentUser.id,
-        checked_in_at: new Date().toISOString()
+        bubble_id: bubbleId, user_id: currentUser.id, checked_in_at: new Date().toISOString()
       });
       if (insErr) { errorToast('save', insErr); return; }
     }
 
-    // 3. Get bubble name for display
+    // 3. Get bubble name
     var bubbleName = '';
     try {
       var { data: bData } = await sb.from('bubbles').select('name, location').eq('id', bubbleId).single();
       if (bData) bubbleName = bData.name;
     } catch(e2) {}
 
-    // 4. Instant UI: show confirmed state in checkin sheet
+    _showCheckinSuccess(bubbleId, bubbleName);
+    showToast('\uD83D\uDCCD ' + (bubbleName || t('toast_checkedin')));
+    trackEvent('live_checkin', { bubble_id: bubbleId, bubble_name: bubbleName, via: 'fallback' });
+
+    loadLiveBubbleStatus().then(function() {
+      if (typeof filterRadarHome === 'function' && appMode.checkedInIds.length > 0) filterRadarHome('live');
+    });
+    if (typeof loadLiveBanner === 'function') loadLiveBanner();
+}
+
+// Shared UI for check-in success
+function _showCheckinSuccess(bubbleId, bubbleName) {
     var scanConfirmed = document.getElementById('live-scan-confirmed');
     if (scanConfirmed) {
       scanConfirmed.style.display = 'flex';
       var nameEl = document.getElementById('live-scan-confirmed-name');
-      if (nameEl) nameEl.textContent = 'Checked ind' + (bubbleName ? ' — ' + bubbleName : '') + '!';
+      if (nameEl) nameEl.textContent = t('bc_checked_in') + (bubbleName ? ' — ' + bubbleName : '') + '!';
       var metaEl = document.getElementById('live-scan-confirmed-meta');
       if (metaEl) metaEl.innerHTML = '<div style="display:flex;gap:0.3rem;margin-top:0.4rem">' +
-        '<button onclick="closeLiveCheckinModal();openBubble(\'' + bubbleId + '\')" style="flex:1;font-size:0.72rem;padding:0.35rem 0.8rem;background:rgba(46,207,207,0.12);color:var(--accent3);border:1px solid rgba(46,207,207,0.25);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Se hvem der er her \u2192</button>' +
-        '<button onclick="liveCheckout();closeLiveCheckinModal()" style="font-size:0.72rem;padding:0.35rem 0.6rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Check ud</button>' +
+        '<button onclick="closeLiveCheckinModal();openBubble(\'' + bubbleId + '\')" style="flex:1;font-size:0.72rem;padding:0.35rem 0.8rem;background:rgba(46,207,207,0.12);color:var(--accent3);border:1px solid rgba(46,207,207,0.25);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">' + t('home_discover_networks') + ' \u2192</button>' +
+        '<button onclick="liveCheckout();closeLiveCheckinModal()" style="font-size:0.72rem;padding:0.35rem 0.6rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">' + t('live_checkout') + '</button>' +
         '</div>';
     }
-
-    showToast('\uD83D\uDCCD ' + (bubbleName || 'Checked ind!'));
-    trackEvent('live_checkin', { bubble_id: bubbleId, bubble_name: bubbleName });
-
-    // 4. Refresh home in background — auto-switch to live mode
-    loadLiveBubbleStatus().then(function() {
-      if (typeof filterRadarHome === 'function' && appMode.checkedInIds.length > 0) {
-        filterRadarHome('live');
-      }
-    });
-    if (typeof loadLiveBanner === 'function') loadLiveBanner();
-  } catch (e) {
-    logError('liveCheckin', e);
-    errorToast('save', e);
-  }
 }
 
 // liveCreateAndCheckin removed — UI element no longer exists
