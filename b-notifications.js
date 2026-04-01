@@ -591,14 +591,14 @@ async function savePushSubscription(subscription) {
 
 function setPushBtnActive(btn) {
   if (!btn) return;
-  btn.innerHTML = icon('bell') + ' Aktiveret';
+  btn.textContent = '✓ Aktiveret';
   btn.style.background = 'rgba(46,207,207,0.15)';
   btn.style.borderColor = 'rgba(46,207,207,0.5)';
   btn.style.color = 'var(--accent3)';
 }
 function setPushBtnInactive(btn) {
   if (!btn) return;
-  btn.innerHTML = icon('bell') + ' Aktivér';
+  btn.textContent = 'Aktivér';
   btn.style.background = 'rgba(30,27,46,0.035)';
   btn.style.borderColor = 'var(--glass-border)';
   btn.style.color = 'var(--muted)';

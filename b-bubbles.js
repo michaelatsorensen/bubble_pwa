@@ -1155,12 +1155,8 @@ async function checkPendingJoin() {
     if (!joinId) return;
 
     // Join bubble
-    const { error } = await sb.from('bubble_members')
-      .insert({ bubble_id: joinId, user_id: currentUser.id });
-    if (error && !String(error.message || '').includes('duplicate')) {
-      errorToast('save', error);
-      return;
-    }
+    var result = await dbActions.joinBubble(joinId);
+    if (!result.ok) return;
 
     // Check if this is an event flow
     var isEventFlow = flowGet('event_flow');

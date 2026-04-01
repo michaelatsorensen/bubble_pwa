@@ -519,15 +519,8 @@ async function checkPendingContact() {
     if (!currentUser) return null;
     var contactId = consumeFlow('pending_contact');
     if (!contactId || contactId === currentUser.id) return null;
-    // Auto-save the contact
-    var { error } = await sb.from('saved_contacts').upsert({
-      user_id: currentUser.id,
-      contact_id: contactId
-    });
-    if (!error) {
-      showSuccessToast(t('toast_saved'));
-      trackEvent('qr_contact_saved', { contact_id: contactId });
-    }
+    var result = await dbActions.saveContact(contactId);
+    if (result.ok) showSuccessToast(t('toast_saved'));
     return contactId;
   } catch(e) {
     logError('checkPendingContact', e);

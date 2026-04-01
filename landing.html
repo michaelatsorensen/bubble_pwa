@@ -421,7 +421,10 @@ body {
 <nav class="nav">
   <div class="nav-inner">
     <a href="#" style="display:flex;align-items:center"><img src="bubble-logo-topbar-v2.png" alt="Bubble" class="nav-logo"></a>
-    <a href="./?auth=1" class="nav-cta">Log ind</a>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button id="lang-toggle" onclick="toggleLandingLang()" style="font-size:12px;font-weight:600;font-family:inherit;padding:4px 10px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer">EN</button>
+      <a href="./?auth=1" class="nav-cta" id="nav-cta-btn">Log ind</a>
+    </div>
   </div>
 </nav>
 
@@ -793,6 +796,232 @@ var _e = 'in'+'fo@'+'bubb'+'leme'+'.dk';
 var fe = document.getElementById('footer-email');
 if (fe) fe.textContent = _e;
 document.querySelectorAll('.dyn-email').forEach(function(el) { el.textContent = _e; });
+
+// ── Landing page i18n ──
+var _landingLang = localStorage.getItem('bubble_landing_lang') || (navigator.language && navigator.language.startsWith('da') ? 'da' : 'en');
+var _landingEN = {
+  // Nav
+  'nav-cta-btn': 'Sign in',
+  // Hero
+  '.hero-tagline': 'The right people are<br class="desktop-br"> already around you',
+  '.hero-sub': 'Bubble shows you who you should meet — and why that conversation matters.',
+  '.hero-actions .btn-primary': 'Get started',
+  '.hero-actions .btn-secondary': 'See how it works',
+  // Hero subtitle
+  '_hero_note': 'Free to create a profile · Works directly on mobile',
+  // Phone
+  '.phone-card-meta': 'UX Designer · 4 shared interests',
+  // How it works
+  '_how_label': 'How it works',
+  '_how_title': 'Three steps. Under one minute.',
+  '_step1_title': 'Tell us who you are',
+  '_step1_desc': 'Your interests, role and what you\'re looking for.',
+  '_step2_title': 'See who you should meet',
+  '_step2_desc': 'The radar shows who\'s relevant — and why.',
+  '_step3_title': 'Connect at the right moment',
+  '_step3_desc': 'Message directly, meet up, or save the contact for later.',
+  '_tip_how1': 'Sign up with Google, LinkedIn or email',
+  '_tip_how2': 'Takes under 30 seconds',
+  // Features
+  '_feat_label': 'Where Bubble makes sense',
+  '_feat_title': 'Built for real meetings — not just connections',
+  '_feat1_name': 'Conferences & events',
+  '_feat1_desc': 'See who\'s here and who you should actually meet.',
+  '_feat2_name': 'Local networks',
+  '_feat2_desc': 'Discover relevant people in your area and communities.',
+  '_feat3_name': 'Communities & groups',
+  '_feat3_desc': 'Bring people together in a Bubble and keep the connection alive.',
+  '_feat4_name': 'Spontaneous connections',
+  '_feat4_desc': 'Share your profile with one scan — no LinkedIn friction.',
+  // Create your own
+  '_create_label': 'Create a Bubble',
+  '_create_title': 'Bring your event or community to life in Bubble',
+  '_create_desc': 'A Bubble is a community you create — for your professional group, event, association or just your circle. Everyone in a Bubble can see each other, chat and match.',
+  '_create_note': 'Perfect for organizers, communities and networks that want to create real connections.',
+  '_create1_name': 'Meetups & groups',
+  '_create1_desc': 'Gather your industry, study group or interest group — and let the radar do the rest.',
+  '_create2_name': 'Events & conferences',
+  '_create2_desc': 'QR check-in, smart matching between attendees and shared event chat.',
+  '_create3_name': 'Local communities',
+  '_create3_desc': 'Build a network in your local area — neighborhood, coworking space or club.',
+  '_tip_create1': 'Save contacts with 1–3 stars',
+  '_tip_create2': 'So you always find them again',
+  // Early beta
+  '_beta_label': 'Early beta',
+  '_beta_title': 'We\'re building Bubble together with you',
+  '_beta_desc': 'Bubble is currently being tested in selected networks, events and communities. We build it closely with our first users — and adjust continuously based on their feedback.',
+  // PWA install
+  '_pwa_label': 'Add to home screen',
+  '_pwa_title': 'Use Bubble as an\u00a0app',
+  '_pwa_desc': 'Bubble is a web app — no App Store needed. Add it to your home screen for the best experience.',
+  '_pwa_iphone1_title': 'Open Bubble in Safari',
+  '_pwa_iphone1_desc': 'Go to <strong>bubbleme.dk</strong> in Safari on your iPhone.',
+  '_pwa_iphone2_title': 'Tap the share icon',
+  '_pwa_iphone2_desc': 'Tap the share button <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:1.5px solid var(--accent);border-radius:5px;font-size:13px;color:var(--accent);vertical-align:middle;position:relative;top:-1px">\u2191</span> at the bottom of Safari.',
+  '_pwa_iphone3_title': 'Choose "Add to Home Screen"',
+  '_pwa_iphone3_desc': 'Scroll down and tap "Add to Home Screen". Then tap "Add".',
+  '_pwa_android1_title': 'Open Bubble in Chrome',
+  '_pwa_android1_desc': 'Go to <strong>bubbleme.dk</strong> in Chrome on your Android.',
+  '_pwa_android2_title': 'Tap the menu \u22ee',
+  '_pwa_android2_desc': 'Tap the three dots in the top right corner of Chrome.',
+  '_pwa_android3_title': 'Choose "Add to Home screen"',
+  '_pwa_android3_desc': 'Tap "Add to Home screen" or "Install app" and confirm.',
+  '_pwa_done_title': 'Done!',
+  '_pwa_done_desc_iphone': 'Bubble is now on your home screen like a real app — without the browser bar.',
+  '_pwa_done_desc_android': 'Bubble is now on your home screen like a real app — in full screen.',
+  '_tip_pwa1': 'No app download needed',
+  '_tip_pwa2': 'Works directly in the browser',
+  '_tip_pwa3': 'Add to home screen for full experience',
+  '_tip_pwa4': 'Push notifications',
+  '_tip_pwa5': 'So you never miss an invitation',
+  // CTA
+  '_cta_title': 'Ready to meet the right people around you?',
+  '_cta_sub': 'Free · No ads · Built in Denmark',
+  '_cta_btn': 'Create your profile',
+  '_cta_note': 'Works on all devices · No download required',
+  // Footer
+  '_footer_interest': 'Think Bubble sounds interesting?',
+  '_footer_contact': 'Write to us — we\'d love to hear from you. <span style="opacity:0.7">(we reply quickly)</span>',
+  // Cookie banner
+  '_cookie_text': 'Bubble only uses necessary local storage for login and app function. No tracking, no ads.',
+  '_cookie_more': 'Read more',
+  '_cookie_ok': 'Got it'
+};
+
+function applyLandingLang(lang) {
+  if (lang === 'da') {
+    // Reload to restore Danish (original HTML)
+    if (_landingLang !== 'da') { localStorage.setItem('bubble_landing_lang', 'da'); location.reload(); }
+    return;
+  }
+  document.documentElement.lang = 'en';
+  document.title = 'Bubble — Meet your network';
+
+  // Nav
+  var navBtn = document.getElementById('nav-cta-btn');
+  if (navBtn) navBtn.textContent = _landingEN['nav-cta-btn'];
+
+  // Hero
+  var q = function(sel) { return document.querySelector(sel); };
+  var qa = function(sel) { return document.querySelectorAll(sel); };
+  var h1 = q('.hero-tagline'); if (h1) h1.innerHTML = _landingEN['.hero-tagline'];
+  var hs = q('.hero-sub'); if (hs) hs.textContent = _landingEN['.hero-sub'];
+  var hbp = q('.hero-actions .btn-primary'); if (hbp) hbp.textContent = _landingEN['.hero-actions .btn-primary'];
+  var hbs = q('.hero-actions .btn-secondary'); if (hbs) hbs.textContent = _landingEN['.hero-actions .btn-secondary'];
+  var hn = q('.hero-actions + p'); if (hn) hn.textContent = _landingEN['_hero_note'];
+  var pcm = q('.phone-card-meta'); if (pcm) pcm.textContent = _landingEN['.phone-card-meta'];
+
+  // Phone nav
+  var pnav = qa('.phone-nav-item');
+  if (pnav.length === 4) { pnav[0].innerHTML = '<div class="dot"></div>Home'; pnav[2].innerHTML = '<div class="dot"></div>Chat'; pnav[3].innerHTML = '<div class="dot"></div>Profile'; }
+
+  // How it works
+  var secs = qa('.section-label');
+  var titles = qa('.section-title');
+  var steps = qa('.step');
+  if (secs[0]) secs[0].textContent = _landingEN['_how_label'];
+  if (titles[0]) titles[0].textContent = _landingEN['_how_title'];
+
+  var stepTitles = qa('.step-title');
+  var stepDescs = qa('.step-desc');
+  if (stepTitles[0]) stepTitles[0].textContent = _landingEN['_step1_title'];
+  if (stepDescs[0]) stepDescs[0].textContent = _landingEN['_step1_desc'];
+  if (stepTitles[1]) stepTitles[1].textContent = _landingEN['_step2_title'];
+  if (stepDescs[1]) stepDescs[1].textContent = _landingEN['_step2_desc'];
+  if (stepTitles[2]) stepTitles[2].textContent = _landingEN['_step3_title'];
+  if (stepDescs[2]) stepDescs[2].textContent = _landingEN['_step3_desc'];
+
+  // How tips
+  var btBubbles = qa('.bt-bubble');
+  if (btBubbles[0]) btBubbles[0].textContent = _landingEN['_tip_how1'];
+  if (btBubbles[1]) btBubbles[1].textContent = _landingEN['_tip_how2'];
+
+  // Features
+  if (secs[1]) secs[1].textContent = _landingEN['_feat_label'];
+  if (titles[1]) titles[1].textContent = _landingEN['_feat_title'];
+  var fnames = qa('.feature-name');
+  var fdescs = qa('.feature-desc');
+  if (fnames[0]) fnames[0].textContent = _landingEN['_feat1_name'];
+  if (fdescs[0]) fdescs[0].textContent = _landingEN['_feat1_desc'];
+  if (fnames[1]) fnames[1].textContent = _landingEN['_feat2_name'];
+  if (fdescs[1]) fdescs[1].textContent = _landingEN['_feat2_desc'];
+  if (fnames[2]) fnames[2].textContent = _landingEN['_feat3_name'];
+  if (fdescs[2]) fdescs[2].textContent = _landingEN['_feat3_desc'];
+  if (fnames[3]) fnames[3].textContent = _landingEN['_feat4_name'];
+  if (fdescs[3]) fdescs[3].textContent = _landingEN['_feat4_desc'];
+
+  // Create your own
+  if (secs[2]) secs[2].textContent = _landingEN['_create_label'];
+  if (titles[2]) titles[2].textContent = _landingEN['_create_title'];
+  var createP = qa('.section.has-tips p');
+  // Create description + note
+  if (fnames[4]) fnames[4].textContent = _landingEN['_create1_name'];
+  if (fdescs[4]) fdescs[4].textContent = _landingEN['_create1_desc'];
+  if (fnames[5]) fnames[5].textContent = _landingEN['_create2_name'];
+  if (fdescs[5]) fdescs[5].textContent = _landingEN['_create2_desc'];
+  if (fnames[6]) fnames[6].textContent = _landingEN['_create3_name'];
+  if (fdescs[6]) fdescs[6].textContent = _landingEN['_create3_desc'];
+
+  if (btBubbles[2]) btBubbles[2].textContent = _landingEN['_tip_create1'];
+  if (btBubbles[3]) btBubbles[3].textContent = _landingEN['_tip_create2'];
+
+  // Beta
+  if (secs[3]) secs[3].textContent = _landingEN['_beta_label'];
+  if (titles[3]) titles[3].textContent = _landingEN['_beta_title'];
+
+  // PWA install
+  if (secs[4]) secs[4].textContent = _landingEN['_pwa_label'];
+  if (titles[4]) titles[4].textContent = _landingEN['_pwa_title'];
+
+  // PWA steps (iPhone + Android)
+  if (stepTitles[3]) stepTitles[3].textContent = _landingEN['_pwa_iphone1_title'];
+  if (stepDescs[3]) stepDescs[3].innerHTML = _landingEN['_pwa_iphone1_desc'];
+  if (stepTitles[4]) stepTitles[4].textContent = _landingEN['_pwa_iphone2_title'];
+  if (stepDescs[4]) stepDescs[4].innerHTML = _landingEN['_pwa_iphone2_desc'];
+  if (stepTitles[5]) stepTitles[5].textContent = _landingEN['_pwa_iphone3_title'];
+  if (stepDescs[5]) stepDescs[5].textContent = _landingEN['_pwa_iphone3_desc'];
+  if (stepTitles[6]) stepTitles[6].textContent = _landingEN['_pwa_done_title'];
+  if (stepDescs[6]) stepDescs[6].textContent = _landingEN['_pwa_done_desc_iphone'];
+
+  if (stepTitles[7]) stepTitles[7].textContent = _landingEN['_pwa_android1_title'];
+  if (stepDescs[7]) stepDescs[7].innerHTML = _landingEN['_pwa_android1_desc'];
+  if (stepTitles[8]) stepTitles[8].textContent = _landingEN['_pwa_android2_title'];
+  if (stepDescs[8]) stepDescs[8].textContent = _landingEN['_pwa_android2_desc'];
+  if (stepTitles[9]) stepTitles[9].textContent = _landingEN['_pwa_android3_title'];
+  if (stepDescs[9]) stepDescs[9].textContent = _landingEN['_pwa_android3_desc'];
+  if (stepTitles[10]) stepTitles[10].textContent = _landingEN['_pwa_done_title'];
+  if (stepDescs[10]) stepDescs[10].textContent = _landingEN['_pwa_done_desc_android'];
+
+  if (btBubbles[4]) btBubbles[4].textContent = _landingEN['_tip_pwa1'];
+  if (btBubbles[5]) btBubbles[5].textContent = _landingEN['_tip_pwa2'];
+  if (btBubbles[6]) btBubbles[6].textContent = _landingEN['_tip_pwa3'];
+  if (btBubbles[7]) btBubbles[7].textContent = _landingEN['_tip_pwa4'];
+  if (btBubbles[8]) btBubbles[8].textContent = _landingEN['_tip_pwa5'];
+
+  // Final CTA
+  var ctaTitle = q('.cta-title'); if (ctaTitle) ctaTitle.textContent = _landingEN['_cta_title'];
+  var ctaSub = q('.cta-sub'); if (ctaSub) ctaSub.textContent = _landingEN['_cta_sub'];
+  var ctaBtn = q('.cta-section .btn-primary'); if (ctaBtn) ctaBtn.textContent = _landingEN['_cta_btn'];
+  var ctaNote = q('.cta-note'); if (ctaNote) ctaNote.textContent = _landingEN['_cta_note'];
+
+  // Toggle button
+  var lb = document.getElementById('lang-toggle');
+  if (lb) lb.textContent = 'DA';
+}
+
+function toggleLandingLang() {
+  var newLang = _landingLang === 'da' ? 'en' : 'da';
+  localStorage.setItem('bubble_landing_lang', newLang);
+  _landingLang = newLang;
+  if (newLang === 'en') {
+    applyLandingLang('en');
+  } else {
+    location.reload();
+  }
+}
+
+// Auto-apply on load
+if (_landingLang === 'en') applyLandingLang('en');
 </script>
 </body>
 </html>

@@ -689,4 +689,133 @@ function renderAvatar(name, color, avatarUrl, size) {
   return '<div style="width:' + sz + 'px;height:' + sz + 'px;border-radius:50%;background:' + (color || 'var(--accent)') + ';display:flex;align-items:center;justify-content:center;color:white;font-size:' + (sz < 30 ? '0.5' : '0.65') + 'rem;font-weight:700;flex-shrink:0">' + escHtml(ini) + '</div>';
 }
 
+// ══════════════════════════════════════════════════════════
+//  DB ACTIONS — centralized write layer for Supabase
+//  All DB writes should go through dbActions for:
+//  - consistent error handling
+//  - dedup protection
+//  - side effect management (toasts, tracking, cache)
+//  Migration: callers move to dbActions.X() incrementally
+// ══════════════════════════════════════════════════════════
+var dbActions = {
+
+  // ── CONTACTS ──
+  async saveContact(contactId) {
+    if (!currentUser || !contactId || contactId === currentUser.id) return { ok: false };
+    try {
+      var { error } = await sb.from('saved_contacts').upsert({
+        user_id: currentUser.id,
+        contact_id: contactId
+      });
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      trackEvent('contact_saved', { contact_id: contactId });
+      return { ok: true };
+    } catch (e) { logError('dbActions.saveContact', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  async removeContact(contactId) {
+    if (!currentUser || !contactId) return { ok: false };
+    try {
+      var { error } = await sb.from('saved_contacts').delete()
+        .eq('user_id', currentUser.id).eq('contact_id', contactId);
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      return { ok: true };
+    } catch (e) { logError('dbActions.removeContact', e); return { ok: false, error: e }; }
+  },
+
+  // ── BUBBLE MEMBERSHIP ──
+  async joinBubble(bubbleId) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    try {
+      var { error } = await sb.from('bubble_members').insert({
+        bubble_id: bubbleId,
+        user_id: currentUser.id
+      });
+      if (error && !String(error.message || '').includes('duplicate')) {
+        errorToast('save', error); return { ok: false, error: error };
+      }
+      trackEvent('bubble_joined', { bubble_id: bubbleId });
+      return { ok: true };
+    } catch (e) { logError('dbActions.joinBubble', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  async leaveBubble(bubbleId) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    try {
+      var { error } = await sb.from('bubble_members').delete()
+        .eq('bubble_id', bubbleId).eq('user_id', currentUser.id);
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      trackEvent('bubble_left', { bubble_id: bubbleId });
+      return { ok: true };
+    } catch (e) { logError('dbActions.leaveBubble', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  // ── PROFILE ──
+  async updateProfile(fields) {
+    if (!currentUser) return { ok: false };
+    try {
+      var { error } = await sb.from('profiles').update(fields).eq('id', currentUser.id);
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      // Update local cache
+      if (currentProfile) Object.assign(currentProfile, fields);
+      if (typeof _profileCache !== 'undefined' && _profileCache[currentUser.id]) {
+        Object.assign(_profileCache[currentUser.id], fields);
+      }
+      return { ok: true };
+    } catch (e) { logError('dbActions.updateProfile', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  // ── DM MESSAGES ──
+  async sendDM(receiverId, content, opts) {
+    if (!currentUser || !receiverId) return { ok: false };
+    opts = opts || {};
+    try {
+      var payload = {
+        sender_id: currentUser.id,
+        receiver_id: receiverId,
+        content: content || '',
+        file_url: opts.fileUrl || null,
+        gif_url: opts.gifUrl || null
+      };
+      var { data, error } = await sb.from('messages').insert(payload).select().single();
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      trackEvent('dm_sent', { receiver_id: receiverId, has_file: !!opts.fileUrl, has_gif: !!opts.gifUrl });
+      return { ok: true, message: data };
+    } catch (e) { logError('dbActions.sendDM', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  // ── BUBBLE MESSAGES ──
+  async sendBubbleMessage(bubbleId, content, opts) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    opts = opts || {};
+    try {
+      var payload = {
+        bubble_id: bubbleId,
+        user_id: currentUser.id,
+        content: content || '',
+        file_url: opts.fileUrl || null,
+        gif_url: opts.gifUrl || null
+      };
+      var { data, error } = await sb.from('bubble_messages').insert(payload).select().single();
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      return { ok: true, message: data };
+    } catch (e) { logError('dbActions.sendBubbleMessage', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  // ── REPORTS ──
+  async reportUser(reportedId, reason, details) {
+    if (!currentUser || !reportedId) return { ok: false };
+    try {
+      var { error } = await sb.from('reports').insert({
+        reporter_id: currentUser.id,
+        reported_id: reportedId,
+        reason: reason || 'other',
+        details: details || ''
+      });
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      return { ok: true };
+    } catch (e) { logError('dbActions.reportUser', e); return { ok: false, error: e }; }
+  }
+};
+
 

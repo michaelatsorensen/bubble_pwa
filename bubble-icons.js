@@ -65,4 +65,4 @@ const ICONS = {
 };
 
 function ico(name) { return ICONS[name] || ''; }
-function icon(name) { return '<span class="ico">' + (ICONS[name] || '') + '</span>'; }
+function icon(name) { return '<span class="ico" style="width:1em;height:1em;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle">' + (ICONS[name] || '') + '</span>'; }

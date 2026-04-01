@@ -651,14 +651,14 @@ async function psSaveContact() {
     const { data: existing } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
     const btn = document.getElementById('ps-save-btn');
     if (existing) {
-      await sb.from('saved_contacts').delete().eq('id', existing.id);
+      await dbActions.removeContact(userId);
       if (btn) btn.innerHTML = icon('bookmark') + ' Gem';
       var sr = document.getElementById('ps-star-row');
       if (sr) sr.style.display = 'none';
       starSet(userId, 0);
       showToast(t('toast_deleted'));
     } else {
-      await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: userId });
+      await dbActions.saveContact(userId);
       if (btn) btn.innerHTML = icon('bookmarkFill') + ' Gemt';
       // Show star rating row
       var sr2 = document.getElementById('ps-star-row');
