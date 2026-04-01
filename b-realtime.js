@@ -416,7 +416,7 @@ async function loadMessages() {
     if (_navVersion !== myNav) return;
 
     if (!convs || convs.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">Ingen samtaler endnu<br><span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400">Tryk Besked på en profil eller scan en QR for at starte</span></div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-home\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">Gå til radaren</button></div></div>';
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">'+t('dm_no_conversations')+'<br><span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400">'+t('dm_no_conversations_desc')+'</span></div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-home\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">'+t('dm_go_to_radar')+'</button></div></div>';
       return;
     }
 
@@ -483,7 +483,7 @@ async function openChat(userId, fromScreen) {
       var dmLiveName = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble) ? currentLiveBubble.bubble_name : '';
       roleEl.innerHTML = '<span class="live-badge-mini">LIVE</span>' + (dmLiveName ? ' <span style="color:var(--muted);font-size:0.65rem">' + escHtml(dmLiveName) + '</span>' : '');
     } else if (lastActive && (Date.now() - new Date(lastActive).getTime()) < 300000) {
-      roleEl.innerHTML = '<span style="color:#1A9E8E">● aktiv nu</span>';
+      roleEl.innerHTML = '<span style="color:#1A9E8E">● '+t('dm_active_now')+'</span>';
     }
     // Personalized placeholder
     var chatInput = document.getElementById('chat-input');
@@ -640,7 +640,7 @@ async function loadChatMessages() {
       el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;padding:3rem 1.5rem 1rem;text-align:center">' +
         '<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#7C5CFC);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:white;overflow:hidden">' + avHtml + '</div>' +
         '<div style="font-size:0.92rem;font-weight:700;margin-top:0.6rem">' + escHtml(partnerName) + '</div>' +
-        '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.2rem">Skriv den første besked</div>' +
+        '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.2rem">'+t('dm_write_first')+'</div>' +
         '</div>';
       return;
     }

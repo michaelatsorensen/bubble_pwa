@@ -27,7 +27,7 @@ async function loadHome() {
     const nameEl = document.getElementById('home-greeting-name');
     if (nameEl && currentProfile?.name) {
       var hour = new Date().getHours();
-      var greetText = hour < 5 ? 'God nat' : hour < 12 ? 'Godmorgen' : hour < 17 ? 'Goddag' : hour < 22 ? 'God aften' : 'God nat';
+      var greetText = hour < 5 ? t('home_greeting_evening') : hour < 12 ? t('home_greeting_morning') : hour < 17 ? t('home_greeting_afternoon') : hour < 22 ? t('home_greeting_evening') : t('home_greeting_evening');
       var greetLabel = nameEl?.previousElementSibling;
       if (greetLabel) greetLabel.textContent = greetText + ',';
       nameEl.innerHTML = escHtml(currentProfile.name.split(' ')[0]) + '<span style="display:inline-flex;width:1.3rem;height:1.3rem">' + ico('wave') + '</span>';
@@ -134,7 +134,7 @@ function homeSetMode(mode) {
     var nameEl = document.getElementById('home-live-banner-name');
     var countEl = document.getElementById('home-live-banner-count');
     if (nameEl) nameEl.textContent = ctx.bubbleName;
-    if (countEl) countEl.textContent = ctx.memberCount + ' her nu';
+    if (countEl) countEl.textContent = ctx.memberCount + ' ' + t('live_here_now');
   } else if (banner) {
     banner.style.display = 'none';
   }
@@ -144,7 +144,7 @@ function homeSetMode(mode) {
     var coName = document.getElementById('live-checkout-name');
     var coMeta = document.getElementById('live-checkout-meta');
     if (coName) coName.textContent = ctx.bubbleName;
-    if (coMeta) coMeta.textContent = 'Checked ind · udløber kl. ' + (ctx.expiryStr || '—');
+    if (coMeta) coMeta.textContent = t('bc_checked_in') + ' · ' + t('live_expires') + ' ' + (ctx.expiryStr || '—');
   }
   updateFilterChipStyle();
 }
@@ -732,7 +732,7 @@ async function loadMyNetworks() {
     var { data: memberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
     if (_navVersion !== myNav) return;
     if (!memberships || memberships.length === 0) {
-      list.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke med i nogen netværk endnu</div><div style="margin-top:1rem"><button class="btn-primary" onclick="bbSwitchTab(\'explore\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">Opdag netværk</button></div></div>';
+      list.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">' + t('bb_no_networks') + '</div><div style="margin-top:1rem"><button class="btn-primary" onclick="bbSwitchTab(\'explore\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">' + t('home_discover_networks') + '</button></div></div>';
       return;
     }
     var myIds = memberships.map(function(m) { return m.bubble_id; });
@@ -1066,7 +1066,7 @@ async function loadMyEvents() {
     if (_navVersion !== myNav) return;
     var myIds = (memberships || []).map(function(m) { return m.bubble_id; });
     if (myIds.length === 0) {
-      list.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('calendar') + '</div><div class="empty-text">Du har ingen events endnu</div><div style="margin-top:1rem"><button class="btn-primary" onclick="bbSwitchTab(\'explore\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">Opdag events</button></div></div>';
+      list.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('calendar') + '</div><div class="empty-text">'+t('bb_no_events')+'</div><div style="margin-top:1rem"><button class="btn-primary" onclick="bbSwitchTab(\'explore\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">'+t('bb_discover_events')+'</button></div></div>';
       return;
     }
 
@@ -1078,7 +1078,7 @@ async function loadMyEvents() {
     if (_navVersion !== myNav) return;
 
     if (!events || events.length === 0) {
-      list.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('calendar') + '</div><div class="empty-text">Du har ingen events endnu</div></div>';
+      list.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('calendar') + '</div><div class="empty-text">'+t('bb_no_events')+'</div></div>';
       return;
     }
 
@@ -1102,11 +1102,11 @@ async function loadMyEvents() {
 
     var html = '';
     if (upcoming.length > 0) {
-      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Kommende</div>';
+      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">'+t('misc_upcoming')+'</div>';
       html += upcoming.map(function(e) { return _bbEventCard(e, parentMap, gpMap, false); }).join('');
     }
     if (past.length > 0) {
-      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin:0.8rem 0 0.4rem">Afholdte</div>';
+      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin:0.8rem 0 0.4rem">'+t('misc_past')+'</div>';
       html += past.map(function(e) { return _bbEventCard(e, parentMap, gpMap, true); }).join('');
     }
     list.innerHTML = html;
@@ -1480,16 +1480,16 @@ function renderHomeDartboard() {
     av.innerHTML = '';
     if (_homeViewMode === 'live') {
       av.innerHTML = '<div class="dartboard-empty" style="position:absolute;top:50%;left:50%;transform:translate(-50%, calc(-100% - 40px));text-align:center;padding:0.6rem 1.2rem;background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:12px;border:1px solid var(--glass-border-subtle);box-shadow:0 2px 8px rgba(30,27,46,0.06);white-space:nowrap">' +
-        '<div style="font-size:0.78rem;font-weight:600;color:var(--text)">Du er den første her!</div>' +
-        '<div style="font-size:0.68rem;color:var(--muted);margin-top:0.15rem">Venter på deltagere...</div>' +
+        '<div style="font-size:0.78rem;font-weight:600;color:var(--text)">' + t('home_first_here') + '</div>' +
+        '<div style="font-size:0.68rem;color:var(--muted);margin-top:0.15rem">' + t('home_waiting') + '</div>' +
         '</div>';
     } else if (_homeRadarFilter !== 'all') {
       showDartboardEmpty(_homeRadarFilter);
     } else {
       av.innerHTML = '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0 2rem">' +
-        '<div style="font-size:0.82rem;font-weight:700;color:var(--text)">Din radar er tom</div>' +
-        '<div style="font-size:0.72rem;color:var(--muted);text-align:center;line-height:1.4">Join et netværk eller scan en QR-kode for at se folk i nærheden</div>' +
-        '<button class="btn-primary" onclick="bbSwitchTab(\'explore\');goTo(\'screen-bubbles\')" style="font-size:0.75rem;padding:0.5rem 1.2rem;margin-top:6px">Opdag netværk</button>' +
+        '<div style="font-size:0.82rem;font-weight:700;color:var(--text)">' + t('home_radar_empty') + '</div>' +
+        '<div style="font-size:0.72rem;color:var(--muted);text-align:center;line-height:1.4">' + t('home_radar_empty_desc') + '</div>' +
+        '<button class="btn-primary" onclick="bbSwitchTab(\'explore\');goTo(\'screen-bubbles\')" style="font-size:0.75rem;padding:0.5rem 1.2rem;margin-top:6px">' + t('home_discover_networks') + '</button>' +
         '</div>';
     }
     return;

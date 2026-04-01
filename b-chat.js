@@ -339,7 +339,7 @@ async function bcLoadBubbleCore(bubbleId) {
     var { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bubbleId).or('status.is.null,status.neq.pending');
     memberCount = count || 0;
   }
-  var subText = memberCount + (isEvent ? ' deltagere' : ' medlemmer');
+  var subText = memberCount + (isEvent ? ' ' + t('bb_participants') : ' ' + t('bb_members'));
   // Fetch parent name for child bubbles
   if (b.parent_bubble_id) {
     try {
@@ -365,7 +365,7 @@ async function bcConfigureTabs(b, bubbleId) {
     var { count: childCount } = await sb.from('bubbles').select('*', { count: 'exact', head: true })
       .eq('parent_bubble_id', bubbleId);
     if (tabEvents) {
-      tabEvents.textContent = 'Tilknyttet';
+      tabEvents.textContent = t('bc_events');
       tabEvents.style.display = (childCount > 0) ? '' : 'none';
     }
   } else {
@@ -467,15 +467,15 @@ async function bcRefreshMembership() {
       if (wasMember && !isMember) {
         if (bcSubscription) { bcSubscription.unsubscribe(); bcSubscription = null; }
         bcSwitchTab('info');
-        _renderToast('Du er fjernet fra boblen', 'error');
+        _renderToast(t('bc_kicked'), 'error');
       }
       // Ownership gained
       if (!wasOwner && bcBubbleData._isOwner) {
-        showSuccessToast('Du er nu ejer af denne boble');
+        showSuccessToast(t('bc_you_are_owner'));
       }
       // Admin granted
       if (!wasAdmin && bcBubbleData._isAdmin) {
-        showSuccessToast('Du er nu admin i denne boble');
+        showSuccessToast(t('bc_you_are_admin'));
       }
     }
   } catch(e) { logError('bcRefreshMembership', e); }
@@ -637,7 +637,7 @@ async function bcLoadBubbleInfo() {
       memberCount2 = count || 0;
     }
     var isEvent = b.type === 'event' || b.type === 'live';
-    var statusText = memberCount2 + (isEvent ? ' deltagere' : ' medlemmer');
+    var statusText = memberCount2 + (isEvent ? ' ' + t('bb_participants') : ' ' + t('bb_members'));
 
     // Check membership + live status for subtitle
     var myMFull = null;
@@ -933,7 +933,7 @@ async function bcToggleChatLock(bubbleId, locked) {
     if (error) { errorToast('save', error); return; }
     if (bcBubbleData) bcBubbleData.chat_locked = locked;
     bcUpdateChatLockUI();
-    showSuccessToast(locked ? 'Chat lukket for medlemmer' : 'Chat åbnet for alle');
+    showSuccessToast(locked ? t('bc_chat_closed') : t('bc_chat_opened'));
   } catch(e) { logError('bcToggleChatLock', e); errorToast('save', e); }
 }
 
@@ -951,7 +951,7 @@ function bcUpdateChatLockUI() {
       lockBanner = document.createElement('div');
       lockBanner.id = 'bc-chat-lock-banner';
       lockBanner.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 16px;background:rgba(245,158,11,0.06);border-top:1px solid rgba(245,158,11,0.15);color:#78350F;font-size:0.75rem;font-weight:600';
-      lockBanner.innerHTML = '<span style="font-size:13px;display:flex">' + ico('lock') + '</span> Chat er lukket af ejeren';
+      lockBanner.innerHTML = '<span style="font-size:13px;display:flex">' + ico('lock') + '</span> ' + t('bc_chat_locked');
       var panel = document.getElementById('bc-panel-chat');
       if (panel) panel.appendChild(lockBanner);
     }
@@ -968,7 +968,7 @@ async function bcSendMessage() {
   if (bcSending) return;
   // Chat lock guard
   if (bcBubbleData?.chat_locked && !bcBubbleData._isOwner && !bcBubbleData._isAdmin) {
-    showWarningToast('Chat er lukket af ejeren');
+    showWarningToast(t('bc_chat_locked'));
     return;
   }
   bcSending = true;
@@ -1323,7 +1323,7 @@ async function bcLoadMembers() {
       .order('joined_at', {ascending:true});
 
     if (!members || members.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('users') + '</div><div class="empty-text">Ingen medlemmer</div></div>';
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('users') + '</div><div class="empty-text">'+t('bc_no_members')+'</div></div>';
       return;
     }
 
@@ -1337,7 +1337,7 @@ async function bcLoadMembers() {
       list.innerHTML = '<div class="empty-state" style="padding:2rem 1rem">' +
         '<div class="empty-icon">' + icon('lock') + '</div>' +
         '<div class="empty-text">' + activeCount + ' ' + memberLabel + '<br>' +
-        '<span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400">Medlemslisten er kun synlig for medlemmer</span></div></div>';
+        '<span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400">'+t('bc_member_list_private')+'</span></div></div>';
       return;
     }
 
@@ -1408,7 +1408,7 @@ async function bcLoadMembers() {
       // Section labels
       let section = isOwnerRow ? 'owner' : (m._isLive ? 'live' : 'members');
       if (section !== prevSection) {
-        if (section === 'owner') html += `<div class="chat-section-label">${isEvent ? 'Arrangør' : 'Ejer'}</div>`;
+        if (section === 'owner') html += `<div class="chat-section-label">${isEvent ? t('misc_organizer') : t('misc_owner')}</div>`;
         else if (section === 'live') html += `<div class="chat-section-label" style="margin-top:0.8rem">${isEvent ? 'Til stede nu' : 'Her lige nu'} · ${liveCount}</div>`;
         else {
           var restCount = activeMembers.length - liveCount - (ownerId ? 1 : 0);
@@ -1427,7 +1427,7 @@ async function bcLoadMembers() {
       }
 
       // Role label
-      var roleLabel = isEvent ? 'Arrangør' : 'Ejer';
+      var roleLabel = isEvent ? t('misc_organizer') : t('misc_owner');
 
       var avatarInner = (p.avatar_url && !p.is_anon)
         ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
@@ -1461,7 +1461,7 @@ function bcShowKickConfirm(btn, userId, userName) {
 
 async function bcConfirmKick(userId, userName) {
   if (!bcBubbleId || !currentUser) return;
-  if (bcBubbleData?.created_by !== currentUser.id) { showWarningToast('Kun ejeren kan fjerne medlemmer'); return; }
+  if (bcBubbleData?.created_by !== currentUser.id) { showWarningToast(t('toast_no_permission')); return; }
   try {
     var { error } = await sb.from('bubble_members').delete()
       .eq('bubble_id', bcBubbleId).eq('user_id', userId);
@@ -1477,7 +1477,7 @@ async function bcApproveMember(userId) {
     var { error } = await sb.from('bubble_members').update({ status: 'active' })
       .eq('bubble_id', bcBubbleId).eq('user_id', userId);
     if (error) throw error;
-    showSuccessToast('Medlem godkendt');
+    showSuccessToast(t('bc_member_approved'));
     bcLoadMembers();
     // Notify approved user via Broadcast
     var bubbleName = bcBubbleData?.name || '';
@@ -1496,7 +1496,7 @@ async function bcRejectMember(userId) {
     var { error } = await sb.from('bubble_members').delete()
       .eq('bubble_id', bcBubbleId).eq('user_id', userId).eq('status', 'pending');
     if (error) throw error;
-    showToast('Anmodning afvist');
+    showToast(t('bc_request_rejected'));
     bcLoadMembers();
   } catch(e) { logError('bcRejectMember', e); errorToast('save', e); }
 }
@@ -1732,7 +1732,7 @@ async function bcLoadInfo() {
       if (isOwner) {
         adminItems += '<div onclick="openAdminDesignation(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
           '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('users') + '</span>' +
-          '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">Udpeg admins</div>' +
+          '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">' + t('bi_designate_admins') + '</div>' +
           '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>' +
           '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>';
       }
@@ -1746,7 +1746,7 @@ async function bcLoadInfo() {
       adminItems += '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>' +
         '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem">' +
         '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('lock') + '</span>' +
-        '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">Luk chat for medlemmer</div>' +
+        '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">' + t('bi_lock_chat') + '</div>' +
         '<label style="position:relative;width:36px;height:20px;flex-shrink:0;cursor:pointer">' +
         '<input type="checkbox" ' + (chatLocked ? 'checked' : '') + ' onchange="bcToggleChatLock(\'' + b.id + '\',this.checked)" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;margin:0">' +
         '<div style="position:absolute;inset:0;border-radius:10px;transition:background 0.2s;background:' + (chatLocked ? 'var(--accent)' : 'var(--border)') + '"></div>' +
@@ -1757,7 +1757,7 @@ async function bcLoadInfo() {
         adminItems += '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>' +
           '<div onclick="generateEventReport(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
           '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('file') + '</span>' +
-          '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">Event-rapport</div>' +
+          '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">' + t('bi_event_report') + '</div>' +
           '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
       }
       // Owner: transfer
@@ -1765,11 +1765,11 @@ async function bcLoadInfo() {
         adminItems += '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>' +
           '<div onclick="openTransferOwnership(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
           '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('crown') + '</span>' +
-          '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">Overdrag ejerskab</div>' +
+          '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">' + t('bi_transfer_ownership') + '</div>' +
           '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
       }
       adminHtml = '<div style="margin-bottom:0.9rem">' +
-        '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">' + (isEvent ? 'Event-administration' : 'Administration') + '</div>' +
+        '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">' + (isEvent ? t('bi_event_admin') : t('bi_administration')) + '</div>' +
         '<div style="border-radius:12px;border:1px solid var(--glass-border-subtle);overflow:hidden">' + adminItems + '</div></div>';
     }
 
@@ -1792,12 +1792,12 @@ async function bcLoadInfo() {
 
       var checkoutBtn = '';
       if (isEvent && myCheckinLive) {
-        checkoutBtn = '<button onclick="bcCheckout()" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.2);color:#085041;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">Check ud af event</button>';
+        checkoutBtn = '<button onclick="bcCheckout()" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.2);color:#085041;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + t('bi_checkout') + '</button>';
       }
       bottomHtml = '<div style="display:flex;flex-direction:column;gap:0.4rem;border-top:1px solid var(--glass-border-subtle);padding-top:0.8rem">' +
         checkoutBtn +
-        '<button data-action="leaveBubble" data-id="' + b.id + '" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.1);color:#A32D2D;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">Forlad ' + (isEvent ? 'event' : 'boblen') + '</button>' +
-        (isOwner ? '<button onclick="confirmPopBubble(\'' + b.id + '\')" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.1);color:#791F1F;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">Slet ' + (isEvent ? 'event' : 'boble') + '</button>' : '') +
+        '<button data-action="leaveBubble" data-id="' + b.id + '" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.1);color:#A32D2D;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_leave_event') : t('bb_leave_bubble')) + '</button>' +
+        (isOwner ? '<button onclick="confirmPopBubble(\'' + b.id + '\')" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.1);color:#791F1F;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_delete_event') : t('bb_delete_bubble')) + '</button>' : '') +
         '</div>';
     } else if (bcBubbleData._isPending) {
       bottomHtml = '<div style="text-align:center;padding:0.8rem 0;font-size:0.8rem;color:#854F0B;font-weight:600">⏳ Din anmodning afventer godkendelse</div>';
@@ -1953,8 +1953,8 @@ function bcRenderPostCard(post, author, event) {
     : '<div class="bp-avatar" style="background:var(--accent)">' + initials + '</div>';
 
   var roleLabel = '';
-  if (bcBubbleData && post.author_id === bcBubbleData.created_by) roleLabel = 'Ejer';
-  else roleLabel = 'Admin';
+  if (bcBubbleData && post.author_id === bcBubbleData.created_by) roleLabel = t('misc_owner');
+  else roleLabel = t('misc_admin');
 
   var ago = timeAgo(post.created_at);
   var preview = escHtml((post.content || '').slice(0, 140));

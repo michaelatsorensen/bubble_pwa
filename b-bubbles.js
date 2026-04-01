@@ -510,7 +510,7 @@ function openCreateEventModal() {
   if (parentLabel) { parentLabel.style.display = 'none'; parentLabel.textContent = ''; }
   bbOpen('create-bubble');
   var _cbTitle = document.getElementById('cb-sheet-title');
-  if (_cbTitle) _cbTitle.textContent = 'Opret event';
+  if (_cbTitle) _cbTitle.textContent = t('bb_create_event');
   setTimeout(function() {
     initInputConfirmButtons();
     var typeSelect = document.getElementById('cb-type');
@@ -522,9 +522,9 @@ function openCreateEventModal() {
     if (oldTypePills) oldTypePills.remove();
     document.getElementById('cb-visibility').value = 'private';
     cbRenderPillSelect('cb-visibility', [
-      { value: 'private', icon: 'lock',  label: 'Privat' },
-      { value: 'public',  icon: 'globe', label: 'Offentlig' },
-      { value: 'hidden',  icon: 'eye',   label: 'Skjult' }
+      { value: 'private', icon: 'lock',  label: t('bb_visibility_private') },
+      { value: 'public',  icon: 'globe', label: t('bb_visibility_public') },
+      { value: 'hidden',  icon: 'eye',   label: t('bb_visibility_hidden') }
     ]);
     // Show event fields
     var cmg = document.getElementById('cb-checkin-mode-group');
@@ -558,7 +558,7 @@ function openCreateEventFromBubble(parentBubbleId) {
   if (modal) modal.dataset.parentBubbleId = parentBubbleId;
   bbOpen('create-bubble');
   var _cbTitle = document.getElementById('cb-sheet-title');
-  if (_cbTitle) _cbTitle.textContent = 'Opret event';
+  if (_cbTitle) _cbTitle.textContent = t('bb_create_event');
   setTimeout(function() {
     initInputConfirmButtons();
     // Force event type selected, hide type picker
@@ -569,9 +569,9 @@ function openCreateEventFromBubble(parentBubbleId) {
     ]);
     document.getElementById('cb-visibility').value = 'private';
     cbRenderPillSelect('cb-visibility', [
-      { value: 'private', icon: 'lock',  label: 'Privat' },
-      { value: 'public',  icon: 'globe', label: 'Offentlig' },
-      { value: 'hidden',  icon: 'eye',   label: 'Skjult' }
+      { value: 'private', icon: 'lock',  label: t('bb_visibility_private') },
+      { value: 'public',  icon: 'globe', label: t('bb_visibility_public') },
+      { value: 'hidden',  icon: 'eye',   label: t('bb_visibility_hidden') }
     ]);
     // Show parent attribution label
     var parentLabel = document.getElementById('cb-parent-label');
@@ -608,7 +608,7 @@ function openCreateSubBubble(parentBubbleId) {
   if (modal) modal.dataset.parentBubbleId = parentBubbleId;
   bbOpen('create-bubble');
   var _cbTitle = document.getElementById('cb-sheet-title');
-  if (_cbTitle) _cbTitle.textContent = 'Opret netv\u00E6rk';
+  if (_cbTitle) _cbTitle.textContent = t('bb_create_network');
   setTimeout(function() {
     initInputConfirmButtons();
     var typeSelect = document.getElementById('cb-type');
@@ -618,9 +618,9 @@ function openCreateSubBubble(parentBubbleId) {
     ]);
     document.getElementById('cb-visibility').value = 'private';
     cbRenderPillSelect('cb-visibility', [
-      { value: 'private', icon: 'lock',  label: 'Privat' },
-      { value: 'public',  icon: 'globe', label: 'Offentlig' },
-      { value: 'hidden',  icon: 'eye',   label: 'Skjult' }
+      { value: 'private', icon: 'lock',  label: t('bb_visibility_private') },
+      { value: 'public',  icon: 'globe', label: t('bb_visibility_public') },
+      { value: 'hidden',  icon: 'eye',   label: t('bb_visibility_hidden') }
     ]);
     var parentLabel = document.getElementById('cb-parent-label');
     if (parentLabel) parentLabel.style.display = 'block';
@@ -663,7 +663,7 @@ function openCreateNetworkModal() {
   if (etge) etge.style.display = 'none';
   bbOpen('create-bubble');
   var _cbTitle = document.getElementById('cb-sheet-title');
-  if (_cbTitle) _cbTitle.textContent = 'Opret netv\u00E6rk';
+  if (_cbTitle) _cbTitle.textContent = t('bb_create_network');
   setTimeout(function() {
     initInputConfirmButtons();
     var typeSelect = document.getElementById('cb-type');
@@ -675,9 +675,9 @@ function openCreateNetworkModal() {
     if (oldTypePills) oldTypePills.remove();
     document.getElementById('cb-visibility').value = 'private';
     cbRenderPillSelect('cb-visibility', [
-      { value: 'private', icon: 'lock',  label: 'Privat' },
-      { value: 'public',  icon: 'globe', label: 'Offentlig' },
-      { value: 'hidden',  icon: 'eye',   label: 'Skjult' }
+      { value: 'private', icon: 'lock',  label: t('bb_visibility_private') },
+      { value: 'public',  icon: 'globe', label: t('bb_visibility_public') },
+      { value: 'hidden',  icon: 'eye',   label: t('bb_visibility_hidden') }
     ]);
   }, 50);
 }
@@ -752,7 +752,7 @@ async function createBubble() {
     const type = document.getElementById('cb-type').value;
     const desc = document.getElementById('cb-desc').value.trim();
     const location = document.getElementById('cb-location').value.trim();
-    if (!name) return showWarningToast('Navn er påkrævet');
+    if (!name) return showWarningToast(t('cb_name_required'));
     const visibility = document.getElementById('cb-visibility')?.value || 'private';
     // Pick up parent bubble id if set (from openCreateEventFromBubble)
     var modal = document.getElementById('bb-sheet-create-bubble');
@@ -810,7 +810,7 @@ async function requestJoin(bubbleId) {
       bubble_id: bubbleId, user_id: currentUser.id, status: 'pending'
     });
     if (error && !String(error.message || '').includes('duplicate')) return errorToast('save', error);
-    showToast('Anmodning sendt! Ejeren skal godkende 🔒');
+    showToast(t('toast_request_sent'));
     _bbAfterJoin(bubbleId);
     await openBubble(bubbleId);
     // Notify owner via Broadcast
@@ -882,9 +882,9 @@ async function openEditBubble(bubbleId) {
       { value: 'network', icon: 'bubble',   label: 'Netværk' }
     ]);
     ebRenderPillSelect('eb-visibility', [
-      { value: 'public',  icon: 'globe', label: 'Offentlig' },
-      { value: 'private', icon: 'lock',  label: 'Privat' },
-      { value: 'hidden',  icon: 'eye',   label: 'Skjult' }
+      { value: 'public',  icon: 'globe', label: t('bb_visibility_public') },
+      { value: 'private', icon: 'lock',  label: t('bb_visibility_private') },
+      { value: 'hidden',  icon: 'eye',   label: t('bb_visibility_hidden') }
     ]);
     openModal('modal-edit-bubble');
     setTimeout(initInputConfirmButtons, 50);
@@ -923,7 +923,7 @@ async function saveEditBubble() {
     const visibility = document.getElementById('eb-visibility').value;
     const desc       = document.getElementById('eb-desc').value.trim();
     const location   = document.getElementById('eb-location').value.trim();
-    if (!name) return showWarningToast('Navn er påkrævet');
+    if (!name) return showWarningToast(t('cb_name_required'));
     var updateObj = {
       name, type, type_label: typeLabel(type),
       visibility, description: desc, location, keywords: ebChips
@@ -945,7 +945,7 @@ async function saveEditBubble() {
     const { error } = await sb.from('bubbles').update(updateObj).eq('id', currentEditBubbleId);
     if (error) return errorToast('save', error);
     closeModal('modal-edit-bubble');
-    showSuccessToast('Boble opdateret');
+    showSuccessToast(t('toast_bubble_updated'));
     await bcLoadBubbleInfo();
     await bcLoadMembers();
   } catch(e) { logError("saveEditBubble", e); errorToast("save", e); }
@@ -1464,7 +1464,7 @@ async function generateEventReport(bubbleId) {
     ]);
 
     var b = bubbleRes.data;
-    if (!b) { _renderToast('Boble ikke fundet', 'error'); return; }
+    if (!b) { _renderToast(t('toast_bubble_not_found'), 'error'); return; }
     var members = membersRes.data || [];
     var messages = messagesRes.data || [];
     var guests = guestsRes.data || [];
@@ -2138,7 +2138,7 @@ async function popBubble(bubbleId) {
     await sb.from('bubble_invitations').delete().eq('bubble_id', bubbleId);
     var { error } = await sb.from('bubbles').delete().eq('id', bubbleId).eq('created_by', currentUser.id);
     if (error) { errorToast('save', error); return; }
-    showSuccessToast('Boble slettet');
+    showSuccessToast(t('toast_bubble_deleted'));
     goTo('screen-home');
     loadHome();
   } catch(e) { logError('popBubble', e); errorToast('delete', e); }

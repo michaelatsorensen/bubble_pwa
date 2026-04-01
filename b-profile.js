@@ -92,8 +92,8 @@ function _personReset() {
 function _personRenderEmpty() {
   var personAvEl = document.getElementById('person-avatar');
   if (personAvEl) personAvEl.textContent = '?';
-  document.getElementById('person-name').textContent = 'Profil ikke tilgængelig';
-  document.getElementById('person-role').textContent = 'Denne profil eksisterer ikke længere';
+  document.getElementById('person-name').textContent = t('ps_profile_not_available');
+  document.getElementById('person-role').textContent = t('ps_profile_not_exists');
   document.getElementById('person-overlap').innerHTML = '';
   var bioS = document.getElementById('person-bio-inline'); if (bioS) bioS.style.display = 'none';
   var tagS = document.getElementById('person-tags-section'); if (tagS) tagS.style.display = 'none';
@@ -110,7 +110,7 @@ function _personRenderIdentity(p) {
     else { personAvEl.textContent = initials; personAvEl.innerHTML = initials; }
   }
   // Name + title
-  document.getElementById('person-name').textContent = p.is_anon ? 'Anonym bruger' : (p.name || '?');
+  document.getElementById('person-name').textContent = p.is_anon ? t('ps_anonymous') : (p.name || '?');
   document.getElementById('person-role').textContent = p.is_anon ? '' : ((p.title || '') + (p.workplace ? ' · ' + p.workplace : ''));
   // Bio (inline under name)
   document.getElementById('person-bio').textContent = p.bio || '';
@@ -223,7 +223,7 @@ async function saveContact() {
   try {
     if (!currentPerson) return;
     const { data: existing } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', currentPerson).maybeSingle();
-    if (existing) { showWarningToast('Allerede gemt'); return; }
+    if (existing) { showWarningToast(t('toast_already_saved')); return; }
     await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: currentPerson });
     document.getElementById('save-btn').innerHTML = icon('checkCircle') + '<span>Gemt</span>';
     showSuccessToast('Kontakt gemt');
@@ -771,7 +771,7 @@ async function loadSavedContacts() {
     var saved = (savedRaw || []).filter(function(s) { return s.contact_id !== currentUser.id; });
 
     if (!saved || saved.length === 0) {
-      if (savedEl) savedEl.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bookmark') + '</div><div class="empty-text">Ingen gemte kontakter endnu.<br>Tryk Gem på en profil for at huske dem.</div></div>';
+      if (savedEl) savedEl.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bookmark') + '</div><div class="empty-text">'+t('pf_no_saved')+'<br>'+t('pf_no_saved_desc')+'</div></div>';
       renderSavedStoryBar(null, {});
       return;
     }
@@ -874,6 +874,11 @@ function profSwitchTab(tab) {
           '<div id="anon-toggle" onclick="toggleAnon()" style="width:46px;height:26px;background:var(--border);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0">' +
             '<div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>' +
           '</div></div>' +
+        '<div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">' + t('pf_language') + '</div>' +
+        '<div style="display:flex;gap:0.4rem;margin-bottom:0.5rem">' +
+          '<button id="lang-btn-da" onclick="switchAppLanguage(\'da\')" style="flex:1;padding:0.55rem;border-radius:10px;font-size:0.82rem;font-weight:600;font-family:inherit;cursor:pointer;border:1.5px solid ' + (_lang === 'da' ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)') + ';background:' + (_lang === 'da' ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)') + ';color:' + (_lang === 'da' ? 'var(--accent)' : 'var(--muted)') + '">Dansk</button>' +
+          '<button id="lang-btn-en" onclick="switchAppLanguage(\'en\')" style="flex:1;padding:0.55rem;border-radius:10px;font-size:0.82rem;font-weight:600;font-family:inherit;cursor:pointer;border:1.5px solid ' + (_lang === 'en' ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)') + ';background:' + (_lang === 'en' ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)') + ';color:' + (_lang === 'en' ? 'var(--accent)' : 'var(--muted)') + '">English</button>' +
+        '</div>' +
         '<div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Konto</div>' +
         '<button onclick="openFeedback()" style="width:100%;padding:0.7rem;background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.15);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent);cursor:pointer;margin-bottom:0.5rem">💬 Giv feedback</button>' +
         '<button onclick="showTerms()" style="width:100%;padding:0.7rem;background:none;border:1px solid var(--glass-border);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--text-secondary);cursor:pointer;margin-bottom:0.5rem">Betingelser & Privatlivspolitik</button>' +
@@ -1122,6 +1127,23 @@ async function saveProfile() {
     loadProfile();
     showSuccessToast('Profil gemt');
   } catch(e) { logError("saveProfile", e); errorToast("save", e); }
+}
+
+function switchAppLanguage(lang) {
+  setLang(lang);
+  translateStaticUI();
+  // Update language buttons
+  var da = document.getElementById('lang-btn-da');
+  var en = document.getElementById('lang-btn-en');
+  if (da) { da.style.borderColor = lang === 'da' ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)'; da.style.background = lang === 'da' ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)'; da.style.color = lang === 'da' ? 'var(--accent)' : 'var(--muted)'; }
+  if (en) { en.style.borderColor = lang === 'en' ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)'; en.style.background = lang === 'en' ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)'; en.style.color = lang === 'en' ? 'var(--accent)' : 'var(--muted)'; }
+  // Refresh active screen to pick up new language
+  if (_activeScreen === 'screen-home') loadHome();
+  else if (_activeScreen === 'screen-bubbles') { loadMyBubbles(); }
+  else if (_activeScreen === 'screen-messages') loadMessages();
+  else if (_activeScreen === 'screen-profile') loadProfile();
+  else if (_activeScreen === 'screen-notifications') loadNotifications();
+  showSuccessToast(lang === 'da' ? 'Sprog ændret til dansk' : 'Language changed to English');
 }
 
 function toggleAnon() {

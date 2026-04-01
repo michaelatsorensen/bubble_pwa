@@ -50,7 +50,7 @@ async function loadNotifications() {
 
     var html = pendingHtml + inviteHtml + dmHtml + matchHtml + liveHtml + savedByHtml + newMemberHtml;
     if (!html) {
-      html = '<div class="empty-state"><div class="empty-icon">' + icon('bell') + '</div><div class="empty-text">Ingen notifikationer endnu<br><span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400">Gem profiler og join bobler — så ser du aktivitet her</span></div></div>';
+      html = '<div class="empty-state"><div class="empty-icon">' + icon('bell') + '</div><div class="empty-text">' + t('nf_empty') + '<br><span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400">' + t('nf_empty_desc') + '</span></div></div>';
     }
     list.innerHTML = html;
   } catch(e) { logError("loadNotifications", e); showRetryState('notifications-list', 'loadNotifications', 'Kunne ikke hente notifikationer'); }

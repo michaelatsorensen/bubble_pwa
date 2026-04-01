@@ -314,34 +314,34 @@ function showWarningToast(message) {
 function errorToast(context, error) {
   var msg = (error && error.message) ? error.message : String(error || '');
 
-  // Network check first — most common mobile issue
+  // Network check first
   if (!navigator.onLine || msg.includes('network') || msg.includes('fetch') || msg.includes('Failed to fetch') || msg.includes('ERR_INTERNET')) {
-    return _renderToast('Ingen internetforbindelse — tjek dit netværk og prøv igen', 'error');
+    return _renderToast(t('toast_no_connection'), 'error');
   }
 
   // Map known technical errors to human messages
-  if (msg.includes('row-level security') || msg.includes('policy')) return _renderToast('Du har ikke tilladelse til dette', 'error');
-  if (msg.includes('JWT') || msg.includes('token') || msg.includes('refresh_token') || msg.includes('session_not_found')) return _renderToast('Din session er udløbet — log ind igen', 'error');
-  if (msg.includes('duplicate') || msg.includes('unique')) return _renderToast('Det er allerede gjort', 'warn');
-  if (msg.includes('timeout') || msg.includes('TIMEOUT') || msg.includes('PGRST')) return _renderToast('Serveren svarer ikke — prøv igen om lidt', 'error');
-  if (msg.includes('too many') || msg.includes('rate limit') || msg.includes('429')) return _renderToast('For mange forsøg — vent et øjeblik', 'warn');
-  if (msg.includes('storage') || msg.includes('bucket')) return _renderToast('Kunne ikke uploade — prøv et mindre billede', 'error');
-  if (msg.includes('not found') || msg.includes('404')) return _renderToast('Indholdet blev ikke fundet — det er muligvis slettet', 'error');
-  if (msg.includes('Invalid login') || msg.includes('invalid_credentials')) return _renderToast('Forkert email eller kodeord', 'error');
-  if (msg.includes('Email not confirmed')) return _renderToast('Bekræft din email først — tjek din indbakke', 'warn');
-  if (msg.includes('User already registered')) return _renderToast('Denne email er allerede registreret — prøv at logge ind', 'warn');
+  if (msg.includes('row-level security') || msg.includes('policy')) return _renderToast(t('toast_no_permission'), 'error');
+  if (msg.includes('JWT') || msg.includes('token') || msg.includes('refresh_token') || msg.includes('session_not_found')) return _renderToast(t('toast_session_expired'), 'error');
+  if (msg.includes('duplicate') || msg.includes('unique')) return _renderToast(t('toast_already_done'), 'warn');
+  if (msg.includes('timeout') || msg.includes('TIMEOUT') || msg.includes('PGRST')) return _renderToast(t('toast_server_error'), 'error');
+  if (msg.includes('too many') || msg.includes('rate limit') || msg.includes('429')) return _renderToast(t('toast_rate_limit'), 'warn');
+  if (msg.includes('storage') || msg.includes('bucket')) return _renderToast(t('toast_upload_smaller'), 'error');
+  if (msg.includes('not found') || msg.includes('404')) return _renderToast(t('toast_not_found'), 'error');
+  if (msg.includes('Invalid login') || msg.includes('invalid_credentials')) return _renderToast(t('toast_wrong_credentials'), 'error');
+  if (msg.includes('Email not confirmed')) return _renderToast(t('toast_confirm_email'), 'warn');
+  if (msg.includes('User already registered')) return _renderToast(t('toast_already_registered'), 'warn');
 
   // Default: friendly context message
   var friendly = {
-    'login': 'Login fejlede — tjek email og kodeord',
-    'signup': 'Oprettelse fejlede — prøv igen',
-    'save': 'Kunne ikke gemme — prøv igen',
-    'send': 'Beskeden blev ikke sendt — prøv igen',
-    'upload': 'Upload fejlede — prøv med en mindre fil',
-    'delete': 'Kunne ikke slette — prøv igen',
-    'load': 'Kunne ikke hente data — træk ned for at prøve igen'
+    'login': t('toast_login_failed'),
+    'signup': t('toast_signup_failed'),
+    'save': t('toast_save_failed'),
+    'send': t('toast_send_failed'),
+    'upload': t('toast_upload_failed'),
+    'delete': t('toast_delete_failed'),
+    'load': t('toast_load_failed')
   };
-  _renderToast(friendly[context] || 'Noget gik galt — prøv igen', 'error');
+  _renderToast(friendly[context] || t('toast_generic_error'), 'error');
 }
 
 

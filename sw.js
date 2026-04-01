@@ -3,11 +3,11 @@
 // ══════════════════════════════════════
 // Version managed by CACHE_NAME below
 
-const CACHE_NAME = 'bubble-v8.0.0';
+const CACHE_NAME = 'bubble-v8.0.3';
 const CACHE_URLS = [
   './', './index.html', './app.css',
   './bubble-icons.js',
-  './b-config.js', './b-utils.js', './b-navigation.js',
+  './b-config.js', './b-i18n.js', './b-utils.js', './b-navigation.js',
   './b-auth.js', './b-home.js', './b-bubbles.js',
   './b-profile.js', './b-radar.js', './b-messages.js',
   './b-realtime.js', './b-onboarding.js', './b-chat.js',

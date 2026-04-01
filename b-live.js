@@ -232,7 +232,7 @@ async function liveCheckout() {
 
     currentLiveBubble = null;
     appMode.clearLive();
-    showSuccessToast('Du er checket ud');
+    showSuccessToast(t('toast_checkedout'));
     await loadLiveBubbleStatus();
 
     // Reset home to 'all' mode + re-render dartboard
@@ -291,7 +291,7 @@ async function startLiveCamera() {
         var s = document.createElement('script');
         s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
         s.onload = resolve;
-        s.onerror = function() { reject(new Error('Kunne ikke indlæse QR-scanner')); };
+        s.onerror = function() { reject(new Error(t('toast_generic_error'))); };
         document.head.appendChild(s);
       });
     }
@@ -742,7 +742,7 @@ async function liveScanConfirmJoin() {
     if (cMeta) cMeta.textContent = (existing ? 'Checked ind igen' : 'Joined + checked ind') + ' ✓';
     if (confirmed) confirmed.style.display = 'flex';
 
-    showToast('Checked ind i ' + bubble.name + ' ✓');
+    showToast(t('toast_checkedin'));
     loadMyBubbles();
     loadLiveBubbleStatus();
     setTimeout(function() { closeLiveCheckinModal(); }, 2500);
