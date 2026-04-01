@@ -529,7 +529,7 @@ async function checkPendingContact() {
     });
     flowRemove('pending_contact');
     if (!error) {
-      showToast('Kontakt gemt fra QR-scan! ✓');
+      showSuccessToast(t('toast_saved'));
       trackEvent('qr_contact_saved', { contact_id: contactId });
     }
     return contactId;
@@ -610,7 +610,7 @@ async function loadEventSocialProof(bubbleId) {
     if (countEl && count > 0) {
       countEl.textContent = count + ' deltager' + (count !== 1 ? 'e' : '') + ' er allerede her';
     } else if (countEl) {
-      countEl.textContent = 'Vær den første!';
+      countEl.textContent = t('home_first_here');
     }
     
     // Load blurred profile cards (max 4)

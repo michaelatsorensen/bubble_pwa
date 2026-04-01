@@ -185,16 +185,7 @@ async function sendMessage() {
         content: content, created_at: new Date().toISOString(),
         _gp: 'single', file_url: null, edited: false, read_at: null
       };
-      var el = document.getElementById('chat-messages');
-      if (el) {
-        var emptyHero = el.querySelector('[style*="flex-direction:column"]');
-        if (emptyHero && !el.querySelector('.msg-row')) emptyHero.remove();
-        _dmMaybeInsertDateSep(el, tempMsg.created_at);
-        el.insertAdjacentHTML('beforeend', dmRenderMsg(tempMsg));
-        var pendingRow = document.getElementById('dm-msg-' + tempId);
-        if (pendingRow) pendingRow.classList.add('msg-pending');
-        el.scrollTop = el.scrollHeight;
-      }
+      dmReduceMsg(tempMsg, { pending: true });
       input.value = '';
       input.blur();
 
@@ -213,19 +204,8 @@ async function sendMessage() {
       }
 
       if (newMsg) {
-        // Replace pending message with confirmed
-        var pendingEl = document.getElementById('dm-msg-' + tempId);
-        if (pendingEl) {
-          pendingEl.id = 'dm-msg-' + newMsg.id;
-          pendingEl.setAttribute('data-msg-id', newMsg.id);
-          pendingEl.classList.remove('msg-pending');
-          // Update long-press handlers with real ID
-          pendingEl.setAttribute('oncontextmenu', "event.preventDefault();dmLongPress('" + newMsg.id + "',true)");
-          pendingEl.setAttribute('ontouchstart', "dmTouchStart(event,'" + newMsg.id + "',true)");
-          // Update bubble ID
-          var bubble = pendingEl.querySelector('.msg-bubble');
-          if (bubble) bubble.id = 'dm-bubble-' + newMsg.id;
-        }
+        // Replace pending message with confirmed via reducer
+        dmReduceMsg(newMsg, { replaceTempId: tempId });
         // Broadcast to recipient
         if (chatSubscription) {
           try { chatSubscription.send({ type: 'broadcast', event: 'new_message', payload: newMsg }); } catch(e) { logError("dm:new_message_broadcast", e); }
@@ -259,14 +239,14 @@ async function dmHandleFile(input) {
   try {
     const file = input.files[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) { showWarningToast('Maks 10MB per fil'); return; }
+    if (file.size > 10 * 1024 * 1024) { showWarningToast(t('toast_max_file')); return; }
 
     // File type blocklist — prevent stored XSS
     var blockedTypes = ['text/html','application/xhtml+xml','image/svg+xml','application/javascript','text/javascript','application/x-httpd-php'];
     var blockedExts = ['html','htm','svg','js','php','exe','bat','cmd','sh','ps1'];
     var ext = (file.name || '').split('.').pop().toLowerCase();
     if (blockedTypes.indexOf(file.type) >= 0 || blockedExts.indexOf(ext) >= 0) {
-      showWarningToast('Filtypen er ikke tilladt');
+      showWarningToast(t('toast_generic_error'));
       input.value = '';
       return;
     }
@@ -298,11 +278,8 @@ async function dmHandleFile(input) {
     if (error) { logError('dmHandleFile:insert', error); errorToast('upload', error); input.value = ''; return; }
     if (newMsg) {
       const el = document.getElementById('chat-messages');
-      if (el && !el.querySelector('[data-msg-id="' + newMsg.id + '"]')) {
-        el.insertAdjacentHTML('beforeend', dmRenderMsg(newMsg));
-        el.scrollTop = el.scrollHeight;
-      }
-      showToast('Fil sendt!');
+      dmReduceMsg(newMsg);
+      showToast(t('toast_sent'));
     }
     input.value = '';
   } catch(e) { logError("dmHandleFile", e); errorToast("upload", e); }

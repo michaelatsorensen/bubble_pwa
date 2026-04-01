@@ -3,7 +3,7 @@
 // ══════════════════════════════════════
 // Version managed by CACHE_NAME below
 
-const CACHE_NAME = 'bubble-v8.0.3';
+const CACHE_NAME = 'bubble-v8.0.9';
 const CACHE_URLS = [
   './', './index.html', './app.css',
   './bubble-icons.js',

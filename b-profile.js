@@ -53,7 +53,7 @@ async function openPerson(userId, fromScreen) {
     // Render bubble-up label
     var firstName = p.is_anon ? 'personen' : (p.name || '').split(' ')[0] || 'personen';
     var bupLabel = document.getElementById('person-bubbleup-label');
-    if (bupLabel) bupLabel.textContent = 'Opret boble med ' + firstName;
+    if (bupLabel) bupLabel.textContent = t('ps_bubbleup_create', { name: firstName });
 
     // Render saved state + stars
     await _personRenderSaved(userId);
@@ -226,7 +226,7 @@ async function saveContact() {
     if (existing) { showWarningToast(t('toast_already_saved')); return; }
     await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: currentPerson });
     document.getElementById('save-btn').innerHTML = icon('checkCircle') + '<span>Gemt</span>';
-    showSuccessToast('Kontakt gemt');
+    showSuccessToast(t('toast_saved'));
     trackEvent('contact_saved', { contact_id: currentPerson });
     loadSavedContacts();
   } catch(e) { logError("saveContact", e); errorToast("save", e); }
@@ -280,7 +280,7 @@ async function confirmRemoveSaved() {
     } else {
       loadSavedContacts();
     }
-    showToast('Kontakt fjernet');
+    showToast(t('toast_deleted'));
   } catch(e) { logError("confirmRemoveSaved", e); errorToast("delete", e); }
   } catch(e) { logError("confirmRemoveSaved", e); }
 }
@@ -656,7 +656,7 @@ async function psSaveContact() {
       var sr = document.getElementById('ps-star-row');
       if (sr) sr.style.display = 'none';
       starSet(userId, 0);
-      showToast('Kontakt fjernet');
+      showToast(t('toast_deleted'));
     } else {
       await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: userId });
       if (btn) btn.innerHTML = icon('bookmarkFill') + ' Gemt';
@@ -669,7 +669,7 @@ async function psSaveContact() {
           return '<div class="ps-star empty" onclick="psSetStar(\'' + userId + '\',' + n + ')">\u2605</div>';
         }).join('');
       }
-      showSuccessToast('Kontakt gemt');
+      showSuccessToast(t('toast_saved'));
     }
     loadSavedContacts();
   } catch(e) { logError("psSaveContact", e); errorToast("save", e); }
@@ -811,7 +811,7 @@ async function loadSavedContacts() {
             ${stars}
           </div>
           <div style="flex:1;min-width:0">
-            <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||'Ukendt')}</div>
+            <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||t('misc_unknown'))}</div>
             <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml([p.title, p.workplace].filter(Boolean).join(' · '))}</div>
           </div>
           <div style="display:flex;gap:0.35rem;flex-shrink:0" onclick="event.stopPropagation()">
@@ -934,7 +934,7 @@ async function loadProfileBubbles() {
     if (events.length > 0) {
       html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin:0.6rem 0 0.4rem">Events (' + events.length + ')</div>';
       events.forEach(function(b) {
-        var dateStr = b.event_date ? new Date(b.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) : '';
+        var dateStr = b.event_date ? new Date(b.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
         var isPast = b.event_date && new Date(b.event_date) < new Date();
         html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5' : '') + '"><div style="display:flex;align-items:center;gap:0.6rem">';
         html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E">' + ico('calendar') + '</div>';
@@ -995,14 +995,14 @@ async function loadProfileInvitations() {
       const b = bubbleMap[inv.bubble_id] || {};
       const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const col = colors[i % colors.length];
-      const time = new Date(inv.created_at).toLocaleDateString('da-DK', { day:'numeric', month:'short' });
+      const time = new Date(inv.created_at).toLocaleDateString(_locale(), { day:'numeric', month:'short' });
       const tags = (p.keywords||[]).slice(0,2).map(k => `<span class="tag" style="font-size:0.58rem;padding:0.15rem 0.4rem">${escHtml(k)}</span>`).join('');
 
       return `<div class="card" style="padding:0.7rem 0.9rem;margin-bottom:0.5rem" id="prof-invite-${inv.id}">
         <div class="flex-row-center" style="gap:0.7rem">
           <div class="avatar" style="background:${col};width:40px;height:40px;font-size:0.75rem;flex-shrink:0" data-action="openPerson" data-id="${inv.from_user_id}" data-from="screen-profile">${ini}</div>
           <div style="flex:1;min-width:0">
-            <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||'Ukendt')}</div>
+            <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||t('misc_unknown'))}</div>
             <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml([p.title, p.workplace].filter(Boolean).join(' · '))}</div>
             ${b.name ? `<div class="fs-065 text-muted" style="margin-top:0.15rem">${icon('bubble')} ${escHtml(b.name)} · ${time}</div>` : `<div class="fs-065 text-muted" style="margin-top:0.15rem">Bubble Up · ${time}</div>`}
             ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.25rem">${tags}</div>` : ''}
@@ -1025,7 +1025,7 @@ async function profAcceptInvite(inviteId, fromUserId) {
     const { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).single();
     if (inv?.bubble_id) {
       await sb.from('bubble_members').insert({ bubble_id: inv.bubble_id, user_id: currentUser.id });
-      showToast('Du er nu med i boblen!');
+      showToast(t('toast_joined'));
       _bbAfterJoin(inv.bubble_id);
       loadProfileInvitations();
       setTimeout(function() { openBubbleChat(inv.bubble_id, 'screen-profile'); }, 800);
@@ -1076,7 +1076,7 @@ async function confirmDeclineInvite() {
     } else {
       loadProfileInvitations();
     }
-    showToast('Invitation afvist');
+    showToast(t('toast_deleted'));
   } catch(e) { logError("confirmDeclineInvite", e); errorToast("save", e); }
   } catch(e) { logError("confirmDeclineInvite", e); }
 }
@@ -1125,7 +1125,7 @@ async function saveProfile() {
     await loadCurrentProfile();
     closeModal('modal-edit-profile');
     loadProfile();
-    showSuccessToast('Profil gemt');
+    showSuccessToast(t('toast_saved'));
   } catch(e) { logError("saveProfile", e); errorToast("save", e); }
 }
 

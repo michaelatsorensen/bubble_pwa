@@ -143,7 +143,7 @@ function _showMinimalOnboarding(hasName, hasWorkplace, autoName) {
   if (flowGet('event_flow')) contextLabel = 'Næsten klar — udfyld dit navn så andre kan finde dig';
   else if (flowGet('pending_contact')) contextLabel = 'Ét felt og du kan se kontakten';
   else if (flowGet('pending_join')) contextLabel = 'Ét felt og du er med i netværket';
-  else contextLabel = 'Næsten klar!';
+  else contextLabel = t('ob_almost_ready');
 
   var nameVal = autoName || currentProfile?.name || '';
   var wpVal = currentProfile?.workplace || '';
@@ -285,10 +285,10 @@ function updateObStrength() {
   var label = document.getElementById('ob-strength-label');
   if (!bar || !label) return;
   bar.style.width = score + '%';
-  if (score >= 80) { label.textContent = 'Stærk'; label.style.color = '#1A9E8E'; bar.style.background = '#1A9E8E'; }
-  else if (score >= 50) { label.textContent = 'God'; label.style.color = 'var(--accent)'; bar.style.background = 'var(--accent)'; }
+  if (score >= 80) { label.textContent = t('pf_strength_strong'); label.style.color = '#1A9E8E'; bar.style.background = '#1A9E8E'; }
+  else if (score >= 50) { label.textContent = t('pf_strength_good'); label.style.color = 'var(--accent)'; bar.style.background = 'var(--accent)'; }
   else if (score >= 30) { label.textContent = 'OK'; label.style.color = 'var(--gold)'; bar.style.background = 'var(--gold)'; }
-  else { label.textContent = 'Svag'; label.style.color = 'var(--accent2)'; bar.style.background = 'var(--accent2)'; }
+  else { label.textContent = t('pf_strength_weak'); label.style.color = 'var(--accent2)'; bar.style.background = 'var(--accent2)'; }
 
   // Actionable hint
   var hint = document.getElementById('ob-strength-hint');
@@ -423,7 +423,7 @@ async function confirmAbortOnboarding() {
     currentUser = null;
     currentProfile = null;
     goTo('screen-auth');
-    showWarningToast('Opsætning afbrudt');
+    showWarningToast(t('toast_generic_error'));
   } catch(e) { logError('abortOnboarding', e); goTo('screen-auth'); }
   } catch(e) { logError("confirmAbortOnboarding", e); }
 }

@@ -39,7 +39,7 @@ async function toggleBubbleUpvote(bubbleId) {
       if (error) { _renderToast('Kunne ikke fjerne anbefaling', 'error'); return; }
       delete myUpvotes[bubbleId];
       bubbleUpvotes[bubbleId] = Math.max((bubbleUpvotes[bubbleId] || 1) - 1, 0);
-      showToast('Anbefaling fjernet');
+      showToast(t('toast_updated'));
     } else {
       var { error } = await sb.from('bubble_upvotes').insert({ user_id: currentUser.id, bubble_id: bubbleId });
       if (error) { _renderToast('Kunne ikke anbefale', 'error'); return; }
@@ -64,7 +64,7 @@ async function toggleBubbleUpvote(bubbleId) {
     var barBtn = document.getElementById('bc-upvote-bar-btn');
     if (barBtn && bcBubbleId === bubbleId) {
       var up = myUpvotes[bubbleId];
-      barBtn.innerHTML = (up ? icon('checkCircle') : icon('rocket')) + ' ' + (up ? 'Anbefalet' : 'Anbefal');
+      barBtn.innerHTML = (up ? icon('checkCircle') : icon('rocket')) + ' ' + (up ? t('bc_recommended') : t('bc_recommend'));
       barBtn.classList.toggle('active', !!up);
     }
   } catch(e) { logError('toggleBubbleUpvote', e); errorToast('save', e); }
@@ -243,7 +243,7 @@ async function joinBubble(bubbleId) {
   try {
     const { error } = await sb.from('bubble_members').insert({ bubble_id: bubbleId, user_id: currentUser.id });
     if (error && !String(error.message || '').includes('duplicate')) return _renderToast('Fejl ved joining', 'error');
-    showSuccessToast('Du er nu i boblen');
+    showSuccessToast(t('toast_joined'));
     _bbAfterJoin(bubbleId);
     await openBubble(bubbleId);
     loadHome();
@@ -289,7 +289,7 @@ function _buildMemberSheet(title, subtitle, members) {
       var adminBadge = isAdmin ? '<span class="admin-badge" style="font-size:0.55rem;background:rgba(124,92,252,0.1);color:var(--accent);padding:0.1rem 0.35rem;border-radius:6px;font-weight:600">Admin</span>' : '';
       return '<div class="member-pick-row" data-uid="' + m.user_id + '" data-name="' + escHtml(p.name||'?').replace(/"/g,'&quot;') + '" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border-radius:12px;border:1px solid var(--glass-border-subtle);margin-bottom:0.4rem;cursor:pointer;transition:all 0.15s">' +
         avHtml +
-        '<div style="flex:1"><div style="font-weight:600;font-size:0.85rem;display:flex;align-items:center;gap:0.3rem">' + escHtml(p.name||'Ukendt') + ' ' + adminBadge + '</div><div style="font-size:0.72rem;color:var(--text-secondary)">' + escHtml(p.title||'') + '</div></div>' +
+        '<div style="flex:1"><div style="font-weight:600;font-size:0.85rem;display:flex;align-items:center;gap:0.3rem">' + escHtml(p.name||t('misc_unknown')) + ' ' + adminBadge + '</div><div style="font-size:0.72rem;color:var(--text-secondary)">' + escHtml(p.title||'') + '</div></div>' +
         '<div style="color:var(--accent);font-size:0.72rem;font-weight:600">Vælg</div>' +
       '</div>';
     }).join('') +
@@ -331,7 +331,7 @@ async function openTransferOwnership(bubbleId) {
     var uIds = members.map(function(m) { return m.user_id; });
     var { data: profs } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', uIds);
     var pm = {}; (profs || []).forEach(function(p) { pm[p.id] = p; });
-    members.forEach(function(m) { m.profiles = pm[m.user_id] || { name: 'Ukendt' }; });
+    members.forEach(function(m) { m.profiles = pm[m.user_id] || { name: t('misc_unknown') }; });
 
     _buildMemberSheet(
       '<span style="display:inline-flex;align-items:center;gap:0.3rem">' + ico('crown').replace('<svg ','<svg style="width:1.1rem;height:1.1rem" ') + ' Overdrag ejerskab</span>',
@@ -376,7 +376,7 @@ async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
       return;
     }
     closeMemberSheet();
-    showSuccessToast('Ejerskab overdraget til ' + newOwnerName);
+    showSuccessToast(t('toast_ownership_transferred', {name: newOwnerName}));
     trackEvent('bubble_ownership_transferred', { bubble_id: bubbleId, new_owner: newOwnerId });
     // Notify new owner via broadcast
     try { sb.channel('member-notify-' + newOwnerId).send({ type: 'broadcast', event: 'ownership', payload: { bubbleName: bcBubbleData?.name || '', senderName: currentProfile?.name || '', bubbleId: bubbleId } }); } catch(e2) {}
@@ -398,7 +398,7 @@ async function openAdminDesignation(bubbleId) {
     var uIds = members.map(function(m) { return m.user_id; });
     var { data: profs } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', uIds);
     var pm = {}; (profs || []).forEach(function(p) { pm[p.id] = p; });
-    members.forEach(function(m) { m.profiles = pm[m.user_id] || { name: 'Ukendt' }; });
+    members.forEach(function(m) { m.profiles = pm[m.user_id] || { name: t('misc_unknown') }; });
     _buildMemberSheet(
       '<span style="display:inline-flex;align-items:center;gap:0.3rem">' + ico('crown').replace('<svg ','<svg style="width:1.1rem;height:1.1rem" ') + ' Udpeg admin</span>',
       'Admins kan redigere boblen, invitere og fjerne medlemmer.',
@@ -451,7 +451,7 @@ async function leaveBubble(bubbleId, btnEl) {
   if (bcBubbleData && bcBubbleData.created_by === currentUser.id) {
     var { count } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', bubbleId).neq('user_id', currentUser.id);
     if (count > 0) {
-      showWarningToast('Du er ejer — overdrag ejerskab først under Info-fanen');
+      showWarningToast(t('toast_owner_leave'));
       return;
     }
   }
@@ -459,8 +459,8 @@ async function leaveBubble(bubbleId, btnEl) {
   if (!target) return;
   var isEvent = bcBubbleData && (bcBubbleData.type === 'event' || bcBubbleData.type === 'live');
   bbConfirm(target, {
-    label: isEvent ? 'Du fjernes fra deltagerlisten' : 'Du mister adgang til chat og deltagere',
-    confirmText: isEvent ? 'Ja, forlad event' : 'Ja, forlad',
+    label: isEvent ? t('bb_leave_event_desc') : t('bb_leave_bubble_desc'),
+    confirmText: isEvent ? t('bb_leave_event') : t('bb_leave'),
     confirmClass: 'bb-confirm-btn-danger',
     onConfirm: "confirmLeaveBubble('" + bubbleId + "')"
   });
@@ -479,7 +479,7 @@ async function confirmLeaveBubble(bubbleId) {
     }
     await sb.from('bubble_members').delete().eq('bubble_id', bubbleId).eq('user_id', currentUser.id);
     var isEvent = bcBubbleData && (bcBubbleData.type === 'event' || bcBubbleData.type === 'live');
-    showToast(isEvent ? 'Du har forladt eventet' : 'Du har forladt boblen');
+    showToast(isEvent ? t('toast_left_event') : t('toast_left_bubble'));
     _discoverLoaded = false;
     loadHome();
     loadMyBubbles();
@@ -544,7 +544,7 @@ function openCreateEventFromBubble(parentBubbleId) {
   // Block creating events under events (only network bubbles can have child events)
   // Only check if we're currently in bubble-chat AND viewing the same bubble
   if (_activeScreen === 'screen-bubble-chat' && bcBubbleId === parentBubbleId && bcBubbleData && (bcBubbleData.type === 'event' || bcBubbleData.type === 'live')) {
-    showWarningToast('Events kan kun oprettes under netværksbobler');
+    showWarningToast(t('toast_generic_error'));
     return;
   }
   // Pre-fill create modal as event type, with parent bubble id stored
@@ -565,7 +565,7 @@ function openCreateEventFromBubble(parentBubbleId) {
     var typeSelect = document.getElementById('cb-type');
     if (typeSelect) typeSelect.value = 'event';
     cbRenderPillSelect('cb-type', [
-      { value: 'event', icon: 'calendar', label: 'Event' }
+      { value: 'event', icon: 'calendar', label: t('home_events') }
     ]);
     document.getElementById('cb-visibility').value = 'private';
     cbRenderPillSelect('cb-visibility', [
@@ -614,7 +614,7 @@ function openCreateSubBubble(parentBubbleId) {
     var typeSelect = document.getElementById('cb-type');
     if (typeSelect) typeSelect.value = 'network';
     cbRenderPillSelect('cb-type', [
-      { value: 'network', icon: 'bubble', label: 'Netværk' }
+      { value: 'network', icon: 'bubble', label: t('home_networks') }
     ]);
     document.getElementById('cb-visibility').value = 'private';
     cbRenderPillSelect('cb-visibility', [
@@ -878,8 +878,8 @@ async function openEditBubble(bubbleId) {
     _pendingBubbleIcon = b.icon_url || null;
     // Render pill selects for type + visibility (same as create form)
     ebRenderPillSelect('eb-type', [
-      { value: 'event',   icon: 'calendar', label: 'Event' },
-      { value: 'network', icon: 'bubble',   label: 'Netværk' }
+      { value: 'event',   icon: 'calendar', label: t('home_events') },
+      { value: 'network', icon: 'bubble',   label: t('home_networks') }
     ]);
     ebRenderPillSelect('eb-visibility', [
       { value: 'public',  icon: 'globe', label: t('bb_visibility_public') },
@@ -1180,22 +1180,22 @@ async function checkPendingJoin() {
         .update({ checked_in_at: new Date().toISOString(), checked_out_at: null })
         .eq('bubble_id', joinId).eq('user_id', currentUser.id);
       flowRemove('event_flow');
-      showSuccessToast('Du er checked ind!');
+      showSuccessToast(t('toast_checkedin'));
       goTo('screen-home');
       setTimeout(function() { openBubbleChat(joinId, 'screen-home'); }, 400);
       // Home will detect live context and show Live tab
     } else if (isEventFlow && isEvent) {
       // Mode B: show QR for organizer to scan
       // event_flow flag stays — handled by checkAuth → showEventReadyQR()
-      showSuccessToast('Du er tilmeldt!');
+      showSuccessToast(t('toast_joined'));
     } else {
       // Normal bubble join (not event)
       if (isEventFlow) flowRemove('event_flow');
-      showSuccessToast('Du er med i ' + (bubble ? bubble.name : 'boblen') + '!');
+      showSuccessToast(t('toast_joined'));
       _bbAfterJoin(joinId);
       await openBubble(joinId, 'screen-home');
     }
-  } catch(e) { logError("checkPendingJoin", e); errorToast("save", e); }
+  } catch(e) { logError("checkPendingJoin", e); flowRemove('event_flow'); errorToast("save", e); }
 }
 
 
@@ -1233,11 +1233,11 @@ async function downloadMembersPdf(bubbleId) {
 
     function fmtTime(iso) {
       if (!iso) return '–';
-      return new Date(iso).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
+      return new Date(iso).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' });
     }
     function fmtDate(iso) {
       if (!iso) return '–';
-      return new Date(iso).toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric' });
+      return new Date(iso).toLocaleDateString(_locale(), { day: 'numeric', month: 'long', year: 'numeric' });
     }
     function fmtDuration(inIso, outIso) {
       if (!inIso) return '–';
@@ -1271,7 +1271,7 @@ async function downloadMembersPdf(bubbleId) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(90, 90, 110);
-    var today = new Date().toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric' });
+    var today = new Date().toLocaleDateString(_locale(), { day: 'numeric', month: 'long', year: 'numeric' });
     doc.text('Genereret ' + today, pw - mr, 16, { align: 'right' });
 
     // Divider
@@ -1403,7 +1403,7 @@ async function downloadMembersPdf(bubbleId) {
       doc.setFont('helvetica', isCheckedIn ? 'bold' : 'normal');
       doc.setFontSize(8);
       doc.setTextColor(isCheckedIn ? 220 : 150, isCheckedIn ? 220 : 150, isCheckedIn ? 235 : 170);
-      doc.text(truncate(p.name || 'Ukendt', 22), cols[0].x, rowY);
+      doc.text(truncate(p.name || t('misc_unknown'), 22), cols[0].x, rowY);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
@@ -1535,7 +1535,7 @@ async function generateEventReport(bubbleId) {
     // Top connectors
     var topConnectors = Object.entries(connectorsMap).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 5).map(function(e) {
       var p = profileMap[e[0]] || {};
-      return { name: p.name || 'Ukendt', title: p.title || '', connections: e[1], messages: msgPerUser[e[0]] || 0 };
+      return { name: p.name || t('misc_unknown'), title: p.title || '', connections: e[1], messages: msgPerUser[e[0]] || 0 };
     });
 
     // Join timeline (by hour)
@@ -1546,7 +1546,7 @@ async function generateEventReport(bubbleId) {
     });
 
     // Event date
-    var eventDate = new Date(b.created_at).toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    var eventDate = new Date(b.created_at).toLocaleDateString(_locale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
     // ── 6. Generate HTML ──
     function statBox(label, value, sub, color) {
@@ -1576,7 +1576,7 @@ async function generateEventReport(bubbleId) {
     var memberRows = members.map(function(m, i) {
       var p = profileMap[m.user_id] || {};
       return '<tr style="border-bottom:1px solid #F4F3F9">' +
-        '<td style="padding:0.5rem 0.6rem;font-size:0.8rem;font-weight:600">' + (p.name || 'Ukendt') + '</td>' +
+        '<td style="padding:0.5rem 0.6rem;font-size:0.8rem;font-weight:600">' + (p.name || t('misc_unknown')) + '</td>' +
         '<td style="padding:0.5rem 0.4rem;font-size:0.75rem;color:#8C8A97">' + (p.title || '–') + '</td>' +
         '<td style="padding:0.5rem 0.4rem;font-size:0.75rem;color:#8C8A97">' + (p.workplace || '–') + '</td>' +
         '</tr>';
@@ -1693,7 +1693,7 @@ async function generateEventReport(bubbleId) {
 
       // Footer
       '<div class="footer">' +
-        '<div>Genereret ' + new Date().toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + '</div>' +
+        '<div>Genereret ' + new Date().toLocaleDateString(_locale(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + '</div>' +
         '<div style="margin-top:0.3rem">Powered by <a href="https://bubbleme.dk" target="_blank">Bubble</a> — Hyperlokal networking</div>' +
         '<button class="no-print" onclick="window.print()" style="margin-top:1rem;padding:0.6rem 1.5rem;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;border:none;border-radius:10px;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Print / Gem som PDF</button>' +
       '</div>' +
@@ -1780,7 +1780,7 @@ async function generateEventReport(bubbleId) {
 
       trayHtml += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0;border-bottom:1px solid var(--glass-border-subtle)">' +
         '<div style="flex:1;min-width:0">' +
-          '<div style="font-size:0.78rem;font-weight:600">' + escHtml(p.name || 'Ukendt') + '</div>' +
+          '<div style="font-size:0.78rem;font-weight:600">' + escHtml(p.name || t('misc_unknown')) + '</div>' +
           '<div style="font-size:0.62rem;color:var(--muted)">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
         '</div>' +
       '</div>';
@@ -1790,7 +1790,7 @@ async function generateEventReport(bubbleId) {
 
     // Footer
     trayHtml += '<div style="text-align:center;padding:1rem 0;font-size:0.68rem;color:var(--muted);border-top:1px solid var(--glass-border-subtle)">' +
-      'Genereret ' + new Date().toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) +
+      'Genereret ' + new Date().toLocaleDateString(_locale(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) +
       '<br>Powered by Bubble · bubbleme.dk</div>';
 
     trayHtml += '</div>';
@@ -1849,7 +1849,7 @@ async function exportReportEmail(bubbleId) {
         to_email: email,
         subject: 'Event-rapport: ' + b.name,
         message: 'Event: ' + b.name + '\n' +
-          'Dato: ' + new Date(b.created_at).toLocaleDateString('da-DK') + '\n' +
+          'Dato: ' + new Date(b.created_at).toLocaleDateString(_locale()) + '\n' +
           'Deltagere: ' + stats.totalMembers + '\n' +
           'Check-ins: ' + stats.totalCheckedIn + '\n' +
           'Connection rate: ' + stats.connectionRate + '%\n\n' +
@@ -2001,7 +2001,7 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
   document.getElementById('ps-avatar').style.background = color;
   document.getElementById('ps-avatar').textContent = initials;
   document.getElementById('ps-avatar').style.overflow = 'hidden';
-  document.getElementById('ps-name').textContent = name || 'Ukendt';
+  document.getElementById('ps-name').textContent = name || t('misc_unknown');
   document.getElementById('ps-sub').textContent = title || '';
   document.getElementById('ps-bio').textContent = '';
   // Check live status
@@ -2016,7 +2016,7 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
   document.getElementById('ps-bubbleup-btn').style.display = 'flex';
   document.getElementById('ps-bubbleup-confirm').classList.remove('show');
   var psLabel = document.getElementById('ps-bubbleup-label');
-  if (psLabel) psLabel.textContent = 'Opret boble med ' + ((name || '').split(' ')[0] || 'personen');
+  if (psLabel) psLabel.textContent = t('ps_bubbleup_create', { name: (name || '').split(' ')[0] || '' });
   // Fetch full profile for bio + LinkedIn + avatar
   const liBtn = document.getElementById('ps-linkedin-btn');
   liBtn.style.display = 'none';
@@ -2073,7 +2073,7 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
 async function dmOpenPersonSheet(userId) {
   try {
     var { data: p } = await sb.from('profiles').select('name,title,avatar_url').eq('id', userId).single();
-    bcOpenPerson(userId, p?.name || 'Ukendt', p?.title || '', 'linear-gradient(135deg,#2ECFCF,#22B8CF)', 'screen-chat');
+    bcOpenPerson(userId, p?.name || t('misc_unknown'), p?.title || '', 'linear-gradient(135deg,#2ECFCF,#22B8CF)', 'screen-chat');
   } catch(e) { logError('dmOpenPersonSheet', e); }
 }
 

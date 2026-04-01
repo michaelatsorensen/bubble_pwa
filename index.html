@@ -12,37 +12,37 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=80300">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=80300">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=80300">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=80300">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=80300">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=80300">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=80300">
+<link rel="manifest" href="manifest.json?v=80900">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=80900">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=80900">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=80900">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=80900">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=80900">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=80900">
 
-<link rel="stylesheet" href="app.css?v=80300">
+<link rel="stylesheet" href="app.css?v=80900">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-<script src="bubble-icons.js?v=80300" defer></script>
-<script src="tag-data.js?v=80300" defer></script>
-<script src="b-i18n.js?v=80300" defer></script>
-<script src="b-config.js?v=80300" defer></script>
-<script src="b-utils.js?v=80300" defer></script>
-<script src="b-auth.js?v=80300" defer></script>
-<script src="b-home.js?v=80300" defer></script>
-<script src="b-bubbles.js?v=80300" defer></script>
-<script src="b-profile.js?v=80300" defer></script>
-<script src="b-radar.js?v=80300" defer></script>
-<script src="b-messages.js?v=80300" defer></script>
-<script src="b-realtime.js?v=80300" defer></script>
-<script src="b-onboarding.js?v=80300" defer></script>
-<script src="b-chat.js?v=80300" defer></script>
-<script src="b-notifications.js?v=80300" defer></script>
-<script src="b-live.js?v=80300" defer></script>
-<script src="b-admin.js?v=80300" defer></script>
-<script src="b-navigation.js?v=80300" defer></script>
-<script src="b-boot.js?v=80300" defer></script>
+<script src="bubble-icons.js?v=80900" defer></script>
+<script src="tag-data.js?v=80900" defer></script>
+<script src="b-i18n.js?v=80900" defer></script>
+<script src="b-config.js?v=80900" defer></script>
+<script src="b-utils.js?v=80900" defer></script>
+<script src="b-auth.js?v=80900" defer></script>
+<script src="b-home.js?v=80900" defer></script>
+<script src="b-bubbles.js?v=80900" defer></script>
+<script src="b-profile.js?v=80900" defer></script>
+<script src="b-radar.js?v=80900" defer></script>
+<script src="b-messages.js?v=80900" defer></script>
+<script src="b-realtime.js?v=80900" defer></script>
+<script src="b-onboarding.js?v=80900" defer></script>
+<script src="b-chat.js?v=80900" defer></script>
+<script src="b-notifications.js?v=80900" defer></script>
+<script src="b-live.js?v=80900" defer></script>
+<script src="b-admin.js?v=80900" defer></script>
+<script src="b-navigation.js?v=80900" defer></script>
+<script src="b-boot.js?v=80900" defer></script>
   
 
 
@@ -445,8 +445,8 @@
       <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer;box-shadow:0 1px 3px rgba(30,27,46,0.06)" onclick="welcomeGo('discover')">
         <div style="width:44px;height:44px;border-radius:12px;background:rgba(124,92,252,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></div>
         <div style="flex:1">
-          <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem">Udforsk bobler</div>
-          <div style="font-size:0.78rem;color:var(--text-secondary)">Find communities, events og netværk</div>
+          <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem" data-t="ob_step_discover">Udforsk bobler</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary)" data-t="ob_step_discover_desc">Find communities, events og netværk</div>
         </div>
         <div style="color:var(--muted);font-size:1.1rem">→</div>
       </div>
@@ -454,8 +454,8 @@
       <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer;box-shadow:0 1px 3px rgba(30,27,46,0.06)" onclick="welcomeGo('radar')">
         <div style="width:44px;height:44px;border-radius:12px;background:rgba(232,121,168,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent2)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div>
         <div style="flex:1">
-          <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem">Se hvem der er her</div>
-          <div style="font-size:0.78rem;color:var(--text-secondary)">Radaren viser profiler og match-%</div>
+          <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem" data-t="ob_step_radar">Se hvem der er her</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary)" data-t="ob_step_radar_desc">Radaren viser profiler og match-%</div>
         </div>
         <div style="color:var(--muted);font-size:1.1rem">→</div>
       </div>
@@ -463,8 +463,8 @@
       <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer;box-shadow:0 1px 3px rgba(30,27,46,0.06)" onclick="welcomeGo('home')">
         <div style="width:44px;height:44px;border-radius:12px;background:rgba(26,158,142,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5v9a1.5 1.5 0 001.5 1.5H10v-5a2 2 0 014 0v5h3.5a1.5 1.5 0 001.5-1.5v-9"/></svg></div>
         <div style="flex:1">
-          <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem">Gå til hjem</div>
-          <div style="font-size:0.78rem;color:var(--text-secondary)">Dit dashboard med bobler, radar og mere</div>
+          <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem" data-t="ob_step_home">Gå til hjem</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary)" data-t="ob_step_home_desc">Dit dashboard med bobler, radar og mere</div>
         </div>
         <div style="color:var(--muted);font-size:1.1rem">→</div>
       </div>
@@ -807,7 +807,7 @@
           <div class="main-nav-icon" style="background:rgba(124,92,252,0.12);color:var(--accent)"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
           <div style="flex:1">
             <div class="section-title">Giv feedback</div>
-            <div class="sub-muted">Hjælp os med at gøre Bubble bedre</div>
+            <div class="sub-muted"data-t="pf_feedback_desc">Hjælp os med at gøre Bubble bedre</div>
           </div>
           <div class="icon-muted">›</div>
         </div>
@@ -1458,9 +1458,9 @@
 <div class="modal-overlay" id="modal-edit-bubble" onclick="if(event.target===this)closeModal('modal-edit-bubble')">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">Rediger boble</div>
+    <div class="modal-title" data-t="bb_edit">Rediger boble</div>
     <div class="input-group">
-      <div class="input-label">Boble-ikon</div>
+      <div class="input-label" data-t="cb_icon">Boble-ikon</div>
       <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem">
         <div id="eb-icon-preview" style="width:52px;height:52px;border-radius:14px;background:var(--glass-bg-strong);border:1px solid var(--glass-border-subtle);display:flex;align-items:center;justify-content:center;font-size:1.3rem;overflow:hidden;flex-shrink:0;color:var(--muted)">?</div>
         <div style="flex:1">
@@ -1471,18 +1471,18 @@
       </div>
     </div>
     <div class="input-group">
-      <div class="input-label">Navn</div>
-      <input class="input" id="eb-name" maxlength="100" placeholder="Boble navn">
+      <div class="input-label" data-t="auth_signup_name">Navn</div>
+      <input class="input" id="eb-name" maxlength="100" data-t-placeholder="cb_name" placeholder="Boble navn">
     </div>
     <div class="input-group">
-      <div class="input-label">Type</div>
+      <div class="input-label" data-t="cb_type">Type</div>
       <select class="input" id="eb-type">
         <option value="network">🔵 Netværk — persistent gruppe</option>
         <option value="event">🟣 Event — har dato og check-in</option>
       </select>
     </div>
     <div class="input-group">
-      <div class="input-label">Synlighed</div>
+      <div class="input-label" data-t="cb_visibility">Synlighed</div>
       <select class="input" id="eb-visibility">
         <option value="public">🌍 Offentlig — synlig, alle kan joine</option>
         <option value="private">🔒 Privat — synlig, join kræver anmodning</option>
@@ -1490,42 +1490,42 @@
       </select>
     </div>
     <div class="input-group">
-      <div class="input-label">Beskrivelse</div>
-      <textarea class="input" id="eb-desc" maxlength="500" maxlength="500" placeholder="Hvad handler denne boble om?"></textarea>
+      <div class="input-label" data-t="cb_desc">Beskrivelse</div>
+      <textarea class="input" id="eb-desc" maxlength="500" maxlength="500" data-t-placeholder="cb_desc_ph" placeholder="Hvad handler denne boble om?"></textarea>
     </div>
     <div class="input-group">
-      <div class="input-label">Nøgleord</div>
+      <div class="input-label" data-t="cb_keywords">Nøgleord</div>
       <div class="chips-container" id="eb-chips-container" onclick="document.getElementById('eb-chip-input').focus()">
-        <input class="chip-input" id="eb-chip-input" placeholder="Tilføj nøgleord..." onkeydown="handleChipInput(event,'eb-chips')">
+        <input class="chip-input" id="eb-chip-input" data-t-placeholder="cb_keywords_ph" placeholder="Tilføj nøgleord..." onkeydown="handleChipInput(event,'eb-chips')">
               <button type="button" onclick="addChipFromBtn('eb-chip-input','eb-chips')" class="ob-cat-custom-btn" title="Tilføj">✓</button>
       </div>
     </div>
     <div class="input-group">
-      <div class="input-label">Lokation (valgfrit)</div>
-      <input class="input" id="eb-location" maxlength="100" placeholder="f.eks. København">
+      <div class="input-label" data-t="cb_location">Lokation (valgfrit)</div>
+      <input class="input" id="eb-location" maxlength="100" data-t-placeholder="cb_location_ph" placeholder="f.eks. København">
     </div>
     <div class="input-group" id="eb-checkin-mode-group" style="display:none">
-      <div class="input-label">Check-in metode</div>
+      <div class="input-label" data-t="cb_checkin_mode">Check-in metode</div>
       <select class="input" id="eb-checkin-mode">
         <option value="self">Selvbetjening (deltagere checker sig selv ind)</option>
         <option value="scan">Reverse QR (arrangør scanner deltagere)</option>
       </select>
     </div>
     <div class="input-group" id="eb-event-date-group" style="display:none">
-      <div class="input-label">Dato</div>
+      <div class="input-label" data-t="cb_date">Dato</div>
       <div style="display:flex"><input class="input" type="date" id="eb-event-date" style="flex:1;min-width:0"></div>
     </div>
     <div class="input-group" style="display:none" id="eb-event-time-row">
-      <div class="input-label">Starttidspunkt</div>
+      <div class="input-label" data-t="cb_time_start">Starttidspunkt</div>
       <div style="display:flex"><input class="input" type="time" id="eb-event-time" style="flex:1;min-width:0"></div>
     </div>
     <div class="input-group" style="display:none" id="eb-event-time-end-group">
-      <div class="input-label">Sluttidspunkt</div>
+      <div class="input-label" data-t="cb_time_end">Sluttidspunkt</div>
       <div style="display:flex"><input class="input" type="time" id="eb-event-time-end" style="flex:1;min-width:0"></div>
     </div>
 
-    <button class="btn-primary" onclick="saveEditBubble()">Gem ændringer</button>
-    <button class="btn-secondary" onclick="closeModal('modal-edit-bubble')">Annuller</button>
+    <button class="btn-primary" onclick="saveEditBubble()" data-t="misc_save_changes">Gem ændringer</button>
+    <button class="btn-secondary" onclick="closeModal('modal-edit-bubble')" data-t="misc_cancel">Annuller</button>
   </div>
 </div>
 
@@ -1680,7 +1680,7 @@
       <div id="ep-tag-categories"></div>
     </div>
     <div class="input-group">
-      <div class="input-label">Søger lige nu</div>
+      <div class="input-label"data-t="ob_step_seeking">Søger lige nu</div>
       <div class="chips-container" id="ep-dyn-chips-container" onclick="document.getElementById('ep-dyn-chip-input').focus()">
         <input class="chip-input" id="ep-dyn-chip-input" placeholder="f.eks. Søger investor, Open to coffee..." onkeydown="handleChipInput(event,'ep-dyn-chips')">
         <button type="button" onclick="addChipFromBtn('ep-dyn-chip-input','ep-dyn-chips')" class="ob-cat-custom-btn" title="Tilføj">✓</button>

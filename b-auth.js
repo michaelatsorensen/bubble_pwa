@@ -108,11 +108,14 @@ async function resolvePostAuthDestination() {
     // Step 6: welcome screen for first-time users
     if (!localStorage.getItem('bubble_welcomed')) {
       goTo('screen-welcome');
+      flowClearAll(); // Safety: no stale flags survive into welcome
       return;
     }
     // Step 7: default
     goTo('screen-home');
   }
+  // Safety: clear any unconsumed flow flags after destination resolved
+  flowClearAll();
 }
 
 // Full orchestrator: single entry point after any successful auth
@@ -134,7 +137,7 @@ async function checkAuth() {
   try {
     // Handle OAuth redirect
     if (window.location.hash && window.location.hash.includes('access_token')) {
-      document.getElementById('loading-msg').textContent = 'Logger ind via Google...';
+      document.getElementById('loading-msg').textContent = 'Login...';
       await new Promise(r => setTimeout(r, 500));
       window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -154,7 +157,7 @@ async function checkAuth() {
     }
   } catch(e) {
     var el = document.getElementById('loading-msg');
-    if (el) { el.textContent = 'Fejl: ' + (e.message || 'Ukendt'); el.style.color = '#D06070'; }
+    if (el) { el.textContent = 'Fejl: ' + (e.message || t('misc_unknown')); el.style.color = '#D06070'; }
     logError('checkAuth', e);
   }
 }
@@ -206,13 +209,13 @@ async function handleAvatarUpload(input) {
     var maxSize = 2 * 1024 * 1024;
     if (file.size > maxSize) {
       var sizeMB = (file.size / 1024 / 1024).toFixed(1);
-      showWarningToast('Billedet er ' + sizeMB + 'MB — maks 2MB. Prøv et mindre billede.');
+      showWarningToast(t('toast_upload_smaller'));
       input.value = '';
       return;
     }
     var allowed = ['image/jpeg','image/png','image/webp'];
     if (allowed.indexOf(file.type) < 0) {
-      showWarningToast('Format ikke understøttet (' + (file.type || 'ukendt') + '). Brug JPG, PNG eller WebP.');
+      showWarningToast(t('toast_upload_failed'));
       input.value = '';
       return;
     }
@@ -244,7 +247,7 @@ async function handleAvatarUpload(input) {
     var img = document.getElementById('ep-avatar-img');
     if (img) { img.src = avatarUrl; img.style.display = 'block'; }
     updateAllAvatars();
-    showToast('Profilbillede opdateret! 📸');
+    showToast(t('toast_saved'));
     input.value = '';
   } catch(e) { logError('handleAvatarUpload', e); errorToast('upload', e); }
 }
@@ -316,7 +319,7 @@ async function handleLogin() {
     const email = document.getElementById('login-email').value.trim();
     const pass = document.getElementById('login-password').value;
     if (!email || !pass) return showWarningToast('Udfyld email og adgangskode');
-    showToast('Logger ind...');
+    showToast(t('misc_loading'));
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) return errorToast('login', error);
     currentUser = data.user;
@@ -331,7 +334,7 @@ async function handleSignup() {
     const pass  = document.getElementById('signup-password').value;
     const title = document.getElementById('signup-title').value.trim();
     if (!name || !email || !pass) return showWarningToast('Udfyld alle felter');
-    if (pass.length < 6) return showWarningToast('Adgangskode skal være min. 6 tegn');
+    if (pass.length < 6) return showWarningToast(t('toast_password_min'));
     showToast('Opretter konto...');
     const { data, error } = await sb.auth.signUp({
       email,
@@ -346,7 +349,7 @@ async function handleSignup() {
     // Check if email confirmation is required
     if (data.user && data.user.identities && data.user.identities.length === 0) {
       // Email already exists
-      showWarningToast('Denne email er allerede registreret — prøv at logge ind');
+      showWarningToast(t('toast_already_registered'));
       return;
     }
 
@@ -405,20 +408,21 @@ async function handleLogout() {
     } catch(e2) { console.debug('[logout] push cleanup:', e2); }
     await sb.auth.signOut();
     currentUser = null; currentProfile = null;
+    flowClearAll(); // Prevent stale flags from affecting next login
     goTo('screen-auth');
   } catch(e) { logError("handleLogout", e); errorToast("load", e); }
 }
 
 async function handleForgotPassword() {
   var email = document.getElementById('login-email').value.trim();
-  if (!email) return showWarningToast('Indtast din email først');
+  if (!email) return showWarningToast(t('toast_enter_email'));
   try {
-    showToast('Sender nulstillingslink...');
+    showToast(t('toast_sending_reset'));
     var { error } = await sb.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin
     });
     if (error) return errorToast('login', error);
-    showToast('Tjek din indbakke for nulstillingslink ✉️');
+    showToast(t('toast_sending_reset'));
   } catch(e) { logError('handleForgotPassword', e); errorToast('login', e); }
 }
 

@@ -55,7 +55,7 @@ function renderRadarList() {
 
   el.innerHTML = fil.map(function(p, i) {
     var isA = p.is_anon;
-    var name = isA ? 'Anonym bruger' : (p.name || '?');
+    var name = isA ? t('ps_anonymous') : (p.name || '?');
     var ini = isA ? '?' : name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     var col = isA ? 'rgba(30,27,46,0.05)' : colors[i % colors.length];
     var bd = isA ? 'border:1px solid rgba(30,27,46,0.04);' : '';
@@ -144,7 +144,7 @@ async function openRadarPerson(userId) {
     var { data: p } = await sb.from('profiles').select('*').eq('id', userId).single();
     if (!p) return;
     var isA = p.is_anon;
-    var name = isA ? 'Anonym bruger' : (p.name || '?');
+    var name = isA ? t('ps_anonymous') : (p.name || '?');
     var ini = isA ? '?' : name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     var rpAvEl = document.getElementById('rp-avatar');
     if (rpAvEl) {
@@ -254,7 +254,7 @@ async function openRadarPerson(userId) {
     // Save state
     var saveBtn = document.getElementById('rp-save-btn');
     var { data: savedCheck } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
-    saveBtn.textContent = savedCheck ? 'Gemt \u2713' : 'Gem';
+    saveBtn.textContent = savedCheck ? t('ps_saved') + ' \u2713' : t('ps_save');
     saveBtn.dataset.saved = savedCheck ? '1' : '0';
     // Open sheet
     document.getElementById('radar-person-overlay').classList.add('open');
@@ -272,10 +272,10 @@ async function rpSaveContact() {
   try {
     if (!rpCurrentUserId) return;
     var btn = document.getElementById('rp-save-btn');
-    if (btn.dataset.saved === '1') { showWarningToast('Allerede gemt'); return; }
+    if (btn.dataset.saved === '1') { showWarningToast(t('toast_already_saved')); return; }
     await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: rpCurrentUserId });
-    btn.textContent = 'Gemt \u2713'; btn.dataset.saved = '1';
-    showSuccessToast('Kontakt gemt');
+    btn.textContent = t('ps_saved') + ' \u2713'; btn.dataset.saved = '1';
+    showSuccessToast(t('toast_saved'));
     loadSavedContacts();
     clearSavedContactIdsCache();
     // Remove from radar cache + re-render immediately

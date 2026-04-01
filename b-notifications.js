@@ -90,7 +90,7 @@ async function _notifInvites() {
         '<div class="notif-header">' +
         '<div class="notif-avatar" style="background:linear-gradient(135deg,#6366F1,#7C5CFC)">' + initials + '</div>' +
         '<div>' +
-        '<div class="notif-title">' + icon("bubble") + ' Invitation til boble</div>' +
+        '<div class="notif-title">' + icon("bubble") + ' ' + t('nf_invitations') + '</div>' +
         '<div class="notif-sub">' + escHtml(p.name||'Nogen') + ' inviterer dig til ' + escHtml(bub.name||'en boble') + '</div>' +
         '</div></div>' +
         '<div class="notif-actions">' +
@@ -125,7 +125,7 @@ async function _notifUnreadDMs() {
       var d = dmBySender[sid];
       var p = dmPMap[sid] || {};
       var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-      var time = new Date(d.latest.created_at).toLocaleDateString('da-DK', {day:'numeric',month:'short'});
+      var time = new Date(d.latest.created_at).toLocaleDateString(_locale(), {day:'numeric',month:'short'});
       var preview = d.latest.file_url ? 'Sendte et billede' : (d.latest.content || '').slice(0, 40);
       var avatarHtml = p.avatar_url ?
         '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
@@ -133,7 +133,7 @@ async function _notifUnreadDMs() {
       return '<div class="notif-card" onclick="openChat(\'' + sid + '\',\'screen-notifications\')" style="cursor:pointer">' +
         '<div class="notif-header">' + avatarHtml +
         '<div>' +
-        '<div class="notif-title">' + icon("chat") + ' ' + escHtml(p.name||'Ukendt') + (d.count > 1 ? ' (' + d.count + ' beskeder)' : '') + '</div>' +
+        '<div class="notif-title">' + icon("chat") + ' ' + escHtml(p.name||t('misc_unknown')) + (d.count > 1 ? ' (' + d.count + ' beskeder)' : '') + '</div>' +
         '<div class="notif-sub">' + escHtml(preview) + ' · ' + time + '</div>' +
         '</div></div></div>';
     }).join('');
@@ -158,15 +158,15 @@ async function _notifSavedBy() {
     return savedBy.map(function(s) {
       var p = sPMap[s.user_id] || {};
       var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-      var time = new Date(s.created_at).toLocaleDateString('da-DK', {day:'numeric',month:'short'});
+      var time = new Date(s.created_at).toLocaleDateString(_locale(), {day:'numeric',month:'short'});
       var avatarHtml = p.avatar_url ?
         '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
         '<div class="notif-avatar" style="background:linear-gradient(135deg,#1A9E8E,#10B981)">' + initials + '</div>';
       return '<div class="notif-card" onclick="openPerson(\'' + s.user_id + '\',\'screen-notifications\')" style="cursor:pointer">' +
         '<div class="notif-header">' + avatarHtml +
         '<div>' +
-        '<div class="notif-title">' + icon("bookmark") + ' Nogen gemte din profil</div>' +
-        '<div class="notif-sub">' + escHtml(p.name||'Ukendt') + ' · ' + time + '</div>' +
+        '<div class="notif-title">' + icon("bookmark") + ' ' + t('nf_saved_you') + '</div>' +
+        '<div class="notif-sub">' + escHtml(p.name||t('misc_unknown')) + ' · ' + time + '</div>' +
         '</div></div></div>';
     }).join('');
   } catch(e) { logError('_notifSavedBy', e); return ''; }
@@ -201,7 +201,7 @@ async function _notifLiveContacts() {
       return '<div class="notif-card">' +
         '<div class="notif-header">' + avatarHtml +
         '<div>' +
-        '<div class="notif-title"><span style="color:var(--accent3)">' + icon("pin") + '</span> ' + escHtml(p.name||'Ukendt') + ' er live</div>' +
+        '<div class="notif-title"><span style="color:var(--accent3)">' + icon("pin") + '</span> ' + escHtml(p.name||t('misc_unknown')) + ' er live</div>' +
         '<div class="notif-sub">' + escHtml(bName) + (bLoc ? ' · ' + escHtml(bLoc) : '') + '</div>' +
         '</div></div></div>';
     }).join('');
@@ -228,7 +228,7 @@ async function _notifNewMembers() {
     return newMembers.map(function(m) {
       var p = mPMap[m.user_id] || {};
       var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-      var time = new Date(m.joined_at).toLocaleDateString('da-DK', {day:'numeric',month:'short'});
+      var time = new Date(m.joined_at).toLocaleDateString(_locale(), {day:'numeric',month:'short'});
       var avatarHtml = p.avatar_url ?
         '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
         '<div class="notif-avatar" style="background:linear-gradient(135deg,#2ECFCF,#7C5CFC)">' + initials + '</div>';
@@ -236,7 +236,7 @@ async function _notifNewMembers() {
       return '<div class="notif-card" onclick="openBubbleChat(\'' + m.bubble_id + '\',\'screen-notifications\')" style="cursor:pointer">' +
         '<div class="notif-header">' + avatarHtml +
         '<div>' +
-        '<div class="notif-title">' + escHtml(p.name||'Ukendt') + ' blev medlem</div>' +
+        '<div class="notif-title">' + escHtml(p.name||t('misc_unknown')) + ' blev medlem</div>' +
         '<div class="notif-sub">' + (bubbleName ? escHtml(bubbleName) + ' · ' : '') + time + '</div>' +
         '</div></div></div>';
     }).join('');
@@ -267,7 +267,7 @@ async function _notifPendingRequests() {
     var pMap = {};
     (profiles || []).forEach(function(p) { pMap[p.id] = p; });
 
-    return '<div class="notif-section-label" style="color:#BA7517">' + icon('lock') + ' Adgangsanmodninger</div>' +
+    return '<div class="notif-section-label" style="color:#BA7517">' + icon('lock') + ' ' + t('nf_pending_requests') + '</div>' +
       pending.map(function(m) {
         var p = pMap[m.user_id] || {};
         var ini = (p.name || '?').split(' ').map(function(w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
@@ -278,7 +278,7 @@ async function _notifPendingRequests() {
         return '<div class="notif-card invite" style="border-left:3px solid #BA7517">' +
           '<div class="notif-header">' + avatarHtml +
           '<div>' +
-          '<div class="notif-title">' + escHtml(p.name || 'Ukendt') + ' anmoder om adgang</div>' +
+          '<div class="notif-title">' + escHtml(p.name || t('misc_unknown')) + ' anmoder om adgang</div>' +
           '<div class="notif-sub">' + escHtml(bName) + (p.title ? ' \u00B7 ' + escHtml(p.title) : '') + '</div>' +
           '</div></div>' +
           '<div class="notif-actions">' +
@@ -377,7 +377,7 @@ async function _notifStrongMatches() {
         var p = s.profile;
         var m = s.member;
         var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-        var time = new Date(m.joined_at).toLocaleDateString('da-DK', {day:'numeric',month:'short'});
+        var time = new Date(m.joined_at).toLocaleDateString(_locale(), {day:'numeric',month:'short'});
         var myKw = (currentProfile.keywords || []).map(function(k){ return k.toLowerCase(); });
         var theirKw = (p.keywords || []).map(function(k){ return k.toLowerCase(); });
         var shared = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; }).slice(0, 3);
@@ -389,7 +389,7 @@ async function _notifStrongMatches() {
         return '<div class="notif-card" onclick="openPerson(\'' + p.id + '\',\'screen-notifications\')" style="cursor:pointer;border-left:3px solid var(--green)">' +
           '<div class="notif-header">' + avatarHtml +
           '<div style="flex:1;min-width:0">' +
-          '<div class="notif-title" style="display:flex;align-items:center;gap:0.3rem">' + escHtml(p.name||'Ukendt') + ' <span style="font-size:0.58rem;font-weight:700;color:var(--green);background:rgba(26,158,142,0.08);padding:0.1rem 0.35rem;border-radius:6px">Stærkt match</span></div>' +
+          '<div class="notif-title" style="display:flex;align-items:center;gap:0.3rem">' + escHtml(p.name||t('misc_unknown')) + ' <span style="font-size:0.58rem;font-weight:700;color:var(--green);background:rgba(26,158,142,0.08);padding:0.1rem 0.35rem;border-radius:6px">Stærkt match</span></div>' +
           '<div class="notif-sub">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + ' · ' + escHtml(m.bubbles?.name||'') + ' · ' + time + '</div>' +
           sharedHtml +
           '</div></div></div>';
@@ -437,7 +437,7 @@ async function confirmDeclineInvite(inviteId) {
     await sb.from('bubble_invitations').update({status:'declined'}).eq('id', inviteId);
     var card = document.getElementById('invite-' + inviteId);
     if (card) { card.style.transition = 'opacity 0.2s'; card.style.opacity = '0'; setTimeout(function() { card.remove(); }, 200); }
-    showToast('Invitation afvist');
+    showToast(t('toast_deleted'));
   } catch(e) { logError("confirmDeclineInvite", e); errorToast("save", e); }
 }
 

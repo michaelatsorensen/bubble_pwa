@@ -109,29 +109,21 @@ async function selectGif(idx) {
       if (error) { logError('selectGif:bc', error); errorToast('send', error); return; }
       if (msg) {
         msg.profiles = { id: currentUser.id, name: currentProfile?.name || '?' };
-        var msgEl2 = document.getElementById('bc-messages');
-        var es2 = msgEl2.querySelector('.empty-state');
-        if (es2) es2.remove();
-        msgEl2.appendChild(bcRenderMsg(msg));
-        bcScrollToBottom();
+        bcReduceMsg(msg);
       }
     } else if (mode === 'dm') {
-      if (!currentChatUser) { logError('selectGif', 'No currentChatUser'); _renderToast('Fejl: ingen aktiv chat', 'error'); return; }
+      if (!currentChatUser) { logError('selectGif', 'No currentChatUser'); _renderToast(t('toast_generic_error'), 'error'); return; }
       var { data: msg2, error: err2 } = await sb.from('messages').insert({
         sender_id: currentUser.id, receiver_id: currentChatUser,
         content: '', file_url: gifUrl, file_name: 'gif.gif', file_type: 'image/gif'
       }).select().single();
       if (err2) { logError('selectGif:dm', err2, { receiver: currentChatUser }); errorToast('send', err2); return; }
       if (msg2) {
-        var el = document.getElementById('chat-messages');
-        if (el && !el.querySelector('[data-msg-id="' + msg2.id + '"]')) {
-          el.insertAdjacentHTML('beforeend', dmRenderMsg(msg2));
-          el.scrollTop = el.scrollHeight;
-        }
+        dmReduceMsg(msg2);
       }
     } else {
       logError('selectGif', 'Unknown mode: ' + mode);
-      _renderToast('GIF fejl: ukendt kontekst', 'error');
+      _renderToast(t('toast_generic_error'), 'error');
     }
   } catch(e) { logError('selectGif', e, { mode: mode }); errorToast('send', e); }
   } catch(e) { logError("selectGif", e); }
@@ -552,21 +544,17 @@ function bcSubscribeRealtime() {
       async (payload) => {
         const m = payload.new;
         if (m.user_id === currentUser.id) return;
-        // Duplicate guard: skip if already in DOM
-        var existing = document.querySelector('[data-bc-msg-id="' + m.id + '"]');
-        if (existing) return;
         m.profiles = await getCachedProfile(m.user_id);
         const panel = document.getElementById('bc-panel-chat');
         if (panel.style.display !== 'none') {
-          var msgContainer = document.getElementById('bc-messages');
-          var emptyS = msgContainer.querySelector('.empty-state') || (msgContainer.children.length === 1 && !msgContainer.querySelector('.msg-row') ? msgContainer.firstChild : null);
-          if (emptyS && !emptyS.classList?.contains('chat-date-sep')) emptyS.remove();
-          msgContainer.appendChild(bcRenderMsg(m));
-          bcScrollToBottom();
+          bcReduceMsg(m);
         } else {
-          const badge = document.getElementById('bc-unread-badge');
-          badge.textContent = parseInt(badge.textContent||0) + 1;
-          badge.style.display = 'inline-flex';
+          // Chat tab not visible — increment unread badge
+          if (!document.querySelector('[data-bc-msg-id="' + m.id + '"]')) {
+            const badge = document.getElementById('bc-unread-badge');
+            badge.textContent = parseInt(badge.textContent||0) + 1;
+            badge.style.display = 'inline-flex';
+          }
         }
       })
     .on('postgres_changes', {event:'UPDATE', schema:'public', table:'bubble_messages', filter:`bubble_id=eq.${bcBubbleId}`},
@@ -580,7 +568,7 @@ function bcSubscribeRealtime() {
             if (msgBody && !msgBody.querySelector('.msg-edited')) {
               const e = document.createElement('span');
               e.className = 'msg-edited';
-              e.textContent = 'redigeret';
+              e.textContent = t('misc_edited');
               const id = m.id;
               e.onclick = () => bcShowHistory(id);
               bubbleEl.appendChild(e);
@@ -737,9 +725,9 @@ async function bcLoadEvents() {
         var evDate = ch.event_date ? new Date(ch.event_date) : null;
         var isPast = evDate && evDate < now;
         var dateStr = evDate
-          ? evDate.toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' }) +
-            (evDate.getHours() > 0 ? ' kl. ' + evDate.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '')
-          : new Date(ch.created_at).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+          ? evDate.toLocaleDateString(_locale(), { weekday: 'short', day: 'numeric', month: 'short' }) +
+            (evDate.getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + evDate.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '')
+          : new Date(ch.created_at).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' });
         var badge = isPast
           ? '<span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(30,27,46,0.06);color:var(--muted)">Afsluttet</span>'
           : '<span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(46,207,207,0.1);color:#0F6E56">Kommende</span>';
@@ -818,7 +806,7 @@ async function bcLoadMessages() {
 
     msgs.forEach(m => {
       m.profiles = profileMap[m.user_id] || { name: '?' };
-      const d = new Date(m.created_at).toLocaleDateString('da-DK', {weekday:'short', day:'numeric', month:'short'});
+      const d = new Date(m.created_at).toLocaleDateString(_locale(), {weekday:'short', day:'numeric', month:'short'});
       if (d !== lastDate) {
         const sep = document.createElement('div');
         sep.className = 'chat-date-sep';
@@ -830,13 +818,35 @@ async function bcLoadMessages() {
       if (m._showTimeSep) {
         var ts = document.createElement('div');
         ts.className = 'msg-time-sep';
-        ts.textContent = new Date(m.created_at).toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'});
+        ts.textContent = new Date(m.created_at).toLocaleTimeString(_locale(), {hour:'2-digit', minute:'2-digit'});
         el.appendChild(ts);
       }
       el.appendChild(bcRenderMsg(m));
     });
     bcScrollToBottom();
   } catch(e) { logError("bcLoadMessages", e); errorToast("load", e); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  BUBBLE CHAT MESSAGE REDUCER — single entry point for all BC message inserts
+//  Deduplicates by msg.id before any DOM mutation
+// ══════════════════════════════════════════════════════════
+function bcReduceMsg(msg) {
+  if (!msg || !msg.id) return false;
+  var msgEl = document.getElementById('bc-messages');
+  if (!msgEl) return false;
+
+  // Dedup: skip if already in DOM
+  if (document.querySelector('[data-bc-msg-id="' + msg.id + '"]')) return false;
+
+  // Clear empty state
+  var emptyState = msgEl.querySelector('.empty-state');
+  if (emptyState) emptyState.remove();
+
+  // Append rendered message
+  msgEl.appendChild(bcRenderMsg(msg));
+  bcScrollToBottom();
+  return true;
 }
 
 function bcRenderMsg(m) {
@@ -890,7 +900,7 @@ function bcRenderMsg(m) {
   var timeHtml = '';
   if ((gp === 'single' || gp === 'tail') && !m._showTimeSep) {
     var t = new Date(m.created_at);
-    timeHtml = '<div class="msg-timestamp">' + t.toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'}) + '</div>';
+    timeHtml = '<div class="msg-timestamp">' + t.toLocaleTimeString(_locale(), {hour:'2-digit', minute:'2-digit'}) + '</div>';
   }
 
   // Sender name on first/single (group chat context)
@@ -995,13 +1005,13 @@ async function bcSendMessage() {
           const e = document.createElement('span');
           e.className = 'msg-edited';
           const id = bcEditingId;
-          e.textContent = 'redigeret';
+          e.textContent = t('misc_edited');
           e.onclick = () => bcShowHistory(id);
           bubbleEl.appendChild(e);
         }
       }
       bcCancelEdit();
-      showToast('Besked opdateret');
+      showToast(t('toast_updated'));
     } else {
       inp.value = '';
       inp.blur();
@@ -1024,12 +1034,7 @@ async function bcSendMessage() {
           id: currentUser.id,
           name: currentProfile?.name || currentUser.email?.split('@')[0] || '?'
         };
-        // Clear empty state if this is the first message
-        var msgEl = document.getElementById('bc-messages');
-        var emptyState = msgEl.querySelector('.empty-state');
-        if (emptyState) emptyState.remove();
-        msgEl.appendChild(bcRenderMsg(newMsg));
-        bcScrollToBottom();
+        bcReduceMsg(newMsg);
       }
     }
   } catch(e) { logError("bcSendMessage", e); errorToast("send", e); }
@@ -1092,7 +1097,7 @@ async function bcHandleFile(input) {
 
     if (msgErr) {
       console.error('File message insert error:', msgErr);
-      _renderToast('Fil uploadet men besked fejlede', 'error');
+      _renderToast(t('toast_generic_error'), 'error');
       input.value = '';
       return;
     }
@@ -1102,12 +1107,8 @@ async function bcHandleFile(input) {
         id: currentUser.id,
         name: currentProfile?.name || currentUser.email?.split('@')[0] || '?'
       };
-      var msgEl3 = document.getElementById('bc-messages');
-      var es3 = msgEl3.querySelector('.empty-state');
-      if (es3) es3.remove();
-      msgEl3.appendChild(bcRenderMsg(newMsg));
-      bcScrollToBottom();
-      showToast('Fil sendt! 📎');
+      bcReduceMsg(newMsg);
+      showToast(t('toast_sent'));
     }
     input.value = '';
   } catch(e) { logError("bcHandleFile", e); errorToast("upload", e); }
@@ -1251,7 +1252,7 @@ async function bcLoadReactions(msgId) {
     });
     el.innerHTML = Object.entries(groups).map(([emoji, names]) => {
       const mine = reactions.some(r => r.emoji === emoji && r.user_id === currentUser.id);
-      return `<button class="chat-reaction-pill${mine ? ' mine' : ''}" onclick="bcToggleReaction('${msgId}','${emoji}')" title="${names.join(', ')}">${emoji} ${names.length}</button>`;
+      return `<button class="chat-reaction-pill${mine ? ' mine' : ''}" onclick="bcToggleReaction('${msgId}','${emoji}')" title="${escHtml(names.join(', '))}">${emoji} ${names.length}</button>`;
     }).join('');
   } catch(e) { /* silent */ }
 }
@@ -1286,16 +1287,16 @@ async function bcShowHistory(msgId) {
     const { data: edits } = await sb.from('bubble_message_edits')
       .select('content, edited_at').eq('message_id', msgId).order('edited_at', {ascending:true});
     const { data: current } = await sb.from('bubble_messages').select('content').eq('id', msgId).single();
-    if (!edits || edits.length === 0) { showWarningToast('Ingen historik'); return; }
+    if (!edits || edits.length === 0) { showWarningToast(t('toast_not_found')); return; }
     const modal = document.getElementById('modal-edit-history') || bcCreateHistoryModal();
     const content = document.getElementById('edit-history-content');
     content.innerHTML = edits.map((e,i) => {
-      const t = new Date(e.edited_at).toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
+      const ts = new Date(e.edited_at).toLocaleTimeString(_locale(),{hour:'2-digit',minute:'2-digit'});
       return `<div style="padding:0.55rem 0;border-bottom:1px solid var(--border)">
-        <div style="font-size:0.62rem;color:var(--muted);margin-bottom:0.2rem;font-family:monospace">${i===0?'Originalt':'Redigeret '+i} · ${t}</div>
+        <div style="font-size:0.62rem;color:var(--muted);margin-bottom:0.2rem;font-family:monospace">${i===0? t('bc_edit_original') : t('bc_edit_edited')+' '+i} · ${ts}</div>
         <div style="font-size:0.82rem;color:var(--muted)">${escHtml(e.content)}</div>
       </div>`;
-    }).join('') + `<div style="padding:0.55rem 0"><div style="font-size:0.62rem;color:var(--muted);margin-bottom:0.2rem;font-family:monospace">Nuværende</div><div style="font-size:0.82rem">${escHtml(current?.content||'')}</div></div>`;
+    }).join('') + `<div style="padding:0.55rem 0"><div style="font-size:0.62rem;color:var(--muted);margin-bottom:0.2rem;font-family:monospace">${t('bc_edit_current')}</div><div style="font-size:0.82rem">${escHtml(current?.content||'')}</div></div>`;
     openModal('modal-edit-history');
   } catch(e) { logError("bcShowHistory", e); errorToast("load", e); }
 }
@@ -1304,7 +1305,7 @@ function bcCreateHistoryModal() {
   const m = document.createElement('div');
   m.id = 'modal-edit-history';
   m.className = 'modal';
-  m.innerHTML = `<div class="modal-content"><div class="modal-header"><div class="modal-title">${icon("edit")} Redigeringshistorik</div><button class="modal-close" onclick="closeModal('modal-edit-history')">${icon('x')}</button></div><div id="edit-history-content" style="padding:0 1.25rem 1rem;overflow-y:auto;max-height:60vh"></div></div>`;
+  m.innerHTML = `<div class="modal-content"><div class="modal-header"><div class="modal-title">${icon("edit")} ${t('bc_edit_history')}</div><button class="modal-close" onclick="closeModal('modal-edit-history')">${icon('x')}</button></div><div id="edit-history-content" style="padding:0 1.25rem 1rem;overflow-y:auto;max-height:60vh"></div></div>`;
   document.getElementById('app-root').appendChild(m);
   return m;
 }
@@ -1387,7 +1388,7 @@ async function bcLoadMembers() {
         html += '<div class="chat-member-row" style="background:rgba(249,177,55,0.04);border:1px solid rgba(249,177,55,0.15);border-radius:12px;margin-bottom:6px;padding:0.65rem 0.75rem">' +
           '<div class="chat-member-avatar" style="background:linear-gradient(135deg,#F59E0B,#EAB308);overflow:hidden">' + avHtml + '</div>' +
           '<div style="flex:1;min-width:0">' +
-            '<div class="chat-member-name">' + escHtml(p.name||'Ukendt') + '</div>' +
+            '<div class="chat-member-name">' + escHtml(p.name||t('misc_unknown')) + '</div>' +
             '<div class="chat-member-status">' + escHtml([p.title, p.workplace].filter(Boolean).join(' \u00B7 ')) + '</div>' +
           '</div>' +
           '<div style="display:flex;gap:4px;flex-shrink:0">' +
@@ -1422,8 +1423,8 @@ async function bcLoadMembers() {
       // Status line: for events, show check-in time; for networks, show title
       var statusText = escHtml([p.title, p.workplace].filter(Boolean).join(' \u00B7 '));
       if (isEvent && !isOwnerRow && !m._isLive && m.checked_in_at) {
-        var checkinTime = new Date(m.checked_in_at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
-        statusText = (statusText ? statusText + ' · ' : '') + '<span style="color:var(--muted)">Var her kl. ' + checkinTime + '</span>';
+        var checkinTime = new Date(m.checked_in_at).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' });
+        statusText = (statusText ? statusText + ' · ' : '') + '<span style="color:var(--muted)">' + t('bc_was_here_at') + ' ' + checkinTime + '</span>';
       }
 
       // Role label
@@ -1435,8 +1436,8 @@ async function bcLoadMembers() {
 
       html += `<div class="chat-member-row" data-member-uid="${m.user_id}" onclick="bcOpenPerson('${m.user_id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${color}')">
         <div class="chat-member-avatar" style="background:${color};overflow:hidden">${avatarInner}${m._isLive ? '<span class="live-dot"></span>' : ''}</div>
-        <div style="flex:1;min-width:0"><div class="chat-member-name">${escHtml(p.name||'Ukendt')} ${liveBadge}</div><div class="chat-member-status">${statusText}</div></div>
-        ${isOwnerRow ? '<span class="chat-member-role">' + roleLabel + '</span>' : (isOwner && !isOwnerRow ? '<button class="bc-kick-btn" onclick="event.stopPropagation();bcShowKickConfirm(this,\'' + m.user_id + '\',\'' + escHtml(p.name||'Ukendt').replace(/'/g,'') + '\')" title="Fjern fra boble">' + icon('x') + '</button>' : '')}
+        <div style="flex:1;min-width:0"><div class="chat-member-name">${escHtml(p.name||t('misc_unknown'))} ${liveBadge}</div><div class="chat-member-status">${statusText}</div></div>
+        ${isOwnerRow ? '<span class="chat-member-role">' + roleLabel + '</span>' : (isOwner && !isOwnerRow ? '<button class="bc-kick-btn" onclick="event.stopPropagation();bcShowKickConfirm(this,\'' + m.user_id + '\',\'' + escHtml(p.name||t('misc_unknown')).replace(/'/g,'') + '\')" title="Fjern fra boble">' + icon('x') + '</button>' : '')}
       </div>`;
     });
     // Add search field when 5+ members
@@ -1622,7 +1623,7 @@ async function bcLoadInfo() {
               cnGc.forEach(function(ev) {
                 var isPast = ev.event_date && new Date(ev.event_date) < now;
                 var evMc = ev.bubble_members?.[0]?.count || 0;
-                var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) : '';
+                var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
                 var isEvt = ev.type === 'event' || ev.type === 'live';
                 if (isEvt) {
                   var gcEvLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
@@ -1654,8 +1655,8 @@ async function bcLoadInfo() {
             var chMc = ch.bubble_members?.[0]?.count || 0;
             var isPast = ch.event_date && new Date(ch.event_date) < now;
             var dateStr = ch.event_date
-              ? new Date(ch.event_date).toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' }) +
-                (new Date(ch.event_date).getHours() > 0 ? ' kl. ' + new Date(ch.event_date).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '')
+              ? new Date(ch.event_date).toLocaleDateString(_locale(), { weekday: 'short', day: 'numeric', month: 'short' }) +
+                (new Date(ch.event_date).getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + new Date(ch.event_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '')
               : '';
             var chEvLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ch.id);
             childCards += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
@@ -1946,7 +1947,7 @@ async function bcLoadPosts() {
 }
 
 function bcRenderPostCard(post, author, event) {
-  var name = author ? escHtml(author.name || '') : 'Ukendt';
+  var name = author ? escHtml(author.name || '') : t('misc_unknown');
   var initials = name.split(' ').map(function(w) { return w[0] || ''; }).join('').slice(0, 2).toUpperCase();
   var avatarHtml = author && author.avatar_url
     ? '<div class="bp-avatar">' + safeAvatarImg(author.avatar_url, 'width:100%;height:100%;object-fit:cover;border-radius:50%') + '</div>'
@@ -1991,7 +1992,7 @@ function bcExpandPost(postId) {
   var post = (_bcPostsCache || []).find(function(p) { return p.id === postId; });
   if (!post) return;
   var author = _bcPostsProfileCache[post.author_id];
-  var name = author ? escHtml(author.name || '') : 'Ukendt';
+  var name = author ? escHtml(author.name || '') : t('misc_unknown');
   var initials = name.split(' ').map(function(w) { return w[0] || ''; }).join('').slice(0, 2).toUpperCase();
 
   var avatarHtml = author && author.avatar_url

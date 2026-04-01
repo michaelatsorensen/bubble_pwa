@@ -455,7 +455,7 @@ async function loadMessages() {
         '<div class="flex-row-center" style="gap:0.75rem">' + convAvatar +
         '<div style="flex:1;min-width:0">' +
         '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:0.5rem">' +
-        '<div class="conv-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.name||'Ukendt') + liveBadge + '</div>' +
+        '<div class="conv-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.name||t('misc_unknown')) + liveBadge + '</div>' +
         '<div class="conv-time">' + time + '</div></div>' +
         '<div class="conv-preview" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;margin-top:0.1rem">' + preview + '</div>' +
         '</div>' + (isUnread ? '<div class="conv-unread-dot"></div>' : '') +
@@ -471,7 +471,7 @@ async function openChat(userId, fromScreen) {
   try {
     currentChatUser = userId;
     const { data: p } = await sb.from('profiles').select('name,title,workplace,avatar_url').eq('id', userId).single();
-    currentChatName = p?.name || 'Ukendt';
+    currentChatName = p?.name || t('misc_unknown');
     window._chatPartnerAvatar = p?.avatar_url || null;
     document.getElementById('chat-name').textContent = currentChatName;
     document.getElementById('chat-role').textContent = [p?.title, p?.workplace].filter(Boolean).join(' \u00B7 ');
@@ -487,7 +487,7 @@ async function openChat(userId, fromScreen) {
     }
     // Personalized placeholder
     var chatInput = document.getElementById('chat-input');
-    if (chatInput) chatInput.placeholder = 'Skriv til ' + (currentChatName.split(' ')[0] || 'dem') + '...';
+    if (chatInput) chatInput.placeholder = t('dm_write_to', { name: currentChatName.split(' ')[0] || '' });
     var dmAvatar = document.getElementById('dm-topbar-avatar');
     if (dmAvatar) {
       if (p?.avatar_url) { dmAvatar.innerHTML = '<img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
@@ -516,11 +516,73 @@ async function openChat(userId, fromScreen) {
 }
 
 
+// ══════════════════════════════════════════════════════════
+//  DM MESSAGE REDUCER — single entry point for all message inserts
+//  Deduplicates by msg.id before any DOM mutation
+//  opts: { pending: bool, replaceTempId: string, skipScroll: bool, markRead: bool }
+// ══════════════════════════════════════════════════════════
+function dmReduceMsg(msg, opts) {
+  opts = opts || {};
+  var el = document.getElementById('chat-messages');
+  if (!el || !msg) return false;
+
+  // Replace: swap temp pending message with confirmed one
+  if (opts.replaceTempId) {
+    var pendingEl = document.getElementById('dm-msg-' + opts.replaceTempId);
+    if (pendingEl) {
+      pendingEl.id = 'dm-msg-' + msg.id;
+      pendingEl.setAttribute('data-msg-id', msg.id);
+      pendingEl.classList.remove('msg-pending');
+      pendingEl.setAttribute('oncontextmenu', "event.preventDefault();dmLongPress('" + msg.id + "',true)");
+      pendingEl.setAttribute('ontouchstart', "dmTouchStart(event,'" + msg.id + "',true)");
+      var bubble = pendingEl.querySelector('.msg-bubble');
+      if (bubble) bubble.id = 'dm-bubble-' + msg.id;
+    }
+    return true;
+  }
+
+  // Dedup: skip if this msg.id already exists in DOM
+  if (msg.id && !String(msg.id).startsWith('_pending_') && el.querySelector('[data-msg-id="' + msg.id + '"]')) {
+    return false;
+  }
+
+  // Remove empty state hero if present
+  if (!opts.pending) {
+    var emptyHero = el.querySelector('[style*="flex-direction:column"]');
+    if (emptyHero && !el.querySelector('.msg-row')) emptyHero.remove();
+  }
+
+  // Insert: date separator + rendered message
+  dmHideTyping();
+  _dmMaybeInsertDateSep(el, msg.created_at);
+  el.insertAdjacentHTML('beforeend', dmRenderMsg(msg));
+
+  if (opts.pending) {
+    var pendingRow = document.getElementById('dm-msg-' + msg.id);
+    if (pendingRow) pendingRow.classList.add('msg-pending');
+  }
+
+  if (!opts.skipScroll) el.scrollTop = el.scrollHeight;
+
+  // Mark as read if incoming
+  if (opts.markRead && msg.receiver_id === currentUser.id && msg.id) {
+    sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', msg.id)
+      .then(function(res) { if (res.error) logError('dm:read_at', res.error); });
+    if (chatSubscription) {
+      try { chatSubscription.send({ type: 'broadcast', event: 'read_receipt', payload: { msgIds: [msg.id] } }); } catch(e) {}
+    }
+  }
+
+  return true;
+}
+
+
 // ── Date separator: insert if last message in DOM is from a different day ──
 function _dmMaybeInsertDateSep(container, createdAt) {
   if (!container || !createdAt) return;
   var d = new Date(createdAt);
-  var newDate = d.toLocaleDateString('da-DK', {weekday:'short', day:'numeric', month:'short'}) + ', ' + d.toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'});
+  var loc = getLang() === 'en' ? 'en-GB' : _locale();
+  var newDate = d.toLocaleDateString(loc, {weekday:'short', day:'numeric', month:'short'}) + ', ' + d.toLocaleTimeString(loc, {hour:'2-digit', minute:'2-digit'});
   var lastSep = container.querySelector('.chat-date-sep:last-of-type');
   var lastDate = lastSep ? lastSep.textContent : '';
   if (newDate !== lastDate) {
@@ -536,9 +598,9 @@ function dmRenderMsg(m) {
   let receipt = '';
   if (sent && m._showReceipt) {
     if (m.read_at) {
-      receipt = '<div class="msg-receipt" id="dm-receipt-' + m.id + '">Læst</div>';
+      receipt = '<div class="msg-receipt" id="dm-receipt-' + m.id + '">'+t('dm_read')+'</div>';
     } else {
-      receipt = '<div class="msg-receipt msg-receipt-sent" id="dm-receipt-' + m.id + '">Sendt</div>';
+      receipt = '<div class="msg-receipt msg-receipt-sent" id="dm-receipt-' + m.id + '">'+t('dm_sent')+'</div>';
     }
   }
 
@@ -546,7 +608,7 @@ function dmRenderMsg(m) {
   var timeHtml = '';
   if ((gp === 'single' || gp === 'tail') && !m._showTimeSep) {
     var t = new Date(m.created_at);
-    timeHtml = '<div class="msg-timestamp">' + t.toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'}) + '</div>';
+    timeHtml = '<div class="msg-timestamp">' + t.toLocaleTimeString(_locale(), {hour:'2-digit', minute:'2-digit'}) + '</div>';
   }
 
   let bubble = '';
@@ -631,7 +693,7 @@ async function loadChatMessages() {
     const sorted = (msgs||[]).reverse();
 
     if (sorted.length === 0) {
-      var partnerName = currentChatName || 'Ukendt';
+      var partnerName = currentChatName || t('misc_unknown');
       var partnerAvatar = window._chatPartnerAvatar;
       var partnerInit = partnerName.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var avHtml = partnerAvatar
@@ -661,15 +723,15 @@ async function loadChatMessages() {
     sorted.forEach(function(m) {
       var d = new Date(m.created_at);
       // Date separator: only when DAY changes
-      var dateKey = d.toLocaleDateString('da-DK');
+      var dateKey = d.toLocaleDateString(_locale());
       if (dateKey !== lastDateKey) {
-        var dateLabel = d.toLocaleDateString('da-DK', {weekday:'short', day:'numeric', month:'short'});
+        var dateLabel = d.toLocaleDateString(_locale(), {weekday:'short', day:'numeric', month:'short'});
         html += '<div class="chat-date-sep">' + dateLabel + '</div>';
         lastDateKey = dateKey;
       }
       // Time separator: 5+ min gap (but not right after a date sep)
       if (m._showTimeSep) {
-        var t = d.toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'});
+        var t = d.toLocaleTimeString(_locale(), {hour:'2-digit', minute:'2-digit'});
         html += '<div class="msg-time-sep">' + t + '</div>';
       }
       html += dmRenderMsg(m);
@@ -832,7 +894,7 @@ function dmUpdateReceipts(msgIds) {
   (msgIds || []).forEach(function(id) {
     var el = document.getElementById('dm-receipt-' + id);
     if (el) {
-      el.textContent = 'Læst';
+      el.textContent = t('dm_read');
       el.className = 'msg-receipt';
     }
   });
@@ -847,17 +909,7 @@ function subscribeToChat() {
       var m = payload.payload;
       if (!m) return;
       if (m.sender_id !== currentChatUser && m.receiver_id !== currentChatUser) return;
-      var el = document.getElementById('chat-messages');
-      if (!el || el.querySelector('[data-msg-id="' + m.id + '"]')) return;
-      dmHideTyping();
-      _dmMaybeInsertDateSep(el, m.created_at);
-      el.insertAdjacentHTML('beforeend', dmRenderMsg(m));
-      el.scrollTop = el.scrollHeight;
-      if (m.receiver_id === currentUser.id) {
-        sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', m.id)
-          .then(function(res) { if (res.error) logError('dm:read_at_broadcast', res.error); });
-        try { chatSubscription.send({ type: 'broadcast', event: 'read_receipt', payload: { msgIds: [m.id] } }); } catch(e) { logError("dm:inline_read_receipt", e); }
-      }
+      dmReduceMsg(m, { markRead: true });
     })
     // Typing indicator
     .on('broadcast', { event: 'typing' }, function(payload) {
@@ -875,14 +927,7 @@ function subscribeToChat() {
       filter: 'receiver_id=eq.' + currentUser.id }, function(payload) {
       var m = payload.new;
       if (!m || m.sender_id !== currentChatUser) return;
-      var el = document.getElementById('chat-messages');
-      if (!el || el.querySelector('[data-msg-id="' + m.id + '"]')) return;
-      dmHideTyping();
-      _dmMaybeInsertDateSep(el, m.created_at);
-      el.insertAdjacentHTML('beforeend', dmRenderMsg(m));
-      el.scrollTop = el.scrollHeight;
-      sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', m.id)
-        .then(function(res) { if (res.error) logError('dm:read_at_changes', res.error); });
+      dmReduceMsg(m, { markRead: true });
     })
     .subscribe(_rtStatusCallback('dm-chat'));
 }

@@ -507,7 +507,7 @@ function showDartboardEmpty(filter) {
   if (existing) existing.remove();
   var msg = '', link = '', linkFn = '';
   if (filter === 'strong') {
-    msg = 'Ingen stærke matches endnu';
+    msg = t('home_no_strong_matches');
     link = 'Tilføj tags →';
     linkFn = 'openProfileSetupTags()';
   } else if (filter === 'good') {
@@ -701,7 +701,7 @@ async function _bbLoadPendingInvites() {
       html += '<div style="display:flex;align-items:center;gap:0.6rem">';
       html += '<div class="avatar" style="width:32px;height:32px;font-size:0.65rem;flex-shrink:0">' + ini + '</div>';
       html += '<div style="flex:1;min-width:0">';
-      html += '<div style="font-size:0.78rem;font-weight:600">' + escHtml(p.name || 'Ukendt') + '</div>';
+      html += '<div style="font-size:0.78rem;font-weight:600">' + escHtml(p.name || t('misc_unknown')) + '</div>';
       if (b.name) html += '<div style="font-size:0.62rem;color:var(--muted)">' + icon('bubble') + ' ' + escHtml(b.name) + '</div>';
       html += '</div>';
       html += '<div style="display:flex;gap:0.3rem;flex-shrink:0">';
@@ -921,7 +921,7 @@ async function loadMyNetworks() {
             cnEvents.forEach(function(ev) {
               var isPast = ev.event_date && new Date(ev.event_date) < now;
               var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
-              var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) : '';
+              var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
               var gcLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
               html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
               html += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
@@ -942,7 +942,7 @@ async function loadMyNetworks() {
         childEvents.forEach(function(ev) {
           var isPast = ev.event_date && new Date(ev.event_date) < now;
           var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
-          var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) : '';
+          var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
           var evLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
           html += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
           html += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
@@ -1004,7 +1004,7 @@ async function loadMyNetworks() {
         orphanEvents.forEach(function(ev) {
           var isPast = ev.event_date && new Date(ev.event_date) < now;
           var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
-          var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) : '';
+          var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
           html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
           html += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
           html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
@@ -1114,7 +1114,7 @@ async function loadMyEvents() {
 }
 
 function _bbEventCard(e, parentMap, gpMap, isPast) {
-  var dateStr = e.event_date ? new Date(e.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  var dateStr = e.event_date ? new Date(e.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short', year: 'numeric' }) : '';
   var parent = parentMap[e.parent_bubble_id];
   var parentName = parent ? parent.name : '';
   var gpName = (parent && parent.parent_bubble_id && gpMap[parent.parent_bubble_id]) ? gpMap[parent.parent_bubble_id] : '';

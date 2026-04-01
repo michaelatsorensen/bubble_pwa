@@ -14,6 +14,9 @@ function setLang(lang) {
 
 function getLang() { return _lang; }
 
+// Locale string for toLocaleDateString/toLocaleTimeString
+function _locale() { return _lang === 'en' ? 'en-GB' : 'da-DK'; }
+
 function t(key, vars) {
   var s = (_translations[_lang] && _translations[_lang][key]) || (_translations['da'] && _translations['da'][key]) || key;
   if (vars) {
@@ -93,6 +96,7 @@ da: {
 
   // ── Onboarding ──
   ob_welcome: 'Velkommen til Bubble!',
+  ob_almost_ready: 'Næsten klar!',
   ob_step_title: 'Titel / Rolle',
   ob_step_title_ph: 'f.eks. CTO, Designer, Studerende...',
   ob_step_workplace: 'Arbejdsplads / organisation',
@@ -115,6 +119,13 @@ da: {
   ob_privacy: 'privatlivspolitik',
   ob_name_label: 'Navn *',
   ob_workplace_label: 'Arbejdsplads *',
+  ob_step_discover: 'Udforsk bobler',
+  ob_step_discover_desc: 'Find communities, events og netværk',
+  ob_step_radar: 'Se hvem der er her',
+  ob_step_radar_desc: 'Radaren viser profiler og match-%',
+  ob_step_home: 'Gå til hjem',
+  ob_step_home_desc: 'Dit dashboard med bobler, radar og mere',
+  pf_feedback_desc: 'Hjælp os med at gøre Bubble bedre',
 
   // ── Home ──
   home_greeting_morning: 'Godmorgen',
@@ -135,6 +146,7 @@ da: {
   home_discover_networks: 'Opdag netværk',
   home_first_here: 'Du er den første her!',
   home_waiting: 'Venter på deltagere...',
+  home_no_strong_matches: 'Ingen stærke matches endnu',
 
   // ── Bubbles ──
   bb_mine: 'Mine',
@@ -162,10 +174,16 @@ da: {
   bb_leave: 'Forlad',
   bb_leave_event: 'Forlad event',
   bb_leave_bubble: 'Forlad boblen',
+  bb_leave_event_desc: 'Du fjernes fra deltagerlisten',
+  bb_leave_bubble_desc: 'Du mister adgang til chat og deltagere',
   bb_delete_event: 'Slet event',
   bb_delete_bubble: 'Slet boble',
   bb_pending_approval: 'Din anmodning afventer godkendelse',
   bb_edit: 'Rediger',
+
+  // ── Toasts: leave/join ──
+  toast_left_event: 'Du har forladt eventet',
+  toast_left_bubble: 'Du har forladt boblen',
 
   // ── Bubble create ──
   cb_name: 'Boble navn',
@@ -210,7 +228,12 @@ da: {
   bc_chat_closed: 'Chat lukket for medlemmer',
   bc_chat_opened: 'Chat åbnet for alle',
   bc_editing: 'Redigerer besked',
+  bc_edit_history: 'Redigeringshistorik',
+  bc_edit_original: 'Originalt',
+  bc_edit_edited: 'Redigeret',
+  bc_edit_current: 'Nuværende',
   bc_checked_in: 'Checked ind',
+  bc_was_here_at: 'Var her kl.',
 
   // ── Bubble info / admin ──
   bi_about: 'Om',
@@ -263,6 +286,8 @@ da: {
   dm_select_all: 'Vælg alle',
   dm_deselect: 'Annuller',
   dm_delete_selected: 'Slet valgte',
+  dm_read: 'Læst',
+  dm_sent: 'Sendt',
 
   // ── Notifications ──
   nf_title: 'Notifikationer',
@@ -291,6 +316,9 @@ da: {
   pf_show_bubbles: 'Vis bobler på profil',
   pf_anonymous: 'Anonym på radar',
   pf_profile_strength: 'Profilstyrke',
+  pf_strength_strong: 'Stærk',
+  pf_strength_good: 'God',
+  pf_strength_weak: 'Svag',
 
   // ── Toasts ──
   toast_saved: 'Gemt!',
@@ -336,6 +364,15 @@ da: {
   toast_request_sent: 'Anmodning sendt! Ejeren skal godkende',
   toast_own_qr: 'Det er din egen QR-kode',
   toast_max_file: 'Maks 10MB per fil',
+  toast_invite_required: 'Denne boble kræver en invitation',
+  toast_approval_required: 'Denne boble kræver godkendelse',
+  toast_checkin_failed: 'Check-in fejlede — prøv igen',
+  toast_unknown_qr: 'Ukendt QR-kode',
+  toast_not_bubble_qr: 'Ikke en Bubble QR-kode',
+  toast_joined: 'Du er med i boblen!',
+  toast_checked_in_name: '{name} checked ind!',
+  toast_enter_email: 'Indtast din email først',
+  toast_sending_reset: 'Sender nulstillingslink...',
 
   // ── Live ──
   live_badge: 'LIVE',
@@ -377,9 +414,11 @@ da: {
   misc_cancel: 'Annuller',
   misc_confirm: 'Bekræft',
   misc_close: 'Luk',
+  misc_save_changes: 'Gem ændringer',
   misc_retry: 'Prøv igen',
   misc_search: 'Søg',
   misc_loading: 'Henter...',
+  misc_unknown: 'Ukendt',
   misc_or: 'eller',
   misc_and: 'og',
   misc_edited: 'redigeret',
@@ -455,6 +494,7 @@ en: {
 
   // ── Onboarding ──
   ob_welcome: 'Welcome to Bubble!',
+  ob_almost_ready: 'Almost ready!',
   ob_step_title: 'Title / Role',
   ob_step_title_ph: 'e.g. CTO, Designer, Student...',
   ob_step_workplace: 'Workplace / organisation',
@@ -477,6 +517,13 @@ en: {
   ob_privacy: 'privacy policy',
   ob_name_label: 'Name *',
   ob_workplace_label: 'Workplace *',
+  ob_step_discover: 'Explore bubbles',
+  ob_step_discover_desc: 'Find communities, events and networks',
+  ob_step_radar: 'See who\'s here',
+  ob_step_radar_desc: 'The radar shows profiles and match %',
+  ob_step_home: 'Go to home',
+  ob_step_home_desc: 'Your dashboard with bubbles, radar and more',
+  pf_feedback_desc: 'Help us make Bubble better',
 
   // ── Home ──
   home_greeting_morning: 'Good morning',
@@ -497,6 +544,7 @@ en: {
   home_discover_networks: 'Discover networks',
   home_first_here: 'You\'re the first one here!',
   home_waiting: 'Waiting for participants...',
+  home_no_strong_matches: 'No strong matches yet',
 
   // ── Bubbles ──
   bb_mine: 'Mine',
@@ -524,10 +572,16 @@ en: {
   bb_leave: 'Leave',
   bb_leave_event: 'Leave event',
   bb_leave_bubble: 'Leave bubble',
+  bb_leave_event_desc: 'You\'ll be removed from the participant list',
+  bb_leave_bubble_desc: 'You\'ll lose access to chat and members',
   bb_delete_event: 'Delete event',
   bb_delete_bubble: 'Delete bubble',
   bb_pending_approval: 'Your request is pending approval',
   bb_edit: 'Edit',
+
+  // ── Toasts: leave/join ──
+  toast_left_event: 'You\'ve left the event',
+  toast_left_bubble: 'You\'ve left the bubble',
 
   // ── Bubble create ──
   cb_name: 'Bubble name',
@@ -572,7 +626,12 @@ en: {
   bc_chat_closed: 'Chat closed for members',
   bc_chat_opened: 'Chat opened for everyone',
   bc_editing: 'Editing message',
+  bc_edit_history: 'Edit history',
+  bc_edit_original: 'Original',
+  bc_edit_edited: 'Edited',
+  bc_edit_current: 'Current',
   bc_checked_in: 'Checked in',
+  bc_was_here_at: 'Was here at',
 
   // ── Bubble info / admin ──
   bi_about: 'About',
@@ -625,6 +684,8 @@ en: {
   dm_select_all: 'Select all',
   dm_deselect: 'Cancel',
   dm_delete_selected: 'Delete selected',
+  dm_read: 'Read',
+  dm_sent: 'Sent',
 
   // ── Notifications ──
   nf_title: 'Notifications',
@@ -653,6 +714,9 @@ en: {
   pf_show_bubbles: 'Show bubbles on profile',
   pf_anonymous: 'Anonymous on radar',
   pf_profile_strength: 'Profile strength',
+  pf_strength_strong: 'Strong',
+  pf_strength_good: 'Good',
+  pf_strength_weak: 'Weak',
 
   // ── Toasts ──
   toast_saved: 'Saved!',
@@ -698,6 +762,15 @@ en: {
   toast_request_sent: 'Request sent! The owner must approve',
   toast_own_qr: 'That\'s your own QR code',
   toast_max_file: 'Max 10MB per file',
+  toast_invite_required: 'This bubble requires an invitation',
+  toast_approval_required: 'This bubble requires approval',
+  toast_checkin_failed: 'Check-in failed — try again',
+  toast_unknown_qr: 'Unknown QR code',
+  toast_not_bubble_qr: 'Not a Bubble QR code',
+  toast_joined: 'You\'re in the bubble!',
+  toast_checked_in_name: '{name} checked in!',
+  toast_enter_email: 'Enter your email first',
+  toast_sending_reset: 'Sending reset link...',
 
   // ── Live ──
   live_badge: 'LIVE',
@@ -739,9 +812,11 @@ en: {
   misc_cancel: 'Cancel',
   misc_confirm: 'Confirm',
   misc_close: 'Close',
+  misc_save_changes: 'Save changes',
   misc_retry: 'Try again',
   misc_search: 'Search',
   misc_loading: 'Loading...',
+  misc_unknown: 'Unknown',
   misc_or: 'or',
   misc_and: 'and',
   misc_edited: 'edited',

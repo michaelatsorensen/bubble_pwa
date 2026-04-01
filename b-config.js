@@ -15,7 +15,7 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
 const BUILD_TIMESTAMP = '2026-03-29T14:00:00';
-const BUILD_VERSION  = 'v8.0.3';
+const BUILD_VERSION  = 'v8.0.9';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -111,7 +111,7 @@ window.onunhandledrejection = function(e) {
   logError('promise', e.reason, null);
   const el = document.getElementById('loading-msg');
   if (el) {
-    el.textContent = '❌ Promise fejl: ' + (e.reason?.message || e.reason || 'Ukendt');
+    el.textContent = '❌ Promise fejl: ' + (e.reason?.message || e.reason || t('misc_unknown'));
     el.style.color = '#D06070';
   }
 };
@@ -163,8 +163,19 @@ var _flowTTL = 15 * 60 * 1000; // 15 minutes
 
 function flowGet(key) {
   var k = _flowStatePrefix + key;
-  // Try sessionStorage first
-  try { var v = sessionStorage.getItem(k); if (v) return v; } catch(e) {}
+  // Try sessionStorage first (with TTL)
+  try {
+    var sv = sessionStorage.getItem(k);
+    if (sv) {
+      try {
+        var sp = JSON.parse(sv);
+        if (sp.exp && sp.exp > Date.now()) return sp.val;
+        sessionStorage.removeItem(k); // expired
+      } catch(e2) {
+        return sv; // legacy plain string — return as-is
+      }
+    }
+  } catch(e) {}
   // Fallback to localStorage with TTL check
   try {
     var raw = localStorage.getItem(k);
@@ -178,13 +189,21 @@ function flowGet(key) {
 }
 function flowSet(key, value) {
   var k = _flowStatePrefix + key;
-  try { sessionStorage.setItem(k, value); } catch(e) {}
-  try { localStorage.setItem(k, JSON.stringify({ val: value, exp: Date.now() + _flowTTL })); } catch(e) {}
+  var wrapped = JSON.stringify({ val: value, exp: Date.now() + _flowTTL });
+  try { sessionStorage.setItem(k, wrapped); } catch(e) {}
+  try { localStorage.setItem(k, wrapped); } catch(e) {}
 }
 function flowRemove(key) {
   var k = _flowStatePrefix + key;
   try { sessionStorage.removeItem(k); } catch(e) {}
   try { localStorage.removeItem(k); } catch(e) {}
+}
+
+// Safety clear — removes ALL flow flags to prevent stale state
+function flowClearAll() {
+  ['pending_contact', 'pending_join', 'event_flow', 'post_tags_destination'].forEach(function(key) {
+    flowRemove(key);
+  });
 }
 
 // ══════════════════════════════════════════════════════════

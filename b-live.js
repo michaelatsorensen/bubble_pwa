@@ -117,7 +117,7 @@ function closeLiveCheckinModal() {
 
 async function liveCheckin(bubbleId) {
   try {
-    showToast('Checker ind...');
+    showToast(t('misc_loading'));
 
     // 0. Check visibility — hidden/private bubbles require membership
     var { data: bCheck } = await sb.from('bubbles').select('visibility').eq('id', bubbleId).single();
@@ -126,9 +126,9 @@ async function liveCheckin(bubbleId) {
         .select('id').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle();
       if (!memCheck) {
         if (bCheck.visibility === 'hidden') {
-          _renderToast('Denne boble kræver en invitation', 'error');
+          _renderToast(t('toast_invite_required'), 'error');
         } else {
-          _renderToast('Denne boble kræver godkendelse', 'error');
+          _renderToast(t('toast_approval_required'), 'error');
           requestJoin(bubbleId);
         }
         return;
@@ -254,7 +254,7 @@ async function liveCheckout() {
     }
   } catch (e) {
     logError('liveCheckout', e);
-    _renderToast('Fejl ved checkout', 'error');
+    _renderToast(t('toast_generic_error'), 'error');
   }
 }
 
@@ -423,7 +423,7 @@ async function liveScanConfirmPersonCheckin() {
   var found = document.getElementById('live-scan-found');
   if (found) found.style.display = 'none';
   var status = document.getElementById('live-scan-status');
-  if (status) { status.textContent = 'Checker ind...'; status.className = 'live-scan-status found'; status.style.display = ''; }
+  if (status) { status.textContent = t('misc_loading'); status.className = 'live-scan-status found'; status.style.display = ''; }
   try {
     var { data: existingMember } = await sb.from('bubble_members')
       .select('id').eq('bubble_id', p.bubbleId).eq('user_id', p.profile.id).maybeSingle();
@@ -435,7 +435,7 @@ async function liveScanConfirmPersonCheckin() {
       });
       if (insErr) {
         logError('scanCheckin:insert', insErr);
-        _renderToast('Check-in fejlede — du kan ikke checke andre ind endnu', 'error');
+        _renderToast(t('toast_checkin_failed'), 'error');
         if (status) { status.textContent = 'Check-in fejlede'; status.className = 'live-scan-status error'; status.style.display = ''; }
         setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; } liveQrPreviewLoop(); }, 3000);
         return;
@@ -447,7 +447,7 @@ async function liveScanConfirmPersonCheckin() {
       }).eq('bubble_id', p.bubbleId).eq('user_id', p.profile.id);
       if (upErr) {
         logError('scanCheckin:update', upErr);
-        _renderToast('Check-in fejlede — du kan ikke checke andre ind endnu', 'error');
+        _renderToast(t('toast_checkin_failed'), 'error');
         if (status) { status.textContent = 'Check-in fejlede'; status.className = 'live-scan-status error'; status.style.display = ''; }
         setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; } liveQrPreviewLoop(); }, 3000);
         return;
@@ -496,7 +496,7 @@ async function liveScanConfirmPersonCheckin() {
     if (cName) cName.textContent = '✓ ' + (p.profile.name || 'Bruger') + ' checked ind!';
     if (cMeta) cMeta.textContent = (p.profile.title || '') + (p.profile.workplace ? ' · ' + p.profile.workplace : '');
     if (confirmed) confirmed.style.display = 'flex';
-    showSuccessToast((p.profile.name || 'Bruger') + ' checked ind! ✓');
+    showSuccessToast(t('toast_checked_in_name', {name: p.profile.name || 'User'}));
     // Refresh member list if viewing this bubble
     if (bcBubbleId === p.bubbleId && typeof bcLoadMembers === 'function') bcLoadMembers();
     setTimeout(function() {
@@ -539,7 +539,7 @@ async function liveScanAutoResolve(data) {
           if (cName) cName.textContent = '✓ ' + (guest.name || 'Gæst') + ' checked ind!';
           if (cMeta) cMeta.textContent = (guest.title || 'Gæst') + ' · via Guest QR';
           if (confirmed) confirmed.style.display = 'flex';
-          showSuccessToast((guest.name || 'Gæst') + ' checked ind! ✓');
+          showSuccessToast(t('toast_checked_in_name', {name: guest.name || 'Guest'}));
           _liveQrPending = false;
           // Resume scanning after 3s
           setTimeout(function() {
@@ -616,7 +616,7 @@ async function liveScanAutoResolve(data) {
             var cMeta = document.getElementById('live-scan-confirmed-meta');
             if (cName) cName.textContent = '✓ ' + (scannedProfile.name || 'Bruger') + ' fundet!';
             if (cMeta) cMeta.textContent = (scannedProfile.title || '') + (scannedProfile.workplace ? ' · ' + scannedProfile.workplace : '');
-            showSuccessToast((scannedProfile.name || 'Bruger') + ' scannet! ✓');
+            showSuccessToast(t('toast_checked_in_name', {name: scannedProfile.name || 'User'}));
             // Auto-save as contact
             try { await sb.from('saved_contacts').upsert({ user_id: currentUser.id, contact_id: scannedProfile.id }, { onConflict: 'user_id,contact_id' }); } catch(e2) {}
           }
@@ -904,7 +904,7 @@ async function _connectResolve(rawUrl) {
     // Parse URL to find profile ID or QR token
     var url;
     try { url = new URL(rawUrl); } catch(e) {
-      _renderToast('Ukendt QR-kode', 'warn');
+      _renderToast(t('toast_unknown_qr'), 'warn');
       _connectPending = false;
       _connectScanLoop();
       return;
@@ -931,7 +931,7 @@ async function _connectResolve(rawUrl) {
     // Handle profile/contact QR → show profile sheet for confirmation
     if (profileId) {
       if (profileId === currentUser.id) {
-        _renderToast('Det er din egen QR-kode', 'warn');
+        _renderToast(t('toast_own_qr'), 'warn');
         _connectPending = false;
         _connectScanLoop();
         return;
@@ -939,7 +939,7 @@ async function _connectResolve(rawUrl) {
       // Fetch profile
       var { data: p } = await sb.from('profiles').select('*').eq('id', profileId).single();
       if (!p) {
-        _renderToast('Profil ikke fundet', 'error');
+        _renderToast(t('toast_not_found'), 'error');
         _connectPending = false;
         _connectScanLoop();
         return;
@@ -965,17 +965,17 @@ async function _connectResolve(rawUrl) {
     if (joinId) {
       closeConnectScanner();
       await sb.from('bubble_members').insert({ bubble_id: joinId, user_id: currentUser.id }).catch(function(){});
-      showSuccessToast('Du er med i boblen!');
+      showSuccessToast(t('toast_joined'));
       setTimeout(function() { openBubbleChat(joinId, 'screen-home'); }, 300);
       return;
     }
 
-    _renderToast('Ikke en Bubble QR-kode', 'warn');
+    _renderToast(t('toast_not_bubble_qr'), 'warn');
     _connectPending = false;
     _connectScanLoop();
   } catch(e) {
     logError('connectResolve', e);
-    _renderToast('Fejl ved scanning', 'error');
+    _renderToast(t('toast_generic_error'), 'error');
     _connectPending = false;
     _connectScanLoop();
   }
@@ -987,7 +987,7 @@ var _connectProfileId = null;
 function _connectShowProfileSheet(p, profileId) {
   _connectProfileId = profileId;
   var isAnon = p.is_anon;
-  var name = isAnon ? 'Anonym bruger' : (p.name || 'Ukendt');
+  var name = isAnon ? t('ps_anonymous') : (p.name || t('misc_unknown'));
   var initials = isAnon ? '?' : name.split(' ').map(function(w){return w[0]}).join('').slice(0,2).toUpperCase();
   var subtitle = [p.title, p.workplace].filter(Boolean).join(' \u00B7 ');
   var bio = p.bio || '';
@@ -1070,7 +1070,7 @@ async function _connectSaveContact() {
     }
   } catch(e) {
     logError('connectSave', e);
-    _renderToast('Kunne ikke gemme kontakt', 'error');
+    _renderToast(t('toast_save_failed'), 'error');
   }
 }
 

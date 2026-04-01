@@ -26,8 +26,8 @@ async function adminLoadReports() {
       return;
     }
     el.innerHTML = data.map(function(r) {
-      var reporterName = r.profiles ? r.profiles.name : 'Ukendt';
-      var reportedName = r.reported ? r.reported.name : 'Ukendt';
+      var reporterName = r.profiles ? r.profiles.name : t('misc_unknown');
+      var reportedName = r.reported ? r.reported.name : t('misc_unknown');
       var isBanned = r.reported && r.reported.banned;
       var timeAgo = adminTimeAgo(r.created_at);
       return '<div style="padding:0.4rem 0;border-bottom:1px solid rgba(30,27,46,0.025)">' +
@@ -57,7 +57,7 @@ async function adminLoadBanned() {
     }
     el.innerHTML = data.map(function(p) {
       return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid rgba(30,27,46,0.025)">' +
-        '<div><span style="font-weight:600">' + escHtml(p.name || 'Ukendt') + '</span>' +
+        '<div><span style="font-weight:600">' + escHtml(p.name || t('misc_unknown')) + '</span>' +
         '<div style="font-size:0.6rem;color:var(--muted)">' + escHtml(p.email || p.id.slice(0,8)) + '</div></div>' +
         '<button class="btn-sm" onclick="adminUnbanUser(\'' + p.id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,158,142,0.15);color:var(--green);border:1px solid rgba(26,158,142,0.3);border-radius:6px">Unban</button>' +
         '</div>';
@@ -343,7 +343,7 @@ function adminSearchUser(query) {
         var isBanned = p.banned;
         return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid rgba(30,27,46,0.025)">' +
           '<div style="flex:1;min-width:0">' +
-          '<div style="font-size:0.75rem;font-weight:600">' + escHtml(p.name || 'Ukendt') +
+          '<div style="font-size:0.75rem;font-weight:600">' + escHtml(p.name || t('misc_unknown')) +
           (isBanned ? ' <span style="font-size:0.55rem;background:rgba(26,122,138,0.2);color:var(--accent2);padding:0.1rem 0.3rem;border-radius:4px">Banned</span>' : '') + '</div>' +
           '<div style="font-size:0.6rem;color:var(--muted)">' + escHtml(p.title || '') + ' · ' + escHtml(p.email || p.id.slice(0,8)) + '</div>' +
           '</div>' +
