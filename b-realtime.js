@@ -188,7 +188,7 @@ function rtUpdateConversationPreview(msg) {
     list.prepend(row);
   } else {
     // New conversation — reload list
-    if (document.getElementById('screen-messages')?.classList.contains('active')) {
+    if (navState.screen === 'screen-messages') {
       loadMessages();
     }
   }
@@ -204,14 +204,14 @@ function rtHandleMemberChange(payload) {
     loadLiveBubbleStatus().then(function() {
       // Auto-activate live filter on home radar when I check in
       if (m.checked_in_at && !m.checked_out_at) {
-        if (document.getElementById('screen-home')?.classList.contains('active')) {
-          if (typeof filterRadarHome === 'function' && (window._liveCheckedInIds || []).length > 0) {
+        if (navState.screen === 'screen-home') {
+          if (typeof filterRadarHome === 'function' && appMode.checkedInIds.length > 0) {
             filterRadarHome('live');
           }
         }
       }
     });
-    if (document.getElementById('screen-home')?.classList.contains('active')) {
+    if (navState.screen === 'screen-home') {
       loadLiveBanner();
     }
     // Show check-in confirmation to the user who was scanned in
@@ -232,7 +232,7 @@ function rtHandleMemberChange(payload) {
   if (currentLiveBubble && m.bubble_id === currentLiveBubble.bubble_id) {
     loadLiveBubbleStatus().then(function() {
       // Re-render home radar if live filter is active
-      if (document.getElementById('screen-home')?.classList.contains('active') &&
+      if (navState.screen === 'screen-home' &&
           typeof _homeRadarFilter !== 'undefined' && _homeRadarFilter === 'live') {
         renderHomeDartboard();
       }
@@ -281,8 +281,8 @@ function initGlobalRealtime() {
       if (!m) return;
 
       // Nav badge: instant increment (no DB roundtrip)
-      var messagesScreenActive = document.getElementById('screen-messages')?.classList.contains('active');
-      var chatScreenActive = document.getElementById('screen-chat')?.classList.contains('active');
+      var messagesScreenActive = navState.screen === 'screen-messages';
+      var chatScreenActive = navState.screen === 'screen-chat';
       var chatIsOpenWithSender = chatScreenActive && currentChatUser === m.sender_id;
 
       if (!chatIsOpenWithSender) {
@@ -321,7 +321,7 @@ function initGlobalRealtime() {
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bubble_invitations',
       filter: 'to_user_id=eq.' + currentUser.id }, function() {
       updateNotifNavBadge(); // recount from DB
-      if (document.getElementById('screen-notifications')?.classList.contains('active')) {
+      if (navState.screen === 'screen-notifications') {
         loadNotifications();
       }
     })
@@ -333,7 +333,7 @@ function initGlobalRealtime() {
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'saved_contacts',
       filter: 'contact_id=eq.' + currentUser.id }, function() {
       updateNotifNavBadge(); // recount from DB
-      if (document.getElementById('screen-notifications')?.classList.contains('active')) {
+      if (navState.screen === 'screen-notifications') {
         loadNotifications();
       }
     })
@@ -347,7 +347,7 @@ function initGlobalRealtime() {
       showSuccessToast('Du er checket ind i ' + (data.bubbleName || 'et event') + ' — velkommen! ✓');
       // Refresh live status so home banner + radar update
       loadLiveBubbleStatus().then(function() {
-        if (document.getElementById('screen-home')?.classList.contains('active')) {
+        if (navState.screen === 'screen-home') {
           loadLiveBanner();
         }
       });
@@ -360,7 +360,7 @@ function initGlobalRealtime() {
     .on('broadcast', { event: 'approved' }, function(msg) {
       var data = msg.payload || {};
       showSuccessToast('Du er godkendt i ' + (data.bubbleName || 'en boble') + ' — velkommen! ✓');
-      if (document.getElementById('screen-home')?.classList.contains('active')) {
+      if (navState.screen === 'screen-home') {
         loadHome();
       }
     })
@@ -378,14 +378,14 @@ function initGlobalRealtime() {
       var data = msg.payload || {};
       showSuccessToast((data.senderName || 'Nogen') + ' inviterede dig til ' + (data.bubbleName || 'en boble') + ' 🫧');
       updateTopbarNotifBadge();
-      if (document.getElementById('screen-profile')?.classList.contains('active')) {
+      if (navState.screen === 'screen-profile') {
         loadProfileInvitations();
       }
     })
     .on('broadcast', { event: 'ownership' }, function(msg) {
       var data = msg.payload || {};
       showSuccessToast('👑 Du er nu ejer af ' + (data.bubbleName || 'en boble'));
-      if (document.getElementById('screen-home')?.classList.contains('active')) {
+      if (navState.screen === 'screen-home') {
         loadHome();
       }
     })
@@ -445,7 +445,7 @@ async function loadMessages() {
       const preview = isMine ? '<span style="color:var(--muted)">Du:</span> ' + previewText : previewText;
       const time = timeAgo(lastMsg.created_at);
       const isOnline = p.updated_at && (Date.now() - new Date(p.updated_at).getTime()) < 300000;
-      const isPartnerLive = (window._liveCheckedInIds || []).indexOf(partnerId) >= 0;
+      const isPartnerLive = appMode.checkedInIds.indexOf(partnerId) >= 0;
       const onlineDot = isPartnerLive ? '<div class="conv-online-dot" style="background:#10B981;animation:livePulse 2s ease-in-out infinite"></div>' : (isOnline ? '<div class="conv-online-dot"></div>' : '');
       const liveBadge = isPartnerLive ? ' <span class="live-badge-mini">LIVE</span>' : '';
       const convAvatar = '<div class="conv-avatar-wrap">' + (p.avatar_url ?
@@ -478,7 +478,7 @@ async function openChat(userId, fromScreen) {
     // Online/Live status
     var lastActive = p?.updated_at || p?.last_sign_in_at;
     var roleEl = document.getElementById('chat-role');
-    var isDmPartnerLive = (window._liveCheckedInIds || []).indexOf(userId) >= 0;
+    var isDmPartnerLive = appMode.checkedInIds.indexOf(userId) >= 0;
     if (isDmPartnerLive) {
       var dmLiveName = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble) ? currentLiveBubble.bubble_name : '';
       roleEl.innerHTML = '<span class="live-badge-mini">LIVE</span>' + (dmLiveName ? ' <span style="color:var(--muted);font-size:0.65rem">' + escHtml(dmLiveName) + '</span>' : '');

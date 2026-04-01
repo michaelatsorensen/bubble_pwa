@@ -67,20 +67,20 @@ async function loadLiveBubbleStatus() {
           .not('checked_in_at', 'is', null)
           .is('checked_out_at', null)
           .gte('checked_in_at', expireCutoff);
-        window._liveCheckedInIds = (liveMembers || []).map(function(m) { return m.user_id; });
-      } catch(e2) { window._liveCheckedInIds = []; }
+        appMode.setCheckedInIds((liveMembers || []).map(function(m) { return m.user_id; }));
+      } catch(e2) { appMode.setCheckedInIds([]); }
     } else {
       currentLiveBubble = null;
       appMode.set('normal');
-      window._liveCheckedInIds = [];
+      appMode.setCheckedInIds([]);
     }
     // Show/hide Live radar chip
     var liveChip = document.getElementById('radar-live-chip');
     var liveCount = document.getElementById('radar-live-count');
     if (liveChip) {
-      if (currentLiveBubble && (window._liveCheckedInIds || []).length > 1) {
+      if (currentLiveBubble && appMode.checkedInIds.length > 1) {
         liveChip.style.display = '';
-        if (liveCount) liveCount.textContent = '· ' + window._liveCheckedInIds.length;
+        if (liveCount) liveCount.textContent = '· ' + appMode.checkedInIds.length;
       } else {
         liveChip.style.display = 'none';
         // If live filter was active, reset to all
@@ -185,7 +185,7 @@ async function liveCheckin(bubbleId) {
 
     // 4. Refresh home in background — auto-switch to live mode
     loadLiveBubbleStatus().then(function() {
-      if (typeof filterRadarHome === 'function' && (window._liveCheckedInIds || []).length > 0) {
+      if (typeof filterRadarHome === 'function' && appMode.checkedInIds.length > 0) {
         filterRadarHome('live');
       }
     });
@@ -242,7 +242,7 @@ async function liveCheckout() {
     if (typeof _homeRadarFilter !== 'undefined' && _homeRadarFilter === 'live') {
       filterRadarHome('all');
     }
-    if (document.getElementById('screen-home')?.classList.contains('active')) {
+    if (navState.screen === 'screen-home') {
       loadLiveBanner();
     }
 

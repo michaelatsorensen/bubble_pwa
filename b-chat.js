@@ -1858,7 +1858,7 @@ async function bcCheckout() {
     if (typeof _homeViewMode !== 'undefined' && _homeViewMode === 'live') {
       homeSetMode('all');
     }
-    if (document.getElementById('screen-home')?.classList.contains('active')) {
+    if (navState.screen === 'screen-home') {
       loadLiveBanner();
     }
   } catch(e) {

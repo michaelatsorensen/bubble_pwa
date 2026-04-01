@@ -15,7 +15,7 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
 const BUILD_TIMESTAMP = '2026-03-29T14:00:00';
-const BUILD_VERSION  = 'v8.1.2';
+const BUILD_VERSION  = 'v8.1.3';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -207,29 +207,109 @@ function flowClearAll() {
 }
 
 // ══════════════════════════════════════════════════════════
-//  APP MODE — centralized state for home/radar/CTAs/notifs
+//  SAFE APP RESET — clears ALL session state on logout
+//  Prevents state leakage between user sessions
+// ══════════════════════════════════════════════════════════
+function resetAppState() {
+  // Auth / user
+  currentUser = null;
+  currentProfile = null;
+  currentBubble = null;
+  currentPerson = null;
+  currentChatUser = null;
+  currentChatName = null;
+  currentLiveBubble = null;
+  isAnon = false;
+  allBubbles = [];
+  cbChips = []; epChips = []; epDynChips = []; ebChips = []; obChips = [];
+  chatSubscription = null;
+
+  // App mode / live
+  appMode.clearLive();
+
+  // Navigation
+  _navVersion = 0;
+  _activeScreen = null;
+  _navStack = [];
+  navState.screen = null;
+  navState.overlay = null;
+  navState.modal = null;
+  navState.chatTarget = null;
+  navState.bubbleChatId = null;
+  navState.personSheetId = null;
+
+  // Flow flags
+  flowClearAll();
+
+  // Home / radar
+  if (typeof _homeDartboardProfiles !== 'undefined') _homeDartboardProfiles = [];
+  if (typeof _dartboardDataLoaded !== 'undefined') _dartboardDataLoaded = false;
+  if (typeof _homeLoading !== 'undefined') _homeLoading = false;
+  if (typeof proxAllProfiles !== 'undefined') proxAllProfiles = [];
+
+  // Chat
+  if (typeof bcBubbleId !== 'undefined') bcBubbleId = null;
+  if (typeof bcBubbleData !== 'undefined') bcBubbleData = null;
+  if (typeof bcSubscription !== 'undefined') bcSubscription = null;
+  if (typeof bcEditingId !== 'undefined') bcEditingId = null;
+  if (typeof bcCurrentMsgId !== 'undefined') bcCurrentMsgId = null;
+  if (typeof bcMsgHistories !== 'undefined') bcMsgHistories = {};
+  if (typeof dmEditingId !== 'undefined') dmEditingId = null;
+  if (typeof dmSending !== 'undefined') dmSending = false;
+
+  // Unread / badges
+  if (typeof _unreadCount !== 'undefined') _unreadCount = 0;
+
+  // Profile cache
+  if (typeof _profileCache !== 'undefined') _profileCache = {};
+  if (typeof _blockedUsers !== 'undefined') _blockedUsers = [];
+
+  // Timers
+  if (typeof _radarRefreshTimer !== 'undefined' && _radarRefreshTimer) { clearInterval(_radarRefreshTimer); _radarRefreshTimer = null; }
+  if (typeof _dmBroadcastTypingTimer !== 'undefined' && _dmBroadcastTypingTimer) { clearTimeout(_dmBroadcastTypingTimer); _dmBroadcastTypingTimer = null; }
+
+  console.debug('[resetAppState] All session state cleared');
+}
+
+// ══════════════════════════════════════════════════════════
+//  APP MODE — SINGLE SOURCE OF TRUTH for app state + live context
 //  Modes: 'normal' | 'live' | 'event' | 'guest'
-//  Writers: appMode.set() from b-home.js and b-live.js only
-//  Readers: anyone via appMode.is(), appMode.get(), appMode.live
+//  Live state: bubble context + checked-in user IDs
+//  Writers: appMode.set() / appMode.clearLive() / appMode.setCheckedInIds()
+//  Readers: appMode.is(), appMode.get(), appMode.live, appMode.checkedInIds
 // ══════════════════════════════════════════════════════════
 var appMode = {
   _mode: 'normal',
   _liveCtx: null, // { bubbleId, bubbleName, memberCount, expiryStr }
+  _checkedInIds: [], // user IDs currently checked in to active live bubble
 
   // Read
   get: function() { return this._mode; },
   is: function(m) { return this._mode === m; },
   get live() { return this._liveCtx; },
+  get checkedInIds() { return this._checkedInIds; },
 
   // Write
   set: function(mode, ctx) {
     this._mode = mode || 'normal';
-    if (mode === 'live' && ctx) { this._liveCtx = ctx; }
-    else if (mode !== 'live') { this._liveCtx = null; }
+    if (mode === 'live' && ctx) {
+      this._liveCtx = ctx;
+      // Sync legacy global for code that still reads it directly
+      currentLiveBubble = ctx;
+    } else if (mode !== 'live') {
+      this._liveCtx = null;
+      currentLiveBubble = null;
+      this._checkedInIds = [];
+    }
+  },
+  setCheckedInIds: function(ids) {
+    this._checkedInIds = ids || [];
   },
   clearLive: function() {
     this._mode = 'normal';
     this._liveCtx = null;
+    this._checkedInIds = [];
+    currentLiveBubble = null;
   }
 };
 

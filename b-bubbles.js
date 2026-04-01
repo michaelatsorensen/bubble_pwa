@@ -2007,7 +2007,7 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
   // Check live status
   var psLiveEl = document.getElementById('ps-live-badge');
   if (psLiveEl) { psLiveEl.style.display = 'none'; psLiveEl.innerHTML = ''; }
-  var isLivePartner = (window._liveCheckedInIds || []).indexOf(userId) >= 0;
+  var isLivePartner = appMode.checkedInIds.indexOf(userId) >= 0;
   if (isLivePartner && psLiveEl) {
     var liveName = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble) ? currentLiveBubble.bubble_name : '';
     psLiveEl.innerHTML = '<span class="live-badge-mini">LIVE</span>' + (liveName ? ' ' + escHtml(liveName) : '');

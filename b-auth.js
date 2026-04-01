@@ -169,9 +169,7 @@ function setupAuthListener() {
       // User signed out (possibly in another tab)
       bcUnsubscribeAll();
       rtUnsubscribeAll();
-      currentUser = null;
-      currentProfile = null;
-      _profileCache = {};
+      resetAppState();
       redirectToLanding();
     } else if (event === 'TOKEN_REFRESHED' && session) {
       // Token refreshed — update user reference
@@ -407,8 +405,7 @@ async function handleLogout() {
       }
     } catch(e2) { console.debug('[logout] push cleanup:', e2); }
     await sb.auth.signOut();
-    currentUser = null; currentProfile = null;
-    flowClearAll(); // Prevent stale flags from affecting next login
+    resetAppState(); // Clear ALL session state
     goTo('screen-auth');
   } catch(e) { logError("handleLogout", e); errorToast("load", e); }
 }
