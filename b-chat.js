@@ -446,15 +446,20 @@ async function bcRefreshMembership() {
     var { data: myM } = await sb.from('bubble_members').select('id,status,role')
       .eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id).maybeSingle();
     var wasMember = bcBubbleData._isMember;
+    var wasAdmin = bcBubbleData._isAdmin;
+    var wasOwner = bcBubbleData._isOwner;
     var isPending = myM && myM.status === 'pending';
     var isMember = !!myM && !isPending;
     bcBubbleData._isMember = isMember;
     bcBubbleData._isPending = isPending;
     bcBubbleData._isAdmin = myM && myM.role === 'admin';
+    // Re-derive ownership from bubble data
+    bcBubbleData._isOwner = currentUser && bcBubbleData.created_by === currentUser.id;
     bcBubbleData._canEdit = bcBubbleData._isOwner || bcBubbleData._isAdmin;
 
-    // If membership state changed, re-render full UI
-    if (wasMember !== isMember) {
+    // If any role/membership state changed, re-render UI
+    var roleChanged = (wasMember !== isMember) || (wasAdmin !== bcBubbleData._isAdmin) || (wasOwner !== bcBubbleData._isOwner);
+    if (roleChanged) {
       bcRenderActions(bcBubbleData, myM, bcBubbleData._canEdit, isPending);
       bcRenderPendingBanner(isPending);
       if (_bcActiveTab === 'info') bcLoadInfo();
@@ -463,6 +468,14 @@ async function bcRefreshMembership() {
         if (bcSubscription) { bcSubscription.unsubscribe(); bcSubscription = null; }
         bcSwitchTab('info');
         _renderToast('Du er fjernet fra boblen', 'error');
+      }
+      // Ownership gained
+      if (!wasOwner && bcBubbleData._isOwner) {
+        showSuccessToast('Du er nu ejer af denne boble');
+      }
+      // Admin granted
+      if (!wasAdmin && bcBubbleData._isAdmin) {
+        showSuccessToast('Du er nu admin i denne boble');
       }
     }
   } catch(e) { logError('bcRefreshMembership', e); }
@@ -537,6 +550,9 @@ function bcSubscribeRealtime() {
       async (payload) => {
         const m = payload.new;
         if (m.user_id === currentUser.id) return;
+        // Duplicate guard: skip if already in DOM
+        var existing = document.querySelector('[data-bc-msg-id="' + m.id + '"]');
+        if (existing) return;
         m.profiles = await getCachedProfile(m.user_id);
         const panel = document.getElementById('bc-panel-chat');
         if (panel.style.display !== 'none') {
@@ -573,9 +589,11 @@ function bcSubscribeRealtime() {
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
       () => { bcLoadMembers(); bcLoadBubbleInfo(); bcRefreshMembership(); })
     .on('postgres_changes', {event:'UPDATE', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
-      () => { bcLoadMembers(); bcLoadBubbleInfo(); })
+      () => { bcLoadMembers(); bcLoadBubbleInfo(); bcRefreshMembership(); })
     .on('postgres_changes', {event:'DELETE', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
       () => { bcLoadMembers(); bcLoadBubbleInfo(); bcRefreshMembership(); })
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'bubbles', filter:`id=eq.${bcBubbleId}`},
+      () => { bcLoadBubbleInfo(); bcLoadMembers(); if (_bcActiveTab === 'info') bcLoadInfo(); })
     .subscribe(typeof _rtStatusCallback === 'function' ? _rtStatusCallback('bc-' + bcBubbleId) : undefined);
 }
 
@@ -584,15 +602,24 @@ async function bcLoadBubbleInfo() {
   try {
     const { data: b } = await sb.from('bubbles').select('*').eq('id', bcBubbleId).maybeSingle();
     if (!b) return;
-    // Preserve membership flags when refreshing bubble data
-    var savedFlags = {};
-    if (bcBubbleData) {
-      ['_isMember','_isOwner','_isAdmin','_canEdit','_isPending'].forEach(function(k) {
-        if (bcBubbleData[k] !== undefined) savedFlags[k] = bcBubbleData[k];
-      });
-    }
+    // Re-derive ownership from fresh data (critical for ownership transfer)
+    var wasOwner = bcBubbleData ? bcBubbleData._isOwner : false;
     bcBubbleData = b;
-    Object.keys(savedFlags).forEach(function(k) { bcBubbleData[k] = savedFlags[k]; });
+    bcBubbleData._isOwner = currentUser && b.created_by === currentUser.id;
+    // Membership flags from current state
+    var { data: myM } = await sb.from('bubble_members').select('id,status,role')
+      .eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id).maybeSingle();
+    var isPending = myM && myM.status === 'pending';
+    bcBubbleData._isMember = !!myM && !isPending;
+    bcBubbleData._isPending = isPending;
+    bcBubbleData._isAdmin = myM && myM.role === 'admin';
+    bcBubbleData._canEdit = bcBubbleData._isOwner || bcBubbleData._isAdmin;
+
+    // If ownership just changed, re-render actions
+    if (wasOwner !== bcBubbleData._isOwner) {
+      bcRenderActions(bcBubbleData, myM, bcBubbleData._canEdit, isPending);
+      if (_bcActiveTab === 'info') bcLoadInfo();
+    }
 
     var iconEl = document.getElementById('bc-topbar-icon');
     if (iconEl) {
@@ -611,16 +638,17 @@ async function bcLoadBubbleInfo() {
     var statusText = memberCount2 + (isEvent ? ' deltagere' : ' medlemmer');
 
     // Check membership + live status for subtitle
-    var { data: myM } = await sb.from('bubble_members').select('checked_in_at,checked_out_at').eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id).maybeSingle();
-    var isLive = myM && myM.checked_in_at && !myM.checked_out_at && (Date.now() - new Date(myM.checked_in_at).getTime() < 6*3600000);
+    var myMFull = null;
+    try { var { data: mf } = await sb.from('bubble_members').select('checked_in_at,checked_out_at').eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id).maybeSingle(); myMFull = mf; } catch(e) {}
+    var isLive = myMFull && myMFull.checked_in_at && !myMFull.checked_out_at && (Date.now() - new Date(myMFull.checked_in_at).getTime() < 6*3600000);
     var countEl = document.getElementById('bc-members-count');
     if (countEl) {
       if (isLive) {
-        var expiry = new Date(new Date(myM.checked_in_at).getTime() + 6*3600000);
+        var expiry = new Date(new Date(myMFull.checked_in_at).getTime() + 6*3600000);
         var hh = expiry.getHours().toString().padStart(2,'0');
         var mm = expiry.getMinutes().toString().padStart(2,'0');
         countEl.innerHTML = statusText + ' · <span style="color:#1A9E8E">LIVE</span> <span style="opacity:0.6">udl. ' + hh + ':' + mm + '</span>';
-      } else if (myM) {
+      } else if (myMFull) {
         countEl.textContent = statusText + ' · Medlem ✓';
       } else {
         countEl.textContent = statusText;
@@ -819,6 +847,7 @@ function bcRenderMsg(m) {
   const row = document.createElement('div');
   row.className = 'msg-row msg-' + gp + (isMe ? ' me' : '');
   row.id = 'bc-msg-' + m.id;
+  row.setAttribute('data-bc-msg-id', m.id);
   row.setAttribute('oncontextmenu', "event.preventDefault();bcLongPress('" + m.id + "'," + isMe + ")");
   row.setAttribute('ontouchstart', "bcTouchStart(event,'" + m.id + "'," + isMe + ")");
   row.setAttribute('ontouchend', 'bcTouchEnd()');

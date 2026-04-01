@@ -144,8 +144,9 @@ function rtUnsubscribeAll() {
 
 // ── Helpers: instant badge manipulation ──
 function dmBadgeClear() {
-  _unreadCount = 0;
-  document.querySelectorAll('.msg-unread-badge').forEach(function(b) { b.style.display = 'none'; });
+  // Recount from DB when entering messages screen
+  // Individual messages get marked read when opening specific chats
+  _unreadRecount();
 }
 
 function notifBadgeSet(n) {
@@ -415,7 +416,7 @@ async function loadMessages() {
     if (_navVersion !== myNav) return;
 
     if (!convs || convs.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">Ingen beskeder endnu</div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-home\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">Find folk på radaren →</button></div></div>';
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">Ingen samtaler endnu<br><span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400">Tryk Besked på en profil eller scan en QR for at starte</span></div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-home\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">Gå til radaren</button></div></div>';
       return;
     }
 

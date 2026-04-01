@@ -73,6 +73,20 @@ function _personReset() {
   if (matchEl) { matchEl.textContent = ''; matchEl.style.display = 'none'; }
   var bubSec = document.getElementById('person-bubbles-section');
   if (bubSec) bubSec.style.display = 'none';
+  // Skeleton loading state
+  var nameEl = document.getElementById('person-name');
+  if (nameEl) nameEl.innerHTML = '<div class="skel" style="width:140px;height:16px;display:inline-block"></div>';
+  var roleEl = document.getElementById('person-role');
+  if (roleEl) roleEl.innerHTML = '<div class="skel" style="width:100px;height:12px;display:inline-block"></div>';
+  var personAvEl = document.getElementById('person-avatar');
+  if (personAvEl) personAvEl.innerHTML = '';
+  var overlapEl = document.getElementById('person-overlap');
+  if (overlapEl) overlapEl.innerHTML = '';
+  var bioS = document.getElementById('person-bio-inline');
+  if (bioS) bioS.style.display = 'none';
+  var tagS = document.getElementById('person-tags-section');
+  if (tagS) tagS.style.display = 'none';
+  document.getElementById('person-dynamic-keywords').innerHTML = '';
 }
 
 function _personRenderEmpty() {

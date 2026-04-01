@@ -1483,7 +1483,11 @@ function renderHomeDartboard() {
     } else if (_homeRadarFilter !== 'all') {
       showDartboardEmpty(_homeRadarFilter);
     } else {
-      av.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:var(--muted)">Join en boble for at se matches</div>';
+      av.innerHTML = '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0 2rem">' +
+        '<div style="font-size:0.82rem;font-weight:700;color:var(--text)">Din radar er tom</div>' +
+        '<div style="font-size:0.72rem;color:var(--muted);text-align:center;line-height:1.4">Join et netværk eller scan en QR-kode for at se folk i nærheden</div>' +
+        '<button class="btn-primary" onclick="bbSwitchTab(\'explore\');goTo(\'screen-bubbles\')" style="font-size:0.75rem;padding:0.5rem 1.2rem;margin-top:6px">Opdag netværk</button>' +
+        '</div>';
     }
     return;
   }

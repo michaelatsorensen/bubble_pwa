@@ -753,6 +753,8 @@ if ('serviceWorker' in navigator) {
       } else if (t === 'checkin' && d.bubble_id) {
         if (currentUser) openBubbleChat(d.bubble_id, 'screen-home');
       }
+      // Refresh badges after push navigation
+      setTimeout(function() { _unreadRecount(); updateTopbarNotifBadge(); }, 500);
     }
   });
 
@@ -970,8 +972,18 @@ async function flushAnalytics() {
 
 // O2: Flush on visibility change (more reliable than beforeunload)
 document.addEventListener('visibilitychange', function() {
-  if (document.hidden && _analyticsQueue.length > 0) {
-    flushAnalytics().catch(function() {});
+  if (document.hidden) {
+    // App backgrounded → flush analytics
+    if (_analyticsQueue.length > 0) flushAnalytics().catch(function() {});
+  } else {
+    // App returned to foreground → refresh stale data
+    if (!currentUser) return;
+    _unreadRecount();
+    updateTopbarNotifBadge();
+    // Refresh active screen data
+    if (_activeScreen === 'screen-messages') loadMessages();
+    else if (_activeScreen === 'screen-home') { loadHome(); }
+    else if (_activeScreen === 'screen-notifications') loadNotifications();
   }
 });
 
