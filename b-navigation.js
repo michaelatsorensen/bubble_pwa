@@ -208,7 +208,6 @@ function _navLeaveBubbleChat() {
   // Reset bubble chat state
   if (typeof bcEditingId !== 'undefined') bcEditingId = null;
   if (typeof bcCurrentMsgId !== 'undefined') bcCurrentMsgId = null;
-  try { bcCloseContext(); } catch(e) {}
   try { cancelLeaveBubble(); } catch(e) {}
   navState.bubbleChatId = null;
 }

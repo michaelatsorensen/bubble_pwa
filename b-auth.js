@@ -187,7 +187,7 @@ async function loadCurrentProfile() {
       // Check if user is banned
       if (data.banned) {
         await sb.auth.signOut();
-        _renderToast('Din konto er blevet suspenderet. Kontakt info@bubbleme.dk', 'error');
+        _renderToast(t('toast_account_suspended'), 'error');
         goTo('screen-auth');
         return;
       }

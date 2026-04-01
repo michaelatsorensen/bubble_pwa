@@ -15,7 +15,7 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
 const BUILD_TIMESTAMP = '2026-03-29T14:00:00';
-const BUILD_VERSION  = 'v8.1.0';
+const BUILD_VERSION  = 'v8.1.2';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -155,7 +155,7 @@ var _activeScreen = null;
 
 // ── Centralized flow state (dual storage for OAuth redirect survival) ──
 // Keys: pending_contact, pending_join, event_flow, post_tags_destination
-// Writes to BOTH sessionStorage and localStorage (with 5-min TTL)
+// Writes to BOTH sessionStorage and localStorage (with 15-min TTL)
 // Reads from sessionStorage first, falls back to localStorage
 // Survives: page reloads, OAuth redirects, Safari private mode
 var _flowStatePrefix = 'bf_'; // bf = bubble flow

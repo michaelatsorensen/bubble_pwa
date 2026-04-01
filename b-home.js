@@ -1338,6 +1338,7 @@ function updateAnonToggle() {
 // ══════════════════════════════════════════════════════════
 var _homeDartboardProfiles = [];
 var _homeRadarFilter = 'all';
+var _dartboardDataLoaded = false;
 
 async function loadHomeDartboardData() {
   try {
@@ -1347,6 +1348,7 @@ async function loadHomeDartboardData() {
       .select('id,name,title,keywords,dynamic_keywords,bio,linkedin,is_anon,avatar_url')
       .neq('id', currentUser.id).neq('banned', true).limit(200);
     if (!allProfiles || allProfiles.length === 0) {
+      _dartboardDataLoaded = true;
       if (_homeViewMode !== 'live') renderHomeDartboard();
       return;
     }
@@ -1378,6 +1380,7 @@ async function loadHomeDartboardData() {
 
     // Store all profiles for 'all' mode — but don't overwrite live dartboard
     proxAllProfiles = scored;
+    _dartboardDataLoaded = true;
     if (_homeViewMode !== 'live') {
       _homeDartboardProfiles = scored;
       renderHomeDartboard();
@@ -1478,6 +1481,8 @@ function renderHomeDartboard() {
 
   if (profiles.length === 0) {
     av.innerHTML = '';
+    // Don't show empty state until data has actually loaded — prevents flash
+    if (!_dartboardDataLoaded) return;
     if (_homeViewMode === 'live') {
       av.innerHTML = '<div class="dartboard-empty" style="position:absolute;top:50%;left:50%;transform:translate(-50%, calc(-100% - 40px));text-align:center;padding:0.6rem 1.2rem;background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:12px;border:1px solid var(--glass-border-subtle);box-shadow:0 2px 8px rgba(30,27,46,0.06);white-space:nowrap">' +
         '<div style="font-size:0.78rem;font-weight:600;color:var(--text)">' + t('home_first_here') + '</div>' +

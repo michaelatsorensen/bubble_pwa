@@ -305,6 +305,7 @@ da: {
   pf_edit: 'Rediger profil',
   pf_my_bubbles: 'Mine bobler',
   pf_saved_contacts: 'Gemte kontakter',
+  pf_tab_saved: 'Gemte',
   pf_no_saved: 'Ingen gemte kontakter endnu.',
   pf_no_saved_desc: 'Tryk Gem på en profil for at huske dem.',
   pf_settings: 'Indstillinger',
@@ -373,6 +374,7 @@ da: {
   toast_checked_in_name: '{name} checked ind!',
   toast_enter_email: 'Indtast din email først',
   toast_sending_reset: 'Sender nulstillingslink...',
+  toast_account_suspended: 'Din konto er blevet suspenderet. Kontakt info@bubbleme.dk',
 
   // ── Live ──
   live_badge: 'LIVE',
@@ -703,6 +705,7 @@ en: {
   pf_edit: 'Edit profile',
   pf_my_bubbles: 'My bubbles',
   pf_saved_contacts: 'Saved contacts',
+  pf_tab_saved: 'Saved',
   pf_no_saved: 'No saved contacts yet.',
   pf_no_saved_desc: 'Tap Save on a profile to remember them.',
   pf_settings: 'Settings',
@@ -771,6 +774,7 @@ en: {
   toast_checked_in_name: '{name} checked in!',
   toast_enter_email: 'Enter your email first',
   toast_sending_reset: 'Sending reset link...',
+  toast_account_suspended: 'Your account has been suspended. Contact info@bubbleme.dk',
 
   // ── Live ──
   live_badge: 'LIVE',

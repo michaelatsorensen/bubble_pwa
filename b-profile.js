@@ -1138,8 +1138,7 @@ function _updateLangBtns() {
 }
 
 function switchAppLanguage(lang) {
-  setLang(lang);
-  translateStaticUI();
+  setLang(lang); // setLang already calls translateStaticUI()
   _updateLangBtns();
   // Refresh active screen to pick up new language
   if (_activeScreen === 'screen-home') loadHome();
