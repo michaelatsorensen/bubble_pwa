@@ -1327,6 +1327,20 @@ async function bcLoadMembers() {
       return;
     }
 
+    // Privacy gate: non-members only see count on private/hidden bubbles
+    var vis = bcBubbleData?.visibility || 'public';
+    var isMember = bcBubbleData?._isMember;
+    if (!isMember && (vis === 'private' || vis === 'hidden')) {
+      var activeCount = members.filter(function(m) { return m.status !== 'pending'; }).length;
+      var isEvent = bcBubbleData?.type === 'event' || bcBubbleData?.type === 'live';
+      var memberLabel = isEvent ? 'deltagere' : 'medlemmer';
+      list.innerHTML = '<div class="empty-state" style="padding:2rem 1rem">' +
+        '<div class="empty-icon">' + icon('lock') + '</div>' +
+        '<div class="empty-text">' + activeCount + ' ' + memberLabel + '<br>' +
+        '<span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400">Medlemslisten er kun synlig for medlemmer</span></div></div>';
+      return;
+    }
+
     // Hent profiler separat
     const userIds = members.map(m => m.user_id);
     const { data: profiles } = await sb.from('profiles').select('id, name, title, workplace, avatar_url').in('id', userIds);
