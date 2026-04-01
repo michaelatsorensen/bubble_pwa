@@ -1151,9 +1151,8 @@ async function checkQRJoin() {
 
 async function checkPendingJoin() {
   try {
-    const joinId = flowGet('pending_join');
+    const joinId = consumeFlow('pending_join');
     if (!joinId) return;
-    flowRemove('pending_join');
 
     // Join bubble
     const { error } = await sb.from('bubble_members')
@@ -1179,23 +1178,21 @@ async function checkPendingJoin() {
       await sb.from('bubble_members')
         .update({ checked_in_at: new Date().toISOString(), checked_out_at: null })
         .eq('bubble_id', joinId).eq('user_id', currentUser.id);
-      flowRemove('event_flow');
+      consumeFlow('event_flow');
       showSuccessToast(t('toast_checkedin'));
       goTo('screen-home');
       setTimeout(function() { openBubbleChat(joinId, 'screen-home'); }, 400);
-      // Home will detect live context and show Live tab
     } else if (isEventFlow && isEvent) {
-      // Mode B: show QR for organizer to scan
-      // event_flow flag stays — handled by checkAuth → showEventReadyQR()
+      // Mode B: show QR for organizer to scan — event_flow stays for showEventReadyQR
       showSuccessToast(t('toast_joined'));
     } else {
       // Normal bubble join (not event)
-      if (isEventFlow) flowRemove('event_flow');
+      consumeFlow('event_flow');
       showSuccessToast(t('toast_joined'));
       _bbAfterJoin(joinId);
       await openBubble(joinId, 'screen-home');
     }
-  } catch(e) { logError("checkPendingJoin", e); flowRemove('event_flow'); errorToast("save", e); }
+  } catch(e) { logError("checkPendingJoin", e); consumeFlow('event_flow'); errorToast("save", e); }
 }
 
 

@@ -90,18 +90,14 @@ async function resolvePostAuthDestination() {
 
   // Step 4: event flow (from event QR)
   var isEventFlow = flowGet('event_flow');
-  var postTagsDest = flowGet('post_tags_destination');
 
   if (isEventFlow) {
     await checkPendingJoin(); // Step 5 inside event context
     var stillEventFlow = flowGet('event_flow');
     if (stillEventFlow) {
-      flowRemove('event_flow');
+      consumeFlow('event_flow');
       showEventReadyQR();
     }
-  } else if (postTagsDest === 'event_bubble') {
-    flowRemove('post_tags_destination');
-    eventReadyGoToEvent();
   } else {
     // Step 5: pending join (from bubble invite link)
     await checkPendingJoin();

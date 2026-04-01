@@ -517,17 +517,13 @@ function spContinueToSignup() {
 async function checkPendingContact() {
   try {
     if (!currentUser) return null;
-    var contactId = flowGet('pending_contact');
-    if (!contactId || contactId === currentUser.id) {
-      flowRemove('pending_contact');
-      return null;
-    }
+    var contactId = consumeFlow('pending_contact');
+    if (!contactId || contactId === currentUser.id) return null;
     // Auto-save the contact
     var { error } = await sb.from('saved_contacts').upsert({
       user_id: currentUser.id,
       contact_id: contactId
     });
-    flowRemove('pending_contact');
     if (!error) {
       showSuccessToast(t('toast_saved'));
       trackEvent('qr_contact_saved', { contact_id: contactId });
@@ -535,7 +531,6 @@ async function checkPendingContact() {
     return contactId;
   } catch(e) {
     logError('checkPendingContact', e);
-    flowRemove('pending_contact');
     return null;
   }
 }
@@ -714,9 +709,8 @@ async function showEventReadyQR() {
 }
 
 function eventReadyGoToEvent() {
-  var bubbleId = flowGet('pending_join');
-  flowRemove('pending_join');
-  flowRemove('post_tags_destination');
+  var bubbleId = consumeFlow('pending_join');
+  consumeFlow('post_tags_destination');
   if (bubbleId) {
     goTo('screen-home');
     loadHome();
