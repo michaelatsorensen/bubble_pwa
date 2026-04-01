@@ -539,6 +539,8 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
     // Non-members land on Info first so they can read about the bubble
     bcSwitchTab('info');
   }
+  // Update chat lock state
+  bcUpdateChatLockUI();
 }
 
 // ── Realtime subscription: only call AFTER data is loaded ──
@@ -654,6 +656,8 @@ async function bcLoadBubbleInfo() {
         countEl.textContent = statusText;
       }
     }
+    // Always refresh chat lock UI when bubble data changes
+    bcUpdateChatLockUI();
   } catch(e) { logError("bcLoadBubbleInfo", e); }
 }
 
@@ -922,9 +926,51 @@ async function getCachedProfile(userId) {
 }
 
 let bcSending = false;
+// ── Chat lock: owner/admin can disable chat for members ──
+async function bcToggleChatLock(bubbleId, locked) {
+  try {
+    var { error } = await sb.from('bubbles').update({ chat_locked: locked }).eq('id', bubbleId);
+    if (error) { errorToast('save', error); return; }
+    if (bcBubbleData) bcBubbleData.chat_locked = locked;
+    bcUpdateChatLockUI();
+    showSuccessToast(locked ? 'Chat lukket for medlemmer' : 'Chat åbnet for alle');
+  } catch(e) { logError('bcToggleChatLock', e); errorToast('save', e); }
+}
+
+function bcUpdateChatLockUI() {
+  var composer = document.querySelector('#bc-panel-chat .chat-composer');
+  var lockBanner = document.getElementById('bc-chat-lock-banner');
+  if (!bcBubbleData) return;
+  var locked = bcBubbleData.chat_locked || false;
+  var canPost = bcBubbleData._isOwner || bcBubbleData._isAdmin;
+
+  if (locked && !canPost) {
+    // Hide composer, show banner
+    if (composer) composer.style.display = 'none';
+    if (!lockBanner) {
+      lockBanner = document.createElement('div');
+      lockBanner.id = 'bc-chat-lock-banner';
+      lockBanner.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 16px;background:rgba(245,158,11,0.06);border-top:1px solid rgba(245,158,11,0.15);color:#78350F;font-size:0.75rem;font-weight:600';
+      lockBanner.innerHTML = '<span style="font-size:13px;display:flex">' + ico('lock') + '</span> Chat er lukket af ejeren';
+      var panel = document.getElementById('bc-panel-chat');
+      if (panel) panel.appendChild(lockBanner);
+    }
+    lockBanner.style.display = 'flex';
+  } else {
+    // Show composer, hide banner
+    if (composer) composer.style.display = '';
+    if (lockBanner) lockBanner.style.display = 'none';
+  }
+}
+
 async function bcSendMessage() {
   try {
   if (bcSending) return;
+  // Chat lock guard
+  if (bcBubbleData?.chat_locked && !bcBubbleData._isOwner && !bcBubbleData._isAdmin) {
+    showWarningToast('Chat er lukket af ejeren');
+    return;
+  }
   bcSending = true;
   var sendBtn = document.getElementById("bc-send-btn");
   if (sendBtn) { sendBtn.disabled = true; }
@@ -1565,9 +1611,10 @@ async function bcLoadInfo() {
                 var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) : '';
                 var isEvt = ev.type === 'event' || ev.type === 'live';
                 if (isEvt) {
+                  var gcEvLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
                   childCards += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubble-chat\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
                   childCards += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
-                  childCards += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
+                  childCards += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + (gcEvLive ? ' <span class="live-badge-mini">LIVE</span>' : '') + '</div>';
                   childCards += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' tilmeldt' : '') + '</div></div>';
                   childCards += '<div class="bb-tree-go">\u203A</div>';
                   childCards += '</div></div>';
@@ -1596,9 +1643,10 @@ async function bcLoadInfo() {
               ? new Date(ch.event_date).toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' }) +
                 (new Date(ch.event_date).getHours() > 0 ? ' kl. ' + new Date(ch.event_date).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '')
               : '';
+            var chEvLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ch.id);
             childCards += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
             childCards += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
-            childCards += '<div style="flex:1;min-width:0"><div style="font-size:0.75rem;font-weight:600">' + escHtml(ch.name) + '</div>';
+            childCards += '<div style="flex:1;min-width:0"><div style="font-size:0.75rem;font-weight:600">' + escHtml(ch.name) + (chEvLive ? ' <span class="live-badge-mini">LIVE</span>' : '') + '</div>';
             childCards += '<div style="font-size:0.58rem;color:var(--muted)">' + visIcon(ch.visibility) + dateStr + ' \u00B7 ' + chMc + ' tilmeldt</div></div>';
             childCards += '<div class="bb-tree-go">\u203A</div>';
             childCards += '</div></div>';
@@ -1679,6 +1727,17 @@ async function bcLoadInfo() {
         '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('file') + '</span>' +
         '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">Download ' + memberLabel + 'liste</div>' +
         '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+      // Shared: chat lock toggle
+      var chatLocked = b.chat_locked || false;
+      adminItems += '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>' +
+        '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem">' +
+        '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('lock') + '</span>' +
+        '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">Luk chat for medlemmer</div>' +
+        '<label style="position:relative;width:36px;height:20px;flex-shrink:0;cursor:pointer">' +
+        '<input type="checkbox" ' + (chatLocked ? 'checked' : '') + ' onchange="bcToggleChatLock(\'' + b.id + '\',this.checked)" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;margin:0">' +
+        '<div style="position:absolute;inset:0;border-radius:10px;transition:background 0.2s;background:' + (chatLocked ? 'var(--accent)' : 'var(--border)') + '"></div>' +
+        '<div style="position:absolute;top:2px;left:' + (chatLocked ? '18px' : '2px') + ';width:16px;height:16px;border-radius:50%;background:white;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.15)"></div>' +
+        '</label></div>';
       // Event-only: rapport
       if (isEvent) {
         adminItems += '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>' +

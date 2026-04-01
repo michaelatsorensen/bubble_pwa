@@ -445,7 +445,9 @@ async function loadMessages() {
       const preview = isMine ? '<span style="color:var(--muted)">Du:</span> ' + previewText : previewText;
       const time = timeAgo(lastMsg.created_at);
       const isOnline = p.updated_at && (Date.now() - new Date(p.updated_at).getTime()) < 300000;
-      const onlineDot = isOnline ? '<div class="conv-online-dot"></div>' : '';
+      const isPartnerLive = (window._liveCheckedInIds || []).indexOf(partnerId) >= 0;
+      const onlineDot = isPartnerLive ? '<div class="conv-online-dot" style="background:#10B981;animation:livePulse 2s ease-in-out infinite"></div>' : (isOnline ? '<div class="conv-online-dot"></div>' : '');
+      const liveBadge = isPartnerLive ? ' <span class="live-badge-mini">LIVE</span>' : '';
       const convAvatar = '<div class="conv-avatar-wrap">' + (p.avatar_url ?
         '<div class="avatar" style="width:44px;height:44px;overflow:hidden;border-radius:50%"><img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover"></div>' :
         '<div class="avatar" style="background:linear-gradient(135deg,#6366F1,#7C5CFC);width:44px;height:44px">'+initials+'</div>') + onlineDot + '</div>';
@@ -453,7 +455,7 @@ async function loadMessages() {
         '<div class="flex-row-center" style="gap:0.75rem">' + convAvatar +
         '<div style="flex:1;min-width:0">' +
         '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:0.5rem">' +
-        '<div class="conv-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.name||'Ukendt') + '</div>' +
+        '<div class="conv-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.name||'Ukendt') + liveBadge + '</div>' +
         '<div class="conv-time">' + time + '</div></div>' +
         '<div class="conv-preview" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;margin-top:0.1rem">' + preview + '</div>' +
         '</div>' + (isUnread ? '<div class="conv-unread-dot"></div>' : '') +
@@ -473,10 +475,14 @@ async function openChat(userId, fromScreen) {
     window._chatPartnerAvatar = p?.avatar_url || null;
     document.getElementById('chat-name').textContent = currentChatName;
     document.getElementById('chat-role').textContent = [p?.title, p?.workplace].filter(Boolean).join(' \u00B7 ');
-    // Online status — check if user was active recently
+    // Online/Live status
     var lastActive = p?.updated_at || p?.last_sign_in_at;
     var roleEl = document.getElementById('chat-role');
-    if (lastActive && (Date.now() - new Date(lastActive).getTime()) < 300000) {
+    var isDmPartnerLive = (window._liveCheckedInIds || []).indexOf(userId) >= 0;
+    if (isDmPartnerLive) {
+      var dmLiveName = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble) ? currentLiveBubble.bubble_name : '';
+      roleEl.innerHTML = '<span class="live-badge-mini">LIVE</span>' + (dmLiveName ? ' <span style="color:var(--muted);font-size:0.65rem">' + escHtml(dmLiveName) + '</span>' : '');
+    } else if (lastActive && (Date.now() - new Date(lastActive).getTime()) < 300000) {
       roleEl.innerHTML = '<span style="color:#1A9E8E">● aktiv nu</span>';
     }
     // Personalized placeholder

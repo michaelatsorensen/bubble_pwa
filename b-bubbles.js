@@ -520,9 +520,10 @@ function openCreateEventModal() {
     if (typeGroup) typeGroup.style.display = 'none';
     var oldTypePills = document.getElementById('cb-type-pills');
     if (oldTypePills) oldTypePills.remove();
+    document.getElementById('cb-visibility').value = 'private';
     cbRenderPillSelect('cb-visibility', [
-      { value: 'public',  icon: 'globe', label: 'Offentlig' },
       { value: 'private', icon: 'lock',  label: 'Privat' },
+      { value: 'public',  icon: 'globe', label: 'Offentlig' },
       { value: 'hidden',  icon: 'eye',   label: 'Skjult' }
     ]);
     // Show event fields
@@ -566,9 +567,10 @@ function openCreateEventFromBubble(parentBubbleId) {
     cbRenderPillSelect('cb-type', [
       { value: 'event', icon: 'calendar', label: 'Event' }
     ]);
+    document.getElementById('cb-visibility').value = 'private';
     cbRenderPillSelect('cb-visibility', [
-      { value: 'public',  icon: 'globe', label: 'Offentlig' },
       { value: 'private', icon: 'lock',  label: 'Privat' },
+      { value: 'public',  icon: 'globe', label: 'Offentlig' },
       { value: 'hidden',  icon: 'eye',   label: 'Skjult' }
     ]);
     // Show parent attribution label
@@ -614,9 +616,10 @@ function openCreateSubBubble(parentBubbleId) {
     cbRenderPillSelect('cb-type', [
       { value: 'network', icon: 'bubble', label: 'Netværk' }
     ]);
+    document.getElementById('cb-visibility').value = 'private';
     cbRenderPillSelect('cb-visibility', [
-      { value: 'public',  icon: 'globe', label: 'Offentlig' },
       { value: 'private', icon: 'lock',  label: 'Privat' },
+      { value: 'public',  icon: 'globe', label: 'Offentlig' },
       { value: 'hidden',  icon: 'eye',   label: 'Skjult' }
     ]);
     var parentLabel = document.getElementById('cb-parent-label');
@@ -670,9 +673,10 @@ function openCreateNetworkModal() {
     if (typeGroup) typeGroup.style.display = 'none';
     var oldTypePills = document.getElementById('cb-type-pills');
     if (oldTypePills) oldTypePills.remove();
+    document.getElementById('cb-visibility').value = 'private';
     cbRenderPillSelect('cb-visibility', [
-      { value: 'public',  icon: 'globe', label: 'Offentlig' },
       { value: 'private', icon: 'lock',  label: 'Privat' },
+      { value: 'public',  icon: 'globe', label: 'Offentlig' },
       { value: 'hidden',  icon: 'eye',   label: 'Skjult' }
     ]);
   }, 50);
@@ -749,7 +753,7 @@ async function createBubble() {
     const desc = document.getElementById('cb-desc').value.trim();
     const location = document.getElementById('cb-location').value.trim();
     if (!name) return showWarningToast('Navn er påkrævet');
-    const visibility = document.getElementById('cb-visibility')?.value || 'public';
+    const visibility = document.getElementById('cb-visibility')?.value || 'private';
     // Pick up parent bubble id if set (from openCreateEventFromBubble)
     var modal = document.getElementById('bb-sheet-create-bubble');
     var parentBubbleId = (modal && modal.dataset.parentBubbleId) || null;
@@ -2000,6 +2004,15 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
   document.getElementById('ps-name').textContent = name || 'Ukendt';
   document.getElementById('ps-sub').textContent = title || '';
   document.getElementById('ps-bio').textContent = '';
+  // Check live status
+  var psLiveEl = document.getElementById('ps-live-badge');
+  if (psLiveEl) { psLiveEl.style.display = 'none'; psLiveEl.innerHTML = ''; }
+  var isLivePartner = (window._liveCheckedInIds || []).indexOf(userId) >= 0;
+  if (isLivePartner && psLiveEl) {
+    var liveName = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble) ? currentLiveBubble.bubble_name : '';
+    psLiveEl.innerHTML = '<span class="live-badge-mini">LIVE</span>' + (liveName ? ' ' + escHtml(liveName) : '');
+    psLiveEl.style.display = 'block';
+  }
   document.getElementById('ps-bubbleup-btn').style.display = 'flex';
   document.getElementById('ps-bubbleup-confirm').classList.remove('show');
   var psLabel = document.getElementById('ps-bubbleup-label');

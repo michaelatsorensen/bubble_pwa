@@ -922,9 +922,10 @@ async function loadMyNetworks() {
               var isPast = ev.event_date && new Date(ev.event_date) < now;
               var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
               var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) : '';
+              var gcLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
               html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
               html += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
-              html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
+              html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + (gcLive ? ' <span class="live-badge-mini">LIVE</span>' : '') + '</div>';
               html += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' tilmeldt' : '') + '</div></div>';
               html += '<div class="bb-tree-go">\u203A</div>';
               html += '</div></div>';
@@ -942,9 +943,10 @@ async function loadMyNetworks() {
           var isPast = ev.event_date && new Date(ev.event_date) < now;
           var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
           var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) : '';
+          var evLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
           html += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
           html += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
-          html += '<div style="flex:1;min-width:0"><div style="font-size:0.75rem;font-weight:600">' + escHtml(ev.name) + '</div>';
+          html += '<div style="flex:1;min-width:0"><div style="font-size:0.75rem;font-weight:600">' + escHtml(ev.name) + (evLive ? ' <span class="live-badge-mini">LIVE</span>' : '') + '</div>';
           html += '<div style="font-size:0.58rem;color:var(--muted)">' + visIcon(ev.visibility) + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' tilmeldt' : '') + '</div></div>';
           html += '<div class="bb-tree-go">\u203A</div>';
           html += '</div></div>';
@@ -1122,10 +1124,11 @@ function _bbEventCard(e, parentMap, gpMap, isPast) {
   } else if (parentName) {
     breadcrumb = '<div class="bb-breadcrumb"><span class="bb-bc-pill">\u21B3 ' + escHtml(parentName) + '</span></div>';
   }
+  var evCardLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === e.id);
   return '<div class="bb-tree-evt" data-action="openBubble" data-id="' + e.id + '" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5;' : '') + '">' +
     '<div class="bb-tree-evt-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>' +
     '<div style="flex:1;min-width:0">' +
-    '<div style="font-size:0.8rem;font-weight:600">' + escHtml(e.name) + '</div>' +
+    '<div style="font-size:0.8rem;font-weight:600">' + escHtml(e.name) + (evCardLive ? ' <span class="live-badge-mini">LIVE</span>' : '') + '</div>' +
     '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;flex-wrap:wrap;gap:2px">' + visIcon(e.visibility) + dateStr + '</div>' +
     breadcrumb +
     '</div><div class="bb-tree-go">\u203A</div></div>';
@@ -1540,7 +1543,8 @@ function renderHomeDartboard() {
     var inner = (p.avatar_url && !p.is_anon)
       ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
       : ini;
-    out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+pos.x.toFixed(1)+'px;top:'+pos.y.toFixed(1)+'px;background:'+col+';font-size:'+(sz<34?'0.48':'0.55')+'rem" onclick="event.stopPropagation();openRadarPerson(\''+p.id+'\')" data-id="'+p.id+'">'+inner+'</div>';
+    var liveIds = window._liveCheckedInIds || [];
+    out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+pos.x.toFixed(1)+'px;top:'+pos.y.toFixed(1)+'px;background:'+col+';font-size:'+(sz<34?'0.48':'0.55')+'rem" onclick="event.stopPropagation();openRadarPerson(\''+p.id+'\')" data-id="'+p.id+'">'+inner+(liveIds.indexOf(p.id)>=0?'<span class="live-dot" style="position:absolute;bottom:-1px;right:-1px;width:8px;height:8px;border:2px solid var(--bg)"></span>':'')+'</div>';
   }
   av.innerHTML = out;
 }
