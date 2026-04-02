@@ -815,7 +815,7 @@ async function loadMyNetworks() {
     var lvl3Map = {};
     if (lvl2NetIds.length > 0) {
       var { data: lvl3 } = await sb.from('bubbles')
-        .select('id, name, type, parent_bubble_id, event_date, location, bubble_members(count)')
+        .select('*, bubble_members(count)')
         .in('parent_bubble_id', lvl2NetIds)
         .eq('type', 'event')
         .order('event_date', { ascending: true, nullsFirst: false });
@@ -836,6 +836,50 @@ async function loadMyNetworks() {
     var _netIcoSm = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/></svg>';
     var _addIco = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>';
 
+    // ── Membership checkmark overlay (small green ✓ on icon) ──
+    var _memberCheck = '<div style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:#1A9E8E;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--bg)"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M5 12.5l5 5L20 7"/></svg></div>';
+
+    // ── Event time window check ──
+    // Returns: 'before' | 'active' | 'after' | 'no_date'
+    function _eventTimeWindow(ev) {
+      if (!ev.event_date) return 'no_date';
+      var start = new Date(ev.event_date);
+      var end = ev.event_end_date ? new Date(ev.event_end_date) : new Date(start.getTime() + 24 * 60 * 60 * 1000);
+      var windowStart = new Date(start.getTime() - 60 * 60 * 1000); // 1h before
+      var windowEnd = new Date(end.getTime() + 2 * 60 * 60 * 1000); // 2h after
+      if (now < windowStart) return 'before';
+      if (now > windowEnd) return 'after';
+      return 'active';
+    }
+
+    // ── "Gå Live" button HTML for an event ──
+    function _goLiveBtn(ev, isMember) {
+      if (!isMember) return '';
+      var mode = ev.checkin_mode || 'self';
+      var win = _eventTimeWindow(ev);
+      var isLiveHere = appMode.live && appMode.live.bubbleId === ev.id;
+      if (isLiveHere) return '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.15);color:#0F6E56;font-weight:700">LIVE</span>';
+      if (mode === 'scan') return '<span style="font-size:0.55rem;color:var(--muted)">' + t('live_scan_checkin') + '</span>';
+      if (win === 'before') {
+        var dateStr = new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' });
+        return '<span style="font-size:0.55rem;color:var(--muted)">' + t('live_starts') + ' ' + dateStr + '</span>';
+      }
+      if (win === 'after') return '<span style="font-size:0.55rem;color:var(--muted)">' + t('live_ended') + '</span>';
+      // Active window + self check-in
+      return '<button onclick="event.stopPropagation();quickGoLive(\'' + ev.id + '\',\'' + escHtml(ev.name).replace(/'/g,"\\'") + '\')" style="font-size:0.58rem;font-weight:700;padding:3px 8px;border-radius:7px;border:none;background:linear-gradient(135deg,#2ECFCF,#1A9E8E);color:white;cursor:pointer;font-family:inherit;white-space:nowrap">' + t('live_go_live') + '</button>';
+    }
+
+    // ── Accordion restore helper ──
+    function _accState(accId) {
+      return _bbAccordionOpen[accId] ? ' style="max-height:2000px;opacity:1"' : '';
+    }
+    function _accClass(accId) {
+      return _bbAccordionOpen[accId] ? '' : ' collapsed';
+    }
+    function _togClass(accId) {
+      return _bbAccordionOpen[accId] ? ' open' : '';
+    }
+
     parentNets.forEach(function(net) {
       var kids = childrenMap[net.id] || [];
       var isOwner = net.created_by === currentUser.id;
@@ -847,10 +891,10 @@ async function loadMyNetworks() {
       var totalChildren = childNets.length + childEvents.length;
       var mc = net.member_count ?? net.bubble_members?.[0]?.count ?? 0;
       var badgeParts = [];
-      if (childNets.length > 0) badgeParts.push(childNets.length + ' netv\u00E6rk');
+      if (childNets.length > 0) badgeParts.push(childNets.length + ' ' + t('bb_networks_count'));
       if (childEvents.length > 0) {
         var upN = childEvents.filter(function(e) { return e.event_date && new Date(e.event_date) >= now; }).length;
-        badgeParts.push(upN > 0 ? upN + ' kommende' : childEvents.length + ' events');
+        badgeParts.push(upN > 0 ? upN + ' ' + t('bb_upcoming') : childEvents.length + ' ' + t('bb_events_count'));
       }
       var badgeText = badgeParts.join(' \u00B7 ');
       var accId = 'acc-' + net.id.slice(0, 8);
@@ -861,16 +905,16 @@ async function loadMyNetworks() {
       html += '<div class="bb-tree-root-ico">' + _netIco + '</div>';
       html += '<div class="bb-tree-body" onclick="openBubbleChat(\'' + net.id + '\',\'screen-bubbles\')">';
       html += '<div style="font-size:0.8rem;font-weight:700">' + escHtml(net.name) + '</div>';
-      html += '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px;flex-wrap:wrap">' + visIcon(net.visibility) + mc + ' medlemmer' + (badgeText ? ' \u00B7 ' + badgeText : '') + '</div>';
+      html += '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px;flex-wrap:wrap">' + visIcon(net.visibility) + mc + ' ' + t('bb_members') + (badgeText ? ' \u00B7 ' + badgeText : '') + '</div>';
       html += '</div>';
       if (totalChildren > 0) {
-        html += '<button class="bb-tree-toggle" id="tog-' + accId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + accId + '\')">' + _chevSvg + '</button>';
+        html += '<button class="bb-tree-toggle' + _togClass(accId) + '" id="tog-' + accId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + accId + '\')">' + _chevSvg + '</button>';
       }
       html += '</div>';
 
       // Children
       if (totalChildren > 0) {
-        html += '<div class="bb-tree-trunk collapsed" id="trunk-' + accId + '">';
+        html += '<div class="bb-tree-trunk' + _accClass(accId) + '" id="trunk-' + accId + '"' + _accState(accId) + '>';
 
         // Child networks (level 2)
         childNets.forEach(function(cn) {
@@ -884,26 +928,26 @@ async function loadMyNetworks() {
 
           html += '<div class="bb-tree-branch">';
           html += '<div class="bb-tree-net" style="' + (isGhost && !isMember ? 'opacity:0.55;border-style:dashed;' : '') + '">';
-          html += '<div class="bb-tree-net-ico">' + _netIcoSm + '</div>';
+          html += '<div style="position:relative">' + '<div class="bb-tree-net-ico">' + _netIcoSm + '</div>' + (isMember ? _memberCheck : '') + '</div>';
           if (isMember) {
             html += '<div class="bb-tree-body" onclick="event.stopPropagation();openBubbleChat(\'' + cn.id + '\',\'screen-bubbles\')">';
           } else {
             html += '<div class="bb-tree-body">';
           }
           html += '<div style="font-size:0.75rem;font-weight:600">' + escHtml(cn.name) + '</div>';
-          html += '<div style="font-size:0.58rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(cn.visibility) + cnMc + ' medl.' + (cnEvents.length > 0 ? ' \u00B7 ' + cnEvents.length + ' events' : '') + '</div>';
+          html += '<div style="font-size:0.58rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(cn.visibility) + cnMc + ' ' + t('bb_members_short') + (cnEvents.length > 0 ? ' \u00B7 ' + cnEvents.length + ' ' + t('bb_events_count') : '') + '</div>';
           if (!isMember) {
-            html += '<div style="margin-top:3px"><button onclick="event.stopPropagation();joinBubble(\'' + cn.id + '\')" style="font-size:0.58rem;padding:2px 8px;border-radius:6px;border:1px solid rgba(124,92,252,0.2);background:rgba(124,92,252,0.06);color:var(--accent);cursor:pointer;font-family:inherit;font-weight:600">Bliv medlem \u2192</button></div>';
+            html += '<div style="margin-top:3px"><button onclick="event.stopPropagation();joinBubble(\'' + cn.id + '\')" style="font-size:0.58rem;padding:2px 8px;border-radius:6px;border:1px solid rgba(124,92,252,0.2);background:rgba(124,92,252,0.06);color:var(--accent);cursor:pointer;font-family:inherit;font-weight:600">' + t('bb_join_member') + '</button></div>';
           }
           html += '</div>';
           if (hasChildren) {
-            html += '<button class="bb-tree-toggle" id="tog-' + cnAccId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + cnAccId + '\')" style="width:24px;height:24px">' + _chevSm + '</button>';
+            html += '<button class="bb-tree-toggle' + _togClass(cnAccId) + '" id="tog-' + cnAccId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + cnAccId + '\')" style="width:24px;height:24px">' + _chevSm + '</button>';
           }
           html += '</div>';
 
           // Level 3: events + adopted grandchildren
           if (hasChildren) {
-            html += '<div class="bb-tree-leaves collapsed" id="trunk-' + cnAccId + '">';
+            html += '<div class="bb-tree-leaves' + _accClass(cnAccId) + '" id="trunk-' + cnAccId + '"' + _accState(cnAccId) + '>';
 
             // Adopted grandchildren (member networks nested under ghost parent)
             cnAdopted.forEach(function(gc) {
@@ -923,15 +967,16 @@ async function loadMyNetworks() {
               var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
               var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
               var gcLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
-              html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
-              html += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
+              var evIsMember = myIds.indexOf(ev.id) >= 0;
+              html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast && !gcLive ? 'opacity:0.5' : '') + (!evIsMember ? 'opacity:0.65' : '') + '">';
+              html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _calIco + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
               html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + (gcLive ? ' <span class="live-badge-mini">LIVE</span>' : '') + '</div>';
-              html += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' tilmeldt' : '') + '</div></div>';
-              html += '<div class="bb-tree-go">\u203A</div>';
+              html += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</div></div>';
+              html += _goLiveBtn(ev, evIsMember) || '<div class="bb-tree-go">\u203A</div>';
               html += '</div></div>';
             });
             if (isOwner) {
-              html += '<div class="bb-tree-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + cn.id + '\')">' + _addIco + ' Opret event</div>';
+              html += '<div class="bb-tree-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + cn.id + '\')">' + _addIco + ' ' + t('bb_create_event') + '</div>';
             }
             html += '</div>';
           }
@@ -944,16 +989,17 @@ async function loadMyNetworks() {
           var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
           var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
           var evLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
-          html += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
-          html += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
+          var evIsMember = myIds.indexOf(ev.id) >= 0;
+          html += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast && !evLive ? 'opacity:0.5' : '') + (!evIsMember ? 'opacity:0.65' : '') + '">';
+          html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _calIco + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
           html += '<div style="flex:1;min-width:0"><div style="font-size:0.75rem;font-weight:600">' + escHtml(ev.name) + (evLive ? ' <span class="live-badge-mini">LIVE</span>' : '') + '</div>';
-          html += '<div style="font-size:0.58rem;color:var(--muted)">' + visIcon(ev.visibility) + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' tilmeldt' : '') + '</div></div>';
-          html += '<div class="bb-tree-go">\u203A</div>';
+          html += '<div style="font-size:0.58rem;color:var(--muted)">' + visIcon(ev.visibility) + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</div></div>';
+          html += _goLiveBtn(ev, evIsMember) || '<div class="bb-tree-go">\u203A</div>';
           html += '</div></div>';
         });
 
         if (isOwner) {
-          html += '<div class="bb-tree-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + net.id + '\')">' + _addIco + ' Opret netv\u00E6rk / event</div>';
+          html += '<div class="bb-tree-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + net.id + '\')">' + _addIco + ' ' + t('bb_create_network_event') + '</div>';
         }
         html += '</div>';
       }
@@ -978,8 +1024,8 @@ async function loadMyNetworks() {
         html += '<div class="bb-tree-root-ico">' + _netIco + '</div>';
         html += '<div class="bb-tree-body">';
         html += '<div style="font-size:0.8rem;font-weight:700">' + escHtml(ghostName) + '</div>';
-        html += '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(ghost.visibility) + ghostMc + ' medlemmer</div>';
-        html += '<div style="margin-top:3px"><button onclick="event.stopPropagation();joinBubble(\'' + ghost.id + '\')" style="font-size:0.58rem;padding:2px 8px;border-radius:6px;border:1px solid rgba(124,92,252,0.2);background:rgba(124,92,252,0.06);color:var(--accent);cursor:pointer;font-family:inherit;font-weight:600">Bliv medlem \u2192</button></div>';
+        html += '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(ghost.visibility) + ghostMc + ' ' + t('bb_members') + '</div>';
+        html += '<div style="margin-top:3px"><button onclick="event.stopPropagation();joinBubble(\'' + ghost.id + '\')" style="font-size:0.58rem;padding:2px 8px;border-radius:6px;border:1px solid rgba(124,92,252,0.2);background:rgba(124,92,252,0.06);color:var(--accent);cursor:pointer;font-family:inherit;font-weight:600">' + t('bb_join_member') + '</button></div>';
         html += '</div></div>';
         // Member child nested under ghost
         html += '<div class="bb-tree-trunk" style="max-height:2000px;opacity:1">';
@@ -992,28 +1038,29 @@ async function loadMyNetworks() {
       else html += '<div class="bb-tree-net-ico">' + _netIcoSm + '</div>';
       html += '<div class="bb-tree-body" onclick="openBubbleChat(\'' + net.id + '\',\'screen-bubbles\')">';
       html += '<div style="font-size:' + (ghost ? '0.75rem' : '0.8rem') + ';font-weight:' + (ghost ? '600' : '700') + '">' + escHtml(net.name) + '</div>';
-      html += '<div style="font-size:' + (ghost ? '0.58' : '0.62') + 'rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(net.visibility) + mc + ' medlemmer</div>';
+      html += '<div style="font-size:' + (ghost ? '0.58' : '0.62') + 'rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(net.visibility) + mc + ' ' + t('bb_members') + '</div>';
       html += '</div>';
       if (orphanEvents.length > 0) {
-        html += '<button class="bb-tree-toggle" id="tog-' + accId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + accId + '\')"' + (ghost ? ' style="width:24px;height:24px"' : '') + '>' + (ghost ? _chevSm : _chevSvg) + '</button>';
+        html += '<button class="bb-tree-toggle' + _togClass(accId) + '" id="tog-' + accId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + accId + '\')"' + (ghost ? ' style="width:24px;height:24px"' : '') + '>' + (ghost ? _chevSm : _chevSvg) + '</button>';
       }
       html += '</div>';
 
       if (orphanEvents.length > 0) {
-        html += '<div class="bb-tree-leaves collapsed" id="trunk-' + accId + '">';
+        html += '<div class="bb-tree-leaves' + _accClass(accId) + '" id="trunk-' + accId + '"' + _accState(accId) + '>';
         orphanEvents.forEach(function(ev) {
           var isPast = ev.event_date && new Date(ev.event_date) < now;
           var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
           var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
-          html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
-          html += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
+          var evIsMember = myIds.indexOf(ev.id) >= 0;
+          html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + (!evIsMember ? 'opacity:0.65' : '') + '">';
+          html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _calIco + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
           html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
-          html += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' tilmeldt' : '') + '</div></div>';
-          html += '<div class="bb-tree-go">\u203A</div>';
+          html += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</div></div>';
+          html += _goLiveBtn(ev, evIsMember) || '<div class="bb-tree-go">\u203A</div>';
           html += '</div></div>';
         });
         if (isOwner) {
-          html += '<div class="bb-tree-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + net.id + '\')">' + _addIco + ' Opret event</div>';
+          html += '<div class="bb-tree-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + net.id + '\')">' + _addIco + ' ' + t('bb_create_event') + '</div>';
         }
         html += '</div>';
       }
@@ -1044,12 +1091,32 @@ function bbTreeToggle(accId) {
     });
     trunk.classList.add('collapsed');
     if (tog) tog.classList.remove('open');
+    _bbAccordionOpen[accId] = false;
   } else {
     trunk.classList.remove('collapsed');
     trunk.style.maxHeight = trunk.scrollHeight + 'px';
     trunk.style.opacity = '1';
     if (tog) tog.classList.add('open');
     setTimeout(function() { trunk.style.maxHeight = '2000px'; }, 300);
+    _bbAccordionOpen[accId] = true;
+  }
+}
+
+// ── Quick "Go Live" from bubble hierarchy ──
+async function quickGoLive(bubbleId, bubbleName) {
+  if (!currentUser) return;
+  // If already live somewhere, confirm switch
+  if (appMode.is('live') && appMode.live && appMode.live.bubbleId !== bubbleId) {
+    if (!confirm(t('live_switch_confirm', { name: appMode.live.bubbleName || '' }))) return;
+    try { await liveCheckout(); } catch(e) {}
+  }
+  try {
+    await liveCheckin(bubbleId);
+    // Re-render the bubble list to update button states
+    if (_activeScreen === 'screen-bubbles') loadMyBubbles();
+  } catch(e) {
+    logError('quickGoLive', e);
+    errorToast('checkin', e);
   }
 }
 
