@@ -157,8 +157,8 @@ function _showMinimalOnboarding(hasName, hasWorkplace, autoName) {
       '<div style="text-align:center;margin-bottom:0.3rem"><img src="bubble-logo-splash.png" alt="bubble" style="height:20px;width:auto"></div>' +
       '<div style="font-size:1.3rem;font-weight:800;text-align:center;margin-bottom:0.15rem">' + escHtml(contextLabel) + '</div>' +
       '<div style="font-size:0.82rem;color:var(--text-secondary);text-align:center;margin-bottom:1.5rem">Du kan udfylde resten inde i appen</div>' +
-      (!hasName ? '<div class="input-group"><div class="input-label">Navn *</div><input class="input" id="mini-ob-name" maxlength="60" placeholder="Dit fulde navn" value="' + escHtml(nameVal) + '" oninput="_miniObCheck()"></div>' : '') +
-      (!hasWorkplace ? '<div class="input-group"><div class="input-label">Arbejdsplads *</div><input class="input" id="mini-ob-workplace" maxlength="80" placeholder="f.eks. Danfoss, SDU, selvstændig..." value="' + escHtml(wpVal) + '" oninput="_miniObCheck()"></div>' : '') +
+      (!hasName ? '<div class="input-group"><div class="input-label">Navn *</div><input class="input" id="mini-ob-name" maxlength="60" placeholder="" data-t-placeholder="ob_name_ph" value="' + escHtml(nameVal) + '" oninput="_miniObCheck()"></div>' : '') +
+      (!hasWorkplace ? '<div class="input-group"><div class="input-label">Arbejdsplads *</div><input class="input" id="mini-ob-workplace" maxlength="80" placeholder="" data-t-placeholder="ob_workplace_ph" value="' + escHtml(wpVal) + '" oninput="_miniObCheck()"></div>' : '') +
       '<label style="display:flex;align-items:flex-start;gap:0.5rem;margin:0.6rem 0;cursor:pointer" onclick="_miniObToggleConsent()">' +
         '<div id="mini-ob-consent" style="width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s;margin-top:1px"></div>' +
         '<span style="font-size:0.72rem;color:var(--text-secondary);line-height:1.4">Jeg accepterer Bubble\'s <a href="#" onclick="event.stopPropagation();showTerms()">betingelser</a> og <a href="#" onclick="event.stopPropagation();showTerms()">privatlivspolitik</a></span>' +
@@ -299,7 +299,7 @@ function updateObStrength() {
     else if (tags < 5) hint.textContent = 'Flere tags = bedre matches';
     else if (!bio) hint.textContent = 'Tilføj en bio under "Gør din profil stærkere"';
     else if (!linkedin) hint.textContent = 'LinkedIn gør det lettere at connecte videre';
-    else hint.textContent = 'Din profil er klar til at finde de rigtige mennesker!';
+    else hint.textContent = t('ob_profile_ready');
   }
 }
 
@@ -447,7 +447,7 @@ function obSelectLifestage(btn) {
     (hiddenRoles.length > 0 ? '<span id="ob-roles-hidden" style="display:none">' + hiddenRoles.map(function(r) {
       return '<button type="button" class="ob-role-chip" onclick="obSetTitle(this)">' + r + '</button>';
     }).join('') + '</span>' +
-    '<button type="button" class="ob-show-more" id="ob-roles-toggle" onclick="obToggleRoles()" style="color:var(--accent);margin-top:0.2rem">+ Vis alle ' + roles.length + ' roller</button>' : '');
+    '<button type="button" class="ob-show-more" id="ob-roles-toggle" onclick="obToggleRoles()" style="color:var(--accent);margin-top:0.2rem">' + t('ob_show_all', { n: roles.length + ' roller' }) + '</button>' : '');
   }
 
   // Auto-add lifestage as first tag if relevant
@@ -480,11 +480,11 @@ function obToggleRoles() {
   if (!hidden || !toggle) return;
   if (hidden.style.display === 'none') {
     hidden.style.display = 'inline';
-    toggle.textContent = '− Vis færre';
+    toggle.textContent = t('ob_show_fewer');
   } else {
     hidden.style.display = 'none';
     var roles = OB_LIFESTAGE_ROLES[obLifestage] || [];
-    toggle.textContent = '+ Vis alle ' + roles.length + ' roller';
+    toggle.textContent = t('ob_show_all', { n: roles.length + ' roller' });
   }
 }
 
@@ -771,10 +771,10 @@ function obUpdateTagLabel() {
   var label = document.getElementById('ob-tag-min-label');
   if (!label) return;
   if (obSelectedTags.length >= 3) {
-    label.textContent = obSelectedTags.length + ' tags valgt \u2713';
+    label.textContent = t('ob_tags_selected', { n: obSelectedTags.length });
     label.style.color = 'var(--green)';
   } else {
-    label.textContent = 'V\u00e6lg mindst 3 tags (' + obSelectedTags.length + '/3)';
+    label.textContent = t('ob_select_min3_tags', { n: obSelectedTags.length });
     label.style.color = 'var(--muted)';
   }
 }
@@ -1050,7 +1050,7 @@ function epRenderCategories() {
       (otherTags.length > 8 ? '<button type="button" class="ob-show-more" onclick="epToggleExpand(\'' + cat + '\')" style="color:' + info.color + '">' +
         (expanded ? '− Vis færre' : '+ Vis alle ' + otherTags.length + ' andre') + '</button>' : '') : '') +
       '<div class="ob-cat-custom"><div class="ob-cat-custom-row">' +
-      '<input class="ob-cat-custom-input" placeholder="+ Tilføj egen..." ' +
+      '<input class="ob-cat-custom-input" placeholder="" data-t-placeholder="ob_custom_tag_ph" ' +
       'onkeydown="epCustomTag(event,\'' + cat + '\',this)" data-cat="' + cat + '">' +
       '<button type="button" class="ob-cat-custom-btn" onclick="epCustomTagBtn(\'' + cat + '\',this)">✓</button>' +
       '</div></div></div>';

@@ -12,37 +12,37 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=82100">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=82100">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=82100">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=82100">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=82100">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=82100">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=82100">
+<link rel="manifest" href="manifest.json?v=83000">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=83000">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=83000">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=83000">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=83000">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=83000">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=83000">
 
-<link rel="stylesheet" href="app.css?v=82100">
+<link rel="stylesheet" href="app.css?v=83000">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-<script src="bubble-icons.js?v=82100" defer></script>
-<script src="tag-data.js?v=82100" defer></script>
-<script src="b-i18n.js?v=82100" defer></script>
-<script src="b-config.js?v=82100" defer></script>
-<script src="b-utils.js?v=82100" defer></script>
-<script src="b-auth.js?v=82100" defer></script>
-<script src="b-home.js?v=82100" defer></script>
-<script src="b-bubbles.js?v=82100" defer></script>
-<script src="b-profile.js?v=82100" defer></script>
-<script src="b-radar.js?v=82100" defer></script>
-<script src="b-messages.js?v=82100" defer></script>
-<script src="b-realtime.js?v=82100" defer></script>
-<script src="b-onboarding.js?v=82100" defer></script>
-<script src="b-chat.js?v=82100" defer></script>
-<script src="b-notifications.js?v=82100" defer></script>
-<script src="b-live.js?v=82100" defer></script>
-<script src="b-admin.js?v=82100" defer></script>
-<script src="b-navigation.js?v=82100" defer></script>
-<script src="b-boot.js?v=82100" defer></script>
+<script src="bubble-icons.js?v=83000" defer></script>
+<script src="tag-data.js?v=83000" defer></script>
+<script src="b-i18n.js?v=83000" defer></script>
+<script src="b-config.js?v=83000" defer></script>
+<script src="b-utils.js?v=83000" defer></script>
+<script src="b-auth.js?v=83000" defer></script>
+<script src="b-home.js?v=83000" defer></script>
+<script src="b-bubbles.js?v=83000" defer></script>
+<script src="b-profile.js?v=83000" defer></script>
+<script src="b-radar.js?v=83000" defer></script>
+<script src="b-messages.js?v=83000" defer></script>
+<script src="b-realtime.js?v=83000" defer></script>
+<script src="b-onboarding.js?v=83000" defer></script>
+<script src="b-chat.js?v=83000" defer></script>
+<script src="b-notifications.js?v=83000" defer></script>
+<script src="b-live.js?v=83000" defer></script>
+<script src="b-admin.js?v=83000" defer></script>
+<script src="b-navigation.js?v=83000" defer></script>
+<script src="b-boot.js?v=83000" defer></script>
   
 
 
@@ -154,7 +154,7 @@
 <div class="gif-picker-overlay" id="gif-picker-overlay" onclick="closeGifPicker()"></div>
 <div class="gif-picker" id="gif-picker">
   <div class="gif-picker-header">
-    <input class="gif-picker-search" id="gif-search" placeholder="Søg GIFs..." oninput="gifSearchDebounce()" autocomplete="off">
+    <input class="gif-picker-search" id="gif-search" placeholder="Søg GIFs..." data-t-placeholder="gif_search_ph" oninput="gifSearchDebounce()" autocomplete="off">
     <button class="gif-picker-close" onclick="closeGifPicker()">✕</button>
   </div>
   <div class="gif-picker-grid" id="gif-grid">
@@ -314,12 +314,12 @@
 
     <div class="input-group">
       <div class="input-label">Navn *</div>
-      <input class="input" id="ob-name" maxlength="60" placeholder="Dit fulde navn" autocomplete="name" oninput="obCheckProgress()">
+      <input class="input" id="ob-name" maxlength="60" placeholder="Dit fulde navn" data-t-placeholder="ob_name_ph" autocomplete="name" oninput="obCheckProgress()">
     </div>
 
     <div class="input-group">
       <div class="input-label">Arbejdsplads *</div>
-      <input class="input" id="ob-workplace" maxlength="80" placeholder="f.eks. Danfoss, SDU, selvstændig..." oninput="obCheckProgress()">
+      <input class="input" id="ob-workplace" maxlength="80" placeholder="f.eks. Danfoss, SDU, selvstændig..." data-t-placeholder="ob_workplace_ph" oninput="obCheckProgress()">
     </div>
 
     <label class="ob-consent-row" id="ob-consent-row" onclick="obToggleConsent()">
@@ -375,7 +375,7 @@
       <!-- Titel -->
       <div class="input-group">
         <div class="input-label">Titel / Rolle <span style="font-weight:400;color:var(--muted)">(valgfrit)</span></div>
-        <input class="input" id="ob-title" maxlength="80" placeholder="f.eks. CTO, Salgschef, Studerende..." oninput="obCheckProgress()">
+        <input class="input" id="ob-title" maxlength="80" placeholder="f.eks. CTO, Salgschef, Studerende..." data-t-placeholder="ob_title_ph" oninput="obCheckProgress()">
         <div class="ob-role-suggestions" id="ob-role-suggestions"></div>
       </div>
 
@@ -386,7 +386,7 @@
           <div class="tag-selected" id="ob-tag-selected"></div>
           <div id="ob-tag-min-label" style="font-size:0.65rem;color:var(--muted);margin-bottom:0.4rem"></div>
           <div class="tag-search-wrap">
-            <input class="input" id="ob-tag-search" placeholder="Søg tags..." autocomplete="off" oninput="obTagSearch(this.value)" onfocus="obTagSearch(this.value)">
+            <input class="input" id="ob-tag-search" placeholder="Søg tags..." data-t-placeholder="ob_tag_search_ph" autocomplete="off" oninput="obTagSearch(this.value)" onfocus="obTagSearch(this.value)">
             <div class="tag-suggestions" id="ob-tag-suggestions"></div>
           </div>
           <div id="ob-tag-categories"></div>
@@ -397,11 +397,11 @@
       <div class="ob-progressive-section" id="ob-sec-c">
         <div class="input-group">
           <div class="input-label">Om dig <span style="font-weight:400;color:var(--muted)">(valgfrit)</span></div>
-          <textarea class="input" id="ob-bio" maxlength="300" placeholder="Hvem du er, hvad du arbejder med..."></textarea>
+          <textarea class="input" id="ob-bio" maxlength="300" placeholder="Hvem du er, hvad du arbejder med..." data-t-placeholder="ob_bio_ph"></textarea>
         </div>
         <div class="input-group">
           <div class="input-label">LinkedIn <span style="font-weight:400;color:var(--muted)">(valgfrit)</span></div>
-          <input class="input" id="ob-linkedin" placeholder="https://linkedin.com/in/dit-navn" type="url">
+          <input class="input" id="ob-linkedin" placeholder="https://linkedin.com/in/dit-navn" data-t-placeholder="ob_linkedin_ph" type="url">
         </div>
       </div>
 
@@ -849,7 +849,7 @@
     <div style="display:flex;flex-direction:column;gap:0.5rem">
       <button onclick="closeLiveCheckoutTray();openLiveBubble()" style="width:100%;padding:0.85rem;border-radius:14px;background:var(--gradient-primary);border:none;color:white;font-size:0.92rem;font-weight:700;cursor:pointer;font-family:var(--font)">Se event →</button>
       <button id="live-checkout-btn" onclick="bbConfirm(this,{label:'Vil du checke ud?',confirmText:'Ja, check ud',confirmClass:'bb-confirm-btn-danger',onConfirm:'liveCheckout();closeLiveCheckoutTray()'})" style="width:100%;padding:0.85rem;border-radius:14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#DC2626;font-size:0.92rem;font-weight:700;cursor:pointer;font-family:var(--font)">Check ud</button>
-      <button onclick="closeLiveCheckoutTray()" style="width:100%;padding:0.65rem;border-radius:14px;background:none;border:none;color:var(--muted);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:var(--font)">Annuller</button>
+      <button onclick="closeLiveCheckoutTray()" style="width:100%;padding:0.65rem;border-radius:14px;background:none;border:none;color:var(--muted);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:var(--font)" data-t="misc_cancel">Annuller</button>
     </div>
   </div>
 </div>
@@ -859,7 +859,7 @@
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-bubbles">
   <div class="topbar">
-    <div class="topbar-title">Bobler</div>
+    <div class="topbar-title" data-t="bb_topbar">Bobler</div>
     <button class="btn-sm btn-ghost" onclick="openCreateBubble()" style="font-size:0.75rem;padding:0.35rem 0.75rem">+ Ny</button>
   </div>
   <div class="bubble-tabs" style="flex-shrink:0;position:sticky;top:0;z-index:5;background:var(--bg);margin:0.4rem 1.1rem 0;padding:3px">
@@ -980,7 +980,7 @@
         <div class="bubble-up-confirm-text">Send en boble-invitation til <span class="bubble-up-confirm-name" id="person-bubbleup-name"></span>?<br>De skal acceptere — begge bliver ejere.</div>
         <div class="bubble-up-confirm-row" style="margin-top:0.4rem">
           <button class="bubble-up-yes" onclick="personConfirmBubbleUp()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg> Send invitation</button>
-          <button class="bubble-up-no" onclick="personCancelBubbleUp()">Annuller</button>
+          <button class="bubble-up-no" onclick="personCancelBubbleUp()" data-t="misc_cancel">Annuller</button>
         </div>
       </div>
     </div>
@@ -1108,7 +1108,7 @@
     <div class="bubble-up-confirm-text">Send en boble-invitation til <span class="bubble-up-confirm-name" id="ps-bubbleup-name"></span>?<br>De skal acceptere — begge bliver ejere.</div>
     <div class="bubble-up-confirm-row">
       <button class="bubble-up-yes" onclick="psConfirmBubbleUp()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg> Send invitation</button>
-      <button class="bubble-up-no" onclick="psCancelBubbleUp()">Annuller</button>
+      <button class="bubble-up-no" onclick="psCancelBubbleUp()" data-t="misc_cancel">Annuller</button>
     </div>
   </div>
   <!-- Block & Report -->
@@ -1140,8 +1140,8 @@
     <div class="radar-person-overlap" id="rp-overlap"></div>
     <div class="radar-person-actions">
       <button class="radar-person-action-btn primary" onclick="rpMessage()">Besked</button>
-      <button class="radar-person-action-btn" id="rp-save-btn" onclick="rpSaveContact()">Gem</button>
-      <button class="radar-person-action-btn" onclick="rpFullProfile()">Profil</button>
+      <button class="radar-person-action-btn" id="rp-save-btn" onclick="rpSaveContact()" data-t="rp_save">Gem</button>
+      <button class="radar-person-action-btn" onclick="rpFullProfile()" data-t="rp_profile">Profil</button>
       <a class="radar-person-action-btn" id="rp-linkedin-btn" href="#" target="_blank" rel="noopener" style="display:none;text-decoration:none">LinkedIn</a>
     </div>
     <div class="radar-person-handle" onclick="closeRadarPerson()"></div>
@@ -1153,15 +1153,15 @@
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-messages">
   <div class="topbar">
-    <div class="topbar-title">Beskeder</div>
-    <button class="btn-sm btn-ghost" id="conv-select-btn" onclick="convToggleSelectMode()" style="font-size:0.75rem;padding:0.35rem 0.75rem">Vælg</button>
+    <div class="topbar-title" data-t="nav_messages">Beskeder</div>
+    <button class="btn-sm btn-ghost" id="conv-select-btn" onclick="convToggleSelectMode()" style="font-size:0.75rem;padding:0.35rem 0.75rem" data-t="misc_select">Vælg</button>
   </div>
   <!-- Conversation delete toolbar -->
   <div class="dm-select-toolbar" id="conv-select-toolbar" style="display:none;flex-shrink:0">
     <span id="conv-select-count" style="font-size:0.78rem;font-weight:600">0 valgt</span>
     <div style="display:flex;gap:0.4rem">
-      <button class="btn-sm" id="conv-delete-btn" onclick="convDeleteSelected()" style="font-size:0.72rem;padding:0.3rem 0.6rem;background:rgba(232,121,168,0.15);color:var(--accent2);border:1px solid rgba(232,121,168,0.3);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600" disabled>Slet</button>
-      <button class="btn-sm btn-ghost" onclick="convSelectAll()" style="font-size:0.72rem;padding:0.3rem 0.6rem">Vælg alle</button>
+      <button class="btn-sm" id="conv-delete-btn" onclick="convDeleteSelected()" style="font-size:0.72rem;padding:0.3rem 0.6rem;background:rgba(232,121,168,0.15);color:var(--accent2);border:1px solid rgba(232,121,168,0.3);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600" disabled data-t="misc_delete">Slet</button>
+      <button class="btn-sm btn-ghost" onclick="convSelectAll()" style="font-size:0.72rem;padding:0.3rem 0.6rem" data-t="misc_select_all">Vælg alle</button>
     </div>
   </div>
   <div class="scroll-area">
@@ -1218,7 +1218,7 @@
             </button>
           </div>
         </div>
-        <input class="chat-composer-input" id="chat-input" placeholder="Skriv en besked..." oninput="dmOnInput()" enterkeyhint="send" autocomplete="off" autocorrect="on" spellcheck="true">
+        <input class="chat-composer-input" id="chat-input" placeholder="Skriv en besked..." data-t-placeholder="dm_write_placeholder" oninput="dmOnInput()" enterkeyhint="send" autocomplete="off" autocorrect="on" spellcheck="true">
         <button class="chat-send-btn" id="chat-send-btn" ontouchstart="event.preventDefault()" ontouchend="event.preventDefault();sendMessage()" onclick="if(!('ontouchstart' in window))sendMessage()">→</button>
       </div>
     </div>
@@ -1230,10 +1230,10 @@
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-profile">
   <div class="topbar">
-    <div class="topbar-title">Min profil</div>
+    <div class="topbar-title" data-t="pf_my_profile">Min profil</div>
     <div style="display:flex;align-items:center;gap:0.4rem">
-      <button class="btn-sm btn-ghost" onclick="openEditProfile()" style="font-size:0.75rem;padding:0.35rem 0.75rem">Rediger</button>
-      <button class="btn-sm btn-ghost" onclick="profSwitchTab('settings')" style="padding:0.35rem 0.45rem;color:var(--muted);display:flex;align-items:center;justify-content:center" title="Indstillinger"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem;display:block"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+      <button class="btn-sm btn-ghost" onclick="openEditProfile()" style="font-size:0.75rem;padding:0.35rem 0.75rem" data-t="pf_edit_btn">Rediger</button>
+      <button class="btn-sm btn-ghost" onclick="profSwitchTab('settings')" style="padding:0.35rem 0.45rem;color:var(--muted);display:flex;align-items:center;justify-content:center" title="Indstillinger" data-t-title="pf_settings"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem;display:block"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
     </div>
   </div>
 
@@ -1281,30 +1281,30 @@
     <!-- SETTINGS TAB -->
     <div id="prof-panel-settings" style="display:none;flex-direction:column;flex:1;padding:0.75rem 1.1rem 8rem">
 
-      <div class="section-label" style="margin-bottom:0.25rem">Hjem-skærm</div>
+      <div class="section-label" style="margin-bottom:0.25rem" data-t="settings_home_screen">Hjem-skærm</div>
     <div class="settings-row" style="border-bottom:1px solid var(--glass-border-subtle)">
-      <div style="font-size:0.82rem;font-weight:600">Gemte profiler</div>
+      <div style="font-size:0.82rem;font-weight:600" data-t="settings_saved_profiles">Gemte profiler</div>
       <div class="settings-toggle" id="hs-toggle-saved" onclick="hsToggle('saved')" data-on="true"><div class="settings-toggle-knob"></div></div>
     </div>
     <div class="settings-row">
-      <div style="font-size:0.82rem;font-weight:600">Feedback</div>
+      <div style="font-size:0.82rem;font-weight:600" data-t="misc_feedback">Feedback</div>
       <div class="settings-toggle" id="hs-toggle-feedback" onclick="hsToggle('feedback')" data-on="true"><div class="settings-toggle-knob"></div></div>
     </div>
 
-    <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Notifikationer</div>
+    <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem" data-t="settings_notifications">Notifikationer</div>
     <div class="settings-row">
       <div style="flex:1">
-        <div style="font-size:0.85rem;font-weight:600">Push-notifikationer</div>
-        <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:0.1rem">Få besked når nogen sender dig en besked eller gemmer din profil</div>
+        <div style="font-size:0.85rem;font-weight:600" data-t="pf_push_notifications">Push-notifikationer</div>
+        <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:0.1rem" data-t="settings_push_desc">Få besked når nogen sender dig en besked eller gemmer din profil</div>
       </div>
-      <button id="push-toggle-btn" onclick="togglePushNotifications()" style="font-size:0.75rem;font-weight:700;font-family:inherit;padding:0.35rem 0.85rem;border-radius:99px;cursor:pointer;transition:all 0.2s;white-space:nowrap;border:1.5px solid var(--glass-border);background:rgba(30,27,46,0.035);color:var(--muted)">Aktivér</button>
+      <button id="push-toggle-btn" onclick="togglePushNotifications()" style="font-size:0.75rem;font-weight:700;font-family:inherit;padding:0.35rem 0.85rem;border-radius:99px;cursor:pointer;transition:all 0.2s;white-space:nowrap;border:1.5px solid var(--glass-border);background:rgba(30,27,46,0.035);color:var(--muted)" data-t="settings_enable">Aktivér</button>
     </div>
 
-    <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Synlighed</div>
+    <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem" data-t="settings_visibility">Synlighed</div>
     <div class="settings-row">
       <div style="flex:1">
-        <div style="font-size:0.85rem;font-weight:600">Anonym tilstand</div>
-        <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:0.1rem">Skjul dit navn og billede på radaren</div>
+        <div style="font-size:0.85rem;font-weight:600" data-t="settings_anon_mode">Anonym tilstand</div>
+        <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:0.1rem" data-t="settings_anon_desc">Skjul dit navn og billede på radaren</div>
       </div>
       <div id="anon-toggle" onclick="toggleAnon()" style="width:46px;height:26px;background:var(--border);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0">
         <div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>
@@ -1317,11 +1317,11 @@
       <button id="lang-btn-en" onclick="switchAppLanguage('en')" style="flex:1;padding:0.55rem;border-radius:10px;font-size:0.82rem;font-weight:600;font-family:inherit;cursor:pointer;border:1.5px solid var(--glass-border);background:rgba(30,27,46,0.03);color:var(--muted)">English</button>
     </div>
 
-    <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Profil</div>
-    <button onclick="reRunOnboarding()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(124,92,252,0.12);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent);cursor:pointer">Kør profilopsætning igen</button>
+    <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem" data-t="settings_profile">Profil</div>
+    <button onclick="reRunOnboarding()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(124,92,252,0.12);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent);cursor:pointer"data-t="settings_rerun_setup">Kør profilopsætning igen</button>
 
-    <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Konto</div>
-    <button onclick="handleLogout()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(232,121,168,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent2);cursor:pointer">Log ud</button>
+    <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem" data-t="settings_account">Konto</div>
+    <button onclick="handleLogout()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(232,121,168,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent2);cursor:pointer" data-t="misc_log_out">Log ud</button>
 
     <!-- ADMIN PANEL (only visible for admin UID) -->
     <div id="admin-panel" style="display:none">
@@ -1331,15 +1331,15 @@
       <div style="background:rgba(232,121,168,0.06);border:1px solid rgba(232,121,168,0.15);border-radius:12px;padding:0.8rem;margin-bottom:0.5rem">
         <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between">
           Rapporterede brugere
-          <button class="btn-sm btn-ghost" onclick="adminLoadReports()" style="font-size:0.62rem">Opdater</button>
+          <button class="btn-sm btn-ghost" onclick="adminLoadReports()" style="font-size:0.62rem"data-t="admin_refresh">Opdater</button>
         </div>
-        <div id="admin-reports-list" style="font-size:0.72rem;color:var(--text-secondary)">Indlæser...</div>
+        <div id="admin-reports-list" style="font-size:0.72rem;color:var(--text-secondary)"data-t="admin_loading">Indlæser...</div>
       </div>
 
       <!-- User lookup -->
       <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:12px;padding:0.8rem;margin-bottom:0.5rem">
-        <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem">Søg bruger</div>
-        <input class="input" id="admin-user-search" placeholder="Navn eller email..." oninput="adminSearchUser(this.value)" style="margin-bottom:0.4rem">
+        <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem"data-t="admin_search_user">Søg bruger</div>
+        <input class="input" id="admin-user-search" placeholder="Navn eller email..." data-t-placeholder="admin_search_ph" oninput="adminSearchUser(this.value)" style="margin-bottom:0.4rem">
         <div id="admin-search-results"></div>
       </div>
 
@@ -1347,15 +1347,15 @@
       <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:12px;padding:0.8rem;margin-bottom:0.5rem">
         <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between">
           Bannede brugere
-          <button class="btn-sm btn-ghost" onclick="adminLoadBanned()" style="font-size:0.62rem">Opdater</button>
+          <button class="btn-sm btn-ghost" onclick="adminLoadBanned()" style="font-size:0.62rem"data-t="admin_refresh">Opdater</button>
         </div>
-        <div id="admin-banned-list" style="font-size:0.72rem;color:var(--text-secondary)">Indlæser...</div>
+        <div id="admin-banned-list" style="font-size:0.72rem;color:var(--text-secondary)"data-t="admin_loading">Indlæser...</div>
       </div>
 
       <!-- Stats -->
       <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:12px;padding:0.8rem">
         <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem">Platform stats</div>
-        <div id="admin-stats" style="font-size:0.72rem;color:var(--text-secondary)">Indlæser...</div>
+        <div id="admin-stats" style="font-size:0.72rem;color:var(--text-secondary)"data-t="admin_loading">Indlæser...</div>
       </div>
 
       <!-- Onboarding test tools -->
@@ -1395,7 +1395,7 @@
     <div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">Hvad er din titel?</div>
     <div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Hjælper folk forstå hvad du laver</div>
     <div class="input-group">
-      <input class="input" id="setup-title-input" placeholder="f.eks. CTO, Designer, Studerende..." oninput="setupTitleChanged()">
+      <input class="input" id="setup-title-input" placeholder="f.eks. CTO, Designer, Studerende..." data-t-placeholder="ob_title_ph" oninput="setupTitleChanged()">
     </div>
     <div style="font-size:0.68rem;color:var(--muted);margin-bottom:0.4rem">Populære titler:</div>
     <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:1.2rem" id="setup-title-suggestions">
@@ -1568,7 +1568,7 @@
         </div>
       </div>
     </div>
-    <button class="btn-secondary" onclick="closeModal('modal-create-picker')" style="margin-top:0.6rem">Annuller</button>
+    <button class="btn-secondary" onclick="closeModal('modal-create-picker')" style="margin-top:0.6rem" data-t="misc_cancel">Annuller</button>
   </div>
 </div>
 
@@ -1631,8 +1631,8 @@
         <button type="button" onclick="addChipFromBtn('cb-chip-input','cb-chips')" class="ob-cat-custom-btn" title="Tilføj">✓</button>
       </div>
     </div>
-    <button class="btn-primary" onclick="createBubble()">Opret</button>
-    <button class="btn-secondary" onclick="bbClose('create-bubble')">Annuller</button>
+    <button class="btn-primary" onclick="createBubble()" data-t="misc_create">Opret</button>
+    <button class="btn-secondary" onclick="bbClose('create-bubble')" data-t="misc_cancel">Annuller</button>
 </div>
 
 
@@ -1697,7 +1697,7 @@
       <input class="input" id="ep-linkedin" placeholder="https://linkedin.com/in/dit-navn" type="url">
     </div>
     <button class="btn-primary" onclick="saveProfile()"data-t="ob_save_profile">Gem profil</button>
-    <button class="btn-secondary" onclick="closeModal('modal-edit-profile')">Annuller</button>
+    <button class="btn-secondary" onclick="closeModal('modal-edit-profile')" data-t="misc_cancel">Annuller</button>
   </div>
 </div>
 
@@ -1767,7 +1767,7 @@
       <div class="live-scan-found-meta" id="live-scan-found-meta"></div>
       <div style="display:flex;gap:0.4rem;margin-top:0.5rem">
         <button class="live-bubble-btn primary" id="live-scan-confirm-btn" onclick="liveScanConfirmJoin()" style="flex:1">Check ind her</button>
-        <button class="live-bubble-btn ghost" onclick="liveScanReset()" style="flex:0 0 auto">Annuller</button>
+        <button class="live-bubble-btn ghost" onclick="liveScanReset()" style="flex:0 0 auto" data-t="misc_cancel">Annuller</button>
       </div>
     </div>
 
@@ -1795,7 +1795,7 @@
   <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.6rem" id="invite-subtitle">Vælg fra dine gemte kontakter</div>
   <div id="invite-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0"></div>
   <div style="display:flex;gap:0.5rem;margin-top:0.6rem;flex-shrink:0">
-    <button onclick="bbClose('invite')" style="flex:1;padding:0.65rem;font-size:0.82rem;font-weight:600;border-radius:12px;border:1px solid var(--glass-border);cursor:pointer;font-family:inherit;color:var(--text-secondary);background:transparent">Annuller</button>
+    <button onclick="bbClose('invite')" style="flex:1;padding:0.65rem;font-size:0.82rem;font-weight:600;border-radius:12px;border:1px solid var(--glass-border);cursor:pointer;font-family:inherit;color:var(--text-secondary);background:transparent" data-t="misc_cancel">Annuller</button>
     <button id="invite-send-btn" onclick="sendBubbleInvites()" style="flex:1;padding:0.65rem;font-size:0.82rem;font-weight:700;border-radius:12px;border:none;cursor:pointer;font-family:inherit;background:var(--gradient-primary);color:white;transition:opacity 0.2s" disabled>Send invitationer</button>
   </div>
 </div>
@@ -1813,7 +1813,7 @@
     <div style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.2rem">Link til event (valgfrit)</div>
     <div id="bp-event-picker" style="margin-bottom:1rem"></div>
     <button onclick="bcSubmitPost()" style="width:100%;padding:0.7rem;border-radius:12px;border:none;background:var(--gradient-primary);color:white;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Publicer opslag</button>
-    <button onclick="closeModal('sheet-create-post')" style="width:100%;margin-top:0.4rem;padding:0.5rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--muted);font-family:inherit;font-size:0.78rem;cursor:pointer">Annuller</button>
+    <button onclick="closeModal('sheet-create-post')" style="width:100%;margin-top:0.4rem;padding:0.5rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--muted);font-family:inherit;font-size:0.78rem;cursor:pointer" data-t="misc_cancel">Annuller</button>
   </div>
 </div>
 

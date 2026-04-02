@@ -344,7 +344,7 @@ var proxColors = [
   'linear-gradient(135deg,#D946EF,#C026D3)',  // fuchsia
 ];
 // Radar (map): relevance labels + thresholds — "who matches me?"
-var proxRangeLabels = ['Nær match','Gode matches','Alle matches','Udvidet','Alle'];
+function _proxRangeLabels() { return [t('prox_near'),t('prox_good'),t('prox_all'),t('prox_extended'),t('prox_everyone')]; }
 var proxThresholds  = [0.6, 0.35, 0.15, 0.05, 0];
 // List: proximity labels — "who is nearby?" (GPS-ready, simulated for now)
 var listRangeLabels = ['50m','200m','500m','2km','10km'];
@@ -365,7 +365,7 @@ async function loadProximityMap() {
     var savedIds = (savedRes.data || []).map(function(s) { return s.contact_id; });
     allProfiles = allProfiles.filter(function(p) { return savedIds.indexOf(p.id) < 0 && !isBlocked(p.id); });
 
-    if (allProfiles.length === 0) { map.style.display = 'none'; if (emptyEl) { emptyEl.innerHTML = 'Alle profiler er gemt!<br>Du har opdaget alle i nærheden.'; emptyEl.style.display = 'block'; } return; }
+    if (allProfiles.length === 0) { map.style.display = 'none'; if (emptyEl) { emptyEl.innerHTML = t('prox_all_discovered'); emptyEl.style.display = 'block'; } return; }
 
     // Build tag popularity index for TF-IDF
     buildTagPopularity(allProfiles);
@@ -712,7 +712,7 @@ async function loadProfile() {
         function qStat(val, label) {
           return '<div style="text-align:center;flex:1"><div style="font-size:1rem;font-weight:800;color:var(--text)">' + val + '</div><div style="font-size:0.6rem;color:var(--text-secondary);font-weight:500">' + label + '</div></div>';
         }
-        qs.innerHTML = qStat(qViews, 'Visninger') + qStat(qSaved, 'Gemt dig') + qStat(qBubbles, 'Bobler');
+        qs.innerHTML = qStat(qViews, t('pf_stat_views')) + qStat(qSaved, t('pf_stat_saved_you')) + qStat(qBubbles, t('pf_stat_bubbles'));
       } catch(e) { qs.innerHTML = ''; }
     }
 
@@ -1373,17 +1373,17 @@ async function loadDashboard() {
     el.innerHTML =
       '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.4rem">Din Bubble-uge</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem">' +
-        statCard('eye', 'Profilvisninger', views, 'rgba(124,92,252,0.08)') +
-        statCard('bookmark', 'Har gemt dig', savedBy, 'rgba(232,121,168,0.08)') +
-        statCard('heart', 'Du har gemt', mySaved, 'rgba(26,158,142,0.08)') +
-        statCard('bubble', 'Bobler', bubbles, 'rgba(46,207,207,0.08)') +
+        statCard('eye', t('pf_dash_views'), views, 'rgba(124,92,252,0.08)') +
+        statCard('bookmark', t('pf_dash_saved_you'), savedBy, 'rgba(232,121,168,0.08)') +
+        statCard('heart', t('pf_dash_you_saved'), mySaved, 'rgba(26,158,142,0.08)') +
+        statCard('bubble', t('pf_stat_bubbles'), bubbles, 'rgba(46,207,207,0.08)') +
       '</div>' +
       '<div style="margin-top:0.4rem">' +
-        statCard('target', 'Stærke matches i dine bobler', strongMatches, 'rgba(26,158,142,0.08)') +
+        statCard('target', t('pf_dash_strong'), strongMatches, 'rgba(26,158,142,0.08)') +
       '</div>' +
       '<div style="margin-top:0.6rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:0.7rem 0.9rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">' +
-          '<div style="font-size:0.78rem;font-weight:700;color:var(--text)">Profilstyrke</div>' +
+          '<div style="font-size:0.78rem;font-weight:700;color:var(--text)">' + t('pf_dash_strength') + '</div>' +
           '<div style="font-size:0.78rem;font-weight:800;color:' + (completePct >= 100 ? 'var(--green)' : 'var(--accent)') + '">' + completePct + '%</div>' +
         '</div>' +
         '<div style="height:6px;background:var(--glass-bg-strong);border-radius:3px;overflow:hidden">' +
@@ -1555,7 +1555,7 @@ async function loadPersonBubbles(userId, navRef) {
     // Render
     var total = bubbles.length;
     var shown = bubbles.slice(0, PERSON_BUBBLES_MAX);
-    if (title) title.textContent = 'Bobler · ' + total;
+    if (title) title.textContent = t('pf_bubbles_title', { n: total });
 
     // Fetch member avatars for shown bubbles
     var shownIds = shown.map(function(b) { return b.id; });

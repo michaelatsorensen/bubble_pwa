@@ -34,7 +34,7 @@ async function adminLoadReports() {
         '<div style="display:flex;justify-content:space-between;align-items:center">' +
         '<div><span style="font-weight:600">' + escHtml(reportedName) + '</span>' +
         (isBanned ? ' <span style="font-size:0.55rem;background:rgba(26,122,138,0.2);color:var(--accent2);padding:0.1rem 0.3rem;border-radius:4px">Banned</span>' : '') +
-        '<div style="font-size:0.62rem;color:var(--muted)">' + escHtml(r.type || 'report') + ' · ' + escHtml(r.reason || 'Ingen grund') + ' · ' + timeAgo + '</div>' +
+        '<div style="font-size:0.62rem;color:var(--muted)">' + escHtml(r.type || 'report') + ' · ' + escHtml(r.reason || t('admin_no_reason')) + ' · ' + timeAgo + '</div>' +
         '<div style="font-size:0.6rem;color:var(--muted)">Af: ' + escHtml(reporterName) + '</div></div>' +
         (!isBanned ? '<button class="btn-sm" onclick="adminBanUser(\'' + r.reported_id + '\',\'' + escHtml(reportedName).replace(/'/g,"\\'") + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(124,92,252,0.12);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:6px;flex-shrink:0">Ban</button>' :
         '<button class="btn-sm" onclick="adminUnbanUser(\'' + r.reported_id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,158,142,0.15);color:var(--green);border:1px solid rgba(26,158,142,0.3);border-radius:6px;flex-shrink:0">Unban</button>') +
@@ -125,7 +125,7 @@ async function adminLoadStats() {
     el.innerHTML =
       // Row 1: Brugere + Bobler
       '<div class="dash-pair"><div class="dash-row">' +
-        dCard('s-users','user','rgba(124,92,252,0.08)','var(--accent)', uc, 'Brugere', uNew.count, 'accent') +
+        dCard('s-users','user','rgba(124,92,252,0.08)','var(--accent)', uc, t('admin_users_label'), uNew.count, 'accent') +
         dCard('s-bubbles','bubble','rgba(46,207,207,0.08)','var(--teal)', bc, 'Bobler', bNew.count, 'teal') +
       '</div>' + trayHtml('s1') + '</div>' +
       // Row 2: Medlemskaber + Boble-beskeder
@@ -147,7 +147,7 @@ async function adminLoadStats() {
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">' +
         _adminMini(ico('pin'), 'Live nu', liveRes.count||0, 'var(--teal)') +
-        _adminMini(ico('lock'), 'Bannede', bannedRes.count||0, '#EF4444') +
+        _adminMini(ico('lock'), t('admin_banned_label'), bannedRes.count||0, '#EF4444') +
         _adminMini(ico('eye'), 'Visninger /7d', viewsRes.count||0, 'var(--accent)') +
       '</div>';
 
@@ -424,7 +424,7 @@ async function testOnboardingReset(mode) {
         }
         redirectUrl = baseUrl + '?event=' + picked.id;
       } else {
-        showWarningToast('Ingen events fundet');
+        showWarningToast(t('admin_no_events'));
         return;
       }
     }
