@@ -1009,4 +1009,18 @@ function applyLandingLang(lang) {
   if (lb) lb.textContent = 'DA';
 }
 
-function togg
+function toggleLandingLang() {
+  var current = _landingLang;
+  var next = current === 'da' ? 'en' : 'da';
+  localStorage.setItem('bubble_landing_lang', next);
+  _landingLang = next;
+  applyLandingLang(next);
+}
+
+// Auto-apply on load
+if (_landingLang === 'en') {
+  applyLandingLang('en');
+}
+</script>
+</body>
+</html>
