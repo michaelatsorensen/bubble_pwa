@@ -301,8 +301,13 @@ var appMode = {
     this._mode = mode || 'normal';
     if (mode === 'live' && ctx) {
       this._liveCtx = ctx;
-      // Sync legacy global for code that still reads it directly
+      // Sync legacy global — add both camelCase + snake_case aliases
+      // so code reading currentLiveBubble.bubble_id OR .bubbleId both work
       currentLiveBubble = ctx;
+      if (ctx.bubbleId && !ctx.bubble_id) ctx.bubble_id = ctx.bubbleId;
+      if (ctx.bubbleName && !ctx.bubble_name) ctx.bubble_name = ctx.bubbleName;
+      if (ctx.bubbleType && !ctx.bubble_type) ctx.bubble_type = ctx.bubbleType;
+      if (ctx.memberCount != null && ctx.member_count == null) ctx.member_count = ctx.memberCount;
     } else if (mode !== 'live') {
       this._liveCtx = null;
       currentLiveBubble = null;

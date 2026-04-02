@@ -282,7 +282,7 @@ async function liveAutoCheckout() {
 async function liveCheckout() {
   try {
     if (!currentLiveBubble) return;
-    var checkoutBubbleId = currentLiveBubble.bubble_id;
+    var checkoutBubbleId = (appMode.live && appMode.live.bubbleId) || currentLiveBubble.bubble_id || currentLiveBubble.bubbleId;
     var { error: coErr } = await sb.from('bubble_members').update({
       checked_out_at: new Date().toISOString()
     }).eq('bubble_id', checkoutBubbleId).eq('user_id', currentUser.id);
@@ -318,7 +318,7 @@ async function liveCheckout() {
 
 function openLiveBubble() {
   if (!currentLiveBubble) return;
-  openBubbleChat(currentLiveBubble.bubble_id, 'screen-home');
+  var _lbId = (appMode.live && appMode.live.bubbleId) || currentLiveBubble.bubbleId || currentLiveBubble.bubble_id; if (_lbId) openBubbleChat(_lbId, 'screen-home');
 }
 
 // ══════════════════════════════════════════════════════════
