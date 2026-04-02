@@ -607,8 +607,8 @@ function dmRenderMsg(m) {
   // Timestamp — shown on single/tail messages, but not if time-sep already shown
   var timeHtml = '';
   if ((gp === 'single' || gp === 'tail') && !m._showTimeSep) {
-    var t = new Date(m.created_at);
-    timeHtml = '<div class="msg-timestamp">' + t.toLocaleTimeString(_locale(), {hour:'2-digit', minute:'2-digit'}) + '</div>';
+    var msgTime = new Date(m.created_at);
+    timeHtml = '<div class="msg-timestamp">' + msgTime.toLocaleTimeString(_locale(), {hour:'2-digit', minute:'2-digit'}) + '</div>';
   }
 
   let bubble = '';
@@ -667,9 +667,9 @@ function _msgComputeGroups(msgs, senderKey) {
     var m = msgs[i];
     var prev = i > 0 ? msgs[i-1] : null;
     var next = i < msgs.length - 1 ? msgs[i+1] : null;
-    var t = new Date(m.created_at).getTime();
-    var samePrev = prev && prev[senderKey] === m[senderKey] && (t - new Date(prev.created_at).getTime()) < GAP;
-    var sameNext = next && next[senderKey] === m[senderKey] && (new Date(next.created_at).getTime() - t) < GAP;
+    var ts = new Date(m.created_at).getTime();
+    var samePrev = prev && prev[senderKey] === m[senderKey] && (ts - new Date(prev.created_at).getTime()) < GAP;
+    var sameNext = next && next[senderKey] === m[senderKey] && (new Date(next.created_at).getTime() - ts) < GAP;
 
     if (samePrev && sameNext) m._gp = 'cont';
     else if (samePrev && !sameNext) m._gp = 'tail';
@@ -677,7 +677,7 @@ function _msgComputeGroups(msgs, senderKey) {
     else m._gp = 'single';
 
     // Time separator: show if 5+ min gap from previous message (any sender)
-    m._showTimeSep = prev && (t - new Date(prev.created_at).getTime()) >= TIME_SEP_GAP;
+    m._showTimeSep = prev && (ts - new Date(prev.created_at).getTime()) >= TIME_SEP_GAP;
   }
 }
 
@@ -731,8 +731,8 @@ async function loadChatMessages() {
       }
       // Time separator: 5+ min gap (but not right after a date sep)
       if (m._showTimeSep) {
-        var t = d.toLocaleTimeString(_locale(), {hour:'2-digit', minute:'2-digit'});
-        html += '<div class="msg-time-sep">' + t + '</div>';
+        var timeStr = d.toLocaleTimeString(_locale(), {hour:'2-digit', minute:'2-digit'});
+        html += '<div class="msg-time-sep">' + timeStr + '</div>';
       }
       html += dmRenderMsg(m);
     });
