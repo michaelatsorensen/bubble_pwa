@@ -167,8 +167,8 @@ function rtUpdateConversationPreview(msg) {
     var preview = row.querySelector('.conv-preview');
     if (preview) {
       var isMine = msg.sender_id === currentUser.id;
-      var text = msg.file_url ? '📎 Billede' : escHtml((msg.content || '').slice(0, 50));
-      preview.innerHTML = isMine ? '<span style="color:var(--muted)">Du:</span> ' + text : text;
+      var text = msg.file_url ? t('dm_attachment_img') : escHtml((msg.content || '').slice(0, 50));
+      preview.innerHTML = isMine ? '<span style="color:var(--muted)">' + t('dm_you_prefix') + '</span> ' + text : text;
     }
     // Update time
     var timeEl = row.querySelector('.conv-time');
@@ -441,8 +441,8 @@ async function loadMessages() {
       const initials = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const isUnread = lastMsg.receiver_id === currentUser.id && !lastMsg.read_at;
       const isMine = lastMsg.sender_id === currentUser.id;
-      const previewText = lastMsg.file_url ? '📎 Billede' : escHtml((lastMsg.content||'').slice(0,50));
-      const preview = isMine ? '<span style="color:var(--muted)">Du:</span> ' + previewText : previewText;
+      const previewText = lastMsg.file_url ? t('dm_attachment_img') : escHtml((lastMsg.content||'').slice(0,50));
+      const preview = isMine ? '<span style="color:var(--muted)">' + t('dm_you_prefix') + '</span> ' + previewText : previewText;
       const time = timeAgo(lastMsg.created_at);
       const isOnline = p.updated_at && (Date.now() - new Date(p.updated_at).getTime()) < 300000;
       const isPartnerLive = appMode.checkedInIds.indexOf(partnerId) >= 0;
@@ -461,7 +461,7 @@ async function loadMessages() {
         '</div>' + (isUnread ? '<div class="conv-unread-dot"></div>' : '') +
         '</div></div>';
     }).join('');
-  } catch(e) { logError("loadMessages", e); showRetryState('conversations-list', 'loadMessages', 'Kunne ikke hente beskeder'); }
+  } catch(e) { logError("loadMessages", e); showRetryState('conversations-list', 'loadMessages', t('toast_load_failed')); }
   finally { _messagesLoading = false; }
 }
 
@@ -620,10 +620,10 @@ function dmRenderMsg(m) {
       bubble = '<a href="javascript:void(0)" onclick="chatLightbox(\'' + safeUrl + '\')"><img class="msg-img" src="' + safeUrl + '" alt="' + escHtml(m.file_name||'') + '"></a>';
     } else {
       const sz = m.file_size ? (m.file_size < 1048576 ? Math.round(m.file_size/1024)+'KB' : (m.file_size/1048576).toFixed(1)+'MB') : '';
-      bubble = '<a class="msg-file" href="' + safeUrl + '" target="_blank" rel="noopener">' + icon('clip') + ' ' + escHtml(m.file_name||'Fil') + ' <span class="msg-file-sz">' + sz + '</span></a>';
+      bubble = '<a class="msg-file" href="' + safeUrl + '" target="_blank" rel="noopener">' + icon('clip') + ' ' + escHtml(m.file_name||t('dm_file_label')) + ' <span class="msg-file-sz">' + sz + '</span></a>';
     }
   } else {
-    var edited = m.edited ? ' <span class="msg-edited">redigeret</span>' : '';
+    var edited = m.edited ? ' <span class="msg-edited">' + t('misc_edited') + '</span>' : '';
     var content = m.content || '';
     var emojiOnly = isEmojiOnly(content);
     if (emojiOnly) {
@@ -784,25 +784,25 @@ function dmLongPress(msgId, isSent) {
   menu.className = 'dm-ctx-menu';
 
   var copyBtn = document.createElement('button');
-  copyBtn.textContent = 'Kopier';
+  copyBtn.textContent = t('misc_copy');
   copyBtn.onclick = function(e) {
     e.stopPropagation();
     var bubble = document.getElementById('dm-bubble-' + msgId);
-    if (bubble) { navigator.clipboard.writeText(bubble.textContent).then(function() { showToast('Kopieret'); }); }
+    if (bubble) { navigator.clipboard.writeText(bubble.textContent).then(function() { showToast(t('misc_copied')); }); }
     overlay.remove();
   };
   menu.appendChild(copyBtn);
 
   if (isSent) {
     var editBtn = document.createElement('button');
-    editBtn.textContent = 'Rediger';
+    editBtn.textContent = t('misc_edit');
     editBtn.onclick = function(e) { e.stopPropagation(); overlay.remove(); dmStartEdit(msgId); };
     menu.appendChild(editBtn);
   }
 
   var delBtn = document.createElement('button');
   delBtn.className = 'danger';
-  delBtn.textContent = 'Slet';
+  delBtn.textContent = t('misc_delete');
   delBtn.onclick = function(e) {
     e.stopPropagation();
     overlay.remove();

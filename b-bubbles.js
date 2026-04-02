@@ -311,10 +311,10 @@ function _showMemberTray(userId, userName, confirmText, cancelText, onConfirm) {
   tray.style.display = 'block';
   tray.innerHTML = '<div style="text-align:center;padding:1rem 0">' +
     '<div style="font-size:0.92rem;font-weight:700;margin-bottom:0.3rem">' + confirmText.replace('{name}', '<strong>' + escHtml(userName) + '</strong>') + '</div>' +
-    '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem">Denne handling kan ikke fortrydes</div>' +
+    '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem">' + t('misc_cannot_undo') + '</div>' +
     '<div style="display:flex;gap:0.5rem;justify-content:center">' +
-    '<button style="flex:1;padding:0.65rem;border-radius:12px;background:var(--gradient-primary);color:white;border:none;font-family:inherit;font-weight:700;font-size:0.82rem;cursor:pointer" onclick="' + onConfirm + '">Bekræft</button>' +
-    '<button style="flex:1;padding:0.65rem;border-radius:12px;background:none;color:var(--text-secondary);border:1px solid var(--glass-border);font-family:inherit;font-weight:600;font-size:0.82rem;cursor:pointer" onclick="closeMemberSheet()">Annuller</button>' +
+    '<button style="flex:1;padding:0.65rem;border-radius:12px;background:var(--gradient-primary);color:white;border:none;font-family:inherit;font-weight:700;font-size:0.82rem;cursor:pointer" onclick="' + onConfirm + '">' + t('misc_confirm') + '</button>' +
+    '<button style="flex:1;padding:0.65rem;border-radius:12px;background:none;color:var(--text-secondary);border:1px solid var(--glass-border);font-family:inherit;font-weight:600;font-size:0.82rem;cursor:pointer" onclick="closeMemberSheet()">' + t('misc_cancel') + '</button>' +
     '</div></div>';
 }
 
@@ -327,15 +327,15 @@ async function openTransferOwnership(bubbleId) {
       .neq('user_id', currentUser.id);
     if (memErr) { logError('openTransferOwnership:query', memErr); errorToast('load', memErr); return; }
     var members = (allMem || []).filter(function(m) { return m.status !== 'pending'; });
-    if (members.length === 0) { showWarningToast('Ingen medlemmer at overdrage til — inviter nogen først'); return; }
+    if (members.length === 0) { showWarningToast(t('bb_no_members_transfer')); return; }
     var uIds = members.map(function(m) { return m.user_id; });
     var { data: profs } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', uIds);
     var pm = {}; (profs || []).forEach(function(p) { pm[p.id] = p; });
     members.forEach(function(m) { m.profiles = pm[m.user_id] || { name: t('misc_unknown') }; });
 
     _buildMemberSheet(
-      '<span style="display:inline-flex;align-items:center;gap:0.3rem">' + ico('crown').replace('<svg ','<svg style="width:1.1rem;height:1.1rem" ') + ' Overdrag ejerskab</span>',
-      'Vælg det nye medlem der skal overtage som ejer. Du mister ejer-rettigheder.',
+      '<span style="display:inline-flex;align-items:center;gap:0.3rem">' + ico('crown').replace('<svg ','<svg style="width:1.1rem;height:1.1rem" ') + ' ' + t('bi_transfer_ownership') + '</span>',
+      t('bc_transfer_owner_desc'),
       members
     );
     document.querySelectorAll('#member-sheet-list .member-pick-row').forEach(function(row) {
@@ -394,7 +394,7 @@ async function openAdminDesignation(bubbleId) {
       .neq('user_id', currentUser.id);
     if (memErr) { logError('openAdminDesignation:query', memErr); errorToast('load', memErr); return; }
     var members = (allMem || []).filter(function(m) { return m.status !== 'pending'; });
-    if (members.length === 0) { showWarningToast('Ingen medlemmer at udpege'); return; }
+    if (members.length === 0) { showWarningToast(t('bb_no_members_admin')); return; }
     var uIds = members.map(function(m) { return m.user_id; });
     var { data: profs } = await sb.from('profiles').select('id, name, title, avatar_url').in('id', uIds);
     var pm = {}; (profs || []).forEach(function(p) { pm[p.id] = p; });
@@ -418,14 +418,14 @@ async function openAdminDesignation(bubbleId) {
 }
 
 function _selectMakeAdmin(bubbleId, userId, userName) {
-  _showMemberTray(userId, userName, 'Gør {name} til admin?',
-    'Annuller',
+  _showMemberTray(userId, userName, t('bc_make_admin_confirm', { name: '{name}' }),
+    t('misc_cancel'),
     '_executeSetRole(\'' + bubbleId + '\',\'' + userId + '\',\'' + escHtml(userName).replace(/'/g,"\\'") + '\',\'admin\')');
 }
 
 function _selectRemoveAdmin(bubbleId, userId, userName) {
-  _showMemberTray(userId, userName, 'Fjern admin-rettigheder fra {name}?',
-    'Annuller',
+  _showMemberTray(userId, userName, t('bc_remove_admin_confirm', { name: '{name}' }),
+    t('misc_cancel'),
     '_executeSetRole(\'' + bubbleId + '\',\'' + userId + '\',\'' + escHtml(userName).replace(/'/g,"\\'") + '\',\'member\')');
 }
 
@@ -1938,11 +1938,11 @@ function toggleInvite(cb) {
   }
   // Update subtitle
   var sub = document.getElementById('invite-subtitle');
-  if (sub) sub.textContent = n > 0 ? n + ' valgt' : 'Vælg fra dine gemte kontakter';
+  if (sub) sub.textContent = n > 0 ? t('bb_n_selected', { n: n }) : t('bb_select_from_contacts');
 }
 
 async function sendBubbleInvites() {
-  if (inviteSelected.length === 0) return showWarningToast('Vælg mindst én kontakt');
+  if (inviteSelected.length === 0) return showWarningToast(t('bb_select_min_one'));
   try {
     var btn = document.getElementById('invite-send-btn');
     if (btn) { btn.textContent = 'Sender...'; btn.disabled = true; btn.classList.add('btn-loading'); }

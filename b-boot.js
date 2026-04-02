@@ -731,13 +731,13 @@ if ('serviceWorker' in navigator) {
     // Push-notifikation klik → naviger
     if (msg.type === 'PUSH_NAVIGATE') {
       var d = msg.data || {};
-      var t = d.type || '';
-      if ((t === 'new_message' || t === 'message') && d.sender_id) {
+      var pushType = d.type || '';
+      if ((pushType === 'new_message' || pushType === 'message') && d.sender_id) {
         if (currentUser) openChat(d.sender_id, 'screen-messages');
-      } else if (t === 'new_invite' || t === 'invitation' || t === 'saved_contact') {
+      } else if (pushType === 'new_invite' || pushType === 'invitation' || pushType === 'saved_contact') {
         goTo('screen-notifications');
         loadNotifications();
-      } else if (t === 'checkin' && d.bubble_id) {
+      } else if (pushType === 'checkin' && d.bubble_id) {
         if (currentUser) openBubbleChat(d.bubble_id, 'screen-home');
       }
       // Refresh badges after push navigation

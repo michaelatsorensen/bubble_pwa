@@ -763,7 +763,7 @@ async function bcLoadEvents() {
     list.innerHTML = html;
   } catch(e) {
     logError('bcLoadEvents', e);
-    showRetryState('bc-events-list', 'bcLoadEvents', 'Kunne ikke hente tilknyttede');
+    showRetryState('bc-events-list', 'bcLoadEvents', t('toast_load_failed'));
   }
 }
 
@@ -880,7 +880,7 @@ function bcRenderMsg(m) {
     }
   } else {
     var content = m.content || '';
-    var edited = m.edited ? ' <span class="msg-edited" onclick="bcShowHistory(\'' + m.id + '\')">redigeret</span>' : '';
+    var edited = m.edited ? ' <span class="msg-edited" onclick="bcShowHistory(\'' + m.id + '\')">' + t('misc_edited') + '</span>' : '';
     if (isEmojiOnly(content)) {
       bubble = '<div class="msg-emoji" id="bc-bubble-' + m.id + '">' + escHtml(content) + '</div>';
     } else {
@@ -1161,17 +1161,17 @@ function bcLongPress(msgId, isMe) {
   var menu = document.createElement('div');
   menu.className = 'dm-ctx-menu';
   var copyBtn = document.createElement('button');
-  copyBtn.textContent = 'Kopier';
-  copyBtn.onclick = function(e) { e.stopPropagation(); var b = document.getElementById('bc-bubble-' + msgId); if (b) navigator.clipboard.writeText(b.textContent).then(function(){ showToast('Kopieret'); }); overlay.remove(); };
+  copyBtn.textContent = t('misc_copy');
+  copyBtn.onclick = function(e) { e.stopPropagation(); var b = document.getElementById('bc-bubble-' + msgId); if (b) navigator.clipboard.writeText(b.textContent).then(function(){ showToast(t('misc_copied')); }); overlay.remove(); };
   menu.appendChild(copyBtn);
   if (isMe) {
     var editBtn = document.createElement('button');
-    editBtn.textContent = 'Rediger';
+    editBtn.textContent = t('misc_edit');
     editBtn.onclick = function(e) { e.stopPropagation(); overlay.remove(); bcEditStart(msgId); };
     menu.appendChild(editBtn);
     var delBtn = document.createElement('button');
     delBtn.className = 'danger';
-    delBtn.textContent = 'Slet';
+    delBtn.textContent = t('misc_delete');
     delBtn.onclick = function(e) { e.stopPropagation(); overlay.remove(); bcDeleteConfirm(msgId); };
     menu.appendChild(delBtn);
   }
@@ -1453,8 +1453,8 @@ function bcShowKickConfirm(btn, userId, userName) {
   var row = btn.closest('.chat-member-row');
   if (!row) return;
   bbConfirm(row, {
-    label: 'Fjern ' + userName + '?',
-    confirmText: 'Fjern',
+    label: t('bc_remove_member_confirm', { name: userName }),
+    confirmText: t('misc_remove'),
     confirmClass: 'bb-confirm-btn-danger',
     onConfirm: "event.stopPropagation();bcConfirmKick('" + userId + "','" + userName + "')"
   });
@@ -1942,7 +1942,7 @@ async function bcLoadPosts() {
 
   } catch(e) {
     logError('bcLoadPosts', e);
-    showRetryState('bc-posts-list', 'bcLoadPosts', 'Kunne ikke hente opslag');
+    showRetryState('bc-posts-list', 'bcLoadPosts', t('toast_load_failed'));
   }
 }
 
@@ -2140,8 +2140,8 @@ async function bcDeletePost(postId) {
     var target = overlay.querySelector('.bb-dyn-sheet');
     if (target) {
       bbConfirm(target, {
-        label: 'Slet dette opslag?',
-        confirmText: 'Slet',
+        label: t('bc_delete_post_confirm'),
+        confirmText: t('misc_delete'),
         confirmClass: 'bb-confirm-btn-danger',
         onConfirm: "bcConfirmDeletePost('" + postId + "')"
       });

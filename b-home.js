@@ -279,11 +279,11 @@ function showProfileSetupCTA() {
 
   // Determine next step
   var nextLabel = '';
-  if (!currentProfile.workplace) nextLabel = 'Næste: Tilføj arbejdsplads';
-  else if (!currentProfile.title) nextLabel = 'Næste: Tilføj titel';
-  else if (!currentProfile.keywords || currentProfile.keywords.length < 3) nextLabel = 'Næste: Vælg interesser';
-  else if (!currentProfile.lifestage) nextLabel = 'Næste: Vælg din type';
-  else nextLabel = 'Tilføj tags for bedre matches';
+  if (!currentProfile.workplace) nextLabel = t('home_next_workplace');
+  else if (!currentProfile.title) nextLabel = t('home_next_title');
+  else if (!currentProfile.keywords || currentProfile.keywords.length < 3) nextLabel = t('home_next_interests');
+  else if (!currentProfile.lifestage) nextLabel = t('home_next_lifestage');
+  else nextLabel = t('home_add_tags');
 
   // Update CTA avatar
   var avEl = document.getElementById('setup-cta-avatar');
@@ -408,11 +408,11 @@ function renderSetupInterests() {
   // Update count + button
   var cnt = _setupSelectedInterests.length;
   var countEl = document.getElementById('setup-interest-count');
-  if (countEl) countEl.textContent = 'Vælg mindst 3 emner (' + cnt + '/3)';
+  if (countEl) countEl.textContent = t('home_select_min3', { n: cnt });
   var btn = document.getElementById('setup-interest-save');
   if (btn) {
-    if (cnt >= 3) { btn.disabled = false; btn.textContent = 'Gem og fortsæt'; }
-    else { btn.disabled = true; btn.textContent = 'Vælg ' + (3 - cnt) + ' mere'; }
+    if (cnt >= 3) { btn.disabled = false; btn.textContent = t('misc_save_continue'); }
+    else { btn.disabled = true; btn.textContent = t('home_select_n_more', { n: 3 - cnt }); }
   }
   // Update progress bar
   var strength = calcProfileStrength(currentProfile);
@@ -464,8 +464,8 @@ function updateSetupLifestageUI() {
   });
   var btn = document.getElementById('setup-ls-save');
   if (btn) {
-    if (_setupSelectedLifestage) { btn.disabled = false; btn.textContent = 'Færdig!'; }
-    else { btn.disabled = true; btn.textContent = 'Vælg din type'; }
+    if (_setupSelectedLifestage) { btn.disabled = false; btn.textContent = t('misc_done'); }
+    else { btn.disabled = true; btn.textContent = t('home_select_type'); }
   }
   var strength = calcProfileStrength(currentProfile);
   var projected = _setupSelectedLifestage ? Math.min(strength + 13, 100) : strength;
@@ -508,15 +508,15 @@ function showDartboardEmpty(filter) {
   var msg = '', link = '', linkFn = '';
   if (filter === 'strong') {
     msg = t('home_no_strong_matches');
-    link = 'Tilføj tags →';
+    link = t('home_add_tags_link');
     linkFn = 'openProfileSetupTags()';
   } else if (filter === 'good') {
-    msg = 'Ingen gode matches endnu';
-    link = 'Prøv et andet filter';
+    msg = t('home_no_good_matches');
+    link = t('home_try_other_filter');
     linkFn = 'filterRadarHome(\'all\')';
   } else if (filter === 'interest') {
-    msg = 'Ingen med fælles interesser';
-    link = 'Tilføj interesser →';
+    msg = t('home_no_shared_interests');
+    link = t('home_add_interests_link');
     linkFn = 'openSetupInterestsSheet()';
   }
   if (!msg) return;

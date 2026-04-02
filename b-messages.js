@@ -58,7 +58,7 @@ function convToggleSelectMode() {
 
   if (convSelectMode) {
     if (toolbar) toolbar.style.display = 'flex';
-    if (selectBtn) { selectBtn.textContent = 'Annuller'; selectBtn.style.color = 'var(--accent2)'; }
+    if (selectBtn) { selectBtn.textContent = t('misc_cancel'); selectBtn.style.color = 'var(--accent2)'; }
     // Add checkboxes to conversation cards
     if (list) {
       list.querySelectorAll('.card[data-conv-id]').forEach(function(card) {
@@ -75,7 +75,7 @@ function convToggleSelectMode() {
     }
   } else {
     if (toolbar) toolbar.style.display = 'none';
-    if (selectBtn) { selectBtn.textContent = 'V\u00e6lg'; selectBtn.style.color = ''; }
+    if (selectBtn) { selectBtn.textContent = t('misc_select'); selectBtn.style.color = ''; }
     if (list) list.querySelectorAll('.conv-check').forEach(function(el) { el.remove(); });
   }
   convUpdateSelectCount();
@@ -112,10 +112,10 @@ function convUpdateSelectCount() {
   var countEl = document.getElementById('conv-select-count');
   var delBtn = document.getElementById('conv-delete-btn');
   var n = convSelectedIds.length;
-  if (countEl) countEl.textContent = n + ' valgt';
+  if (countEl) countEl.textContent = t('dm_n_selected', { n: n });
   if (delBtn) {
     delBtn.disabled = n === 0;
-    delBtn.textContent = n > 0 ? 'Slet ' + n : 'Slet';
+    delBtn.textContent = n > 0 ? t('misc_delete') + ' ' + n : t('misc_delete');
   }
 }
 
@@ -124,8 +124,8 @@ async function convDeleteSelected() {
   var btn = document.getElementById('conv-delete-btn');
   if (!btn) return;
   bbConfirm(btn, {
-    label: convSelectedIds.length + ' samtale' + (convSelectedIds.length > 1 ? 'r' : '') + ' slettes permanent',
-    confirmText: 'Slet',
+    label: convSelectedIds.length > 1 ? t('dm_conv_delete_many', { n: convSelectedIds.length }) : t('dm_conv_delete_one', { n: convSelectedIds.length }),
+    confirmText: t('misc_delete'),
     confirmClass: 'bb-confirm-btn-danger',
     onConfirm: 'convConfirmDelete()'
   });
@@ -149,7 +149,7 @@ async function convConfirmDelete() {
       var card = list ? list.querySelector('[data-conv-id="' + id + '"]') : null;
       if (card) { card.style.transition = 'opacity 0.2s'; card.style.opacity = '0'; setTimeout(function() { card.remove(); }, 200); }
     });
-    showToast(ids.length + (ids.length === 1 ? ' samtale slettet' : ' samtaler slettet'));
+    showToast(ids.length > 1 ? t('dm_conv_deleted_many', { n: ids.length }) : t('dm_conv_deleted_one', { n: ids.length }));
     convToggleSelectMode();
     renderUnreadBadge();
   } catch(e) { logError('convConfirmDelete', e); errorToast('delete', e); }
