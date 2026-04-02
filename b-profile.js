@@ -1421,8 +1421,8 @@ function personSetStar(userId, rating) {
 }
 
 
-function psMessage() { const uid = document.getElementById('person-sheet-el').dataset.userId; const from = document.getElementById('person-sheet-el').dataset.fromScreen || 'screen-home'; psClose(); setTimeout(() => openChat(uid, from), 350); }
-function psProfile() { const uid = document.getElementById('person-sheet-el').dataset.userId; const from = document.getElementById('person-sheet-el').dataset.fromScreen || 'screen-home'; psClose(); setTimeout(() => openPerson(uid, from), 350); }
+function psMessage() { const uid = document.getElementById('person-sheet-el').dataset.userId; var from = document.getElementById('person-sheet-el').dataset.fromScreen || 'screen-home'; if (from === 'screen-bubble-chat') from = 'screen-home'; psClose(); setTimeout(() => openChat(uid, from), 350); }
+function psProfile() { const uid = document.getElementById('person-sheet-el').dataset.userId; var from = document.getElementById('person-sheet-el').dataset.fromScreen || 'screen-home'; if (from === 'screen-bubble-chat') from = 'screen-home'; psClose(); setTimeout(() => openPerson(uid, from), 350); }
 // psMeeting removed — feature shelved
 
 function psTriggerBubbleUp() {

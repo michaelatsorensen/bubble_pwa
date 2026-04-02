@@ -552,10 +552,34 @@ function dmReduceMsg(msg, opts) {
     if (emptyHero && !el.querySelector('.msg-row')) emptyHero.remove();
   }
 
-  // Insert: date separator + rendered message
+  // Insert: date separator + rendered message (sorted by created_at)
   dmHideTyping();
-  _dmMaybeInsertDateSep(el, msg.created_at);
-  el.insertAdjacentHTML('beforeend', dmRenderMsg(msg));
+  var newTs = new Date(msg.created_at).getTime();
+  var rows = el.querySelectorAll('.msg-row[data-msg-id]');
+  var insertBefore = null;
+
+  // Walk backwards to find first message with later timestamp
+  for (var i = rows.length - 1; i >= 0; i--) {
+    var row = rows[i];
+    var rowTs = parseInt(row.getAttribute('data-ts') || '0', 10);
+    if (rowTs && rowTs > newTs) {
+      insertBefore = row;
+    } else {
+      break; // Found a message with earlier/equal timestamp, stop
+    }
+  }
+
+  if (!insertBefore) {
+    // Normal case: append to end (most recent message)
+    _dmMaybeInsertDateSep(el, msg.created_at);
+    el.insertAdjacentHTML('beforeend', dmRenderMsg(msg));
+  } else {
+    // Out-of-order: insert before the later message
+    var tmpDiv = document.createElement('div');
+    tmpDiv.innerHTML = dmRenderMsg(msg);
+    var newRow = tmpDiv.firstElementChild;
+    if (newRow) el.insertBefore(newRow, insertBefore);
+  }
 
   if (opts.pending) {
     var pendingRow = document.getElementById('dm-msg-' + msg.id);
@@ -649,8 +673,9 @@ function dmRenderMsg(m) {
   var avatarClick = (!sent && showAvatar) ? ' onclick="dmOpenPersonSheet(\'' + m.sender_id + '\')"' : '';
 
   var rowClass = 'msg-row msg-' + gp + (sent ? ' me' : '');
+  var msgTs = new Date(m.created_at).getTime();
 
-  return '<div class="' + rowClass + '" id="dm-msg-' + m.id + '" data-msg-id="' + m.id + '" oncontextmenu="event.preventDefault();dmLongPress(\'' + m.id + '\',' + sent + ')" ontouchstart="dmTouchStart(event,\'' + m.id + '\',' + sent + ')" ontouchend="dmTouchEnd()" ontouchmove="dmTouchEnd()">' +
+  return '<div class="' + rowClass + '" id="dm-msg-' + m.id + '" data-msg-id="' + m.id + '" data-ts="' + msgTs + '" oncontextmenu="event.preventDefault();dmLongPress(\'' + m.id + '\',' + sent + ')" ontouchstart="dmTouchStart(event,\'' + m.id + '\',' + sent + ')" ontouchend="dmTouchEnd()" ontouchmove="dmTouchEnd()">' +
     '<div class="msg-avatar"' + avatarClick + ' style="' + avatarStyle + '">' + avatarInner + '</div>' +
     '<div class="msg-body">' +
     '<div class="msg-content">' + bubble + '</div>' +
