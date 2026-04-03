@@ -14,9 +14,9 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-04-04T22:00:00';
-const BUILD_VERSION  = 'v8.5.6';
-const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
+const BUILD_TIMESTAMP = '2026-04-03T19:00:00';
+const BUILD_VERSION  = 'v8.6.0';
+const SUPABASE_URL  = "https://api.bubbleme.dk";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
 
