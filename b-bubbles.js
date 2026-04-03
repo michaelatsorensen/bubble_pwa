@@ -242,13 +242,12 @@ async function openBubble(bubbleId, fromScreen) {
 
 async function joinBubble(bubbleId) {
   try {
-    const { error } = await sb.from('bubble_members').insert({ bubble_id: bubbleId, user_id: currentUser.id });
-    if (error && !String(error.message || '').includes('duplicate')) return _renderToast('Fejl ved joining', 'error');
+    var result = await dbActions.joinBubble(bubbleId);
+    if (!result.ok) return; // dbActions already showed error toast
     showSuccessToast(t('toast_joined'));
     _bbAfterJoin(bubbleId);
     await openBubble(bubbleId);
     loadHome();
-    trackEvent('bubble_joined', { bubble_id: bubbleId });
     // Notify owner via Broadcast
     try {
       var { data: bub } = await sb.from('bubbles').select('name, created_by').eq('id', bubbleId).single();
@@ -1140,15 +1139,22 @@ async function checkQRJoin() {
       return;
     }
 
-    // Auto-join
-    const { error } = await sb.from('bubble_members')
-      .insert({ bubble_id: joinId, user_id: session.user.id });
-
-    if (!error || String(error.message || '').includes('duplicate')) {
-      showSuccessToast('Du er checket ind');
-      await openBubble(joinId, 'screen-home');
+    // Join via centralized write layer
+    var result = await dbActions.joinBubble(joinId);
+    if (!result.ok) {
+      // dbActions already showed error toast — navigate home so user isn't stranded
+      goTo('screen-home');
+      return;
     }
-  } catch(e) { logError("checkQRJoin", e); errorToast("load", e); }
+
+    showSuccessToast(t('toast_joined'));
+    await openBubble(joinId, 'screen-home');
+  } catch(e) {
+    logError("checkQRJoin", e);
+    errorToast("load", e);
+    // Prevent dead end — always navigate somewhere
+    if (_activeScreen === 'screen-loading' || !_activeScreen) goTo('screen-home');
+  }
 }
 
 async function checkPendingJoin() {

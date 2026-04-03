@@ -14,8 +14,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-04-04T09:00:00';
-const BUILD_VERSION  = 'v8.5.0';
+const BUILD_TIMESTAMP = '2026-04-04T12:00:00';
+const BUILD_VERSION  = 'v8.5.1';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -159,7 +159,7 @@ var _activeScreen = null;
 // Reads from sessionStorage first, falls back to localStorage
 // Survives: page reloads, OAuth redirects, Safari private mode
 var _flowStatePrefix = 'bf_'; // bf = bubble flow
-var _flowTTL = 15 * 60 * 1000; // 15 minutes
+var _flowTTL = 30 * 60 * 1000; // 30 minutes — must survive OAuth redirects on slow WiFi
 
 function flowGet(key) {
   var k = _flowStatePrefix + key;

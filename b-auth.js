@@ -308,27 +308,35 @@ function updateHomeAvatar() {
   if (myAv) { if (url) myAv.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else myAv.textContent = ini; }
 }
 
+// ── Auth lock: prevents double-tap on login/signup buttons ──
+var _authLock = false;
+
 async function handleLogin() {
+  if (_authLock) return;
+  _authLock = true;
   try {
     const email = document.getElementById('login-email').value.trim();
     const pass = document.getElementById('login-password').value;
-    if (!email || !pass) return showWarningToast('Udfyld email og adgangskode');
+    if (!email || !pass) { _authLock = false; return showWarningToast('Udfyld email og adgangskode'); }
     showToast(t('misc_loading'));
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-    if (error) return errorToast('login', error);
+    if (error) { _authLock = false; return errorToast('login', error); }
     currentUser = data.user;
     await resolvePostAuth();
   } catch(e) { logError("handleLogin", e); errorToast("login", e); }
+  finally { _authLock = false; }
 }
 
 async function handleSignup() {
+  if (_authLock) return;
+  _authLock = true;
   try {
     const name  = document.getElementById('signup-name').value.trim();
     const email = document.getElementById('signup-email').value.trim();
     const pass  = document.getElementById('signup-password').value;
     const title = document.getElementById('signup-title').value.trim();
-    if (!name || !email || !pass) return showWarningToast('Udfyld alle felter');
-    if (pass.length < 6) return showWarningToast(t('toast_password_min'));
+    if (!name || !email || !pass) { _authLock = false; return showWarningToast('Udfyld alle felter'); }
+    if (pass.length < 6) { _authLock = false; return showWarningToast(t('toast_password_min')); }
     showToast('Opretter konto...');
     const { data, error } = await sb.auth.signUp({
       email,
@@ -381,6 +389,7 @@ async function handleSignup() {
     await resolvePostAuth();
     showSuccessToast('Velkommen til Bubble');
   } catch(e) { logError("handleSignup", e); errorToast("signup", e); }
+  finally { _authLock = false; }
 }
 
 async function handleLogout() {
@@ -540,6 +549,8 @@ async function submitFeedback() {
 //  GOOGLE LOGIN
 // ══════════════════════════════════════════════════════════
 async function handleGoogleLogin() {
+  if (_authLock) return;
+  _authLock = true;
   try {
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'google',
@@ -550,12 +561,15 @@ async function handleGoogleLogin() {
     });
     if (error) errorToast('login', error);
   } catch(e) { logError("handleGoogleLogin", e); errorToast("login", e); }
+  finally { _authLock = false; }
 }
 
 // ══════════════════════════════════════════════════════════
 //  LINKEDIN LOGIN
 // ══════════════════════════════════════════════════════════
 async function handleLinkedInLogin() {
+  if (_authLock) return;
+  _authLock = true;
   try {
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'linkedin_oidc',
@@ -565,12 +579,15 @@ async function handleLinkedInLogin() {
     });
     if (error) errorToast('login', error);
   } catch(e) { logError("handleLinkedInLogin", e); errorToast("login", e); }
+  finally { _authLock = false; }
 }
 
 // ══════════════════════════════════════════════════════════
 //  APPLE LOGIN
 // ══════════════════════════════════════════════════════════
 async function handleAppleLogin() {
+  if (_authLock) return;
+  _authLock = true;
   try {
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'apple',
@@ -580,6 +597,7 @@ async function handleAppleLogin() {
     });
     if (error) errorToast('login', error);
   } catch(e) { logError("handleAppleLogin", e); errorToast("login", e); }
+  finally { _authLock = false; }
 }
 
 // ══════════════════════════════════════════════════════════
