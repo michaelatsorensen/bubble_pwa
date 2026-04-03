@@ -14,8 +14,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-04-04T12:00:00';
-const BUILD_VERSION  = 'v8.5.1';
+const BUILD_TIMESTAMP = '2026-04-04T16:00:00';
+const BUILD_VERSION  = 'v8.5.3';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -229,6 +229,8 @@ function resetAppState() {
   isAnon = false;
   allBubbles = [];
   cbChips = []; epChips = []; epDynChips = []; ebChips = []; obChips = [];
+  // Subscriptions — unsubscribe before nullifying to prevent orphaned channels
+  try { if (chatSubscription) chatSubscription.unsubscribe(); } catch(e) {}
   chatSubscription = null;
 
   // App mode / live
@@ -254,7 +256,8 @@ function resetAppState() {
   if (typeof _homeLoading !== 'undefined') _homeLoading = false;
   if (typeof proxAllProfiles !== 'undefined') proxAllProfiles = [];
 
-  // Chat
+  // Chat — unsubscribe before nullifying
+  try { if (typeof bcSubscription !== 'undefined' && bcSubscription) bcSubscription.unsubscribe(); } catch(e) {}
   if (typeof bcBubbleId !== 'undefined') bcBubbleId = null;
   if (typeof bcBubbleData !== 'undefined') bcBubbleData = null;
   if (typeof bcSubscription !== 'undefined') bcSubscription = null;
@@ -263,6 +266,8 @@ function resetAppState() {
   if (typeof bcMsgHistories !== 'undefined') bcMsgHistories = {};
   if (typeof dmEditingId !== 'undefined') dmEditingId = null;
   if (typeof dmSending !== 'undefined') dmSending = false;
+  if (typeof _authLock !== 'undefined') _authLock = false;
+  if (typeof _liveLock !== 'undefined') _liveLock = false;
 
   // Unread / badges
   if (typeof unreadState !== 'undefined') unreadState.reset();

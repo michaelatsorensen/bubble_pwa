@@ -14,6 +14,7 @@
 // ══════════════════════════════════════════════════════════
 const LIVE_EXPIRE_HOURS = 6;
 let currentLiveBubble = null; // { bubble_id, bubble_name, bubble_location, checked_in_at, member_count }
+var _liveLock = false; // Prevents double check-in/checkout from rapid taps
 
 async function loadLiveBubbleStatus() {
   try {
@@ -116,6 +117,8 @@ function closeLiveCheckinModal() {
 }
 
 async function liveCheckin(bubbleId) {
+  if (_liveLock) return;
+  _liveLock = true;
   try {
     showToast(t('misc_loading'));
 
@@ -181,11 +184,10 @@ async function liveCheckin(bubbleId) {
   } catch (e) {
     logError('liveCheckin', e);
     errorToast('save', e);
-  }
+  } finally { _liveLock = false; }
 }
-
-// Client-side fallback (original multi-query approach)
 async function _liveCheckinFallback(bubbleId) {
+  try {
     // 0. Check visibility
     var { data: bCheck } = await sb.from('bubbles').select('visibility').eq('id', bubbleId).single();
     if (bCheck && (bCheck.visibility === 'hidden' || bCheck.visibility === 'private')) {
@@ -237,6 +239,7 @@ async function _liveCheckinFallback(bubbleId) {
       if (typeof filterRadarHome === 'function' && appMode.checkedInIds.length > 0) filterRadarHome('live');
     });
     if (typeof loadLiveBanner === 'function') loadLiveBanner();
+  } catch(e) { logError('_liveCheckinFallback', e); errorToast('save', e); }
 }
 
 // Shared UI for check-in success
@@ -280,6 +283,8 @@ async function liveAutoCheckout() {
 }
 
 async function liveCheckout() {
+  if (_liveLock) return;
+  _liveLock = true;
   try {
     if (!currentLiveBubble) return;
     var checkoutBubbleId = (appMode.live && appMode.live.bubbleId) || currentLiveBubble.bubble_id || currentLiveBubble.bubbleId;
@@ -314,7 +319,7 @@ async function liveCheckout() {
   } catch (e) {
     logError('liveCheckout', e);
     _renderToast(t('toast_generic_error'), 'error');
-  }
+  } finally { _liveLock = false; }
 }
 
 function openLiveBubble() {

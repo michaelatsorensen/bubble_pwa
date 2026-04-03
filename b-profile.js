@@ -12,6 +12,7 @@
 async function openPerson(userId, fromScreen) {
   try {
     currentPerson = userId;
+    navState.personSheetId = userId;
     const backBtn = document.getElementById('person-back-btn');
     // Capture bubble ID before navigation clears it
     var _backBubbleId = (fromScreen === 'screen-bubble-chat' && typeof bcBubbleId !== 'undefined') ? bcBubbleId : null;
@@ -132,67 +133,71 @@ function _personRenderIdentity(p) {
 }
 
 async function _personRenderLive(p, userId) {
-  var personLiveEl = document.getElementById('person-live-badge');
-  if (!personLiveEl) return;
-  var expCut = new Date(Date.now() - LIVE_EXPIRE_HOURS * 3600000).toISOString();
-  var { data: pLive } = await sb.from('bubble_members')
-    .select('checked_in_at, bubbles(name)')
-    .eq('user_id', userId)
-    .not('checked_in_at', 'is', null)
-    .is('checked_out_at', null)
-    .gte('checked_in_at', expCut)
-    .order('checked_in_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (pLive) {
-    personLiveEl.innerHTML = '<span class="live-badge-mini">LIVE</span> ' + escHtml(pLive.bubbles?.name || '');
-    personLiveEl.style.display = 'block';
-  } else {
-    personLiveEl.style.display = 'none';
-  }
+  try {
+    var personLiveEl = document.getElementById('person-live-badge');
+    if (!personLiveEl) return;
+    var expCut = new Date(Date.now() - LIVE_EXPIRE_HOURS * 3600000).toISOString();
+    var { data: pLive } = await sb.from('bubble_members')
+      .select('checked_in_at, bubbles(name)')
+      .eq('user_id', userId)
+      .not('checked_in_at', 'is', null)
+      .is('checked_out_at', null)
+      .gte('checked_in_at', expCut)
+      .order('checked_in_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (pLive) {
+      personLiveEl.innerHTML = '<span class="live-badge-mini">LIVE</span> ' + escHtml(pLive.bubbles?.name || '');
+      personLiveEl.style.display = 'block';
+    } else {
+      personLiveEl.style.display = 'none';
+    }
+  } catch(e) { logError('_personRenderLive', e); }
 }
 
 async function _personRenderMatch(p, userId, myNav) {
-  var myKw = (currentProfile?.keywords || []).map(k => k.toLowerCase());
-  var theirKw = (p.keywords || []).map(k => k.toLowerCase());
-  var overlap = myKw.filter(k => theirKw.includes(k));
+  try {
+    var myKw = (currentProfile?.keywords || []).map(k => k.toLowerCase());
+    var theirKw = (p.keywords || []).map(k => k.toLowerCase());
+    var overlap = myKw.filter(k => theirKw.includes(k));
 
-  // Shared bubble count
-  var { data: sharedBubs } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
-  var myBIds = (sharedBubs || []).map(b => b.bubble_id);
-  var sharedCount = 0;
-  if (myBIds.length > 0) {
-    var { count: sc } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('user_id', userId).in('bubble_id', myBIds);
-    sharedCount = sc || 0;
-  }
+    // Shared bubble count
+    var { data: sharedBubs } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+    var myBIds = (sharedBubs || []).map(b => b.bubble_id);
+    var sharedCount = 0;
+    if (myBIds.length > 0) {
+      var { count: sc } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('user_id', userId).in('bubble_id', myBIds);
+      sharedCount = sc || 0;
+    }
 
-  // Match score label
-  var score = calcMatchScore(currentProfile || {}, p, sharedCount);
-  var ml = matchLabel(score);
-  var matchEl = document.getElementById('person-match-label');
-  matchEl.textContent = ml.text;
-  matchEl.style.background = ml.color;
-  matchEl.style.display = ml.text ? '' : 'none';
+    // Match score label
+    var score = calcMatchScore(currentProfile || {}, p, sharedCount);
+    var ml = matchLabel(score);
+    var matchEl = document.getElementById('person-match-label');
+    matchEl.textContent = ml.text;
+    matchEl.style.background = ml.color;
+    matchEl.style.display = ml.text ? '' : 'none';
 
-  // Shared interests — collapsible (show 6, expand to all)
-  var overlapEl = document.getElementById('person-overlap');
-  if (overlap.length) {
-    var INITIAL_SHOW = 6;
-    var allTagsHtml = overlap.map(function(k) {
-      var original = (p.keywords || []).find(function(t) { return t.toLowerCase() === k; }) || k;
-      return '<span class="tag mint">' + icon("check") + ' ' + escHtml(original) + '</span>';
-    });
-    var visibleHtml = allTagsHtml.slice(0, INITIAL_SHOW).join('');
-    var hiddenHtml = allTagsHtml.slice(INITIAL_SHOW).join('');
-    var hasMore = overlap.length > INITIAL_SHOW;
-    
-    overlapEl.innerHTML = '<div class="person-section-title" style="margin-bottom:0.4rem">Fælles interesser · ' + overlap.length + '</div>' +
-      '<div id="person-tags-visible">' + visibleHtml + '</div>' +
-      (hasMore ? '<div id="person-tags-hidden" style="display:none">' + hiddenHtml + '</div>' +
-        '<button id="person-tags-toggle" onclick="togglePersonTags()" style="font-size:0.7rem;font-weight:600;color:var(--accent);background:none;border:none;padding:0.4rem 0;cursor:pointer;font-family:inherit">Vis alle ' + overlap.length + ' →</button>' : '');
-  } else {
-    overlapEl.innerHTML = '<span class="fs-085 text-muted">Ingen fælles interesser fundet</span>';
-  }
+    // Shared interests — collapsible (show 6, expand to all)
+    var overlapEl = document.getElementById('person-overlap');
+    if (overlap.length) {
+      var INITIAL_SHOW = 6;
+      var allTagsHtml = overlap.map(function(k) {
+        var original = (p.keywords || []).find(function(t) { return t.toLowerCase() === k; }) || k;
+        return '<span class="tag mint">' + icon("check") + ' ' + escHtml(original) + '</span>';
+      });
+      var visibleHtml = allTagsHtml.slice(0, INITIAL_SHOW).join('');
+      var hiddenHtml = allTagsHtml.slice(INITIAL_SHOW).join('');
+      var hasMore = overlap.length > INITIAL_SHOW;
+      
+      overlapEl.innerHTML = '<div class="person-section-title" style="margin-bottom:0.4rem">Fælles interesser · ' + overlap.length + '</div>' +
+        '<div id="person-tags-visible">' + visibleHtml + '</div>' +
+        (hasMore ? '<div id="person-tags-hidden" style="display:none">' + hiddenHtml + '</div>' +
+          '<button id="person-tags-toggle" onclick="togglePersonTags()" style="font-size:0.7rem;font-weight:600;color:var(--accent);background:none;border:none;padding:0.4rem 0;cursor:pointer;font-family:inherit">Vis alle ' + overlap.length + ' →</button>' : '');
+    } else {
+      overlapEl.innerHTML = '<span class="fs-085 text-muted">Ingen fælles interesser fundet</span>';
+    }
+  } catch(e) { logError('_personRenderMatch', e); }
 }
 
 function _personRenderDynamic(p) {

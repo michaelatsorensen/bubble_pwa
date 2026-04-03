@@ -472,6 +472,7 @@ async function openChat(userId, fromScreen) {
   if (isBlocked(userId)) { _renderToast('Denne bruger er blokeret', 'error'); return; }
   try {
     currentChatUser = userId;
+    navState.chatTarget = userId;
     const { data: p } = await sb.from('profiles').select('name,title,workplace,avatar_url').eq('id', userId).single();
     currentChatName = p?.name || t('misc_unknown');
     window._chatPartnerAvatar = p?.avatar_url || null;

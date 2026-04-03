@@ -203,6 +203,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
   var prevTab = prevBubbleId ? _bcActiveTab : null;
   bcUnsubscribe();
   bcBubbleId = bubbleId;
+  navState.bubbleChatId = bubbleId;
 
   // Persist route state for browser back/restore
   try {
@@ -346,24 +347,26 @@ async function bcLoadBubbleCore(bubbleId) {
 
 // Phase 2: Show/hide tabs based on bubble type + children
 async function bcConfigureTabs(b, bubbleId) {
-  var isEvent = b.type === 'event' || b.type === 'live';
-  var tabMembers = document.getElementById('bc-tab-members');
-  var tabEvents = document.getElementById('bc-tab-events');
-  var tabPosts = document.getElementById('bc-tab-posts');
+  try {
+    var isEvent = b.type === 'event' || b.type === 'live';
+    var tabMembers = document.getElementById('bc-tab-members');
+    var tabEvents = document.getElementById('bc-tab-events');
+    var tabPosts = document.getElementById('bc-tab-posts');
 
-  if (tabMembers) tabMembers.textContent = isEvent ? 'Deltagere' : 'Medlemmer';
+    if (tabMembers) tabMembers.textContent = isEvent ? 'Deltagere' : 'Medlemmer';
 
-  if (!isEvent) {
-    var { count: childCount } = await sb.from('bubbles').select('*', { count: 'exact', head: true })
-      .eq('parent_bubble_id', bubbleId);
-    if (tabEvents) {
-      tabEvents.textContent = t('bc_events');
-      tabEvents.style.display = (childCount > 0) ? '' : 'none';
+    if (!isEvent) {
+      var { count: childCount } = await sb.from('bubbles').select('*', { count: 'exact', head: true })
+        .eq('parent_bubble_id', bubbleId);
+      if (tabEvents) {
+        tabEvents.textContent = t('bc_events');
+        tabEvents.style.display = (childCount > 0) ? '' : 'none';
+      }
+    } else {
+      if (tabEvents) tabEvents.style.display = 'none';
     }
-  } else {
-    if (tabEvents) tabEvents.style.display = 'none';
-  }
-  if (tabPosts) tabPosts.style.display = '';
+    if (tabPosts) tabPosts.style.display = '';
+  } catch(e) { logError('bcConfigureTabs', e); }
 }
 
 // Phase 3: Load membership, roles, pending state, action buttons
@@ -1844,35 +1847,33 @@ async function bcLoadInfo() {
 // ── Checkout from event (within bubble chat view) ──
 async function bcCheckout() {
   if (!bcBubbleId || !currentUser) return;
+  if (typeof _liveLock !== 'undefined' && _liveLock) return;
+
+  // If this is the active live bubble, delegate to liveCheckout (handles all state cleanup)
+  if (currentLiveBubble && (currentLiveBubble.bubble_id === bcBubbleId || currentLiveBubble.bubbleId === bcBubbleId)) {
+    await liveCheckout();
+    // Refresh bubble chat UI after checkout
+    bcLoadBubbleInfo();
+    bcLoadMembers();
+    if (_bcActiveTab === 'info') bcLoadInfo();
+    return;
+  }
+
+  // Non-live bubble checkout (edge case: checked in but not tracked as live)
   try {
     await sb.from('bubble_members').update({
       checked_out_at: new Date().toISOString()
     }).eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id);
 
-    // Clear global live state if this was the active live bubble
-    if (currentLiveBubble && currentLiveBubble.bubble_id === bcBubbleId) {
-      currentLiveBubble = null;
-      appMode.clearLive();
-    }
-
-    showSuccessToast('Du er checket ud');
+    showSuccessToast(t('toast_checkedout'));
     trackEvent('live_checkout', { bubble_id: bcBubbleId, via: 'bubble_chat' });
 
-    // Refresh bubble chat UI
     bcLoadBubbleInfo();
     bcLoadMembers();
     if (_bcActiveTab === 'info') bcLoadInfo();
-
-    // Refresh home if visible
-    if (typeof _homeViewMode !== 'undefined' && _homeViewMode === 'live') {
-      homeSetMode('all');
-    }
-    if (navState.screen === 'screen-home') {
-      loadLiveBanner();
-    }
   } catch(e) {
     logError('bcCheckout', e);
-    _renderToast('Fejl ved checkout', 'error');
+    _renderToast(t('toast_generic_error'), 'error');
   }
 }
 
