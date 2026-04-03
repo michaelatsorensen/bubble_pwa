@@ -14,8 +14,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-04-02T16:00:00';
-const BUILD_VERSION  = 'v8.4.0';
+const BUILD_TIMESTAMP = '2026-04-04T09:00:00';
+const BUILD_VERSION  = 'v8.5.0';
 const SUPABASE_URL  = "https://pfxcsjjxvdtpsfltexka.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -265,6 +265,7 @@ function resetAppState() {
   if (typeof dmSending !== 'undefined') dmSending = false;
 
   // Unread / badges
+  if (typeof unreadState !== 'undefined') unreadState.reset();
   if (typeof _unreadCount !== 'undefined') _unreadCount = 0;
 
   // Profile cache

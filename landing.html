@@ -1010,11 +1010,10 @@ function applyLandingLang(lang) {
 }
 
 function toggleLandingLang() {
-  var current = _landingLang;
-  var next = current === 'da' ? 'en' : 'da';
+  var next = _landingLang === 'da' ? 'en' : 'da';
   localStorage.setItem('bubble_landing_lang', next);
-  _landingLang = next;
   applyLandingLang(next);
+  _landingLang = next;
 }
 
 // Auto-apply on load

@@ -8,39 +8,62 @@
 // ══════════════════════════════════════════════════════════
 
 // ══════════════════════════════════════════════════════════
-//  MESSAGES — Hybrid unread badge
-//  _unreadRecount: full DB count (boot, reconnect, drift)
-//  _unreadRender: DOM update from local counter
-//  unreadIncrement/unreadDecrement: instant local adjustments
+//  UNREAD STATE — single source of truth for all badges
+//  Consolidates DM unread + notification badge management
+//  Writers: unreadState.dm* / unreadState.notif*
+//  Readers: unreadState.dm / unreadState.notif
+//  Compat: old function names (_unreadRecount, unreadIncrement, etc.) still work
 // ══════════════════════════════════════════════════════════
-var _unreadCount = 0;
+var unreadState = {
+  dm: 0,
+  notif: 0,
 
-function _unreadRender() {
-  var label = _unreadCount > 9 ? '9+' : (_unreadCount > 0 ? _unreadCount : '');
-  document.querySelectorAll('.msg-unread-badge').forEach(function(b) {
-    if (_unreadCount > 0) { b.textContent = label; b.style.display = 'flex'; }
-    else { b.style.display = 'none'; }
-  });
-}
+  // ── Render all badges ──
+  render: function() {
+    // DM badge (messages nav tab)
+    var dmLabel = this.dm > 9 ? '9+' : (this.dm > 0 ? String(this.dm) : '');
+    var self = this;
+    document.querySelectorAll('.msg-unread-badge').forEach(function(b) {
+      if (self.dm > 0) { b.textContent = dmLabel; b.style.display = 'flex'; }
+      else { b.style.display = 'none'; }
+    });
+    // Notification badge (topbar bell)
+    var notifEl = document.getElementById('topbar-notif-badge');
+    if (notifEl) {
+      if (this.notif > 0) { notifEl.textContent = this.notif > 9 ? '9+' : String(this.notif); notifEl.style.display = 'flex'; }
+      else { notifEl.style.display = 'none'; }
+    }
+  },
 
-async function _unreadRecount() {
-  try {
-    if (!currentUser) return;
-    var { count } = await sb.from('messages')
-      .select('*', { count: 'exact', head: true })
-      .eq('receiver_id', currentUser.id)
-      .is('read_at', null);
-    _unreadCount = count || 0;
-    _unreadRender();
-  } catch(e) { logError('_unreadRecount', e); }
-}
+  // ── DM operations ──
+  dmRecount: async function() {
+    try {
+      if (!currentUser) return;
+      var { count } = await sb.from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('receiver_id', currentUser.id)
+        .is('read_at', null);
+      this.dm = count || 0;
+      this.render();
+    } catch(e) { logError('unreadState.dmRecount', e); }
+  },
+  dmIncrement: function() { this.dm++; this.render(); },
+  dmDecrement: function(n) { this.dm = Math.max(0, this.dm - (n || 1)); this.render(); },
 
-function unreadIncrement() { _unreadCount++; _unreadRender(); }
-function unreadDecrement(n) { _unreadCount = Math.max(0, _unreadCount - (n || 1)); _unreadRender(); }
+  // ── Notification operations ──
+  notifSet: function(n) { this.notif = n || 0; this.render(); },
 
-// Compat alias — renamed for clarity: this only renders local state, does NOT recount from DB.
-// Use _unreadRecount() for a full DB refresh.
-async function renderUnreadBadge() { _unreadRender(); }
+  // ── Reset (logout) ──
+  reset: function() { this.dm = 0; this.notif = 0; this.render(); }
+};
+
+// ── Compat aliases — old callers keep working ──
+var _unreadCount = 0; // Legacy read (not authoritative — use unreadState.dm)
+function _unreadRender() { unreadState.render(); }
+async function _unreadRecount() { await unreadState.dmRecount(); }
+function unreadIncrement() { unreadState.dmIncrement(); }
+function unreadDecrement(n) { unreadState.dmDecrement(n); }
+async function renderUnreadBadge() { unreadState.render(); }
 
 
 // ══════════════════════════════════════════════════════════

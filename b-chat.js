@@ -695,7 +695,7 @@ async function bcLoadEvents() {
   list.innerHTML = skelCards(3);
   try {
     var { data: children } = await sb.from('bubbles')
-      .select('id, name, type, created_at, event_date, visibility, checkin_mode, bubble_members(count)')
+      .select('*, bubble_members(count)')
       .eq('parent_bubble_id', bcBubbleId)
       .order('event_date', { ascending: true, nullsFirst: false })
       .limit(30);
@@ -940,7 +940,14 @@ let bcSending = false;
 async function bcToggleChatLock(bubbleId, locked) {
   try {
     var { error } = await sb.from('bubbles').update({ chat_locked: locked }).eq('id', bubbleId);
-    if (error) { errorToast('save', error); return; }
+    if (error) {
+      // Column may not exist if migration hasn't been run
+      if (String(error.message || '').includes('chat_locked')) {
+        showWarningToast('Chat-lås kræver database-migration');
+        return;
+      }
+      errorToast('save', error); return;
+    }
     if (bcBubbleData) bcBubbleData.chat_locked = locked;
     bcUpdateChatLockUI();
     showSuccessToast(locked ? t('bc_chat_closed') : t('bc_chat_opened'));
@@ -1035,6 +1042,7 @@ async function bcSendMessage() {
           name: currentProfile?.name || currentUser.email?.split('@')[0] || '?'
         };
         bcReduceMsg(newMsg);
+        trackEvent('bubble_chat_msg_sent', { bubble_id: bcBubbleId });
       }
     }
   } catch(e) { logError("bcSendMessage", e); errorToast("send", e); }
@@ -1848,6 +1856,7 @@ async function bcCheckout() {
     }
 
     showSuccessToast('Du er checket ud');
+    trackEvent('live_checkout', { bubble_id: bcBubbleId, via: 'bubble_chat' });
 
     // Refresh bubble chat UI
     bcLoadBubbleInfo();

@@ -211,6 +211,7 @@ function filterBubbles(type) {
     var input = document.getElementById(searchId);
     if (!list || !input) return;
     var q = input.value.toLowerCase();
+    if (q) trackEvent('search_discover', { query_length: q.length, type: type });
     var source = type === 'evt'
       ? allBubbles.filter(function(b) { return b.type === 'event'; })
       : allBubbles.filter(function(b) { return b.type !== 'event'; });
@@ -787,6 +788,7 @@ async function createBubble() {
     await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id });
     bbClose('create-bubble');
     showToast(`"${name}" oprettet! 🫧`);
+    trackEvent('bubble_created', { bubble_id: bubble.id, type: type, has_parent: !!parentBubbleId });
     // If created as child event, refresh parent bubble's info tab
     if (parentBubbleId && typeof bcLoadInfo === 'function' && bcBubbleId === parentBubbleId) {
       bcLoadInfo();
@@ -1162,8 +1164,9 @@ async function checkPendingJoin() {
     var isEventFlow = flowGet('event_flow');
 
     // Fetch bubble to check type and checkin_mode
+    // Uses select('*') because checkin_mode may not be migrated yet
     var { data: bubble } = await sb.from('bubbles')
-      .select('id, name, type, checkin_mode')
+      .select('*')
       .eq('id', joinId).maybeSingle();
 
     var isEvent = bubble && (bubble.type === 'event' || bubble.type === 'live');
@@ -1981,6 +1984,7 @@ async function sendBubbleInvites() {
     } else {
       showWarningToast('Alle er allerede inviteret');
     }
+    if (newIds.length > 0) trackEvent('invite_sent', { bubble_id: inviteBubbleId, count: newIds.length });
   } catch(e) {
     logError('sendBubbleInvites', e);
     closeInviteModal();

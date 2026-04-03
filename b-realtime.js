@@ -143,13 +143,15 @@ function rtUnsubscribeAll() {
 }
 
 // ── Helpers: instant badge manipulation ──
+// Routes through central unreadState (b-messages.js)
 function dmBadgeClear() {
-  // Recount from DB when entering messages screen
-  // Individual messages get marked read when opening specific chats
-  _unreadRecount();
+  unreadState.dmRecount();
 }
 
 function notifBadgeSet(n) {
+  // Route through unreadState so it owns the render
+  if (typeof unreadState !== 'undefined') { unreadState.notifSet(n); return; }
+  // Fallback if called before b-messages.js loads (shouldn't happen)
   var el = document.getElementById('topbar-notif-badge');
   if (!el) return;
   if (n > 0) { el.textContent = n > 9 ? '9+' : String(n); el.style.display = 'flex'; }

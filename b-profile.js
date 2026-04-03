@@ -37,6 +37,7 @@ async function openPerson(userId, fromScreen) {
     // Track profile view (fire-and-forget, no await)
     if (currentUser && userId !== currentUser.id) {
       sb.from('profile_views').insert({ viewer_id: currentUser.id, viewed_id: userId }).then(function() {}).catch(function() {});
+      trackEvent('profile_viewed', { viewed_id: userId, from: fromScreen || 'unknown' });
     }
 
     // Render identity: avatar, name, title, live badge, bio, linkedin
@@ -1126,6 +1127,7 @@ async function saveProfile() {
     closeModal('modal-edit-profile');
     loadProfile();
     showSuccessToast(t('toast_saved'));
+    trackEvent('profile_updated', { tags: epSelectedTags.length });
   } catch(e) { logError("saveProfile", e); errorToast("save", e); }
 }
 

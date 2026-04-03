@@ -291,6 +291,7 @@ async function liveCheckout() {
     currentLiveBubble = null;
     appMode.clearLive();
     showSuccessToast(t('toast_checkedout'));
+    trackEvent('live_checkout', { bubble_id: checkoutBubbleId });
     await loadLiveBubbleStatus();
 
     // Reset home to 'all' mode + re-render dartboard
