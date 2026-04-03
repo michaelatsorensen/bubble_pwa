@@ -2114,11 +2114,15 @@ function bcSelectPostEvent(label, eventId) {
   label.parentElement._selectedEvent = eventId;
 }
 
+var _postSubmitLock = false;
+
 async function bcSubmitPost() {
+  if (_postSubmitLock) return;
   var title = document.getElementById('bp-title').value.trim();
   var content = document.getElementById('bp-content').value.trim();
   if (!title) { showWarningToast('Titel er påkrævet'); return; }
 
+  _postSubmitLock = true;
   var picker = document.getElementById('bp-event-picker');
   var selectedEvent = picker ? picker._selectedEvent || null : null;
 
@@ -2140,7 +2144,7 @@ async function bcSubmitPost() {
   } catch(e) {
     logError('bcSubmitPost', e);
     errorToast('save', e);
-  }
+  } finally { _postSubmitLock = false; }
 }
 
 async function bcDeletePost(postId) {

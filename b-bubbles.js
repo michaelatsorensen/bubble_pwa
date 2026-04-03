@@ -746,7 +746,11 @@ function cbRenderPillSelect(selectId, options) {
 }
 var ebRenderPillSelect = cbRenderPillSelect;
 
+var _bbSubmitLock = false; // Prevents double-tap on create/edit/delete bubble
+
 async function createBubble() {
+  if (_bbSubmitLock) return;
+  _bbSubmitLock = true;
   try {
     const name = document.getElementById('cb-name').value.trim();
     const type = document.getElementById('cb-type').value;
@@ -798,6 +802,7 @@ async function createBubble() {
     // Open the new bubble
     setTimeout(function() { openBubbleChat(bubble.id, 'screen-bubbles'); }, 400);
   } catch(e) { logError("createBubble", e); errorToast("save", e); }
+  finally { _bbSubmitLock = false; }
 }
 
 
@@ -918,6 +923,8 @@ async function handleBubbleIconUpload(input) {
 
 
 async function saveEditBubble() {
+  if (_bbSubmitLock) return;
+  _bbSubmitLock = true;
   try {
     const name       = document.getElementById('eb-name').value.trim();
     const type       = document.getElementById('eb-type').value;
@@ -950,6 +957,7 @@ async function saveEditBubble() {
     await bcLoadBubbleInfo();
     await bcLoadMembers();
   } catch(e) { logError("saveEditBubble", e); errorToast("save", e); }
+  finally { _bbSubmitLock = false; }
 }
 
 // ══════════════════════════════════════════════════════════
