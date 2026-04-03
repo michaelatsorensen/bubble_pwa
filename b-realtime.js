@@ -54,7 +54,20 @@ function _rtEvalState() {
   if (subscribed === states.length) {
     var wasDisconnected = _rtState !== 'connected';
     rtSetState('connected');
-    if (wasDisconnected && typeof _unreadRecount === 'function') _unreadRecount();
+    if (wasDisconnected) {
+      // Recovery: refresh all data that could have drifted during disconnect
+      if (typeof unreadState !== 'undefined') unreadState.dmRecount();
+      if (typeof updateTopbarNotifBadge === 'function') updateTopbarNotifBadge();
+      // Reload active chat to catch missed messages
+      if (_activeScreen === 'screen-chat' && typeof currentChatUser !== 'undefined' && currentChatUser) {
+        if (typeof loadChatMessages === 'function') loadChatMessages(currentChatUser);
+      }
+      if (_activeScreen === 'screen-bubble-chat' && typeof bcBubbleId !== 'undefined' && bcBubbleId) {
+        if (typeof bcLoadChat === 'function') bcLoadChat();
+      }
+      // Refresh live status
+      if (typeof loadLiveBubbleStatus === 'function') loadLiveBubbleStatus();
+    }
   } else if (errored > 0 && subscribed === 0) {
     rtSetState('disconnected');
     _rtScheduleReconnect();

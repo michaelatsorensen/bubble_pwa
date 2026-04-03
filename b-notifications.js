@@ -577,13 +577,14 @@ async function requestPushPermission() {
 async function savePushSubscription(subscription) {
   try {
     var sub = subscription.toJSON();
+    // Multi-device: upsert on (user_id, endpoint) so each device keeps its own subscription
     await sb.from('push_subscriptions').upsert({
       user_id: currentUser.id,
       endpoint: sub.endpoint,
       p256dh: sub.keys?.p256dh || '',
       auth: sub.keys?.auth || '',
       updated_at: new Date().toISOString()
-    }, { onConflict: 'user_id' });
+    }, { onConflict: 'user_id,endpoint' });
   } catch(e) {
     logError('savePushSubscription', e);
   }
@@ -613,9 +614,10 @@ async function togglePushNotifications() {
     var reg = await navigator.serviceWorker.ready;
     var sub = await reg.pushManager.getSubscription();
     if (sub) {
-      // Unsubscribe
+      // Unsubscribe this device only (not all devices)
+      var endpoint = sub.endpoint;
       await sub.unsubscribe();
-      await sb.from('push_subscriptions').delete().eq('user_id', currentUser.id);
+      await sb.from('push_subscriptions').delete().eq('user_id', currentUser.id).eq('endpoint', endpoint);
       setPushBtnInactive(btn);
       showToast('Notifikationer deaktiveret');
       trackEvent('push_disabled');
