@@ -340,3 +340,18 @@ function goTo(screenId) {
     }
   } catch(e) { console.error('[nav] onEnter error:', screenId, e); }
 }
+
+// ── Safe post-navigation callback ──
+// Replaces goTo() + setTimeout(() => openX(), N) pattern
+// Waits for screen render before firing callback
+function goToThen(screenId, callback) {
+  goTo(screenId);
+  // rAF ensures DOM is painted, second rAF ensures layout is stable
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      if (typeof callback === 'function') {
+        try { callback(); } catch(e) { logError('goToThen:callback', e); }
+      }
+    });
+  });
+}

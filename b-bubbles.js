@@ -800,7 +800,7 @@ async function createBubble() {
     loadHome();
     loadDiscover();
     // Open the new bubble
-    setTimeout(function() { openBubbleChat(bubble.id, 'screen-bubbles'); }, 400);
+    requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(bubble.id, 'screen-bubbles'); }); });
   } catch(e) { logError("createBubble", e); errorToast("save", e); }
   finally { _bbSubmitLock = false; }
 }
@@ -1193,8 +1193,7 @@ async function checkPendingJoin() {
         .eq('bubble_id', joinId).eq('user_id', currentUser.id);
       consumeFlow('event_flow');
       showSuccessToast(t('toast_checkedin'));
-      goTo('screen-home');
-      setTimeout(function() { openBubbleChat(joinId, 'screen-home'); }, 400);
+      goToThen('screen-home', function() { openBubbleChat(joinId, 'screen-home'); });
     } else if (isEventFlow && isEvent) {
       // Mode B: show QR for organizer to scan — event_flow stays for showEventReadyQR
       showSuccessToast(t('toast_joined'));

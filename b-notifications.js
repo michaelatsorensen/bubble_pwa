@@ -416,7 +416,7 @@ async function confirmAcceptInvite(inviteId) {
       await sb.from('bubble_members').insert({bubble_id: inv.bubble_id, user_id: currentUser.id});
       showSuccessToast('Du er nu med i boblen!');
       loadNotifications();
-      setTimeout(() => openBubbleChat(inv.bubble_id, 'screen-notifications'), 800);
+      requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(inv.bubble_id, 'screen-notifications'); }); });
     }
   } catch(e) { logError("confirmAcceptInvite", e); errorToast("save", e); }
 }

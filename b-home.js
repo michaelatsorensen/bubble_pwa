@@ -594,7 +594,7 @@ async function bbConfirmAccept(inviteId, fromUserId) {
       showSuccessToast('Du er nu med i boblen!');
       _bbAfterJoin(inv.bubble_id);
       loadMyBubbles();
-      setTimeout(function() { openBubbleChat(inv.bubble_id, 'screen-bubbles'); }, 800);
+      requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(inv.bubble_id, 'screen-bubbles'); }); });
     }
   } catch(e) { logError('bbConfirmAccept', e); errorToast('save', e); }
 }

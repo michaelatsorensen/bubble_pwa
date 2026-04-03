@@ -64,8 +64,7 @@ async function resolvePostAuthDestination() {
     history.replaceState(null, '', window.location.pathname);
     if (pushAction === 'chat' && pushParams.get('uid')) {
       var _pushUid = pushParams.get('uid');
-      goTo('screen-home');
-      requestAnimationFrame(function() { setTimeout(function() { openChat(_pushUid, 'screen-messages'); }, 100); });
+      goToThen('screen-home', function() { openChat(_pushUid, 'screen-messages'); });
       return;
     } else if (pushAction === 'messages') {
       goTo('screen-messages');
@@ -75,16 +74,14 @@ async function resolvePostAuthDestination() {
       return;
     } else if (pushAction === 'bubble' && pushParams.get('id')) {
       var _pushBid = pushParams.get('id');
-      goTo('screen-home');
-      requestAnimationFrame(function() { setTimeout(function() { openBubbleChat(_pushBid, 'screen-home'); }, 100); });
+      goToThen('screen-home', function() { openBubbleChat(_pushBid, 'screen-home'); });
       return;
     }
   }
 
   // Step 3b: if contact was saved from QR → navigate directly to their profile
   if (savedContactId) {
-    goTo('screen-home');
-    setTimeout(function() { openPerson(savedContactId, 'screen-home'); }, 400);
+    goToThen('screen-home', function() { openPerson(savedContactId, 'screen-home'); });
     return;
   }
 

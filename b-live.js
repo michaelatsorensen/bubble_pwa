@@ -1030,7 +1030,7 @@ async function _connectResolve(rawUrl) {
       closeConnectScanner();
       await sb.from('bubble_members').insert({ bubble_id: joinId, user_id: currentUser.id }).catch(function(){});
       showSuccessToast(t('toast_joined'));
-      setTimeout(function() { openBubbleChat(joinId, 'screen-home'); }, 300);
+      requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(joinId, 'screen-home'); }); });
       return;
     }
 

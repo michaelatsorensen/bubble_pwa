@@ -1034,7 +1034,7 @@ async function profAcceptInvite(inviteId, fromUserId) {
       showToast(t('toast_joined'));
       _bbAfterJoin(inv.bubble_id);
       loadProfileInvitations();
-      setTimeout(function() { openBubbleChat(inv.bubble_id, 'screen-profile'); }, 800);
+      requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(inv.bubble_id, 'screen-profile'); }); });
     }
   } catch(e) { logError("profAcceptInvite", e); errorToast("save", e); }
 }

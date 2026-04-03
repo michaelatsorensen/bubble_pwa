@@ -705,9 +705,8 @@ function eventReadyGoToEvent() {
   var bubbleId = consumeFlow('pending_join');
   consumeFlow('post_tags_destination');
   if (bubbleId) {
-    goTo('screen-home');
+    goToThen('screen-home', function() { openBubble(bubbleId, 'screen-home'); });
     loadHome();
-    setTimeout(function() { openBubble(bubbleId, 'screen-home'); }, 500);
   } else {
     goTo('screen-home');
     loadHome();
