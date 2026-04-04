@@ -1350,11 +1350,29 @@ function bubbleCard(b, joined) {
     childPills = '<div style="display:flex;gap:4px;margin-top:0.15rem">' + pills.join('') + '</div>';
   }
 
+  // Event date row — shown on event cards only
+  var eventDateHtml = '';
+  if ((b.type === 'event' || b.type === 'live') && b.event_date) {
+    var evD = new Date(b.event_date);
+    var evIsPast = evD < new Date();
+    var evDateStr = evD.toLocaleDateString(_locale(), { weekday: 'short', day: 'numeric', month: 'short' }) +
+      (evD.getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + evD.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '');
+    var evBadge = evIsPast
+      ? '<span style="font-size:0.58rem;padding:1px 5px;border-radius:99px;background:rgba(30,27,46,0.06);color:var(--muted);font-weight:600">Afsluttet</span>'
+      : '<span style="font-size:0.58rem;padding:1px 5px;border-radius:99px;background:rgba(46,207,207,0.12);color:#085041;font-weight:600">' + t('bb_coming') + '</span>';
+    eventDateHtml = '<div style="display:flex;align-items:center;gap:0.25rem;margin-top:0.2rem;opacity:' + (evIsPast ? '0.55' : '1') + '">' +
+      '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="' + (evIsPast ? 'currentColor' : '#0F6E56') + '" stroke-width="1.4" style="flex-shrink:0"><rect x="1" y="2" width="10" height="9" rx="1.5"/><path d="M4 1v2M8 1v2M1 5h10"/></svg>' +
+      '<span style="font-size:0.68rem;font-weight:600;color:' + (evIsPast ? 'var(--muted)' : '#0F6E56') + '">' + evDateStr + '</span>' +
+      '<span style="width:2px;height:2px;border-radius:50%;background:var(--muted);flex-shrink:0"></span>' +
+      evBadge + '</div>';
+  }
+
   return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}">
     <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};color:${bubbleColor(b.type, 0.9)}">${bubbleEmoji(b.type)}</div>
     <div style="flex:1;min-width:0">
       <div class="fw-600 fs-085">${escHtml(b.name)}</div>
       <div style="font-size:0.68rem;color:var(--muted);display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap">${visIcon(b.visibility)} ${escHtml(b.type_label || b.type)} ${b.location ? '<span>·</span> <span>' + escHtml(b.location) + '</span>' : ''}</div>
+      ${eventDateHtml}
       ${parentRef}
       ${childPills}
       ${contactHtml}

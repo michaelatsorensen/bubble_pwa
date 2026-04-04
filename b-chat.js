@@ -1834,6 +1834,25 @@ async function bcLoadInfo() {
         '<div style="width:52px;height:52px;border-radius:15px;background:' + iconBg + ';display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;color:' + accentStroke + ';font-size:24px">' + heroIcon + '</div>' +
         '<div style="font-size:1rem;font-weight:800;color:var(--text)">' + escHtml(b.name) + '</div>' +
         '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.15rem">' + typeLabel(b.type) + (b.location ? ' · ' + escHtml(b.location) : '') + ' · ' + mc + ' ' + memberLabel + '</div>' +
+        (isEvent && b.event_date ? (function() {
+          var evD = new Date(b.event_date);
+          var evPast = evD < new Date();
+          var evDateStr = evD.toLocaleDateString(_locale(), { weekday: 'long', day: 'numeric', month: 'long' }) +
+            (evD.getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + evD.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '');
+          var evEndStr = b.event_end_date
+            ? (_lang === 'da' ? 'slutter kl. ' : 'ends at ') + new Date(b.event_end_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' })
+            : '';
+          var evBadge = evPast
+            ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(30,27,46,0.08);color:var(--muted);font-weight:600">Afsluttet</span>'
+            : '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(46,207,207,0.2);color:#085041;font-weight:600">' + t('bb_coming') + '</span>';
+          return '<div style="background:rgba(46,207,207,0.08);border:0.5px solid rgba(46,207,207,0.25);border-radius:10px;padding:8px 12px;margin-top:0.6rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem">' +
+            '<div style="text-align:left">' +
+              '<div style="font-size:0.8rem;font-weight:700;color:#085041">' + evDateStr + '</div>' +
+              (evEndStr ? '<div style="font-size:0.68rem;color:#0F6E56;margin-top:1px">' + evEndStr + '</div>' : '') +
+            '</div>' +
+            evBadge +
+          '</div>';
+        })() : '') +
         (b.description ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;line-height:1.5;text-align:left">' + escHtml(b.description) + '</div>' : '') +
         (tagsHtml ? '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.5rem;justify-content:center">' + tagsHtml + '</div>' : '') +
       '</div>' +
