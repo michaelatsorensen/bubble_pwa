@@ -1335,9 +1335,9 @@ async function bcLoadMembers() {
       if (vis === 'hidden') {
         joinBtn = '<div style="font-size:0.78rem;color:var(--muted);margin-top:0.3rem">' + icon('eye') + ' Kun via invitation</div>';
       } else if (vis === 'private') {
-        joinBtn = '<button class="btn-primary" data-action="requestJoin" data-id="' + bcBubbleId + '" style="font-size:0.88rem;padding:0.7rem 2rem;margin-top:0.5rem">' + icon('lock') + ' Anmod om medlemskab</button>';
+        joinBtn = '<button class="btn-primary" data-action="requestJoin" data-id="' + bcBubbleId + '" style="font-size:0.8rem;padding:0.5rem 1.4rem;margin-top:0.5rem">' + icon('lock') + ' Anmod om medlemskab</button>';
       } else {
-        joinBtn = '<button class="btn-primary" onclick="joinBubble(\'' + bcBubbleId + '\')" style="font-size:0.88rem;padding:0.7rem 2rem;margin-top:0.5rem">Bliv medlem</button>';
+        joinBtn = '<button class="btn-primary" onclick="joinBubble(\'' + bcBubbleId + '\')" style="font-size:0.8rem;padding:0.5rem 1.4rem;margin-top:0.5rem">Bliv medlem</button>';
       }
       list.innerHTML = '<div style="text-align:center;padding:2.5rem 1rem">' +
         '<div style="font-size:2.2rem;font-weight:700;color:var(--text-primary);margin-bottom:0.15rem">' + activeCount + '</div>' +
@@ -1820,9 +1820,9 @@ async function bcLoadInfo() {
       if (b.visibility === 'hidden') {
         topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem;font-size:0.78rem;color:var(--muted)">' + icon('eye') + ' Kun via invitation</div>';
       } else if (b.visibility === 'private') {
-        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem"><button class="btn-primary" data-action="requestJoin" data-id="' + b.id + '" style="font-size:0.88rem;padding:0.7rem 2rem">' + icon('lock') + ' Anmod om medlemskab</button></div>';
+        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem"><button class="btn-primary" data-action="requestJoin" data-id="' + b.id + '" style="font-size:0.8rem;padding:0.5rem 1.4rem">' + icon('lock') + ' Anmod om medlemskab</button></div>';
       } else {
-        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem"><button class="btn-primary" onclick="joinBubble(\'' + b.id + '\')" style="font-size:0.88rem;padding:0.7rem 2rem">Bliv medlem</button></div>';
+        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem"><button class="btn-primary" onclick="joinBubble(\'' + b.id + '\')" style="font-size:0.8rem;padding:0.5rem 1.4rem">Bliv medlem</button></div>';
       }
     } else if (bcBubbleData._isPending) {
       topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem;font-size:0.8rem;color:#854F0B;font-weight:600">⏳ Din anmodning afventer godkendelse</div>';
