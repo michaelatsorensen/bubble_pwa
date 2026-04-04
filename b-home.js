@@ -1305,12 +1305,22 @@ function bubbleCard(b, joined) {
     parentRef = '<div class="bb-breadcrumb"><span class="bb-bc-pill">↳ ' + escHtml(b._parentName) + '</span></div>';
   }
 
+  // Child count pills (Opdag: "◎ 6 netværk · 📅 2 events")
+  var childPills = '';
+  if (b._childNetCount > 0 || b._childEventCount > 0) {
+    var pills = [];
+    if (b._childNetCount > 0) pills.push('<span style="font-size:0.62rem;padding:2px 7px;border-radius:6px;background:rgba(124,92,252,0.06);color:#534AB7;font-weight:600;display:inline-flex;align-items:center;gap:3px">' + ico('bubble') + ' ' + b._childNetCount + ' netværk</span>');
+    if (b._childEventCount > 0) pills.push('<span style="font-size:0.62rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.06);color:#0F6E56;font-weight:600;display:inline-flex;align-items:center;gap:3px">' + ico('calendar') + ' ' + b._childEventCount + ' event' + (b._childEventCount > 1 ? 's' : '') + '</span>');
+    childPills = '<div style="display:flex;gap:4px;margin-top:0.15rem">' + pills.join('') + '</div>';
+  }
+
   return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}">
     <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};color:${bubbleColor(b.type, 0.9)}">${bubbleEmoji(b.type)}</div>
     <div style="flex:1;min-width:0">
       <div class="fw-600 fs-085">${escHtml(b.name)}</div>
       <div style="font-size:0.68rem;color:var(--muted);display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap">${visIcon(b.visibility)} ${escHtml(b.type_label || b.type)} ${b.location ? '<span>·</span> <span>' + escHtml(b.location) + '</span>' : ''}</div>
       ${parentRef}
+      ${childPills}
       ${contactHtml}
     </div>
     <div class="flex-col-end" style="align-items:flex-end;gap:0.15rem">

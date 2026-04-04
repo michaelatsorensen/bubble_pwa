@@ -71,7 +71,7 @@ document.addEventListener('click', (e) => {
     case 'openPerson': openPerson(id, from); break;
     case 'openChat': openChat(id, from); break;
     case 'joinBubble': joinBubble(id); break;
-    case 'requestJoin': requestJoin(id); break;
+    case 'requestJoin': confirmRequestJoin(id); break;
     case 'openQRModal': openQRModal(id); break;
     case 'leaveBubble': leaveBubble(id, el); break;
     case 'openEditBubble': openEditBubble(id); break;

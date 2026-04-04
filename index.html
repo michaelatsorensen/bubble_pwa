@@ -12,37 +12,37 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=86000">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=86000">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=86000">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=86000">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=86000">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=86000">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=86000">
+<link rel="manifest" href="manifest.json?v=86100">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=86100">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=86100">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=86100">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=86100">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=86100">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=86100">
 
-<link rel="stylesheet" href="app.css?v=86000">
+<link rel="stylesheet" href="app.css?v=86100">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-<script src="bubble-icons.js?v=86000" defer></script>
-<script src="tag-data.js?v=86000" defer></script>
-<script src="b-i18n.js?v=86000" defer></script>
-<script src="b-config.js?v=86000" defer></script>
-<script src="b-utils.js?v=86000" defer></script>
-<script src="b-auth.js?v=86000" defer></script>
-<script src="b-home.js?v=86000" defer></script>
-<script src="b-bubbles.js?v=86000" defer></script>
-<script src="b-profile.js?v=86000" defer></script>
-<script src="b-radar.js?v=86000" defer></script>
-<script src="b-messages.js?v=86000" defer></script>
-<script src="b-realtime.js?v=86000" defer></script>
-<script src="b-onboarding.js?v=86000" defer></script>
-<script src="b-chat.js?v=86000" defer></script>
-<script src="b-notifications.js?v=86000" defer></script>
-<script src="b-live.js?v=86000" defer></script>
-<script src="b-admin.js?v=86000" defer></script>
-<script src="b-navigation.js?v=86000" defer></script>
-<script src="b-boot.js?v=86000" defer></script>
+<script src="bubble-icons.js?v=86100" defer></script>
+<script src="tag-data.js?v=86100" defer></script>
+<script src="b-i18n.js?v=86100" defer></script>
+<script src="b-config.js?v=86100" defer></script>
+<script src="b-utils.js?v=86100" defer></script>
+<script src="b-auth.js?v=86100" defer></script>
+<script src="b-home.js?v=86100" defer></script>
+<script src="b-bubbles.js?v=86100" defer></script>
+<script src="b-profile.js?v=86100" defer></script>
+<script src="b-radar.js?v=86100" defer></script>
+<script src="b-messages.js?v=86100" defer></script>
+<script src="b-realtime.js?v=86100" defer></script>
+<script src="b-onboarding.js?v=86100" defer></script>
+<script src="b-chat.js?v=86100" defer></script>
+<script src="b-notifications.js?v=86100" defer></script>
+<script src="b-live.js?v=86100" defer></script>
+<script src="b-admin.js?v=86100" defer></script>
+<script src="b-navigation.js?v=86100" defer></script>
+<script src="b-boot.js?v=86100" defer></script>
   
 
 
@@ -1013,7 +1013,7 @@
   <!-- Tabs: Medlemmer > Events/Opslag > Chat > Info -->
   <div class="bubble-tabs">
     <button class="bubble-tab active" id="bc-tab-members" onclick="bcSwitchTab('members')" data-t="bc_members">Medlemmer</button>
-    <button class="bubble-tab" id="bc-tab-events" onclick="bcSwitchTab('events')" style="display:none" data-t="bc_events">Tilknyttet</button>
+    <!-- Events tab removed in v8.6.1 — hierarchy shown via accordion in Info tab -->
     <button class="bubble-tab" id="bc-tab-posts" onclick="bcSwitchTab('posts')" data-t="bc_posts">Opslag</button>
     <button class="bubble-tab" id="bc-tab-chat" onclick="bcSwitchTab('chat')"><span data-t="bc_chat">Chat</span> <span class="bubble-tab-badge" id="bc-unread-badge" style="display:none">0</span></button>
     <button class="bubble-tab" id="bc-tab-info" onclick="bcSwitchTab('info')" data-t="bc_info">Info</button>
@@ -1069,9 +1069,7 @@
   </div>
 
   <!-- EVENTS TAB (for network bubbles) -->
-  <div id="bc-panel-events" style="display:none;flex-direction:column;flex:1;overflow:hidden">
-    <div class="scroll-area" id="bc-events-list" style="flex:1;overflow-y:auto;padding:0.8rem 1.1rem"></div>
-  </div>
+  <!-- Events panel removed in v8.6.1 -->
 
   <!-- Bottom nav -->
 </div>

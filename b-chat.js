@@ -350,21 +350,9 @@ async function bcConfigureTabs(b, bubbleId) {
   try {
     var isEvent = b.type === 'event' || b.type === 'live';
     var tabMembers = document.getElementById('bc-tab-members');
-    var tabEvents = document.getElementById('bc-tab-events');
     var tabPosts = document.getElementById('bc-tab-posts');
 
     if (tabMembers) tabMembers.textContent = isEvent ? 'Deltagere' : 'Medlemmer';
-
-    if (!isEvent) {
-      var { count: childCount } = await sb.from('bubbles').select('*', { count: 'exact', head: true })
-        .eq('parent_bubble_id', bubbleId);
-      if (tabEvents) {
-        tabEvents.textContent = t('bc_events');
-        tabEvents.style.display = (childCount > 0) ? '' : 'none';
-      }
-    } else {
-      if (tabEvents) tabEvents.style.display = 'none';
-    }
     if (tabPosts) tabPosts.style.display = '';
   } catch(e) { logError('bcConfigureTabs', e); }
 }
@@ -486,17 +474,15 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
   var infoTab = document.getElementById('bc-tab-info');
   var chatTab = document.getElementById('bc-tab-chat');
   var postsTab = document.getElementById('bc-tab-posts');
-  var eventsTab = document.getElementById('bc-tab-events');
   var isActiveMember = myMembership && !isPending;
   var membersTab = document.getElementById('bc-tab-members');
 
   if (isActiveMember) {
-    // Active members: Medlemmer + Opslag + Chat (+ Tilknyttet if set by Phase 2)
+    // Active members: Medlemmer + Opslag + Chat + Info (accordion shows children)
     if (membersTab) membersTab.style.display = '';
-    if (infoTab) infoTab.style.display = 'none';
+    if (infoTab) infoTab.style.display = '';
     if (chatTab) chatTab.style.display = '';
     if (postsTab) postsTab.style.display = '';
-    // eventsTab visibility already set by bcConfigureTabs (Phase 2)
     // Set initial tab for members
     bcSwitchTab('members');
     // Edit button as topbar card
@@ -518,7 +504,6 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
     if (infoTab) infoTab.style.display = '';
     if (chatTab) chatTab.style.display = 'none';
     if (postsTab) postsTab.style.display = 'none';
-    if (eventsTab) eventsTab.style.display = 'none';
     if (actionBar) actionBar.style.display = 'none';
     actionArea.style.display = 'none';
 
@@ -666,8 +651,9 @@ function bcToggleInfo() {
 var _bcPrevTab = 'members';
 
 function bcSwitchTab(tab) {
+  if (tab === 'events') tab = 'info'; // v8.6.1: events tab removed, redirect to info
   _bcActiveTab = tab;
-  ['chat','members','info','posts','events'].forEach(t => {
+  ['chat','members','info','posts'].forEach(t => {
     const panel = document.getElementById('bc-panel-'+t);
     const tabBtn = document.getElementById('bc-tab-'+t);
     if (panel) {
@@ -689,7 +675,6 @@ function bcSwitchTab(tab) {
   }
   if (tab === 'info') bcLoadInfo();
   if (tab === 'posts') bcLoadPosts();
-  if (tab === 'events') bcLoadEvents();
 }
 
 async function bcLoadEvents() {
@@ -1339,19 +1324,29 @@ async function bcLoadMembers() {
       return;
     }
 
-    // Privacy gate: non-members only see count on private/hidden bubbles
-    var vis = bcBubbleData?.visibility || 'public';
+    // Non-members: show count + join button only
     var isMember = bcBubbleData?._isMember;
-    if (!isMember && (vis === 'private' || vis === 'hidden')) {
+    if (!isMember) {
       var activeCount = members.filter(function(m) { return m.status !== 'pending'; }).length;
       var isEvent = bcBubbleData?.type === 'event' || bcBubbleData?.type === 'live';
       var memberLabel = isEvent ? 'deltagere' : 'medlemmer';
-      list.innerHTML = '<div class="empty-state" style="padding:2rem 1rem">' +
-        '<div class="empty-icon">' + icon('lock') + '</div>' +
-        '<div class="empty-text">' + activeCount + ' ' + memberLabel + '<br>' +
-        '<span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400">'+t('bc_member_list_private')+'</span></div></div>';
+      var vis = bcBubbleData?.visibility || 'public';
+      var joinBtn = '';
+      if (vis === 'hidden') {
+        joinBtn = '<div style="font-size:0.78rem;color:var(--muted);margin-top:0.3rem">' + icon('eye') + ' Kun via invitation</div>';
+      } else if (vis === 'private') {
+        joinBtn = '<button class="btn-primary" data-action="requestJoin" data-id="' + bcBubbleId + '" style="font-size:0.88rem;padding:0.7rem 2rem;margin-top:0.5rem">' + icon('lock') + ' Anmod om medlemskab</button>';
+      } else {
+        joinBtn = '<button class="btn-primary" onclick="joinBubble(\'' + bcBubbleId + '\')" style="font-size:0.88rem;padding:0.7rem 2rem;margin-top:0.5rem">Bliv medlem</button>';
+      }
+      list.innerHTML = '<div style="text-align:center;padding:2.5rem 1rem">' +
+        '<div style="font-size:2.2rem;font-weight:700;color:var(--text-primary);margin-bottom:0.15rem">' + activeCount + '</div>' +
+        '<div style="font-size:0.88rem;color:var(--muted);margin-bottom:0.8rem">' + memberLabel + '</div>' +
+        joinBtn + '</div>';
       return;
     }
+
+    // Privacy gate removed — non-members handled above
 
     // Hent profiler separat
     const userIds = members.map(m => m.user_id);
@@ -1680,8 +1675,8 @@ async function bcLoadInfo() {
 
           eventsHtml = '<div style="margin-bottom:0.9rem">' +
             '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">' +
-            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">Tilknyttet</div>' +
-            '<div style="font-size:0.68rem;color:#0F6E56;font-weight:600">' + childBubbles.length + ' tilknyttet</div></div>' +
+            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">Netværk & events</div>' +
+            '<div style="font-size:0.68rem;color:#0F6E56;font-weight:600">' + childBubbles.length + '</div></div>' +
             '<div style="display:flex;flex-direction:column;gap:0.15rem">' + childCards + '</div>' +
             (canEdit ? '<div style="display:flex;gap:0.4rem;margin-top:0.4rem">' +
               '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('calendar') + ' Event</button>' +
@@ -1689,7 +1684,7 @@ async function bcLoadInfo() {
             '</div>';
         } else if (canEdit) {
           eventsHtml = '<div style="margin-bottom:0.9rem">' +
-            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Tilknyttet</div>' +
+            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Netværk & events</div>' +
             '<div style="display:flex;gap:0.4rem">' +
             '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('calendar') + ' Event</button>' +
             '<button onclick="openCreateSubBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('bubble') + ' Sub-boble</button></div></div>';
@@ -1819,14 +1814,28 @@ async function bcLoadInfo() {
       if (b.visibility === 'hidden') {
         joinBtn = '<div style="text-align:center;padding:0.6rem 0;font-size:0.78rem;color:var(--muted)">' + icon('eye') + ' Kun via invitation</div>';
       } else if (b.visibility === 'private') {
-        joinBtn = '<button data-action="requestJoin" data-id="' + b.id + '" style="width:100%;padding:0.7rem;border-radius:12px;background:var(--gradient-primary);border:none;color:white;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font)">' + icon('lock') + ' Anmod om adgang</button>';
+        joinBtn = '<button data-action="requestJoin" data-id="' + b.id + '" style="width:100%;padding:0.7rem;border-radius:12px;background:var(--gradient-primary);border:none;color:white;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font)">' + icon('lock') + ' Anmod om medlemskab</button>';
       } else {
-        joinBtn = '<button data-action="joinBubble" data-id="' + b.id + '" style="width:100%;padding:0.7rem;border-radius:12px;background:var(--gradient-primary);border:none;color:white;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font)">+ Join ' + (isEvent ? 'event' : 'boble') + '</button>';
+        joinBtn = '<button data-action="joinBubble" data-id="' + b.id + '" style="width:100%;padding:0.7rem;border-radius:12px;background:var(--gradient-primary);border:none;color:white;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font)">Bliv medlem</button>';
       }
       bottomHtml = '<div style="padding-top:0.8rem;border-top:1px solid var(--glass-border-subtle)">' + joinBtn + '</div>';
     }
 
     // ── Assemble ──
+    // Top join CTA for non-members (prominent, above accordion)
+    var topJoinHtml = '';
+    if (!bcBubbleData._isMember && !bcBubbleData._isPending) {
+      if (b.visibility === 'hidden') {
+        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem;font-size:0.78rem;color:var(--muted)">' + icon('eye') + ' Kun via invitation</div>';
+      } else if (b.visibility === 'private') {
+        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem"><button data-action="requestJoin" data-id="' + b.id + '" style="padding:0.7rem 2rem;border-radius:12px;background:var(--gradient-primary);border:none;color:white;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:var(--font)">' + icon('lock') + ' Anmod om medlemskab</button></div>';
+      } else {
+        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem"><button onclick="joinBubble(\'' + b.id + '\')" style="padding:0.7rem 2rem;border-radius:12px;background:var(--gradient-primary);border:none;color:white;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:var(--font)">Bliv medlem</button></div>';
+      }
+    } else if (bcBubbleData._isPending) {
+      topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem;font-size:0.8rem;color:#854F0B;font-weight:600">⏳ Din anmodning afventer godkendelse</div>';
+    }
+
     list.innerHTML =
       parentHtml +
       '<div style="text-align:center;padding:0.25rem 0 1rem">' +
@@ -1836,6 +1845,7 @@ async function bcLoadInfo() {
         (b.description ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;line-height:1.5;text-align:left">' + escHtml(b.description) + '</div>' : '') +
         (tagsHtml ? '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.5rem;justify-content:center">' + tagsHtml + '</div>' : '') +
       '</div>' +
+      topJoinHtml +
       eventsHtml +
       statsHtml +
       adminHtml +

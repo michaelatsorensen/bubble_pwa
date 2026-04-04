@@ -160,6 +160,30 @@ async function _fetchDiscoverData() {
       if (b.member_count !== a.member_count) return b.member_count - a.member_count;
       return new Date(b.created_at) - new Date(a.created_at);
     });
+
+    // Fetch child counts for network bubbles (for Opdag pills)
+    var netIds = allBubbles.filter(function(b) { return b.type !== 'event'; }).map(function(b) { return b.id; });
+    if (netIds.length > 0) {
+      try {
+        var { data: childRows } = await sb.from('bubbles')
+          .select('parent_bubble_id, type')
+          .in('parent_bubble_id', netIds);
+        if (_navVersion !== myNav) return;
+        var childCounts = {}; // { parentId: { net: N, evt: N } }
+        (childRows || []).forEach(function(ch) {
+          if (!childCounts[ch.parent_bubble_id]) childCounts[ch.parent_bubble_id] = { net: 0, evt: 0 };
+          if (ch.type === 'event' || ch.type === 'live') childCounts[ch.parent_bubble_id].evt++;
+          else childCounts[ch.parent_bubble_id].net++;
+        });
+        allBubbles.forEach(function(b) {
+          if (childCounts[b.id]) {
+            b._childNetCount = childCounts[b.id].net;
+            b._childEventCount = childCounts[b.id].evt;
+          }
+        });
+      } catch(e) { /* silent — pills are optional enhancement */ }
+    }
+
     _discoverLoaded = true;
   } catch(e) { logError('_fetchDiscoverData', e); throw e; }
 }
@@ -795,7 +819,6 @@ async function createBubble() {
     // If created as child event, refresh parent bubble's info tab
     if (parentBubbleId && typeof bcLoadInfo === 'function' && bcBubbleId === parentBubbleId) {
       bcLoadInfo();
-      bcLoadEvents();
     }
     loadHome();
     loadDiscover();
@@ -2111,6 +2134,24 @@ function openBubbleScannerFromInfo(bubbleId) {
 // ══════════════════════════════════════════════════════════
 //  POP (DELETE) BUBBLE — owner only, with confirmation tray
 // ══════════════════════════════════════════════════════════
+function confirmRequestJoin(bubbleId) {
+  var existing = document.getElementById('request-join-tray');
+  if (existing) { existing.remove(); return; }
+  // Get bubble name from bcBubbleData or DOM
+  var bName = bcBubbleData?.name || '';
+  var tray = document.createElement('div');
+  tray.id = 'request-join-tray';
+  tray.style.cssText = 'position:fixed;bottom:0;left:0;right:0;padding:1.2rem 1rem;background:rgba(255,255,255,0.98);border-top:1px solid var(--glass-border-subtle);box-shadow:0 -4px 20px rgba(0,0,0,0.08);z-index:999;text-align:center;backdrop-filter:blur(12px)';
+  tray.innerHTML =
+    '<div style="font-size:0.9rem;font-weight:700;margin-bottom:0.2rem">Anmod om medlemskab?</div>' +
+    '<div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.8rem">' + escHtml(bName) + ' er privat — din anmodning sendes til ejeren</div>' +
+    '<div style="display:flex;gap:0.5rem;justify-content:center">' +
+      '<button onclick="document.getElementById(\'request-join-tray\').remove();requestJoin(\'' + bubbleId + '\')" style="padding:0.65rem 1.5rem;border-radius:12px;background:var(--gradient-primary);border:none;color:white;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font)">Send anmodning</button>' +
+      '<button onclick="document.getElementById(\'request-join-tray\').remove()" style="padding:0.65rem 1.2rem;border-radius:12px;background:none;border:1px solid var(--glass-border);color:var(--muted);font-size:0.85rem;cursor:pointer;font-family:var(--font)">Annuller</button>' +
+    '</div>';
+  document.body.appendChild(tray);
+}
+
 function confirmPopBubble(bubbleId) {
   var infoList = document.getElementById('bc-info-list');
   if (!infoList) return;
