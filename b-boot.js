@@ -796,6 +796,15 @@ window.addEventListener('load', async () => {
       initAllSwipeClose();
       return;
     }
+
+    // Capture ?join= BEFORE auth so resolvePostAuthDestination handles it
+    // This prevents the double-join race between checkPendingJoin + checkQRJoin
+    var _joinParam = new URLSearchParams(window.location.search).get('join');
+    if (_joinParam) {
+      flowSet('pending_join', _joinParam);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
     var isAnon = await checkQRAnonPreview();
     if (isAnon) {
       initAllSwipeClose();
@@ -803,7 +812,8 @@ window.addEventListener('load', async () => {
     }
   }
   await checkAuth();
-  await checkQRJoin();
+  // Note: checkQRJoin() removed — ?join= is now captured above and handled
+  // inside resolvePostAuthDestination() via checkPendingJoin()
   if (currentUser) {
     // Realtime, badges, preload, pending actions already initialized by resolvePostAuth
     trackEvent('app_open');
@@ -847,78 +857,8 @@ window.addEventListener('load', async () => {
 
   // Nav bar is handled purely by CSS #global-nav rule
 
-  // ── Rubber band elastic overscroll for scroll areas ──
-  (function initRubberBand() {
-    if (isDesktop) return;
-
-    var RESISTANCE = 3.5;
-    var BOUNCE_MS = 400;
-    var BOUNCE_EASE = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-
-    document.querySelectorAll('.scroll-area').forEach(function(scrollEl) {
-      var startY = 0;
-      var pulling = false;
-      var direction = 0;
-
-      // Apply transform to ALL direct children simultaneously
-      function setTransform(value, transition) {
-        var children = scrollEl.children;
-        for (var i = 0; i < children.length; i++) {
-          children[i].style.transition = transition || 'none';
-          children[i].style.transform = value;
-        }
-      }
-
-      function clearTransform() {
-        var children = scrollEl.children;
-        for (var i = 0; i < children.length; i++) {
-          children[i].style.transition = '';
-          children[i].style.transform = '';
-        }
-      }
-
-      scrollEl.addEventListener('touchstart', function(e) {
-        startY = e.touches[0].clientY;
-        pulling = true;
-        direction = 0;
-        setTransform('', 'none');
-      }, { passive: true });
-
-      scrollEl.addEventListener('touchmove', function(e) {
-        if (!pulling) return;
-        var dy = e.touches[0].clientY - startY;
-        var atTop = scrollEl.scrollTop <= 0;
-        var atBottom = scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 1;
-
-        if (atTop && dy > 0) {
-          direction = 1;
-          var pull = dy / RESISTANCE;
-          setTransform('translate3d(0,' + pull + 'px,0)');
-        } else if (atBottom && dy < 0) {
-          direction = -1;
-          var pull = dy / RESISTANCE;
-          setTransform('translate3d(0,' + pull + 'px,0)');
-        } else {
-          if (direction !== 0) {
-            direction = 0;
-            clearTransform();
-          }
-        }
-      }, { passive: true });
-
-      function snapBack() {
-        pulling = false;
-        if (direction !== 0) {
-          setTransform('translate3d(0,0,0)', 'transform ' + BOUNCE_MS + 'ms ' + BOUNCE_EASE);
-          setTimeout(clearTransform, BOUNCE_MS + 10);
-        }
-        direction = 0;
-      }
-
-      scrollEl.addEventListener('touchend', snapBack, { passive: true });
-      scrollEl.addEventListener('touchcancel', snapBack, { passive: true });
-    });
-  })();
+  // Rubber band removed — iOS Safari has native overscroll elastic behaviour.
+  // Custom implementation caused scroll jerk by clearing transforms without transition.
 });
 
 

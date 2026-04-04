@@ -89,11 +89,17 @@ async function resolvePostAuthDestination() {
   var isEventFlow = flowGet('event_flow');
 
   if (isEventFlow) {
-    await checkPendingJoin(); // Step 5 inside event context
-    var stillEventFlow = flowGet('event_flow');
-    if (stillEventFlow) {
-      consumeFlow('event_flow');
-      showEventReadyQR();
+    try {
+      await checkPendingJoin();
+    } catch(e) {
+      logError('resolvePostAuth:eventFlow', e);
+    } finally {
+      // Always consume event_flow — even if checkPendingJoin threw
+      var stillEventFlow = flowGet('event_flow');
+      if (stillEventFlow) {
+        consumeFlow('event_flow');
+        showEventReadyQR();
+      }
     }
   } else {
     // Step 5: pending join (from bubble invite link)

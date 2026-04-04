@@ -1061,7 +1061,7 @@ function epRenderCategories() {
         var sel = epSelectedTags.indexOf(t) >= 0;
         return '<span class="tag-pick recommended' + (sel ? ' selected' : '') + '" ' +
           'style="border-color:' + info.color + '30;' + (sel ? 'background:' + info.color + '20;color:' + info.color : 'color:' + info.color + '99') + '" ' +
-          'onclick="epTogglePickTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\',\'' + cat + '\',this)">' +
+          'data-tag="' + escHtml(t) + '" data-cat="' + cat + '" onclick="epTogglePickTag(this.dataset.tag,this.dataset.cat,this)">' +
           escHtml(t) + '</span>';
       }).join('') +
       '</div>' +
@@ -1071,7 +1071,7 @@ function epRenderCategories() {
         var sel = epSelectedTags.indexOf(t) >= 0;
         return '<span class="tag-pick other-tag' + (sel ? ' selected' : '') + '" ' +
           'style="border-color:' + info.color + '30;' + (sel ? 'background:' + info.color + '20;color:' + info.color : 'color:' + info.color + '99') + '" ' +
-          'onclick="epTogglePickTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\',\'' + cat + '\',this)">' +
+          'data-tag="' + escHtml(t) + '" data-cat="' + cat + '" onclick="epTogglePickTag(this.dataset.tag,this.dataset.cat,this)">' +
           escHtml(t) + '</span>';
       }).join('') +
       '</div>' +

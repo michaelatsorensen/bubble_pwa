@@ -420,6 +420,7 @@ async function loadMessages() {
   try {
     var myNav = _navVersion;
     const list = document.getElementById('conversations-list');
+    if (!list) { _messagesLoading = false; return; }
     list.innerHTML = skelCards(5);
 
     const { data: convs } = await sb.from('messages')
@@ -518,8 +519,8 @@ async function openChat(userId, fromScreen) {
     // Mark messages as read + update ✓✓ on sender's side
     var { data: unread } = await sb.from('messages')
       .select('id').eq('sender_id', userId).eq('receiver_id', currentUser.id).is('read_at', null);
-    if (unread && unread.length > 0) {
-      var unreadIds = unread.map(function(m) { return m.id; });
+    var unreadIds = (unread || []).map(function(m) { return m.id; });
+    if (unreadIds.length > 0) {
       await sb.from('messages').update({ read_at: new Date().toISOString() })
         .in('id', unreadIds);
       // Notify sender that their messages were read
@@ -724,6 +725,7 @@ function _msgComputeGroups(msgs, senderKey) {
 
 async function loadChatMessages() {
   try {
+    if (typeof t !== 'function') { console.warn('[dm] loadChatMessages: i18n not ready'); return; }
     const el = document.getElementById('chat-messages');
     const { data: msgs } = await sb.from('messages')
       .select('*')

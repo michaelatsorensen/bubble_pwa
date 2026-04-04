@@ -797,7 +797,8 @@ async function loadSavedContacts() {
     const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
 
     // Sort by star rating (highest first), then by date
-    saved.sort(function(a, b) {
+    // .slice() creates a mutable copy — Supabase objects are frozen on iOS Safari
+    saved = saved.slice().sort(function(a, b) {
       var sa = starGet(a.contact_id), sb2 = starGet(b.contact_id);
       if (sb2 !== sa) return sb2 - sa;
       return new Date(b.created_at) - new Date(a.created_at);
@@ -1387,16 +1388,6 @@ async function loadDashboard() {
       '</div>' +
       '<div style="margin-top:0.4rem">' +
         statCard('target', t('pf_dash_strong'), strongMatches, 'rgba(26,158,142,0.08)') +
-      '</div>' +
-      '<div style="margin-top:0.6rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:0.7rem 0.9rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">' +
-          '<div style="font-size:0.78rem;font-weight:700;color:var(--text)">' + t('pf_dash_strength') + '</div>' +
-          '<div style="font-size:0.78rem;font-weight:800;color:' + (completePct >= 100 ? 'var(--green)' : 'var(--accent)') + '">' + completePct + '%</div>' +
-        '</div>' +
-        '<div style="height:6px;background:var(--glass-bg-strong);border-radius:3px;overflow:hidden">' +
-          '<div style="height:100%;width:' + completePct + '%;background:' + (completePct >= 100 ? 'var(--green)' : 'var(--gradient-primary)') + ';border-radius:3px;transition:width 0.5s ease"></div>' +
-        '</div>' +
-        ctaHtml +
       '</div>';
 
   } catch(e) {

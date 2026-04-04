@@ -1807,7 +1807,7 @@ async function bcLoadInfo() {
         (isOwner ? '<button onclick="confirmPopBubble(\'' + b.id + '\')" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.1);color:#791F1F;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_delete_event') : t('bb_delete_bubble')) + '</button>' : '') +
         '</div>';
     } else if (bcBubbleData._isPending) {
-      bottomHtml = '<div style="text-align:center;padding:0.8rem 0;font-size:0.8rem;color:#854F0B;font-weight:600">⏳ Din anmodning afventer godkendelse</div>';
+      bottomHtml = ''; // Banner at top (bcLoadMembership) already shows pending state
     } else {
       // Non-member: join CTA is shown at top of Info tab (topJoinHtml)
       bottomHtml = '';
@@ -1825,7 +1825,7 @@ async function bcLoadInfo() {
         topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem"><button class="btn-primary" onclick="joinBubble(\'' + b.id + '\')" style="font-size:0.8rem;padding:0.5rem 1.4rem">Bliv medlem</button></div>';
       }
     } else if (bcBubbleData._isPending) {
-      topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem;font-size:0.8rem;color:#854F0B;font-weight:600">⏳ Din anmodning afventer godkendelse</div>';
+      topJoinHtml = ''; // Banner at top already handles pending state
     }
 
     list.innerHTML =

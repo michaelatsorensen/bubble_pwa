@@ -753,7 +753,12 @@ async function liveScanAutoResolve(data) {
     if (fMeta) fMeta.textContent = (bubble.location ? bubble.location : '') + (bubble.type ? ' · ' + bubble.type : '');
     if (found) found.style.display = 'block';
   } catch(e) {
-    logError('liveScanAutoResolve', e);
+    // "Boble ikke fundet" = expected — user scanned non-Bubble or expired QR
+    if (e.message === 'Boble ikke fundet') {
+      console.debug('[liveScan] QR not resolved:', e.message);
+    } else {
+      logError('liveScanAutoResolve', e);
+    }
     if (status) { status.textContent = e.message || 'QR ikke genkendt'; status.className = 'live-scan-status error'; }
     _liveQrPending = false;
     _liveQrFound = null;
