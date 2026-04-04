@@ -1485,6 +1485,20 @@ a.person-action-btn { text-decoration:none; }
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
+.pending-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.08rem 0.35rem;
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #C05621;
+  background: rgba(237,137,54,0.12);
+  border: 1px solid rgba(237,137,54,0.3);
+  border-radius: 4px;
+  vertical-align: middle;
+  margin-left: 0.3rem;
+}
 .chat-member-avatar .live-dot {
   position: absolute;
   bottom: -1px;

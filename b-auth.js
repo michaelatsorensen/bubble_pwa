@@ -619,9 +619,12 @@ async function openMyQR() {
     token = null;
   }
   
-  var url = token
+  // QR kode bruger token-URL (roterende, 10 min) — til live scanning
+  var qrUrl = token
     ? window.location.origin + window.location.pathname + '?qrt=' + token
     : window.location.origin + window.location.pathname + '?profile=' + currentUser.id;
+  // Del profil bruger permanent profil-URL — overlever deling via WhatsApp/mail
+  var shareUrl = window.location.origin + window.location.pathname + '?profile=' + currentUser.id;
   
   var { overlay, sheet } = bbDynOpen();
   sheet.style.textAlign = 'center';
@@ -630,13 +633,13 @@ async function openMyQR() {
     '<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Gyldig i 10 minutter · opdateres automatisk</div>' +
     '<div id="my-qr-container" style="display:flex;justify-content:center;margin-bottom:1rem"></div>' +
     '<div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.8rem">' + escHtml(currentProfile.name) + ' · ' + escHtml(currentProfile.title || '') + '</div>' +
-    '<button onclick="navigator.clipboard.writeText(\'' + url + '\');this.textContent=\'Kopieret! ✓\';setTimeout(()=>this.textContent=\'Del profil\',2000)" style="width:100%;padding:0.7rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer">Del profil</button>';
+    '<button onclick="navigator.clipboard.writeText(\'' + shareUrl + '\');this.textContent=\'Kopieret! ✓\';setTimeout(()=>this.textContent=\'Del profil\',2000)" style="width:100%;padding:0.7rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer">Del profil</button>';
   
   setTimeout(function() {
     var container = document.getElementById('my-qr-container');
     if (container && typeof QRCode !== 'undefined') {
       new QRCode(container, {
-        text: url,
+        text: qrUrl,
         width: 200,
         height: 200,
         colorDark: '#1E1B2E',
