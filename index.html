@@ -12,37 +12,37 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=864">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=864">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=864">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=864">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=864">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=864">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=864">
+<link rel="manifest" href="manifest.json?v=865">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=865">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=865">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=865">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=865">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=865">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=865">
 
-<link rel="stylesheet" href="app.css?v=864">
+<link rel="stylesheet" href="app.css?v=865">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-<script src="bubble-icons.js?v=864" defer></script>
-<script src="tag-data.js?v=864" defer></script>
-<script src="b-i18n.js?v=864" defer></script>
-<script src="b-config.js?v=864" defer></script>
-<script src="b-utils.js?v=864" defer></script>
-<script src="b-auth.js?v=864" defer></script>
-<script src="b-home.js?v=864" defer></script>
-<script src="b-bubbles.js?v=864" defer></script>
-<script src="b-profile.js?v=864" defer></script>
-<script src="b-radar.js?v=864" defer></script>
-<script src="b-messages.js?v=864" defer></script>
-<script src="b-realtime.js?v=864" defer></script>
-<script src="b-onboarding.js?v=864" defer></script>
-<script src="b-chat.js?v=864" defer></script>
-<script src="b-notifications.js?v=864" defer></script>
-<script src="b-live.js?v=864" defer></script>
-<script src="b-admin.js?v=864" defer></script>
-<script src="b-navigation.js?v=864" defer></script>
-<script src="b-boot.js?v=864" defer></script>
+<script src="bubble-icons.js?v=865" defer></script>
+<script src="tag-data.js?v=865" defer></script>
+<script src="b-i18n.js?v=865" defer></script>
+<script src="b-config.js?v=865" defer></script>
+<script src="b-utils.js?v=865" defer></script>
+<script src="b-auth.js?v=865" defer></script>
+<script src="b-home.js?v=865" defer></script>
+<script src="b-bubbles.js?v=865" defer></script>
+<script src="b-profile.js?v=865" defer></script>
+<script src="b-radar.js?v=865" defer></script>
+<script src="b-messages.js?v=865" defer></script>
+<script src="b-realtime.js?v=865" defer></script>
+<script src="b-onboarding.js?v=865" defer></script>
+<script src="b-chat.js?v=865" defer></script>
+<script src="b-notifications.js?v=865" defer></script>
+<script src="b-live.js?v=865" defer></script>
+<script src="b-admin.js?v=865" defer></script>
+<script src="b-navigation.js?v=865" defer></script>
+<script src="b-boot.js?v=865" defer></script>
   
 
 
@@ -687,7 +687,7 @@
       </div>
 
       <!-- ═══ LIVE EVENT BANNER (shown when Live tab active) ═══ -->
-      <div id="home-live-banner" style="display:none">
+      <div class="hs-slot hs-hidden" id="home-live-banner-slot"><div id="home-live-banner">
         <div onclick="openLiveCheckoutTray()" style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;border-radius:12px;background:rgba(26,158,142,0.07);border:1px solid rgba(26,158,142,0.18);cursor:pointer">
           <div style="width:8px;height:8px;border-radius:50%;background:#1A9E8E;box-shadow:0 0 0 3px rgba(26,158,142,0.2);animation:livePulse 2s infinite;flex-shrink:0"></div>
           <div style="flex:1;min-width:0">
@@ -697,7 +697,7 @@
           <div style="font-size:0.68rem;color:var(--muted);font-weight:600;flex-shrink:0" id="home-live-banner-count"></div>
           <div style="font-size:0.88rem;color:var(--muted);flex-shrink:0">›</div>
         </div>
-      </div>
+      </div></div>
 
       <!-- ═══ RADAR HERO (borderless dartboard) ═══ -->
       <div data-hs="radar">
@@ -744,7 +744,7 @@
       </div>
 
       <!-- ═══ PROFILE MATCH CARD (altid synlig, toggle-bar) ═══ -->
-      <div id="home-profile-setup" data-hs="profile_cta" style="display:none;margin-bottom:0.5rem">
+      <div class="hs-slot hs-hidden" id="home-profile-setup-slot"><div id="home-profile-setup" data-hs="profile_cta" style="margin-bottom:0.5rem">
         <div onclick="openNextProfileSetupSheet()" style="padding:0.7rem 0.9rem;border-radius:14px;background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.12);cursor:pointer">
           <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.55rem">
             <div class="home-avatar-mini" id="setup-cta-avatar" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#7C5CFC);display:flex;align-items:center;justify-content:center;color:white;font-size:0.72rem;font-weight:700;flex-shrink:0;overflow:hidden">?</div>
@@ -758,8 +758,8 @@
             <div id="setup-cta-bar" style="height:100%;border-radius:3px;background:linear-gradient(90deg,#7C5CFC,#6366F1);transition:width 0.6s ease;width:0%"></div>
           </div>
         </div>
-      </div>
-      <div id="home-profile-mini" style="display:none"></div>
+      </div></div>
+      <div id="home-profile-mini"></div>
 
       <!-- ═══ FEEDBACK ═══ -->
       <div data-hs="feedback">

@@ -7,6 +7,18 @@
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 
+// ── Layout-shift-free show/hide for iOS Safari ──
+// Uses max-height transition instead of display:none to avoid scroll jumps
+function hsSlotShow(id) {
+  var slot = document.getElementById(id + '-slot');
+  if (slot) { slot.classList.remove('hs-hidden'); slot.classList.add('hs-visible'); }
+}
+function hsSlotHide(id) {
+  var slot = document.getElementById(id + '-slot');
+  if (slot) { slot.classList.add('hs-hidden'); slot.classList.remove('hs-visible'); }
+}
+
+
 // ══════════════════════════════════════════════════════════
 //  HOME
 // ══════════════════════════════════════════════════════════
@@ -95,14 +107,14 @@ async function loadLiveBanner() {
     } else {
       appMode.set('normal');
       if (tabs) tabs.style.display = 'none';
-      if (banner) banner.style.display = 'none';
+      hsSlotHide('home-live-banner');
       homeSetMode('all');
     }
   } catch(e) {
     logError('loadLiveBanner', e);
     appMode.set('normal');
     if (tabs) tabs.style.display = 'none';
-    if (banner) banner.style.display = 'none';
+    hsSlotHide('home-live-banner');
   }
 }
 
@@ -130,13 +142,13 @@ function homeSetMode(mode) {
 
   // Live banner stays visible in BOTH modes as long as checked in
   if (banner && ctx) {
-    banner.style.display = 'block';
+    hsSlotShow('home-live-banner');
     var nameEl = document.getElementById('home-live-banner-name');
     var countEl = document.getElementById('home-live-banner-count');
     if (nameEl) nameEl.textContent = ctx.bubbleName;
     if (countEl) countEl.textContent = ctx.memberCount + ' ' + t('live_here_now');
   } else if (banner) {
-    banner.style.display = 'none';
+    hsSlotHide('home-live-banner');
   }
 
   // Update checkout tray info
@@ -275,7 +287,7 @@ function showProfileSetupCTA() {
 
   // Hide completely at 100% or if toggled off
   if (strength >= 100 || !ctaVisible) {
-    setupEl.style.display = 'none';
+    hsSlotHide('home-profile-setup'); setupEl.style.display = 'none';
     if (miniEl) miniEl.style.display = 'none';
     _updateProfileStrengthBar(strength);
     return;
@@ -301,7 +313,7 @@ function showProfileSetupCTA() {
     }
   }
 
-  setupEl.style.display = 'block';
+  hsSlotShow('home-profile-setup'); setupEl.style.display = 'block';
   if (miniEl) miniEl.style.display = 'none';
   var bar = document.getElementById('setup-cta-bar');
   var pctEl = document.getElementById('setup-cta-pct');

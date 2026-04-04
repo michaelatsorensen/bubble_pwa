@@ -2068,3 +2068,22 @@ input[type="range"] {
 
 /* ── Connect scanner profile sheet ── */
 @keyframes connectSheetUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+
+/* ── Scroll-anchor fix: prevent layout shifts on iOS Safari ── */
+/* Use .hs-slot instead of display:none — reserves space, no layout shift */
+.hs-slot {
+  overflow: hidden;
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+}
+.hs-slot.hs-hidden {
+  max-height: 0 !important;
+  opacity: 0;
+  pointer-events: none;
+}
+.hs-slot.hs-visible {
+  opacity: 1;
+}
+
+#home-live-banner-slot { max-height: 80px; }
+#home-profile-setup-slot { max-height: 120px; }
+
