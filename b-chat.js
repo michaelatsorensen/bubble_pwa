@@ -1078,15 +1078,15 @@ async function bcHandleFile(input) {
       return;
     }
 
-    // Use signed URL for privacy
-    const { data: urlData, error: urlErr } = await sb.storage.from('bubble-files').createSignedUrl(path, 604800); // 7 days
-    if (urlErr || !urlData?.signedUrl) { _renderToast('Kunne ikke generere fil-link', 'error'); input.value = ''; return; }
+    // Public URL — permanent, no expiry. Requires bubble-files bucket to be public in Supabase.
+    const { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
+    if (!urlData?.publicUrl) { _renderToast('Kunne ikke generere fil-link', 'error'); input.value = ''; return; }
 
     const { data: newMsg, error: msgErr } = await sb.from('bubble_messages').insert({
       bubble_id: bcBubbleId,
       user_id: currentUser.id,
       content: '',
-      file_url: urlData.signedUrl,
+      file_url: urlData.publicUrl,
       file_name: file.name,
       file_type: file.type
     }).select('id, bubble_id, user_id, content, file_url, file_name, file_type, edited, created_at').single();

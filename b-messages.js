@@ -181,6 +181,9 @@ async function convConfirmDelete() {
 
 
 let dmSending = false;
+var _dmLastSent = {}; // { receiverId+content: timestamp } — prevents duplicate sends on reconnect
+registerState(function() { dmSending = false; dmEditingId = null; _dmLastSent = {}; });
+
 async function sendMessage() {
   if (dmSending) return;
   dmSending = true;
@@ -192,6 +195,21 @@ async function sendMessage() {
     const input = document.getElementById('chat-input');
     const content = filterChatContent(input.value.trim());
     if (!content) return;
+
+    // Dedup guard: prevent identical message to same receiver within 3s (reconnect safety)
+    if (!dmEditingId) {
+      var _dedupKey = currentChatUser + '|' + content;
+      var _now = Date.now();
+      if (_dmLastSent[_dedupKey] && (_now - _dmLastSent[_dedupKey]) < 3000) {
+        console.debug('[dm] dedup: identical message within 3s, skipping');
+        input.value = '';
+        return;
+      }
+      _dmLastSent[_dedupKey] = _now;
+      var _dkeys = Object.keys(_dmLastSent);
+      if (_dkeys.length > 20) { delete _dmLastSent[_dkeys[0]]; }
+    }
+
     if (dmEditingId) {
       await sb.from('messages').update({ content, edited: true }).eq('id', dmEditingId);
       const bubble = document.getElementById('dm-bubble-' + dmEditingId);
@@ -285,15 +303,15 @@ async function dmHandleFile(input) {
     });
     if (uploadErr) { errorToast('upload', uploadErr); input.value = ''; return; }
 
-    // Use signed URL for privacy — DM files should not be publicly accessible
-    const { data: urlData, error: urlErr } = await sb.storage.from('bubble-files').createSignedUrl(path, 604800); // 7 days
-    if (urlErr || !urlData?.signedUrl) { _renderToast('Kunne ikke generere fil-link', 'error'); input.value = ''; return; }
+    // Public URL — permanent, no expiry. Requires bubble-files bucket to be public in Supabase.
+    const { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
+    if (!urlData?.publicUrl) { _renderToast('Kunne ikke generere fil-link', 'error'); input.value = ''; return; }
 
     const { data: newMsg, error } = await sb.from('messages').insert({
       sender_id: currentUser.id,
       receiver_id: currentChatUser,
       content: '',
-      file_url: urlData.signedUrl,
+      file_url: urlData.publicUrl,
       file_name: file.name,
       file_type: file.type
     }).select().single();

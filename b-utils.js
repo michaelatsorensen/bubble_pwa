@@ -815,6 +815,73 @@ var dbActions = {
       if (error) { errorToast('save', error); return { ok: false, error: error }; }
       return { ok: true };
     } catch (e) { logError('dbActions.reportUser', e); return { ok: false, error: e }; }
+  },
+
+  // ── CHECK-IN / CHECKOUT ──
+
+  // Check in current user to a bubble (atomic upsert — truly idempotent)
+  // onConflict: 'bubble_id,user_id' uses the unique constraint that joinBubble also relies on
+  async checkIn(bubbleId) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    try {
+      var now = new Date().toISOString();
+      var { error } = await sb.from('bubble_members').upsert({
+        bubble_id: bubbleId,
+        user_id: currentUser.id,
+        checked_in_at: now,
+        checked_out_at: null
+      }, { onConflict: 'bubble_id,user_id' });
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      return { ok: true };
+    } catch(e) { logError('dbActions.checkIn', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  // Check in a specific user (organizer scanning attendee QR — atomic upsert)
+  async checkInUser(bubbleId, userId) {
+    if (!currentUser || !bubbleId || !userId) return { ok: false };
+    try {
+      var now = new Date().toISOString();
+      var { error } = await sb.from('bubble_members').upsert({
+        bubble_id: bubbleId,
+        user_id: userId,
+        checked_in_at: now,
+        checked_out_at: null
+      }, { onConflict: 'bubble_id,user_id' });
+      if (error) { logError('dbActions.checkInUser', error); return { ok: false, error: error }; }
+      return { ok: true };
+    } catch(e) { logError('dbActions.checkInUser', e); return { ok: false, error: e }; }
+  },
+
+  // Check out current user from a specific bubble
+  async checkOut(bubbleId) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    try {
+      var { error } = await sb.from('bubble_members').update({
+        checked_out_at: new Date().toISOString()
+      }).eq('bubble_id', bubbleId).eq('user_id', currentUser.id);
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      trackEvent('live_checkout', { bubble_id: bubbleId });
+      return { ok: true };
+    } catch(e) { logError('dbActions.checkOut', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  // Auto-checkout from ALL active check-ins (before checking in to a new bubble)
+  async checkOutAll() {
+    if (!currentUser) return { ok: false };
+    try {
+      var { data: active } = await sb.from('bubble_members')
+        .select('id')
+        .eq('user_id', currentUser.id)
+        .not('checked_in_at', 'is', null)
+        .is('checked_out_at', null);
+      if (!active || active.length === 0) return { ok: true };
+      var ids = active.map(function(m) { return m.id; });
+      var { error } = await sb.from('bubble_members').update({
+        checked_out_at: new Date().toISOString()
+      }).in('id', ids);
+      if (error) { logError('dbActions.checkOutAll', error); return { ok: false, error: error }; }
+      return { ok: true };
+    } catch(e) { logError('dbActions.checkOutAll', e); return { ok: false, error: e }; }
   }
 };
 

@@ -14,8 +14,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-04-04T15:30:07';
-const BUILD_VERSION  = 'v8.7.0';
+const BUILD_TIMESTAMP = '2026-04-04T15:57:05';
+const BUILD_VERSION  = 'v8.7.5';
 const SUPABASE_URL  = "https://api.bubbleme.dk";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -204,6 +204,17 @@ function flowClearAll() {
 //  SAFE APP RESET — clears ALL session state on logout
 //  Prevents state leakage between user sessions
 // ══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+//  STATE REGISTRY — modules register their own cleanup
+//  Usage: registerState(function() { myVar = null; myFlag = false; })
+//  resetAppState() iterates the registry automatically.
+//  This prevents "forgot to reset" bugs when adding new state.
+// ══════════════════════════════════════════════════════════
+var _stateRegistry = [];
+function registerState(resetFn) {
+  if (typeof resetFn === 'function') _stateRegistry.push(resetFn);
+}
+
 function resetAppState() {
   // Auth / user
   currentUser = null;
@@ -269,6 +280,9 @@ function resetAppState() {
   // Timers
   if (typeof _radarRefreshTimer !== 'undefined' && _radarRefreshTimer) { clearInterval(_radarRefreshTimer); _radarRefreshTimer = null; }
   if (typeof _dmBroadcastTypingTimer !== 'undefined' && _dmBroadcastTypingTimer) { clearTimeout(_dmBroadcastTypingTimer); _dmBroadcastTypingTimer = null; }
+
+  // Module-registered cleanup (registerState pattern)
+  _stateRegistry.forEach(function(fn) { try { fn(); } catch(e) {} });
 
   console.debug('[resetAppState] All session state cleared');
 }

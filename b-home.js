@@ -528,8 +528,9 @@ function skipSetupSheet(which) {
 }
 
 function openProfileSetupTags() {
-  goTo('screen-profile');
-  setTimeout(function() { if (typeof profSwitchTab === 'function') profSwitchTab('edit'); }, 200);
+  goToThen('screen-profile', function() {
+    if (typeof profSwitchTab === 'function') profSwitchTab('dashboard');
+  });
 }
 
 // ── EMPTY FILTER STATE ──

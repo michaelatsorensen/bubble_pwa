@@ -1211,9 +1211,7 @@ async function checkPendingJoin() {
 
     if (isEventFlow && isEvent && isSelfCheckin) {
       // Mode A: auto check-in → open event directly
-      await sb.from('bubble_members')
-        .update({ checked_in_at: new Date().toISOString(), checked_out_at: null })
-        .eq('bubble_id', joinId).eq('user_id', currentUser.id);
+      await dbActions.checkIn(joinId);
       consumeFlow('event_flow');
       showSuccessToast(t('toast_checkedin'));
       goToThen('screen-home', function() { openBubbleChat(joinId, 'screen-home'); });

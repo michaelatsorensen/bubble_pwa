@@ -204,27 +204,14 @@ async function _liveCheckinFallback(bubbleId) {
       }
     }
 
-    // 1. Auto-checkout
-    await liveAutoCheckout();
+    // 1. Auto-checkout from any current check-in
+    await dbActions.checkOutAll();
 
-    // 2. Check membership + check-in
-    const { data: existing } = await sb.from('bubble_members')
-      .select('id, checked_in_at, checked_out_at')
-      .eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle();
+    // 2. Check-in (idempotent: updates if already member, inserts if new)
+    var result = await dbActions.checkIn(bubbleId);
+    if (!result.ok) return;
 
-    if (existing) {
-      var { error: upErr } = await sb.from('bubble_members').update({
-        checked_in_at: new Date().toISOString(), checked_out_at: null
-      }).eq('id', existing.id);
-      if (upErr) { errorToast('save', upErr); return; }
-    } else {
-      var { error: insErr } = await sb.from('bubble_members').insert({
-        bubble_id: bubbleId, user_id: currentUser.id, checked_in_at: new Date().toISOString()
-      });
-      if (insErr) { errorToast('save', insErr); return; }
-    }
-
-    // 3. Get bubble name
+    // 3. Get bubble name for UI
     var bubbleName = '';
     try {
       var { data: bData } = await sb.from('bubbles').select('name, location').eq('id', bubbleId).single();
@@ -260,26 +247,8 @@ function _showCheckinSuccess(bubbleId, bubbleName) {
 // liveCreateAndCheckin removed — UI element no longer exists
 
 async function liveAutoCheckout() {
-  try {
-    // Checkout from ALL active check-ins (any bubble type)
-    const { data: activeCheckins } = await sb.from('bubble_members')
-      .select('id')
-      .eq('user_id', currentUser.id)
-      .not('checked_in_at', 'is', null)
-      .is('checked_out_at', null);
-
-    if (!activeCheckins || activeCheckins.length === 0) return;
-
-    const ids = activeCheckins.map(m => m.id);
-    var { error: coErr } = await sb.from('bubble_members').update({
-      checked_out_at: new Date().toISOString()
-    }).in('id', ids);
-    if (coErr) logError('liveAutoCheckout:update', coErr);
-
-    // Note: this only sets checked_out_at — user remains a member
-  } catch (e) {
-    logError('liveAutoCheckout', e);
-  }
+  // Delegate to dbActions.checkOutAll — consistent error handling + logging
+  await dbActions.checkOutAll();
 }
 
 async function liveCheckout() {
@@ -288,15 +257,13 @@ async function liveCheckout() {
   try {
     if (!currentLiveBubble) return;
     var checkoutBubbleId = (appMode.live && appMode.live.bubbleId) || currentLiveBubble.bubble_id || currentLiveBubble.bubbleId;
-    var { error: coErr } = await sb.from('bubble_members').update({
-      checked_out_at: new Date().toISOString()
-    }).eq('bubble_id', checkoutBubbleId).eq('user_id', currentUser.id);
-    if (coErr) { errorToast('save', coErr); return; }
+    var result = await dbActions.checkOut(checkoutBubbleId);
+    if (!result.ok) return;
 
     currentLiveBubble = null;
     appMode.clearLive();
     showSuccessToast(t('toast_checkedout'));
-    trackEvent('live_checkout', { bubble_id: checkoutBubbleId });
+    // trackEvent handled by dbActions.checkOut
     await loadLiveBubbleStatus();
 
     // Reset home to 'all' mode + re-render dartboard
@@ -489,33 +456,12 @@ async function liveScanConfirmPersonCheckin() {
   var status = document.getElementById('live-scan-status');
   if (status) { status.textContent = t('misc_loading'); status.className = 'live-scan-status found'; status.style.display = ''; }
   try {
-    var { data: existingMember } = await sb.from('bubble_members')
-      .select('id').eq('bubble_id', p.bubbleId).eq('user_id', p.profile.id).maybeSingle();
-    if (!existingMember) {
-      var { error: insErr } = await sb.from('bubble_members').insert({
-        bubble_id: p.bubbleId,
-        user_id: p.profile.id,
-        checked_in_at: new Date().toISOString()
-      });
-      if (insErr) {
-        logError('scanCheckin:insert', insErr);
-        _renderToast(t('toast_checkin_failed'), 'error');
-        if (status) { status.textContent = 'Check-in fejlede'; status.className = 'live-scan-status error'; status.style.display = ''; }
-        setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; } liveQrPreviewLoop(); }, 3000);
-        return;
-      }
-    } else {
-      var { error: upErr } = await sb.from('bubble_members').update({
-        checked_in_at: new Date().toISOString(),
-        checked_out_at: null
-      }).eq('bubble_id', p.bubbleId).eq('user_id', p.profile.id);
-      if (upErr) {
-        logError('scanCheckin:update', upErr);
-        _renderToast(t('toast_checkin_failed'), 'error');
-        if (status) { status.textContent = 'Check-in fejlede'; status.className = 'live-scan-status error'; status.style.display = ''; }
-        setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; } liveQrPreviewLoop(); }, 3000);
-        return;
-      }
+    var result = await dbActions.checkInUser(p.bubbleId, p.profile.id);
+    if (!result.ok) {
+      _renderToast(t('toast_checkin_failed'), 'error');
+      if (status) { status.textContent = 'Check-in fejlede'; status.className = 'live-scan-status error'; status.style.display = ''; }
+      setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; } liveQrPreviewLoop(); }, 3000);
+      return;
     }
     // Log scan
     try { sb.from('qr_scans').insert({ bubble_id: p.bubbleId, scanned_by: currentUser.id, scanned_user: p.profile.id, scan_type: 'event_checkin' }); } catch(e2) {}
@@ -682,7 +628,7 @@ async function liveScanAutoResolve(data) {
             if (cMeta) cMeta.textContent = (scannedProfile.title || '') + (scannedProfile.workplace ? ' · ' + scannedProfile.workplace : '');
             showSuccessToast(t('toast_checked_in_name', {name: scannedProfile.name || 'User'}));
             // Auto-save as contact
-            try { await sb.from('saved_contacts').upsert({ user_id: currentUser.id, contact_id: scannedProfile.id }, { onConflict: 'user_id,contact_id' }); } catch(e2) {}
+            try { await dbActions.saveContact(scannedProfile.id); } catch(e2) {}
           }
 
           if (confirmed) confirmed.style.display = 'flex';
@@ -776,30 +722,16 @@ async function liveScanConfirmJoin() {
   var bubble = _liveQrResolvedBubble;
   try {
     // Auto-checkout from any current check-in first
-    await liveAutoCheckout();
+    await dbActions.checkOutAll();
 
-    // Check if already a member
-    var { data: existing } = await sb.from('bubble_members')
-      .select('id, checked_in_at, checked_out_at')
-      .eq('bubble_id', bubble.id).eq('user_id', currentUser.id).maybeSingle();
+    // Join + check-in (idempotent)
+    var wasExisting = false;
+    var { data: existCheck } = await sb.from('bubble_members')
+      .select('id').eq('bubble_id', bubble.id).eq('user_id', currentUser.id).maybeSingle();
+    wasExisting = !!existCheck;
 
-    if (existing) {
-      // Already member — just re-check-in
-      var { error: upErr } = await sb.from('bubble_members').update({
-        checked_in_at: new Date().toISOString(),
-        checked_out_at: null
-      }).eq('id', existing.id);
-      if (upErr) { errorToast('save', upErr); return; }
-    } else {
-      // New member + check-in
-      var { error: insErr } = await sb.from('bubble_members').insert({
-        bubble_id: bubble.id,
-        user_id: currentUser.id,
-        role: 'member',
-        checked_in_at: new Date().toISOString()
-      });
-      if (insErr) { errorToast('save', insErr); return; }
-    }
+    var result = await dbActions.checkIn(bubble.id);
+    if (!result.ok) return;
 
     stopLiveCamera();
     // Show confirmation
@@ -808,7 +740,7 @@ async function liveScanConfirmJoin() {
     var cName = document.getElementById('live-scan-confirmed-name');
     var cMeta = document.getElementById('live-scan-confirmed-meta');
     if (cName) cName.textContent = bubble.name;
-    if (cMeta) cMeta.textContent = (existing ? 'Checked ind igen' : 'Joined + checked ind') + ' ✓';
+    if (cMeta) cMeta.textContent = (wasExisting ? 'Checked ind igen' : 'Joined + checked ind') + ' ✓';
     if (confirmed) confirmed.style.display = 'flex';
 
     showToast(t('toast_checkedin'));
@@ -1033,7 +965,7 @@ async function _connectResolve(rawUrl) {
     // Handle join QR
     if (joinId) {
       closeConnectScanner();
-      await sb.from('bubble_members').insert({ bubble_id: joinId, user_id: currentUser.id }).catch(function(){});
+      await dbActions.joinBubble(joinId);
       showSuccessToast(t('toast_joined'));
       requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(joinId, 'screen-home'); }); });
       return;
@@ -1117,7 +1049,7 @@ async function _connectSaveContact() {
   var btn = document.querySelector('#connect-scan-result button');
   if (btn) { btn.textContent = 'Gemmer...'; btn.disabled = true; }
   try {
-    await sb.from('saved_contacts').upsert({ user_id: currentUser.id, contact_id: _connectProfileId });
+    await dbActions.saveContact(_connectProfileId);
     clearSavedContactIdsCache();
     trackEvent('qr_contact_saved', { contact_id: _connectProfileId });
 
