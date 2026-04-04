@@ -350,6 +350,34 @@ function obCheckProgress() {
 }
 
 
+// ── Step navigation ──
+function obNextStep() {
+  var name = (document.getElementById('ob-name')?.value || '').trim();
+  var workplace = (document.getElementById('ob-workplace')?.value || '').trim();
+  if (!name) { showWarningToast('Skriv dit navn først'); return; }
+  if (!workplace) { showWarningToast('Tilføj arbejdsplads'); return; }
+  if (!_obConsentGiven) { showWarningToast('Du skal acceptere betingelserne'); return; }
+  // Show step 2
+  var s1 = document.getElementById('ob-step-1');
+  var s2 = document.getElementById('ob-step-2');
+  if (s1) s1.style.display = 'none';
+  if (s2) s2.style.display = 'block';
+  // Scroll to top + init tag picker
+  var scroll = document.querySelector('#screen-onboarding > div');
+  if (scroll) scroll.scrollTop = 0;
+  obRenderCategories();
+  updateObStrength();
+}
+
+function obPrevStep() {
+  var s1 = document.getElementById('ob-step-1');
+  var s2 = document.getElementById('ob-step-2');
+  if (s1) s1.style.display = 'block';
+  if (s2) s2.style.display = 'none';
+  var scroll = document.querySelector('#screen-onboarding > div');
+  if (scroll) scroll.scrollTop = 0;
+}
+
 // Note: skipOnboarding is no longer called from UI (v5.6 removed skip button)
 // Kept for backwards compatibility if re-enabled
 async function skipOnboarding() {
@@ -1092,27 +1120,33 @@ function epCustomTag(event, cat, input) {
 async function saveOnboarding() {
   try {
     if (!_obConsentGiven) return showWarningToast('Du skal acceptere betingelserne');
-    const name      = document.getElementById('ob-name').value.trim();
-    const title     = document.getElementById('ob-title').value.trim();
-    const bio       = document.getElementById('ob-bio').value.trim();
-    const linkedin  = document.getElementById('ob-linkedin').value.trim();
+    const name      = (document.getElementById('ob-name')?.value || '').trim();
+    const title     = (document.getElementById('ob-title')?.value || '').trim();
+    const bio       = (document.getElementById('ob-bio')?.value || '').trim();
+    const linkedin  = (document.getElementById('ob-linkedin')?.value || '').trim();
     const workplace = (document.getElementById('ob-workplace')?.value || '').trim();
-    if (!name)            return showWarningToast('Navn er påkrævet');
-    if (!workplace)       return showWarningToast('Virksomhed er påkrævet');
+    if (!name)      return showWarningToast('Navn er påkrævet');
+    if (!workplace) return showWarningToast('Virksomhed er påkrævet');
+    var btn = document.getElementById('ob-finish-btn') || document.getElementById('ob-save-btn');
+    if (btn) { btn.textContent = 'Gemmer...'; btn.disabled = true; }
     const { error } = await sb.from('profiles').upsert({
       id: currentUser.id, name, title, bio, linkedin, workplace,
       keywords: obSelectedTags.length > 0 ? obSelectedTags : [],
       dynamic_keywords: obDynChips, is_anon: false,
       lifestage: obLifestage || null
     });
-    if (error) return errorToast('save', error);
+    if (error) {
+      if (btn) { btn.textContent = 'Start Bubble'; btn.disabled = false; }
+      return errorToast('save', error);
+    }
     persistCustomTitle(title);
     await loadCurrentProfile();
+    localStorage.setItem('bubble_welcomed', '1');
     showSuccessToast('Profil oprettet');
-    trackEvent('onboarding_complete');
+    trackEvent('onboarding_complete', { tags: obSelectedTags.length, has_title: !!title });
     initServices();
     await resolvePostAuthDestination();
-  } catch(e) { logError("saveOnboarding", e); errorToast("save", e); }
+  } catch(e) { logError('saveOnboarding', e); errorToast('save', e); }
 }
 
 

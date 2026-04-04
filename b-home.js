@@ -267,25 +267,31 @@ function calcProfileStrength(profile) {
 function showProfileSetupCTA() {
   var setupEl = document.getElementById('home-profile-setup');
   var miniEl = document.getElementById('home-profile-mini');
-  if (!setupEl || !miniEl || !currentProfile) return;
+  if (!setupEl || !currentProfile) return;
 
   var strength = calcProfileStrength(currentProfile);
+  var prefs = hsGetPrefs();
+  var ctaVisible = prefs.profile_cta !== false; // default on
 
-  if (strength >= SETUP_THRESHOLD) {
+  // Hide completely at 100% or if toggled off
+  if (strength >= 100 || !ctaVisible) {
     setupEl.style.display = 'none';
-    miniEl.style.display = 'none';
+    if (miniEl) miniEl.style.display = 'none';
+    _updateProfileStrengthBar(strength);
     return;
   }
 
-  // Determine next step
+  // Contextual match-position message based on what's missing
   var nextLabel = '';
-  if (!currentProfile.workplace) nextLabel = t('home_next_workplace');
-  else if (!currentProfile.title) nextLabel = t('home_next_title');
-  else if (!currentProfile.keywords || currentProfile.keywords.length < 3) nextLabel = t('home_next_interests');
-  else if (!currentProfile.lifestage) nextLabel = t('home_next_lifestage');
-  else nextLabel = t('home_add_tags');
+  var tags = currentProfile.keywords ? currentProfile.keywords.length : 0;
+  if (!currentProfile.title && tags < 3) nextLabel = 'Tilføj titel og tags — ryk mod midten af andres radar';
+  else if (tags < 3) nextLabel = 'Tilføj ' + (3 - tags) + ' tags mere — bliv et bedre match';
+  else if (!currentProfile.title) nextLabel = 'Tilføj en titel — gør det lettere at connecte';
+  else if (tags < 6) nextLabel = 'Flere tags = flere matches tæt på midten';
+  else if (!currentProfile.bio) nextLabel = 'En bio giver kontekst og bedre matches';
+  else nextLabel = 'Din profil er næsten komplet';
 
-  // Update CTA avatar
+  // Avatar
   var avEl = document.getElementById('setup-cta-avatar');
   if (avEl) {
     if (currentProfile.avatar_url) {
@@ -295,16 +301,31 @@ function showProfileSetupCTA() {
     }
   }
 
-  // Show big CTA or mini bar
-  var bar, pctEl, nextEl;
   setupEl.style.display = 'block';
-  miniEl.style.display = 'none';
-  bar = document.getElementById('setup-cta-bar');
-  pctEl = document.getElementById('setup-cta-pct');
-  nextEl = document.getElementById('setup-cta-next');
+  if (miniEl) miniEl.style.display = 'none';
+  var bar = document.getElementById('setup-cta-bar');
+  var pctEl = document.getElementById('setup-cta-pct');
+  var nextEl = document.getElementById('setup-cta-next');
   if (bar) bar.style.width = strength + '%';
   if (pctEl) pctEl.textContent = strength + '%';
   if (nextEl) nextEl.textContent = nextLabel;
+
+  _updateProfileStrengthBar(strength);
+}
+
+// Update the always-visible strength bar on the profile screen
+function _updateProfileStrengthBar(strength) {
+  var bar = document.getElementById('prof-strength-bar');
+  var pct = document.getElementById('prof-strength-pct');
+  var lbl = document.getElementById('prof-strength-label');
+  if (bar) bar.style.width = strength + '%';
+  if (pct) pct.textContent = strength + '%';
+  if (lbl) {
+    if (strength >= 80) { lbl.textContent = 'Stærk profil'; lbl.style.color = '#1A9E8E'; }
+    else if (strength >= 50) { lbl.textContent = 'God profil'; lbl.style.color = 'var(--accent)'; }
+    else if (strength >= 25) { lbl.textContent = 'Basis profil'; lbl.style.color = 'var(--gold)'; }
+    else { lbl.textContent = 'Kom i gang'; lbl.style.color = 'var(--accent2)'; }
+  }
 }
 
 function openNextProfileSetupSheet() {
@@ -1378,7 +1399,7 @@ function hsUpdateToggleUI(key, isOn) {
 
 function hsUpdateAllToggles() {
   var prefs = hsGetPrefs();
-  ['saved','nudge','feedback'].forEach(function(key) {
+  ['saved','nudge','feedback','profile_cta'].forEach(function(key) {
     hsUpdateToggleUI(key, prefs[key] !== false);
   });
   hsUpdatePreview();
@@ -1387,7 +1408,7 @@ function hsUpdateAllToggles() {
 function hsApplyToHome() {
   var prefs = hsGetPrefs();
   // v5.2: toggle keys are saved, nudge, feedback. Radar is always visible.
-  ['saved','nudge','feedback'].forEach(function(key) {
+  ['saved','nudge','feedback','profile_cta'].forEach(function(key) {
     var els = document.querySelectorAll('[data-hs="' + key + '"]');
     els.forEach(function(el) {
       if (prefs[key] !== false) {
