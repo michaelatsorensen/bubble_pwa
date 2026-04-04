@@ -14,8 +14,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-04-04T10:00:00';
-const BUILD_VERSION  = 'v8.6.9';
+const BUILD_TIMESTAMP = '2026-04-04T15:30:07';
+const BUILD_VERSION  = 'v8.7.0';
 const SUPABASE_URL  = "https://api.bubbleme.dk";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -153,49 +153,36 @@ function initSupabase() {
 var _navVersion = 0;
 var _activeScreen = null;
 
-// ── Centralized flow state (dual storage for OAuth redirect survival) ──
+// ── Centralized flow state ──
+// Primary mechanism: URL params via OAuth redirectTo (see b-auth.js getOAuthRedirectTo)
+// Fallback: localStorage with 5-min TTL (enough for OAuth + slow WiFi)
 // Keys: pending_contact, pending_join, event_flow, post_tags_destination
-// Writes to BOTH sessionStorage and localStorage (with 15-min TTL)
-// Reads from sessionStorage first, falls back to localStorage
-// Survives: page reloads, OAuth redirects, Safari private mode
+// Single storage — sessionStorage removed (added complexity without value;
+// localStorage alone is sufficient since URL params handle cross-redirect survival)
 var _flowStatePrefix = 'bf_'; // bf = bubble flow
-var _flowTTL = 30 * 60 * 1000; // 30 minutes — must survive OAuth redirects on slow WiFi
+var _flowTTL = 5 * 60 * 1000; // 5 minutes — enough for OAuth redirect on slow WiFi
 
 function flowGet(key) {
   var k = _flowStatePrefix + key;
-  // Try sessionStorage first (with TTL)
-  try {
-    var sv = sessionStorage.getItem(k);
-    if (sv) {
-      try {
-        var sp = JSON.parse(sv);
-        if (sp.exp && sp.exp > Date.now()) return sp.val;
-        sessionStorage.removeItem(k); // expired
-      } catch(e2) {
-        return sv; // legacy plain string — return as-is
-      }
-    }
-  } catch(e) {}
-  // Fallback to localStorage with TTL check
   try {
     var raw = localStorage.getItem(k);
     if (raw) {
       var parsed = JSON.parse(raw);
       if (parsed.exp > Date.now()) return parsed.val;
-      localStorage.removeItem(k); // expired
+      localStorage.removeItem(k); // expired — clean up
     }
   } catch(e) {}
   return null;
 }
+
 function flowSet(key, value) {
   var k = _flowStatePrefix + key;
   var wrapped = JSON.stringify({ val: value, exp: Date.now() + _flowTTL });
-  try { sessionStorage.setItem(k, wrapped); } catch(e) {}
   try { localStorage.setItem(k, wrapped); } catch(e) {}
 }
+
 function flowRemove(key) {
   var k = _flowStatePrefix + key;
-  try { sessionStorage.removeItem(k); } catch(e) {}
   try { localStorage.removeItem(k); } catch(e) {}
 }
 

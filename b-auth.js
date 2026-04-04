@@ -551,6 +551,23 @@ async function submitFeedback() {
 // ══════════════════════════════════════════════════════════
 //  GOOGLE LOGIN
 // ══════════════════════════════════════════════════════════
+// ── Build redirectTo URL with current flow intent encoded as URL params ──
+// Params: _fc=pending_contact, _fj=pending_join, _fe=event_flow
+// After OAuth redirect, b-boot.js reads these back and sets flow flags.
+// Requires: Supabase Auth → URL Configuration → Redirect URLs includes https://bubbleme.dk/**
+// Graceful degradation: if Supabase ignores redirectTo, falls back to localStorage (5-min TTL)
+function getOAuthRedirectTo() {
+  var base = window.location.origin + window.location.pathname;
+  var params = [];
+  var contact = flowGet('pending_contact');
+  var join    = flowGet('pending_join');
+  var eventF  = flowGet('event_flow');
+  if (contact) params.push('_fc=' + encodeURIComponent(contact));
+  if (join)    params.push('_fj=' + encodeURIComponent(join));
+  if (eventF)  params.push('_fe=1');
+  return params.length > 0 ? base + '?' + params.join('&') : base;
+}
+
 async function handleGoogleLogin() {
   if (_authLock) return;
   _authLock = true;
@@ -558,7 +575,7 @@ async function handleGoogleLogin() {
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin + window.location.pathname,
+        redirectTo: getOAuthRedirectTo(),
         queryParams: { access_type: 'offline', prompt: 'consent' }
       }
     });
@@ -577,7 +594,7 @@ async function handleLinkedInLogin() {
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'linkedin_oidc',
       options: {
-        redirectTo: window.location.origin + window.location.pathname
+        redirectTo: getOAuthRedirectTo()
       }
     });
     if (error) errorToast('login', error);
@@ -595,7 +612,7 @@ async function handleAppleLogin() {
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'apple',
       options: {
-        redirectTo: window.location.origin + window.location.pathname
+        redirectTo: getOAuthRedirectTo()
       }
     });
     if (error) errorToast('login', error);

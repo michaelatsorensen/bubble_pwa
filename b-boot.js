@@ -789,6 +789,28 @@ window.addEventListener('load', async () => {
     window.history.replaceState({}, document.title, _cleanUrl);
   }
 
+  // ── Read flow intent from OAuth redirectTo URL params ──
+  // b-auth.js encodes pending_contact/_join/event_flow as _fc/_fj/_fe in redirectTo.
+  // After OAuth redirect, we restore them here before any auth/flow logic runs.
+  // Values are validated (non-empty strings only) before storing.
+  (function restoreFlowFromUrl() {
+    try {
+      var p = new URLSearchParams(window.location.search);
+      var fc = p.get('_fc'); // pending_contact
+      var fj = p.get('_fj'); // pending_join
+      var fe = p.get('_fe'); // event_flow
+      if (fc && fc.length > 0) flowSet('pending_contact', fc);
+      if (fj && fj.length > 0) flowSet('pending_join', fj);
+      if (fe) flowSet('event_flow', 'true');
+      // Clean flow params from URL (keep other params like ?auth=)
+      if (fc || fj || fe) {
+        p.delete('_fc'); p.delete('_fj'); p.delete('_fe');
+        var clean = window.location.pathname + (p.toString() ? '?' + p.toString() : '');
+        window.history.replaceState({}, '', clean);
+      }
+    } catch(e) { console.warn('[boot] restoreFlowFromUrl failed:', e); }
+  })();
+
   // Check QR anon preview BEFORE auth (shows profile without login)
   if (initSupabase()) {
     var isGuest = await checkGuestEventRoute();
