@@ -126,6 +126,8 @@ async function maybeShowOnboarding() {
 
     goTo('screen-onboarding');
     setTimeout(initInputConfirmButtons, 50);
+    // Trigger strength check so button state reflects pre-filled values immediately
+    setTimeout(updateObStrength, 80);
     return true;
   } catch(e) { logError("maybeShowOnboarding", e); errorToast("load", e); }
 }

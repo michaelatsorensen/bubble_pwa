@@ -105,7 +105,14 @@ async function resolvePostAuthDestination() {
     // Step 5: pending join (from bubble invite link)
     await checkPendingJoin();
     // Step 6: welcome screen for first-time users
-    if (!localStorage.getItem('bubble_welcomed')) {
+    // A user with name + workplace is treated as welcomed regardless of localStorage —
+    // covers returning users who pre-date the welcome screen and new-device logins.
+    var hasCompletedProfile = !!(currentProfile?.name && currentProfile?.workplace);
+    var hasWelcomedFlag = !!localStorage.getItem('bubble_welcomed');
+    if (!hasWelcomedFlag && hasCompletedProfile) {
+      localStorage.setItem('bubble_welcomed', '1'); // backfill — never show welcome to existing users
+    }
+    if (!hasWelcomedFlag && !hasCompletedProfile) {
       goTo('screen-welcome');
       flowClearAll(); // Safety: no stale flags survive into welcome
       return;
@@ -345,7 +352,7 @@ async function handleSignup() {
       email,
       password: pass,
       options: {
-        emailRedirectTo: window.location.origin + window.location.pathname,
+        emailRedirectTo: getOAuthRedirectTo(),
         data: { name: name }
       }
     });
@@ -390,7 +397,10 @@ async function handleSignup() {
     }
 
     await resolvePostAuth();
-    showSuccessToast('Velkommen til Bubble');
+    // Only toast on home — new users go to onboarding where the screen is its own greeting
+    if (navState.screen === 'screen-home') {
+      showSuccessToast('Velkommen til Bubble');
+    }
   } catch(e) { logError("handleSignup", e); errorToast("signup", e); }
   finally { _authLock = false; }
 }
@@ -413,8 +423,8 @@ async function handleLogout() {
       }
     } catch(e2) { console.debug('[logout] push cleanup:', e2); }
     await sb.auth.signOut();
-    resetAppState(); // Clear ALL session state
-    goTo('screen-auth');
+    resetAppState();
+    redirectToLanding(); // Auth listener also calls this — safe to call twice
   } catch(e) { logError("handleLogout", e); errorToast("load", e); }
 }
 

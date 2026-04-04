@@ -471,23 +471,25 @@ async function _executeSetRole(bubbleId, userId, userName, role) {
 }
 
 async function leaveBubble(bubbleId, btnEl) {
-  // If user is owner, warn to transfer first
-  if (bcBubbleData && bcBubbleData.created_by === currentUser.id) {
-    var { count } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', bubbleId).neq('user_id', currentUser.id);
-    if (count > 0) {
-      showWarningToast(t('toast_owner_leave'));
-      return;
+  try {
+    // If user is owner, warn to transfer first
+    if (bcBubbleData && bcBubbleData.created_by === currentUser.id) {
+      var { count } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', bubbleId).neq('user_id', currentUser.id);
+      if (count > 0) {
+        showWarningToast(t('toast_owner_leave'));
+        return;
+      }
     }
-  }
-  var target = btnEl || document.querySelector('[data-action="leaveBubble"]');
-  if (!target) return;
-  var isEvent = bcBubbleData && (bcBubbleData.type === 'event' || bcBubbleData.type === 'live');
-  bbConfirm(target, {
-    label: isEvent ? t('bb_leave_event_desc') : t('bb_leave_bubble_desc'),
-    confirmText: isEvent ? t('bb_leave_event') : t('bb_leave'),
-    confirmClass: 'bb-confirm-btn-danger',
-    onConfirm: "confirmLeaveBubble('" + bubbleId + "')"
-  });
+    var target = btnEl || document.querySelector('[data-action="leaveBubble"]');
+    if (!target) return;
+    var isEvent = bcBubbleData && (bcBubbleData.type === 'event' || bcBubbleData.type === 'live');
+    bbConfirm(target, {
+      label: isEvent ? t('bb_leave_event_desc') : t('bb_leave_bubble_desc'),
+      confirmText: isEvent ? t('bb_leave_event') : t('bb_leave'),
+      confirmClass: 'bb-confirm-btn-danger',
+      onConfirm: "confirmLeaveBubble('" + bubbleId + "')"
+    });
+  } catch(e) { logError('leaveBubble', e); errorToast('save', e); }
 }
 
 function cancelLeaveBubble() {

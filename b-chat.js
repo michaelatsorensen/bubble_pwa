@@ -95,6 +95,7 @@ function renderGifs(results) {
 
 async function selectGif(idx) {
   try {
+  if (!currentUser) { logError('selectGif', 'No currentUser'); return; }
   var gifUrl = window._gifResults && window._gifResults[idx];
   var mode = gifPickerMode;
   closeGifPicker();
