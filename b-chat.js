@@ -1809,16 +1809,8 @@ async function bcLoadInfo() {
     } else if (bcBubbleData._isPending) {
       bottomHtml = '<div style="text-align:center;padding:0.8rem 0;font-size:0.8rem;color:#854F0B;font-weight:600">⏳ Din anmodning afventer godkendelse</div>';
     } else {
-      // Non-member: show Join or Anmod CTA
-      var joinBtn = '';
-      if (b.visibility === 'hidden') {
-        joinBtn = '<div style="text-align:center;padding:0.6rem 0;font-size:0.78rem;color:var(--muted)">' + icon('eye') + ' Kun via invitation</div>';
-      } else if (b.visibility === 'private') {
-        joinBtn = '<button data-action="requestJoin" data-id="' + b.id + '" style="width:100%;padding:0.7rem;border-radius:12px;background:var(--gradient-primary);border:none;color:white;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font)">' + icon('lock') + ' Anmod om medlemskab</button>';
-      } else {
-        joinBtn = '<button data-action="joinBubble" data-id="' + b.id + '" style="width:100%;padding:0.7rem;border-radius:12px;background:var(--gradient-primary);border:none;color:white;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font)">Bliv medlem</button>';
-      }
-      bottomHtml = '<div style="padding-top:0.8rem;border-top:1px solid var(--glass-border-subtle)">' + joinBtn + '</div>';
+      // Non-member: join CTA is shown at top of Info tab (topJoinHtml)
+      bottomHtml = '';
     }
 
     // ── Assemble ──
@@ -1828,9 +1820,9 @@ async function bcLoadInfo() {
       if (b.visibility === 'hidden') {
         topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem;font-size:0.78rem;color:var(--muted)">' + icon('eye') + ' Kun via invitation</div>';
       } else if (b.visibility === 'private') {
-        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem"><button data-action="requestJoin" data-id="' + b.id + '" style="padding:0.7rem 2rem;border-radius:12px;background:var(--gradient-primary);border:none;color:white;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:var(--font)">' + icon('lock') + ' Anmod om medlemskab</button></div>';
+        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem"><button class="btn-primary" data-action="requestJoin" data-id="' + b.id + '" style="font-size:0.88rem;padding:0.7rem 2rem">' + icon('lock') + ' Anmod om medlemskab</button></div>';
       } else {
-        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem"><button onclick="joinBubble(\'' + b.id + '\')" style="padding:0.7rem 2rem;border-radius:12px;background:var(--gradient-primary);border:none;color:white;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:var(--font)">Bliv medlem</button></div>';
+        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem"><button class="btn-primary" onclick="joinBubble(\'' + b.id + '\')" style="font-size:0.88rem;padding:0.7rem 2rem">Bliv medlem</button></div>';
       }
     } else if (bcBubbleData._isPending) {
       topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem;font-size:0.8rem;color:#854F0B;font-weight:600">⏳ Din anmodning afventer godkendelse</div>';
