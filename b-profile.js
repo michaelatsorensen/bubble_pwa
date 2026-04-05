@@ -1443,7 +1443,7 @@ function _renderDashboardTagsCard() {
   if (ls && LS_LBL[ls]) {
     html += '<div style="padding:0 0.9rem 0.5rem">' +
       '<span style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.65rem;border-radius:99px;font-size:0.68rem;font-weight:700;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:#B45309">' +
-      '<span style="display:flex;align-items:center;width:13px;height:13px">' + ico(LS_ICO[ls]) + '</span>' +
+      '<span style="display:flex;align-items:center;width:13px;height:13px">' + (typeof etIco === 'function' ? etIco(LS_ICO[ls]) : ico(LS_ICO[ls])) + '</span>' +
       LS_LBL[ls] + '</span>' +
     '</div>';
   }
