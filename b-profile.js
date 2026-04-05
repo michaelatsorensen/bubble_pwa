@@ -1440,7 +1440,7 @@ function _renderDashboardTagsCard() {
     '<div style="font-size:0.72rem;font-weight:700;color:var(--text)">Tags &amp; interesser</div>' +
     '<div style="display:flex;align-items:center;gap:0.5rem">' +
     '<button onclick="reRunOnboarding()" style="font-size:0.6rem;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;font-family:inherit;padding:0;text-decoration:underline;text-underline-offset:2px" title="Kør profilopsætning igen">Genstart</button>' +
-    '<button onclick="openEditTags()" style="font-size:0.68rem;font-weight:600;color:var(--accent);background:var(--accent-bg);border:1px solid rgba(124,92,252,0.15);border-radius:8px;padding:0.2rem 0.55rem;cursor:pointer;font-family:inherit">Rediger \u2192</button>' +
+    '<button onclick="openEditTags()" style="font-size:0.68rem;font-weight:600;color:var(--accent);background:var(--accent-bg);border:1px solid rgba(124,92,252,0.15);border-radius:8px;padding:0.2rem 0.55rem;cursor:pointer;font-family:inherit">Vælg tags \u2192</button>' +
     '</div>' +
     '</div>';
   if (ls && LS_LBL[ls]) {
