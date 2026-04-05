@@ -1107,6 +1107,9 @@ function openEditProfile() {
   if (avImg) { if (currentProfile.avatar_url) { avImg.src = currentProfile.avatar_url; avImg.style.display = 'block'; } else { avImg.style.display = 'none'; } }
   // Tag picker — now handled by screen-edit-tags
   // epSelectedTags and epDynChips are initialized when openEditTags() is called
+  // Dynamic keywords (Søger) — restored here as it belongs in profile edit
+  epDynChips = [...(currentProfile.dynamic_keywords || [])];
+  renderChips('ep-dyn-chips', epDynChips, 'ep-dyn-chips-container', 'ep-dyn-chip-input');
   openModal('modal-edit-profile');
   setTimeout(initInputConfirmButtons, 50);
 }
@@ -1120,7 +1123,8 @@ async function saveProfile() {
     const workplace = (document.getElementById('ep-workplace')?.value || '').trim();
     if (!name) return showWarningToast('Navn er påkrævet');
     const { error } = await sb.from('profiles').upsert({
-      id: currentUser.id, name, title, bio, linkedin, workplace, is_anon: isAnon
+      id: currentUser.id, name, title, bio, linkedin, workplace,
+      dynamic_keywords: epDynChips, is_anon: isAnon
     });
     if (error) return errorToast('save', error);
     await loadCurrentProfile();

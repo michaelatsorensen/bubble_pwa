@@ -1652,6 +1652,14 @@
       <textarea class="input" id="ep-bio" maxlength="300" placeholder="Skriv kort om dig selv og hvad du søger..."></textarea>
     </div>
     <div class="input-group">
+      <div class="input-label" data-t="ob_step_seeking">Søger lige nu</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.4rem">Vises på din profil og i andres radar — f.eks. "Søger investor", "Open to coffee", "Søger nyt job"</div>
+      <div class="chips-container" id="ep-dyn-chips-container" onclick="document.getElementById('ep-dyn-chip-input').focus()">
+        <input class="chip-input" id="ep-dyn-chip-input" placeholder="Skriv og tryk Enter..." onkeydown="handleChipInput(event,'ep-dyn-chips')">
+        <button type="button" onclick="addChipFromBtn('ep-dyn-chip-input','ep-dyn-chips')" class="ob-cat-custom-btn" title="Tilføj">✓</button>
+      </div>
+    </div>
+    <div class="input-group">
       <div class="input-label">LinkedIn URL</div>
       <input class="input" id="ep-linkedin" placeholder="https://linkedin.com/in/dit-navn" type="url">
     </div>
