@@ -1360,7 +1360,7 @@ function etBuild() {
       ? 'background:rgba(245,158,11,0.12);border:2px solid #F59E0B;color:#B45309;font-weight:700'
       : 'background:var(--bg);border:1.5px solid var(--glass-border);color:var(--muted);font-weight:500';
     return '<span style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.7rem;border-radius:99px;font-size:0.68rem;cursor:pointer;font-family:inherit;'+style+'" onclick="etSelectLifestage(\''+ls.id+'\')">' +
-      '<span style="display:flex;align-items:center;width:14px;height:14px">' + ico(ls.icon) + '</span>' +
+      '<span style="display:flex;align-items:center;width:14px;height:14px;flex-shrink:0">' + ico(ls.icon) + '</span>' +
       ls.label + '</span>';
   }).join('');
 }
