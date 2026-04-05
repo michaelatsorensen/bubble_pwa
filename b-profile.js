@@ -81,7 +81,7 @@ function _personReset() {
   var roleEl = document.getElementById('person-role');
   if (roleEl) roleEl.innerHTML = '<div class="skel" style="width:100px;height:12px;display:inline-block"></div>';
   var personAvEl = document.getElementById('person-avatar');
-  if (personAvEl) personAvEl.innerHTML = '';
+  if (personAvEl) personAvEl.innerHTML = '<div class="skel" style="width:100%;height:100%;border-radius:50%"></div>';
   var overlapEl = document.getElementById('person-overlap');
   if (overlapEl) overlapEl.innerHTML = '';
   var bioS = document.getElementById('person-bio-inline');
@@ -1307,6 +1307,15 @@ function psSetStar(userId, rating) {
 async function loadDashboard() {
   var el = document.getElementById('prof-dashboard-content');
   if (!el || !currentUser) return;
+
+  // Show skeleton while queries run
+  el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem">' +
+    '<div class="skel" style="height:64px;border-radius:var(--radius)"></div>' +
+    '<div class="skel" style="height:64px;border-radius:var(--radius)"></div>' +
+    '<div class="skel" style="height:64px;border-radius:var(--radius)"></div>' +
+    '<div class="skel" style="height:64px;border-radius:var(--radius)"></div>' +
+    '</div>' +
+    '<div class="skel" style="height:64px;border-radius:var(--radius);margin-top:0.4rem"></div>';
 
   try {
     // Run all queries in parallel — each wrapped for resilience
