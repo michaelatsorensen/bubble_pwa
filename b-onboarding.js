@@ -587,6 +587,7 @@ function obAddTag(label, category) {
   if (obSelectedTags.indexOf(label) >= 0) return;
   obSelectedTags.push(label);
   obRenderSelectedTags();
+  obRenderCategories(); // update selected state in tag list
   var input = document.getElementById('ob-tag-search');
   if (input) { input.value = ''; }
   var sug = document.getElementById('ob-tag-suggestions');
@@ -597,6 +598,7 @@ function obAddTag(label, category) {
 function obRemoveTag(label) {
   obSelectedTags = obSelectedTags.filter(function(t) { return t !== label; });
   obRenderSelectedTags();
+  obRenderCategories(); // update selected state in tag list
   updateObStrength();
 }
 
@@ -947,6 +949,7 @@ function epAddTag(label, category) {
   if (epSelectedTags.indexOf(label) >= 0) return;
   epSelectedTags.push(label);
   epRenderSelectedTags();
+  epRenderCategories(); // update selected state in tag list
   var input = document.getElementById('ep-tag-search');
   if (input) input.value = '';
   var sug = document.getElementById('ep-tag-suggestions');
@@ -1152,3 +1155,295 @@ async function saveOnboarding() {
 }
 
 
+
+// ══════════════════════════════════════════════════════════
+//  EDIT TAGS SCREEN (et*)
+//  OWNS: ET_SECTIONS, etSelected, etCustomTags, etLifestage
+//  OWNS: etInit, etBuild, etRebuildSec, etToggle, etCloseSec
+//  OWNS: etTgl, etShowIn, etConfirmC, etRmCustom, etUpdateUI
+//  OWNS: etSelectLifestage, etGetSelectedTags, etGetLifestage
+// ══════════════════════════════════════════════════════════
+
+var ET_SECTIONS = [
+  {id:'branche',label:'Branche & sektor',icon:'🏭',desc:'Hvilken industri arbejder du i',color:'#1D4ED8',bg:'#EFF6FF',groups:[
+    {label:'Teknologi & digitalt',tags:['SaaS','AI/ML','Cybersecurity','Cloud','Infrastructure','DevTools','IoT','Robotics','AR/VR','Quantum','Blockchain','Deep Tech','Hardware','Embedded','Semiconductors','Fintech','Legaltech','Insurtech','SpaceTech','Martech']},
+    {label:'Energi & klima',tags:['Energi','Vindenergi','Solenergi','Brint','Energilagring','Smart Grid','Offshore','Fjernvarme','Energieffektivitet','Carbon Capture','Affaldshåndtering','Vandteknologi','Grøn Omstilling','Circular Economy','Bæredygtighed','Cleantech']},
+    {label:'Sundhed & life science',tags:['Healthtech','MedTech','Pharma','Biotech','Mental Health','Sundhed','Velfærdsteknologi','Tandpleje','Genoptræning']},
+    {label:'Fødevarer & bioressourcer',tags:['Foodtech','Agritech','Landbrug','Økologi','Fødevarer','Restaurant','Hotel','Turisme','Catering']},
+    {label:'Produktion & industri',tags:['Produktion','Industri','Automation','Transport','Logistik','Shipping','Mobility','Lager']},
+    {label:'Byggeri & anlæg',tags:['Byggeri','Anlæg','Renovering','Boligbyggeri','Proptech','Ejendomme','Bolig']},
+    {label:'Finans & forsikring',tags:['Finans','Banking','Forsikring','Pension','Revision','Crypto','DeFi','Investering','Kapitalforvaltning']},
+    {label:'Handel & service',tags:['E-commerce','Retail','Fashion','Luxury','D2C','B2B','B2C','Marketplace','Platform','Abonnement','Detail','Dagligvarer','Consulting','Agency','Service','Advokatbranchen','Rekruttering','Vikarbranchen','Facility Management']},
+    {label:'Kreativitet & medier',tags:['Media','Publishing','Gaming','Entertainment','Reklame','Film','Musik','Kultur','Kommunikation','PR']},
+  ]},
+  {id:'offentlig',label:'Offentlig & erhvervsfremme',icon:'🏛️',desc:'Myndigheder, klynger, erhvervshuse, brancheorg.',color:'#085041',bg:'#E1F5EE',groups:[
+    {label:'Myndigheder',tags:['Kommune','Region','Stat','Forsyning','Statslig styrelse','EU-institution','Politi & forsvar']},
+    {label:'Erhvervsfremme',tags:['Erhvervsklynge','Brancheorganisation','Erhvervshus','Handelskammer','Vækstforum','Innovationscenter','Erhvervsråd','EU-klynge','GovTech','Civic Tech','Impact']},
+    {label:'Uddannelse & forskning',tags:['Universitet','Erhvervsskole','Gymnasium','Professionshøjskole','Forskning','GTS-institut','Videncenter','Efteruddannelse']},
+    {label:'Civilsamfund & NGO',tags:['NGO','Humanitær','Frivilligsektor','Forening','Fond','Socialøkonomi']},
+  ]},
+  {id:'rolle',label:'Rolle & funktion',icon:'👤',desc:'Din position og ansvarsområde',color:'#534AB7',bg:'#EEEDFE',groups:[
+    {label:'Ledelse & direktion',tags:['CEO','CTO','CFO','COO','CMO','CPO','Founder','Co-Founder','VP','Director','Partner','Board Member','General Manager','Country Manager','Managing Director','Bestyrelsesmedlem','Formand','Næstformand']},
+    {label:'Teknologi & produkt',tags:['Developer','Software Engineer','Frontend Developer','Backend Developer','Data Scientist','Data Engineer','ML Engineer','DevOps Engineer','QA Engineer','Solutions Architect','Tech Lead','Product Manager']},
+    {label:'Design & kreativitet',tags:['Designer','UX Designer','UI Designer','Graphic Designer','Art Director','Creative Director','Content Creator','Fotograf']},
+    {label:'Projektledelse & drift',tags:['Project Manager','Program Manager','Scrum Master','Agile Coach','Team Lead','Afdelingsleder','Operations Manager','Supply Chain Manager','Logistics Manager','Produktionsleder']},
+    {label:'Salg, marketing & komm.',tags:['Sales Manager','Account Manager','Key Account Manager','Marketing Manager','Growth Manager','Brand Manager','Digital Marketing Manager','Social Media Manager','Journalist','Kommunikationsrådgiver']},
+    {label:'Økonomi, jura & HR',tags:['HR Manager','Recruiter','People Partner','CHRO','Legal Counsel','Compliance Officer','Indkøber','Kvalitetschef']},
+    {label:'Rådgivning & analyse',tags:['Consultant','Advisor','Mentor','Coach','Business Coach','Management Consultant','Strategisk Rådgiver']},
+    {label:'Investering',tags:['Investor','Business Angel','VC','LP','Fund Manager']},
+    {label:'Iværksætteri',tags:['Iværksætter','Serial Entrepreneur','Freelancer','Selvstændig']},
+    {label:'Uddannelse & forskning',tags:['Student','PhD','Professor','Researcher','Underviser','Lektor','Pædagog','Lærer','Skoleleder']},
+    {label:'Sundhed & omsorg',tags:['Sygeplejerske','Læge','Tandlæge','Fysioterapeut','Psykolog','Ergoterapeut','Jordemoder','Sundhedsplejerske','Farmaceut','Bioanalytiker','Radiograf','Sosu-assistent','Sosu-hjælper','Plejehjemsleder']},
+    {label:'Offentlig forvaltning',tags:['Kommunaldirektør','Kontorchef','Sagsbehandler','Socialrådgiver','Embedsmand','Forvaltningschef']},
+    {label:'Håndværk & industri',tags:['Tømrer','Elektriker','VVS-installatør','Murer','Maler','Smed','Mekaniker','Maskinmester','Ingeniør','Industritekniker','Procesoperatør','CNC-operatør','Håndværker','Mester','Installatør']},
+    {label:'Service & detail',tags:['Kok','Tjener','Hotelchef','Restaurantchef','Bartender','Butiksbestyrer','Butikschef','Ejendomsmægler','Landmand','Gartner','Skovfoged']},
+    {label:'Frivillig & community',tags:['Frivillig','Træner','Instruktør','Terapeut']},
+  ]},
+  {id:'komp',label:'Kompetencer',icon:'⚡',desc:'Hvad er du særligt god til',color:'#993556',bg:'#FBEAF0',groups:[
+    {label:'Teknologi & data',tags:['Frontend','Backend','Full-Stack','Mobile (iOS)','Mobile (Android)','React','Python','Node.js','Java','C#','TypeScript','Go','Rust','PHP','Swift','API Design','Architecture','System Design','DevOps','CI/CD','Security','Cloud Architecture','Data Analytics','Machine Learning','NLP','Computer Vision','Deep Learning','Data Engineering','Data Visualization','Business Intelligence','Power BI','Excel/Sheets','UX/UI Design','Product Development']},
+    {label:'Marketing & vækst',tags:['Growth Hacking','SEO/SEM','Content Marketing','Social Media','Paid Acquisition','Email Marketing','CRO','Analytics','Influencer Marketing','Branding','Copywriting','Google Ads','Meta Ads','LinkedIn Marketing']},
+    {label:'Salg & forretning',tags:['Sales Strategy','Enterprise Sales','Partnerships','BD','Key Account Management','Forhandling','Kundeservice','Pipeline Management','CRM']},
+    {label:'Økonomi & fundraising',tags:['Fundraising','Pitch Deck','Financial Modeling','Due Diligence','Budgettering','Regnskab','Controlling','Økonomiansvar','Bogføring','Revision']},
+    {label:'People & organisation',tags:['People Ops','Talent Acquisition','Culture','Org Design','Medarbejderudvikling','Onboarding','Employer Branding','Konfliktløsning','Coaching','Mentoring']},
+    {label:'Drift & supply chain',tags:['Operations','Supply Chain','Procurement','Lagerstyring','Lean Manufacturing','Six Sigma','Kvalitetsstyring','ISO','Produktionsplanlægning','Vedligeholdelse']},
+    {label:'Kommunikation & brand',tags:['Brand Strategy','PR/Comms','Storytelling','Krisekommunikation','Intern Kommunikation','Pressearbejde','Eventplanlægning']},
+    {label:'Jura & compliance',tags:['Legal/Compliance','IP/Patent','GDPR','Kontraktret','Persondataret','Udbudsret']},
+    {label:'Innovation & research',tags:['Research','Innovation','Strategy','Facilitation','Design Thinking','Prototyping','User Research','Forretningsudvikling','Markedsanalyse','Konkurrentanalyse']},
+    {label:'Bæredygtighed',tags:['Sustainability','ESG','Carbon Accounting','LCA','Miljøledelse','Energioptimering','Grøn Certificering']},
+    {label:'Bygge & anlæg',tags:['Projektledelse','Byggeledelse','Tilbudskalkulation','Tegning/CAD','3D-modellering','BIM','Energiinstallation','Elinstallation','VVS']},
+    {label:'Sundhed & klinik',tags:['Klinisk Arbejde','Patientpleje','Medicinhåndtering','Rehabilitering','Tværfagligt Samarbejde','Dokumentation']},
+    {label:'Undervisning',tags:['Undervisning','Kursusudvikling','E-læring','Pædagogik','Didaktik','Vejledning']},
+  ]},
+  {id:'int',label:'Faglige interesser',icon:'🚀',desc:'Hvad driver dig fagligt',color:'#B45309',bg:'#FAEEDA',groups:[
+    {label:'Teknologi & digitalt',tags:['Open Source','Web3','Decentralization','Privacy','AI Ethics','Responsible AI','AI Safety','No-Code','Low-Code','Maker Culture']},
+    {label:'Klima & bæredygtighed',tags:['Climate Action','Social Impact','Grøn Omstilling','Regenerativt Landbrug','Biodiversitet','Havmiljø','Cirkulær Økonomi']},
+    {label:'Arbejdsliv & ledelse',tags:['Future of Work','Remote Work','Digital Nomad','Leadership','Management','Intrapreneurship','Selvledelse','Work-Life Balance']},
+    {label:'Iværksætteri & investering',tags:['Entrepreneurship','Venture Capital','Angel Investing','Crowdfunding','Nordic Startups','European Tech','Global Markets','Internationalisering','Skalering','Exit Strategy','Startup Økosystem','Iværksætterkultur']},
+    {label:'Community & netværk',tags:['Networking','Community Building','Events','Foreningsliv','Frivilligt Arbejde','Lokalt Engagement','Mentorordninger','Erfa-grupper','Branchenetværk']},
+    {label:'Personlig udvikling',tags:['Personal Development','Mindfulness','Biohacking','Public Speaking','Writing','Podcasting','Fotografi','Musik','Kunst','Håndarbejde']},
+    {label:'Metoder & frameworks',tags:['Design Thinking','Lean Startup','Agile','Scrum','OKR','Kaizen','Systems Thinking']},
+    {label:'Innovation & transformation',tags:['Smart Cities','Digital Health','Digital Transformation','Industry 4.0','Automation','PropTech Innovation','Creator Economy']},
+    {label:'Diversitet & inklusion',tags:['Diversity & Inclusion','Gender Equality','Tilgængelighed']},
+    {label:'Viden & læring',tags:['Livslang Læring','Faglig Udvikling','Videndeling','Tværfaglighed','Forskning & Udvikling']},
+    {label:'Sektorspecifikt',tags:['Patientinddragelse','Velfærdsinnovation','Sundhedsfremme','Bygningskultur','Cirkulært Byggeri','Energirenovering','Fødevaresikkerhed','Madkultur','Gastronomi']},
+  ]},
+];
+
+var etSelected = new Map();
+var etCustom = {};
+var etInputVis = {};
+var etOpenSec = null;
+var etLifestage = null;
+
+var ET_LS = [
+  {id:'student',icon:'👩‍🎓',label:'Student'},
+  {id:'employee',icon:'💼',label:'Ansat'},
+  {id:'entrepreneur',icon:'⚡',label:'Iværksætter'},
+  {id:'freelancer',icon:'🔗',label:'Freelancer'},
+  {id:'investor',icon:'💰',label:'Investor'},
+  {id:'public',icon:'🏛',label:'Offentlig'},
+  {id:'practical',icon:'🔧',label:'Fagperson'},
+  {id:'other',icon:'✦',label:'Andet'},
+];
+
+function etInit() {
+  etSelected = new Map();
+  etCustom = {};
+  etInputVis = {};
+  etOpenSec = null;
+  etLifestage = (currentProfile && currentProfile.lifestage) || null;
+  ET_SECTIONS.forEach(function(s){ etCustom[s.id] = []; etInputVis[s.id] = false; });
+  // Pre-load existing tags
+  var kw = (currentProfile && currentProfile.keywords) || [];
+  kw.forEach(function(tag) {
+    var cat = (typeof getTagCategory === 'function') ? getTagCategory(tag) : 'custom';
+    var secId = cat === 'branche' ? 'branche' : cat === 'rolle' ? 'rolle'
+              : cat === 'kompetence' ? 'komp' : cat === 'interesse' ? 'int' : null;
+    // Check offentlig
+    var offSec = ET_SECTIONS.find(function(s){ return s.id === 'offentlig'; });
+    if (offSec) {
+      var offAll = offSec.groups.reduce(function(a,g){ return a.concat(g.tags); },[]);
+      if (offAll.indexOf(tag) >= 0) secId = 'offentlig';
+    }
+    // Check if tag exists in any section
+    var found = false;
+    ET_SECTIONS.forEach(function(s) {
+      s.groups.forEach(function(g) { if (g.tags.indexOf(tag) >= 0) { found = true; if (!secId) secId = s.id; } });
+    });
+    if (!secId) secId = 'custom';
+    var sec = ET_SECTIONS.find(function(s){ return s.id === secId; }) || {color:'#6B7280',bg:'#F1EFF8'};
+    if (!found && secId !== 'custom') {
+      // Custom tag
+      if (!etCustom[secId]) etCustom[secId] = [];
+      etCustom[secId].push(tag);
+    }
+    etSelected.set(tag, {sec: secId, color: sec.color, bg: sec.bg});
+  });
+  etBuild();
+  etUpdateUI();
+}
+
+function etEsc(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+function etCountSec(id){ var n=0; etSelected.forEach(function(v){ if(v.sec===id)n++; }); return n; }
+
+function etBuildBody(s) {
+  var h = '';
+  s.groups.forEach(function(g){
+    h += '<div><div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:0.25rem 0 0.1rem">' + g.label + '</div><div style="display:flex;flex-wrap:wrap;gap:0.3rem">';
+    g.tags.forEach(function(tag){
+      var isSel = etSelected.has(tag);
+      var style = isSel ? 'background:'+s.color+';border-color:'+s.color+';color:white' : 'background:'+s.bg+';border-color:'+s.bg+';color:'+s.color;
+      h += '<span style="padding:0.27rem 0.65rem;border-radius:99px;font-size:0.7rem;font-weight:500;cursor:pointer;border:1.5px solid;transition:all .13s;'+style+'" onclick="etTgl(\''+etEsc(tag)+'\',\''+s.id+'\')">' + tag + '</span>';
+    });
+    h += '</div></div>';
+  });
+  // Custom tags
+  h += '<div style="margin-top:0.4rem;padding-top:0.5rem;border-top:1.5px dashed var(--glass-border)">';
+  var ct = etCustom[s.id] || [];
+  if (ct.length > 0) {
+    h += '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.35rem">';
+    ct.forEach(function(tag){
+      var isSel = etSelected.has(tag);
+      var bg = isSel ? s.color : s.bg; var col = isSel ? 'white' : s.color;
+      h += '<span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.25rem 0.55rem;border-radius:99px;font-size:0.68rem;font-weight:600;border:1.5px dashed '+s.color+'40;background:'+bg+';color:'+col+';cursor:pointer" onclick="etTgl(\''+etEsc(tag)+'\',\''+s.id+'\')">' +
+        tag + '<span style="opacity:0.55;font-size:0.65rem" onclick="event.stopPropagation();etRmCustom(\''+etEsc(tag)+'\',\''+s.id+'\')">×</span></span>';
+    });
+    h += '</div>';
+  }
+  if (!etInputVis[s.id]) {
+    h += '<button style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.3rem 0.75rem;border-radius:99px;font-size:0.7rem;font-weight:600;cursor:pointer;border:1.5px dashed '+s.color+'40;color:'+s.color+';background:transparent;font-family:inherit" onclick="etShowIn(\''+s.id+'\')"><span style="font-size:0.9rem;line-height:1">+</span> Tilføj eget tag</button>';
+  } else {
+    h += '<div style="display:flex;gap:0.35rem;align-items:center;margin-top:0.4rem">' +
+      '<input id="etci-'+s.id+'" style="flex:1;padding:0.35rem 0.65rem;border-radius:99px;font-size:0.72rem;font-family:inherit;border:1.5px solid var(--glass-border);background:var(--bg);outline:none;color:var(--text);min-width:0" placeholder="Skriv dit tag..." maxlength="40" oninput="etCiChk(\''+s.id+'\')" onkeydown="etCiKey(event,\''+s.id+'\')">' +
+      '<button id="etci-btn-'+s.id+'" disabled style="padding:0.35rem 0.75rem;border-radius:99px;font-size:0.7rem;font-weight:700;font-family:inherit;border:none;background:'+s.color+';color:white;cursor:pointer;opacity:0.35" onclick="etConfirmC(\''+s.id+'\')">Tilføj</button>' +
+      '<button style="padding:0.35rem 0.6rem;border-radius:99px;font-size:0.7rem;font-weight:600;font-family:inherit;border:1px solid var(--glass-border);background:var(--bg);cursor:pointer;color:var(--muted)" onclick="etHideIn(\''+s.id+'\')">×</button>' +
+    '</div>';
+  }
+  h += '</div>';
+  // Done row
+  var n = etCountSec(s.id);
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0 0.8rem;margin-top:0.1rem">' +
+    '<div style="font-size:0.7rem;font-weight:600;color:'+s.color+'">'+n+' valgt</div>' +
+    '<button style="padding:0.38rem 1rem;border-radius:99px;font-size:0.72rem;font-weight:700;font-family:inherit;border:none;cursor:pointer;background:'+s.bg+';color:'+s.color+'" onclick="etCloseSec(\''+s.id+'\')">Gem &amp; luk ✓</button>' +
+  '</div>';
+  return h;
+}
+
+function etBuild() {
+  var list = document.getElementById('et-acc-list'); if (!list) return;
+  list.innerHTML = '';
+  ET_SECTIONS.forEach(function(s){
+    var div = document.createElement('div');
+    div.style.cssText = 'background:var(--bg);border:1px solid var(--glass-border-subtle);border-radius:13px;overflow:hidden' + (etOpenSec===s.id?';border-color:rgba(124,92,252,0.18);box-shadow:0 2px 10px rgba(30,27,46,0.06)':'');
+    div.id = 'et-acc-' + s.id;
+    var n = etCountSec(s.id);
+    var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.bg+';color:'+s.color+'">'+n+'</span>' : '';
+    div.innerHTML =
+      '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.75rem 0.85rem;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" onclick="etToggle(\''+s.id+'\')">' +
+        '<div style="width:32px;height:32px;border-radius:9px;background:'+s.bg+';display:flex;align-items:center;justify-content:center;font-size:0.95rem;flex-shrink:0">'+s.icon+'</div>' +
+        '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700">'+s.label+'</div><div style="font-size:0.6rem;color:var(--muted);margin-top:1px">'+s.desc+'</div></div>' +
+        badgeHtml +
+        '<div style="color:var(--muted);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===s.id?'transform:rotate(180deg)':'')+'">▼</div>' +
+      '</div>' +
+      (etOpenSec===s.id ? '<div style="padding:0 0.75rem;display:flex;flex-direction:column;gap:0.45rem">'+etBuildBody(s)+'</div>' : '');
+    list.appendChild(div);
+  });
+  // Lifestage buttons
+  var lsEl = document.getElementById('et-lifestage-btns'); if (!lsEl) return;
+  lsEl.innerHTML = ET_LS.map(function(ls){
+    var isSel = etLifestage === ls.id;
+    var style = isSel
+      ? 'background:rgba(245,158,11,0.12);border:2px solid #F59E0B;color:#B45309;font-weight:700'
+      : 'background:var(--bg);border:1.5px solid var(--glass-border);color:var(--muted);font-weight:500';
+    return '<span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.3rem 0.7rem;border-radius:99px;font-size:0.68rem;cursor:pointer;font-family:inherit;'+style+'" onclick="etSelectLifestage(\''+ls.id+'\')">'+ls.icon+' '+ls.label+'</span>';
+  }).join('');
+}
+
+function etRebuildSec(id){
+  var s = ET_SECTIONS.find(function(x){return x.id===id;});
+  var el = document.getElementById('et-acc-'+id);
+  if (!el) return;
+  var n = etCountSec(id);
+  var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.bg+';color:'+s.color+'">'+n+'</span>' : '';
+  el.innerHTML =
+    '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.75rem 0.85rem;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" onclick="etToggle(\''+s.id+'\')">' +
+      '<div style="width:32px;height:32px;border-radius:9px;background:'+s.bg+';display:flex;align-items:center;justify-content:center;font-size:0.95rem;flex-shrink:0">'+s.icon+'</div>' +
+      '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700">'+s.label+'</div><div style="font-size:0.6rem;color:var(--muted);margin-top:1px">'+s.desc+'</div></div>' +
+      badgeHtml +
+      '<div style="color:var(--muted);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===id?'transform:rotate(180deg)':'')+'">▼</div>' +
+    '</div>' +
+    (etOpenSec===id ? '<div style="padding:0 0.75rem;display:flex;flex-direction:column;gap:0.45rem">'+etBuildBody(s)+'</div>' : '');
+  el.style.cssText = 'background:var(--bg);border:1px solid var(--glass-border-subtle);border-radius:13px;overflow:hidden' + (etOpenSec===id?';border-color:rgba(124,92,252,0.18);box-shadow:0 2px 10px rgba(30,27,46,0.06)':'');
+}
+
+function etToggle(id) {
+  etOpenSec = etOpenSec === id ? null : id;
+  etBuild();
+  if (etOpenSec) {
+    setTimeout(function(){ var el=document.getElementById('et-acc-'+id); if(el)el.scrollIntoView({behavior:'smooth',block:'start'}); }, 60);
+  }
+}
+
+function etCloseSec(id){ etOpenSec=null; etBuild(); etUpdateUI(); }
+
+function etTgl(tag, secId){
+  if (etSelected.has(tag)){ etSelected.delete(tag); }
+  else {
+    var s=ET_SECTIONS.find(function(x){return x.id===secId;});
+    etSelected.set(tag,{sec:secId,color:s?s.color:'#6B7280',bg:s?s.bg:'#F1EFF8'});
+  }
+  etRebuildSec(secId); etUpdateUI();
+}
+
+function etShowIn(id){ etInputVis[id]=true; etRebuildSec(id); setTimeout(function(){var el=document.getElementById('etci-'+id);if(el)el.focus();},40); }
+function etHideIn(id){ etInputVis[id]=false; etRebuildSec(id); }
+
+function etCiChk(id){
+  var v=(document.getElementById('etci-'+id)||{}).value||'';
+  var btn=document.getElementById('etci-btn-'+id);
+  if(btn){btn.disabled=v.trim().length<2;btn.style.opacity=v.trim().length<2?'0.35':'1';}
+}
+
+function etCiKey(e,id){ if(e.key==='Enter'){e.preventDefault();etConfirmC(id);} if(e.key==='Escape')etHideIn(id); }
+
+function etConfirmC(id){
+  var input=document.getElementById('etci-'+id); if(!input)return;
+  var val=input.value.trim(); if(val.length<2)return;
+  var fmt=val.charAt(0).toUpperCase()+val.slice(1);
+  if(!(etCustom[id]||[]).includes(fmt)){
+    if(!etCustom[id])etCustom[id]=[];
+    etCustom[id].push(fmt);
+    var s=ET_SECTIONS.find(function(x){return x.id===id;});
+    etSelected.set(fmt,{sec:id,color:s?s.color:'#6B7280',bg:s?s.bg:'#F1EFF8'});
+  }
+  etInputVis[id]=false; etRebuildSec(id); etUpdateUI();
+}
+
+function etRmCustom(tag,id){
+  etCustom[id]=(etCustom[id]||[]).filter(function(t){return t!==tag;});
+  etSelected.delete(tag); etRebuildSec(id); etUpdateUI();
+}
+
+function etSelectLifestage(stage){
+  etLifestage = etLifestage === stage ? null : stage;
+  etBuild(); etUpdateUI();
+}
+
+function etUpdateUI(){
+  var n=etSelected.size;
+  var bar=document.getElementById('et-prog-bar'); if(bar)bar.style.width=Math.min(n/10*100,100)+'%';
+  var lbl=document.getElementById('et-prog-lbl'); if(lbl)lbl.textContent=n+' valgt';
+  var chips=document.getElementById('et-chips');
+  if(chips){
+    chips.innerHTML=Array.from(etSelected.entries()).map(function(e){
+      var tg=e[0],v=e[1];
+      return '<span style="display:inline-flex;align-items:center;gap:0.2rem;padding:0.18rem 0.45rem 0.18rem 0.3rem;border-radius:99px;font-size:0.65rem;font-weight:600;cursor:pointer;background:'+v.bg+';color:'+v.color+';border:1px solid transparent" onclick="etTgl(\''+etEsc(tg)+'\',\''+v.sec+'\')">' +
+        '<span style="width:5px;height:5px;border-radius:50%;background:'+v.color+';flex-shrink:0;display:inline-block"></span>'+tg+
+        '<span style="opacity:0.5;font-size:0.65rem;margin-left:1px">×</span></span>';
+    }).join('');
+  }
+}
+
+function etGetSelectedTags(){ return Array.from(etSelected.keys()); }
+function etGetLifestage(){ return etLifestage; }

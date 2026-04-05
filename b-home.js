@@ -344,10 +344,10 @@ function openNextProfileSetupSheet() {
   if (!currentProfile) return;
   if (!currentProfile.workplace) { openSetupWorkplaceSheet(); return; }
   if (!currentProfile.title) { openSetupTitleSheet(); return; }
-  if (!currentProfile.keywords || currentProfile.keywords.length < 3) { openSetupInterestsSheet(); return; }
-  if (!currentProfile.lifestage) { openSetupLifestageSheet(); return; }
-  // All done — open profile tab for tags
-  openProfileSetupTags();
+  if (!currentProfile.keywords || currentProfile.keywords.length < 3) { openEditTags(); return; }
+  if (!currentProfile.lifestage) { openEditTags(); return; }
+  // All done — open profile dashboard to show tags card
+  openEditTags();
 }
 
 // ── WORKPLACE SHEET ──
@@ -528,9 +528,7 @@ function skipSetupSheet(which) {
 }
 
 function openProfileSetupTags() {
-  goToThen('screen-profile', function() {
-    if (typeof profSwitchTab === 'function') profSwitchTab('dashboard');
-  });
+  if (typeof openEditTags === 'function') openEditTags();
 }
 
 // ── EMPTY FILTER STATE ──
@@ -543,7 +541,7 @@ function showDartboardEmpty(filter) {
   if (filter === 'strong') {
     msg = t('home_no_strong_matches');
     link = t('home_add_tags_link');
-    linkFn = 'openProfileSetupTags()';
+    linkFn = 'openEditTags()';
   } else if (filter === 'good') {
     msg = t('home_no_good_matches');
     link = t('home_try_other_filter');
@@ -551,7 +549,7 @@ function showDartboardEmpty(filter) {
   } else if (filter === 'interest') {
     msg = t('home_no_shared_interests');
     link = t('home_add_interests_link');
-    linkFn = 'openSetupInterestsSheet()';
+    linkFn = 'openEditTags()';
   }
   if (!msg) return;
   var div = document.createElement('div');

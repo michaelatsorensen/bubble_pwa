@@ -12,37 +12,37 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=881">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=881">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=881">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=881">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=881">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=881">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=881">
+<link rel="manifest" href="manifest.json?v=890">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=890">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=890">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=890">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=890">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=890">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=890">
 
-<link rel="stylesheet" href="app.css?v=881">
+<link rel="stylesheet" href="app.css?v=890">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-<script src="bubble-icons.js?v=881" defer></script>
-<script src="tag-data.js?v=881" defer></script>
-<script src="b-i18n.js?v=881" defer></script>
-<script src="b-config.js?v=881" defer></script>
-<script src="b-utils.js?v=881" defer></script>
-<script src="b-auth.js?v=881" defer></script>
-<script src="b-home.js?v=881" defer></script>
-<script src="b-bubbles.js?v=881" defer></script>
-<script src="b-profile.js?v=881" defer></script>
-<script src="b-radar.js?v=881" defer></script>
-<script src="b-messages.js?v=881" defer></script>
-<script src="b-realtime.js?v=881" defer></script>
-<script src="b-onboarding.js?v=881" defer></script>
-<script src="b-chat.js?v=881" defer></script>
-<script src="b-notifications.js?v=881" defer></script>
-<script src="b-live.js?v=881" defer></script>
-<script src="b-admin.js?v=881" defer></script>
-<script src="b-navigation.js?v=881" defer></script>
-<script src="b-boot.js?v=881" defer></script>
+<script src="bubble-icons.js?v=890" defer></script>
+<script src="tag-data.js?v=890" defer></script>
+<script src="b-i18n.js?v=890" defer></script>
+<script src="b-config.js?v=890" defer></script>
+<script src="b-utils.js?v=890" defer></script>
+<script src="b-auth.js?v=890" defer></script>
+<script src="b-home.js?v=890" defer></script>
+<script src="b-bubbles.js?v=890" defer></script>
+<script src="b-profile.js?v=890" defer></script>
+<script src="b-radar.js?v=890" defer></script>
+<script src="b-messages.js?v=890" defer></script>
+<script src="b-realtime.js?v=890" defer></script>
+<script src="b-onboarding.js?v=890" defer></script>
+<script src="b-chat.js?v=890" defer></script>
+<script src="b-notifications.js?v=890" defer></script>
+<script src="b-live.js?v=890" defer></script>
+<script src="b-admin.js?v=890" defer></script>
+<script src="b-navigation.js?v=890" defer></script>
+<script src="b-boot.js?v=890" defer></script>
   
 
 
@@ -1652,27 +1652,51 @@
       <textarea class="input" id="ep-bio" maxlength="300" placeholder="Skriv kort om dig selv og hvad du søger..."></textarea>
     </div>
     <div class="input-group">
-      <div class="input-label">Tags</div>
-      <div class="tag-search-wrap">
-        <input class="input" id="ep-tag-search" placeholder="Søg eller skriv nyt tag..." autocomplete="off" oninput="epTagSearch(this.value)" onfocus="epTagSearch(this.value)">
-        <div class="tag-suggestions" id="ep-tag-suggestions"></div>
-      </div>
-      <div class="tag-selected" id="ep-tag-selected"></div>
-      <div id="ep-tag-categories"></div>
-    </div>
-    <div class="input-group">
-      <div class="input-label"data-t="ob_step_seeking">Søger lige nu</div>
-      <div class="chips-container" id="ep-dyn-chips-container" onclick="document.getElementById('ep-dyn-chip-input').focus()">
-        <input class="chip-input" id="ep-dyn-chip-input" placeholder="f.eks. Søger investor, Open to coffee..." onkeydown="handleChipInput(event,'ep-dyn-chips')">
-        <button type="button" onclick="addChipFromBtn('ep-dyn-chip-input','ep-dyn-chips')" class="ob-cat-custom-btn" title="Tilføj">✓</button>
-      </div>
-    </div>
-    <div class="input-group">
       <div class="input-label">LinkedIn URL</div>
       <input class="input" id="ep-linkedin" placeholder="https://linkedin.com/in/dit-navn" type="url">
     </div>
     <button class="btn-primary" onclick="saveProfile()"data-t="ob_save_profile">Gem profil</button>
     <button class="btn-secondary" onclick="closeModal('modal-edit-profile')" data-t="misc_cancel">Annuller</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: EDIT TAGS
+════════════════════════════════════════ -->
+<div class="screen" id="screen-edit-tags">
+  <div class="topbar">
+    <button class="btn-icon" onclick="etBack()" style="display:flex;align-items:center;gap:0.25rem;font-size:0.78rem;font-weight:600;color:var(--accent);background:none;border:none;cursor:pointer;padding:0.25rem 0.5rem;border-radius:8px">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="topbar-title" data-t="et_title">Tags &amp; interesser</div>
+    <button class="btn-sm btn-primary" id="et-save-btn" onclick="saveTagsOnly()" style="font-size:0.75rem;padding:0.35rem 0.75rem">Gem</button>
+  </div>
+
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:2rem">
+
+    <!-- Progress -->
+    <div style="padding:0.5rem 1rem 0;display:flex;align-items:center;gap:0.5rem">
+      <div style="flex:1;height:4px;background:rgba(124,92,252,0.08);border-radius:99px;overflow:hidden">
+        <div id="et-prog-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#E879A8);transition:width .4s;width:0%"></div>
+      </div>
+      <div id="et-prog-lbl" style="font-size:0.62rem;font-weight:700;color:var(--accent);white-space:nowrap;min-width:3rem;text-align:right">0 valgt</div>
+    </div>
+
+    <!-- Selected chips summary -->
+    <div id="et-chips" style="display:flex;flex-wrap:wrap;gap:0.3rem;padding:0.4rem 1rem 0;min-height:0"></div>
+
+    <!-- Livsfase -->
+    <div style="padding:0.6rem 1rem 0.25rem">
+      <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.5rem" data-t="et_lifestage_lbl">Livsfase</div>
+      <div id="et-lifestage-btns" style="display:flex;flex-wrap:wrap;gap:0.35rem"></div>
+    </div>
+
+    <!-- Accordion list -->
+    <div style="padding:0.5rem 1rem 0">
+      <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.5rem" data-t="et_tags_lbl">Faglige tags</div>
+    </div>
+    <div id="et-acc-list" style="padding:0 0.75rem 1rem;display:flex;flex-direction:column;gap:0.4rem"></div>
+
   </div>
 </div>
 

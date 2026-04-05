@@ -1105,13 +1105,8 @@ function openEditProfile() {
   var avImg = document.getElementById('ep-avatar-img');
   if (avIni) avIni.textContent = ini;
   if (avImg) { if (currentProfile.avatar_url) { avImg.src = currentProfile.avatar_url; avImg.style.display = 'block'; } else { avImg.style.display = 'none'; } }
-  // Tag picker
-  epSelectedTags = [...(currentProfile.keywords || [])];
-  epRenderSelectedTags();
-  epRenderCategories();
-  // Dynamic keywords
-  epDynChips = [...(currentProfile.dynamic_keywords || [])];
-  renderChips('ep-dyn-chips', epDynChips, 'ep-dyn-chips-container', 'ep-dyn-chip-input');
+  // Tag picker — now handled by screen-edit-tags
+  // epSelectedTags and epDynChips are initialized when openEditTags() is called
   openModal('modal-edit-profile');
   setTimeout(initInputConfirmButtons, 50);
 }
@@ -1125,15 +1120,14 @@ async function saveProfile() {
     const workplace = (document.getElementById('ep-workplace')?.value || '').trim();
     if (!name) return showWarningToast('Navn er påkrævet');
     const { error } = await sb.from('profiles').upsert({
-      id: currentUser.id, name, title, bio, linkedin, workplace,
-      keywords: epSelectedTags, dynamic_keywords: epDynChips, is_anon: isAnon
+      id: currentUser.id, name, title, bio, linkedin, workplace, is_anon: isAnon
     });
     if (error) return errorToast('save', error);
     await loadCurrentProfile();
     closeModal('modal-edit-profile');
     loadProfile();
     showSuccessToast(t('toast_saved'));
-    trackEvent('profile_updated', { tags: epSelectedTags.length });
+    trackEvent('profile_updated', { tags: (currentProfile && currentProfile.keywords || []).length });
   } catch(e) { logError("saveProfile", e); errorToast("save", e); }
 }
 
@@ -1397,13 +1391,96 @@ async function loadDashboard() {
       '</div>' +
       '<div style="margin-top:0.4rem">' +
         statCard('target', t('pf_dash_strong'), strongMatches, 'rgba(26,158,142,0.08)') +
-      '</div>';
+      '</div>' +
+      _renderDashboardTagsCard();
 
   } catch(e) {
     logError('loadDashboard', e);
     el.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">Kunne ikke hente dashboard-data</div>';
   }
 }
+
+// ── Tags card in dashboard ──
+function _renderDashboardTagsCard() {
+  var kw = (currentProfile && currentProfile.keywords) || [];
+  var ls = (currentProfile && currentProfile.lifestage) || null;
+  var TAG_META = {
+    branche:  { label:'Branche & sektor',           color:'#1D4ED8', bg:'#EFF6FF' },
+    offentlig:{ label:'Offentlig & erhvervsfremme', color:'#085041', bg:'#E1F5EE' },
+    rolle:    { label:'Rolle & funktion',            color:'#534AB7', bg:'#EEEDFE' },
+    komp:     { label:'Kompetencer',                 color:'#993556', bg:'#FBEAF0' },
+    int:      { label:'Faglige interesser',          color:'#B45309', bg:'#FAEEDA' },
+    custom:   { label:'Egne tags',                   color:'#6B7280', bg:'#F1EFF8' }
+  };
+  var LS_LABELS = {
+    student:'👩‍🎓 Student', entrepreneur:'⚡ Iværksætter', employee:'💼 Ansat',
+    freelancer:'🔗 Freelancer', investor:'💰 Investor', public:'🏛 Offentlig',
+    practical:'🔧 Fagperson', other:'✦ Andet'
+  };
+  var grouped = {};
+  kw.forEach(function(tag) {
+    var cat = (typeof getTagCategory === 'function') ? getTagCategory(tag) : 'custom';
+    var sec = cat === 'branche' ? 'branche' : cat === 'rolle' ? 'rolle'
+            : cat === 'kompetence' ? 'komp' : cat === 'interesse' ? 'int' : 'custom';
+    if (typeof ET_SECTIONS !== 'undefined') {
+      var offSec = ET_SECTIONS.find(function(s){ return s.id === 'offentlig'; });
+      if (offSec) {
+        var offTags = offSec.groups.reduce(function(a,g){ return a.concat(g.tags); }, []);
+        if (offTags.indexOf(tag) >= 0) sec = 'offentlig';
+      }
+    }
+    if (!grouped[sec]) grouped[sec] = [];
+    grouped[sec].push(tag);
+  });
+  var html = '<div style="margin-top:0.75rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);box-shadow:0 1px 3px rgba(30,27,46,0.06);overflow:hidden">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem 0.5rem">' +
+    '<div style="font-size:0.72rem;font-weight:700;color:var(--text)">Tags &amp; interesser</div>' +
+    '<button onclick="openEditTags()" style="font-size:0.68rem;font-weight:600;color:var(--accent);background:var(--accent-bg);border:1px solid rgba(124,92,252,0.15);border-radius:8px;padding:0.2rem 0.55rem;cursor:pointer;font-family:inherit">Rediger \u2192</button>' +
+    '</div>';
+  if (ls && LS_LABELS[ls]) {
+    html += '<div style="padding:0 0.9rem 0.5rem"><span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.2rem 0.65rem;border-radius:99px;font-size:0.68rem;font-weight:700;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:#B45309">' + LS_LABELS[ls] + '</span></div>';
+  }
+  if (kw.length === 0) {
+    html += '<div style="padding:0.5rem 0.9rem 0.9rem;font-size:0.72rem;color:var(--muted);font-style:italic">Ingen tags valgt endnu \u2014 klik Rediger for at tilf\u00f8je</div>';
+  } else {
+    ['branche','offentlig','rolle','komp','int','custom'].forEach(function(sec) {
+      var tags = grouped[sec]; if (!tags || !tags.length) return;
+      var m = TAG_META[sec];
+      html += '<div style="padding:0.2rem 0.9rem 0.5rem"><div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:' + m.color + ';opacity:0.7;margin-bottom:0.3rem">' + m.label + '</div><div style="display:flex;flex-wrap:wrap;gap:0.25rem">';
+      tags.forEach(function(tag){ html += '<span style="padding:0.18rem 0.55rem;border-radius:99px;font-size:0.65rem;font-weight:600;background:' + m.bg + ';color:' + m.color + '">' + escHtml(tag) + '</span>'; });
+      html += '</div></div>';
+    });
+  }
+  return html + '</div>';
+}
+
+// ── Open edit tags screen ──
+function openEditTags() {
+  if (typeof etInit === 'function') etInit();
+  goTo('screen-edit-tags');
+}
+
+// ── Save tags only ──
+async function saveTagsOnly() {
+  try {
+    if (!currentUser) return;
+    var btn = document.getElementById('et-save-btn');
+    if (btn) { btn.textContent = 'Gemmer...'; btn.disabled = true; }
+    var tags = typeof etGetSelectedTags === 'function' ? etGetSelectedTags() : [];
+    var lifestage = typeof etGetLifestage === 'function' ? etGetLifestage() : null;
+    var { error } = await sb.from('profiles').update({ keywords: tags, lifestage: lifestage || null }).eq('id', currentUser.id);
+    if (error) { if (btn) { btn.textContent = 'Gem'; btn.disabled = false; } return errorToast('save', error); }
+    await loadCurrentProfile();
+    showSuccessToast(t('toast_saved'));
+    trackEvent('tags_updated', { tags: tags.length });
+    goTo('screen-profile');
+    setTimeout(function(){ profSwitchTab('dashboard'); loadDashboard(); }, 200);
+  } catch(e) { logError('saveTagsOnly', e); errorToast('save', e); var btn = document.getElementById('et-save-btn'); if (btn) { btn.textContent = 'Gem'; btn.disabled = false; } }
+}
+
+// ── Back from edit-tags ──
+function etBack() { goTo('screen-profile'); }
+
 
 function togglePersonTags() {
   var hidden = document.getElementById('person-tags-hidden');
