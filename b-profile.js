@@ -866,35 +866,15 @@ function renderSavedStoryBar(saved, profileMap) {
 }
 
 // Profile tab switching — same pattern as bcSwitchTab
+function openSettingsModal() {
+  updateAnonToggle();
+  hsUpdateAllToggles();
+  _updateLangBtns();
+  openModal('modal-settings');
+}
+
 function profSwitchTab(tab) {
-  // Ensure settings panel exists (in case of cached HTML)
-  if (tab === 'settings' && !document.getElementById('prof-panel-settings')) {
-    var container = document.getElementById('prof-panel-invites');
-    if (container && container.parentElement) {
-      var div = document.createElement('div');
-      div.id = 'prof-panel-settings';
-      div.style.cssText = 'display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.1rem 6rem';
-      div.innerHTML = '<div class="section-label" style="margin-bottom:0.25rem">Synlighed</div>' +
-        '<div class="settings-row">' +
-          '<div style="flex:1"><div style="font-size:0.85rem;font-weight:600">Anonym tilstand</div>' +
-          '<div style="font-size:0.68rem;color:var(--text-secondary);margin-top:0.1rem">Skjul dit navn og billede p\u00e5 radaren</div></div>' +
-          '<div id="anon-toggle" onclick="toggleAnon()" style="width:46px;height:26px;background:var(--border);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0">' +
-            '<div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>' +
-          '</div></div>' +
-        '<div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">' + t('pf_language') + '</div>' +
-        '<div style="display:flex;gap:0.4rem;margin-bottom:0.5rem">' +
-          '<button id="lang-btn-da" onclick="switchAppLanguage(\'da\')" style="flex:1;padding:0.55rem;border-radius:10px;font-size:0.82rem;font-weight:600;font-family:inherit;cursor:pointer;border:1.5px solid ' + (_lang === 'da' ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)') + ';background:' + (_lang === 'da' ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)') + ';color:' + (_lang === 'da' ? 'var(--accent)' : 'var(--muted)') + '">Dansk</button>' +
-          '<button id="lang-btn-en" onclick="switchAppLanguage(\'en\')" style="flex:1;padding:0.55rem;border-radius:10px;font-size:0.82rem;font-weight:600;font-family:inherit;cursor:pointer;border:1.5px solid ' + (_lang === 'en' ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)') + ';background:' + (_lang === 'en' ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)') + ';color:' + (_lang === 'en' ? 'var(--accent)' : 'var(--muted)') + '">English</button>' +
-        '</div>' +
-        '<div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem">Konto</div>' +
-        '<button onclick="openFeedback()" style="width:100%;padding:0.7rem;background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.15);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent);cursor:pointer;margin-bottom:0.5rem">💬 Giv feedback</button>' +
-        '<button onclick="showTerms()" style="width:100%;padding:0.7rem;background:none;border:1px solid var(--glass-border);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--text-secondary);cursor:pointer;margin-bottom:0.5rem">Betingelser & Privatlivspolitik</button>' +
-        '<button onclick="handleLogout()" style="width:100%;padding:0.7rem;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:#EF4444;cursor:pointer">Log ud</button>' +
-        '<div style="text-align:center;margin-top:2rem;font-size:0.62rem;color:var(--muted)">Bubble ' + BUILD_VERSION + ' · Build ' + BUILD_TIMESTAMP + '</div>';
-      container.parentElement.insertBefore(div, container.nextSibling);
-    }
-  }
-  ['dashboard','saved','bubbles','invites','settings'].forEach(function(t) {
+  ['dashboard','saved','bubbles','invites'].forEach(function(t) {
     var panel = document.getElementById('prof-panel-' + t);
     var tabBtn = document.getElementById('prof-tab-' + t);
     if (panel) panel.style.display = t === tab ? 'flex' : 'none';
@@ -902,7 +882,6 @@ function profSwitchTab(tab) {
   });
   if (tab === 'dashboard') loadDashboard();
   if (tab === 'bubbles') loadProfileBubbles();
-  if (tab === 'settings') { updateAnonToggle(); hsUpdateAllToggles(); _updateLangBtns(); }
 }
 
 // Load user's bubbles into profile bubbles tab
