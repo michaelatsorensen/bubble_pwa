@@ -109,8 +109,10 @@ async function resolvePostAuthDestination() {
     // covers returning users who pre-date the welcome screen and new-device logins.
     var hasCompletedProfile = !!(currentProfile?.name && currentProfile?.workplace);
     var hasWelcomedFlag = !!localStorage.getItem('bubble_welcomed');
-    if (!hasWelcomedFlag && hasCompletedProfile) {
-      localStorage.setItem('bubble_welcomed', '1'); // backfill — never show welcome to existing users
+    // Backfill: any user with name OR workplace has been through onboarding already
+    if (!hasWelcomedFlag && (currentProfile?.name || currentProfile?.workplace)) {
+      localStorage.setItem('bubble_welcomed', '1');
+      hasWelcomedFlag = true;
     }
     if (!hasWelcomedFlag && !hasCompletedProfile) {
       goTo('screen-welcome');

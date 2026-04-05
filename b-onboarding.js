@@ -132,10 +132,36 @@ async function maybeShowOnboarding() {
   } catch(e) { logError("maybeShowOnboarding", e); errorToast("load", e); }
 }
 
+// Track whether onboarding is being run by an existing user (vs first-time)
+var _reRunningOnboarding = false;
+
 function reRunOnboarding() {
+  _reRunningOnboarding = true;
+  // Pre-fill with existing profile data
+  var nameEl = document.getElementById('ob-name');
+  var workEl = document.getElementById('ob-workplace');
+  var titleEl = document.getElementById('ob-title');
+  var bioEl = document.getElementById('ob-bio');
+  var liEl = document.getElementById('ob-linkedin');
+  if (nameEl && currentProfile?.name) nameEl.value = currentProfile.name;
+  if (workEl && currentProfile?.workplace) workEl.value = currentProfile.workplace;
+  if (titleEl && currentProfile?.title) titleEl.value = currentProfile.title;
+  if (bioEl && currentProfile?.bio) bioEl.value = currentProfile.bio;
+  if (liEl && currentProfile?.linkedin) liEl.value = currentProfile.linkedin;
+  obSelectedTags = [...(currentProfile?.keywords || [])];
+  obLifestage = currentProfile?.lifestage || null;
+  _obConsentGiven = true; // already consented as existing user
+  // Show step 2 directly (skip navn/arbejdsplads step for existing users)
+  var s1 = document.getElementById('ob-step-1');
+  var s2 = document.getElementById('ob-step-2');
+  if (s1) s1.style.display = 'none';
+  if (s2) s2.style.display = 'block';
+  obRenderCategories();
+  updateObStrength();
+  goTo('screen-onboarding');
+}
 
 // ── Minimal onboarding for deep-link users (just name + workplace) ──
-var _miniObConsentGiven = false;
 
 function _showMinimalOnboarding(hasName, hasWorkplace, autoName) {
   var existing = document.getElementById('mini-onboarding-overlay');
@@ -231,30 +257,6 @@ async function _miniObSave() {
     if (btn) { btn.textContent = 'Fortsæt'; btn.disabled = false; }
   }
 }
-  if (!currentProfile || !currentUser) return;
-  // Pre-fill with existing data
-  var obName = document.getElementById('ob-name');
-  var obTitle = document.getElementById('ob-title');
-  var obBio = document.getElementById('ob-bio');
-  var obLinkedin = document.getElementById('ob-linkedin');
-  var obWp = document.getElementById('ob-workplace');
-  if (obName) obName.value = currentProfile.name || '';
-  if (obTitle) obTitle.value = currentProfile.title || '';
-  if (obBio) obBio.value = currentProfile.bio || '';
-  if (obLinkedin) obLinkedin.value = currentProfile.linkedin || '';
-  if (obWp) obWp.value = currentProfile.workplace || '';
-  // Load existing tags
-  obSelectedTags = Array.isArray(currentProfile.keywords) ? [...currentProfile.keywords] : [];
-  obRenderSelectedTags();
-  obRenderCategories();
-  // Reset progress UI
-  obCheckProgress();
-  goTo('screen-onboarding');
-  setTimeout(initInputConfirmButtons, 50);
-}
-
-
-
 
 // ══════════════════════════════════════════════════════════
 //  WELCOME & GETTING STARTED
@@ -417,11 +419,21 @@ function abortOnboarding() {
     overlay.id = 'abort-confirm-overlay';
     var s = overlay.querySelector('.bb-dyn-sheet');
     s.style.textAlign = 'center';
-    s.innerHTML =
-      '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">Afbryd opsætning?</div>' +
-      '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">Alt du har udfyldt nulstilles og du vender tilbage til login-skærmen.</div>' +
-      '<button onclick="confirmAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid rgba(26,122,138,0.3);background:rgba(26,122,138,0.1);color:var(--accent2);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.4rem">Ja, afbryd og nulstil</button>' +
-      '<button onclick="cancelAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Fortsæt opsætning</button>';
+    if (_reRunningOnboarding) {
+      // Existing user — just go back, no logout
+      s.innerHTML =
+        '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">Afbryd opsætning?</div>' +
+        '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">Dine ændringer gemmes ikke. Du vender tilbage til din profil.</div>' +
+        '<button onclick="cancelReRunOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid rgba(124,92,252,0.2);background:rgba(124,92,252,0.08);color:var(--accent);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.4rem">Tilbage til profil</button>' +
+        '<button onclick="cancelAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Fortsæt opsætning</button>';
+    } else {
+      // First-time user — original behavior
+      s.innerHTML =
+        '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">Afbryd opsætning?</div>' +
+        '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">Alt du har udfyldt nulstilles og du vender tilbage til login-skærmen.</div>' +
+        '<button onclick="confirmAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid rgba(26,122,138,0.3);background:rgba(26,122,138,0.1);color:var(--accent2);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.4rem">Ja, afbryd og nulstil</button>' +
+        '<button onclick="cancelAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Fortsæt opsætning</button>';
+    }
     return;
   }
 }
@@ -430,6 +442,14 @@ function cancelAbortOnboarding() {
   _abortConfirmed = false;
   var overlay = document.getElementById('abort-confirm-overlay');
   if (overlay) bbDynClose(overlay);
+}
+
+function cancelReRunOnboarding() {
+  _abortConfirmed = false;
+  _reRunningOnboarding = false;
+  var overlay = document.getElementById('abort-confirm-overlay');
+  if (overlay) bbDynClose(overlay);
+  goTo('screen-profile');
 }
 
 async function confirmAbortOnboarding() {
@@ -1148,9 +1168,15 @@ async function saveOnboarding() {
     await loadCurrentProfile();
     localStorage.setItem('bubble_welcomed', '1');
     showSuccessToast('Profil oprettet');
-    trackEvent('onboarding_complete', { tags: obSelectedTags.length, has_title: !!title });
+    trackEvent('onboarding_complete', { tags: obSelectedTags.length, has_title: !!title, rerun: _reRunningOnboarding });
+    var wasRerun = _reRunningOnboarding;
+    _reRunningOnboarding = false;
     initServices();
-    await resolvePostAuthDestination();
+    if (wasRerun) {
+      goTo('screen-profile');
+    } else {
+      await resolvePostAuthDestination();
+    }
   } catch(e) { logError('saveOnboarding', e); errorToast('save', e); }
 }
 
