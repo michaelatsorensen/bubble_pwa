@@ -1376,6 +1376,7 @@ async function loadDashboard() {
         statCard('target', t('pf_dash_strong'), strongMatches, 'rgba(26,158,142,0.08)') +
       '</div>' +
       _renderDashboardTagsCard();
+    if (typeof etInit === 'function') etInit();
 
   } catch(e) {
     logError('loadDashboard', e);
@@ -1385,68 +1386,28 @@ async function loadDashboard() {
 
 // ── Tags card in dashboard ──
 function _renderDashboardTagsCard() {
-  var kw = (currentProfile && currentProfile.keywords) || [];
-  var ls = (currentProfile && currentProfile.lifestage) || null;
-  var TAG_META = {
-    branche:  { label:'Branche & sektor',           color:'#1D4ED8', bg:'#EFF6FF' },
-    offentlig:{ label:'Offentlig & erhvervsfremme', color:'#085041', bg:'#E1F5EE' },
-    rolle:    { label:'Rolle & funktion',            color:'#534AB7', bg:'#EEEDFE' },
-    komp:     { label:'Kompetencer',                 color:'#993556', bg:'#FBEAF0' },
-    int:      { label:'Faglige interesser',          color:'#B45309', bg:'#FAEEDA' },
-    custom:   { label:'Egne tags',                   color:'#6B7280', bg:'#F1EFF8' }
-  };
-  var LS_ICO = { student:'graduation', employee:'building', entrepreneur:'rocket',
-    freelancer:'coffee', investor:'target', public:'globe', practical:'cpu', other:'smile' };
-  var LS_LBL = { student:'Student', employee:'Ansat', entrepreneur:'Iværksætter',
-    freelancer:'Freelancer', investor:'Investor', public:'Offentlig', practical:'Fagperson', other:'Andet' };
-  var grouped = {};
-  kw.forEach(function(tag) {
-    var cat = (typeof getTagCategory === 'function') ? getTagCategory(tag) : 'custom';
-    var sec = cat === 'branche' ? 'branche' : cat === 'rolle' ? 'rolle'
-            : cat === 'kompetence' ? 'komp' : cat === 'interesse' ? 'int' : 'custom';
-    if (typeof ET_SECTIONS !== 'undefined') {
-      var offSec = ET_SECTIONS.find(function(s){ return s.id === 'offentlig'; });
-      if (offSec) {
-        var offTags = offSec.groups.reduce(function(a,g){ return a.concat(g.tags); }, []);
-        if (offTags.indexOf(tag) >= 0) sec = 'offentlig';
-      }
-    }
-    if (!grouped[sec]) grouped[sec] = [];
-    grouped[sec].push(tag);
-  });
-  var html = '<div style="margin-top:0.75rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);box-shadow:0 1px 3px rgba(30,27,46,0.06);overflow:hidden">' +
+  return '<div style="margin-top:0.75rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);box-shadow:0 1px 3px rgba(30,27,46,0.06);overflow:hidden">' +
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem 0.5rem">' +
-    '<div style="font-size:0.72rem;font-weight:700;color:var(--text)">Tags &amp; interesser</div>' +
-    '<button onclick="openEditTags()" style="font-size:0.68rem;font-weight:600;color:var(--accent);background:var(--accent-bg);border:1px solid rgba(124,92,252,0.15);border-radius:8px;padding:0.2rem 0.55rem;cursor:pointer;font-family:inherit">Vælg tags \u2192</button>' +
-    '</div>';
-  if (ls && LS_LBL[ls]) {
-    html += '<div style="padding:0 0.9rem 0.5rem">' +
-      '<span style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.65rem;border-radius:99px;font-size:0.68rem;font-weight:700;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:#B45309">' +
-      '<span style="display:flex;align-items:center;width:13px;height:13px">' + (typeof etIco === 'function' ? etIco(LS_ICO[ls]) : ico(LS_ICO[ls])) + '</span>' +
-      LS_LBL[ls] + '</span>' +
-    '</div>';
-  }
-  if (kw.length === 0) {
-    html += '<div style="padding:0.5rem 0.9rem 0.9rem;font-size:0.72rem;color:var(--muted);font-style:italic">Ingen tags valgt endnu \u2014 klik Rediger for at tilf\u00f8je</div>';
-  } else {
-    ['branche','offentlig','rolle','komp','int','custom'].forEach(function(sec) {
-      var tags = grouped[sec]; if (!tags || !tags.length) return;
-      var m = TAG_META[sec];
-      html += '<div style="padding:0.2rem 0.9rem 0.5rem"><div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:' + m.color + ';opacity:0.7;margin-bottom:0.3rem">' + m.label + '</div><div style="display:flex;flex-wrap:wrap;gap:0.25rem">';
-      tags.forEach(function(tag){ html += '<span style="padding:0.18rem 0.55rem;border-radius:99px;font-size:0.65rem;font-weight:600;background:' + m.bg + ';color:' + m.color + '">' + escHtml(tag) + '</span>'; });
-      html += '</div></div>';
-    });
-  }
-  return html + '</div>';
+      '<div style="font-size:0.72rem;font-weight:700;color:var(--text)">Tags &amp; interesser</div>' +
+      '<button id="et-save-btn" onclick="saveTagsOnly()" style="font-size:0.68rem;font-weight:600;color:var(--accent);background:var(--accent-bg);border:1px solid rgba(124,92,252,0.15);border-radius:8px;padding:0.2rem 0.65rem;cursor:pointer;font-family:inherit">Gem</button>' +
+    '</div>' +
+    '<div style="padding:0 0.9rem 0.4rem;display:flex;align-items:center;gap:0.5rem">' +
+      '<div style="flex:1;height:3px;background:rgba(124,92,252,0.08);border-radius:99px;overflow:hidden"><div id="et-prog-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#E879A8);transition:width .4s;width:0%"></div></div>' +
+      '<div id="et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:var(--accent);white-space:nowrap">0 valgt</div>' +
+    '</div>' +
+    '<div id="et-chips" style="display:flex;flex-wrap:wrap;gap:0.3rem;padding:0 0.9rem 0.4rem;min-height:0"></div>' +
+    '<div style="padding:0.3rem 0.9rem 0.1rem">' +
+      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.4rem">Livsfase</div>' +
+      '<div id="et-lifestage-btns" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem"></div>' +
+    '</div>' +
+    '<div style="padding:0.3rem 0.9rem 0.1rem">' +
+      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.35rem">Faglige tags</div>' +
+    '</div>' +
+    '<div id="et-acc-list" style="padding:0 0.6rem 0.75rem;display:flex;flex-direction:column;gap:0.35rem"></div>' +
+  '</div>';
 }
 
-// ── Open edit tags screen ──
-function openEditTags() {
-  if (typeof etInit === 'function') etInit();
-  goTo('screen-edit-tags');
-}
-
-// ── Save tags only ──
+// ── Save tags inline (no navigation) ──
 async function saveTagsOnly() {
   try {
     if (!currentUser) return;
@@ -1457,16 +1418,11 @@ async function saveTagsOnly() {
     var { error } = await sb.from('profiles').update({ keywords: tags, lifestage: lifestage || null }).eq('id', currentUser.id);
     if (error) { if (btn) { btn.textContent = 'Gem'; btn.disabled = false; } return errorToast('save', error); }
     await loadCurrentProfile();
-    if (btn) { btn.textContent = 'Gem'; btn.disabled = false; }
     showSuccessToast(t('toast_saved'));
     trackEvent('tags_updated', { tags: tags.length });
-    goTo('screen-profile');
-    setTimeout(function(){ profSwitchTab('dashboard'); loadDashboard(); }, 200);
+    if (btn) { btn.textContent = 'Gem'; btn.disabled = false; }
   } catch(e) { logError('saveTagsOnly', e); errorToast('save', e); var btn = document.getElementById('et-save-btn'); if (btn) { btn.textContent = 'Gem'; btn.disabled = false; } }
 }
-
-// ── Back from edit-tags ──
-function etBack() { goTo('screen-profile'); }
 
 
 function togglePersonTags() {

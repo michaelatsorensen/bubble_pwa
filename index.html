@@ -1564,46 +1564,6 @@
 <!-- ════════════════════════════════════════
      SCREEN: EDIT TAGS
 ════════════════════════════════════════ -->
-<div class="screen" id="screen-edit-tags">
-  <div class="topbar" style="padding-left:1rem;padding-right:1rem">
-    <div style="min-width:64px;display:flex;align-items:center">
-      <button onclick="etBack()" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:none;border:none;cursor:pointer;color:var(--accent)">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-    </div>
-    <div class="topbar-title" style="flex:1;text-align:center">Tags &amp; interesser</div>
-    <div style="min-width:64px;display:flex;align-items:center;justify-content:flex-end">
-      <button class="btn-sm btn-primary" id="et-save-btn" onclick="saveTagsOnly()" style="font-size:0.75rem;padding:0.35rem 0.75rem">Gem</button>
-    </div>
-  </div>
-
-  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:2rem">
-
-    <!-- Progress -->
-    <div style="padding:0.5rem 1rem 0;display:flex;align-items:center;gap:0.5rem">
-      <div style="flex:1;height:4px;background:rgba(124,92,252,0.08);border-radius:99px;overflow:hidden">
-        <div id="et-prog-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#E879A8);transition:width .4s;width:0%"></div>
-      </div>
-      <div id="et-prog-lbl" style="font-size:0.62rem;font-weight:700;color:var(--accent);white-space:nowrap;min-width:3rem;text-align:right">0 valgt</div>
-    </div>
-
-    <!-- Selected chips summary -->
-    <div id="et-chips" style="display:flex;flex-wrap:wrap;gap:0.3rem;padding:0.4rem 1rem 0;min-height:0"></div>
-
-    <!-- Livsfase -->
-    <div style="padding:0.6rem 1rem 0.25rem">
-      <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.5rem">Livsfase</div>
-      <div id="et-lifestage-btns" style="display:flex;flex-wrap:wrap;gap:0.35rem"></div>
-    </div>
-
-    <!-- Accordion list -->
-    <div style="padding:0.5rem 1rem 0">
-      <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.5rem">Faglige tags</div>
-    </div>
-    <div id="et-acc-list" style="padding:0 0.75rem 1rem;display:flex;flex-direction:column;gap:0.4rem"></div>
-
-  </div>
-</div>
 
 <!-- ════════════════════════════════════════
      MODAL: SETTINGS
