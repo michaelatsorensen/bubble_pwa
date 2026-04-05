@@ -1653,7 +1653,7 @@
     </div>
     <div class="input-group">
       <div class="input-label" data-t="ob_step_seeking">Søger lige nu</div>
-      <div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.4rem">Vises på din profil og i andres radar — f.eks. "Søger investor", "Open to coffee", "Søger nyt job"</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.4rem">Vises på din profil og i andres radar — f.eks. "Søger investor", "Søger samarbejdspartner" eller "Open to coffee"</div>
       <div class="chips-container" id="ep-dyn-chips-container" onclick="document.getElementById('ep-dyn-chip-input').focus()">
         <input class="chip-input" id="ep-dyn-chip-input" placeholder="Skriv og tryk Enter..." onkeydown="handleChipInput(event,'ep-dyn-chips')">
         <button type="button" onclick="addChipFromBtn('ep-dyn-chip-input','ep-dyn-chips')" class="ob-cat-custom-btn" title="Tilføj">✓</button>
@@ -1672,12 +1672,16 @@
      SCREEN: EDIT TAGS
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-edit-tags">
-  <div class="topbar">
-    <button class="btn-icon" onclick="etBack()" style="display:flex;align-items:center;gap:0.25rem;font-size:0.78rem;font-weight:600;color:var(--accent);background:none;border:none;cursor:pointer;padding:0.25rem 0.5rem;border-radius:8px">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem"><polyline points="15 18 9 12 15 6"/></svg>
-    </button>
-    <div class="topbar-title" data-t="et_title">Tags &amp; interesser</div>
-    <button class="btn-sm btn-primary" id="et-save-btn" onclick="saveTagsOnly()" style="font-size:0.75rem;padding:0.35rem 0.75rem">Gem</button>
+  <div class="topbar" style="padding-left:1rem;padding-right:1rem">
+    <div style="min-width:64px;display:flex;align-items:center">
+      <button onclick="etBack()" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:none;border:none;cursor:pointer;color:var(--accent)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+    </div>
+    <div class="topbar-title" data-t="et_title" style="flex:1;text-align:center">Tags &amp; interesser</div>
+    <div style="min-width:64px;display:flex;align-items:center;justify-content:flex-end">
+      <button class="btn-sm btn-primary" id="et-save-btn" onclick="saveTagsOnly()" style="font-size:0.75rem;padding:0.35rem 0.75rem">Gem</button>
+    </div>
   </div>
 
   <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:2rem">

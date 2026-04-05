@@ -1416,11 +1416,10 @@ function _renderDashboardTagsCard() {
     int:      { label:'Faglige interesser',          color:'#B45309', bg:'#FAEEDA' },
     custom:   { label:'Egne tags',                   color:'#6B7280', bg:'#F1EFF8' }
   };
-  var LS_LABELS = {
-    student:'👩‍🎓 Student', entrepreneur:'⚡ Iværksætter', employee:'💼 Ansat',
-    freelancer:'🔗 Freelancer', investor:'💰 Investor', public:'🏛 Offentlig',
-    practical:'🔧 Fagperson', other:'✦ Andet'
-  };
+  var LS_ICO = { student:'graduation', employee:'building', entrepreneur:'rocket',
+    freelancer:'coffee', investor:'target', public:'globe', practical:'cpu', other:'smile' };
+  var LS_LBL = { student:'Student', employee:'Ansat', entrepreneur:'Iværksætter',
+    freelancer:'Freelancer', investor:'Investor', public:'Offentlig', practical:'Fagperson', other:'Andet' };
   var grouped = {};
   kw.forEach(function(tag) {
     var cat = (typeof getTagCategory === 'function') ? getTagCategory(tag) : 'custom';
@@ -1441,8 +1440,12 @@ function _renderDashboardTagsCard() {
     '<div style="font-size:0.72rem;font-weight:700;color:var(--text)">Tags &amp; interesser</div>' +
     '<button onclick="openEditTags()" style="font-size:0.68rem;font-weight:600;color:var(--accent);background:var(--accent-bg);border:1px solid rgba(124,92,252,0.15);border-radius:8px;padding:0.2rem 0.55rem;cursor:pointer;font-family:inherit">Rediger \u2192</button>' +
     '</div>';
-  if (ls && LS_LABELS[ls]) {
-    html += '<div style="padding:0 0.9rem 0.5rem"><span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.2rem 0.65rem;border-radius:99px;font-size:0.68rem;font-weight:700;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:#B45309">' + LS_LABELS[ls] + '</span></div>';
+  if (ls && LS_LBL[ls]) {
+    html += '<div style="padding:0 0.9rem 0.5rem">' +
+      '<span style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.65rem;border-radius:99px;font-size:0.68rem;font-weight:700;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:#B45309">' +
+      '<span style="display:flex;align-items:center;width:13px;height:13px">' + ico(LS_ICO[ls]) + '</span>' +
+      LS_LBL[ls] + '</span>' +
+    '</div>';
   }
   if (kw.length === 0) {
     html += '<div style="padding:0.5rem 0.9rem 0.9rem;font-size:0.72rem;color:var(--muted);font-style:italic">Ingen tags valgt endnu \u2014 klik Rediger for at tilf\u00f8je</div>';

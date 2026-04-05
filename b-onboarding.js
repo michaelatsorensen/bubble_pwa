@@ -1165,7 +1165,7 @@ async function saveOnboarding() {
 // ══════════════════════════════════════════════════════════
 
 var ET_SECTIONS = [
-  {id:'branche',label:'Branche & sektor',icon:'🏭',desc:'Hvilken industri arbejder du i',color:'#1D4ED8',bg:'#EFF6FF',groups:[
+  {id:'branche',label:'Branche & sektor',icon:'building',desc:'Hvilken industri arbejder du i',color:'#1D4ED8',bg:'#EFF6FF',groups:[
     {label:'Teknologi & digitalt',tags:['SaaS','AI/ML','Cybersecurity','Cloud','Infrastructure','DevTools','IoT','Robotics','AR/VR','Quantum','Blockchain','Deep Tech','Hardware','Embedded','Semiconductors','Fintech','Legaltech','Insurtech','SpaceTech','Martech']},
     {label:'Energi & klima',tags:['Energi','Vindenergi','Solenergi','Brint','Energilagring','Smart Grid','Offshore','Fjernvarme','Energieffektivitet','Carbon Capture','Affaldshåndtering','Vandteknologi','Grøn Omstilling','Circular Economy','Bæredygtighed','Cleantech']},
     {label:'Sundhed & life science',tags:['Healthtech','MedTech','Pharma','Biotech','Mental Health','Sundhed','Velfærdsteknologi','Tandpleje','Genoptræning']},
@@ -1176,13 +1176,13 @@ var ET_SECTIONS = [
     {label:'Handel & service',tags:['E-commerce','Retail','Fashion','Luxury','D2C','B2B','B2C','Marketplace','Platform','Abonnement','Detail','Dagligvarer','Consulting','Agency','Service','Advokatbranchen','Rekruttering','Vikarbranchen','Facility Management']},
     {label:'Kreativitet & medier',tags:['Media','Publishing','Gaming','Entertainment','Reklame','Film','Musik','Kultur','Kommunikation','PR']},
   ]},
-  {id:'offentlig',label:'Offentlig & erhvervsfremme',icon:'🏛️',desc:'Myndigheder, klynger, erhvervshuse, brancheorg.',color:'#085041',bg:'#E1F5EE',groups:[
+  {id:'offentlig',label:'Offentlig & erhvervsfremme',icon:'globe',desc:'Myndigheder, klynger, erhvervshuse, brancheorg.',color:'#085041',bg:'#E1F5EE',groups:[
     {label:'Myndigheder',tags:['Kommune','Region','Stat','Forsyning','Statslig styrelse','EU-institution','Politi & forsvar']},
     {label:'Erhvervsfremme',tags:['Erhvervsklynge','Brancheorganisation','Erhvervshus','Handelskammer','Vækstforum','Innovationscenter','Erhvervsråd','EU-klynge','GovTech','Civic Tech','Impact']},
     {label:'Uddannelse & forskning',tags:['Universitet','Erhvervsskole','Gymnasium','Professionshøjskole','Forskning','GTS-institut','Videncenter','Efteruddannelse']},
     {label:'Civilsamfund & NGO',tags:['NGO','Humanitær','Frivilligsektor','Forening','Fond','Socialøkonomi']},
   ]},
-  {id:'rolle',label:'Rolle & funktion',icon:'👤',desc:'Din position og ansvarsområde',color:'#534AB7',bg:'#EEEDFE',groups:[
+  {id:'rolle',label:'Rolle & funktion',icon:'user',desc:'Din position og ansvarsområde',color:'#534AB7',bg:'#EEEDFE',groups:[
     {label:'Ledelse & direktion',tags:['CEO','CTO','CFO','COO','CMO','CPO','Founder','Co-Founder','VP','Director','Partner','Board Member','General Manager','Country Manager','Managing Director','Bestyrelsesmedlem','Formand','Næstformand']},
     {label:'Teknologi & produkt',tags:['Developer','Software Engineer','Frontend Developer','Backend Developer','Data Scientist','Data Engineer','ML Engineer','DevOps Engineer','QA Engineer','Solutions Architect','Tech Lead','Product Manager']},
     {label:'Design & kreativitet',tags:['Designer','UX Designer','UI Designer','Graphic Designer','Art Director','Creative Director','Content Creator','Fotograf']},
@@ -1199,7 +1199,7 @@ var ET_SECTIONS = [
     {label:'Service & detail',tags:['Kok','Tjener','Hotelchef','Restaurantchef','Bartender','Butiksbestyrer','Butikschef','Ejendomsmægler','Landmand','Gartner','Skovfoged']},
     {label:'Frivillig & community',tags:['Frivillig','Træner','Instruktør','Terapeut']},
   ]},
-  {id:'komp',label:'Kompetencer',icon:'⚡',desc:'Hvad er du særligt god til',color:'#993556',bg:'#FBEAF0',groups:[
+  {id:'komp',label:'Kompetencer',icon:'cpu',desc:'Hvad er du særligt god til',color:'#993556',bg:'#FBEAF0',groups:[
     {label:'Teknologi & data',tags:['Frontend','Backend','Full-Stack','Mobile (iOS)','Mobile (Android)','React','Python','Node.js','Java','C#','TypeScript','Go','Rust','PHP','Swift','API Design','Architecture','System Design','DevOps','CI/CD','Security','Cloud Architecture','Data Analytics','Machine Learning','NLP','Computer Vision','Deep Learning','Data Engineering','Data Visualization','Business Intelligence','Power BI','Excel/Sheets','UX/UI Design','Product Development']},
     {label:'Marketing & vækst',tags:['Growth Hacking','SEO/SEM','Content Marketing','Social Media','Paid Acquisition','Email Marketing','CRO','Analytics','Influencer Marketing','Branding','Copywriting','Google Ads','Meta Ads','LinkedIn Marketing']},
     {label:'Salg & forretning',tags:['Sales Strategy','Enterprise Sales','Partnerships','BD','Key Account Management','Forhandling','Kundeservice','Pipeline Management','CRM']},
@@ -1214,7 +1214,7 @@ var ET_SECTIONS = [
     {label:'Sundhed & klinik',tags:['Klinisk Arbejde','Patientpleje','Medicinhåndtering','Rehabilitering','Tværfagligt Samarbejde','Dokumentation']},
     {label:'Undervisning',tags:['Undervisning','Kursusudvikling','E-læring','Pædagogik','Didaktik','Vejledning']},
   ]},
-  {id:'int',label:'Faglige interesser',icon:'🚀',desc:'Hvad driver dig fagligt',color:'#B45309',bg:'#FAEEDA',groups:[
+  {id:'int',label:'Faglige interesser',icon:'rocket',desc:'Hvad driver dig fagligt',color:'#B45309',bg:'#FAEEDA',groups:[
     {label:'Teknologi & digitalt',tags:['Open Source','Web3','Decentralization','Privacy','AI Ethics','Responsible AI','AI Safety','No-Code','Low-Code','Maker Culture']},
     {label:'Klima & bæredygtighed',tags:['Climate Action','Social Impact','Grøn Omstilling','Regenerativt Landbrug','Biodiversitet','Havmiljø','Cirkulær Økonomi']},
     {label:'Arbejdsliv & ledelse',tags:['Future of Work','Remote Work','Digital Nomad','Leadership','Management','Intrapreneurship','Selvledelse','Work-Life Balance']},
@@ -1236,14 +1236,14 @@ var etOpenSec = null;
 var etLifestage = null;
 
 var ET_LS = [
-  {id:'student',icon:'👩‍🎓',label:'Student'},
-  {id:'employee',icon:'💼',label:'Ansat'},
-  {id:'entrepreneur',icon:'⚡',label:'Iværksætter'},
-  {id:'freelancer',icon:'🔗',label:'Freelancer'},
-  {id:'investor',icon:'💰',label:'Investor'},
-  {id:'public',icon:'🏛',label:'Offentlig'},
-  {id:'practical',icon:'🔧',label:'Fagperson'},
-  {id:'other',icon:'✦',label:'Andet'},
+  {id:'student',icon:'graduation',label:'Student'},
+  {id:'employee',icon:'building',label:'Ansat'},
+  {id:'entrepreneur',icon:'rocket',label:'Iværksætter'},
+  {id:'freelancer',icon:'coffee',label:'Freelancer'},
+  {id:'investor',icon:'target',label:'Investor'},
+  {id:'public',icon:'globe',label:'Offentlig'},
+  {id:'practical',icon:'cpu',label:'Fagperson'},
+  {id:'other',icon:'smile',label:'Andet'},
 ];
 
 function etInit() {
@@ -1253,6 +1253,9 @@ function etInit() {
   etOpenSec = null;
   etLifestage = (currentProfile && currentProfile.lifestage) || null;
   ET_SECTIONS.forEach(function(s){ etCustom[s.id] = []; etInputVis[s.id] = false; });
+  // Reset save button
+  var btn = document.getElementById('et-save-btn');
+  if (btn) { btn.textContent = 'Gem'; btn.disabled = false; }
   // Pre-load existing tags
   var kw = (currentProfile && currentProfile.keywords) || [];
   kw.forEach(function(tag) {
@@ -1341,7 +1344,7 @@ function etBuild() {
     var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.bg+';color:'+s.color+'">'+n+'</span>' : '';
     div.innerHTML =
       '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.75rem 0.85rem;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" onclick="etToggle(\''+s.id+'\')">' +
-        '<div style="width:32px;height:32px;border-radius:9px;background:'+s.bg+';display:flex;align-items:center;justify-content:center;font-size:0.95rem;flex-shrink:0">'+s.icon+'</div>' +
+        '<div style="width:32px;height:32px;border-radius:9px;background:'+s.bg+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+'">' + ico(s.icon) + '</span></div>' +
         '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700">'+s.label+'</div><div style="font-size:0.6rem;color:var(--muted);margin-top:1px">'+s.desc+'</div></div>' +
         badgeHtml +
         '<div style="color:var(--muted);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===s.id?'transform:rotate(180deg)':'')+'">▼</div>' +
@@ -1356,7 +1359,9 @@ function etBuild() {
     var style = isSel
       ? 'background:rgba(245,158,11,0.12);border:2px solid #F59E0B;color:#B45309;font-weight:700'
       : 'background:var(--bg);border:1.5px solid var(--glass-border);color:var(--muted);font-weight:500';
-    return '<span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.3rem 0.7rem;border-radius:99px;font-size:0.68rem;cursor:pointer;font-family:inherit;'+style+'" onclick="etSelectLifestage(\''+ls.id+'\')">'+ls.icon+' '+ls.label+'</span>';
+    return '<span style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.7rem;border-radius:99px;font-size:0.68rem;cursor:pointer;font-family:inherit;'+style+'" onclick="etSelectLifestage(\''+ls.id+'\')">' +
+      '<span style="display:flex;align-items:center;width:14px;height:14px">' + ico(ls.icon) + '</span>' +
+      ls.label + '</span>';
   }).join('');
 }
 
@@ -1368,7 +1373,7 @@ function etRebuildSec(id){
   var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.bg+';color:'+s.color+'">'+n+'</span>' : '';
   el.innerHTML =
     '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.75rem 0.85rem;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" onclick="etToggle(\''+s.id+'\')">' +
-      '<div style="width:32px;height:32px;border-radius:9px;background:'+s.bg+';display:flex;align-items:center;justify-content:center;font-size:0.95rem;flex-shrink:0">'+s.icon+'</div>' +
+      '<div style="width:32px;height:32px;border-radius:9px;background:'+s.bg+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+'">' + ico(s.icon) + '</span></div>' +
       '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700">'+s.label+'</div><div style="font-size:0.6rem;color:var(--muted);margin-top:1px">'+s.desc+'</div></div>' +
       badgeHtml +
       '<div style="color:var(--muted);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===id?'transform:rotate(180deg)':'')+'">▼</div>' +
