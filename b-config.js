@@ -15,7 +15,7 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
 const BUILD_TIMESTAMP = '2026-04-06T13:08:12';
-const BUILD_VERSION  = 'v8.10.1';
+const BUILD_VERSION  = 'v8.10.3';
 const SUPABASE_URL  = "https://api.bubbleme.dk";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -41,14 +41,37 @@ function getClientState() {
   }
   var push = 'unsupported';
   try { if ('Notification' in window) push = Notification.permission; } catch(e) { /* */ }
+  // Flow flags
+  var flows = {};
+  ['pending_contact', 'pending_join', 'event_flow', 'post_tags_destination'].forEach(function(k) {
+    var v = typeof flowGet === 'function' ? flowGet(k) : null;
+    if (v) flows[k] = v;
+  });
   return {
     v: BUILD_VERSION,
     sw: sw,
+    // Navigation
     screen: (typeof navState !== 'undefined' && navState.screen) || null,
+    overlay: (typeof navState !== 'undefined' && navState.overlay) || null,
+    modal: (typeof navState !== 'undefined' && navState.modal) || null,
+    navStack: (typeof _navStack !== 'undefined') ? _navStack.slice(-5) : [],
+    // App mode
     mode: appMode.get(),
     live: appMode.live ? appMode.live.bubbleId : null,
     checkins: appMode.checkedInIds ? appMode.checkedInIds.length : 0,
+    // Chat context
+    chatUser: (typeof currentChatUser !== 'undefined' && currentChatUser) || null,
+    chatName: (typeof currentChatName !== 'undefined' && currentChatName) || null,
+    bcId: (typeof bcBubbleId !== 'undefined' && bcBubbleId) || null,
+    bcName: (typeof bcBubbleData !== 'undefined' && bcBubbleData && bcBubbleData.name) || null,
+    person: (typeof currentPerson !== 'undefined' && currentPerson) || null,
+    personSheet: (typeof navState !== 'undefined' && navState.personSheetId) || null,
+    // Flow flags
+    flows: flows,
+    // Realtime
     rt: rt,
+    rtRetry: (typeof _rtReconnectAttempt !== 'undefined') ? _rtReconnectAttempt : 0,
+    // Device
     push: push,
     online: navigator.onLine,
     uptime: Math.round((Date.now() - _bootTs) / 1000),

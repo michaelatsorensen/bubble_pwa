@@ -529,12 +529,39 @@ function _renderDebugContent() {
     deviceEl.innerHTML =
       _debugRow('Version', cs.v) +
       _debugRow('SW', cs.sw === 'active' ? '<span class="debug-pill-ok">synced</span>' : '<span class="debug-pill-err">' + cs.sw + '</span>') +
-      _debugRow('RT', '<span class="debug-pill-' + (rtOk === rtSummary.length ? 'ok' : 'err') + '">' + rtOk + '/' + rtSummary.length + '</span>') +
-      _debugRow('Mode', cs.mode + (cs.live ? ':' + cs.live.substring(0, 8) : '')) +
-      _debugRow('Checkins', cs.checkins) +
       _debugRow('Push', cs.push === 'granted' ? '<span class="debug-pill-ok">active</span>' : '<span class="debug-pill-err">' + cs.push + '</span>') +
       _debugRow('Online', cs.online ? 'Ja' : '<span class="debug-pill-err">Offline</span>') +
       _debugRow('Uptime', _fmtUptime(cs.uptime));
+  }
+  // Navigation / app state
+  var stateEl = document.getElementById('debug-state-info');
+  if (stateEl) {
+    var flowKeys = Object.keys(cs.flows);
+    var flowHtml = flowKeys.length > 0
+      ? flowKeys.map(function(k) { return '<span class="debug-pill-err">' + k + '</span>'; }).join(' ')
+      : '<span style="color:var(--muted)">ingen</span>';
+    var stackHtml = cs.navStack.length > 0 ? cs.navStack.slice(-3).join(' → ') : '-';
+    var html =
+      _debugRow('Screen', _debugMono(cs.screen || '-')) +
+      _debugRow('Overlay', _debugMono(cs.overlay || '-')) +
+      _debugRow('Modal', _debugMono(cs.modal || '-')) +
+      _debugRow('Nav stack', '<span style="font-size:0.58rem">' + escHtml(stackHtml) + '</span>') +
+      _debugRow('Mode', cs.mode + (cs.live ? ':' + cs.live.substring(0, 8) : '')) +
+      _debugRow('Checkins', cs.checkins);
+    // Chat context (only show if active)
+    if (cs.chatUser || cs.bcId) {
+      html += '<div style="border-top:1px solid rgba(0,0,0,0.04);margin:4px 0"></div>';
+      if (cs.chatUser) html += _debugRow('DM', _debugMono(cs.chatUser.substring(0, 12)) + (cs.chatName ? ' · ' + escHtml(cs.chatName) : ''));
+      if (cs.bcId) html += _debugRow('Boble chat', _debugMono(cs.bcId.substring(0, 12)) + (cs.bcName ? ' · ' + escHtml(cs.bcName) : ''));
+      if (cs.personSheet) html += _debugRow('Person sheet', _debugMono(cs.personSheet.substring(0, 12)));
+    }
+    // Realtime
+    html += '<div style="border-top:1px solid rgba(0,0,0,0.04);margin:4px 0"></div>';
+    html += _debugRow('RT kanaler', '<span class="debug-pill-' + (rtOk === rtSummary.length ? 'ok' : 'err') + '">' + rtOk + '/' + rtSummary.length + '</span>');
+    if (cs.rtRetry > 0) html += _debugRow('RT retry', '<span class="debug-pill-err">' + cs.rtRetry + '</span>');
+    // Flow flags
+    html += _debugRow('Flow flags', flowHtml);
+    stateEl.innerHTML = html;
   }
   _renderDebugErrorList();
 }
@@ -580,6 +607,10 @@ function _debugRow(label, value) {
   return '<div class="debug-row"><span class="debug-k">' + label + '</span><span class="debug-v">' + value + '</span></div>';
 }
 
+function _debugMono(val) {
+  return '<code style="font-size:0.58rem;background:rgba(0,0,0,0.04);padding:1px 4px;border-radius:3px">' + escHtml(val) + '</code>';
+}
+
 function _fmtUptime(sec) {
   if (sec < 60) return sec + 's';
   if (sec < 3600) return Math.floor(sec / 60) + 'm ' + (sec % 60) + 's';
@@ -597,6 +628,16 @@ function debugExportEmail() {
   lines.push('Admin: ' + cs.v + ' | SW:' + cs.sw + ' | RT:' + rtOk + '/' + rtTotal);
   lines.push('Mode: ' + cs.mode + (cs.live ? ':' + cs.live : '') + ' | Checkins: ' + cs.checkins);
   lines.push('Push: ' + cs.push + ' | Online: ' + cs.online + ' | Uptime: ' + _fmtUptime(cs.uptime));
+  lines.push('');
+  lines.push('--- App state ---');
+  lines.push('Screen: ' + (cs.screen || '-') + ' | Overlay: ' + (cs.overlay || '-') + ' | Modal: ' + (cs.modal || '-'));
+  lines.push('Nav stack: ' + (cs.navStack.length > 0 ? cs.navStack.join(' > ') : '-'));
+  if (cs.chatUser) lines.push('DM: ' + cs.chatUser.substring(0, 12) + ' (' + (cs.chatName || '?') + ')');
+  if (cs.bcId) lines.push('Boble chat: ' + cs.bcId.substring(0, 12) + ' (' + (cs.bcName || '?') + ')');
+  if (cs.personSheet) lines.push('Person sheet: ' + cs.personSheet.substring(0, 12));
+  var flowKeys = Object.keys(cs.flows);
+  if (flowKeys.length > 0) lines.push('Flow flags: ' + flowKeys.join(', '));
+  if (cs.rtRetry > 0) lines.push('RT retry attempts: ' + cs.rtRetry);
   lines.push('');
   lines.push('--- Errors (' + _debugErrors.length + ') ---');
 
