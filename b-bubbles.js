@@ -32,7 +32,10 @@ async function loadBubbleUpvotes() {
   } catch(e) { logError('loadBubbleUpvotes', e); }
 }
 
+var _upvoteLock = {};
 async function toggleBubbleUpvote(bubbleId) {
+  if (_upvoteLock[bubbleId]) return;
+  _upvoteLock[bubbleId] = true;
   try {
     if (myUpvotes[bubbleId]) {
       var { error } = await sb.from('bubble_upvotes').delete().eq('user_id', currentUser.id).eq('bubble_id', bubbleId);
@@ -42,7 +45,12 @@ async function toggleBubbleUpvote(bubbleId) {
       showToast(t('toast_updated'));
     } else {
       var { error } = await sb.from('bubble_upvotes').insert({ user_id: currentUser.id, bubble_id: bubbleId });
-      if (error) { _renderToast('Kunne ikke anbefale', 'error'); return; }
+      if (error) {
+        // Duplicate check — already upvoted (race or stale state)
+        if (String(error.message || '').includes('duplicate')) { myUpvotes[bubbleId] = true; }
+        else { _renderToast('Kunne ikke anbefale', 'error'); }
+        return;
+      }
       myUpvotes[bubbleId] = true;
       bubbleUpvotes[bubbleId] = (bubbleUpvotes[bubbleId] || 0) + 1;
       showToast('Anbefalet \u2713');
@@ -68,6 +76,7 @@ async function toggleBubbleUpvote(bubbleId) {
       barBtn.classList.toggle('active', !!up);
     }
   } catch(e) { logError('toggleBubbleUpvote', e); errorToast('save', e); }
+  finally { delete _upvoteLock[bubbleId]; }
 }
 
 var _discoverLoaded = false;

@@ -233,17 +233,19 @@ async function _personRenderSaved(userId) {
   }
 }
 
+var _saveContactLock = false;
 async function saveContact() {
+  if (_saveContactLock) return;
   try {
     if (!currentPerson) return;
-    const { data: existing } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', currentPerson).maybeSingle();
-    if (existing) { showWarningToast(t('toast_already_saved')); return; }
-    await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: currentPerson });
+    _saveContactLock = true;
+    var result = await dbActions.saveContact(currentPerson);
+    if (!result.ok) return;
     document.getElementById('save-btn').innerHTML = icon('checkCircle') + '<span>Gemt</span>';
     showSuccessToast(t('toast_saved'));
-    trackEvent('contact_saved', { contact_id: currentPerson });
     loadSavedContacts();
   } catch(e) { logError("saveContact", e); errorToast("save", e); }
+  finally { _saveContactLock = false; }
 }
 
 let pendingRemoveSavedId = null;
