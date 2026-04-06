@@ -268,13 +268,18 @@ function closeRadarPerson() {
 }
 
 function rpMessage() { closeRadarPerson(); closeHomeTray(); setTimeout(function(){ openChat(rpCurrentUserId, 'screen-home'); }, 400); }
+var _rpSaveLock = false;
 async function rpSaveContact() {
+  if (_rpSaveLock) return;
   try {
     if (!rpCurrentUserId) return;
     var btn = document.getElementById('rp-save-btn');
-    if (btn.dataset.saved === '1') { showWarningToast(t('toast_already_saved')); return; }
-    await sb.from('saved_contacts').insert({ user_id: currentUser.id, contact_id: rpCurrentUserId });
-    btn.textContent = t('ps_saved') + ' \u2713'; btn.dataset.saved = '1';
+    if (btn && btn.dataset.saved === '1') { showWarningToast(t('toast_already_saved')); return; }
+    _rpSaveLock = true;
+    if (btn) { btn.disabled = true; }
+    var result = await dbActions.saveContact(rpCurrentUserId);
+    if (!result.ok) return;
+    if (btn) { btn.textContent = t('ps_saved') + ' \u2713'; btn.dataset.saved = '1'; }
     showSuccessToast(t('toast_saved'));
     loadSavedContacts();
     clearSavedContactIdsCache();
@@ -284,6 +289,7 @@ async function rpSaveContact() {
     closeRadarPerson();
     if (radarCurrentView === 'map') renderProximityDots(); else renderRadarList();
   } catch(e) { logError("rpSaveContact", e); errorToast("save", e); }
+  finally { _rpSaveLock = false; var btn2 = document.getElementById('rp-save-btn'); if (btn2) btn2.disabled = false; }
 }
 function rpFullProfile() {
   var uid = rpCurrentUserId;

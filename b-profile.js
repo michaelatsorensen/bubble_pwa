@@ -14,13 +14,14 @@ async function openPerson(userId, fromScreen) {
     currentPerson = userId;
     navState.personSheetId = userId;
     const backBtn = document.getElementById('person-back-btn');
-    // Capture bubble ID before navigation clears it
+    // Capture bubble ID and actual origin screen before navigation clears it
     var _backBubbleId = (fromScreen === 'screen-bubble-chat' && typeof bcBubbleId !== 'undefined') ? bcBubbleId : null;
+    var _backScreen = fromScreen || 'screen-home';
     backBtn.onclick = function() {
       if (_backBubbleId) {
-        openBubbleChat(_backBubbleId, 'screen-bubbles');
+        openBubbleChat(_backBubbleId, _backScreen === 'screen-bubble-chat' ? 'screen-home' : _backScreen);
       } else {
-        goTo(fromScreen || 'screen-home');
+        goTo(_backScreen);
       }
     };
     goTo('screen-person');
@@ -35,9 +36,16 @@ async function openPerson(userId, fromScreen) {
       return;
     }
 
-    // Track profile view (fire-and-forget, no await)
+    // Track profile view (fire-and-forget, rate-limited per user pair)
     if (currentUser && userId !== currentUser.id) {
-      sb.from('profile_views').insert({ viewer_id: currentUser.id, viewed_id: userId }).then(function() {}).catch(function() {});
+      var pvKey = 'pv_' + userId;
+      var pvLast = window._profileViewTimes || {};
+      var pvNow = Date.now();
+      if (!pvLast[pvKey] || pvNow - pvLast[pvKey] > 300000) { // max 1 per 5 min per person
+        if (!window._profileViewTimes) window._profileViewTimes = {};
+        window._profileViewTimes[pvKey] = pvNow;
+        sb.from('profile_views').insert({ viewer_id: currentUser.id, viewed_id: userId }).then(function() {}).catch(function() {});
+      }
       trackEvent('profile_viewed', { viewed_id: userId, from: fromScreen || 'unknown' });
     }
 
@@ -772,7 +780,12 @@ async function loadSavedContacts() {
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false });
 
-    if (savedErr) { console.error('loadSavedContacts query error:', savedErr); return; }
+    if (savedErr) {
+      console.error('loadSavedContacts query error:', savedErr);
+      if (savedEl) savedEl.innerHTML = '<div class="empty-state" style="padding:1rem 0"><div class="empty-text" style="font-size:0.72rem;color:var(--muted)">Kunne ikke hente kontakter</div></div>';
+      renderSavedStoryBar(null, {});
+      return;
+    }
 
     // Filter out self
     var saved = (savedRaw || []).filter(function(s) { return s.contact_id !== currentUser.id; });
