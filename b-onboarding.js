@@ -1275,9 +1275,6 @@ function etInit() {
   etOpenSec = null;
   etLifestage = (currentProfile && currentProfile.lifestage) || null;
   ET_SECTIONS.forEach(function(s){ etCustom[s.id] = []; etInputVis[s.id] = false; });
-  // Reset save button
-  var btn = document.getElementById('et-save-btn');
-  if (btn) { btn.textContent = 'Gem'; btn.disabled = false; }
   // Pre-load existing tags
   var kw = (currentProfile && currentProfile.keywords) || [];
   kw.forEach(function(tag) {
@@ -1412,7 +1409,13 @@ function etToggle(id) {
   }
 }
 
-function etCloseSec(id){ etOpenSec=null; etBuild(); etUpdateUI(); }
+function etCloseSec(id){
+  etOpenSec=null;
+  etBuild();
+  etUpdateUI();
+  // Auto-save when closing a section — same pattern as setup sheets
+  if (typeof saveTagsOnly === 'function') saveTagsOnly();
+}
 
 function etTgl(tag, secId){
   if (etSelected.has(tag)){ etSelected.delete(tag); }
@@ -1461,15 +1464,63 @@ function etUpdateUI(){
   var n=etSelected.size;
   var bar=document.getElementById('et-prog-bar'); if(bar)bar.style.width=Math.min(n/10*100,100)+'%';
   var lbl=document.getElementById('et-prog-lbl'); if(lbl)lbl.textContent=n+' valgt';
-  var chips=document.getElementById('et-chips');
-  if(chips){
-    chips.innerHTML=Array.from(etSelected.entries()).map(function(e){
+
+  // ── Tray preview (first 3 + count) ──
+  var preview=document.getElementById('et-tray-preview');
+  if(preview){
+    var all=Array.from(etSelected.entries());
+    var shown=all.slice(0,3);
+    var rest=all.length-3;
+    preview.innerHTML=shown.map(function(e){
+      var v=e[1];
+      return '<span style="padding:0.18rem 0.5rem;border-radius:99px;font-size:0.62rem;font-weight:600;background:'+v.bg+';color:'+v.color+';border:0.5px solid '+v.color+'30;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px">'+escHtml(e[0])+'</span>';
+    }).join('')+(rest>0?'<span style="font-size:0.62rem;font-weight:600;color:var(--muted);white-space:nowrap">+'+rest+' mere</span>':'');
+  }
+
+  // ── Tray btn: hide if 0 tags ──
+  var trayBtn=document.getElementById('et-tray-btn');
+  if(trayBtn)trayBtn.style.display=n>0?'flex':'none';
+
+  // ── Tray drawer (all tags with ×) ──
+  var drawer=document.getElementById('et-tray-drawer');
+  if(drawer&&drawer.style.display!=='none'){
+    drawer.innerHTML=Array.from(etSelected.entries()).map(function(e){
       var tg=e[0],v=e[1];
-      return '<span style="display:inline-flex;align-items:center;gap:0.2rem;padding:0.18rem 0.45rem 0.18rem 0.3rem;border-radius:99px;font-size:0.65rem;font-weight:600;cursor:pointer;background:'+v.bg+';color:'+v.color+';border:1px solid transparent" onclick="etTgl(\''+etEsc(tg)+'\',\''+v.sec+'\')">' +
-        '<span style="width:5px;height:5px;border-radius:50%;background:'+v.color+';flex-shrink:0;display:inline-block"></span>'+tg+
-        '<span style="opacity:0.5;font-size:0.65rem;margin-left:1px">×</span></span>';
+      return '<span style="display:inline-flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem 0.2rem 0.55rem;border-radius:99px;font-size:0.65rem;font-weight:600;background:'+v.bg+';color:'+v.color+';border:0.5px solid '+v.color+'30">' +
+        escHtml(tg)+
+        '<span onclick="etRemoveTag(\''+etEsc(tg)+'\')" style="cursor:pointer;opacity:0.45;font-size:0.65rem;margin-left:1px;line-height:1">×</span></span>';
     }).join('');
   }
+
+  // ── Old chips container (kept for backward compat) ──
+  var chips=document.getElementById('et-chips');
+  if(chips)chips.innerHTML='';
+}
+
+function etToggleTray(){
+  var drawer=document.getElementById('et-tray-drawer');
+  var btn=document.getElementById('et-tray-btn-lbl');
+  var chev=document.getElementById('et-tray-chev');
+  if(!drawer)return;
+  var open=drawer.style.display!=='none';
+  drawer.style.display=open?'none':'flex';
+  if(btn)btn.textContent=open?'Se alle':'Luk';
+  if(chev)chev.style.transform=open?'':'rotate(180deg)';
+  if(!open)etUpdateUI(); // re-render drawer contents
+}
+
+async function etRemoveTag(tag){
+  etSelected.delete(tag);
+  // Also remove from custom lists
+  Object.keys(etCustom).forEach(function(secId){
+    etCustom[secId]=(etCustom[secId]||[]).filter(function(t){return t!==tag;});
+  });
+  etUpdateUI();
+  // Rebuild open section if any
+  if(etOpenSec)etRebuildSec(etOpenSec);
+  else etBuild();
+  // Save immediately
+  if(typeof saveTagsOnly==='function')saveTagsOnly();
 }
 
 function etGetSelectedTags(){ return Array.from(etSelected.keys()); }

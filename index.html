@@ -12,37 +12,37 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=891">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=891">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=891">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=891">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=891">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=891">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=891">
+<link rel="manifest" href="manifest.json?v=892">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=892">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=892">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=892">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=892">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=892">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=892">
 
-<link rel="stylesheet" href="app.css?v=891">
+<link rel="stylesheet" href="app.css?v=892">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-<script src="bubble-icons.js?v=891" defer></script>
-<script src="tag-data.js?v=891" defer></script>
-<script src="b-i18n.js?v=891" defer></script>
-<script src="b-config.js?v=891" defer></script>
-<script src="b-utils.js?v=891" defer></script>
-<script src="b-auth.js?v=891" defer></script>
-<script src="b-home.js?v=891" defer></script>
-<script src="b-bubbles.js?v=891" defer></script>
-<script src="b-profile.js?v=891" defer></script>
-<script src="b-radar.js?v=891" defer></script>
-<script src="b-messages.js?v=891" defer></script>
-<script src="b-realtime.js?v=891" defer></script>
-<script src="b-onboarding.js?v=891" defer></script>
-<script src="b-chat.js?v=891" defer></script>
-<script src="b-notifications.js?v=891" defer></script>
-<script src="b-live.js?v=891" defer></script>
-<script src="b-admin.js?v=891" defer></script>
-<script src="b-navigation.js?v=891" defer></script>
-<script src="b-boot.js?v=891" defer></script>
+<script src="bubble-icons.js?v=892" defer></script>
+<script src="tag-data.js?v=892" defer></script>
+<script src="b-i18n.js?v=892" defer></script>
+<script src="b-config.js?v=892" defer></script>
+<script src="b-utils.js?v=892" defer></script>
+<script src="b-auth.js?v=892" defer></script>
+<script src="b-home.js?v=892" defer></script>
+<script src="b-bubbles.js?v=892" defer></script>
+<script src="b-profile.js?v=892" defer></script>
+<script src="b-radar.js?v=892" defer></script>
+<script src="b-messages.js?v=892" defer></script>
+<script src="b-realtime.js?v=892" defer></script>
+<script src="b-onboarding.js?v=892" defer></script>
+<script src="b-chat.js?v=892" defer></script>
+<script src="b-notifications.js?v=892" defer></script>
+<script src="b-live.js?v=892" defer></script>
+<script src="b-admin.js?v=892" defer></script>
+<script src="b-navigation.js?v=892" defer></script>
+<script src="b-boot.js?v=892" defer></script>
   
 
 
@@ -1200,53 +1200,38 @@
 <div class="modal-overlay" id="sheet-setup-title" onclick="if(event.target===this)closeModal('sheet-setup-title')" style="align-items:flex-end">
   <div class="setup-sheet">
     <div class="setup-sheet-handle"></div>
-    <div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">Hvad er din titel?</div>
-    <div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Hjælper folk forstå hvad du laver</div>
-    <div class="input-group">
-      <input class="input" id="setup-title-input" placeholder="f.eks. CTO, Designer, Studerende..." data-t-placeholder="ob_title_ph" oninput="setupTitleChanged()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem">
+      <div>
+        <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--accent);margin-bottom:0.15rem">Trin 1 af 4</div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Hvad er din titel?</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--accent)" id="setup-title-pct">0%</div>
+        <div style="width:48px;height:4px;border-radius:99px;background:rgba(124,92,252,0.1);margin-top:3px;overflow:hidden"><div id="setup-title-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#6366F1);transition:width 0.4s;width:0%"></div></div>
+      </div>
     </div>
-    <div style="font-size:0.68rem;color:var(--muted);margin-bottom:0.4rem">Populære titler:</div>
-    <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:1.2rem" id="setup-title-suggestions">
-      <button type="button" class="setup-suggestion" onclick="pickSetupTitle(this)">Founder</button>
-      <button type="button" class="setup-suggestion" onclick="pickSetupTitle(this)">CTO</button>
-      <button type="button" class="setup-suggestion" onclick="pickSetupTitle(this)">Product Manager</button>
-      <button type="button" class="setup-suggestion" onclick="pickSetupTitle(this)">Designer</button>
-      <button type="button" class="setup-suggestion" onclick="pickSetupTitle(this)">Salgschef</button>
-      <button type="button" class="setup-suggestion" onclick="pickSetupTitle(this)">Konsulent</button>
-      <button type="button" class="setup-suggestion" onclick="pickSetupTitle(this)">Studerende</button>
-      <button type="button" class="setup-suggestion" onclick="pickSetupTitle(this)">Projektleder</button>
+    <div class="input-group" style="margin-bottom:1rem">
+      <input class="input" id="setup-title-input" placeholder="f.eks. Founder, CTO, Projektleder..." autocomplete="off" oninput="setupTitleChanged()">
     </div>
-    <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.8rem">
-      <div style="flex:1;height:5px;border-radius:3px;background:rgba(124,92,252,0.1)"><div id="setup-title-bar" style="height:100%;border-radius:3px;background:var(--gradient-primary);transition:width 0.4s"></div></div>
-      <div style="font-size:0.72rem;color:var(--muted);font-weight:600" id="setup-title-pct">33%</div>
-    </div>
-    <button class="btn-primary" id="setup-title-save" onclick="saveSetupTitle()" style="width:100%" data-t="ob_save_continue">Gem og fortsæt</button>
-    <div onclick="skipSetupSheet('title')" style="text-align:center;margin-top:0.5rem;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:0.3rem"data-t="ob_skip">Spring over</div>
+    <button class="btn-primary" id="setup-title-save" onclick="saveSetupTitle()" style="width:100%;margin-bottom:0.5rem">Gem og fortsæt →</button>
+    <div onclick="skipSetupSheet('title')" style="text-align:center;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:0.3rem">Spring over</div>
   </div>
 </div>
 
-<!-- SHEET 2: Interests (11 categories) -->
-<div class="modal-overlay" id="sheet-setup-interests" onclick="if(event.target===this)closeModal('sheet-setup-interests')" style="align-items:flex-end">
-  <div class="setup-sheet" style="max-height:85vh">
-    <div class="setup-sheet-handle"></div>
-    <div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">Hvad interesserer dig?</div>
-    <div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem" id="setup-interest-count">Vælg mindst 3 emner (0/3)</div>
-    <div style="display:flex;flex-direction:column;gap:0.35rem;margin-bottom:1.2rem;overflow-y:auto;max-height:45vh" id="setup-interest-list"></div>
-    <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.8rem">
-      <div style="flex:1;height:5px;border-radius:3px;background:rgba(124,92,252,0.1)"><div id="setup-interest-bar" style="height:100%;border-radius:3px;background:var(--gradient-primary);transition:width 0.4s"></div></div>
-      <div style="font-size:0.72rem;color:var(--muted);font-weight:600" id="setup-interest-pct">46%</div>
-    </div>
-    <button class="btn-primary" id="setup-interest-save" onclick="saveSetupInterests()" style="width:100%" disabled>Vælg 3 mere</button>
-    <div onclick="skipSetupSheet('interests')" style="text-align:center;margin-top:0.5rem;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:0.3rem"data-t="ob_skip">Spring over</div>
-  </div>
-</div>
-
-<!-- SHEET 3: Lifestage -->
+<!-- SHEET 2: Livsfase -->
 <div class="modal-overlay" id="sheet-setup-lifestage" onclick="if(event.target===this)closeModal('sheet-setup-lifestage')" style="align-items:flex-end">
   <div class="setup-sheet">
     <div class="setup-sheet-handle"></div>
-    <div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">Hvad beskriver dig bedst?</div>
-    <div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Vælg én — vi tilpasser dine matches</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem">
+      <div>
+        <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--accent);margin-bottom:0.15rem">Trin 2 af 4</div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Hvad beskriver dig bedst?</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--accent)" id="setup-ls-pct">0%</div>
+        <div style="width:48px;height:4px;border-radius:99px;background:rgba(124,92,252,0.1);margin-top:3px;overflow:hidden"><div id="setup-ls-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#6366F1);transition:width 0.4s;width:0%"></div></div>
+      </div>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-bottom:1.2rem" id="setup-lifestage-grid">
       <button type="button" class="setup-ls-btn" data-ls="student" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(59,130,246,0.1);color:#3B82F6"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 10l-10-5L2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg></div><span>Studerende</span></button>
       <button type="button" class="setup-ls-btn" data-ls="employee" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(124,92,252,0.1);color:#7C5CFC"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg></div><span>Erhverv</span></button>
@@ -1257,12 +1242,59 @@
       <button type="button" class="setup-ls-btn" data-ls="investor" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(245,158,11,0.1);color:#F59E0B"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div><span>Investor</span></button>
       <button type="button" class="setup-ls-btn" data-ls="other" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(46,207,207,0.1);color:#2ECFCF"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v.01"/><path d="M12 8a2.5 2.5 0 011.13 4.74c-.46.27-.76.72-.87 1.26"/></svg></div><span>Andet</span></button>
     </div>
-    <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.8rem">
-      <div style="flex:1;height:5px;border-radius:3px;background:rgba(124,92,252,0.1)"><div id="setup-ls-bar" style="height:100%;border-radius:3px;background:var(--gradient-primary);transition:width 0.4s"></div></div>
-      <div style="font-size:0.72rem;color:var(--muted);font-weight:600" id="setup-ls-pct">59%</div>
+    <button class="btn-primary" id="setup-ls-save" onclick="saveSetupLifestage()" style="width:100%;margin-bottom:0.5rem" disabled>Vælg din type</button>
+    <div onclick="skipSetupSheet('lifestage')" style="text-align:center;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:0.3rem">Spring over</div>
+  </div>
+</div>
+
+<!-- SHEET 3: Tags -->
+<div class="modal-overlay" id="sheet-setup-tags" onclick="if(event.target===this)closeModal('sheet-setup-tags')" style="align-items:flex-end">
+  <div class="setup-sheet" style="max-height:88vh;display:flex;flex-direction:column">
+    <div class="setup-sheet-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-shrink:0">
+      <div>
+        <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--accent);margin-bottom:0.15rem">Trin 3 af 4</div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Faglige tags</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--accent)" id="setup-tags-pct">0%</div>
+        <div style="width:48px;height:4px;border-radius:99px;background:rgba(124,92,252,0.1);margin-top:3px;overflow:hidden"><div id="setup-tags-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#6366F1);transition:width 0.4s;width:0%"></div></div>
+      </div>
     </div>
-    <button class="btn-primary" id="setup-ls-save" onclick="saveSetupLifestage()" style="width:100%" disabled>Vælg din type</button>
-    <div onclick="skipSetupSheet('lifestage')" style="text-align:center;margin-top:0.5rem;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:0.3rem"data-t="ob_skip">Spring over</div>
+    <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.75rem;flex-shrink:0">Vælg tags der beskriver din branche, rolle og interesser</div>
+    <div id="et-prog-bar-setup" style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.4rem;flex-shrink:0">
+      <div style="flex:1;height:3px;background:rgba(124,92,252,0.08);border-radius:99px;overflow:hidden"><div id="et-prog-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#E879A8);transition:width .4s;width:0%"></div></div>
+      <div id="et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:var(--accent);white-space:nowrap">0 valgt</div>
+    </div>
+    <div id="et-chips" style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-bottom:0.5rem;min-height:0;flex-shrink:0"></div>
+    <div id="et-acc-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:0.35rem;margin-bottom:0.75rem"></div>
+    <div style="flex-shrink:0">
+      <button class="btn-primary" onclick="saveSetupTags()" style="width:100%;margin-bottom:0.5rem">Gem og fortsæt →</button>
+      <div onclick="skipSetupSheet('tags')" style="text-align:center;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:0.3rem">Spring over</div>
+    </div>
+  </div>
+</div>
+
+<!-- SHEET 4: Bio -->
+<div class="modal-overlay" id="sheet-setup-bio" onclick="if(event.target===this)closeModal('sheet-setup-bio')" style="align-items:flex-end">
+  <div class="setup-sheet">
+    <div class="setup-sheet-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem">
+      <div>
+        <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--accent);margin-bottom:0.15rem">Trin 4 af 4</div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Kort om dig</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--accent)" id="setup-bio-pct">0%</div>
+        <div style="width:48px;height:4px;border-radius:99px;background:rgba(124,92,252,0.1);margin-top:3px;overflow:hidden"><div id="setup-bio-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#6366F1);transition:width 0.4s;width:0%"></div></div>
+      </div>
+    </div>
+    <div class="input-group" style="margin-bottom:0.75rem">
+      <textarea class="input" id="setup-bio-input" maxlength="300" rows="4" placeholder="Skriv kort om dig selv — hvad du arbejder med, hvad du brænder for, eller hvad du søger..." style="resize:none;line-height:1.5"></textarea>
+      <div style="font-size:0.62rem;color:var(--muted);margin-top:0.3rem;text-align:right"><span id="setup-bio-count">0</span>/300</div>
+    </div>
+    <button class="btn-primary" onclick="saveSetupBio()" style="width:100%;margin-bottom:0.5rem">Gem profil ✓</button>
+    <div onclick="skipSetupSheet('bio')" style="text-align:center;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:0.3rem">Udfyld senere →</div>
   </div>
 </div>
 

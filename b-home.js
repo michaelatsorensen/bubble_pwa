@@ -381,12 +381,13 @@ function _updateProfileStrengthBar(strength) {
 
 function openNextProfileSetupSheet() {
   if (!currentProfile) return;
-  if (!currentProfile.workplace) { openSetupWorkplaceSheet(); return; }
   if (!currentProfile.title) { openSetupTitleSheet(); return; }
-  if (!currentProfile.keywords || currentProfile.keywords.length < 3) { openEditTags(); return; }
-  if (!currentProfile.lifestage) { openEditTags(); return; }
-  // All done — open profile dashboard to show tags card
-  openEditTags();
+  if (!currentProfile.lifestage) { openSetupLifestageSheet(); return; }
+  if (!currentProfile.keywords || currentProfile.keywords.length < 3) { openSetupTagsSheet(); return; }
+  if (!currentProfile.bio) { openSetupBioSheet(); return; }
+  // All done
+  showSuccessToast('Profil komplet! 🎉');
+  showProfileSetupCTA();
 }
 
 // ── WORKPLACE SHEET ──
@@ -422,11 +423,11 @@ function openSetupTitleSheet() {
   var input = document.getElementById('setup-title-input');
   if (input) input.value = currentProfile?.title || '';
   var strength = calcProfileStrength(currentProfile);
+  var projected = Math.min(strength + 13, 100);
   var bar = document.getElementById('setup-title-bar');
   var pct = document.getElementById('setup-title-pct');
-  if (bar) bar.style.width = Math.min(strength + 13, 100) + '%';
-  if (pct) pct.textContent = Math.min(strength + 13, 100) + '%';
-  setupTitleChanged();
+  if (bar) bar.style.width = projected + '%';
+  if (pct) pct.textContent = projected + '%';
   openModal('sheet-setup-title');
 }
 
@@ -450,71 +451,63 @@ async function saveSetupTitle() {
     if (currentProfile) currentProfile.title = title;
     closeModal('sheet-setup-title');
     showProfileSetupCTA();
-    loadHomeDartboardData();
-    // Auto-open next sheet after brief delay
-    setTimeout(function() { openNextProfileSetupSheet(); }, 400);
+    setTimeout(function() { openSetupLifestageSheet(); }, 350);
   } catch(e) { errorToast('save', e); }
 }
 
-// ── INTERESTS SHEET ──
-function openSetupInterestsSheet() {
-  _setupSelectedInterests = Array.isArray(currentProfile?.keywords) ? currentProfile.keywords.filter(function(k) {
-    return SETUP_INTERESTS.some(function(si) { return si.id === k || si.label === k; });
-  }) : [];
-  renderSetupInterests();
-  openModal('sheet-setup-interests');
-}
-
-function renderSetupInterests() {
-  var list = document.getElementById('setup-interest-list');
-  if (!list) return;
-  list.innerHTML = SETUP_INTERESTS.map(function(si) {
-    var isActive = _setupSelectedInterests.indexOf(si.id) !== -1;
-    return '<div class="setup-interest-row' + (isActive ? ' active' : '') + '" onclick="toggleSetupInterest(\'' + si.id + '\')" ' +
-      'style="' + (isActive ? '--active-border:' + si.bg + '0.35);--active-bg:' + si.bg + '0.05);--check-color:' + si.color : '') + '">' +
-      '<div class="si-icon" style="background:' + si.bg + '0.1);color:' + si.color + '">' + si.icon + '</div>' +
-      '<div style="flex:1;font-size:0.82rem;font-weight:' + (isActive ? '700' : '600') + ';color:' + (isActive ? si.color : 'var(--text-secondary)') + '">' + si.label + '</div>' +
-      '<div class="si-check">' + (isActive ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</div>' +
-    '</div>';
-  }).join('');
-  // Update count + button
-  var cnt = _setupSelectedInterests.length;
-  var countEl = document.getElementById('setup-interest-count');
-  if (countEl) countEl.textContent = t('home_select_min3', { n: cnt });
-  var btn = document.getElementById('setup-interest-save');
-  if (btn) {
-    if (cnt >= 3) { btn.disabled = false; btn.textContent = t('misc_save_continue'); }
-    else { btn.disabled = true; btn.textContent = t('home_select_n_more', { n: 3 - cnt }); }
-  }
-  // Update progress bar
+// ── TAGS SHEET ──
+function openSetupTagsSheet() {
+  if (typeof etInit === 'function') etInit();
   var strength = calcProfileStrength(currentProfile);
-  var projectedStrength = cnt >= 3 ? Math.min(strength + 13, 100) : strength;
-  var bar = document.getElementById('setup-interest-bar');
-  var pct = document.getElementById('setup-interest-pct');
-  if (bar) bar.style.width = projectedStrength + '%';
-  if (pct) pct.textContent = projectedStrength + '%';
+  var projected = Math.min(strength + 13, 100);
+  var bar = document.getElementById('setup-tags-bar');
+  var pct = document.getElementById('setup-tags-pct');
+  if (bar) bar.style.width = projected + '%';
+  if (pct) pct.textContent = projected + '%';
+  openModal('sheet-setup-tags');
 }
 
-function toggleSetupInterest(id) {
-  var idx = _setupSelectedInterests.indexOf(id);
-  if (idx === -1) _setupSelectedInterests.push(id);
-  else _setupSelectedInterests.splice(idx, 1);
-  renderSetupInterests();
-}
-
-async function saveSetupInterests() {
-  if (_setupSelectedInterests.length < 3) return;
+async function saveSetupTags() {
   try {
-    // Merge with existing keywords (keep detailed tags, add broad interests)
-    var existing = Array.isArray(currentProfile?.keywords) ? currentProfile.keywords : [];
-    var merged = _setupSelectedInterests.slice();
-    existing.forEach(function(k) { if (merged.indexOf(k) === -1) merged.push(k); });
-    await sb.from('profiles').update({ keywords: merged }).eq('id', currentUser.id);
-    if (currentProfile) currentProfile.keywords = merged;
-    closeModal('sheet-setup-interests');
+    var tags = typeof etGetSelectedTags === 'function' ? etGetSelectedTags() : [];
+    var lifestage = typeof etGetLifestage === 'function' ? etGetLifestage() : null;
+    await sb.from('profiles').update({ keywords: tags, lifestage: lifestage || currentProfile?.lifestage || null }).eq('id', currentUser.id);
+    if (currentProfile) { currentProfile.keywords = tags; }
+    closeModal('sheet-setup-tags');
+    showProfileSetupCTA();
+    setTimeout(function() { openSetupBioSheet(); }, 350);
+  } catch(e) { errorToast('save', e); }
+}
+
+// ── BIO SHEET ──
+function openSetupBioSheet() {
+  var input = document.getElementById('setup-bio-input');
+  if (input) {
+    input.value = currentProfile?.bio || '';
+    input.oninput = function() {
+      var cnt = document.getElementById('setup-bio-count');
+      if (cnt) cnt.textContent = input.value.length;
+    };
+    input.oninput();
+  }
+  var strength = calcProfileStrength(currentProfile);
+  var projected = Math.min(strength + 8, 100);
+  var bar = document.getElementById('setup-bio-bar');
+  var pct = document.getElementById('setup-bio-pct');
+  if (bar) bar.style.width = projected + '%';
+  if (pct) pct.textContent = projected + '%';
+  openModal('sheet-setup-bio');
+}
+
+async function saveSetupBio() {
+  var bio = (document.getElementById('setup-bio-input')?.value || '').trim();
+  try {
+    await sb.from('profiles').update({ bio: bio }).eq('id', currentUser.id);
+    if (currentProfile) currentProfile.bio = bio;
+    closeModal('sheet-setup-bio');
+    showSuccessToast('Profil komplet! 🎉');
     showProfileSetupCTA();
     loadHomeDartboardData();
-    setTimeout(function() { openNextProfileSetupSheet(); }, 400);
   } catch(e) { errorToast('save', e); }
 }
 
@@ -522,6 +515,12 @@ async function saveSetupInterests() {
 function openSetupLifestageSheet() {
   _setupSelectedLifestage = currentProfile?.lifestage || null;
   updateSetupLifestageUI();
+  var strength = calcProfileStrength(currentProfile);
+  var projected = Math.min(strength + 13, 100);
+  var bar = document.getElementById('setup-ls-bar');
+  var pct = document.getElementById('setup-ls-pct');
+  if (bar) bar.style.width = projected + '%';
+  if (pct) pct.textContent = projected + '%';
   openModal('sheet-setup-lifestage');
 }
 
@@ -553,17 +552,20 @@ async function saveSetupLifestage() {
     await sb.from('profiles').update({ lifestage: _setupSelectedLifestage }).eq('id', currentUser.id);
     if (currentProfile) currentProfile.lifestage = _setupSelectedLifestage;
     closeModal('sheet-setup-lifestage');
-    showSuccessToast('Profil klar!');
     showProfileSetupCTA();
-    loadHomeDartboardData();
+    setTimeout(function() { openSetupTagsSheet(); }, 350);
   } catch(e) { errorToast('save', e); }
 }
 
 // ── SKIP + BOOST ──
 function skipSetupSheet(which) {
-  closeModal('sheet-setup-' + (which === 'interests' ? 'interests' : which === 'lifestage' ? 'lifestage' : 'title'));
-  // Back to home — CTA updates with next step
+  var modalId = 'sheet-setup-' + which;
+  closeModal(modalId);
   showProfileSetupCTA();
+  // Continue to next step after skip
+  var next = { title: openSetupLifestageSheet, lifestage: openSetupTagsSheet, tags: openSetupBioSheet, bio: null };
+  var fn = next[which];
+  if (fn) setTimeout(fn, 350);
 }
 
 function openProfileSetupTags() {

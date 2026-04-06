@@ -1385,23 +1385,44 @@ async function loadDashboard() {
 // ── Tags card in dashboard ──
 function _renderDashboardTagsCard() {
   return '<div style="margin-top:0.75rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);box-shadow:0 1px 3px rgba(30,27,46,0.06);overflow:hidden">' +
+
+    // ── Header ──
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem 0.5rem">' +
       '<div style="font-size:0.72rem;font-weight:700;color:var(--text)">Tags &amp; interesser</div>' +
-      '<button id="et-save-btn" onclick="saveTagsOnly()" style="font-size:0.68rem;font-weight:600;color:var(--accent);background:var(--accent-bg);border:1px solid rgba(124,92,252,0.15);border-radius:8px;padding:0.2rem 0.65rem;cursor:pointer;font-family:inherit">Gem</button>' +
+      '<div id="et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:var(--accent)">0 valgt</div>' +
     '</div>' +
-    '<div style="padding:0 0.9rem 0.4rem;display:flex;align-items:center;gap:0.5rem">' +
+
+    // ── Progress bar ──
+    '<div style="padding:0 0.9rem 0.5rem;display:flex;align-items:center;gap:0.5rem">' +
       '<div style="flex:1;height:3px;background:rgba(124,92,252,0.08);border-radius:99px;overflow:hidden"><div id="et-prog-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#E879A8);transition:width .4s;width:0%"></div></div>' +
-      '<div id="et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:var(--accent);white-space:nowrap">0 valgt</div>' +
     '</div>' +
-    '<div id="et-chips" style="display:flex;flex-wrap:wrap;gap:0.3rem;padding:0 0.9rem 0.4rem;min-height:0"></div>' +
-    '<div style="padding:0.3rem 0.9rem 0.1rem">' +
+
+    // ── Tray: selected tags preview ──
+    '<div style="border-top:0.5px solid var(--glass-border-subtle);border-bottom:0.5px solid var(--glass-border-subtle)">' +
+      '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.55rem 0.9rem">' +
+        '<div style="width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0"></div>' +
+        '<div style="font-size:0.68rem;font-weight:600;color:var(--accent);flex-shrink:0">Dine tags</div>' +
+        '<div id="et-tray-preview" style="display:flex;gap:0.3rem;flex:1;overflow:hidden;min-width:0;align-items:center"></div>' +
+        '<button onclick="etToggleTray()" id="et-tray-btn" style="display:flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem;border-radius:99px;border:0.5px solid var(--glass-border);background:rgba(124,92,252,0.04);cursor:pointer;font-family:inherit;flex-shrink:0">' +
+          '<span id="et-tray-btn-lbl" style="font-size:0.65rem;font-weight:600;color:var(--accent)">Se alle</span>' +
+          '<span id="et-tray-chev" style="font-size:0.6rem;color:var(--accent);transition:transform 0.2s">▾</span>' +
+        '</button>' +
+      '</div>' +
+      '<div id="et-tray-drawer" style="display:none;flex-wrap:wrap;gap:0.3rem;padding:0.1rem 0.9rem 0.65rem;background:rgba(124,92,252,0.02)"></div>' +
+    '</div>' +
+
+    // ── Lifestage ──
+    '<div style="padding:0.55rem 0.9rem 0.1rem">' +
       '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.4rem">Livsfase</div>' +
       '<div id="et-lifestage-btns" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem"></div>' +
     '</div>' +
-    '<div style="padding:0.3rem 0.9rem 0.1rem">' +
-      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.35rem">Faglige tags</div>' +
+
+    // ── Category accordions ──
+    '<div style="padding:0.1rem 0.9rem 0.2rem">' +
+      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.35rem">Tilføj fra kategorier</div>' +
     '</div>' +
     '<div id="et-acc-list" style="padding:0 0.6rem 0.75rem;display:flex;flex-direction:column;gap:0.35rem"></div>' +
+
   '</div>';
 }
 
@@ -1409,17 +1430,14 @@ function _renderDashboardTagsCard() {
 async function saveTagsOnly() {
   try {
     if (!currentUser) return;
-    var btn = document.getElementById('et-save-btn');
-    if (btn) { btn.textContent = 'Gemmer...'; btn.disabled = true; }
     var tags = typeof etGetSelectedTags === 'function' ? etGetSelectedTags() : [];
     var lifestage = typeof etGetLifestage === 'function' ? etGetLifestage() : null;
     var { error } = await sb.from('profiles').update({ keywords: tags, lifestage: lifestage || null }).eq('id', currentUser.id);
-    if (error) { if (btn) { btn.textContent = 'Gem'; btn.disabled = false; } return errorToast('save', error); }
+    if (error) return errorToast('save', error);
     await loadCurrentProfile();
     showSuccessToast(t('toast_saved'));
     trackEvent('tags_updated', { tags: tags.length });
-    if (btn) { btn.textContent = 'Gem'; btn.disabled = false; }
-  } catch(e) { logError('saveTagsOnly', e); errorToast('save', e); var btn = document.getElementById('et-save-btn'); if (btn) { btn.textContent = 'Gem'; btn.disabled = false; } }
+  } catch(e) { logError('saveTagsOnly', e); errorToast('save', e); }
 }
 
 
