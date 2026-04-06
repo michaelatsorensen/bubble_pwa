@@ -1359,7 +1359,7 @@ function etBuild() {
   list.innerHTML = '';
   ET_SECTIONS.forEach(function(s){
     var div = document.createElement('div');
-    div.style.cssText = 'background:var(--bg);border:1px solid var(--glass-border-subtle);border-radius:13px;overflow:hidden' + (etOpenSec===s.id?';border-color:rgba(124,92,252,0.18);box-shadow:0 2px 10px rgba(30,27,46,0.06)':'');
+    div.style.cssText = 'background:var(--bg);border:1px solid var(--glass-border-subtle);border-radius:13px;margin-bottom:0.35rem' + (etOpenSec===s.id?';border-color:rgba(124,92,252,0.18);box-shadow:0 2px 10px rgba(30,27,46,0.06)':'');
     div.id = _etPrefix + 'et-acc-' + s.id;
     var n = etCountSec(s.id);
     var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.bg+';color:'+s.color+'">'+n+'</span>' : '';
@@ -1400,7 +1400,7 @@ function etRebuildSec(id){
       '<div style="color:var(--muted);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===id?'transform:rotate(180deg)':'')+'">▼</div>' +
     '</div>' +
     (etOpenSec===id ? '<div style="padding:0 0.75rem;display:flex;flex-direction:column;gap:0.45rem">'+etBuildBody(s)+'</div>' : '');
-  el.style.cssText = 'background:var(--bg);border:1px solid var(--glass-border-subtle);border-radius:13px;overflow:hidden' + (etOpenSec===id?';border-color:rgba(124,92,252,0.18);box-shadow:0 2px 10px rgba(30,27,46,0.06)':'');
+  el.style.cssText = 'background:var(--bg);border:1px solid var(--glass-border-subtle);border-radius:13px;margin-bottom:0.35rem' + (etOpenSec===id?';border-color:rgba(124,92,252,0.18);box-shadow:0 2px 10px rgba(30,27,46,0.06)':'');
 }
 
 function etToggle(id) {
