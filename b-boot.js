@@ -727,6 +727,15 @@ if ('serviceWorker' in navigator) {
       return;
     }
 
+    // SW version svar — vis banner hvis version ikke matcher
+    if (msg.type === 'SW_VERSION') {
+      var expected = 'bubble-' + BUILD_VERSION;
+      if (msg.version && msg.version !== expected) {
+        showUpdateBanner();
+      }
+      return;
+    }
+
     // Push-notifikation klik → naviger
     if (msg.type === 'PUSH_NAVIGATE') {
       var d = msg.data || {};
@@ -747,6 +756,11 @@ if ('serviceWorker' in navigator) {
   // Tjek også ved app-start om SW har en opdatering klar
   navigator.serviceWorker.ready.then(function(reg) {
     reg.update(); // Trigger SW update check
+
+    // Spørg den aktive SW om dens version og sammenlign med BUILD_VERSION
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'GET_VERSION' });
+    }
   });
 }
 

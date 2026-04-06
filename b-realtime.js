@@ -259,6 +259,47 @@ function rtHandleMemberChange(payload) {
   }
 }
 
+// ── Realtime: bubble membership DELETED (bruger forlod boble) ──
+function rtHandleMemberDelete(payload) {
+  var m = payload.old;
+  if (!m) return;
+
+  // Det er mig der forlod — opdater boble-lister øjeblikkeligt
+  if (m.user_id === currentUser.id) {
+    // Fjern element direkte fra DOM hvis synligt
+    var el = document.querySelector('[data-bubble-id="' + m.bubble_id + '"]');
+    if (el) { el.style.transition = 'opacity 0.2s'; el.style.opacity = '0'; setTimeout(function() { el.remove(); }, 220); }
+    // Refresh aktiv skærm
+    if (navState.screen === 'screen-home') {
+      loadHome();
+    } else if (navState.screen === 'screen-bubbles') {
+      if (typeof loadMyBubbles === 'function') loadMyBubbles();
+    } else if (navState.screen === 'screen-profile') {
+      if (typeof loadProfileBubbles === 'function') loadProfileBubbles();
+    }
+    // Ryd live state hvis det var min check-in boble
+    if (currentLiveBubble && currentLiveBubble.bubble_id === m.bubble_id) {
+      currentLiveBubble = null;
+      appMode.clearLive();
+      if (navState.screen === 'screen-home' && typeof loadLiveBanner === 'function') loadLiveBanner();
+    }
+    return;
+  }
+
+  // En anden bruger forlod en boble jeg er i → opdater membertal
+  if (bcBubbleId && m.bubble_id === bcBubbleId) {
+    if (typeof bcLoadMembers === 'function') bcLoadMembers();
+  }
+  if (currentLiveBubble && m.bubble_id === currentLiveBubble.bubble_id) {
+    loadLiveBubbleStatus().then(function() {
+      if (navState.screen === 'screen-home' &&
+          typeof _homeRadarFilter !== 'undefined' && _homeRadarFilter === 'live') {
+        if (typeof renderHomeDartboard === 'function') renderHomeDartboard();
+      }
+    });
+  }
+}
+
 // ── Radar: soft refresh when screen is active ──
 function rtStartRadarPolling() {
   rtStopRadarPolling(); // clear old interval first
@@ -317,6 +358,18 @@ function initGlobalRealtime() {
       // read_at just got set → update ✓✓ in open DM
       if (m && m.read_at) dmUpdateReceipts([m.id]);
     })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' },
+      function(payload) {
+      var m = payload.old;
+      if (!m) return;
+      // Remove message from open DM chat
+      if (navState.screen === 'screen-chat' || navState.screen === 'screen-dm') {
+        var msgEl = document.querySelector('[data-msg-id="' + m.id + '"]');
+        if (msgEl) { msgEl.style.transition = 'opacity 0.2s'; msgEl.style.opacity = '0'; setTimeout(function() { msgEl.remove(); }, 220); }
+      }
+      // Update conversation preview if on messages screen
+      if (navState.screen === 'screen-messages') loadMessages();
+    })
     .subscribe(_rtStatusCallback('rt-messages'));
   _globalRtChannels.push(chMessages);
 
@@ -328,8 +381,36 @@ function initGlobalRealtime() {
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'bubble_members',
       filter: 'user_id=eq.' + currentUser.id },
       function(payload) { rtHandleMemberChange(payload); })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'bubble_members',
+      filter: 'user_id=eq.' + currentUser.id },
+      function(payload) { rtHandleMemberDelete(payload); })
     .subscribe(_rtStatusCallback('rt-members'));
   _globalRtChannels.push(chMembers);
+
+  // ── Kanal: Bobler slettet — fjern fra alle lister øjeblikkeligt ──
+  var chBubbles = sb.channel('rt-bubbles-deleted-' + currentUser.id)
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'bubbles' },
+      function(payload) {
+      var b = payload.old;
+      if (!b) return;
+      // Remove from DOM instantly
+      var els = document.querySelectorAll('[data-bubble-id="' + b.id + '"]');
+      els.forEach(function(el) {
+        el.style.transition = 'opacity 0.2s';
+        el.style.opacity = '0';
+        setTimeout(function() { el.remove(); }, 220);
+      });
+      // If we're inside the deleted bubble's chat → go back
+      if (bcBubbleId === b.id) {
+        navBack();
+        showWarningToast('Denne boble er blevet slettet');
+      }
+      // Refresh relevant screens
+      if (navState.screen === 'screen-home') loadHome();
+      else if (navState.screen === 'screen-bubbles') { if (typeof loadMyBubbles === 'function') loadMyBubbles(); }
+    })
+    .subscribe(_rtStatusCallback('rt-bubbles'));
+  _globalRtChannels.push(chBubbles);
 
   // ── Kanal 3: Invitationer ──
   var chInvites = sb.channel('rt-invites-' + currentUser.id)

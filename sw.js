@@ -28,7 +28,6 @@ self.addEventListener('activate', function(event) {
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
     ).then(function() {
-      // Fortæl alle åbne vinduer at ny version er klar
       return self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     }).then(function(clients) {
       clients.forEach(function(client) {
@@ -37,6 +36,13 @@ self.addEventListener('activate', function(event) {
     })
   );
   self.clients.claim();
+});
+
+// Send version til nye klienter når de connecter
+self.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'GET_VERSION') {
+    event.source.postMessage({ type: 'SW_VERSION', version: CACHE_NAME });
+  }
 });
 
 self.addEventListener('fetch', function(event) {
