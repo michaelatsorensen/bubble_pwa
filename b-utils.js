@@ -984,10 +984,15 @@ var dbActions = {
   async acceptInvitation(inviteId, bubbleId) {
     if (!currentUser || !inviteId) return { ok: false };
     try {
-      await sb.from('bubble_invitations').update({ status: 'accepted' }).eq('id', inviteId);
+      // Join FIRST while invitation is still 'pending' (RLS checks for pending invitation)
       if (bubbleId) {
-        await sb.from('bubble_members').insert({ bubble_id: bubbleId, user_id: currentUser.id });
+        var { error: joinErr } = await sb.from('bubble_members').insert({ bubble_id: bubbleId, user_id: currentUser.id });
+        if (joinErr && !String(joinErr.message || '').includes('duplicate')) {
+          errorToast('save', joinErr); return { ok: false, error: joinErr };
+        }
       }
+      // Then mark invitation as accepted
+      await sb.from('bubble_invitations').update({ status: 'accepted' }).eq('id', inviteId);
       return { ok: true };
     } catch(e) { logError('dbActions.acceptInvitation', e); errorToast('save', e); return { ok: false, error: e }; }
   },
