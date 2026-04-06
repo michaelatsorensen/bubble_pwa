@@ -346,9 +346,11 @@ async function handleSignup() {
     const name  = document.getElementById('signup-name').value.trim();
     const email = document.getElementById('signup-email').value.trim();
     const pass  = document.getElementById('signup-password').value;
+    const passConfirm = document.getElementById('signup-password-confirm').value;
     const title = document.getElementById('signup-title').value.trim();
     if (!name || !email || !pass) { _authLock = false; return showWarningToast('Udfyld alle felter'); }
     if (pass.length < 6) { _authLock = false; return showWarningToast(t('toast_password_min')); }
+    if (pass !== passConfirm) { _authLock = false; return showWarningToast('Adgangskoderne matcher ikke'); }
     showToast('Opretter konto...');
     const { data, error } = await sb.auth.signUp({
       email,

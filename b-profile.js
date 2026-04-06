@@ -867,8 +867,6 @@ function renderSavedStoryBar(saved, profileMap) {
 
 // Profile tab switching — same pattern as bcSwitchTab
 function openSettingsModal() {
-  updateAnonToggle();
-  hsUpdateAllToggles();
   _updateLangBtns();
   openModal('modal-settings');
 }

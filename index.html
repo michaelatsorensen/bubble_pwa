@@ -12,37 +12,37 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=890">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=890">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=890">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=890">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=890">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=890">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=890">
+<link rel="manifest" href="manifest.json?v=891">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=891">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=891">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=891">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=891">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=891">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=891">
 
-<link rel="stylesheet" href="app.css?v=890">
+<link rel="stylesheet" href="app.css?v=891">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-<script src="bubble-icons.js?v=890" defer></script>
-<script src="tag-data.js?v=890" defer></script>
-<script src="b-i18n.js?v=890" defer></script>
-<script src="b-config.js?v=890" defer></script>
-<script src="b-utils.js?v=890" defer></script>
-<script src="b-auth.js?v=890" defer></script>
-<script src="b-home.js?v=890" defer></script>
-<script src="b-bubbles.js?v=890" defer></script>
-<script src="b-profile.js?v=890" defer></script>
-<script src="b-radar.js?v=890" defer></script>
-<script src="b-messages.js?v=890" defer></script>
-<script src="b-realtime.js?v=890" defer></script>
-<script src="b-onboarding.js?v=890" defer></script>
-<script src="b-chat.js?v=890" defer></script>
-<script src="b-notifications.js?v=890" defer></script>
-<script src="b-live.js?v=890" defer></script>
-<script src="b-admin.js?v=890" defer></script>
-<script src="b-navigation.js?v=890" defer></script>
-<script src="b-boot.js?v=890" defer></script>
+<script src="bubble-icons.js?v=891" defer></script>
+<script src="tag-data.js?v=891" defer></script>
+<script src="b-i18n.js?v=891" defer></script>
+<script src="b-config.js?v=891" defer></script>
+<script src="b-utils.js?v=891" defer></script>
+<script src="b-auth.js?v=891" defer></script>
+<script src="b-home.js?v=891" defer></script>
+<script src="b-bubbles.js?v=891" defer></script>
+<script src="b-profile.js?v=891" defer></script>
+<script src="b-radar.js?v=891" defer></script>
+<script src="b-messages.js?v=891" defer></script>
+<script src="b-realtime.js?v=891" defer></script>
+<script src="b-onboarding.js?v=891" defer></script>
+<script src="b-chat.js?v=891" defer></script>
+<script src="b-notifications.js?v=891" defer></script>
+<script src="b-live.js?v=891" defer></script>
+<script src="b-admin.js?v=891" defer></script>
+<script src="b-navigation.js?v=891" defer></script>
+<script src="b-boot.js?v=891" defer></script>
   
 
 
@@ -281,6 +281,10 @@
       <input class="input" type="password" id="signup-password" data-t-placeholder="auth_placeholder_password_min" placeholder="Min. 6 tegn" autocomplete="new-password">
     </div>
     <div class="input-group">
+      <div class="input-label">Bekræft adgangskode</div>
+      <input class="input" type="password" id="signup-password-confirm" placeholder="Gentag adgangskode" autocomplete="new-password">
+    </div>
+    <div class="input-group">
       <div class="input-label" data-t="auth_signup_title">Titel / Rolle</div>
       <input class="input" type="text" id="signup-title" data-t-placeholder="auth_placeholder_title" placeholder="f.eks. Founder · Bubble">
     </div>
@@ -332,78 +336,14 @@
         <span class="ob-consent-text">Jeg accepterer Bubble's <a href="#" onclick="event.stopPropagation();showTerms()">betingelser</a> og <a href="#" onclick="event.stopPropagation();showTerms()">privatlivspolitik</a></span>
       </label>
 
-      <button class="btn-primary" id="ob-save-btn" onclick="obNextStep()" style="margin-top:0.8rem" disabled>Næste →</button>
-      <div style="text-align:center;font-size:0.72rem;color:var(--muted);margin-top:0.5rem">Du kan udfylde resten inde i appen</div>
+      <button class="btn-primary" id="ob-save-btn" onclick="saveOnboarding()" style="margin-top:0.8rem" disabled>Kom i gang →</button>
+      <div style="text-align:center;font-size:0.72rem;color:var(--muted);margin-top:0.5rem">Du kan tilføje tags og detaljer inde i appen</div>
       <div style="margin-top:1.5rem;text-align:center">
         <button type="button" onclick="abortOnboarding()" style="background:none;border:none;color:var(--muted);font-size:0.7rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.5rem;opacity:0.6">Afbryd og nulstil</button>
       </div>
     </div>
 
     <!-- ═══ TRIN 2: Tags + Titel (valgfrit) ═══ -->
-    <div id="ob-step-2" style="display:none">
-
-      <!-- Trin-indikator -->
-      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1.2rem">
-        <button onclick="obPrevStep()" style="background:none;border:none;cursor:pointer;padding:0.2rem;color:var(--muted);display:flex;align-items:center">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        </button>
-        <div style="flex:1;display:flex;gap:4px">
-          <div style="flex:1;height:3px;border-radius:99px;background:var(--accent)"></div>
-          <div style="flex:1;height:3px;border-radius:99px;background:var(--accent)"></div>
-        </div>
-        <button onclick="saveOnboarding()" style="background:none;border:none;cursor:pointer;font-size:0.78rem;color:var(--muted);font-family:inherit;padding:0.2rem 0.4rem">Spring over</button>
-      </div>
-
-      <div style="margin-bottom:1.2rem">
-        <div style="font-size:1.3rem;font-weight:800;margin-bottom:0.2rem">Bliv synlig i radaren</div>
-        <div style="font-size:0.82rem;color:var(--text-secondary);line-height:1.5">Vælg mindst 3 tags — det er det der matcher dig med andre og gør dig synlig i Bubble-radaren.</div>
-      </div>
-
-      <!-- Tags -->
-      <div class="input-group" style="margin-bottom:0.8rem">
-        <div style="display:flex;gap:4px;margin-bottom:0.5rem" id="ob-tag-selected"></div>
-        <div id="ob-tag-min-label" style="font-size:0.65rem;color:var(--muted);margin-bottom:0.4rem"></div>
-        <div class="tag-search-wrap">
-          <input class="input" id="ob-tag-search" placeholder="Søg tags..." data-t-placeholder="ob_tag_search_ph" autocomplete="off" oninput="obTagSearch(this.value)" onfocus="obTagSearch(this.value)">
-          <div class="tag-suggestions" id="ob-tag-suggestions"></div>
-        </div>
-        <div id="ob-tag-categories"></div>
-      </div>
-
-      <!-- Titel / Livsfase (sekundært) -->
-      <div style="margin-top:0.8rem;padding:0.9rem 1rem;background:rgba(124,92,252,0.03);border-radius:12px;border:1px solid rgba(124,92,252,0.06)">
-        <div style="font-size:0.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.6rem">Også rart at have</div>
-        <div class="input-group" style="margin-bottom:0.6rem">
-          <div class="input-label">Titel / Rolle <span style="font-weight:400;color:var(--muted)">(valgfrit)</span></div>
-          <input class="input" id="ob-title" maxlength="80" placeholder="f.eks. CTO, Salgschef, Studerende..." data-t-placeholder="ob_title_ph" oninput="obCheckProgress()">
-          <div class="ob-role-suggestions" id="ob-role-suggestions"></div>
-        </div>
-        <div class="input-group" style="margin-bottom:0">
-          <div class="input-label">Livsfase <span style="font-weight:400;color:var(--muted)">(valgfrit)</span></div>
-          <div class="ob-lifestage-grid" id="ob-lifestage-grid" style="grid-template-columns:repeat(4,1fr)">
-            <button type="button" class="ob-lifestage-btn" data-stage="student" onclick="obSelectLifestage(this)"><span class="ob-ls-icon" style="color:#3B82F6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10l-10-5L2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/><path d="M22 10v6"/></svg></span><span class="ob-ls-label">Studerende</span></button>
-            <button type="button" class="ob-lifestage-btn" data-stage="employee" onclick="obSelectLifestage(this)"><span class="ob-ls-icon" style="color:var(--accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M12 12v.01"/><path d="M2 12h20"/></svg></span><span class="ob-ls-label">Erhverv</span></button>
-            <button type="button" class="ob-lifestage-btn" data-stage="entrepreneur" onclick="obSelectLifestage(this)"><span class="ob-ls-icon" style="color:var(--accent2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.5-2 5-2 5s3.5-.5 5-2c.8-.8 1-2 .4-2.8a2.1 2.1 0 00-3.4-.2z"/><path d="M14.5 2.5c-3 2-5 5.5-5.5 9l3.5 3.5c3.5-.5 7-2.5 9-5.5L14.5 2.5z"/><path d="M14 9a1 1 0 100 2 1 1 0 000-2z" fill="currentColor"/></svg></span><span class="ob-ls-label">Iværksætter</span></button>
-            <button type="button" class="ob-lifestage-btn" data-stage="freelancer" onclick="obSelectLifestage(this)"><span class="ob-ls-icon" style="color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></span><span class="ob-ls-label">Freelancer</span></button>
-            <button type="button" class="ob-lifestage-btn" data-stage="public" onclick="obSelectLifestage(this)"><span class="ob-ls-icon" style="color:#1A9E8E"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/><path d="M10 21v-3h4v3"/></svg></span><span class="ob-ls-label">Offentlig</span></button>
-            <button type="button" class="ob-lifestage-btn" data-stage="investor" onclick="obSelectLifestage(this)"><span class="ob-ls-icon" style="color:var(--gold)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span><span class="ob-ls-label">Investor</span></button>
-            <button type="button" class="ob-lifestage-btn" data-stage="practical" onclick="obSelectLifestage(this)"><span class="ob-ls-icon" style="color:#F59E0B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></span><span class="ob-ls-label">Håndværk</span></button>
-            <button type="button" class="ob-lifestage-btn" data-stage="other" onclick="obSelectLifestage(this)"><span class="ob-ls-icon" style="color:var(--accent3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v.01"/><path d="M12 8a2.5 2.5 0 011.13 4.74c-.46.27-.76.72-.87 1.26"/></svg></span><span class="ob-ls-label">Andet</span></button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Profil-styrke -->
-      <div id="ob-strength" style="margin-top:1rem;margin-bottom:0.5rem;padding:0.6rem 0.8rem;background:rgba(124,92,252,0.03);border-radius:10px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem"><span style="font-size:0.72rem;font-weight:600">Profil-styrke</span><span id="ob-strength-label" style="font-size:0.72rem;font-weight:700;color:var(--muted)">Svag</span></div>
-        <div style="height:4px;background:rgba(30,27,46,0.04);border-radius:99px;overflow:hidden"><div id="ob-strength-bar" style="height:100%;width:10%;border-radius:99px;background:var(--accent2);transition:all 0.4s"></div></div>
-        <div id="ob-strength-hint" style="font-size:0.65rem;color:var(--muted);margin-top:0.3rem"></div>
-      </div>
-
-      <!-- Gem knap -->
-      <button class="btn-primary" id="ob-finish-btn" onclick="saveOnboarding()" style="margin-top:0.5rem">Start Bubble</button>
-      <div style="height:1.5rem"></div>
-    </div>
 
   </div>
 </div>
@@ -743,7 +683,7 @@
         </div>
       </div>
 
-      <!-- ═══ PROFILE MATCH CARD (altid synlig, toggle-bar) ═══ -->
+      <!-- ═══ WELCOME CARD (nye brugere, kan dismisses) ═══ -->\n      <div id=\"home-welcome-card\" style=\"display:none;margin-bottom:0.5rem\"></div>\n\n      <!-- ═══ PROFILE MATCH CARD (altid synlig, toggle-bar) ═══ -->
       <div class="hs-slot hs-hidden" id="home-profile-setup-slot"><div id="home-profile-setup" data-hs="profile_cta" style="margin-bottom:0.5rem">
         <div onclick="openNextProfileSetupSheet()" style="padding:0.7rem 0.9rem;border-radius:14px;background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.12);cursor:pointer">
           <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.55rem">

@@ -137,27 +137,15 @@ var _reRunningOnboarding = false;
 
 function reRunOnboarding() {
   _reRunningOnboarding = true;
-  // Pre-fill with existing profile data
+  _obConsentGiven = true; // already consented as existing user
   var nameEl = document.getElementById('ob-name');
   var workEl = document.getElementById('ob-workplace');
-  var titleEl = document.getElementById('ob-title');
-  var bioEl = document.getElementById('ob-bio');
-  var liEl = document.getElementById('ob-linkedin');
   if (nameEl && currentProfile?.name) nameEl.value = currentProfile.name;
   if (workEl && currentProfile?.workplace) workEl.value = currentProfile.workplace;
-  if (titleEl && currentProfile?.title) titleEl.value = currentProfile.title;
-  if (bioEl && currentProfile?.bio) bioEl.value = currentProfile.bio;
-  if (liEl && currentProfile?.linkedin) liEl.value = currentProfile.linkedin;
-  obSelectedTags = [...(currentProfile?.keywords || [])];
-  obLifestage = currentProfile?.lifestage || null;
-  _obConsentGiven = true; // already consented as existing user
-  // Show step 2 directly (skip navn/arbejdsplads step for existing users)
-  var s1 = document.getElementById('ob-step-1');
-  var s2 = document.getElementById('ob-step-2');
-  if (s1) s1.style.display = 'none';
-  if (s2) s2.style.display = 'block';
-  obRenderCategories();
-  updateObStrength();
+  // Update button for re-run context
+  var btn = document.getElementById('ob-save-btn');
+  if (btn) { btn.textContent = 'Gem ændringer'; btn.disabled = false; }
+  obCheckProgress();
   goTo('screen-onboarding');
 }
 
@@ -1146,29 +1134,22 @@ async function saveOnboarding() {
   try {
     if (!_obConsentGiven) return showWarningToast('Du skal acceptere betingelserne');
     const name      = (document.getElementById('ob-name')?.value || '').trim();
-    const title     = (document.getElementById('ob-title')?.value || '').trim();
-    const bio       = (document.getElementById('ob-bio')?.value || '').trim();
-    const linkedin  = (document.getElementById('ob-linkedin')?.value || '').trim();
     const workplace = (document.getElementById('ob-workplace')?.value || '').trim();
     if (!name)      return showWarningToast('Navn er påkrævet');
     if (!workplace) return showWarningToast('Virksomhed er påkrævet');
-    var btn = document.getElementById('ob-finish-btn') || document.getElementById('ob-save-btn');
+    var btn = document.getElementById('ob-save-btn');
     if (btn) { btn.textContent = 'Gemmer...'; btn.disabled = true; }
     const { error } = await sb.from('profiles').upsert({
-      id: currentUser.id, name, title, bio, linkedin, workplace,
-      keywords: obSelectedTags.length > 0 ? obSelectedTags : [],
-      dynamic_keywords: obDynChips, is_anon: false,
-      lifestage: obLifestage || null
+      id: currentUser.id, name, workplace, is_anon: false
     });
     if (error) {
-      if (btn) { btn.textContent = 'Start Bubble'; btn.disabled = false; }
+      if (btn) { btn.textContent = 'Kom i gang →'; btn.disabled = false; }
       return errorToast('save', error);
     }
-    persistCustomTitle(title);
     await loadCurrentProfile();
     localStorage.setItem('bubble_welcomed', '1');
-    showSuccessToast('Profil oprettet');
-    trackEvent('onboarding_complete', { tags: obSelectedTags.length, has_title: !!title, rerun: _reRunningOnboarding });
+    showSuccessToast('Velkommen til Bubble!');
+    trackEvent('onboarding_complete', { rerun: _reRunningOnboarding });
     var wasRerun = _reRunningOnboarding;
     _reRunningOnboarding = false;
     initServices();

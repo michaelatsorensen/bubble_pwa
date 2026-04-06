@@ -55,6 +55,7 @@ async function loadHome() {
 
     // Post-load: apply visibility toggles, show nudge
     hsApplyToHome();
+    showWelcomeCard();
     showProfileSetupCTA();
   } catch(e) {
     logError("loadHome", e);
@@ -274,6 +275,44 @@ function calcProfileStrength(profile) {
   if (profile.avatar_url) s += 10;
   if (profile.linkedin) s += 10;
   return Math.min(s, 100);
+}
+
+// ── Welcome card — shown once to brand new users ──
+function showWelcomeCard() {
+  var el = document.getElementById('home-welcome-card');
+  if (!el || !currentProfile) return;
+  if (localStorage.getItem('bubble_welcome_card_dismissed')) return;
+  // Only show if profile is truly fresh — name + workplace but nothing else
+  var isNewUser = !currentProfile.title &&
+    !(currentProfile.keywords && currentProfile.keywords.length) &&
+    !currentProfile.lifestage;
+  if (!isNewUser) return;
+
+  el.innerHTML =
+    '<div style="background:#FFFFFF;border:1px solid rgba(124,92,252,0.15);border-radius:16px;padding:1rem 1.1rem;position:relative">' +
+      '<button onclick="dismissWelcomeCard()" style="position:absolute;top:0.6rem;right:0.7rem;background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;line-height:1;padding:0.2rem;font-family:inherit" aria-label="Luk">×</button>' +
+      '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">' +
+        '<div style="width:28px;height:28px;color:var(--accent);flex-shrink:0">' + ico('bubble') + '</div>' +
+        '<div style="font-size:0.88rem;font-weight:800;color:var(--text)">Velkommen til Bubble' + (currentProfile.name ? ', ' + currentProfile.name.split(' ')[0] : '') + '!</div>' +
+      '</div>' +
+      '<div style="font-size:0.78rem;color:var(--text-secondary);line-height:1.55;margin-bottom:0.75rem">' +
+        'Bubble matcher dig med relevante mennesker i nærheden — baseret på hvem du er og hvad du søger. Jo mere du udfylder, jo bedre og mere præcise matches får du i radaren.' +
+      '</div>' +
+      '<div style="display:flex;gap:0.5rem;align-items:center">' +
+        '<button onclick="dismissWelcomeCard();goTo(\'screen-profile\');setTimeout(function(){profSwitchTab(\'dashboard\')},200)" style="flex:1;padding:0.55rem;border-radius:10px;font-size:0.78rem;font-weight:700;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;border:none">Udfyld profil →</button>' +
+        '<button onclick="dismissWelcomeCard()" style="padding:0.55rem 0.8rem;border-radius:10px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;background:none;border:1px solid var(--glass-border);color:var(--muted)">Senere</button>' +
+      '</div>' +
+    '</div>';
+  el.style.display = 'block';
+}
+
+function dismissWelcomeCard() {
+  localStorage.setItem('bubble_welcome_card_dismissed', '1');
+  var el = document.getElementById('home-welcome-card');
+  if (!el) return;
+  el.style.transition = 'opacity 0.25s';
+  el.style.opacity = '0';
+  setTimeout(function() { el.style.display = 'none'; }, 260);
 }
 
 function showProfileSetupCTA() {
