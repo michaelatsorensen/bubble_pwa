@@ -264,14 +264,19 @@ var SETUP_INTERESTS = [
 function calcProfileStrength(profile) {
   if (!profile) return 0;
   var s = 0;
-  if (profile.name) s += 10;
-  if (profile.workplace) s += 10;
-  if (profile.title) s += 13;
-  if (profile.keywords && profile.keywords.length >= 3) s += 13;
-  if (profile.lifestage) s += 13;
-  // Above 59% threshold — bonus fields
-  if (profile.keywords && profile.keywords.length >= 6) s += 13; // detailed tags
-  if (profile.bio) s += 8;
+  // Identity (10) — onboarding gives these for free
+  if (profile.name) s += 5;
+  if (profile.workplace) s += 5;
+  // Context (18) — setup flow fields
+  if (profile.title) s += 10;
+  if (profile.lifestage) s += 8;
+  // Tags (37) — drives TF-IDF match quality
+  var tagCount = (profile.keywords && profile.keywords.length) || 0;
+  if (tagCount >= 3) s += 10;
+  if (tagCount >= 6) s += 15;
+  if (tagCount >= 10) s += 12;
+  // Presentation (35) — trust & context
+  if (profile.bio) s += 15;
   if (profile.avatar_url) s += 10;
   if (profile.linkedin) s += 10;
   return Math.min(s, 100);

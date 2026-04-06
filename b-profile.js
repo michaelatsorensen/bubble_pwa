@@ -1411,9 +1411,9 @@ function _renderDashboardTagsCard() {
       '<div id="et-tray-drawer" style="display:none;flex-wrap:wrap;gap:0.3rem;padding:0.1rem 0.9rem 0.65rem;background:rgba(124,92,252,0.02)"></div>' +
     '</div>' +
 
-    // ── Lifestage ──
+    // ── Beskæftigelse (DB column: lifestage) ──
     '<div style="padding:0.55rem 0.9rem 0.1rem">' +
-      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.4rem">Livsfase</div>' +
+      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.4rem">Beskæftigelse</div>' +
       '<div id="et-lifestage-btns" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem"></div>' +
     '</div>' +
 

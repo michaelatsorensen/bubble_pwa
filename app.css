@@ -2055,7 +2055,7 @@ input[type="range"] {
 .dash-ico svg{width:15px!important;height:15px!important}
 .dash-val{font-size:1.15rem;font-weight:800;color:var(--text);line-height:1.1}
 .dash-label{font-size:0.55rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.02em}
-.dash-delta{font-size:0.5rem;font-weight:700;color:var(--teal)}
+.dash-delta{font-size:0.5rem;font-weight:700;color:var(--accent3)}
 .dash-tray{display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.35s ease;margin:0}
 .dash-tray.open{grid-template-rows:1fr}
 .dash-tray-collapse{overflow:hidden;min-height:0}
