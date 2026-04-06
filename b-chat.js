@@ -565,6 +565,69 @@ function bcSubscribeRealtime() {
           }
         }
       })
+    .on('postgres_changes', {event:'DELETE', schema:'public', table:'bubble_messages', filter:`bubble_id=eq.${bcBubbleId}`},
+      (payload) => {
+        const m = payload.old;
+        if (!m) return;
+        const msgEl = document.querySelector('[data-bc-msg-id="' + m.id + '"]');
+        if (msgEl) {
+          msgEl.style.transition = 'opacity 0.2s';
+          msgEl.style.opacity = '0';
+          setTimeout(function() { msgEl.remove(); }, 220);
+        }
+      })
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_message_reactions', filter:`bubble_id=eq.${bcBubbleId}`},
+      (payload) => {
+        const r = payload.new;
+        if (r && r.message_id) bcLoadReactions(r.message_id);
+      })
+    .on('postgres_changes', {event:'DELETE', schema:'public', table:'bubble_message_reactions', filter:`bubble_id=eq.${bcBubbleId}`},
+      (payload) => {
+        const r = payload.old;
+        if (r && r.message_id) bcLoadReactions(r.message_id);
+      })
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_post_reactions', filter:`bubble_id=eq.${bcBubbleId}`},
+      (payload) => {
+        const r = payload.new;
+        if (!r) return;
+        if (!window._postLikeCounts) window._postLikeCounts = {};
+        window._postLikeCounts[r.post_id] = (window._postLikeCounts[r.post_id] || 0) + 1;
+        var countEl = document.getElementById('bp-like-count-' + r.post_id);
+        if (countEl) countEl.textContent = window._postLikeCounts[r.post_id] || '';
+        var expandCount = document.getElementById('bp-expand-like-count-' + r.post_id);
+        if (expandCount) expandCount.textContent = window._postLikeCounts[r.post_id] || '';
+      })
+    .on('postgres_changes', {event:'DELETE', schema:'public', table:'bubble_post_reactions', filter:`bubble_id=eq.${bcBubbleId}`},
+      (payload) => {
+        const r = payload.old;
+        if (!r) return;
+        if (!window._postLikeCounts) window._postLikeCounts = {};
+        window._postLikeCounts[r.post_id] = Math.max((window._postLikeCounts[r.post_id] || 1) - 1, 0);
+        var countEl = document.getElementById('bp-like-count-' + r.post_id);
+        if (countEl) countEl.textContent = window._postLikeCounts[r.post_id] > 0 ? window._postLikeCounts[r.post_id] : '';
+        var expandCount = document.getElementById('bp-expand-like-count-' + r.post_id);
+        if (expandCount) expandCount.textContent = window._postLikeCounts[r.post_id] > 0 ? window._postLikeCounts[r.post_id] : '';
+      })
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_posts', filter:`bubble_id=eq.${bcBubbleId}`},
+      () => {
+        // Nyt opslag — reload posts-tab for alle i boblen
+        if (typeof bcLoadPosts === 'function') bcLoadPosts();
+      })
+    .on('postgres_changes', {event:'DELETE', schema:'public', table:'bubble_posts', filter:`bubble_id=eq.${bcBubbleId}`},
+      (payload) => {
+        const p = payload.old;
+        if (!p) return;
+        // Fjern opslaget fra DOM øjeblikkeligt
+        var postEl = document.getElementById('bc-post-' + p.id);
+        if (postEl) {
+          postEl.style.transition = 'opacity 0.2s';
+          postEl.style.opacity = '0';
+          setTimeout(function() { postEl.remove(); }, 220);
+        } else {
+          // Fallback: reload posts
+          if (typeof bcLoadPosts === 'function') bcLoadPosts();
+        }
+      })
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},
       () => { bcLoadMembers(); bcLoadBubbleInfo(); bcRefreshMembership(); })
     .on('postgres_changes', {event:'UPDATE', schema:'public', table:'bubble_members', filter:`bubble_id=eq.${bcBubbleId}`},

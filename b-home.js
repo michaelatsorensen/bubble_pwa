@@ -1045,7 +1045,7 @@ async function loadMyNetworks() {
               var evIsMember = myIds.indexOf(ev.id) >= 0;
               html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast && !gcLive ? 'opacity:0.5' : '') + (!evIsMember ? 'opacity:0.65' : '') + '">';
               html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _calIco + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
-              html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + (gcLive ? ' <span class="live-badge-mini">LIVE</span>' : '') + '</div>';
+              html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
               html += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</div></div>';
               html += _goLiveBtn(ev, evIsMember) || '<div class="bb-tree-go">\u203A</div>';
               html += '</div></div>';
@@ -1067,7 +1067,7 @@ async function loadMyNetworks() {
           var evIsMember = myIds.indexOf(ev.id) >= 0;
           html += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast && !evLive ? 'opacity:0.5' : '') + (!evIsMember ? 'opacity:0.65' : '') + '">';
           html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _calIco + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
-          html += '<div style="flex:1;min-width:0"><div style="font-size:0.75rem;font-weight:600">' + escHtml(ev.name) + (evLive ? ' <span class="live-badge-mini">LIVE</span>' : '') + '</div>';
+          html += '<div style="flex:1;min-width:0"><div style="font-size:0.75rem;font-weight:600">' + escHtml(ev.name) + '</div>';
           html += '<div style="font-size:0.58rem;color:var(--muted)">' + visIcon(ev.visibility) + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</div></div>';
           html += _goLiveBtn(ev, evIsMember) || '<div class="bb-tree-go">\u203A</div>';
           html += '</div></div>';
@@ -1270,7 +1270,7 @@ function _bbEventCard(e, parentMap, gpMap, isPast) {
   return '<div class="bb-tree-evt" data-action="openBubble" data-id="' + e.id + '" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5;' : '') + '">' +
     '<div class="bb-tree-evt-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>' +
     '<div style="flex:1;min-width:0">' +
-    '<div style="font-size:0.8rem;font-weight:600">' + escHtml(e.name) + (evCardLive ? ' <span class="live-badge-mini">LIVE</span>' : '') + '</div>' +
+    '<div style="font-size:0.8rem;font-weight:600">' + escHtml(e.name) + '</div>' +
     '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;flex-wrap:wrap;gap:2px">' + visIcon(e.visibility) + dateStr + '</div>' +
     breadcrumb +
     '</div><div class="bb-tree-go">\u203A</div></div>';

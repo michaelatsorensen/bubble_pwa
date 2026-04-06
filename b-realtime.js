@@ -412,6 +412,23 @@ function initGlobalRealtime() {
     .subscribe(_rtStatusCallback('rt-bubbles'));
   _globalRtChannels.push(chBubbles);
 
+  // ── Kanal: DM samtale slettet af modpart ──
+  var chDmNotify = sb.channel('dm-notify-' + currentUser.id)
+    .on('broadcast', { event: 'conv_deleted' }, function(msg) {
+      var fromId = msg.payload && msg.payload.from;
+      // Remove conversation card from list
+      var card = fromId ? document.querySelector('[data-conv-id="' + fromId + '"]') : null;
+      if (card) {
+        card.style.transition = 'opacity 0.2s';
+        card.style.opacity = '0';
+        setTimeout(function() { card.remove(); }, 220);
+      } else if (navState.screen === 'screen-messages') {
+        loadMessages();
+      }
+    })
+    .subscribe();
+  _globalRtChannels.push(chDmNotify);
+
   // ── Kanal 3: Invitationer ──
   var chInvites = sb.channel('rt-invites-' + currentUser.id)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bubble_invitations',

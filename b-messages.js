@@ -159,13 +159,20 @@ async function convConfirmDelete() {
     var ids = convSelectedIds.slice();
     for (var i = 0; i < ids.length; i++) {
       var partnerId = ids[i];
-      // S5: Delete both directions — full conversation removal
+      // Delete both directions
       await sb.from('messages').delete()
         .eq('sender_id', currentUser.id)
         .eq('receiver_id', partnerId);
       await sb.from('messages').delete()
         .eq('sender_id', partnerId)
         .eq('receiver_id', currentUser.id);
+      // Notify receiver so their conversation list updates too
+      try {
+        await sb.channel('dm-notify-' + partnerId).send({
+          type: 'broadcast', event: 'conv_deleted',
+          payload: { from: currentUser.id }
+        });
+      } catch(e) { /* silent — notification is best-effort */ }
     }
     var list = document.getElementById('conversations-list');
     ids.forEach(function(id) {

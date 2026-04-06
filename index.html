@@ -12,37 +12,37 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=892">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=892">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=892">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=892">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=892">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=892">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=892">
+<link rel="manifest" href="manifest.json?v=893">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=893">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=893">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=893">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=893">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=893">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=893">
 
-<link rel="stylesheet" href="app.css?v=892">
+<link rel="stylesheet" href="app.css?v=893">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-<script src="bubble-icons.js?v=892" defer></script>
-<script src="tag-data.js?v=892" defer></script>
-<script src="b-i18n.js?v=892" defer></script>
-<script src="b-config.js?v=892" defer></script>
-<script src="b-utils.js?v=892" defer></script>
-<script src="b-auth.js?v=892" defer></script>
-<script src="b-home.js?v=892" defer></script>
-<script src="b-bubbles.js?v=892" defer></script>
-<script src="b-profile.js?v=892" defer></script>
-<script src="b-radar.js?v=892" defer></script>
-<script src="b-messages.js?v=892" defer></script>
-<script src="b-realtime.js?v=892" defer></script>
-<script src="b-onboarding.js?v=892" defer></script>
-<script src="b-chat.js?v=892" defer></script>
-<script src="b-notifications.js?v=892" defer></script>
-<script src="b-live.js?v=892" defer></script>
-<script src="b-admin.js?v=892" defer></script>
-<script src="b-navigation.js?v=892" defer></script>
-<script src="b-boot.js?v=892" defer></script>
+<script src="bubble-icons.js?v=893" defer></script>
+<script src="tag-data.js?v=893" defer></script>
+<script src="b-i18n.js?v=893" defer></script>
+<script src="b-config.js?v=893" defer></script>
+<script src="b-utils.js?v=893" defer></script>
+<script src="b-auth.js?v=893" defer></script>
+<script src="b-home.js?v=893" defer></script>
+<script src="b-bubbles.js?v=893" defer></script>
+<script src="b-profile.js?v=893" defer></script>
+<script src="b-radar.js?v=893" defer></script>
+<script src="b-messages.js?v=893" defer></script>
+<script src="b-realtime.js?v=893" defer></script>
+<script src="b-onboarding.js?v=893" defer></script>
+<script src="b-chat.js?v=893" defer></script>
+<script src="b-notifications.js?v=893" defer></script>
+<script src="b-live.js?v=893" defer></script>
+<script src="b-admin.js?v=893" defer></script>
+<script src="b-navigation.js?v=893" defer></script>
+<script src="b-boot.js?v=893" defer></script>
   
 
 
@@ -683,7 +683,10 @@
         </div>
       </div>
 
-      <!-- ═══ WELCOME CARD (nye brugere, kan dismisses) ═══ -->\n      <div id=\"home-welcome-card\" style=\"display:none;margin-bottom:0.5rem\"></div>\n\n      <!-- ═══ PROFILE MATCH CARD (altid synlig, toggle-bar) ═══ -->
+      <!-- ═══ WELCOME CARD (nye brugere, kan dismisses) ═══ -->
+      <div id="home-welcome-card" style="display:none;margin-bottom:0.5rem"></div>
+
+      <!-- ═══ PROFILE MATCH CARD (altid synlig, toggle-bar) ═══ -->
       <div class="hs-slot hs-hidden" id="home-profile-setup-slot"><div id="home-profile-setup" data-hs="profile_cta" style="margin-bottom:0.5rem">
         <div onclick="openNextProfileSetupSheet()" style="padding:0.7rem 0.9rem;border-radius:14px;background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.12);cursor:pointer">
           <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.55rem">
