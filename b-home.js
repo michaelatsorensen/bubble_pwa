@@ -585,7 +585,12 @@ function setupGoToStep(step) {
 }
 
 function openProfileSetupTags() {
-  if (typeof openEditTags === 'function') openEditTags();
+  openSetupTagsSheet();
+}
+
+// Alias for onclick references in radar empty states
+function openEditTags() {
+  openSetupTagsSheet();
 }
 
 // ── EMPTY FILTER STATE ──
