@@ -65,6 +65,10 @@ function _rtEvalState() {
       if (_activeScreen === 'screen-bubble-chat' && typeof bcBubbleId !== 'undefined' && bcBubbleId) {
         if (typeof bcLoadChat === 'function') bcLoadChat();
       }
+      // Refresh notifications screen if active
+      if (_activeScreen === 'screen-notifications' && typeof loadNotifications === 'function') {
+        loadNotifications();
+      }
       // Refresh live status
       if (typeof loadLiveBubbleStatus === 'function') loadLiveBubbleStatus();
     }
@@ -98,12 +102,15 @@ function _rtScheduleReconnect() {
 function rtReconnect() {
   console.debug('[rt] reconnecting...');
   if (!currentUser) return;
+  // Clean ALL subscriptions — global + chat-specific
   rtUnsubscribeAll();
+  if (typeof chatSubscription !== 'undefined' && chatSubscription) { try { chatSubscription.unsubscribe(); } catch(e) {} chatSubscription = null; }
+  if (typeof bcSubscription !== 'undefined' && bcSubscription) { try { bcSubscription.unsubscribe(); } catch(e) {} bcSubscription = null; }
   _rtChannelStates = {};
   initGlobalRealtime();
-  // Re-subscribe DM chat if screen is open (not subscription-dependent)
+  // Re-subscribe DM chat if screen is open
   if (_activeScreen === 'screen-chat' && currentChatUser) subscribeToChat();
-  // Re-subscribe bubble chat if screen is open (not subscription-dependent)
+  // Re-subscribe bubble chat if screen is open
   if (_activeScreen === 'screen-bubble-chat' && typeof bcBubbleId !== 'undefined' && bcBubbleId) {
     if (typeof bcSubscribeRealtime === 'function') bcSubscribeRealtime();
   }

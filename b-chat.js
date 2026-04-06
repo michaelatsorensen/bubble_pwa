@@ -107,13 +107,9 @@ async function selectGif(idx) {
       if (result.ok && result.message) bcReduceMsg(result.message);
     } else if (mode === 'dm') {
       if (!currentChatUser) { logError('selectGif', 'No currentChatUser'); _renderToast(t('toast_generic_error'), 'error'); return; }
-      var { data: msg2, error: err2 } = await sb.from('messages').insert({
-        sender_id: currentUser.id, receiver_id: currentChatUser,
-        content: '', file_url: gifUrl, file_name: 'gif.gif', file_type: 'image/gif'
-      }).select().single();
-      if (err2) { logError('selectGif:dm', err2, { receiver: currentChatUser }); errorToast('send', err2); return; }
-      if (msg2) {
-        dmReduceMsg(msg2);
+      var dmResult = await dbActions.sendDM(currentChatUser, '', { gifUrl: gifUrl });
+      if (dmResult.ok && dmResult.message) {
+        dmReduceMsg(dmResult.message);
       }
     } else {
       logError('selectGif', 'Unknown mode: ' + mode);

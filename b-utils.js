@@ -786,14 +786,16 @@ var dbActions = {
         sender_id: currentUser.id,
         receiver_id: receiverId,
         content: content || '',
-        file_url: opts.fileUrl || null,
-        gif_url: opts.gifUrl || null
+        file_url: opts.fileUrl || opts.gifUrl || null,
+        gif_url: opts.gifUrl || null,
+        file_name: opts.fileName || (opts.gifUrl ? 'gif.gif' : null),
+        file_type: opts.fileType || (opts.gifUrl ? 'image/gif' : null)
       };
       var { data, error } = await sb.from('messages').insert(payload).select().single();
-      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      if (error) { errorToast('send', error); return { ok: false, error: error }; }
       trackEvent('dm_sent', { receiver_id: receiverId, has_file: !!opts.fileUrl, has_gif: !!opts.gifUrl });
       return { ok: true, message: data };
-    } catch (e) { logError('dbActions.sendDM', e); errorToast('save', e); return { ok: false, error: e }; }
+    } catch (e) { logError('dbActions.sendDM', e); errorToast('send', e); return { ok: false, error: e }; }
   },
 
   // ── BUBBLE MESSAGES ──
