@@ -1256,6 +1256,8 @@ var etCustom = {};
 var etInputVis = {};
 var etOpenSec = null;
 var etLifestage = null;
+var _etPrefix = ''; // '' for setup sheets, 'dash-' for profile dashboard
+function _etEl(id) { return document.getElementById(_etPrefix + id); }
 
 var ET_LS = [
   {id:'student',icon:'graduation',label:'Student'},
@@ -1353,12 +1355,12 @@ function etBuildBody(s) {
 }
 
 function etBuild() {
-  var list = document.getElementById('et-acc-list'); if (!list) return;
+  var list = _etEl('et-acc-list'); if (!list) return;
   list.innerHTML = '';
   ET_SECTIONS.forEach(function(s){
     var div = document.createElement('div');
     div.style.cssText = 'background:var(--bg);border:1px solid var(--glass-border-subtle);border-radius:13px;overflow:hidden' + (etOpenSec===s.id?';border-color:rgba(124,92,252,0.18);box-shadow:0 2px 10px rgba(30,27,46,0.06)':'');
-    div.id = 'et-acc-' + s.id;
+    div.id = _etPrefix + 'et-acc-' + s.id;
     var n = etCountSec(s.id);
     var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.bg+';color:'+s.color+'">'+n+'</span>' : '';
     div.innerHTML =
@@ -1372,7 +1374,7 @@ function etBuild() {
     list.appendChild(div);
   });
   // Lifestage buttons
-  var lsEl = document.getElementById('et-lifestage-btns'); if (!lsEl) return;
+  var lsEl = _etEl('et-lifestage-btns'); if (!lsEl) return;
   lsEl.innerHTML = ET_LS.map(function(ls){
     var isSel = etLifestage === ls.id;
     var style = isSel
@@ -1386,7 +1388,7 @@ function etBuild() {
 
 function etRebuildSec(id){
   var s = ET_SECTIONS.find(function(x){return x.id===id;});
-  var el = document.getElementById('et-acc-'+id);
+  var el = _etEl('et-acc-'+id);
   if (!el) return;
   var n = etCountSec(id);
   var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.bg+';color:'+s.color+'">'+n+'</span>' : '';
@@ -1405,7 +1407,7 @@ function etToggle(id) {
   etOpenSec = etOpenSec === id ? null : id;
   etBuild();
   if (etOpenSec) {
-    setTimeout(function(){ var el=document.getElementById('et-acc-'+id); if(el)el.scrollIntoView({behavior:'smooth',block:'start'}); }, 60);
+    setTimeout(function(){ var el=_etEl('et-acc-'+id); if(el)el.scrollIntoView({behavior:'smooth',block:'start'}); }, 60);
   }
 }
 
@@ -1462,11 +1464,11 @@ function etSelectLifestage(stage){
 
 function etUpdateUI(){
   var n=etSelected.size;
-  var bar=document.getElementById('et-prog-bar'); if(bar)bar.style.width=Math.min(n/10*100,100)+'%';
-  var lbl=document.getElementById('et-prog-lbl'); if(lbl)lbl.textContent=n+' valgt';
+  var bar=_etEl('et-prog-bar'); if(bar)bar.style.width=Math.min(n/10*100,100)+'%';
+  var lbl=_etEl('et-prog-lbl'); if(lbl)lbl.textContent=n+' valgt';
 
   // ── Tray preview (first 3 + count) ──
-  var preview=document.getElementById('et-tray-preview');
+  var preview=_etEl('et-tray-preview');
   if(preview){
     var all=Array.from(etSelected.entries());
     var shown=all.slice(0,3);
@@ -1478,11 +1480,11 @@ function etUpdateUI(){
   }
 
   // ── Tray btn: hide if 0 tags ──
-  var trayBtn=document.getElementById('et-tray-btn');
+  var trayBtn=_etEl('et-tray-btn');
   if(trayBtn)trayBtn.style.display=n>0?'flex':'none';
 
   // ── Tray drawer (all tags with ×) ──
-  var drawer=document.getElementById('et-tray-drawer');
+  var drawer=_etEl('et-tray-drawer');
   if(drawer&&drawer.style.display!=='none'){
     drawer.innerHTML=Array.from(etSelected.entries()).map(function(e){
       var tg=e[0],v=e[1];
@@ -1493,14 +1495,14 @@ function etUpdateUI(){
   }
 
   // ── Old chips container (kept for backward compat) ──
-  var chips=document.getElementById('et-chips');
+  var chips=_etEl('et-chips');
   if(chips)chips.innerHTML='';
 }
 
 function etToggleTray(){
-  var drawer=document.getElementById('et-tray-drawer');
-  var btn=document.getElementById('et-tray-btn-lbl');
-  var chev=document.getElementById('et-tray-chev');
+  var drawer=_etEl('et-tray-drawer');
+  var btn=_etEl('et-tray-btn-lbl');
+  var chev=_etEl('et-tray-chev');
   if(!drawer)return;
   var open=drawer.style.display!=='none';
   drawer.style.display=open?'none':'flex';

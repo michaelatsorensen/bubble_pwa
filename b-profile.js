@@ -1375,6 +1375,7 @@ async function loadDashboard() {
         statCard('target', t('pf_dash_strong'), strongMatches, 'rgba(26,158,142,0.08)') +
       '</div>' +
       _renderDashboardTagsCard();
+    _etPrefix = 'dash-';
     if (typeof etInit === 'function') etInit();
 
   } catch(e) {
@@ -1390,12 +1391,12 @@ function _renderDashboardTagsCard() {
     // ── Header ──
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem 0.5rem">' +
       '<div style="font-size:0.72rem;font-weight:700;color:var(--text)">Tags &amp; interesser</div>' +
-      '<div id="et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:var(--accent)">0 valgt</div>' +
+      '<div id="dash-et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:var(--accent)">0 valgt</div>' +
     '</div>' +
 
     // ── Progress bar ──
     '<div style="padding:0 0.9rem 0.5rem;display:flex;align-items:center;gap:0.5rem">' +
-      '<div style="flex:1;height:3px;background:rgba(124,92,252,0.08);border-radius:99px;overflow:hidden"><div id="et-prog-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#E879A8);transition:width .4s;width:0%"></div></div>' +
+      '<div style="flex:1;height:3px;background:rgba(124,92,252,0.08);border-radius:99px;overflow:hidden"><div id="dash-et-prog-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#E879A8);transition:width .4s;width:0%"></div></div>' +
     '</div>' +
 
     // ── Tray: selected tags preview ──
@@ -1403,26 +1404,26 @@ function _renderDashboardTagsCard() {
       '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.55rem 0.9rem">' +
         '<div style="width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0"></div>' +
         '<div style="font-size:0.68rem;font-weight:600;color:var(--accent);flex-shrink:0">Dine tags</div>' +
-        '<div id="et-tray-preview" style="display:flex;gap:0.3rem;flex:1;overflow:hidden;min-width:0;align-items:center"></div>' +
-        '<button onclick="etToggleTray()" id="et-tray-btn" style="display:flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem;border-radius:99px;border:0.5px solid var(--glass-border);background:rgba(124,92,252,0.04);cursor:pointer;font-family:inherit;flex-shrink:0">' +
-          '<span id="et-tray-btn-lbl" style="font-size:0.65rem;font-weight:600;color:var(--accent)">Se alle</span>' +
-          '<span id="et-tray-chev" style="font-size:0.6rem;color:var(--accent);transition:transform 0.2s">▾</span>' +
+        '<div id="dash-et-tray-preview" style="display:flex;gap:0.3rem;flex:1;overflow:hidden;min-width:0;align-items:center"></div>' +
+        '<button onclick="etToggleTray()" id="dash-et-tray-btn" style="display:flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem;border-radius:99px;border:0.5px solid var(--glass-border);background:rgba(124,92,252,0.04);cursor:pointer;font-family:inherit;flex-shrink:0">' +
+          '<span id="dash-et-tray-btn-lbl" style="font-size:0.65rem;font-weight:600;color:var(--accent)">Se alle</span>' +
+          '<span id="dash-et-tray-chev" style="font-size:0.6rem;color:var(--accent);transition:transform 0.2s">▾</span>' +
         '</button>' +
       '</div>' +
-      '<div id="et-tray-drawer" style="display:none;flex-wrap:wrap;gap:0.3rem;padding:0.1rem 0.9rem 0.65rem;background:rgba(124,92,252,0.02)"></div>' +
+      '<div id="dash-et-tray-drawer" style="display:none;flex-wrap:wrap;gap:0.3rem;padding:0.1rem 0.9rem 0.65rem;background:rgba(124,92,252,0.02)"></div>' +
     '</div>' +
 
     // ── Beskæftigelse (DB column: lifestage) ──
     '<div style="padding:0.55rem 0.9rem 0.1rem">' +
       '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.4rem">Beskæftigelse</div>' +
-      '<div id="et-lifestage-btns" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem"></div>' +
+      '<div id="dash-et-lifestage-btns" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem"></div>' +
     '</div>' +
 
     // ── Category accordions ──
     '<div style="padding:0.1rem 0.9rem 0.2rem">' +
       '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.35rem">Tilføj fra kategorier</div>' +
     '</div>' +
-    '<div id="et-acc-list" style="padding:0 0.6rem 0.75rem;display:flex;flex-direction:column;gap:0.35rem"></div>' +
+    '<div id="dash-et-acc-list" style="padding:0 0.6rem 0.75rem;display:flex;flex-direction:column;gap:0.35rem"></div>' +
 
   '</div>';
 }

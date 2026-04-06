@@ -461,6 +461,7 @@ async function saveSetupTitle() {
 
 // ── TAGS SHEET ──
 function openSetupTagsSheet() {
+  _etPrefix = '';
   if (typeof etInit === 'function') etInit();
   var strength = calcProfileStrength(currentProfile);
   var bar = document.getElementById('setup-tags-bar');
