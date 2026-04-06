@@ -103,15 +103,8 @@ async function selectGif(idx) {
   try {
     if (mode === 'bc') {
       if (!bcBubbleId) { logError('selectGif', 'No bcBubbleId'); _renderToast('Fejl: ingen aktiv boble', 'error'); return; }
-      var { data: msg, error } = await sb.from('bubble_messages').insert({
-        bubble_id: bcBubbleId, user_id: currentUser.id,
-        content: '', file_url: gifUrl, file_name: 'gif.gif', file_type: 'image/gif'
-      }).select('id, bubble_id, user_id, content, file_url, file_name, file_size, file_type, edited, created_at').single();
-      if (error) { logError('selectGif:bc', error); errorToast('send', error); return; }
-      if (msg) {
-        msg.profiles = { id: currentUser.id, name: currentProfile?.name || '?' };
-        bcReduceMsg(msg);
-      }
+      var result = await dbActions.sendBubbleMessage(bcBubbleId, '', { gifUrl: gifUrl });
+      if (result.ok && result.message) bcReduceMsg(result.message);
     } else if (mode === 'dm') {
       if (!currentChatUser) { logError('selectGif', 'No currentChatUser'); _renderToast(t('toast_generic_error'), 'error'); return; }
       var { data: msg2, error: err2 } = await sb.from('messages').insert({
@@ -990,20 +983,18 @@ async function getCachedProfile(userId) {
 let bcSending = false;
 // ── Chat lock: owner/admin can disable chat for members ──
 async function bcToggleChatLock(bubbleId, locked) {
-  try {
-    var { error } = await sb.from('bubbles').update({ chat_locked: locked }).eq('id', bubbleId);
-    if (error) {
-      // Column may not exist if migration hasn't been run
-      if (String(error.message || '').includes('chat_locked')) {
-        showWarningToast('Chat-lås kræver database-migration');
-        return;
-      }
-      errorToast('save', error); return;
+  var result = await dbActions.updateBubble(bubbleId, { chat_locked: locked });
+  if (!result.ok) {
+    // Column may not exist if migration hasn't been run
+    if (result.error && String(result.error.message || '').includes('chat_locked')) {
+      showWarningToast('Chat-lås kræver database-migration');
+      return;
     }
-    if (bcBubbleData) bcBubbleData.chat_locked = locked;
-    bcUpdateChatLockUI();
-    showSuccessToast(locked ? t('bc_chat_closed') : t('bc_chat_opened'));
-  } catch(e) { logError('bcToggleChatLock', e); errorToast('save', e); }
+    return;
+  }
+  if (bcBubbleData) bcBubbleData.chat_locked = locked;
+  bcUpdateChatLockUI();
+  showSuccessToast(locked ? t('bc_chat_closed') : t('bc_chat_opened'));
 }
 
 function bcUpdateChatLockUI() {
@@ -1075,25 +1066,13 @@ async function bcSendMessage() {
       inp.value = '';
       inp.blur();
 
-      const { data: newMsg, error } = await sb.from('bubble_messages').insert({
-        bubble_id: bcBubbleId,
-        user_id: currentUser.id,
-        content: text
-      }).select('id, bubble_id, user_id, content, file_url, file_name, file_size, file_type, edited, created_at').single();
-
-      if (error) {
-        console.error('bcSendMessage insert error:', error);
-        errorToast('send', error);
+      var sendResult = await dbActions.sendBubbleMessage(bcBubbleId, text);
+      if (!sendResult.ok) {
         inp.value = text;
         return;
       }
-
-      if (newMsg) {
-        newMsg.profiles = {
-          id: currentUser.id,
-          name: currentProfile?.name || currentUser.email?.split('@')[0] || '?'
-        };
-        bcReduceMsg(newMsg);
+      if (sendResult.message) {
+        bcReduceMsg(sendResult.message);
         trackEvent('bubble_chat_msg_sent', { bubble_id: bcBubbleId });
       }
     }
@@ -1146,28 +1125,11 @@ async function bcHandleFile(input) {
     const { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
     if (!urlData?.publicUrl) { _renderToast('Kunne ikke generere fil-link', 'error'); input.value = ''; return; }
 
-    const { data: newMsg, error: msgErr } = await sb.from('bubble_messages').insert({
-      bubble_id: bcBubbleId,
-      user_id: currentUser.id,
-      content: '',
-      file_url: urlData.publicUrl,
-      file_name: file.name,
-      file_type: file.type
-    }).select('id, bubble_id, user_id, content, file_url, file_name, file_type, edited, created_at').single();
-
-    if (msgErr) {
-      console.error('File message insert error:', msgErr);
-      _renderToast(t('toast_generic_error'), 'error');
-      input.value = '';
-      return;
-    }
-
-    if (newMsg) {
-      newMsg.profiles = {
-        id: currentUser.id,
-        name: currentProfile?.name || currentUser.email?.split('@')[0] || '?'
-      };
-      bcReduceMsg(newMsg);
+    var fileResult = await dbActions.sendBubbleMessage(bcBubbleId, '', {
+      fileUrl: urlData.publicUrl, fileName: file.name, fileType: file.type
+    });
+    if (fileResult.ok && fileResult.message) {
+      bcReduceMsg(fileResult.message);
       showToast(t('toast_sent'));
     }
     input.value = '';
@@ -1253,12 +1215,12 @@ function bcEditStart(msgId) {
 }
 
 async function bcDeleteConfirm(msgId) {
-  try {
-    await sb.from('bubble_messages').delete().eq('id', msgId).eq('user_id', currentUser.id);
+  var result = await dbActions.deleteBubbleMessage(msgId);
+  if (result.ok) {
     var el = document.getElementById('bc-msg-' + msgId);
     if (el) { el.style.transition = 'opacity 0.2s'; el.style.opacity = '0'; setTimeout(function(){ el.remove(); }, 200); }
     showToast('Besked slettet');
-  } catch(e) { logError('bcDeleteConfirm', e); errorToast('delete', e); }
+  }
 }
 
 // ── Shared image lightbox ──
@@ -1334,12 +1296,12 @@ function bcCancelEdit() {
 }
 
 async function bcDeleteMessage() {
-  try {
-    if (!bcCurrentMsgId) return;
-    await sb.from('bubble_messages').delete().eq('id', bcCurrentMsgId).eq('user_id', currentUser.id);
+  if (!bcCurrentMsgId) return;
+  var result = await dbActions.deleteBubbleMessage(bcCurrentMsgId);
+  if (result.ok) {
     document.getElementById('bc-msg-' + bcCurrentMsgId)?.remove();
     showToast('Besked slettet');
-  } catch(e) { logError("bcDeleteMessage", e); errorToast("delete", e); }
+  }
 }
 
 async function bcShowHistory(msgId) {
@@ -2211,25 +2173,16 @@ async function bcSubmitPost() {
   var picker = document.getElementById('bp-event-picker');
   var selectedEvent = picker ? picker._selectedEvent || null : null;
 
-  try {
-    showToast('Publicerer...');
-    var { error } = await sb.from('bubble_posts').insert({
-      bubble_id: bcBubbleId,
-      author_id: currentUser.id,
-      title: title,
-      content: content || null,
-      event_id: selectedEvent
-    });
-    if (error) throw error;
-
+  showToast('Publicerer...');
+  var result = await dbActions.createPost(bcBubbleId, title, content || null, selectedEvent);
+  if (result.ok) {
     closeModal('sheet-create-post');
     showSuccessToast('Opslag publiceret');
-    trackEvent('post_created', { bubble_id: bcBubbleId });
     bcLoadPosts();
-  } catch(e) {
-    logError('bcSubmitPost', e);
-    errorToast('save', e);
-  } finally { _postSubmitLock = false; }
+  } else {
+    logError('bcSubmitPost', result.error);
+  }
+  _postSubmitLock = false;
 }
 
 async function bcDeletePost(postId) {
@@ -2249,15 +2202,12 @@ async function bcDeletePost(postId) {
 }
 
 async function bcConfirmDeletePost(postId) {
-  try {
-    await sb.from('bubble_posts').delete().eq('id', postId);
+  var result = await dbActions.deletePost(postId);
+  if (result.ok) {
     var overlay = document.querySelector('.bb-dyn-overlay');
     if (overlay) bbDynClose(overlay);
     showSuccessToast('Opslag slettet');
     bcLoadPosts();
-  } catch(e) {
-    logError('bcConfirmDeletePost', e);
-    errorToast('save', e);
   }
 }
 
@@ -2268,27 +2218,28 @@ async function bcTogglePostLike(postId) {
   var btn = document.getElementById('bp-like-' + postId);
   var countEl = document.getElementById('bp-like-count-' + postId);
   var liked = (window._postMyLikes || {})[postId];
-  try {
-    if (liked) {
-      await sb.from('bubble_post_reactions').delete().eq('post_id', postId).eq('user_id', currentUser.id);
-      delete window._postMyLikes[postId];
-      window._postLikeCounts[postId] = Math.max((window._postLikeCounts[postId] || 1) - 1, 0);
-    } else {
-      await sb.from('bubble_post_reactions').insert({ post_id: postId, user_id: currentUser.id });
-      if (!window._postMyLikes) window._postMyLikes = {};
+
+  var result = await dbActions.toggleReaction(postId);
+  if (result.ok) {
+    if (!window._postMyLikes) window._postMyLikes = {};
+    if (!window._postLikeCounts) window._postLikeCounts = {};
+    if (result.liked) {
       window._postMyLikes[postId] = true;
       window._postLikeCounts[postId] = (window._postLikeCounts[postId] || 0) + 1;
+    } else {
+      delete window._postMyLikes[postId];
+      window._postLikeCounts[postId] = Math.max((window._postLikeCounts[postId] || 1) - 1, 0);
     }
     // Update UI
-    if (btn) btn.innerHTML = window._postMyLikes[postId] ? '❤️' : '🤍';
-    if (btn) btn.classList.toggle('liked', !!window._postMyLikes[postId]);
+    if (btn) btn.innerHTML = result.liked ? '❤️' : '🤍';
+    if (btn) btn.classList.toggle('liked', result.liked);
     var c = window._postLikeCounts[postId] || 0;
     if (countEl) countEl.textContent = c > 0 ? c : '';
     // Update expanded view if open
     var expandBtn = document.getElementById('bp-expand-like-' + postId);
     var expandCount = document.getElementById('bp-expand-like-count-' + postId);
-    if (expandBtn) expandBtn.innerHTML = window._postMyLikes[postId] ? '❤️' : '🤍';
-    if (expandBtn) expandBtn.classList.toggle('liked', !!window._postMyLikes[postId]);
+    if (expandBtn) expandBtn.innerHTML = result.liked ? '❤️' : '🤍';
+    if (expandBtn) expandBtn.classList.toggle('liked', result.liked);
     if (expandCount) expandCount.textContent = c > 0 ? c : '';
-  } catch(e) { logError('bcTogglePostLike', e); }
+  }
 }

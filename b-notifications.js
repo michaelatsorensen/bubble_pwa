@@ -410,13 +410,12 @@ function acceptBubbleInvite(inviteId, fromUserId) {
 
 async function confirmAcceptInvite(inviteId) {
   try {
-    await sb.from('bubble_invitations').update({status:'accepted'}).eq('id', inviteId);
     const { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).single();
-    if (inv?.bubble_id) {
-      await sb.from('bubble_members').insert({bubble_id: inv.bubble_id, user_id: currentUser.id});
+    var result = await dbActions.acceptInvitation(inviteId, inv?.bubble_id);
+    if (result.ok) {
       showSuccessToast('Du er nu med i boblen!');
       loadNotifications();
-      requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(inv.bubble_id, 'screen-notifications'); }); });
+      if (inv?.bubble_id) requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(inv.bubble_id, 'screen-notifications'); }); });
     }
   } catch(e) { logError("confirmAcceptInvite", e); errorToast("save", e); }
 }
@@ -433,12 +432,12 @@ function declineBubbleInvite(inviteId) {
 }
 
 async function confirmDeclineInvite(inviteId) {
-  try {
-    await sb.from('bubble_invitations').update({status:'declined'}).eq('id', inviteId);
+  var result = await dbActions.declineInvitation(inviteId);
+  if (result.ok) {
     var card = document.getElementById('invite-' + inviteId);
     if (card) { card.style.transition = 'opacity 0.2s'; card.style.opacity = '0'; setTimeout(function() { card.remove(); }, 200); }
     showToast(t('toast_deleted'));
-  } catch(e) { logError("confirmDeclineInvite", e); errorToast("save", e); }
+  }
 }
 
 

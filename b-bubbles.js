@@ -392,9 +392,9 @@ async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
   try {
     var confirmBtn = document.getElementById('transfer-confirm-yes');
     if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Overdrager...'; }
-    var { data: updated, error } = await sb.from('bubbles').update({ created_by: newOwnerId }).eq('id', bubbleId).select();
-    if (error) { errorToast('save', error); if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Bekræft overdragelse'; } return; }
-    if (!updated || updated.length === 0) {
+    var result = await dbActions.transferBubble(bubbleId, newOwnerId);
+    if (!result.ok) { if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Bekræft overdragelse'; } return; }
+    if (!result.data || result.data.length === 0) {
       _renderToast('Kunne ikke overdrage — du er muligvis ikke ejer længere', 'error');
       if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Bekræft overdragelse'; }
       return;
@@ -837,10 +837,8 @@ async function createBubble() {
 async function requestJoin(bubbleId) {
   try {
     const { data: b } = await sb.from('bubbles').select('name,created_by').eq('id', bubbleId).single();
-    const { error } = await sb.from('bubble_members').insert({
-      bubble_id: bubbleId, user_id: currentUser.id, status: 'pending'
-    });
-    if (error && !String(error.message || '').includes('duplicate')) return errorToast('save', error);
+    var result = await dbActions.requestJoin(bubbleId);
+    if (!result.ok) return;
     showToast(t('toast_request_sent'));
     _bbAfterJoin(bubbleId);
     await openBubble(bubbleId);
@@ -975,8 +973,8 @@ async function saveEditBubble() {
         updateObj.event_end_date = timeEndVal ? new Date(dateVal + 'T' + timeEndVal).toISOString() : null;
       }
     }
-    const { error } = await sb.from('bubbles').update(updateObj).eq('id', currentEditBubbleId);
-    if (error) return errorToast('save', error);
+    var editResult = await dbActions.updateBubble(currentEditBubbleId, updateObj);
+    if (!editResult.ok) return;
     closeModal('modal-edit-bubble');
     showSuccessToast(t('toast_bubble_updated'));
     await bcLoadBubbleInfo();
@@ -1999,8 +1997,8 @@ async function sendBubbleInvites() {
       var rows = newIds.map(function(uid) {
         return { bubble_id: inviteBubbleId, from_user_id: currentUser.id, to_user_id: uid, status: 'pending' };
       });
-      var { error } = await sb.from('bubble_invitations').insert(rows);
-      if (error) throw error;
+      var invResult = await dbActions.sendInvitations(inviteBubbleId, rows);
+      if (!invResult.ok) throw new Error('Invitation insert failed');
       // Notify each recipient via broadcast
       var bubbleName = bcBubbleData?.name || '';
       var senderName = currentProfile?.name || '';

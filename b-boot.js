@@ -674,9 +674,8 @@ async function showEventReadyQR() {
     // Generate rotating QR token (10 min)
     var token = crypto.randomUUID ? crypto.randomUUID().split('-')[0] : Math.random().toString(36).slice(2,10);
     var expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-    try {
-      await sb.from('qr_tokens').insert({ token: token, user_id: currentUser.id, expires_at: expiresAt });
-    } catch(e) { token = null; }
+    var qrResult = await dbActions.createQRToken(token, expiresAt);
+    if (!qrResult.ok) token = null;
     
     var qrUrl = token
       ? window.location.origin + window.location.pathname + '?qrt=' + token

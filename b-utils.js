@@ -728,6 +728,17 @@ var dbActions = {
   async joinBubble(bubbleId) {
     if (!currentUser || !bubbleId) return { ok: false };
     try {
+      // Defense-in-depth: check visibility before join
+      var { data: bub } = await sb.from('bubbles').select('visibility,type').eq('id', bubbleId).single();
+      if (bub && bub.visibility === 'private' && bub.type !== 'event' && bub.type !== 'live') {
+        // Private non-event bubble — must use requestJoin() instead
+        logError('dbActions.joinBubble', new Error('Attempted direct join on private bubble'), { bubble_id: bubbleId });
+        return { ok: false, error: 'private_bubble' };
+      }
+      if (bub && bub.visibility === 'hidden') {
+        logError('dbActions.joinBubble', new Error('Attempted direct join on hidden bubble'), { bubble_id: bubbleId });
+        return { ok: false, error: 'hidden_bubble' };
+      }
       var { error } = await sb.from('bubble_members').insert({
         bubble_id: bubbleId,
         user_id: currentUser.id
@@ -794,13 +805,19 @@ var dbActions = {
         bubble_id: bubbleId,
         user_id: currentUser.id,
         content: content || '',
-        file_url: opts.fileUrl || null,
-        gif_url: opts.gifUrl || null
+        file_url: opts.fileUrl || opts.gifUrl || null,
+        gif_url: opts.gifUrl || null,
+        file_name: opts.fileName || (opts.gifUrl ? 'gif.gif' : null),
+        file_type: opts.fileType || (opts.gifUrl ? 'image/gif' : null)
       };
       var { data, error } = await sb.from('bubble_messages').insert(payload).select().single();
-      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      if (error) { errorToast('send', error); return { ok: false, error: error }; }
+      // Attach profile for optimistic UI (bcReduceMsg)
+      if (data) {
+        data.profiles = { id: currentUser.id, name: currentProfile?.name || currentUser.email?.split('@')[0] || '?' };
+      }
       return { ok: true, message: data };
-    } catch (e) { logError('dbActions.sendBubbleMessage', e); errorToast('save', e); return { ok: false, error: e }; }
+    } catch (e) { logError('dbActions.sendBubbleMessage', e); errorToast('send', e); return { ok: false, error: e }; }
   },
 
   // ── REPORTS ──
@@ -883,6 +900,141 @@ var dbActions = {
       if (error) { logError('dbActions.checkOutAll', error); return { ok: false, error: error }; }
       return { ok: true };
     } catch(e) { logError('dbActions.checkOutAll', e); return { ok: false, error: e }; }
+  },
+
+  // ── QR Token ──
+  async createQRToken(token, expiresAt) {
+    if (!currentUser || !token) return { ok: false };
+    try {
+      var { error } = await sb.from('qr_tokens').insert({ token: token, user_id: currentUser.id, expires_at: expiresAt });
+      if (error) { logError('dbActions.createQRToken', error); return { ok: false, error: error }; }
+      return { ok: true };
+    } catch(e) { logError('dbActions.createQRToken', e); return { ok: false, error: e }; }
+  },
+
+  // ── Bubble CRUD ──
+  async createBubble(data) {
+    if (!currentUser) return { ok: false };
+    try {
+      data.created_by = currentUser.id;
+      var { data: bubble, error } = await sb.from('bubbles').insert(data).select().single();
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      // Auto-join as member
+      await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id });
+      trackEvent('bubble_created', { bubble_id: bubble.id, type: data.type });
+      return { ok: true, bubble: bubble };
+    } catch(e) { logError('dbActions.createBubble', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  async updateBubble(bubbleId, fields) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    try {
+      var { error } = await sb.from('bubbles').update(fields).eq('id', bubbleId);
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      return { ok: true };
+    } catch(e) { logError('dbActions.updateBubble', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  async transferBubble(bubbleId, newOwnerId) {
+    if (!currentUser || !bubbleId || !newOwnerId) return { ok: false };
+    try {
+      var { data, error } = await sb.from('bubbles').update({ created_by: newOwnerId }).eq('id', bubbleId).select();
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      trackEvent('bubble_ownership_transferred', { bubble_id: bubbleId, new_owner: newOwnerId });
+      return { ok: true, data: data };
+    } catch(e) { logError('dbActions.transferBubble', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  // ── Bubble message delete ──
+  async deleteBubbleMessage(msgId) {
+    if (!currentUser || !msgId) return { ok: false };
+    try {
+      var { error } = await sb.from('bubble_messages').delete().eq('id', msgId).eq('user_id', currentUser.id);
+      if (error) { logError('dbActions.deleteBubbleMessage', error); return { ok: false, error: error }; }
+      return { ok: true };
+    } catch(e) { logError('dbActions.deleteBubbleMessage', e); return { ok: false, error: e }; }
+  },
+
+  // ── Request join (private bubble) ──
+  async requestJoin(bubbleId) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    try {
+      var { error } = await sb.from('bubble_members').insert({
+        bubble_id: bubbleId, user_id: currentUser.id, status: 'pending'
+      });
+      if (error && !String(error.message || '').includes('duplicate')) {
+        errorToast('save', error); return { ok: false, error: error };
+      }
+      trackEvent('bubble_join_requested', { bubble_id: bubbleId });
+      return { ok: true };
+    } catch(e) { logError('dbActions.requestJoin', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  // ── Invitations ──
+  async sendInvitations(bubbleId, rows) {
+    if (!currentUser || !bubbleId || !rows || !rows.length) return { ok: false };
+    try {
+      var { error } = await sb.from('bubble_invitations').insert(rows);
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      trackEvent('invitations_sent', { bubble_id: bubbleId, count: rows.length });
+      return { ok: true };
+    } catch(e) { logError('dbActions.sendInvitations', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  async acceptInvitation(inviteId, bubbleId) {
+    if (!currentUser || !inviteId) return { ok: false };
+    try {
+      await sb.from('bubble_invitations').update({ status: 'accepted' }).eq('id', inviteId);
+      if (bubbleId) {
+        await sb.from('bubble_members').insert({ bubble_id: bubbleId, user_id: currentUser.id });
+      }
+      return { ok: true };
+    } catch(e) { logError('dbActions.acceptInvitation', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  async declineInvitation(inviteId) {
+    if (!currentUser || !inviteId) return { ok: false };
+    try {
+      await sb.from('bubble_invitations').update({ status: 'declined' }).eq('id', inviteId);
+      return { ok: true };
+    } catch(e) { logError('dbActions.declineInvitation', e); return { ok: false, error: e }; }
+  },
+
+  // ── Posts + reactions ──
+  async createPost(bubbleId, title, content, eventId) {
+    if (!currentUser || !bubbleId || !title) return { ok: false };
+    try {
+      var { data, error } = await sb.from('bubble_posts').insert({
+        bubble_id: bubbleId, author_id: currentUser.id,
+        title: title, content: content || null, event_id: eventId || null
+      }).select().single();
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      return { ok: true, post: data };
+    } catch(e) { logError('dbActions.createPost', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  async deletePost(postId) {
+    if (!currentUser || !postId) return { ok: false };
+    try {
+      var { error } = await sb.from('bubble_posts').delete().eq('id', postId);
+      if (error) { logError('dbActions.deletePost', error); return { ok: false, error: error }; }
+      return { ok: true };
+    } catch(e) { logError('dbActions.deletePost', e); return { ok: false, error: e }; }
+  },
+
+  async toggleReaction(postId) {
+    if (!currentUser || !postId) return { ok: false };
+    try {
+      var { data: existing } = await sb.from('bubble_post_reactions')
+        .select('id').eq('post_id', postId).eq('user_id', currentUser.id).maybeSingle();
+      if (existing) {
+        await sb.from('bubble_post_reactions').delete().eq('id', existing.id);
+        return { ok: true, liked: false };
+      } else {
+        await sb.from('bubble_post_reactions').insert({ post_id: postId, user_id: currentUser.id });
+        return { ok: true, liked: true };
+      }
+    } catch(e) { logError('dbActions.toggleReaction', e); return { ok: false, error: e }; }
   }
 };
 

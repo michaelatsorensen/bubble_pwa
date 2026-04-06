@@ -680,16 +680,17 @@ function bbAcceptInvite(inviteId, fromUserId) {
 
 async function bbConfirmAccept(inviteId, fromUserId) {
   try {
-    await sb.from('bubble_invitations').update({ status: 'accepted' }).eq('id', inviteId);
-    var invCard = document.getElementById('bb-inv-' + inviteId);
-    if (invCard) { invCard.style.transition = 'opacity 0.2s'; invCard.style.opacity = '0'; setTimeout(function() { invCard.remove(); }, 200); }
     var { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).single();
-    if (inv?.bubble_id) {
-      await sb.from('bubble_members').insert({ bubble_id: inv.bubble_id, user_id: currentUser.id });
+    var result = await dbActions.acceptInvitation(inviteId, inv?.bubble_id);
+    if (result.ok) {
+      var invCard = document.getElementById('bb-inv-' + inviteId);
+      if (invCard) { invCard.style.transition = 'opacity 0.2s'; invCard.style.opacity = '0'; setTimeout(function() { invCard.remove(); }, 200); }
       showSuccessToast('Du er nu med i boblen!');
-      _bbAfterJoin(inv.bubble_id);
-      loadMyBubbles();
-      requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(inv.bubble_id, 'screen-bubbles'); }); });
+      if (inv?.bubble_id) {
+        _bbAfterJoin(inv.bubble_id);
+        loadMyBubbles();
+        requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(inv.bubble_id, 'screen-bubbles'); }); });
+      }
     }
   } catch(e) { logError('bbConfirmAccept', e); errorToast('save', e); }
 }
@@ -706,12 +707,12 @@ function bbDeclineInvite(inviteId) {
 }
 
 async function bbConfirmDecline(inviteId) {
-  try {
-    await sb.from('bubble_invitations').update({ status: 'declined' }).eq('id', inviteId);
+  var result = await dbActions.declineInvitation(inviteId);
+  if (result.ok) {
     var card = document.getElementById('bb-inv-' + inviteId);
     if (card) { card.style.transition = 'opacity 0.2s'; card.style.opacity = '0'; setTimeout(function() { card.remove(); }, 200); }
     showToast('Invitation afvist');
-  } catch(e) { logError('bbConfirmDecline', e); errorToast('save', e); }
+  }
 }
 
 var _bbActiveTab = 'mine';

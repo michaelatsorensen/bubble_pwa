@@ -1004,16 +1004,17 @@ async function loadProfileInvitations() {
 
 async function profAcceptInvite(inviteId, fromUserId) {
   try {
-    await sb.from('bubble_invitations').update({ status: 'accepted' }).eq('id', inviteId);
-    var invCard = document.getElementById('prof-invite-' + inviteId);
-    if (invCard) { invCard.style.transition = 'opacity 0.2s'; invCard.style.opacity = '0'; setTimeout(function() { invCard.remove(); }, 200); }
     const { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).single();
-    if (inv?.bubble_id) {
-      await sb.from('bubble_members').insert({ bubble_id: inv.bubble_id, user_id: currentUser.id });
+    var result = await dbActions.acceptInvitation(inviteId, inv?.bubble_id);
+    if (result.ok) {
+      var invCard = document.getElementById('prof-invite-' + inviteId);
+      if (invCard) { invCard.style.transition = 'opacity 0.2s'; invCard.style.opacity = '0'; setTimeout(function() { invCard.remove(); }, 200); }
       showToast(t('toast_joined'));
-      _bbAfterJoin(inv.bubble_id);
-      loadProfileInvitations();
-      requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(inv.bubble_id, 'screen-profile'); }); });
+      if (inv?.bubble_id) {
+        _bbAfterJoin(inv.bubble_id);
+        loadProfileInvitations();
+        requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(inv.bubble_id, 'screen-profile'); }); });
+      }
     }
   } catch(e) { logError("profAcceptInvite", e); errorToast("save", e); }
 }
@@ -1045,13 +1046,12 @@ function cancelDeclineInvite(btn) {
 }
 
 async function confirmDeclineInvite() {
-  try {
   if (!pendingDeclineInviteId) return;
   const inviteId = pendingDeclineInviteId;
   pendingDeclineInviteId = null;
   pendingDeclineBtn = null;
-  try {
-    await sb.from('bubble_invitations').update({ status: 'declined' }).eq('id', inviteId);
+  var result = await dbActions.declineInvitation(inviteId);
+  if (result.ok) {
     const card = document.getElementById('prof-invite-' + inviteId);
     if (card) {
       card.style.transition = 'opacity 0.25s, transform 0.25s';
@@ -1062,8 +1062,7 @@ async function confirmDeclineInvite() {
       loadProfileInvitations();
     }
     showToast(t('toast_deleted'));
-  } catch(e) { logError("confirmDeclineInvite", e); errorToast("save", e); }
-  } catch(e) { logError("confirmDeclineInvite", e); }
+  }
 }
 
 function openEditProfile() {
