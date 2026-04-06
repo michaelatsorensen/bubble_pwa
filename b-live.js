@@ -205,7 +205,11 @@ async function _liveCheckinFallback(bubbleId) {
     }
 
     // 1. Auto-checkout from any current check-in
-    await dbActions.checkOutAll();
+    var coResult = await dbActions.checkOutAll();
+    if (!coResult.ok) {
+      logError('_liveCheckinFallback', new Error('checkOutAll failed before checkIn'), { bubble_id: bubbleId });
+      // Continue anyway — checkIn may still succeed if no conflicting check-ins
+    }
 
     // 2. Check-in (idempotent: updates if already member, inserts if new)
     var result = await dbActions.checkIn(bubbleId);

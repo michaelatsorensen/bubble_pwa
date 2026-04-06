@@ -235,6 +235,8 @@ async function checkQRAnonPreview() {
       if (profileId && profileId !== session.user.id) {
         flowSet('pending_contact', profileId);
       }
+      // Clean URL to prevent re-entry on refresh
+      window.history.replaceState({}, document.title, window.location.pathname);
       return false;
     }
     
@@ -544,6 +546,8 @@ async function checkGuestEventRoute() {
     if (session) {
       flowSet('pending_join', eventId);
       flowSet('event_flow', 'true');
+      // Clean URL to prevent re-entry on refresh
+      window.history.replaceState({}, document.title, window.location.pathname);
       return false;
     }
     

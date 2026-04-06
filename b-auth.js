@@ -60,8 +60,9 @@ async function resolvePostAuthDestination() {
   var pushParams = new URLSearchParams(window.location.search);
   var pushAction = pushParams.get('push');
   if (pushAction) {
-    // Clean URL
+    // Clean URL + flow flags (prevent ghost flows from surviving push early-return)
     history.replaceState(null, '', window.location.pathname);
+    flowClearAll();
     if (pushAction === 'chat' && pushParams.get('uid')) {
       var _pushUid = pushParams.get('uid');
       goToThen('screen-home', function() { openChat(_pushUid, 'screen-messages'); });
@@ -81,6 +82,7 @@ async function resolvePostAuthDestination() {
 
   // Step 3b: if contact was saved from QR → navigate directly to their profile
   if (savedContactId) {
+    flowClearAll();
     goToThen('screen-home', function() { openPerson(savedContactId, 'screen-home'); });
     return;
   }

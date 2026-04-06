@@ -1190,12 +1190,15 @@ async function checkQRJoin() {
 
 async function checkPendingJoin() {
   try {
-    const joinId = consumeFlow('pending_join');
+    const joinId = flowGet('pending_join');
     if (!joinId) return;
 
     // Join bubble
     var result = await dbActions.joinBubble(joinId);
-    if (!result.ok) return;
+    if (!result.ok) return; // Keep pending_join for retry on next auth
+
+    // Join succeeded — consume the flag
+    consumeFlow('pending_join');
 
     // Check if this is an event flow
     var isEventFlow = flowGet('event_flow');
@@ -1211,10 +1214,15 @@ async function checkPendingJoin() {
 
     if (isEventFlow && isEvent && isSelfCheckin) {
       // Mode A: auto check-in → open event directly
-      await dbActions.checkIn(joinId);
+      var ciResult = await dbActions.checkIn(joinId);
       consumeFlow('event_flow');
-      showSuccessToast(t('toast_checkedin'));
-      goToThen('screen-home', function() { openBubbleChat(joinId, 'screen-home'); });
+      if (ciResult.ok) {
+        showSuccessToast(t('toast_checkedin'));
+        goToThen('screen-home', function() { openBubbleChat(joinId, 'screen-home'); });
+      } else {
+        showWarningToast(t('toast_joined'));
+        goToThen('screen-home', function() { openBubbleChat(joinId, 'screen-home'); });
+      }
     } else if (isEventFlow && isEvent) {
       // Mode B: show QR for organizer to scan — event_flow stays for showEventReadyQR
       showSuccessToast(t('toast_joined'));
