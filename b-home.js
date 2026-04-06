@@ -573,6 +573,20 @@ function skipSetupSheet(which) {
   if (fn) setTimeout(fn, 350);
 }
 
+// ── STEP NAVIGATION — jump between setup sheets ──
+var _setupStepMap = {
+  1: { id: 'sheet-setup-title', open: function() { openSetupTitleSheet(); } },
+  2: { id: 'sheet-setup-lifestage', open: function() { openSetupLifestageSheet(); } },
+  3: { id: 'sheet-setup-tags', open: function() { openSetupTagsSheet(); } },
+  4: { id: 'sheet-setup-bio', open: function() { openSetupBioSheet(); } }
+};
+function setupGoToStep(step) {
+  // Close all setup sheets first
+  [1, 2, 3, 4].forEach(function(s) { closeModal(_setupStepMap[s].id); });
+  var target = _setupStepMap[step];
+  if (target) setTimeout(target.open, 300);
+}
+
 function openProfileSetupTags() {
   if (typeof openEditTags === 'function') openEditTags();
 }

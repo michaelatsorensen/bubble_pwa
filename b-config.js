@@ -14,8 +14,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-04-06T12:07:33';
-const BUILD_VERSION  = 'v8.9.4';
+const BUILD_TIMESTAMP = '2026-04-06T13:08:12';
+const BUILD_VERSION  = 'v8.9.6';
 const SUPABASE_URL  = "https://api.bubbleme.dk";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -27,6 +27,43 @@ var hsDefaults = { radar: true, saved: true, feedback: true, profile_cta: true }
 // ══════════════════════════════════════════════════════════
 var _errorLog = [];
 var ERROR_LOG_MAX = 50;
+var _bootTs = Date.now();
+
+// ── Client state snapshot for diagnostics ──
+function getClientState() {
+  var sw = 'none';
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) sw = 'active';
+  } catch(e) { /* */ }
+  var rt = {};
+  if (typeof _rtChannelStates !== 'undefined') {
+    Object.keys(_rtChannelStates).forEach(function(k) { rt[k] = _rtChannelStates[k]; });
+  }
+  var push = 'unsupported';
+  try { if ('Notification' in window) push = Notification.permission; } catch(e) { /* */ }
+  return {
+    v: BUILD_VERSION,
+    sw: sw,
+    screen: (typeof navState !== 'undefined' && navState.screen) || null,
+    mode: appMode.get(),
+    live: appMode.live ? appMode.live.bubbleId : null,
+    checkins: appMode.checkedInIds ? appMode.checkedInIds.length : 0,
+    rt: rt,
+    push: push,
+    online: navigator.onLine,
+    uptime: Math.round((Date.now() - _bootTs) / 1000),
+    ua: _shortUA()
+  };
+}
+function _shortUA() {
+  var u = navigator.userAgent || '';
+  var os = /iPhone|iPad/.test(u) ? 'iOS' : /Android/.test(u) ? 'Android' : /Mac/.test(u) ? 'Mac' : /Win/.test(u) ? 'Win' : 'Other';
+  var br = /CriOS/.test(u) ? 'Chrome' : /FxiOS/.test(u) ? 'Firefox' : /Safari/.test(u) && !/Chrome/.test(u) ? 'Safari' : /Chrome/.test(u) ? 'Chrome' : 'Other';
+  var ver = '';
+  if (os === 'iOS') { var m = u.match(/OS (\d+[_\.]\d+)/); if (m) ver = ' ' + m[1].replace('_','.'); }
+  else if (os === 'Android') { var m2 = u.match(/Android (\d+[\.\d]*)/); if (m2) ver = ' ' + m2[1]; }
+  return os + ver + ' / ' + br;
+}
 
 // ── EmailJS config (fill in your keys from emailjs.com) ──
 var EMAILJS_PUBLIC_KEY  = 'obqyOwjfRAzMEr_MI';
@@ -77,14 +114,17 @@ function logError(context, error, extra) {
   if (_errorLog.length > ERROR_LOG_MAX) _errorLog.shift();
   console.error('[' + context + ']', error, extra || '');
 
-  // Persist to Supabase error_log table
+  // Persist to Supabase error_log table (enriched with client state)
   if (typeof sb !== 'undefined' && sb && currentUser) {
+    var cs = getClientState();
+    var extraObj = extra ? (typeof extra === 'object' ? extra : { raw: extra }) : {};
+    extraObj._cs = cs;
     sb.from('error_log').insert({
       user_id: currentUser.id,
       context: context,
       message: entry.msg,
       stack: entry.stack,
-      extra: typeof extra === 'object' ? JSON.stringify(extra) : extra || null
+      extra: JSON.stringify(extraObj)
     }).then(function(){}).catch(function(){});
   }
 
@@ -283,6 +323,15 @@ function resetAppState() {
 
   // Module-registered cleanup (registerState pattern)
   _stateRegistry.forEach(function(fn) { try { fn(); } catch(e) {} });
+
+  // Admin debug cleanup
+  try { if (typeof _debugChannel !== 'undefined' && _debugChannel) _debugChannel.unsubscribe(); } catch(e) {}
+  if (typeof _debugChannel !== 'undefined') _debugChannel = null;
+  if (typeof _debugOverlayOpen !== 'undefined') _debugOverlayOpen = false;
+  var debugFab = document.getElementById('admin-debug-fab');
+  if (debugFab) debugFab.remove();
+  var debugOv = document.getElementById('debug-overlay');
+  if (debugOv) debugOv.classList.remove('open');
 
   console.debug('[resetAppState] All session state cleared');
 }

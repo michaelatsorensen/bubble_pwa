@@ -442,3 +442,208 @@ async function testOnboardingReset(mode) {
     _renderToast('Fejl: ' + (e.message || 'ukendt'), 'error');
   }
 }
+
+// ══════════════════════════════════════════════════════════
+//  ADMIN DEBUG PANEL — FAB + overlay + realtime error badge
+//  Only renders for admin users (isAdmin())
+// ══════════════════════════════════════════════════════════
+var _debugErrorCount = 0;
+var _debugErrors = [];
+var _debugChannel = null;
+var _debugOverlayOpen = false;
+
+function initAdminDebug() {
+  if (!isAdmin()) return;
+  _renderDebugFab();
+  _debugSubscribeErrors();
+  _debugLoadRecent();
+}
+
+function _renderDebugFab() {
+  if (document.getElementById('admin-debug-fab')) return;
+  var fab = document.createElement('div');
+  fab.id = 'admin-debug-fab';
+  fab.className = 'debug-fab';
+  fab.onclick = toggleDebugOverlay;
+  fab.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m-10-10h4m12 0h4"/></svg><span class="debug-fab-badge" id="debug-fab-badge" style="display:none">0</span>';
+  document.body.appendChild(fab);
+}
+
+function _debugSubscribeErrors() {
+  if (_debugChannel) return;
+  _debugChannel = sb.channel('admin-debug-errors')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'error_log' }, function(payload) {
+      var row = payload.new;
+      _debugErrors.unshift(row);
+      if (_debugErrors.length > 50) _debugErrors.pop();
+      _debugErrorCount++;
+      _updateDebugBadge();
+      if (_debugOverlayOpen) _renderDebugErrorList();
+    })
+    .subscribe();
+}
+
+function _debugLoadRecent() {
+  sb.from('error_log').select('*').order('created_at', { ascending: false }).limit(30)
+    .then(function(res) {
+      _debugErrors = res.data || [];
+      _updateDebugBadge();
+    });
+}
+
+function _updateDebugBadge() {
+  var badge = document.getElementById('debug-fab-badge');
+  if (!badge) return;
+  if (_debugErrorCount > 0) {
+    badge.textContent = _debugErrorCount > 99 ? '99+' : _debugErrorCount;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function toggleDebugOverlay() {
+  var overlay = document.getElementById('debug-overlay');
+  if (!overlay) return;
+  _debugOverlayOpen = !_debugOverlayOpen;
+  if (_debugOverlayOpen) {
+    _renderDebugContent();
+    overlay.classList.add('open');
+  } else {
+    overlay.classList.remove('open');
+  }
+}
+
+function closeDebugOverlay() {
+  _debugOverlayOpen = false;
+  var overlay = document.getElementById('debug-overlay');
+  if (overlay) overlay.classList.remove('open');
+}
+
+function _renderDebugContent() {
+  var cs = getClientState();
+  var deviceEl = document.getElementById('debug-device-info');
+  if (deviceEl) {
+    var rtSummary = Object.keys(cs.rt);
+    var rtOk = rtSummary.filter(function(k) { return cs.rt[k] === 'SUBSCRIBED'; }).length;
+    deviceEl.innerHTML =
+      _debugRow('Version', cs.v) +
+      _debugRow('SW', cs.sw === 'active' ? '<span class="debug-pill-ok">synced</span>' : '<span class="debug-pill-err">' + cs.sw + '</span>') +
+      _debugRow('RT', '<span class="debug-pill-' + (rtOk === rtSummary.length ? 'ok' : 'err') + '">' + rtOk + '/' + rtSummary.length + '</span>') +
+      _debugRow('Mode', cs.mode + (cs.live ? ':' + cs.live.substring(0, 8) : '')) +
+      _debugRow('Checkins', cs.checkins) +
+      _debugRow('Push', cs.push === 'granted' ? '<span class="debug-pill-ok">active</span>' : '<span class="debug-pill-err">' + cs.push + '</span>') +
+      _debugRow('Online', cs.online ? 'Ja' : '<span class="debug-pill-err">Offline</span>') +
+      _debugRow('Uptime', _fmtUptime(cs.uptime));
+  }
+  _renderDebugErrorList();
+}
+
+function _renderDebugErrorList() {
+  var el = document.getElementById('debug-error-list');
+  if (!el) return;
+  if (_debugErrors.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:0.72rem;padding:1rem 0">Ingen fejl</div>';
+    return;
+  }
+  el.innerHTML = _debugErrors.slice(0, 30).map(function(e) {
+    var extra = null;
+    try { extra = typeof e.extra === 'string' ? JSON.parse(e.extra) : e.extra; } catch(x) { /* */ }
+    var cs2 = extra && extra._cs ? extra._cs : null;
+    var time = e.created_at ? new Date(e.created_at).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '?';
+    var severity = (e.context || '').includes('global') || (e.context || '').includes('promise') ? 'err' : 'warn';
+    var html = '<div class="debug-err-card debug-err-' + severity + '">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700">' + escHtml(e.context || '?') + '</span><span>' + time + '</span></div>';
+    html += '<div style="font-size:0.6rem;margin-top:2px;opacity:0.85">' + escHtml((e.message || '').substring(0, 80)) + '</div>';
+    if (cs2) {
+      html += '<div style="font-size:0.55rem;margin-top:3px;opacity:0.7">' +
+        escHtml((e.user_id || '').substring(0, 8) + '.. | ' + (cs2.ua || '?')) + '</div>';
+      if (cs2.rt) {
+        var rtParts = Object.keys(cs2.rt).map(function(k) {
+          var v = cs2.rt[k];
+          return v === 'SUBSCRIBED' ? k + ':ok' : '<span style="font-weight:700">' + k + ':' + (v || '?') + '</span>';
+        });
+        html += '<div style="font-size:0.55rem;margin-top:1px;opacity:0.7">RT: ' + rtParts.join(' ') + '</div>';
+      }
+    }
+    html += '</div>';
+    return html;
+  }).join('');
+}
+
+function clearDebugBadge() {
+  _debugErrorCount = 0;
+  _updateDebugBadge();
+}
+
+function _debugRow(label, value) {
+  return '<div class="debug-row"><span class="debug-k">' + label + '</span><span class="debug-v">' + value + '</span></div>';
+}
+
+function _fmtUptime(sec) {
+  if (sec < 60) return sec + 's';
+  if (sec < 3600) return Math.floor(sec / 60) + 'm ' + (sec % 60) + 's';
+  return Math.floor(sec / 3600) + 'h ' + Math.floor((sec % 3600) / 60) + 'm';
+}
+
+// ── Export debug log via EmailJS ──
+function debugExportEmail() {
+  var cs = getClientState();
+  var rtOk = Object.keys(cs.rt).filter(function(k) { return cs.rt[k] === 'SUBSCRIBED'; }).length;
+  var rtTotal = Object.keys(cs.rt).length;
+  var lines = [];
+  lines.push('=== Bubble Debug Export ===');
+  lines.push('Time: ' + new Date().toISOString());
+  lines.push('Admin: ' + cs.v + ' | SW:' + cs.sw + ' | RT:' + rtOk + '/' + rtTotal);
+  lines.push('Mode: ' + cs.mode + (cs.live ? ':' + cs.live : '') + ' | Checkins: ' + cs.checkins);
+  lines.push('Push: ' + cs.push + ' | Online: ' + cs.online + ' | Uptime: ' + _fmtUptime(cs.uptime));
+  lines.push('');
+  lines.push('--- Errors (' + _debugErrors.length + ') ---');
+
+  _debugErrors.slice(0, 30).forEach(function(e) {
+    var extra2 = null;
+    try { extra2 = typeof e.extra === 'string' ? JSON.parse(e.extra) : e.extra; } catch(x) { /* */ }
+    var cs3 = extra2 && extra2._cs ? extra2._cs : null;
+    var time = e.created_at ? new Date(e.created_at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '?';
+    lines.push(time + ' ' + (e.context || '?'));
+    lines.push('  msg: ' + (e.message || '').substring(0, 120));
+    if (e.user_id) lines.push('  user: ' + e.user_id.substring(0, 12) + '..');
+    if (cs3) {
+      lines.push('  device: ' + (cs3.ua || '?') + ' | ' + (cs3.v || '?'));
+      lines.push('  mode: ' + (cs3.mode || '?') + (cs3.live ? ':' + cs3.live.substring(0, 8) : '') + ' screen: ' + (cs3.screen || '?'));
+      if (cs3.rt) {
+        var rtLine = Object.keys(cs3.rt).map(function(k) { return k + ':' + cs3.rt[k]; }).join(' ');
+        lines.push('  rt: ' + rtLine);
+      }
+      lines.push('  push: ' + (cs3.push || '?') + ' | online: ' + cs3.online);
+    }
+    lines.push('');
+  });
+
+  var body = lines.join('\n');
+
+  // Copy to clipboard as backup
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(body).catch(function() {});
+  }
+
+  // Send via EmailJS
+  if (_emailjsLoaded && window.emailjs) {
+    window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      context: 'DEBUG_EXPORT',
+      message: 'Debug log eksporteret (' + _debugErrors.length + ' fejl)',
+      stack: body,
+      extra: 'Admin: ' + (currentUser?.id || '?'),
+      user_id: currentUser?.id || 'unknown',
+      timestamp: new Date().toISOString()
+    }).then(function() {
+      showSuccessToast(t('debug_email_sent'));
+    }).catch(function(err) {
+      showWarningToast(t('debug_email_failed'));
+      console.error('EmailJS debug export failed', err);
+    });
+  } else {
+    // Fallback: just clipboard
+    showSuccessToast(t('debug_copied'));
+  }
+}

@@ -288,13 +288,14 @@ var _toastIconNames = { info: 'info', success: 'check', error: 'x', warn: 'warn'
 var _toastDurations = { info: 2500, success: 2500, error: 4500, warn: 3500 };
 
 function _renderToast(msg, type) {
-  var t = document.getElementById('toast');
-  if (!t) return;
-  t.className = 'toast toast-' + type;
-  t.innerHTML = '<div class="toast-ico">' + ico(_toastIconNames[type]) + '</div><div style="flex:1;min-width:0">' + escHtml(msg) + '</div>';
-  t.classList.add('show');
+  var el = document.getElementById('toast');
+  if (!el) return;
+  el.className = 'toast toast-' + type;
+  var reportNote = (type === 'error' && typeof currentUser !== 'undefined' && currentUser) ? '<div style="font-size:0.6rem;opacity:0.7;margin-top:1px">' + t('toast_report_sent') + '</div>' : '';
+  el.innerHTML = '<div class="toast-ico">' + ico(_toastIconNames[type]) + '</div><div style="flex:1;min-width:0">' + escHtml(msg) + reportNote + '</div>';
+  el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(function() { t.classList.remove('show'); }, _toastDurations[type] || 2500);
+  toastTimer = setTimeout(function() { el.classList.remove('show'); }, _toastDurations[type] || 2500);
 }
 
 function showToast(msg, duration) {

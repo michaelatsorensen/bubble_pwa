@@ -12,37 +12,37 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=894">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=894">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=894">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=894">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=894">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=894">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=894">
+<link rel="manifest" href="manifest.json?v=896">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=896">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=896">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=896">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=896">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=896">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=896">
 
-<link rel="stylesheet" href="app.css?v=894">
+<link rel="stylesheet" href="app.css?v=896">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-<script src="bubble-icons.js?v=894" defer></script>
-<script src="tag-data.js?v=894" defer></script>
-<script src="b-i18n.js?v=894" defer></script>
-<script src="b-config.js?v=894" defer></script>
-<script src="b-utils.js?v=894" defer></script>
-<script src="b-auth.js?v=894" defer></script>
-<script src="b-home.js?v=894" defer></script>
-<script src="b-bubbles.js?v=894" defer></script>
-<script src="b-profile.js?v=894" defer></script>
-<script src="b-radar.js?v=894" defer></script>
-<script src="b-messages.js?v=894" defer></script>
-<script src="b-realtime.js?v=894" defer></script>
-<script src="b-onboarding.js?v=894" defer></script>
-<script src="b-chat.js?v=894" defer></script>
-<script src="b-notifications.js?v=894" defer></script>
-<script src="b-live.js?v=894" defer></script>
-<script src="b-admin.js?v=894" defer></script>
-<script src="b-navigation.js?v=894" defer></script>
-<script src="b-boot.js?v=894" defer></script>
+<script src="bubble-icons.js?v=896" defer></script>
+<script src="tag-data.js?v=896" defer></script>
+<script src="b-i18n.js?v=896" defer></script>
+<script src="b-config.js?v=896" defer></script>
+<script src="b-utils.js?v=896" defer></script>
+<script src="b-auth.js?v=896" defer></script>
+<script src="b-home.js?v=896" defer></script>
+<script src="b-bubbles.js?v=896" defer></script>
+<script src="b-profile.js?v=896" defer></script>
+<script src="b-radar.js?v=896" defer></script>
+<script src="b-messages.js?v=896" defer></script>
+<script src="b-realtime.js?v=896" defer></script>
+<script src="b-onboarding.js?v=896" defer></script>
+<script src="b-chat.js?v=896" defer></script>
+<script src="b-notifications.js?v=896" defer></script>
+<script src="b-live.js?v=896" defer></script>
+<script src="b-admin.js?v=896" defer></script>
+<script src="b-navigation.js?v=896" defer></script>
+<script src="b-boot.js?v=896" defer></script>
   
 
 
@@ -1205,7 +1205,7 @@
     <div class="setup-sheet-handle"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem">
       <div>
-        <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--accent);margin-bottom:0.15rem">Trin 1 af 4</div>
+        <div style="display:flex;align-items:center;gap:0.5rem"><div class="setup-step-dots"><span class="setup-dot active"></span><span class="setup-dot" onclick="setupGoToStep(2)"></span><span class="setup-dot" onclick="setupGoToStep(3)"></span><span class="setup-dot" onclick="setupGoToStep(4)"></span></div><span style="font-size:0.58rem;color:var(--muted)">1/4</span></div>
         <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Hvad er din titel?</div>
       </div>
       <div style="text-align:right">
@@ -1227,7 +1227,7 @@
     <div class="setup-sheet-handle"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem">
       <div>
-        <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--accent);margin-bottom:0.15rem">Trin 2 af 4</div>
+        <div style="display:flex;align-items:center;gap:0.5rem"><span class="setup-back" onclick="setupGoToStep(1)">&#8249;</span><div class="setup-step-dots"><span class="setup-dot" onclick="setupGoToStep(1)"></span><span class="setup-dot active"></span><span class="setup-dot" onclick="setupGoToStep(3)"></span><span class="setup-dot" onclick="setupGoToStep(4)"></span></div><span style="font-size:0.58rem;color:var(--muted)">2/4</span></div>
         <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Hvad beskriver dig bedst?</div>
       </div>
       <div style="text-align:right">
@@ -1256,7 +1256,7 @@
     <div class="setup-sheet-handle"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-shrink:0">
       <div>
-        <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--accent);margin-bottom:0.15rem">Trin 3 af 4</div>
+        <div style="display:flex;align-items:center;gap:0.5rem"><span class="setup-back" onclick="setupGoToStep(2)">&#8249;</span><div class="setup-step-dots"><span class="setup-dot" onclick="setupGoToStep(1)"></span><span class="setup-dot" onclick="setupGoToStep(2)"></span><span class="setup-dot active"></span><span class="setup-dot" onclick="setupGoToStep(4)"></span></div><span style="font-size:0.58rem;color:var(--muted)">3/4</span></div>
         <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Faglige tags</div>
       </div>
       <div style="text-align:right">
@@ -1284,7 +1284,7 @@
     <div class="setup-sheet-handle"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem">
       <div>
-        <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--accent);margin-bottom:0.15rem">Trin 4 af 4</div>
+        <div style="display:flex;align-items:center;gap:0.5rem"><span class="setup-back" onclick="setupGoToStep(3)">&#8249;</span><div class="setup-step-dots"><span class="setup-dot" onclick="setupGoToStep(1)"></span><span class="setup-dot" onclick="setupGoToStep(2)"></span><span class="setup-dot" onclick="setupGoToStep(3)"></span><span class="setup-dot active"></span></div><span style="font-size:0.58rem;color:var(--muted)">4/4</span></div>
         <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Kort om dig</div>
       </div>
       <div style="text-align:right">
@@ -1759,5 +1759,23 @@
 </div><!-- /global-nav -->
 </div><!-- /app-shell -->
 
+<div id="debug-overlay" class="debug-overlay" onclick="if(event.target===this)closeDebugOverlay()">
+  <div class="debug-sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem">
+      <div style="font-size:0.92rem;font-weight:800;color:var(--text)">Debug</div>
+      <button onclick="closeDebugOverlay()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:2px 10px;font-size:0.65rem;cursor:pointer;font-family:inherit;color:var(--muted)" data-t="misc_close">Luk</button>
+    </div>
+    <div style="display:flex;gap:0.35rem;margin-bottom:0.7rem">
+      <button onclick="debugExportEmail()" class="btn-primary" style="flex:1;font-size:0.68rem;padding:0.4rem" data-t="debug_export">Send fejlrapport</button>
+      <button onclick="clearDebugBadge()" style="flex:1;font-size:0.68rem;padding:0.4rem;background:none;border:1px solid var(--border);border-radius:10px;cursor:pointer;font-family:inherit;color:var(--text-secondary)" data-t="debug_clear_badge">Ryd badge</button>
+    </div>
+    <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.3rem" data-t="debug_your_device">Dit device</div>
+    <div id="debug-device-info" style="margin-bottom:0.6rem"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
+      <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent)" data-t="debug_error_log">Fejl-log</div>
+    </div>
+    <div id="debug-error-list" style="max-height:45vh;overflow-y:auto"></div>
+  </div>
+</div>
 </body>
 </html>

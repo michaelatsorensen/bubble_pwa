@@ -730,6 +730,7 @@ async function loadProfile() {
         adminLoadReports();
         adminLoadBanned();
         adminLoadStats();
+        if (typeof initAdminDebug === 'function') initAdminDebug();
       } else {
         adminPanel.style.display = 'none';
       }
