@@ -428,11 +428,10 @@ function openSetupTitleSheet() {
   var input = document.getElementById('setup-title-input');
   if (input) input.value = currentProfile?.title || '';
   var strength = calcProfileStrength(currentProfile);
-  var projected = Math.min(strength + 13, 100);
   var bar = document.getElementById('setup-title-bar');
   var pct = document.getElementById('setup-title-pct');
-  if (bar) bar.style.width = projected + '%';
-  if (pct) pct.textContent = projected + '%';
+  if (bar) bar.style.width = strength + '%';
+  if (pct) pct.textContent = strength + '%';
   openModal('sheet-setup-title');
 }
 
@@ -456,7 +455,7 @@ async function saveSetupTitle() {
     if (currentProfile) currentProfile.title = title;
     closeModal('sheet-setup-title');
     showProfileSetupCTA();
-    setTimeout(function() { openSetupLifestageSheet(); }, 350);
+    setTimeout(function() { openSetupLifestageSheet(); }, 180);
   } catch(e) { errorToast('save', e); }
 }
 
@@ -464,11 +463,10 @@ async function saveSetupTitle() {
 function openSetupTagsSheet() {
   if (typeof etInit === 'function') etInit();
   var strength = calcProfileStrength(currentProfile);
-  var projected = Math.min(strength + 13, 100);
   var bar = document.getElementById('setup-tags-bar');
   var pct = document.getElementById('setup-tags-pct');
-  if (bar) bar.style.width = projected + '%';
-  if (pct) pct.textContent = projected + '%';
+  if (bar) bar.style.width = strength + '%';
+  if (pct) pct.textContent = strength + '%';
   openModal('sheet-setup-tags');
 }
 
@@ -480,7 +478,7 @@ async function saveSetupTags() {
     if (currentProfile) { currentProfile.keywords = tags; }
     closeModal('sheet-setup-tags');
     showProfileSetupCTA();
-    setTimeout(function() { openSetupBioSheet(); }, 350);
+    setTimeout(function() { openSetupBioSheet(); }, 180);
   } catch(e) { errorToast('save', e); }
 }
 
@@ -496,11 +494,10 @@ function openSetupBioSheet() {
     input.oninput();
   }
   var strength = calcProfileStrength(currentProfile);
-  var projected = Math.min(strength + 8, 100);
   var bar = document.getElementById('setup-bio-bar');
   var pct = document.getElementById('setup-bio-pct');
-  if (bar) bar.style.width = projected + '%';
-  if (pct) pct.textContent = projected + '%';
+  if (bar) bar.style.width = strength + '%';
+  if (pct) pct.textContent = strength + '%';
   openModal('sheet-setup-bio');
 }
 
@@ -521,11 +518,10 @@ function openSetupLifestageSheet() {
   _setupSelectedLifestage = currentProfile?.lifestage || null;
   updateSetupLifestageUI();
   var strength = calcProfileStrength(currentProfile);
-  var projected = Math.min(strength + 13, 100);
   var bar = document.getElementById('setup-ls-bar');
   var pct = document.getElementById('setup-ls-pct');
-  if (bar) bar.style.width = projected + '%';
-  if (pct) pct.textContent = projected + '%';
+  if (bar) bar.style.width = strength + '%';
+  if (pct) pct.textContent = strength + '%';
   openModal('sheet-setup-lifestage');
 }
 
@@ -544,7 +540,8 @@ function updateSetupLifestageUI() {
     else { btn.disabled = true; btn.textContent = t('home_select_type'); }
   }
   var strength = calcProfileStrength(currentProfile);
-  var projected = _setupSelectedLifestage ? Math.min(strength + 13, 100) : strength;
+  var bonus = (_setupSelectedLifestage && !currentProfile?.lifestage) ? 8 : 0;
+  var projected = Math.min(strength + bonus, 100);
   var bar = document.getElementById('setup-ls-bar');
   var pct = document.getElementById('setup-ls-pct');
   if (bar) bar.style.width = projected + '%';
@@ -558,7 +555,7 @@ async function saveSetupLifestage() {
     if (currentProfile) currentProfile.lifestage = _setupSelectedLifestage;
     closeModal('sheet-setup-lifestage');
     showProfileSetupCTA();
-    setTimeout(function() { openSetupTagsSheet(); }, 350);
+    setTimeout(function() { openSetupTagsSheet(); }, 180);
   } catch(e) { errorToast('save', e); }
 }
 
@@ -570,7 +567,7 @@ function skipSetupSheet(which) {
   // Continue to next step after skip
   var next = { title: openSetupLifestageSheet, lifestage: openSetupTagsSheet, tags: openSetupBioSheet, bio: null };
   var fn = next[which];
-  if (fn) setTimeout(fn, 350);
+  if (fn) setTimeout(fn, 180);
 }
 
 // ── STEP NAVIGATION — jump between setup sheets ──
@@ -584,7 +581,7 @@ function setupGoToStep(step) {
   // Close all setup sheets first
   [1, 2, 3, 4].forEach(function(s) { closeModal(_setupStepMap[s].id); });
   var target = _setupStepMap[step];
-  if (target) setTimeout(target.open, 300);
+  if (target) setTimeout(target.open, 120);
 }
 
 function openProfileSetupTags() {

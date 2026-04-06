@@ -199,6 +199,8 @@ async function loadCurrentProfile() {
       }
       currentProfile = data;
       updateHomeAvatar();
+      // Init admin debug panel if admin (FAB on all screens)
+      if (typeof initAdminDebug === 'function') initAdminDebug();
     }
   } catch(e) { logError("loadCurrentProfile", e); errorToast("load", e); }
 }
