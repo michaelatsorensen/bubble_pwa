@@ -1955,12 +1955,7 @@ input[type="range"] {
 /* ── BUBBLE HERO HEADER ── */
 
 /* ── SCROLL FADE ── */
-/* Subtle bottom fade on all scroll containers — content fades before hard edge */
-.scroll-area,
-.screen-inner-scroll {
-  mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 20px), transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 20px), transparent 100%);
-}
+/* Removed: bottom mask-image fade created uneven visual weight across screens */
 /* Live checkin modal: don't clip scanner viewport */
 #modal-live-checkin .modal-sheet {
   overflow: visible;
