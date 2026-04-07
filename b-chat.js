@@ -798,9 +798,9 @@ async function bcLoadEvents() {
     }).join('');
     // Add create buttons for owners
     if (bcBubbleData?._canEdit) {
-      html += '<div style="display:flex;gap:0.4rem;margin-top:0.3rem">' +
-        '<button onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('calendar') + ' Event</button>' +
-        '<button onclick="openCreateSubBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('bubble') + ' Sub-boble</button>' +
+      html += '<div style="display:flex;gap:0.4rem;margin-top:0.8rem">' +
+        '<button onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('calendar') + ' Event</button>' +
+        '<button onclick="openCreateSubBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('bubble') + ' Sub-boble</button>' +
         '</div>';
     }
     list.innerHTML = html;
@@ -1571,7 +1571,7 @@ async function bcLoadInfo() {
     // Member count
     var mc = b.member_count;
     if (mc == null) {
-      var { count: c } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', b.id);
+      var { count: c } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', b.id).or('status.is.null,status.neq.pending');
       mc = c || 0;
     }
 
@@ -1715,16 +1715,16 @@ async function bcLoadInfo() {
             '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">Netværk & events</div>' +
             '<div style="font-size:0.68rem;color:#0F6E56;font-weight:600">' + childBubbles.length + '</div></div>' +
             '<div style="display:flex;flex-direction:column;gap:0.15rem">' + childCards + '</div>' +
-            (canEdit ? '<div style="display:flex;gap:0.4rem;margin-top:0.4rem">' +
-              '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('calendar') + ' Event</button>' +
-              '<button onclick="openCreateSubBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('bubble') + ' Sub-boble</button></div>' : '') +
+            (canEdit ? '<div style="display:flex;gap:0.4rem;margin-top:0.8rem">' +
+              '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('calendar') + ' Event</button>' +
+              '<button onclick="openCreateSubBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('bubble') + ' Sub-boble</button></div>' : '') +
             '</div>';
         } else if (canEdit) {
           eventsHtml = '<div style="margin-bottom:0.9rem">' +
             '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Netværk & events</div>' +
             '<div style="display:flex;gap:0.4rem">' +
-            '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('calendar') + ' Event</button>' +
-            '<button onclick="openCreateSubBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('bubble') + ' Sub-boble</button></div></div>';
+            '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('calendar') + ' Event</button>' +
+            '<button onclick="openCreateSubBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('bubble') + ' Sub-boble</button></div></div>';
         }
       } catch(e) { logError('bcLoadInfo:children', e); }
     }
@@ -1881,7 +1881,9 @@ async function bcLoadInfo() {
             : '';
           var evBadge = evPast
             ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(30,27,46,0.08);color:var(--muted);font-weight:600">Afsluttet</span>'
-            : '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(46,207,207,0.2);color:#085041;font-weight:600">' + t('bb_coming') + '</span>';
+            : (evD <= new Date()
+              ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(46,207,207,0.2);color:#085041;font-weight:600">I gang</span>'
+              : '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(124,92,252,0.1);color:#534AB7;font-weight:600">' + t('bb_coming') + '</span>');
           return '<div style="background:rgba(46,207,207,0.08);border:0.5px solid rgba(46,207,207,0.25);border-radius:10px;padding:8px 12px;margin-top:0.6rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem">' +
             '<div style="text-align:left">' +
               '<div style="font-size:0.8rem;font-weight:700;color:#085041">' + evDateStr + '</div>' +
