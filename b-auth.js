@@ -351,7 +351,6 @@ async function handleSignup() {
     const email = document.getElementById('signup-email').value.trim();
     const pass  = document.getElementById('signup-password').value;
     const passConfirm = document.getElementById('signup-password-confirm').value;
-    const title = document.getElementById('signup-title').value.trim();
     if (!name || !email || !pass) { _authLock = false; return showWarningToast('Udfyld alle felter'); }
     if (pass.length < 6) { _authLock = false; return showWarningToast(t('toast_password_min')); }
     if (pass !== passConfirm) { _authLock = false; return showWarningToast('Adgangskoderne matcher ikke'); }
@@ -395,7 +394,8 @@ async function handleSignup() {
       await new Promise(r => setTimeout(r, 500));
       const { error: profileError } = await sb.from('profiles').upsert({
         id: currentUser.id,
-        name, title, keywords: [], dynamic_keywords: [], bio: '', is_anon: false
+        name, keywords: [], dynamic_keywords: [], bio: '', is_anon: false,
+        terms_accepted_at: new Date().toISOString()
       });
       if (!profileError) { profileCreated = true; break; }
     }
