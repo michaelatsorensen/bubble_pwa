@@ -1008,6 +1008,7 @@ async function saveEditBubble() {
     showSuccessToast(t('toast_bubble_updated'));
     await bcLoadBubbleInfo();
     await bcLoadMembers();
+    if (_bcActiveTab === 'info') bcLoadInfo();
   } catch(e) { logError("saveEditBubble", e); errorToast("save", e); }
   finally { _bbSubmitLock = false; }
 }

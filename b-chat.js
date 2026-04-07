@@ -1499,6 +1499,7 @@ async function bcConfirmKick(userId, userName) {
     if (error) throw error;
     showToast(userName + ' er fjernet fra boblen');
     bcLoadMembers();
+    bcLoadBubbleInfo();
   } catch(e) { logError('bcConfirmKick', e, { bubbleId: bcBubbleId, userId: userId }); errorToast('save', e); }
 }
 
@@ -1510,6 +1511,7 @@ async function bcApproveMember(userId) {
     if (error) throw error;
     showSuccessToast(t('bc_member_approved'));
     bcLoadMembers();
+    bcLoadBubbleInfo();
     // Notify approved user via Broadcast
     var bubbleName = bcBubbleData?.name || '';
     try {
@@ -1529,6 +1531,7 @@ async function bcRejectMember(userId) {
     if (error) throw error;
     showToast(t('bc_request_rejected'));
     bcLoadMembers();
+    bcLoadBubbleInfo();
   } catch(e) { logError('bcRejectMember', e); errorToast('save', e); }
 }
 
