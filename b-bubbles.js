@@ -1317,11 +1317,11 @@ async function checkPendingJoin() {
       // Mode A: auto check-in → open event directly
       var ciResult = await dbActions.checkIn(joinId);
       consumeFlow('event_flow');
+      // Set greeting flag for bubble chat to show welcome banner
+      try { sessionStorage.setItem('event_greeting', bubble.name || ''); } catch(e2) {}
       if (ciResult.ok) {
-        showSuccessToast(t('toast_checkedin'));
         goToThen('screen-home', function() { openBubbleChat(joinId, 'screen-home'); });
       } else {
-        showWarningToast(t('toast_joined'));
         goToThen('screen-home', function() { openBubbleChat(joinId, 'screen-home'); });
       }
     } else if (isEventFlow && isEvent) {

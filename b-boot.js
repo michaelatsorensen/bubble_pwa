@@ -878,12 +878,6 @@ window.addEventListener('load', async () => {
     });
   });
 
-  // Onboarding strength meter
-  ['ob-name','ob-title','ob-bio','ob-linkedin','ob-workplace'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.addEventListener('input', updateObStrength);
-  });
-
   // iOS keyboard dismiss: blur active input when tapping outside inputs
   document.addEventListener('touchstart', function(e) {
     var active = document.activeElement;

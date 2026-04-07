@@ -97,6 +97,8 @@ da: {
   // ── Onboarding ──
   ob_welcome: 'Velkommen til Bubble!',
   ob_almost_ready: 'Næsten klar!',
+  ob_goto_event: 'Gå til event →',
+  ob_get_started: 'Kom i gang →',
   ob_step_title: 'Titel / Rolle',
   ob_step_title_ph: 'f.eks. CTO, Designer, Studerende...',
   ob_step_workplace: 'Arbejdsplads / organisation',
@@ -369,6 +371,7 @@ da: {
   toast_bubble_deleted: 'Boble slettet',
   toast_bubble_not_found: 'Boble ikke fundet',
   toast_checkedin: 'Du er checket ind!',
+  event_greeting: 'Du er checket ind i {name}',
   toast_checkedout: 'Du er checket ud',
   toast_ownership_transferred: 'Ejerskab overdraget til {name}',
   toast_owner_leave: 'Du er ejer — overdrag ejerskab først under Info-fanen',
@@ -647,6 +650,8 @@ en: {
   // ── Onboarding ──
   ob_welcome: 'Welcome to Bubble!',
   ob_almost_ready: 'Almost ready!',
+  ob_goto_event: 'Go to event →',
+  ob_get_started: 'Get started →',
   ob_step_title: 'Title / Role',
   ob_step_title_ph: 'e.g. CTO, Designer, Student...',
   ob_step_workplace: 'Workplace / organisation',
@@ -919,6 +924,7 @@ en: {
   toast_bubble_deleted: 'Bubble deleted',
   toast_bubble_not_found: 'Bubble not found',
   toast_checkedin: 'You\'re checked in!',
+  event_greeting: 'You\'re checked in to {name}',
   toast_checkedout: 'You\'re checked out',
   toast_ownership_transferred: 'Ownership transferred to {name}',
   toast_owner_leave: 'You\'re the owner — transfer ownership first in the Info tab',

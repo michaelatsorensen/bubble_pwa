@@ -363,6 +363,37 @@ async function bcLoadMembership(b, bubbleId) {
 
   // Action buttons + tab gating
   bcRenderActions(b, myMembership, canEdit, isPending);
+
+  // Event greeting banner (shown once after QR auto-checkin)
+  _bcShowEventGreeting();
+}
+
+// ── Event greeting banner (shown once after QR auto-checkin) ──
+function _bcShowEventGreeting() {
+  var eventName;
+  try { eventName = sessionStorage.getItem('event_greeting'); } catch(e) { return; }
+  if (eventName === null) return;
+  // Consume immediately so it only shows once
+  try { sessionStorage.removeItem('event_greeting'); } catch(e) {}
+
+  var banner = document.createElement('div');
+  banner.id = 'bc-event-greeting';
+  banner.style.cssText = 'padding:0.6rem 1rem;margin:0.5rem 1.1rem 0;border-radius:10px;background:rgba(26,158,142,0.08);border:1px solid rgba(26,158,142,0.18);font-size:0.8rem;color:#085041;font-weight:600;display:flex;align-items:center;gap:0.5rem;cursor:pointer;animation:fadeSlideUp 0.3s ease';
+  banner.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+    '<span>' + t('event_greeting', { name: escHtml(eventName) }) + '</span>';
+  banner.onclick = function() { banner.remove(); };
+
+  var anchor = document.getElementById('bc-action-bar');
+  if (anchor) anchor.insertAdjacentElement('afterend', banner);
+
+  // Auto-dismiss after 6 seconds
+  setTimeout(function() {
+    if (banner.parentNode) {
+      banner.style.transition = 'opacity 0.4s ease';
+      banner.style.opacity = '0';
+      setTimeout(function() { banner.remove(); }, 400);
+    }
+  }, 6000);
 }
 
 // Render or hide pending membership banner

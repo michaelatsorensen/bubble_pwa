@@ -99,19 +99,8 @@ async function maybeShowOnboarding() {
     // Pre-fill from OAuth metadata
     var obName = document.getElementById('ob-name');
     if (obName) obName.value = autoName || currentProfile?.name || '';
-    var obTitle = document.getElementById('ob-title');
-    if (obTitle) obTitle.value = currentProfile?.title || '';
-    var obBio = document.getElementById('ob-bio');
-    if (obBio) obBio.value = currentProfile?.bio || '';
-    var obLinkedin = document.getElementById('ob-linkedin');
-    if (obLinkedin) obLinkedin.value = currentProfile?.linkedin || '';
     var obWp = document.getElementById('ob-workplace');
     if (obWp) obWp.value = currentProfile?.workplace || '';
-
-    // Initialize tag picker with existing tags
-    obSelectedTags = Array.isArray(currentProfile?.keywords) ? [...currentProfile.keywords] : [];
-    obRenderSelectedTags();
-    obRenderCategories();
 
     // Show QR contact confirmation banner if pending
     var pendingContact = flowGet('pending_contact');
@@ -126,8 +115,7 @@ async function maybeShowOnboarding() {
 
     goTo('screen-onboarding');
     setTimeout(initInputConfirmButtons, 50);
-    // Trigger strength check so button state reflects pre-filled values immediately
-    setTimeout(updateObStrength, 80);
+    setTimeout(obCheckProgress, 80);
     return true;
   } catch(e) { logError("maybeShowOnboarding", e); errorToast("load", e); }
 }
@@ -179,7 +167,8 @@ function _showMinimalOnboarding(hasName, hasWorkplace, autoName) {
         '<div id="mini-ob-consent" style="width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s;margin-top:1px"></div>' +
         '<span style="font-size:0.72rem;color:var(--text-secondary);line-height:1.4">Jeg accepterer Bubble\'s <a href="#" onclick="event.stopPropagation();showTerms()">betingelser</a> og <a href="#" onclick="event.stopPropagation();showTerms()">privatlivspolitik</a></span>' +
       '</label>' +
-      '<button class="btn-primary" id="mini-ob-save" onclick="_miniObSave()" style="margin-top:0.8rem" disabled>Fortsæt</button>' +
+      '<button class="btn-primary" id="mini-ob-save" onclick="_miniObSave()" style="margin-top:0.8rem" disabled>' + (flowGet('event_flow') ? 'Gå til event →' : 'Fortsæt') + '</button>' +
+      '<div style="text-align:center;font-size:0.72rem;color:var(--muted);margin-top:0.5rem">Du kan tilføje interesser, titel og mere bagefter</div>' +
     '</div>';
 
   document.body.appendChild(ov);
@@ -224,7 +213,7 @@ async function _miniObSave() {
   if (btn) { btn.textContent = 'Gemmer...'; btn.disabled = true; }
 
   try {
-    var update = {};
+    var update = { terms_accepted_at: new Date().toISOString() };
     if (nameEl) update.name = name;
     if (wpEl) update.workplace = wp;
     var { error } = await sb.from('profiles').update(update).eq('id', currentUser.id);
@@ -250,66 +239,7 @@ async function _miniObSave() {
 //  WELCOME & GETTING STARTED
 // ══════════════════════════════════════════════════════════
 
-// ── Profile strength meter (onboarding) ──
-var obDynChips = [];
-
-function updateObStrength() {
-  var name = (document.getElementById('ob-name')?.value || '').trim();
-  var title = (document.getElementById('ob-title')?.value || '').trim();
-  var bio = (document.getElementById('ob-bio')?.value || '').trim();
-  var linkedin = (document.getElementById('ob-linkedin')?.value || '').trim();
-  var tags = obSelectedTags.length;
-  var dynTags = obDynChips.length;
-
-  var score = 0;
-  if (name) score += 15;
-  if (obLifestage) score += 5;
-  if (title) score += 15;
-  if (bio && bio.length > 20) score += 20;
-  else if (bio) score += 8;
-  if (tags >= 5) score += 25;
-  else if (tags >= 3) score += 15;
-  else if (tags >= 1) score += 5;
-  if (dynTags >= 1) score += 15;
-  if (linkedin) score += 10;
-
-  var bar = document.getElementById('ob-strength-bar');
-  var label = document.getElementById('ob-strength-label');
-  if (!bar || !label) return;
-  bar.style.width = score + '%';
-  if (score >= 80) { label.textContent = t('pf_strength_strong'); label.style.color = '#1A9E8E'; bar.style.background = '#1A9E8E'; }
-  else if (score >= 50) { label.textContent = t('pf_strength_good'); label.style.color = 'var(--accent)'; bar.style.background = 'var(--accent)'; }
-  else if (score >= 30) { label.textContent = 'OK'; label.style.color = 'var(--gold)'; bar.style.background = 'var(--gold)'; }
-  else { label.textContent = t('pf_strength_weak'); label.style.color = 'var(--accent2)'; bar.style.background = 'var(--accent2)'; }
-
-  // Actionable hint
-  var hint = document.getElementById('ob-strength-hint');
-  if (hint) {
-    if (!name) hint.textContent = 'Tilføj dit navn for at komme i gang';
-    else if (!title) hint.textContent = 'Vælg en titel — den vises i radaren';
-    else if (tags < 3) hint.textContent = 'Vælg ' + (3 - tags) + ' tags mere for at aktivere matching';
-    else if (tags < 5) hint.textContent = 'Flere tags = bedre matches';
-    else if (!bio) hint.textContent = 'Tilføj en bio under "Gør din profil stærkere"';
-    else if (!linkedin) hint.textContent = 'LinkedIn gør det lettere at connecte videre';
-    else hint.textContent = t('ob_profile_ready');
-  }
-}
-
-
-// ── Lifestage selector & role suggestions ──
-var OB_LIFESTAGE_ROLES = {
-  student: ['Student','PhD','Researcher','Praktikant','Studentermedhjælper','Teaching Assistant','Kandidatstuderende','Bachelorstuderende','Stipendiat','Lab Assistant','Tutor','Studenterambassadør'],
-  employee: ['Developer','Designer','Product Manager','Marketing','Sales','HR','Finance','Operations','Team Lead','Director','Project Manager','Data Scientist','Engineer','Analyst','Consultant','Account Manager','Customer Success','DevOps','QA','Scrum Master','UX Researcher','Content Manager','Business Developer','Logistics','Supply Chain'],
-  entrepreneur: ['Founder','Co-Founder','CEO','CTO','CFO','COO','CMO','CPO','Iværksætter','Serial Entrepreneur','Solo Founder','Startup Advisor','Growth Lead','Head of Product','Technical Lead'],
-  freelancer: ['Freelancer','Consultant','Advisor','Coach','Mentor','Selvstændig','Fotograf','Grafiker','Tekstforfatter','Webudvikler','Oversætter','Illustrator','Regnskab','Virtual Assistant','Projektleder'],
-  public: ['Sagsbehandler','Kommunaldirektør','Projektleder','Koordinator','Rådgiver','Leder','Analytiker','Socialrådgiver','Lærer','Pædagog','Sygeplejerske','Læge','Forsker','Jurist','Bibliotekar','Planlægger','Embedsmand'],
-  practical: ['Håndværker','Tekniker','Sygeplejerske','Mekaniker','Elektriker','Tømrer','Landmand','Operatør','Montør','Murer','VVS','Smed','Maler','Gartner','Kok','Bager','Frisør','Chauffør','Lagermedarbejder'],
-  investor: ['Investor','Business Angel','VC','LP','Board Member','Partner','Fund Manager','Family Office','Syndicate Lead','Due Diligence','Portfolio Manager','Impact Investor','Micro VC','Crowdfunding'],
-  other: ['Pensionist','Mellem jobs','Karriereskift','Frivillig','Community Builder','Kreativ','Hjemmegående','Sabbatical','Digital Nomad','Influencer','Kunstner','Musiker','Atlet','Aktivist']
-};
-var obLifestage = null;
-
-// ── Progress check (simplified v5.6) ──
+// ── Progress check (simplified v8.15) ──
 var _obConsentGiven = false;
 
 function obToggleConsent() {
@@ -329,46 +259,8 @@ function obCheckProgress() {
     var canSave = name && workplace && _obConsentGiven;
     saveBtn.disabled = !canSave;
   }
-
-  // Render tag categories if not yet done
-  if (name && workplace) {
-    var cats = document.getElementById('ob-tag-categories');
-    if (cats && !cats.innerHTML) obRenderCategories();
-  }
-
-  // Tag min label
-  obUpdateTagLabel();
-  updateObStrength();
 }
 
-
-// ── Step navigation ──
-function obNextStep() {
-  var name = (document.getElementById('ob-name')?.value || '').trim();
-  var workplace = (document.getElementById('ob-workplace')?.value || '').trim();
-  if (!name) { showWarningToast('Skriv dit navn først'); return; }
-  if (!workplace) { showWarningToast('Tilføj arbejdsplads'); return; }
-  if (!_obConsentGiven) { showWarningToast('Du skal acceptere betingelserne'); return; }
-  // Show step 2
-  var s1 = document.getElementById('ob-step-1');
-  var s2 = document.getElementById('ob-step-2');
-  if (s1) s1.style.display = 'none';
-  if (s2) s2.style.display = 'block';
-  // Scroll to top + init tag picker
-  var scroll = document.querySelector('#screen-onboarding > div');
-  if (scroll) scroll.scrollTop = 0;
-  obRenderCategories();
-  updateObStrength();
-}
-
-function obPrevStep() {
-  var s1 = document.getElementById('ob-step-1');
-  var s2 = document.getElementById('ob-step-2');
-  if (s1) s1.style.display = 'block';
-  if (s2) s2.style.display = 'none';
-  var scroll = document.querySelector('#screen-onboarding > div');
-  if (scroll) scroll.scrollTop = 0;
-}
 
 // Note: skipOnboarding is no longer called from UI (v5.6 removed skip button)
 // Kept for backwards compatibility if re-enabled
@@ -383,10 +275,8 @@ async function skipOnboarding() {
   try {
     await sb.from('profiles').upsert({
       id: currentUser.id, name: name,
-      title: (document.getElementById('ob-title')?.value || '').trim() || '',
       workplace: workplace,
-      keywords: obSelectedTags.length > 0 ? obSelectedTags : [],
-      dynamic_keywords: [], bio: '', is_anon: false,
+      is_anon: false,
       onboarding_skipped: true
     });
     await loadCurrentProfile();
@@ -447,12 +337,9 @@ async function confirmAbortOnboarding() {
   if (overlay) bbDynClose(overlay);
   try {
     // Clear onboarding inputs
-    ['ob-name','ob-title','ob-bio','ob-linkedin','ob-workplace'].forEach(function(id) {
+    ['ob-name','ob-workplace'].forEach(function(id) {
       var el = document.getElementById(id); if (el) el.value = '';
     });
-    obSelectedTags = [];
-    obDynChips = [];
-    obLifestage = null;
     // Sign out and go to auth
     bcUnsubscribeAll();
     rtUnsubscribeAll();
@@ -466,86 +353,6 @@ async function confirmAbortOnboarding() {
   } catch(e) { logError("confirmAbortOnboarding", e); }
 }
 
-function obSelectLifestage(btn) {
-  // Deselect all
-  document.querySelectorAll('.ob-lifestage-btn').forEach(function(b) { b.classList.remove('selected'); });
-  btn.classList.add('selected');
-  obLifestage = btn.dataset.stage;
-
-  // Show role suggestions with show-more
-  var roles = OB_LIFESTAGE_ROLES[obLifestage] || [];
-  var container = document.getElementById('ob-role-suggestions');
-  if (container) {
-    var initialShow = 8;
-    var visibleRoles = roles.slice(0, initialShow);
-    var hiddenRoles = roles.slice(initialShow);
-    container.innerHTML = visibleRoles.map(function(r) {
-      return '<button type="button" class="ob-role-chip" onclick="obSetTitle(this)">' + r + '</button>';
-    }).join('') +
-    (hiddenRoles.length > 0 ? '<span id="ob-roles-hidden" style="display:none">' + hiddenRoles.map(function(r) {
-      return '<button type="button" class="ob-role-chip" onclick="obSetTitle(this)">' + r + '</button>';
-    }).join('') + '</span>' +
-    '<button type="button" class="ob-show-more" id="ob-roles-toggle" onclick="obToggleRoles()" style="color:var(--accent);margin-top:0.2rem">' + t('ob_show_all', { n: roles.length + ' roller' }) + '</button>' : '');
-  }
-
-  // Auto-add lifestage as first tag if relevant
-  var autoTag = {student:'Student',entrepreneur:'Iværksætter',freelancer:'Freelancer',investor:'Investor',public:'GovTech',practical:'Håndværk'}[obLifestage];
-  if (autoTag && obSelectedTags.indexOf(autoTag) < 0) {
-    obAddTag(autoTag, getTagCategory(autoTag) || 'rolle');
-  }
-
-  // Re-render categories filtered for this lifestage
-  obRenderCategories();
-  obCheckProgress();
-  updateObStrength();
-}
-
-function obSetTitle(btn) {
-  var input = document.getElementById('ob-title');
-  if (!input) return;
-  input.value = btn.textContent;
-  document.querySelectorAll('.ob-role-chip').forEach(function(b) { b.classList.remove('active'); });
-  btn.classList.add('active');
-  // Confirm button green
-  var cb = input.parentElement?.querySelector('.input-confirm-btn');
-  if (cb) { cb.classList.add('confirmed'); }
-  updateObStrength();
-}
-
-function obToggleRoles() {
-  var hidden = document.getElementById('ob-roles-hidden');
-  var toggle = document.getElementById('ob-roles-toggle');
-  if (!hidden || !toggle) return;
-  if (hidden.style.display === 'none') {
-    hidden.style.display = 'inline';
-    toggle.textContent = t('ob_show_fewer');
-  } else {
-    hidden.style.display = 'none';
-    var roles = OB_LIFESTAGE_ROLES[obLifestage] || [];
-    toggle.textContent = t('ob_show_all', { n: roles.length + ' roller' });
-  }
-}
-
-// Save custom-typed titles for admin review (fires on save)
-function persistCustomTitle(title) {
-  if (!title || !currentUser) return;
-  // Check if it's a known role
-  var allRoles = Object.values(OB_LIFESTAGE_ROLES).flat();
-  var isKnown = allRoles.some(function(r) { return r.toLowerCase() === title.toLowerCase(); });
-  if (isKnown) return; // Already in suggestions, no need to save
-  // Save as custom tag candidate for admin review
-  sb.from('custom_tags').upsert({
-    label: title, category: 'rolle', created_by: currentUser.id, usage_count: 1
-  }, { onConflict: 'label' }).then(function() {
-    // Increment usage if already exists
-    sb.from('custom_tags').select('id,usage_count').eq('label', title).maybeSingle().then(function(res) {
-      if (res.data && res.data.usage_count > 1) return;
-      // Already handled by upsert
-    });
-  }).catch(function() {});
-}
-
-// ── Apple Login ──
 
 function welcomeGo(target) {
   localStorage.setItem('bubble_welcomed', '1');
@@ -562,69 +369,8 @@ function welcomeGo(target) {
 // ══════════════════════════════════════════════════════════
 //  TAG PICKER SYSTEM
 // ══════════════════════════════════════════════════════════
-var obSelectedTags = [];
 var epSelectedTags = [];
 
-function obTagSearch(q) {
-  var el = document.getElementById('ob-tag-suggestions');
-  if (!el) return;
-  if (!q || q.length < 1) {
-    el.style.display = 'none';
-    return;
-  }
-  var results = searchTags(q).filter(function(t) { return obSelectedTags.indexOf(t.label) < 0; });
-  if (results.length === 0 && q.trim().length > 1) {
-    // Allow custom tag
-    el.innerHTML = '<div class="tag-sug-item custom" onclick="obAddTag(\'' + escHtml(q.trim()) + '\',\'custom\')">' +
-      '<span class="tag-sug-label">+ \"' + escHtml(q.trim()) + '\" (nyt tag)</span></div>';
-    el.style.display = 'block';
-    return;
-  }
-  if (results.length === 0) { el.style.display = 'none'; return; }
-  el.innerHTML = results.map(function(t) {
-    var catInfo = TAG_CATEGORIES[t.category] || {};
-    return '<div class="tag-sug-item" onclick="obAddTag(\'' + escHtml(t.label).replace(/'/g,"\\'") + '\',\'' + t.category + '\')">' +
-      '<span class="tag-sug-dot" style="background:' + (catInfo.color || 'var(--accent)') + '"></span>' +
-      '<span class="tag-sug-label">' + escHtml(t.label) + '</span>' +
-      '<span class="tag-sug-cat">' + (catInfo.label || t.category) + '</span></div>';
-  }).join('');
-  el.style.display = 'block';
-}
-
-function obAddTag(label, category) {
-  if (obSelectedTags.indexOf(label) >= 0) return;
-  obSelectedTags.push(label);
-  obRenderSelectedTags();
-  obRenderCategories(); // update selected state in tag list
-  var input = document.getElementById('ob-tag-search');
-  if (input) { input.value = ''; }
-  var sug = document.getElementById('ob-tag-suggestions');
-  if (sug) sug.style.display = 'none';
-  updateObStrength();
-}
-
-function obRemoveTag(label) {
-  obSelectedTags = obSelectedTags.filter(function(t) { return t !== label; });
-  obRenderSelectedTags();
-  obRenderCategories(); // update selected state in tag list
-  updateObStrength();
-}
-
-function obRenderSelectedTags() {
-  var el = document.getElementById('ob-tag-selected');
-  if (!el) return;
-  if (obSelectedTags.length === 0) { el.innerHTML = ''; return; }
-  el.innerHTML = obSelectedTags.map(function(t) {
-    var cat = getTagCategory(t);
-    var color = TAG_CATEGORIES[cat]?.color || 'var(--accent)';
-    return '<span class="tag-chip" style="border-color:' + color + '40;background:' + color + '15">' +
-      '<span class="tag-chip-dot" style="background:' + color + '"></span>' +
-      escHtml(t) +
-      '<span class="tag-chip-x" onclick="obRemoveTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\')">×</span></span>';
-  }).join('');
-}
-
-// ── Lifestage → tag filtering ──
 var OB_LIFESTAGE_TAGS = {
   student: {
     branche: ['Edtech','AI/ML','Healthtech','Cleantech','SaaS','Gaming','Media','Cybersecurity','Biotech','Fintech','NGO','Forskning','Universitet'],
@@ -723,108 +469,6 @@ var OB_INTEREST_TAGS = {
 };
 
 
-function obGetRecommendedTags(cat) {
-  var allTags = TAG_DATABASE[cat] || [];
-  if (cat === 'rolle') return allTags.slice(0, 8);
-
-  // Start with lifestage-based recommendations
-  var lifestageRecs = (obLifestage && OB_LIFESTAGE_TAGS[obLifestage]) ? OB_LIFESTAGE_TAGS[obLifestage][cat] || [] : [];
-
-  // Add interest-based recommendations
-  var interestRecs = [];
-  if (_selectedInterests && _selectedInterests.length > 0) {
-    _selectedInterests.forEach(function(key) {
-      var map = OB_INTEREST_TAGS[key];
-      if (map && map[cat]) {
-        map[cat].forEach(function(t) {
-          if (interestRecs.indexOf(t) < 0 && allTags.indexOf(t) >= 0) interestRecs.push(t);
-        });
-      }
-    });
-  }
-
-  // Merge: interest tags first (highest relevance), then lifestage, deduplicated
-  var merged = [];
-  interestRecs.forEach(function(t) { if (merged.indexOf(t) < 0) merged.push(t); });
-  lifestageRecs.forEach(function(t) { if (merged.indexOf(t) < 0) merged.push(t); });
-
-  // If still empty, fall back to first 8
-  if (merged.length === 0) return allTags.slice(0, 8);
-
-  // Cap at 12 to keep it scannable
-  return merged.slice(0, 12);
-}
-
-var OB_TAGS_INITIAL = 8; // Show 8 tags initially per category
-var _obExpandedCats = {};
-
-function obRenderCategories() {
-  var el = document.getElementById('ob-tag-categories');
-  if (!el) return;
-
-  el.innerHTML = Object.entries(TAG_CATEGORIES).map(function(entry) {
-    var cat = entry[0], info = entry[1];
-    if (cat === 'rolle') return '';
-    var allTags = TAG_DATABASE[cat] || [];
-    var recommended = obGetRecommendedTags(cat);
-    var otherTags = allTags.filter(function(t) { return recommended.indexOf(t) < 0; });
-    var expanded = _obExpandedCats[cat];
-    var visibleOthers = expanded ? otherTags : otherTags.slice(0, 8);
-
-    return '<div class="ob-cat-block">' +
-      '<div class="ob-cat-header">' +
-      '<span class="tag-cat-dot" style="background:' + info.color + '"></span>' +
-      '<span class="tag-cat-title">' + info.label + '</span>' +
-      '</div>' +
-      '<div class="ob-tag-section-label recommended">For dig</div>' +
-      '<div class="ob-cat-tags">' +
-      recommended.map(function(t) {
-        var sel = obSelectedTags.indexOf(t) >= 0;
-        return '<span class="tag-pick recommended' + (sel ? ' selected' : '') + '" ' +
-          'style="border-color:' + info.color + '30;' + (sel ? 'background:' + info.color + '20;color:' + info.color : 'color:' + info.color + '99') + '" ' +
-          'onclick="obTogglePickTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\',\'' + cat + '\',this)">' +
-          escHtml(t) + '</span>';
-      }).join('') +
-      '</div>' +
-      (otherTags.length > 0 ? '<div class="ob-tag-section-label other">Andre</div>' +
-      '<div class="ob-cat-tags">' +
-      visibleOthers.map(function(t) {
-        var sel = obSelectedTags.indexOf(t) >= 0;
-        return '<span class="tag-pick other-tag' + (sel ? ' selected' : '') + '" ' +
-          'style="border-color:' + info.color + '30;' + (sel ? 'background:' + info.color + '20;color:' + info.color : 'color:' + info.color + '99') + '" ' +
-          'onclick="obTogglePickTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\',\'' + cat + '\',this)">' +
-          escHtml(t) + '</span>';
-      }).join('') +
-      '</div>' +
-      (otherTags.length > 8 ? '<button type="button" class="ob-show-more" onclick="obToggleExpand(\'' + cat + '\')" style="color:' + info.color + '">' +
-        (expanded ? '\u2212 Vis f\u00e6rre' : '+ Vis alle ' + otherTags.length + ' andre') + '</button>' : '') : '') +
-      '<div class="ob-cat-custom"><div class="ob-cat-custom-row">' +
-      '<input class="ob-cat-custom-input" placeholder="+ Tilf\u00f8j egen..." onkeydown="obCustomTag(event,\'' + cat + '\',this)" data-cat="' + cat + '">' +
-      '<button type="button" class="ob-cat-custom-btn" onclick="obCustomTagBtn(\'' + cat + '\',this)" title="Tilf\u00f8j">\u2713</button>' +
-      '</div></div></div>';
-  }).join('');
-
-  obUpdateTagLabel();
-}
-
-function obUpdateTagLabel() {
-  var label = document.getElementById('ob-tag-min-label');
-  if (!label) return;
-  if (obSelectedTags.length >= 3) {
-    label.textContent = t('ob_tags_selected', { n: obSelectedTags.length });
-    label.style.color = 'var(--green)';
-  } else {
-    label.textContent = t('ob_select_min3_tags', { n: obSelectedTags.length });
-    label.style.color = 'var(--muted)';
-  }
-}
-
-function obToggleExpand(cat) {
-  _obExpandedCats[cat] = !_obExpandedCats[cat];
-  obRenderCategories();
-}
-
-// ── Custom tag creation with dedup + basic filter ──
 var OB_BLOCKED_WORDS = ['fuck','shit','ass','dick','pik','lort','idiot','nazi','hitler'];
 var CUSTOM_TAG_PROMOTE_THRESHOLD = 3;
 
@@ -845,81 +489,9 @@ async function loadPromotedCustomTags() {
     });
   } catch(e) { console.warn('loadPromotedCustomTags:', e); }
 }
-
-function obCustomTagBtn(cat, btn) {
-  var input = btn.parentElement.querySelector('.ob-cat-custom-input');
-  if (!input) return;
-  obCustomTag({ key: 'Enter', preventDefault: function(){} }, cat, input);
-}
-
-function obCustomTag(event, cat, input) {
-  if (event.key !== 'Enter') return;
-  event.preventDefault();
-  var val = input.value.trim();
-  if (!val || val.length < 2 || val.length > 40) { input.value = ''; return; }
-
-  // Block inappropriate content
-  var lower = val.toLowerCase();
-  if (OB_BLOCKED_WORDS.some(function(w) { return lower.includes(w); })) {
-    showWarningToast('Det tag er ikke tilladt');
-    input.value = '';
-    return;
-  }
-
-  // Case-insensitive dedup against existing tags (curated + promoted)
-  var exists = ALL_TAGS.find(function(t) { return t.label.toLowerCase() === lower; });
-  if (exists) {
-    obAddTag(exists.label, exists.category);
-    input.value = '';
-    obRenderCategories();
-    obCheckProgress();
-    return;
-  }
-
-  // New custom tag — add locally for THIS user only (not to TAG_DATABASE)
-  var formatted = val.charAt(0).toUpperCase() + val.slice(1);
-  obAddTag(formatted, cat);
-  input.value = '';
-  obRenderCategories();
-  obCheckProgress();
-  showToast('Tag tilføjet til din profil');
-
-  // Persist to Supabase: increment usage_count if exists, insert if new
-  if (typeof sb !== 'undefined' && currentUser) {
-    sb.from('custom_tags').select('id,usage_count').eq('label', formatted).maybeSingle()
-      .then(function(res) {
-        if (res.data) {
-          // Tag exists — increment usage count
-          sb.from('custom_tags').update({ usage_count: (res.data.usage_count || 0) + 1 })
-            .eq('id', res.data.id).then(function() {}).catch(function() {});
-        } else {
-          // New tag — insert with count 1
-          sb.from('custom_tags').insert({
-            label: formatted, category: cat, created_by: currentUser.id, usage_count: 1
-          }).then(function() {}).catch(function() {});
-        }
-      }).catch(function() {});
-  }
-}
-
-
-function obTogglePickTag(label, cat, el) {
-  if (obSelectedTags.indexOf(label) >= 0) {
-    obRemoveTag(label);
-    if (el) { el.classList.remove('selected'); el.style.background = ''; }
-  } else {
-    obAddTag(label, cat);
-    var color = TAG_CATEGORIES[cat]?.color || 'var(--accent)';
-    if (el) { el.classList.add('selected'); el.style.background = color + '20'; }
-  }
-  obCheckProgress();
-}
-
 // Close suggestions when clicking outside
 document.addEventListener('click', function(e) {
   if (!e.target.closest('.tag-search-wrap')) {
-    var sug = document.getElementById('ob-tag-suggestions');
-    if (sug) sug.style.display = 'none';
     var sug2 = document.getElementById('ep-tag-suggestions');
     if (sug2) sug2.style.display = 'none';
   }
@@ -1137,13 +709,15 @@ async function saveOnboarding() {
     const workplace = (document.getElementById('ob-workplace')?.value || '').trim();
     if (!name)      return showWarningToast('Navn er påkrævet');
     if (!workplace) return showWarningToast('Virksomhed er påkrævet');
+    var isEventFlow = !!flowGet('event_flow');
     var btn = document.getElementById('ob-save-btn');
     if (btn) { btn.textContent = 'Gemmer...'; btn.disabled = true; }
     const { error } = await sb.from('profiles').upsert({
-      id: currentUser.id, name, workplace, is_anon: false
+      id: currentUser.id, name, workplace, is_anon: false,
+      terms_accepted_at: new Date().toISOString()
     });
     if (error) {
-      if (btn) { btn.textContent = 'Kom i gang →'; btn.disabled = false; }
+      if (btn) { btn.textContent = isEventFlow ? t('ob_goto_event') : t('ob_get_started'); btn.disabled = false; }
       return errorToast('save', error);
     }
     await loadCurrentProfile();
