@@ -944,9 +944,8 @@ async function loadMyNetworks() {
       var start = new Date(ev.event_date);
       var end = ev.event_end_date ? new Date(ev.event_end_date) : new Date(start.getTime() + 24 * 60 * 60 * 1000);
       var windowStart = new Date(start.getTime() - 60 * 60 * 1000); // 1h before
-      var windowEnd = new Date(end.getTime() + 2 * 60 * 60 * 1000); // 2h after
       if (now < windowStart) return 'before';
-      if (now > windowEnd) return 'after';
+      if (now > end) return 'after';
       return 'active';
     }
 

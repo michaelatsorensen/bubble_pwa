@@ -472,9 +472,14 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
     // Set initial tab — Info first so user sees hierarchy + context
     bcSwitchTab('info');
     // Edit button as topbar card
+    var _scannerVisible = canEdit && (b.type === 'event' || b.type === 'live' || b.visibility === 'private' || b.visibility === 'hidden');
+    if (_scannerVisible && (b.type === 'event' || b.type === 'live') && b.event_date) {
+      var _evEnd = new Date(b.event_end_date || b.event_date);
+      if (_evEnd < new Date()) _scannerVisible = false;
+    }
     actionArea.innerHTML =
       (canEdit ? `<button class="chat-topbar-back" data-action="openEditBubble" data-id="${b.id}" title="Rediger"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg></button>` : '') +
-      (canEdit && (b.type === 'event' || b.type === 'live' || b.visibility === 'private' || b.visibility === 'hidden') ? `<button class="chat-topbar-back" onclick="openBubbleScannerFromInfo('${b.id}')" title="Scanner" style="color:#1A9E8E"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7V2h5M17 2h5v5M22 17v5h-5M7 22H2v-5"/><line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2 2"/></svg></button>` : '');
+      (_scannerVisible ? `<button class="chat-topbar-back" onclick="openBubbleScannerFromInfo('${b.id}')" title="Scanner" style="color:#1A9E8E"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7V2h5M17 2h5v5M22 17v5h-5M7 22H2v-5"/><line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2 2"/></svg></button>` : '');
     actionArea.style.display = canEdit ? 'flex' : 'none';
     if (actionBar) {
       var upvoted = myUpvotes[b.id];
