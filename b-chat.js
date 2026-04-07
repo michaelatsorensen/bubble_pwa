@@ -992,6 +992,14 @@ async function bcToggleChatLock(bubbleId, locked) {
   }
   if (bcBubbleData) bcBubbleData.chat_locked = locked;
   bcUpdateChatLockUI();
+  // Update toggle visual state without full re-render
+  var toggleEl = document.querySelector('#bc-panel-info input[type="checkbox"][onchange*="bcToggleChatLock"]');
+  if (toggleEl) {
+    var track = toggleEl.nextElementSibling;
+    var knob = track ? track.nextElementSibling : null;
+    if (track) track.style.background = locked ? 'var(--accent)' : 'var(--border)';
+    if (knob) knob.style.left = locked ? '18px' : '2px';
+  }
   showSuccessToast(locked ? t('bc_chat_closed') : t('bc_chat_opened'));
 }
 
