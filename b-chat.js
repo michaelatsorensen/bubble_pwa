@@ -1600,7 +1600,7 @@ async function bcLoadInfo() {
     if (!isEvent) {
       try {
         var { data: childBubbles } = await sb.from('bubbles')
-          .select('id, name, type, created_at, event_date, event_end_date, visibility, icon_url, bubble_members(count)')
+          .select('id, name, type, created_at, event_date, event_end_date, visibility, icon_url, agenda, bubble_members(count)')
           .eq('parent_bubble_id', b.id)
           .order('event_date', { ascending: true, nullsFirst: false })
           .limit(20);
@@ -1619,7 +1619,7 @@ async function bcLoadInfo() {
           var childNetIds = childNets.map(function(cn) { return cn.id; });
           if (childNetIds.length > 0) {
             var { data: grandchildren } = await sb.from('bubbles')
-              .select('id, name, type, event_date, event_end_date, visibility, parent_bubble_id, icon_url, bubble_members(count)')
+              .select('id, name, type, event_date, event_end_date, visibility, parent_bubble_id, icon_url, agenda, bubble_members(count)')
               .in('parent_bubble_id', childNetIds)
               .order('event_date', { ascending: true, nullsFirst: false });
             (grandchildren || []).forEach(function(gc) {
@@ -1694,12 +1694,22 @@ async function bcLoadInfo() {
                 : '')
               : '';
             var chEvLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ch.id);
-            childCards += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
-            childCards += '<div class="bb-tree-evt-ico">' + (ev.icon_url ? '<img src="' + escHtml(ev.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px">' : _calIco) + '</div>';
+            var _agId = 'bc-agenda-' + ch.id;
+            childCards += '<div class="bb-tree-branch">';
+            childCards += '<div class="bb-tree-evt" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
+            childCards += '<div class="bb-tree-evt-ico">' + (ch.icon_url ? '<img src="' + escHtml(ch.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px">' : _calIco) + '</div>';
             childCards += '<div style="flex:1;min-width:0"><div style="font-size:0.75rem;font-weight:600">' + escHtml(ch.name) + (chEvLive ? ' <span class="live-badge-mini">LIVE</span>' : '') + '</div>';
             childCards += '<div style="font-size:0.58rem;color:var(--muted)">' + visIcon(ch.visibility) + dateStr + ' \u00B7 ' + chMc + ' tilmeldt</div></div>';
-            childCards += '<div class="bb-tree-go">\u203A</div>';
-            childCards += '</div></div>';
+            if (ch.agenda) {
+              childCards += '<div onclick="event.stopPropagation();var p=document.getElementById(\'' + _agId + '\');var v=p.style.display===\'none\';p.style.display=v?\'block\':\'none\';this.style.transform=v?\'rotate(90deg)\':\'rotate(0)\'" style="cursor:pointer;color:var(--muted);transition:transform 0.2s;padding:4px">' + _chevSm + '</div>';
+            } else {
+              childCards += '<div class="bb-tree-go">\u203A</div>';
+            }
+            childCards += '</div>';
+            if (ch.agenda) {
+              childCards += '<div id="' + _agId + '" style="display:none;padding:0.4rem 0.6rem 0.5rem 2.2rem;font-size:0.7rem;color:var(--text-secondary);line-height:1.5;white-space:pre-line;background:rgba(46,207,207,0.03);border-radius:0 0 8px 8px;margin-top:-2px;border-top:0.5px solid rgba(46,207,207,0.1)">' + escHtml(ch.agenda) + '</div>';
+            }
+            childCards += '</div>';
           });
 
           eventsHtml = '<div style="margin-bottom:0.9rem">' +
