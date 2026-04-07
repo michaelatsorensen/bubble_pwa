@@ -60,7 +60,7 @@ async function toggleBubbleUpvote(bubbleId) {
       var nl = document.getElementById('discover-net-list');
       var el = document.getElementById('discover-evt-list');
       if (nl && nl.offsetParent) _renderDiscoverList(nl, allBubbles.filter(function(b){return b.type!=='event';}), 'netværk');
-      if (el && el.offsetParent) _renderDiscoverList(el, allBubbles.filter(function(b){return b.type==='event';}), 'events');
+      if (el && el.offsetParent) _renderDiscoverList(el, _discoverUpcomingEvents(), 'events');
     }
     // Update info panel button if open
     var recBtn = document.getElementById('bc-recommend-btn');
@@ -214,9 +214,24 @@ async function loadDiscoverEvents() {
   list.innerHTML = skelCards(4);
   try {
     await _fetchDiscoverData();
-    var evts = allBubbles.filter(function(b) { return b.type === 'event'; });
+    var evts = _discoverUpcomingEvents();
     _renderDiscoverList(list, evts, 'events');
   } catch(e) { showRetryState('discover-evt-list', 'loadDiscoverEvents', 'Kunne ikke hente events'); }
+}
+
+function _discoverUpcomingEvents() {
+  var now = new Date();
+  return allBubbles.filter(function(b) {
+    if (b.type !== 'event') return false;
+    if (!b.event_date) return true; // no date set → show anyway
+    return new Date(b.event_end_date || b.event_date) >= now;
+  }).sort(function(a, b) {
+    var da = a.event_date ? new Date(a.event_date).getTime() : Infinity;
+    var db = b.event_date ? new Date(b.event_date).getTime() : Infinity;
+    if (da !== db) return da - db;
+    if (b.upvote_count !== a.upvote_count) return b.upvote_count - a.upvote_count;
+    return b.member_count - a.member_count;
+  });
 }
 
 // Compat wrapper — called from pull-to-refresh and other places
@@ -246,7 +261,7 @@ function filterBubbles(type) {
     var q = input.value.toLowerCase();
     if (q) trackEvent('search_discover', { query_length: q.length, type: type });
     var source = type === 'evt'
-      ? allBubbles.filter(function(b) { return b.type === 'event'; })
+      ? _discoverUpcomingEvents()
       : allBubbles.filter(function(b) { return b.type !== 'event'; });
     var filtered = q ? source.filter(function(b) {
       return b.name.toLowerCase().indexOf(q) >= 0 || (b.keywords || []).some(function(k) { return k.toLowerCase().indexOf(q) >= 0; });
