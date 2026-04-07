@@ -370,25 +370,25 @@ function safeAvatarImg(url, style) {
 }
 
 function bubbleEmoji(type) {
-  var t = (type || '').toLowerCase();
+  var typ = (type || '').toLowerCase();
   // v5: simplified to network/event. Old types mapped for backwards compat.
-  if (t === 'event' || t === 'live') return ico('calendar');
+  if (typ === 'event' || typ === 'live') return ico('calendar');
   return ico('bubble'); // network, topic, local, company, standard → all "network"
 }
 
 function bubbleColor(type, alpha) {
-  var t = (type || '').toLowerCase();
+  var typ = (type || '').toLowerCase();
   // Event = cyan (#2ECFCF), Network = purple (#7C5CFC)
-  if (t === 'event' || t === 'live') return `rgba(46,207,207,${alpha})`;
+  if (typ === 'event' || typ === 'live') return `rgba(46,207,207,${alpha})`;
   return `rgba(124,92,252,${alpha})`; // network + all legacy types
 }
 
 function typeLabel(type) {
-  var t = (type || '').toLowerCase();
+  var typ = (type || '').toLowerCase();
   // v5: two types. Old values mapped for backwards compat.
-  if (t === 'event' || t === 'live') return 'Event';
-  if (t === 'network' || t === 'topic' || t === 'local' || t === 'lokal' || t === 'theme' || t === 'tema' || t === 'standard') return 'Netværk';
-  if (t === 'company' || t === 'virksomhed') return 'Virksomhed';
+  if (typ === 'event' || typ === 'live') return 'Event';
+  if (typ === 'network' || typ === 'topic' || typ === 'local' || typ === 'lokal' || typ === 'theme' || typ === 'tema' || typ === 'standard') return 'Netværk';
+  if (typ === 'company' || typ === 'virksomhed') return 'Virksomhed';
   return 'Netværk';
 }
 
