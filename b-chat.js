@@ -1883,7 +1883,7 @@ async function bcLoadInfo() {
             evBadge +
           '</div>';
         })() : '') +
-        (b.description ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;line-height:1.5;text-align:left">' + escHtml(b.description) + '</div>' : '') +
+        (b.description ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;line-height:1.6;text-align:left;padding:0.7rem 0.85rem;border-radius:10px;background:rgba(30,27,46,0.03);border:0.5px solid #D8D5E4;white-space:pre-line">' + escHtml(b.description) + '</div>' : '') +
         (b.agenda ? '<div style="margin-top:0.7rem;padding:0.7rem 0.85rem;border-radius:10px;background:rgba(46,207,207,0.06);border:0.5px solid rgba(46,207,207,0.2);text-align:left">' +
           '<div style="font-size:0.68rem;font-weight:700;color:#0F6E56;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.35rem">' + icon('calendar') + ' ' + t('bi_agenda') + '</div>' +
           '<div style="font-size:0.78rem;color:var(--text);line-height:1.6;white-space:pre-line">' + escHtml(b.agenda) + '</div>' +
