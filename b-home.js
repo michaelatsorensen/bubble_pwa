@@ -1033,11 +1033,7 @@ async function loadMyNetworks() {
           html += '<div class="bb-tree-branch">';
           html += '<div class="bb-tree-net" style="' + (isGhost && !isMember ? 'opacity:0.55;border-style:dashed;' : '') + '">';
           html += '<div style="position:relative">' + '<div class="bb-tree-net-ico">' + _bIco(cn, _netIcoSm, 8) + '</div>' + (isMember ? _memberCheck : '') + '</div>';
-          if (isMember) {
-            html += '<div class="bb-tree-body" onclick="event.stopPropagation();openBubbleChat(\'' + cn.id + '\',\'screen-bubbles\')">';
-          } else {
-            html += '<div class="bb-tree-body">';
-          }
+          html += '<div class="bb-tree-body" onclick="event.stopPropagation();openBubbleChat(\'' + cn.id + '\',\'screen-bubbles\')">';
           html += '<div style="font-size:0.75rem;font-weight:600">' + escHtml(cn.name) + '</div>';
           html += '<div style="font-size:0.58rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(cn.visibility) + cnMc + ' ' + t('bb_members_short') + (cnEvents.length > 0 ? ' \u00B7 ' + cnEvents.length + ' ' + t('bb_events_count') : '') + '</div>';
           html += '</div>';
