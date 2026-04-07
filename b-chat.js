@@ -1579,7 +1579,9 @@ async function bcLoadInfo() {
     var accentTxt = isEvent ? '#085041' : '#534AB7';
     var accentStroke = isEvent ? '#2ECFCF' : '#7C5CFC';
     var iconBg = isEvent ? 'rgba(46,207,207,0.1)' : 'rgba(124,92,252,0.1)';
-    var heroIcon = isEvent ? icon('calendar') : ico('bubble');
+    var heroIcon = b.icon_url
+      ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:15px">'
+      : (isEvent ? icon('calendar') : ico('bubble'));
 
     // ── Parent reference (for any bubble with parent_bubble_id) ──
     var parentHtml = '';
@@ -1871,7 +1873,7 @@ async function bcLoadInfo() {
     list.innerHTML =
       parentHtml +
       '<div style="text-align:center;padding:0.25rem 0 1rem">' +
-        '<div style="width:52px;height:52px;border-radius:15px;background:' + iconBg + ';display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;color:' + accentStroke + ';font-size:24px">' + heroIcon + '</div>' +
+        '<div style="width:52px;height:52px;border-radius:15px;background:' + (b.icon_url ? 'transparent' : iconBg) + ';display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;color:' + accentStroke + ';font-size:24px;overflow:hidden">' + heroIcon + '</div>' +
         '<div style="font-size:1rem;font-weight:800;color:var(--text)">' + escHtml(b.name) + '</div>' +
         '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.15rem">' + typeLabel(b.type) + (b.location ? ' · ' + escHtml(b.location) : '') + ' · ' + mc + ' ' + memberLabel + '</div>' +
         (isEvent && b.event_date ? (function() {
