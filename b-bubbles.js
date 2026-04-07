@@ -909,7 +909,7 @@ async function openEditBubble(bubbleId) {
     const { data: b } = await sb.from('bubbles').select('*').eq('id', bubbleId).maybeSingle();
     if (!b) return;
     document.getElementById('eb-name').value = b.name || '';
-    document.getElementById('eb-type').value = b.type || 'event';
+    document.getElementById('eb-type').value = b.type || 'network';
     document.getElementById('eb-visibility').value = b.visibility || 'public';
     document.getElementById('eb-desc').value = b.description || '';
     document.getElementById('eb-location').value = b.location || '';
