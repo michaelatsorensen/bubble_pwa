@@ -592,7 +592,7 @@ async function openChat(userId, fromScreen) {
   try {
     currentChatUser = userId;
     navState.chatTarget = userId;
-    const { data: p } = await sb.from('profiles').select('name,title,workplace,avatar_url').eq('id', userId).single();
+    const { data: p } = await sb.from('profiles').select('name,title,workplace,avatar_url').eq('id', userId).maybeSingle();
     currentChatName = p?.name || t('misc_unknown');
     window._chatPartnerAvatar = p?.avatar_url || null;
     document.getElementById('chat-name').textContent = currentChatName;

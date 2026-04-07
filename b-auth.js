@@ -190,7 +190,7 @@ function setupAuthListener() {
 
 async function loadCurrentProfile() {
   try {
-    const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
     if (data) {
       // Check if user is banned
       if (data.banned) {

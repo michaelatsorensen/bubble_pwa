@@ -299,7 +299,7 @@ async function notifApproveJoin(bubbleId, userId, btn) {
     updateTopbarNotifBadge();
     // Notify approved user via Broadcast
     try {
-      var { data: bub } = await sb.from('bubbles').select('name').eq('id', bubbleId).single();
+      var { data: bub } = await sb.from('bubbles').select('name').eq('id', bubbleId).maybeSingle();
       var ch = sb.channel('member-notify-' + userId);
       await ch.subscribe();
       await ch.send({ type: 'broadcast', event: 'approved', payload: { bubbleName: bub?.name || '', bubbleId: bubbleId } });
@@ -410,7 +410,7 @@ function acceptBubbleInvite(inviteId, fromUserId) {
 
 async function confirmAcceptInvite(inviteId) {
   try {
-    const { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).single();
+    const { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).maybeSingle();
     var result = await dbActions.acceptInvitation(inviteId, inv?.bubble_id);
     if (result.ok) {
       showSuccessToast('Du er nu med i boblen!');

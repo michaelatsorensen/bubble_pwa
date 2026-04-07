@@ -141,7 +141,7 @@ var rpCurrentUserId = null;
 async function openRadarPerson(userId) {
   rpCurrentUserId = userId;
   try {
-    var { data: p } = await sb.from('profiles').select('*').eq('id', userId).single();
+    var { data: p } = await sb.from('profiles').select('*').eq('id', userId).maybeSingle();
     if (!p) return;
     var isA = p.is_anon;
     var name = isA ? t('ps_anonymous') : (p.name || '?');

@@ -30,7 +30,7 @@ async function openPerson(userId, fromScreen) {
     // Reset all stateful UI from previous profile
     _personReset();
 
-    const { data: p } = await sb.from('profiles').select('*').eq('id', userId).single();
+    const { data: p } = await sb.from('profiles').select('*').eq('id', userId).maybeSingle();
     if (!p || _navVersion !== myNav) {
       if (!p && _navVersion === myNav) _personRenderEmpty();
       return;
@@ -1019,7 +1019,7 @@ async function loadProfileInvitations() {
 
 async function profAcceptInvite(inviteId, fromUserId) {
   try {
-    const { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).single();
+    const { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).maybeSingle();
     var result = await dbActions.acceptInvitation(inviteId, inv?.bubble_id);
     if (result.ok) {
       var invCard = document.getElementById('prof-invite-' + inviteId);
@@ -1549,7 +1549,7 @@ async function sendBubbleUpInvitation(toUserId) {
       visibility: 'hidden',
       created_by: currentUser.id,
       description: 'Privat boble'
-    }).select().single();
+    }).select().maybeSingle();
 
     if (!bubble) { _renderToast('Noget gik galt', 'error'); return; }
 
@@ -1585,7 +1585,7 @@ async function loadPersonBubbles(userId, navRef) {
 
   try {
     // Check if user has show_bubbles = false
-    var { data: prof } = await sb.from('profiles').select('show_bubbles').eq('id', userId).single();
+    var { data: prof } = await sb.from('profiles').select('show_bubbles').eq('id', userId).maybeSingle();
     if (prof && prof.show_bubbles === false) return;
 
     // Stale nav check

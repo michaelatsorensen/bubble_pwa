@@ -729,7 +729,7 @@ var dbActions = {
     if (!currentUser || !bubbleId) return { ok: false };
     try {
       // Defense-in-depth: check visibility before join
-      var { data: bub } = await sb.from('bubbles').select('visibility,type').eq('id', bubbleId).single();
+      var { data: bub } = await sb.from('bubbles').select('visibility,type').eq('id', bubbleId).maybeSingle();
       if (bub && bub.visibility === 'private' && bub.type !== 'event' && bub.type !== 'live') {
         // Private non-event bubble — must use requestJoin() instead
         logError('dbActions.joinBubble', new Error('Attempted direct join on private bubble'), { bubble_id: bubbleId });
@@ -812,7 +812,7 @@ var dbActions = {
         file_name: opts.fileName || (opts.gifUrl ? 'gif.gif' : null),
         file_type: opts.fileType || (opts.gifUrl ? 'image/gif' : null)
       };
-      var { data, error } = await sb.from('bubble_messages').insert(payload).select().single();
+      var { data, error } = await sb.from('bubble_messages').insert(payload).select().maybeSingle();
       if (error) { errorToast('send', error); return { ok: false, error: error }; }
       // Attach profile for optimistic UI (bcReduceMsg)
       if (data) {
@@ -919,7 +919,7 @@ var dbActions = {
     if (!currentUser) return { ok: false };
     try {
       data.created_by = currentUser.id;
-      var { data: bubble, error } = await sb.from('bubbles').insert(data).select().single();
+      var { data: bubble, error } = await sb.from('bubbles').insert(data).select().maybeSingle();
       if (error) { errorToast('save', error); return { ok: false, error: error }; }
       // Auto-join as member
       await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id });
@@ -1014,7 +1014,7 @@ var dbActions = {
       var { data, error } = await sb.from('bubble_posts').insert({
         bubble_id: bubbleId, author_id: currentUser.id,
         title: title, content: content || null, event_id: eventId || null
-      }).select().single();
+      }).select().maybeSingle();
       if (error) { errorToast('save', error); return { ok: false, error: error }; }
       return { ok: true, post: data };
     } catch(e) { logError('dbActions.createPost', e); errorToast('save', e); return { ok: false, error: e }; }

@@ -1043,7 +1043,7 @@ async function bcSendMessage() {
 
     if (bcEditingId) {
       // Save edit to history first
-      const { data: orig } = await sb.from('bubble_messages').select('content').eq('id', bcEditingId).single();
+      const { data: orig } = await sb.from('bubble_messages').select('content').eq('id', bcEditingId).maybeSingle();
       if (orig) {
         await sb.from('bubble_message_edits').insert({message_id: bcEditingId, content: orig.content});
       }
@@ -1309,7 +1309,7 @@ async function bcShowHistory(msgId) {
   try {
     const { data: edits } = await sb.from('bubble_message_edits')
       .select('content, edited_at').eq('message_id', msgId).order('edited_at', {ascending:true});
-    const { data: current } = await sb.from('bubble_messages').select('content').eq('id', msgId).single();
+    const { data: current } = await sb.from('bubble_messages').select('content').eq('id', msgId).maybeSingle();
     if (!edits || edits.length === 0) { showWarningToast(t('toast_not_found')); return; }
     const modal = document.getElementById('modal-edit-history') || bcCreateHistoryModal();
     const content = document.getElementById('edit-history-content');
@@ -1714,7 +1714,7 @@ async function bcLoadInfo() {
 
           eventsHtml = '<div style="margin-bottom:0.9rem">' +
             '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">' +
-            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">Netværk & events</div>' +
+            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">' + t('bi_network_events') + '</div>' +
             '<div style="font-size:0.68rem;color:#0F6E56;font-weight:600">' + childBubbles.length + '</div></div>' +
             '<div style="display:flex;flex-direction:column;gap:0.15rem">' + childCards + '</div>' +
             (canEdit ? '<div style="display:flex;gap:0.4rem;margin-top:0.8rem">' +
@@ -1723,7 +1723,7 @@ async function bcLoadInfo() {
             '</div>';
         } else if (canEdit) {
           eventsHtml = '<div style="margin-bottom:0.9rem">' +
-            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Netværk & events</div>' +
+            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">' + t('bi_network_events') + '</div>' +
             '<div style="display:flex;gap:0.4rem">' +
             '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('calendar') + ' Event</button>' +
             '<button onclick="openCreateSubBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('bubble') + ' Sub-boble</button></div></div>';
@@ -1750,22 +1750,22 @@ async function bcLoadInfo() {
         var memTotalCount = memTotalRpc.data || 0;
         var memNewCount = memNewRpc.data || 0;
         // Register bubble-specific chart meta
-        _dashMeta['o-mem-' + b.id] = { title: 'Medlemsvækst', sub: 'Kumulativt for hele netværket', table: 'bubble_members', field: 'joined_at', type: 'line', filter: allBubbleIds, icon: 'users' };
-        _dashMeta['o-msg-' + b.id] = { title: 'Chat-aktivitet', sub: 'Beskeder per uge', table: 'bubble_messages', field: 'created_at', type: 'bar', filter: allBubbleIds, icon: 'chat' };
+        _dashMeta['o-mem-' + b.id] = { title: t('bi_member_growth'), sub: t('bi_member_growth_sub'), table: 'bubble_members', field: 'joined_at', type: 'line', filter: allBubbleIds, icon: 'users' };
+        _dashMeta['o-msg-' + b.id] = { title: t('bi_chat_activity'), sub: t('bi_chat_activity_sub'), table: 'bubble_messages', field: 'created_at', type: 'bar', filter: allBubbleIds, icon: 'chat' };
 
         function oCard(id, iconName, icoBg, icoCol, val, label, delta, color) {
           return '<div class="dash-card" data-color="' + color + '" onclick="dashToggle(this,\'' + id + '\',this.closest(\'.dash-pair\').querySelector(\'.dash-tray\').id)">' +
             '<div class="dash-ico" style="background:' + icoBg + ';color:' + icoCol + '">' + ico(iconName) + '</div>' +
             '<div><div class="dash-val">' + val + '</div><div class="dash-label">' + label + '</div>' +
-            (delta ? '<div class="dash-delta">+' + delta + ' denne md.</div>' : '') + '</div></div>';
+            (delta ? '<div class="dash-delta">+' + delta + ' ' + t('bi_this_month') + '</div>' : '') + '</div></div>';
         }
 
         var childCount = allBubbleIds.length - 1;
         statsHtml = '<div style="margin-bottom:0.9rem">' +
-          '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Statistik</div>' +
+          '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">' + t('bi_statistics') + '</div>' +
           '<div class="dash-pair"><div class="dash-row">' +
-            oCard('o-mem-' + b.id, 'users', 'rgba(124,92,252,0.08)', 'var(--accent)', memTotalCount, 'Medlemmer', memNewCount, 'accent') +
-            oCard('o-msg-' + b.id, 'chat', 'rgba(232,121,168,0.08)', 'var(--pink)', msgTotal.count || 0, 'Beskeder', msgNew.count, 'pink') +
+            oCard('o-mem-' + b.id, 'users', 'rgba(124,92,252,0.08)', 'var(--accent)', memTotalCount, t('bi_members_label'), memNewCount, 'accent') +
+            oCard('o-msg-' + b.id, 'chat', 'rgba(232,121,168,0.08)', 'var(--pink)', msgTotal.count || 0, t('bi_messages_label'), msgNew.count, 'pink') +
           '</div><div class="dash-tray" id="dtray-o1-' + b.id.slice(0,8) + '"><div class="dash-tray-collapse"><div class="dash-tray-inner" id="dti-o1"><div style="font-size:0.72rem;font-weight:700" id="dtitle-o1"></div><div style="font-size:0.55rem;color:var(--muted)" id="dsub-o1"></div><div class="dash-chart-wrap"><canvas id="dcv-o1"></canvas></div></div></div></div></div>' +
           '</div>';
       } catch(e) { logError('bcLoadInfo:stats', e); }

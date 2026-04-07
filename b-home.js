@@ -680,7 +680,7 @@ function bbAcceptInvite(inviteId, fromUserId) {
 
 async function bbConfirmAccept(inviteId, fromUserId) {
   try {
-    var { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).single();
+    var { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).maybeSingle();
     var result = await dbActions.acceptInvitation(inviteId, inv?.bubble_id);
     if (result.ok) {
       var invCard = document.getElementById('bb-inv-' + inviteId);

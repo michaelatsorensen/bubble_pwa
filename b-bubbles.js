@@ -283,7 +283,7 @@ async function joinBubble(bubbleId) {
     loadHome();
     // Notify owner via Broadcast
     try {
-      var { data: bub } = await sb.from('bubbles').select('name, created_by').eq('id', bubbleId).single();
+      var { data: bub } = await sb.from('bubbles').select('name, created_by').eq('id', bubbleId).maybeSingle();
       if (bub && bub.created_by && bub.created_by !== currentUser.id) {
         var ch = sb.channel('member-notify-' + bub.created_by);
         await ch.subscribe();
@@ -880,7 +880,7 @@ async function createBubble() {
 // ══════════════════════════════════════════════════════════
 async function requestJoin(bubbleId) {
   try {
-    const { data: b } = await sb.from('bubbles').select('name,created_by').eq('id', bubbleId).single();
+    const { data: b } = await sb.from('bubbles').select('name,created_by').eq('id', bubbleId).maybeSingle();
     var result = await dbActions.requestJoin(bubbleId);
     if (!result.ok) return;
     showToast(t('toast_request_sent'));
@@ -906,7 +906,7 @@ let currentEditBubbleId = null;
 async function openEditBubble(bubbleId) {
   try {
     currentEditBubbleId = bubbleId;
-    const { data: b } = await sb.from('bubbles').select('*').eq('id', bubbleId).single();
+    const { data: b } = await sb.from('bubbles').select('*').eq('id', bubbleId).maybeSingle();
     if (!b) return;
     document.getElementById('eb-name').value = b.name || '';
     document.getElementById('eb-type').value = b.type || 'event';
@@ -1077,7 +1077,7 @@ async function shareBubbleLink(bubbleId) {
 async function openQRModal(bubbleId) {
   try {
     currentQRBubble = bubbleId;
-    const { data: b } = await sb.from('bubbles').select('*').eq('id', bubbleId).single();
+    const { data: b } = await sb.from('bubbles').select('*').eq('id', bubbleId).maybeSingle();
     if (!b) return;
 
     document.getElementById('qr-modal-title').innerHTML = escHtml(b.name) + ' ' + icon('bubble');
@@ -1121,7 +1121,7 @@ async function loadJsPdf() {
 async function downloadQRPdf() {
   try {
   await loadJsPdf();
-  const { data: b, error } = await sb.from('bubbles').select('*').eq('id', currentQRBubble).single();
+  const { data: b, error } = await sb.from('bubbles').select('*').eq('id', currentQRBubble).maybeSingle();
   if (error || !b) return _renderToast('Kunne ikke hente boble-data', 'error');
 
   showToast('Genererer PDF...');
@@ -1334,7 +1334,7 @@ async function downloadMembersPdf(bubbleId) {
     const { jsPDF } = window.jspdf;
 
     // ── Fetch data ──
-    const { data: b } = await sb.from('bubbles').select('*').eq('id', bubbleId).single();
+    const { data: b } = await sb.from('bubbles').select('*').eq('id', bubbleId).maybeSingle();
     if (!b) { _renderToast('Kunne ikke hente boble-data', 'error'); return; }
 
     const { data: members } = await sb.from('bubble_members')
@@ -2145,7 +2145,7 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
   // Fetch full profile for bio + LinkedIn + avatar
   const liBtn = document.getElementById('ps-linkedin-btn');
   liBtn.style.display = 'none';
-  sb.from('profiles').select('bio,linkedin,workplace,avatar_url').eq('id', userId).single().then(({data}) => {
+  sb.from('profiles').select('bio,linkedin,workplace,avatar_url').eq('id', userId).maybeSingle().then(({data}) => {
     if (data?.bio) document.getElementById('ps-bio').textContent = data.bio;
     var subEl = document.getElementById('ps-sub');
     if (subEl && data?.workplace) subEl.textContent = (title || '') + (title && data.workplace ? ' · ' : '') + (data.workplace || '');
@@ -2197,7 +2197,7 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
 
 async function dmOpenPersonSheet(userId) {
   try {
-    var { data: p } = await sb.from('profiles').select('name,title,avatar_url').eq('id', userId).single();
+    var { data: p } = await sb.from('profiles').select('name,title,avatar_url').eq('id', userId).maybeSingle();
     bcOpenPerson(userId, p?.name || t('misc_unknown'), p?.title || '', 'linear-gradient(135deg,#2ECFCF,#22B8CF)', 'screen-chat');
   } catch(e) { logError('dmOpenPersonSheet', e); }
 }

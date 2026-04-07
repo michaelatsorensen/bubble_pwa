@@ -189,7 +189,7 @@ async function liveCheckin(bubbleId) {
 async function _liveCheckinFallback(bubbleId) {
   try {
     // 0. Check visibility
-    var { data: bCheck } = await sb.from('bubbles').select('visibility').eq('id', bubbleId).single();
+    var { data: bCheck } = await sb.from('bubbles').select('visibility').eq('id', bubbleId).maybeSingle();
     if (bCheck && (bCheck.visibility === 'hidden' || bCheck.visibility === 'private')) {
       var { data: memCheck } = await sb.from('bubble_members')
         .select('id').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle();
@@ -218,7 +218,7 @@ async function _liveCheckinFallback(bubbleId) {
     // 3. Get bubble name for UI
     var bubbleName = '';
     try {
-      var { data: bData } = await sb.from('bubbles').select('name, location').eq('id', bubbleId).single();
+      var { data: bData } = await sb.from('bubbles').select('name, location').eq('id', bubbleId).maybeSingle();
       if (bData) bubbleName = bData.name;
     } catch(e2) {}
 
@@ -472,7 +472,7 @@ async function liveScanConfirmPersonCheckin() {
     // Get event name for notifications
     var eventName = 'et event';
     try {
-      var { data: bName } = await sb.from('bubbles').select('name').eq('id', p.bubbleId).single();
+      var { data: bName } = await sb.from('bubbles').select('name').eq('id', p.bubbleId).maybeSingle();
       if (bName?.name) eventName = bName.name;
     } catch(e2b) {}
     // Broadcast check-in notification directly to scanned user (bypasses RLS)
@@ -942,7 +942,7 @@ async function _connectResolve(rawUrl) {
         return;
       }
       // Fetch profile
-      var { data: p } = await sb.from('profiles').select('*').eq('id', profileId).single();
+      var { data: p } = await sb.from('profiles').select('*').eq('id', profileId).maybeSingle();
       if (!p) {
         _renderToast(t('toast_not_found'), 'error');
         _connectPending = false;
