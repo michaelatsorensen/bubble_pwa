@@ -544,6 +544,10 @@ function openCreateEventModal() {
   document.getElementById('cb-name').value = '';
   document.getElementById('cb-desc').value = '';
   document.getElementById('cb-location').value = '';
+  var _cbAg = document.getElementById('cb-agenda'); if (_cbAg) _cbAg.value = '';
+  var _cbTm = document.getElementById('cb-event-time'); if (_cbTm) _cbTm.value = '';
+  var _cbTe = document.getElementById('cb-event-time-end'); if (_cbTe) _cbTe.value = '';
+  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = 'self';
   renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
   var modal = document.getElementById('bb-sheet-create-bubble');
   if (modal) delete modal.dataset.parentBubbleId;
@@ -552,6 +556,7 @@ function openCreateEventModal() {
   bbOpen('create-bubble');
   var _cbTitle = document.getElementById('cb-sheet-title');
   if (_cbTitle) _cbTitle.textContent = t('bb_create_event');
+  var _cbNameEl = document.getElementById('cb-name'); if (_cbNameEl) _cbNameEl.placeholder = t('cb_name_event');
   setTimeout(function() {
     initInputConfirmButtons();
     var typeSelect = document.getElementById('cb-type');
@@ -594,6 +599,10 @@ function openCreateEventFromBubble(parentBubbleId) {
   document.getElementById('cb-name').value = '';
   document.getElementById('cb-desc').value = '';
   document.getElementById('cb-location').value = '';
+  var _cbAg = document.getElementById('cb-agenda'); if (_cbAg) _cbAg.value = '';
+  var _cbTm = document.getElementById('cb-event-time'); if (_cbTm) _cbTm.value = '';
+  var _cbTe = document.getElementById('cb-event-time-end'); if (_cbTe) _cbTe.value = '';
+  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = 'self';
   renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
   // Store parent bubble id on the modal for use in createBubble()
   var modal = document.getElementById('bb-sheet-create-bubble');
@@ -601,6 +610,7 @@ function openCreateEventFromBubble(parentBubbleId) {
   bbOpen('create-bubble');
   var _cbTitle = document.getElementById('cb-sheet-title');
   if (_cbTitle) _cbTitle.textContent = t('bb_create_event');
+  var _cbNameEl = document.getElementById('cb-name'); if (_cbNameEl) _cbNameEl.placeholder = t('cb_name_event');
   setTimeout(function() {
     initInputConfirmButtons();
     // Force event type selected, hide type picker
@@ -646,12 +656,17 @@ function openCreateSubBubble(parentBubbleId) {
   document.getElementById('cb-name').value = '';
   document.getElementById('cb-desc').value = '';
   document.getElementById('cb-location').value = '';
+  var _cbAg = document.getElementById('cb-agenda'); if (_cbAg) _cbAg.value = '';
+  var _cbTm = document.getElementById('cb-event-time'); if (_cbTm) _cbTm.value = '';
+  var _cbTe = document.getElementById('cb-event-time-end'); if (_cbTe) _cbTe.value = '';
+  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = 'self';
   renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
   var modal = document.getElementById('bb-sheet-create-bubble');
   if (modal) modal.dataset.parentBubbleId = parentBubbleId;
   bbOpen('create-bubble');
   var _cbTitle = document.getElementById('cb-sheet-title');
   if (_cbTitle) _cbTitle.textContent = t('bb_create_network');
+  var _cbNameEl = document.getElementById('cb-name'); if (_cbNameEl) _cbNameEl.placeholder = t('cb_name');
   setTimeout(function() {
     initInputConfirmButtons();
     var typeSelect = document.getElementById('cb-type');
@@ -690,6 +705,10 @@ function openCreateNetworkModal() {
   document.getElementById('cb-name').value = '';
   document.getElementById('cb-desc').value = '';
   document.getElementById('cb-location').value = '';
+  var _cbAg = document.getElementById('cb-agenda'); if (_cbAg) _cbAg.value = '';
+  var _cbTm = document.getElementById('cb-event-time'); if (_cbTm) _cbTm.value = '';
+  var _cbTe = document.getElementById('cb-event-time-end'); if (_cbTe) _cbTe.value = '';
+  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = 'self';
   renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
   // Clear any lingering parent bubble state
   var modal = document.getElementById('bb-sheet-create-bubble');
@@ -709,6 +728,7 @@ function openCreateNetworkModal() {
   bbOpen('create-bubble');
   var _cbTitle = document.getElementById('cb-sheet-title');
   if (_cbTitle) _cbTitle.textContent = t('bb_create_network');
+  var _cbNameEl = document.getElementById('cb-name'); if (_cbNameEl) _cbNameEl.placeholder = t('cb_name');
   setTimeout(function() {
     initInputConfirmButtons();
     var typeSelect = document.getElementById('cb-type');
@@ -771,6 +791,7 @@ function cbRenderPillSelect(selectId, options) {
         if (etg) etg.style.display = isEvt ? 'block' : 'none';
         if (etge) etge.style.display = isEvt ? 'block' : 'none';
         var cag = document.getElementById('cb-agenda-group'); if (cag) cag.style.display = isEvt ? 'block' : 'none';
+        var _cbN = document.getElementById('cb-name'); if (_cbN) _cbN.placeholder = isEvt ? t('cb_name_event') : t('cb_name');
       }
       if (selectId === 'eb-type') {
         var isEvt2 = (opt.value === 'event' || opt.value === 'live');

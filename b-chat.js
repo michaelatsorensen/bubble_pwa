@@ -316,11 +316,8 @@ async function bcLoadBubbleCore(bubbleId) {
   document.getElementById('bc-name').textContent = b.name;
 
   // Member count + parent ref in subtitle
-  var memberCount = b.member_count;
-  if (memberCount == null) {
-    var { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bubbleId).or('status.is.null,status.neq.pending');
-    memberCount = count || 0;
-  }
+  var { count: memberCount } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bubbleId).or('status.is.null,status.neq.pending');
+  memberCount = memberCount || 0;
   var subText = memberCount + (isEvent ? ' ' + t('bb_participants') : ' ' + t('bb_members'));
   // Fetch parent name for child bubbles
   if (b.parent_bubble_id) {
@@ -660,11 +657,8 @@ async function bcLoadBubbleInfo() {
     }
     document.getElementById('bc-name').textContent = b.name;
 
-    var memberCount2 = b.member_count;
-    if (memberCount2 == null) {
-      var { count } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bcBubbleId).or('status.is.null,status.neq.pending');
-      memberCount2 = count || 0;
-    }
+    var { count: memberCount2 } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bcBubbleId).or('status.is.null,status.neq.pending');
+    memberCount2 = memberCount2 || 0;
     var isEvent = b.type === 'event' || b.type === 'live';
     var statusText = memberCount2 + (isEvent ? ' ' + t('bb_participants') : ' ' + t('bb_members'));
 
@@ -1569,11 +1563,8 @@ async function bcLoadInfo() {
     const memberLabel = isEvent ? 'deltagere' : 'medlemmer';
 
     // Member count
-    var mc = b.member_count;
-    if (mc == null) {
-      var { count: c } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', b.id).or('status.is.null,status.neq.pending');
-      mc = c || 0;
-    }
+    var { count: mc } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', b.id).or('status.is.null,status.neq.pending');
+    mc = mc || 0;
 
     // Tags
     var tagsHtml = (b.keywords || []).map(function(k) {

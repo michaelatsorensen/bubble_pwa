@@ -187,6 +187,7 @@ da: {
 
   // ── Bubble create ──
   cb_name: 'Boble navn',
+  cb_name_event: 'Event navn',
   cb_type: 'Type',
   cb_desc: 'Beskrivelse',
   cb_desc_ph: 'Hvad handler denne boble om?',
@@ -731,6 +732,7 @@ en: {
 
   // ── Bubble create ──
   cb_name: 'Bubble name',
+  cb_name_event: 'Event name',
   cb_type: 'Type',
   cb_desc: 'Description',
   cb_desc_ph: 'What is this bubble about?',
