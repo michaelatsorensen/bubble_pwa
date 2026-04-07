@@ -190,7 +190,7 @@ let currentPerson = null;
 let currentChatUser = null;
 let currentChatName = null;
 let allBubbles = [];
-let cbChips = [], epChips = [], epDynChips = [], ebChips = [], obChips = [];
+let cbChips = [], epChips = [], epDynChips = [], ebChips = [], obChips = [], obDynChips = [];
 let chatSubscription = null;
 let isAnon = false;
 
@@ -289,7 +289,7 @@ function resetAppState() {
   currentLiveBubble = null;
   isAnon = false;
   allBubbles = [];
-  cbChips = []; epChips = []; epDynChips = []; ebChips = []; obChips = [];
+  cbChips = []; epChips = []; epDynChips = []; ebChips = []; obChips = []; obDynChips = [];
   // Subscriptions — unsubscribe before nullifying to prevent orphaned channels
   try { if (chatSubscription) chatSubscription.unsubscribe(); } catch(e) {}
   chatSubscription = null;

@@ -122,6 +122,7 @@ async function maybeShowOnboarding() {
 
 // Track whether onboarding is being run by an existing user (vs first-time)
 var _reRunningOnboarding = false;
+var _miniObConsentGiven = false;
 
 function reRunOnboarding() {
   _reRunningOnboarding = true;
