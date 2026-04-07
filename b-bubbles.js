@@ -413,8 +413,14 @@ async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
     trackEvent('bubble_ownership_transferred', { bubble_id: bubbleId, new_owner: newOwnerId });
     // Notify new owner via broadcast
     try { sb.channel('member-notify-' + newOwnerId).send({ type: 'broadcast', event: 'ownership', payload: { bubbleName: bcBubbleData?.name || '', senderName: currentProfile?.name || '', bubbleId: bubbleId } }); } catch(e2) {}
-    if (typeof bcLoadBubbleInfo === 'function') bcLoadBubbleInfo();
+    // Refresh UI — must await bcLoadBubbleInfo before bcLoadInfo (data dependency)
+    if (typeof bcLoadBubbleInfo === 'function') await bcLoadBubbleInfo();
     if (typeof bcLoadInfo === 'function') bcLoadInfo();
+    if (typeof bcRenderActions === 'function') {
+      var myM2 = null;
+      try { var { data: m2 } = await sb.from('bubble_members').select('id,status,role').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle(); myM2 = m2; } catch(e3) {}
+      bcRenderActions(bcBubbleData, myM2, bcBubbleData._canEdit, false);
+    }
   } catch(e) { logError('_executeTransfer', e); errorToast('save', e); }
 }
 
@@ -516,10 +522,10 @@ async function confirmLeaveBubble(bubbleId) {
     var isEvent = bcBubbleData && (bcBubbleData.type === 'event' || bcBubbleData.type === 'live');
     showToast(isEvent ? t('toast_left_event') : t('toast_left_bubble'));
     _discoverLoaded = false;
+    // Navigate away FIRST, then refresh data in background
+    goTo('screen-bubbles');
     loadHome();
     loadMyBubbles();
-    var backBtn = document.getElementById('bc-back-btn');
-    if (backBtn) { backBtn.click(); } else { goTo(_activeScreen || 'screen-home'); }
   } catch(e) { logError("confirmLeaveBubble", e); errorToast("save", e); }
 }
 
