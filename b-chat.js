@@ -1884,10 +1884,6 @@ async function bcLoadInfo() {
           '<div style="font-size:0.68rem;font-weight:700;color:#0F6E56;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.35rem">' + icon('calendar') + ' ' + t('bi_agenda') + '</div>' +
           '<div style="font-size:0.78rem;color:var(--text);line-height:1.6;white-space:pre-line">' + escHtml(b.agenda) + '</div>' +
         '</div>' : '') +
-        (b.agenda ? '<div style="margin-top:0.6rem;padding:0.6rem 0.8rem;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);border-radius:10px;text-align:left">' +
-          '<div style="font-size:0.68rem;font-weight:700;color:#0F6E56;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.3rem">' + icon('calendar') + ' ' + t('cb_agenda') + '</div>' +
-          '<div style="font-size:0.78rem;color:var(--text);line-height:1.6;white-space:pre-line">' + escHtml(b.agenda) + '</div>' +
-        '</div>' : '') +
         (tagsHtml ? '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.5rem;justify-content:center">' + tagsHtml + '</div>' : '') +
       '</div>' +
       topJoinHtml +
