@@ -1314,16 +1314,15 @@ async function checkPendingJoin() {
     var isSelfCheckin = !bubble || !bubble.checkin_mode || bubble.checkin_mode === 'self';
 
     if (isEventFlow && isEvent && isSelfCheckin) {
-      // Mode A: auto check-in → open event directly
-      var ciResult = await dbActions.checkIn(joinId);
+      // Mode A: auto check-in → home with event card
+      await dbActions.checkIn(joinId);
       consumeFlow('event_flow');
-      // Set greeting flag for bubble chat to show welcome banner
-      try { sessionStorage.setItem('event_greeting', bubble.name || ''); } catch(e2) {}
-      if (ciResult.ok) {
-        goToThen('screen-home', function() { openBubbleChat(joinId, 'screen-home'); });
-      } else {
-        goToThen('screen-home', function() { openBubbleChat(joinId, 'screen-home'); });
-      }
+      // Store greeting data for home screen event card
+      try {
+        sessionStorage.setItem('event_greeting', bubble.name || '');
+        sessionStorage.setItem('event_greeting_id', joinId);
+      } catch(e2) {}
+      goTo('screen-home');
     } else if (isEventFlow && isEvent) {
       // Mode B: show QR for organizer to scan — event_flow stays for showEventReadyQR
       showSuccessToast(t('toast_joined'));

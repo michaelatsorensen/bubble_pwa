@@ -55,6 +55,7 @@ async function loadHome() {
 
     // Post-load: apply visibility toggles, show nudge
     hsApplyToHome();
+    showEventCheckinCard();
     showWelcomeCard();
     showProfileSetupCTA();
   } catch(e) {
@@ -282,11 +283,58 @@ function calcProfileStrength(profile) {
   return Math.min(s, 100);
 }
 
+// ── Event checkin card — shown after QR scan auto-checkin ──
+function showEventCheckinCard() {
+  var el = document.getElementById('home-event-card');
+  if (!el) return;
+  var eventName, eventId;
+  try {
+    eventName = sessionStorage.getItem('event_greeting');
+    eventId = sessionStorage.getItem('event_greeting_id');
+  } catch(e) { return; }
+  if (!eventName || !eventId) { el.style.display = 'none'; return; }
+
+  el.innerHTML =
+    '<div style="background:#FFFFFF;border:1px solid rgba(26,158,142,0.2);border-radius:16px;padding:1rem 1.1rem;position:relative">' +
+      '<button onclick="dismissEventCard()" style="position:absolute;top:0.6rem;right:0.7rem;background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;line-height:1;padding:0.2rem" aria-label="Luk">×</button>' +
+      '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">' +
+        '<div style="width:24px;height:24px;border-radius:50%;background:rgba(26,158,142,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+        '</div>' +
+        '<div style="font-size:0.85rem;font-weight:700;color:#085041">' + t('event_greeting', { name: escHtml(eventName) }) + '</div>' +
+      '</div>' +
+      '<button onclick="goToEventFromCard()" style="width:100%;padding:0.6rem;border-radius:10px;font-size:0.82rem;font-weight:700;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,#1A9E8E,#17877A);color:white;border:none">' + t('ob_goto_event') + '</button>' +
+    '</div>';
+  el.style.display = 'block';
+}
+
+function goToEventFromCard() {
+  var eventId;
+  try { eventId = sessionStorage.getItem('event_greeting_id'); } catch(e) {}
+  dismissEventCard();
+  if (eventId) openBubbleChat(eventId, 'screen-home');
+}
+
+function dismissEventCard() {
+  try {
+    sessionStorage.removeItem('event_greeting');
+    sessionStorage.removeItem('event_greeting_id');
+  } catch(e) {}
+  var el = document.getElementById('home-event-card');
+  if (!el) return;
+  el.style.transition = 'opacity 0.25s';
+  el.style.opacity = '0';
+  setTimeout(function() { el.style.display = 'none'; }, 260);
+}
+
 // ── Welcome card — shown once to brand new users ──
 function showWelcomeCard() {
   var el = document.getElementById('home-welcome-card');
   if (!el || !currentProfile) return;
   if (localStorage.getItem('bubble_welcome_card_dismissed')) return;
+  // Suppress if event checkin card is already showing
+  var eventCard = document.getElementById('home-event-card');
+  if (eventCard && eventCard.style.display !== 'none' && eventCard.innerHTML) return;
   // Only show if profile is truly fresh — name + workplace but nothing else
   var isNewUser = !currentProfile.title &&
     !(currentProfile.keywords && currentProfile.keywords.length) &&
