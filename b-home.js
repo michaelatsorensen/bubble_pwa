@@ -582,7 +582,7 @@ function setupGoToStep(step) {
   // Close all setup sheets first
   [1, 2, 3, 4].forEach(function(s) { closeModal(_setupStepMap[s].id); });
   var target = _setupStepMap[step];
-  if (target) setTimeout(target.open, 120);
+  if (target) setTimeout(target.open, 60);
 }
 
 function openProfileSetupTags() {

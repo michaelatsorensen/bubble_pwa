@@ -1980,10 +1980,11 @@ input[type="range"] {
   touch-action: pan-y;
   box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
   transform: translateY(100%);
-  transition: transform 0.25s cubic-bezier(0.22,1,0.36,1);
+  transition: transform 0.12s ease-in;
 }
 .modal-overlay.open .setup-sheet {
   transform: translateY(0);
+  transition: transform 0.15s cubic-bezier(0.22,1,0.36,1);
 }
 .setup-sheet-handle {
   width: 32px; height: 4px; border-radius: 2px; background: #D8D5E4;
