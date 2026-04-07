@@ -1018,6 +1018,41 @@ async function saveEditBubble() {
 // ══════════════════════════════════════════════════════════
 let currentQRBubble = null;
 
+// ── Share bubble/event link ──
+async function shareBubbleLink(bubbleId) {
+  var url = window.location.origin + window.location.pathname + '?event=' + bubbleId;
+  var name = bcBubbleData ? bcBubbleData.name : 'Bubble';
+  var isEvent = bcBubbleData && (bcBubbleData.type === 'event' || bcBubbleData.type === 'live');
+  var text = isEvent
+    ? name + ' — åbn i Bubble for at tilmelde dig'
+    : name + ' — åbn i Bubble for at se netværket';
+
+  // Try native share (mobile: opens share sheet with mail, SMS, WhatsApp etc.)
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: name, text: text, url: url });
+      trackEvent('bubble_link_shared', { bubble_id: bubbleId, method: 'native' });
+      return;
+    } catch(e) {
+      // User cancelled or share failed — fall through to clipboard
+      if (e.name === 'AbortError') return;
+    }
+  }
+
+  // Fallback: copy to clipboard + offer mailto
+  try {
+    await navigator.clipboard.writeText(url);
+    showSuccessToast('Link kopieret!');
+    trackEvent('bubble_link_shared', { bubble_id: bubbleId, method: 'clipboard' });
+  } catch(e) {
+    // Last resort: mailto with link in body
+    var subject = encodeURIComponent(name);
+    var body = encodeURIComponent(text + '\n\n' + url);
+    window.open('mailto:?subject=' + subject + '&body=' + body, '_self');
+    trackEvent('bubble_link_shared', { bubble_id: bubbleId, method: 'mailto' });
+  }
+}
+
 async function openQRModal(bubbleId) {
   try {
     currentQRBubble = bubbleId;
