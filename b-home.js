@@ -869,7 +869,7 @@ async function loadMyNetworks() {
     var orphanParentIds = childNetsWithMissingParent.map(function(o) { return o.parent_bubble_id; }).filter(function(v, i, a) { return a.indexOf(v) === i; });
 
     if (orphanParentIds.length > 0) {
-      var { data: opData } = await sb.from('bubbles').select('id, name, type, visibility, parent_bubble_id, bubble_members(count)').in('id', orphanParentIds);
+      var { data: opData } = await sb.from('bubbles').select('id, name, type, visibility, parent_bubble_id, icon_url, bubble_members(count)').in('id', orphanParentIds);
       if (_navVersion !== myNav) return;
       (opData || []).forEach(function(p) { ghostParentMap[p.id] = p; });
     }
@@ -933,6 +933,13 @@ async function loadMyNetworks() {
     var _netIco = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/></svg>';
     var _netIcoSm = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/></svg>';
     var _addIco = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>';
+
+    // Bubble icon helper: shows icon_url if available, fallback to SVG
+    function _bIco(b, fallback, r) {
+      return b && b.icon_url
+        ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:' + (r || '8') + 'px">'
+        : fallback;
+    }
 
     // ── Membership checkmark overlay (small green ✓ on icon) ──
     var _memberCheck = '<div style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:#1A9E8E;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--bg)"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M5 12.5l5 5L20 7"/></svg></div>';
@@ -999,7 +1006,7 @@ async function loadMyNetworks() {
       // Root card
       html += '<div class="bb-accordion">';
       html += '<div class="bb-tree-root">';
-      html += '<div class="bb-tree-root-ico">' + _netIco + '</div>';
+      html += '<div class="bb-tree-root-ico">' + _bIco(b, _netIco, 9) + '</div>';
       html += '<div class="bb-tree-body" onclick="openBubbleChat(\'' + net.id + '\',\'screen-bubbles\')">';
       html += '<div style="font-size:0.8rem;font-weight:700">' + escHtml(net.name) + (pendingSet[net.id] ? ' <span class="pending-badge">Afventer</span>' : '') + '</div>';
       html += '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px;flex-wrap:wrap">' + visIcon(net.visibility) + mc + ' ' + t('bb_members') + (badgeText ? ' \u00B7 ' + badgeText : '') + '</div>';
@@ -1025,7 +1032,7 @@ async function loadMyNetworks() {
 
           html += '<div class="bb-tree-branch">';
           html += '<div class="bb-tree-net" style="' + (isGhost && !isMember ? 'opacity:0.55;border-style:dashed;' : '') + '">';
-          html += '<div style="position:relative">' + '<div class="bb-tree-net-ico">' + _netIcoSm + '</div>' + (isMember ? _memberCheck : '') + '</div>';
+          html += '<div style="position:relative">' + '<div class="bb-tree-net-ico">' + _bIco(cn, _netIcoSm, 8) + '</div>' + (isMember ? _memberCheck : '') + '</div>';
           if (isMember) {
             html += '<div class="bb-tree-body" onclick="event.stopPropagation();openBubbleChat(\'' + cn.id + '\',\'screen-bubbles\')">';
           } else {
@@ -1048,7 +1055,7 @@ async function loadMyNetworks() {
               var gcMc = gc.member_count ?? gc.bubble_members?.[0]?.count ?? 0;
 
               html += '<div class="bb-tree-leaf"><div class="bb-tree-net" style="border-left-color:rgba(46,207,207,0.35)" onclick="event.stopPropagation();openBubbleChat(\'' + gc.id + '\',\'screen-bubbles\')">';
-              html += '<div class="bb-tree-net-ico">' + _netIcoSm + '</div>';
+              html += '<div class="bb-tree-net-ico">' + _bIco(cn, _netIcoSm, 8) + '</div>';
               html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(gc.name) + '</div>';
               html += '<div style="font-size:0.55rem;color:var(--muted)">' + visIcon(gc.visibility) + gcMc + ' medl.</div></div>';
               html += '<div class="bb-tree-go">\u203A</div>';
@@ -1063,7 +1070,7 @@ async function loadMyNetworks() {
               var gcLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
               var evIsMember = myIds.indexOf(ev.id) >= 0;
               html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast && !gcLive ? 'opacity:0.5' : '') + '">';
-              html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _calIco + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
+              html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _bIco(ev, _calIco, 6) + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
               html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
               html += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</div></div>';
               html += _goLiveBtn(ev, evIsMember) || '<div class="bb-tree-go">\u203A</div>';
@@ -1085,7 +1092,7 @@ async function loadMyNetworks() {
           var evLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
           var evIsMember = myIds.indexOf(ev.id) >= 0;
           html += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast && !evLive ? 'opacity:0.5' : '') + '">';
-          html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _calIco + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
+          html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _bIco(ev, _calIco, 6) + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
           html += '<div style="flex:1;min-width:0"><div style="font-size:0.75rem;font-weight:600">' + escHtml(ev.name) + '</div>';
           html += '<div style="font-size:0.58rem;color:var(--muted)">' + visIcon(ev.visibility) + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</div></div>';
           html += _goLiveBtn(ev, evIsMember) || '<div class="bb-tree-go">\u203A</div>';
@@ -1115,7 +1122,7 @@ async function loadMyNetworks() {
       // Ghost parent as root (if available)
       if (ghost) {
         html += '<div class="bb-tree-root" style="opacity:0.55;border-style:dashed">';
-        html += '<div class="bb-tree-root-ico">' + _netIco + '</div>';
+        html += '<div class="bb-tree-root-ico">' + _bIco(b, _netIco, 9) + '</div>';
         html += '<div class="bb-tree-body">';
         html += '<div style="font-size:0.8rem;font-weight:700">' + escHtml(ghostName) + '</div>';
         html += '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(ghost.visibility) + ghostMc + ' ' + t('bb_members') + '</div>';
@@ -1127,8 +1134,8 @@ async function loadMyNetworks() {
 
       // The actual member network
       html += '<div class="bb-tree-' + (ghost ? 'net' : 'root') + '">';
-      if (!ghost) html += '<div class="bb-tree-root-ico">' + _netIco + '</div>';
-      else html += '<div class="bb-tree-net-ico">' + _netIcoSm + '</div>';
+      if (!ghost) html += '<div class="bb-tree-root-ico">' + _bIco(b, _netIco, 9) + '</div>';
+      else html += '<div class="bb-tree-net-ico">' + _bIco(cn, _netIcoSm, 8) + '</div>';
       html += '<div class="bb-tree-body" onclick="openBubbleChat(\'' + net.id + '\',\'screen-bubbles\')">';
       html += '<div style="font-size:' + (ghost ? '0.75rem' : '0.8rem') + ';font-weight:' + (ghost ? '600' : '700') + '">' + escHtml(net.name) + (pendingSet[net.id] ? ' <span class="pending-badge">Afventer</span>' : '') + '</div>';
       html += '<div style="font-size:' + (ghost ? '0.58' : '0.62') + 'rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(net.visibility) + mc + ' ' + t('bb_members') + '</div>';
@@ -1146,7 +1153,7 @@ async function loadMyNetworks() {
           var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
           var evIsMember = myIds.indexOf(ev.id) >= 0;
           html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
-          html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _calIco + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
+          html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _bIco(ev, _calIco, 6) + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
           html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
           html += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</div></div>';
           html += _goLiveBtn(ev, evIsMember) || '<div class="bb-tree-go">\u203A</div>';
@@ -1231,7 +1238,7 @@ async function loadMyEvents() {
     }
 
     var { data: events } = await sb.from('bubbles')
-      .select('id, name, type, event_date, event_end_date, parent_bubble_id, location, visibility')
+      .select('id, name, type, event_date, event_end_date, parent_bubble_id, location, visibility, icon_url')
       .in('id', myIds)
       .in('type', ['event', 'live'])
       .order('event_date', { ascending: true, nullsFirst: false });
@@ -1298,7 +1305,7 @@ function _bbEventCard(e, parentMap, gpMap, isPast) {
   }
   var evCardLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === e.id);
   return '<div class="bb-tree-evt" data-action="openBubble" data-id="' + e.id + '" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5;' : '') + '">' +
-    '<div class="bb-tree-evt-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>' +
+    '<div class="bb-tree-evt-ico">' + (e.icon_url ? '<img src="' + escHtml(e.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px">' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>') + '</div>' +
     '<div style="flex:1;min-width:0">' +
     '<div style="font-size:0.8rem;font-weight:600">' + escHtml(e.name) + '</div>' +
     '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;flex-wrap:wrap;gap:2px">' + visIcon(e.visibility) + dateStr + '</div>' +
@@ -1439,7 +1446,7 @@ function bubbleCard(b, joined) {
   }
 
   return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}">
-    <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};color:${bubbleColor(b.type, 0.9)}">${bubbleEmoji(b.type)}</div>
+    <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};color:${bubbleColor(b.type, 0.9)}">${b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : bubbleEmoji(b.type)}</div>
     <div style="flex:1;min-width:0">
       <div class="fw-600 fs-085">${escHtml(b.name)}</div>
       <div style="font-size:0.68rem;color:var(--muted);display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap">${visIcon(b.visibility)} ${escHtml(b.type_label || b.type)} ${b.location ? '<span>·</span> <span>' + escHtml(b.location) + '</span>' : ''}</div>

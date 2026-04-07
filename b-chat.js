@@ -218,11 +218,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
   // If member tapped ⓘ to view info temporarily, back returns to previous tab
   // For non-members, info IS the landing tab — back should navigate away
   backBtn.onclick = function() {
-    if (_bcActiveTab === 'info' && _bcPrevTab && _bcPrevTab !== 'info' && bcBubbleData?._isMember) {
-      bcSwitchTab(_bcPrevTab);
-    } else {
-      _bcBackFn();
-    }
+    _bcBackFn();
   };
 
   // Reset ALL visible state BEFORE showing screen — prevents previous bubble flashing
@@ -786,7 +782,7 @@ async function bcLoadEvents() {
         // Sub-bubble (network type)
         return '<div class="card" style="padding:0.75rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')">' +
           '<div style="display:flex;align-items:center;gap:0.6rem">' +
-          '<div style="width:38px;height:38px;border-radius:10px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0">' + bubbleEmoji(ch.type) + '</div>' +
+          '<div style="width:38px;height:38px;border-radius:10px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;overflow:hidden">' + (ch.icon_url ? '<img src="' + escHtml(ch.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : bubbleEmoji(ch.type)) + '</div>' +
           '<div style="flex:1;min-width:0">' +
           '<div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(ch.name) + '</div>' +
           '<div class="fs-072 text-muted">' + typeLabel(ch.type) + ' · ' + mc + ' medlem' + (mc !== 1 ? 'mer' : '') + '</div>' +
@@ -1604,7 +1600,7 @@ async function bcLoadInfo() {
     if (!isEvent) {
       try {
         var { data: childBubbles } = await sb.from('bubbles')
-          .select('id, name, type, created_at, event_date, event_end_date, visibility, bubble_members(count)')
+          .select('id, name, type, created_at, event_date, event_end_date, visibility, icon_url, bubble_members(count)')
           .eq('parent_bubble_id', b.id)
           .order('event_date', { ascending: true, nullsFirst: false })
           .limit(20);
@@ -1623,7 +1619,7 @@ async function bcLoadInfo() {
           var childNetIds = childNets.map(function(cn) { return cn.id; });
           if (childNetIds.length > 0) {
             var { data: grandchildren } = await sb.from('bubbles')
-              .select('id, name, type, event_date, event_end_date, visibility, parent_bubble_id, bubble_members(count)')
+              .select('id, name, type, event_date, event_end_date, visibility, parent_bubble_id, icon_url, bubble_members(count)')
               .in('parent_bubble_id', childNetIds)
               .order('event_date', { ascending: true, nullsFirst: false });
             (grandchildren || []).forEach(function(gc) {
@@ -1645,7 +1641,7 @@ async function bcLoadInfo() {
 
             childCards += '<div class="bb-tree-branch">';
             childCards += '<div class="bb-tree-net">';
-            childCards += '<div class="bb-tree-net-ico">' + _netIco + '</div>';
+            childCards += '<div class="bb-tree-net-ico">' + (cn.icon_url ? '<img src="' + escHtml(cn.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px">' : _netIco) + '</div>';
             childCards += '<div class="bb-tree-body" onclick="openBubbleChat(\'' + cn.id + '\',\'screen-bubble-chat\')">';
             childCards += '<div style="font-size:0.75rem;font-weight:600">' + escHtml(cn.name) + '</div>';
             childCards += '<div style="font-size:0.58rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(cn.visibility) + cnMc + ' medl.' + (cnGc.length > 0 ? ' \u00B7 ' + cnGc.length + ' events' : '') + '</div>';
@@ -1665,14 +1661,14 @@ async function bcLoadInfo() {
                 if (isEvt) {
                   var gcEvLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
                   childCards += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubble-chat\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
-                  childCards += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
+                  childCards += '<div class="bb-tree-evt-ico">' + (ev.icon_url ? '<img src="' + escHtml(ev.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px">' : _calIco) + '</div>';
                   childCards += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + (gcEvLive ? ' <span class="live-badge-mini">LIVE</span>' : '') + '</div>';
                   childCards += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' tilmeldt' : '') + '</div></div>';
                   childCards += '<div class="bb-tree-go">\u203A</div>';
                   childCards += '</div></div>';
                 } else {
                   childCards += '<div class="bb-tree-leaf"><div class="bb-tree-net" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubble-chat\')">';
-                  childCards += '<div class="bb-tree-net-ico">' + _netIco + '</div>';
+                  childCards += '<div class="bb-tree-net-ico">' + (cn.icon_url ? '<img src="' + escHtml(cn.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px">' : _netIco) + '</div>';
                   childCards += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
                   childCards += '<div style="font-size:0.55rem;color:var(--muted)">' + visIcon(ev.visibility) + evMc + ' medl.</div></div>';
                   childCards += '<div class="bb-tree-go">\u203A</div>';
@@ -1699,7 +1695,7 @@ async function bcLoadInfo() {
               : '';
             var chEvLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ch.id);
             childCards += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
-            childCards += '<div class="bb-tree-evt-ico">' + _calIco + '</div>';
+            childCards += '<div class="bb-tree-evt-ico">' + (ev.icon_url ? '<img src="' + escHtml(ev.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px">' : _calIco) + '</div>';
             childCards += '<div style="flex:1;min-width:0"><div style="font-size:0.75rem;font-weight:600">' + escHtml(ch.name) + (chEvLive ? ' <span class="live-badge-mini">LIVE</span>' : '') + '</div>';
             childCards += '<div style="font-size:0.58rem;color:var(--muted)">' + visIcon(ch.visibility) + dateStr + ' \u00B7 ' + chMc + ' tilmeldt</div></div>';
             childCards += '<div class="bb-tree-go">\u203A</div>';
