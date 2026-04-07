@@ -1296,7 +1296,22 @@ async function checkPendingJoin() {
 
     // Join bubble
     var result = await dbActions.joinBubble(joinId);
-    if (!result.ok) return; // Keep pending_join for retry on next auth
+    var isEventFlow = flowGet('event_flow');
+
+    if (!result.ok && !isEventFlow) return; // Keep pending_join for retry on next auth
+    if (!result.ok && isEventFlow) {
+      // Already a member but came via event QR — still show event card
+      consumeFlow('pending_join');
+      var { data: bubble } = await sb.from('bubbles').select('id,name,type,checkin_mode').eq('id', joinId).maybeSingle();
+      if (bubble && (bubble.type === 'event' || bubble.type === 'live')) await dbActions.checkIn(joinId);
+      consumeFlow('event_flow');
+      try {
+        sessionStorage.setItem('event_greeting', bubble ? bubble.name : '');
+        sessionStorage.setItem('event_greeting_id', joinId);
+      } catch(e2) {}
+      goTo('screen-home');
+      return;
+    }
 
     // Join succeeded — consume the flag
     consumeFlow('pending_join');
@@ -1313,21 +1328,21 @@ async function checkPendingJoin() {
     var isEvent = bubble && (bubble.type === 'event' || bubble.type === 'live');
     var isSelfCheckin = !bubble || !bubble.checkin_mode || bubble.checkin_mode === 'self';
 
-    if (isEventFlow && isEvent && isSelfCheckin) {
-      // Mode A: auto check-in → home with event card
-      await dbActions.checkIn(joinId);
+    if (isEventFlow && isEvent && !isSelfCheckin) {
+      // Mode B: scan checkin — show QR for organizer to scan
+      // event_flow stays set for showEventReadyQR in resolvePostAuthDestination
+      showSuccessToast(t('toast_joined'));
+    } else if (isEventFlow) {
+      // Mode A: event QR flow → auto check-in + home with event card
+      if (isEvent) await dbActions.checkIn(joinId);
       consumeFlow('event_flow');
-      // Store greeting data for home screen event card
       try {
-        sessionStorage.setItem('event_greeting', bubble.name || '');
+        sessionStorage.setItem('event_greeting', bubble ? bubble.name : '');
         sessionStorage.setItem('event_greeting_id', joinId);
       } catch(e2) {}
       goTo('screen-home');
-    } else if (isEventFlow && isEvent) {
-      // Mode B: show QR for organizer to scan — event_flow stays for showEventReadyQR
-      showSuccessToast(t('toast_joined'));
     } else {
-      // Normal bubble join (not event)
+      // Normal bubble join (not event flow)
       consumeFlow('event_flow');
       showSuccessToast(t('toast_joined'));
       _bbAfterJoin(joinId);
