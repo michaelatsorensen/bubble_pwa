@@ -1006,7 +1006,7 @@ async function loadMyNetworks() {
       // Root card
       html += '<div class="bb-accordion">';
       html += '<div class="bb-tree-root">';
-      html += '<div class="bb-tree-root-ico">' + _bIco(b, _netIco, 9) + '</div>';
+      html += '<div class="bb-tree-root-ico">' + _bIco(net, _netIco, 9) + '</div>';
       html += '<div class="bb-tree-body" onclick="openBubbleChat(\'' + net.id + '\',\'screen-bubbles\')">';
       html += '<div style="font-size:0.8rem;font-weight:700">' + escHtml(net.name) + (pendingSet[net.id] ? ' <span class="pending-badge">Afventer</span>' : '') + '</div>';
       html += '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px;flex-wrap:wrap">' + visIcon(net.visibility) + mc + ' ' + t('bb_members') + (badgeText ? ' \u00B7 ' + badgeText : '') + '</div>';
@@ -1122,7 +1122,7 @@ async function loadMyNetworks() {
       // Ghost parent as root (if available)
       if (ghost) {
         html += '<div class="bb-tree-root" style="opacity:0.55;border-style:dashed">';
-        html += '<div class="bb-tree-root-ico">' + _bIco(b, _netIco, 9) + '</div>';
+        html += '<div class="bb-tree-root-ico">' + _bIco(ghost, _netIco, 9) + '</div>';
         html += '<div class="bb-tree-body">';
         html += '<div style="font-size:0.8rem;font-weight:700">' + escHtml(ghostName) + '</div>';
         html += '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(ghost.visibility) + ghostMc + ' ' + t('bb_members') + '</div>';
@@ -1134,8 +1134,8 @@ async function loadMyNetworks() {
 
       // The actual member network
       html += '<div class="bb-tree-' + (ghost ? 'net' : 'root') + '">';
-      if (!ghost) html += '<div class="bb-tree-root-ico">' + _bIco(b, _netIco, 9) + '</div>';
-      else html += '<div class="bb-tree-net-ico">' + _bIco(cn, _netIcoSm, 8) + '</div>';
+      if (!ghost) html += '<div class="bb-tree-root-ico">' + _bIco(net, _netIco, 9) + '</div>';
+      else html += '<div class="bb-tree-net-ico">' + _bIco(net, _netIcoSm, 8) + '</div>';
       html += '<div class="bb-tree-body" onclick="openBubbleChat(\'' + net.id + '\',\'screen-bubbles\')">';
       html += '<div style="font-size:' + (ghost ? '0.75rem' : '0.8rem') + ';font-weight:' + (ghost ? '600' : '700') + '">' + escHtml(net.name) + (pendingSet[net.id] ? ' <span class="pending-badge">Afventer</span>' : '') + '</div>';
       html += '<div style="font-size:' + (ghost ? '0.58' : '0.62') + 'rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(net.visibility) + mc + ' ' + t('bb_members') + '</div>';
