@@ -52,7 +52,6 @@ function navBack() {
         try { route = JSON.parse(sessionStorage.getItem('bb_route')); } catch(e) {}
         if (route && route.parentBubbleId) {
           openBubbleChat(route.parentBubbleId, route.backTarget || 'screen-bubbles');
-          if (route.parentTab && typeof bcSwitchTab === 'function') setTimeout(function() { bcSwitchTab(route.parentTab); }, 150);
         } else {
           goTo('screen-home');
         }
@@ -122,7 +121,6 @@ window.addEventListener('popstate', function() {
         try { route = JSON.parse(sessionStorage.getItem('bb_route')); } catch(e) {}
         if (route && route.parentBubbleId) {
           openBubbleChat(route.parentBubbleId, route.backTarget || 'screen-bubbles');
-          if (route.parentTab && typeof bcSwitchTab === 'function') setTimeout(function() { bcSwitchTab(route.parentTab); }, 150);
         } else if (route && route.backTarget) {
           goTo(route.backTarget);
         } else {

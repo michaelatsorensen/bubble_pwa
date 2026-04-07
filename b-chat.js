@@ -210,8 +210,7 @@ async function openBubbleChat(bubbleId, fromScreen) {
   if (prevBubbleId) {
     _bcBackFn = function() {
       openBubbleChat(prevBubbleId, 'screen-bubbles');
-      // Restore parent tab after bubble loads
-      if (prevTab) setTimeout(function() { bcSwitchTab(prevTab); }, 150);
+      // Always land on info when returning to parent — shows hierarchy context
     };
   } else {
     _bcBackFn = function() { goTo(fromScreen || 'screen-home'); };
@@ -473,8 +472,8 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
     if (infoTab) infoTab.style.display = '';
     if (chatTab) chatTab.style.display = '';
     if (postsTab) postsTab.style.display = '';
-    // Set initial tab for members
-    bcSwitchTab('members');
+    // Set initial tab — Info first so user sees hierarchy + context
+    bcSwitchTab('info');
     // Edit button as topbar card
     actionArea.innerHTML =
       (canEdit ? `<button class="chat-topbar-back" data-action="openEditBubble" data-id="${b.id}" title="Rediger"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg></button>` : '') +
@@ -690,7 +689,7 @@ async function bcLoadBubbleInfo() {
   } catch(e) { logError("bcLoadBubbleInfo", e); }
 }
 
-var _bcActiveTab = 'members';
+var _bcActiveTab = 'info';
 
 function bcToggleInfo() {
   if (_bcActiveTab === 'info') {
@@ -701,7 +700,7 @@ function bcToggleInfo() {
     bcSwitchTab('info');
   }
 }
-var _bcPrevTab = 'members';
+var _bcPrevTab = null;
 
 function bcSwitchTab(tab) {
   if (tab === 'events') tab = 'info'; // v8.6.1: events tab removed, redirect to info
@@ -764,7 +763,7 @@ async function bcLoadEvents() {
 
       if (isEvent) {
         var evDate = ch.event_date ? new Date(ch.event_date) : null;
-        var isPast = evDate && evDate < now;
+        var isPast = evDate && new Date(ch.event_end_date || ch.event_date) < now;
         var dateStr = evDate
           ? evDate.toLocaleDateString(_locale(), { weekday: 'short', day: 'numeric', month: 'short' }) +
             (evDate.getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + evDate.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) +
@@ -1654,7 +1653,7 @@ async function bcLoadInfo() {
             if (hasChildren) {
               childCards += '<div class="bb-tree-leaves collapsed" id="trunk-' + cnAccId + '">';
               cnGc.forEach(function(ev) {
-                var isPast = ev.event_date && new Date(ev.event_date) < now;
+                var isPast = ev.event_date && new Date(ev.event_end_date || ev.event_date) < now;
                 var evMc = ev.bubble_members?.[0]?.count || 0;
                 var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
                 var isEvt = ev.type === 'event' || ev.type === 'live';
@@ -1686,7 +1685,7 @@ async function bcLoadInfo() {
           // Direct child events
           childEvents.forEach(function(ch) {
             var chMc = ch.bubble_members?.[0]?.count || 0;
-            var isPast = ch.event_date && new Date(ch.event_date) < now;
+            var isPast = ch.event_date && new Date(ch.event_end_date || ch.event_date) < now;
             var dateStr = ch.event_date
               ? new Date(ch.event_date).toLocaleDateString(_locale(), { weekday: 'short', day: 'numeric', month: 'short' }) +
                 (new Date(ch.event_date).getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + new Date(ch.event_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) +
@@ -1865,7 +1864,7 @@ async function bcLoadInfo() {
         '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.15rem">' + typeLabel(b.type) + (b.location ? ' · ' + escHtml(b.location) : '') + ' · ' + mc + ' ' + memberLabel + '</div>' +
         (isEvent && b.event_date ? (function() {
           var evD = new Date(b.event_date);
-          var evPast = evD < new Date();
+          var evPast = new Date(b.event_end_date || b.event_date) < new Date();
           var evDateStr = evD.toLocaleDateString(_locale(), { weekday: 'long', day: 'numeric', month: 'long' }) +
             (evD.getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + evD.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '');
           var evEndStr = b.event_end_date

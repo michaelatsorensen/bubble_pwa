@@ -1034,9 +1034,6 @@ async function loadMyNetworks() {
           }
           html += '<div style="font-size:0.75rem;font-weight:600">' + escHtml(cn.name) + '</div>';
           html += '<div style="font-size:0.58rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(cn.visibility) + cnMc + ' ' + t('bb_members_short') + (cnEvents.length > 0 ? ' \u00B7 ' + cnEvents.length + ' ' + t('bb_events_count') : '') + '</div>';
-          if (!isMember) {
-            html += '<div style="margin-top:3px"><button onclick="event.stopPropagation();joinBubble(\'' + cn.id + '\')" style="font-size:0.58rem;padding:2px 8px;border-radius:6px;border:1px solid rgba(124,92,252,0.2);background:rgba(124,92,252,0.06);color:var(--accent);cursor:pointer;font-family:inherit;font-weight:600">' + t('bb_join_member') + '</button></div>';
-          }
           html += '</div>';
           if (hasChildren) {
             html += '<button class="bb-tree-toggle' + _togClass(cnAccId) + '" id="tog-' + cnAccId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + cnAccId + '\')" style="width:24px;height:24px">' + _chevSm + '</button>';
@@ -1061,12 +1058,12 @@ async function loadMyNetworks() {
 
             // Events
             cnEvents.forEach(function(ev) {
-              var isPast = ev.event_date && new Date(ev.event_date) < now;
+              var isPast = ev.event_date && new Date(ev.event_end_date || ev.event_date) < now;
               var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
               var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
               var gcLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
               var evIsMember = myIds.indexOf(ev.id) >= 0;
-              html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast && !gcLive ? 'opacity:0.5' : '') + (!evIsMember ? 'opacity:0.65' : '') + '">';
+              html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast && !gcLive ? 'opacity:0.5' : '') + '">';
               html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _calIco + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
               html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
               html += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</div></div>';
@@ -1083,12 +1080,12 @@ async function loadMyNetworks() {
 
         // Direct child events (level 2)
         childEvents.forEach(function(ev) {
-          var isPast = ev.event_date && new Date(ev.event_date) < now;
+          var isPast = ev.event_date && new Date(ev.event_end_date || ev.event_date) < now;
           var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
           var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
           var evLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
           var evIsMember = myIds.indexOf(ev.id) >= 0;
-          html += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast && !evLive ? 'opacity:0.5' : '') + (!evIsMember ? 'opacity:0.65' : '') + '">';
+          html += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast && !evLive ? 'opacity:0.5' : '') + '">';
           html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _calIco + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
           html += '<div style="flex:1;min-width:0"><div style="font-size:0.75rem;font-weight:600">' + escHtml(ev.name) + '</div>';
           html += '<div style="font-size:0.58rem;color:var(--muted)">' + visIcon(ev.visibility) + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</div></div>';
@@ -1123,7 +1120,6 @@ async function loadMyNetworks() {
         html += '<div class="bb-tree-body">';
         html += '<div style="font-size:0.8rem;font-weight:700">' + escHtml(ghostName) + '</div>';
         html += '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(ghost.visibility) + ghostMc + ' ' + t('bb_members') + '</div>';
-        html += '<div style="margin-top:3px"><button onclick="event.stopPropagation();joinBubble(\'' + ghost.id + '\')" style="font-size:0.58rem;padding:2px 8px;border-radius:6px;border:1px solid rgba(124,92,252,0.2);background:rgba(124,92,252,0.06);color:var(--accent);cursor:pointer;font-family:inherit;font-weight:600">' + t('bb_join_member') + '</button></div>';
         html += '</div></div>';
         // Member child nested under ghost
         html += '<div class="bb-tree-trunk" style="max-height:2000px;opacity:1">';
@@ -1146,11 +1142,11 @@ async function loadMyNetworks() {
       if (orphanEvents.length > 0) {
         html += '<div class="bb-tree-leaves' + _accClass(accId) + '" id="trunk-' + accId + '"' + _accState(accId) + '>';
         orphanEvents.forEach(function(ev) {
-          var isPast = ev.event_date && new Date(ev.event_date) < now;
+          var isPast = ev.event_date && new Date(ev.event_end_date || ev.event_date) < now;
           var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
           var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
           var evIsMember = myIds.indexOf(ev.id) >= 0;
-          html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + (!evIsMember ? 'opacity:0.65' : '') + '">';
+          html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
           html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _calIco + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
           html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
           html += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</div></div>';
@@ -1262,8 +1258,8 @@ async function loadMyEvents() {
     }
 
     var now = new Date();
-    var upcoming = events.filter(function(e) { return !e.event_date || new Date(e.event_date) >= now; });
-    var past = events.filter(function(e) { return e.event_date && new Date(e.event_date) < now; }).reverse();
+    var upcoming = events.filter(function(e) { return !e.event_date || new Date(e.event_end_date || e.event_date) >= now; });
+    var past = events.filter(function(e) { return e.event_date && new Date(e.event_end_date || e.event_date) < now; }).reverse();
 
     var html = '';
     if (upcoming.length > 0) {
@@ -1428,7 +1424,7 @@ function bubbleCard(b, joined) {
   var eventDateHtml = '';
   if ((b.type === 'event' || b.type === 'live') && b.event_date) {
     var evD = new Date(b.event_date);
-    var evIsPast = evD < new Date();
+    var evIsPast = new Date(b.event_end_date || b.event_date) < new Date();
     var evDateStr = evD.toLocaleDateString(_locale(), { weekday: 'short', day: 'numeric', month: 'short' }) +
       (evD.getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + evD.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) +
         (b.event_end_date ? ' – ' + new Date(b.event_end_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '')
