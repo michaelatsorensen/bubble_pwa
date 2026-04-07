@@ -1236,7 +1236,7 @@ async function loadMyEvents() {
     }
 
     var { data: events } = await sb.from('bubbles')
-      .select('id, name, type, event_date, parent_bubble_id, location, visibility')
+      .select('id, name, type, event_date, event_end_date, parent_bubble_id, location, visibility')
       .in('id', myIds)
       .in('type', ['event', 'live'])
       .order('event_date', { ascending: true, nullsFirst: false });
@@ -1271,15 +1271,27 @@ async function loadMyEvents() {
       html += upcoming.map(function(e) { return _bbEventCard(e, parentMap, gpMap, false); }).join('');
     }
     if (past.length > 0) {
-      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin:0.8rem 0 0.4rem">'+t('misc_past')+'</div>';
+      var accId = 'bb-past-events-acc';
+      var isOpen = _bbAccordionOpen[accId] || false;
+      html += '<div onclick="var c=this.nextElementSibling;var a=c.style.display===\'none\';c.style.display=a?\'block\':\'none\';this.querySelector(\'.bb-acc-chev\').style.transform=a?\'rotate(90deg)\':\'rotate(0)\';_bbAccordionOpen[\'' + accId + '\']=a" style="display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.2rem;margin-top:0.8rem;cursor:pointer;border-top:1px solid var(--glass-border)">' +
+        '<span class="bb-acc-chev" style="transition:transform 0.2s;transform:' + (isOpen ? 'rotate(90deg)' : 'rotate(0)') + ';color:var(--muted);font-size:12px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>' +
+        '<span style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">' + t('misc_past') + ' (' + past.length + ')</span>' +
+      '</div>';
+      html += '<div style="display:' + (isOpen ? 'block' : 'none') + '">';
       html += past.map(function(e) { return _bbEventCard(e, parentMap, gpMap, true); }).join('');
+      html += '</div>';
     }
     list.innerHTML = html;
   } catch(e) { logError("loadMyEvents", e); showRetryState('bb-evt-list', 'loadMyEvents', 'Kunne ikke hente events'); }
 }
 
 function _bbEventCard(e, parentMap, gpMap, isPast) {
-  var dateStr = e.event_date ? new Date(e.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  var evD = e.event_date ? new Date(e.event_date) : null;
+  var dateStr = evD ? evD.toLocaleDateString(_locale(), { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  if (evD && evD.getHours() > 0) {
+    dateStr += (_lang === 'da' ? ' kl. ' : ' at ') + evD.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' });
+    if (e.event_end_date) dateStr += ' – ' + new Date(e.event_end_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' });
+  }
   var parent = parentMap[e.parent_bubble_id];
   var parentName = parent ? parent.name : '';
   var gpName = (parent && parent.parent_bubble_id && gpMap[parent.parent_bubble_id]) ? gpMap[parent.parent_bubble_id] : '';
@@ -1418,7 +1430,9 @@ function bubbleCard(b, joined) {
     var evD = new Date(b.event_date);
     var evIsPast = evD < new Date();
     var evDateStr = evD.toLocaleDateString(_locale(), { weekday: 'short', day: 'numeric', month: 'short' }) +
-      (evD.getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + evD.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '');
+      (evD.getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + evD.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) +
+        (b.event_end_date ? ' – ' + new Date(b.event_end_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '')
+      : '');
     var evBadge = evIsPast
       ? '<span style="font-size:0.58rem;padding:1px 5px;border-radius:99px;background:rgba(30,27,46,0.06);color:var(--muted);font-weight:600">Afsluttet</span>'
       : '<span style="font-size:0.58rem;padding:1px 5px;border-radius:99px;background:rgba(46,207,207,0.12);color:#085041;font-weight:600">' + t('bb_coming') + '</span>';

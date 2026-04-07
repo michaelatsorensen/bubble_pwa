@@ -767,7 +767,9 @@ async function bcLoadEvents() {
         var isPast = evDate && evDate < now;
         var dateStr = evDate
           ? evDate.toLocaleDateString(_locale(), { weekday: 'short', day: 'numeric', month: 'short' }) +
-            (evDate.getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + evDate.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '')
+            (evDate.getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + evDate.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) +
+              (ch.event_end_date ? ' – ' + new Date(ch.event_end_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '')
+            : '')
           : new Date(ch.created_at).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' });
         var badge = isPast
           ? '<span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(30,27,46,0.06);color:var(--muted)">Afsluttet</span>'
@@ -1595,7 +1597,7 @@ async function bcLoadInfo() {
     if (!isEvent) {
       try {
         var { data: childBubbles } = await sb.from('bubbles')
-          .select('id, name, type, created_at, event_date, visibility, bubble_members(count)')
+          .select('id, name, type, created_at, event_date, event_end_date, visibility, bubble_members(count)')
           .eq('parent_bubble_id', b.id)
           .order('event_date', { ascending: true, nullsFirst: false })
           .limit(20);
@@ -1614,7 +1616,7 @@ async function bcLoadInfo() {
           var childNetIds = childNets.map(function(cn) { return cn.id; });
           if (childNetIds.length > 0) {
             var { data: grandchildren } = await sb.from('bubbles')
-              .select('id, name, type, event_date, visibility, parent_bubble_id, bubble_members(count)')
+              .select('id, name, type, event_date, event_end_date, visibility, parent_bubble_id, bubble_members(count)')
               .in('parent_bubble_id', childNetIds)
               .order('event_date', { ascending: true, nullsFirst: false });
             (grandchildren || []).forEach(function(gc) {
@@ -1684,7 +1686,9 @@ async function bcLoadInfo() {
             var isPast = ch.event_date && new Date(ch.event_date) < now;
             var dateStr = ch.event_date
               ? new Date(ch.event_date).toLocaleDateString(_locale(), { weekday: 'short', day: 'numeric', month: 'short' }) +
-                (new Date(ch.event_date).getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + new Date(ch.event_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '')
+                (new Date(ch.event_date).getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + new Date(ch.event_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) +
+                  (ch.event_end_date ? ' – ' + new Date(ch.event_end_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '')
+                : '')
               : '';
             var chEvLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ch.id);
             childCards += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
@@ -1876,6 +1880,14 @@ async function bcLoadInfo() {
           '</div>';
         })() : '') +
         (b.description ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;line-height:1.5;text-align:left">' + escHtml(b.description) + '</div>' : '') +
+        (b.agenda ? '<div style="margin-top:0.7rem;padding:0.7rem 0.85rem;border-radius:10px;background:rgba(46,207,207,0.06);border:0.5px solid rgba(46,207,207,0.2);text-align:left">' +
+          '<div style="font-size:0.68rem;font-weight:700;color:#0F6E56;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.35rem">' + icon('calendar') + ' ' + t('bi_agenda') + '</div>' +
+          '<div style="font-size:0.78rem;color:var(--text);line-height:1.6;white-space:pre-line">' + escHtml(b.agenda) + '</div>' +
+        '</div>' : '') +
+        (b.agenda ? '<div style="margin-top:0.6rem;padding:0.6rem 0.8rem;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);border-radius:10px;text-align:left">' +
+          '<div style="font-size:0.68rem;font-weight:700;color:#0F6E56;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.3rem">' + icon('calendar') + ' ' + t('cb_agenda') + '</div>' +
+          '<div style="font-size:0.78rem;color:var(--text);line-height:1.6;white-space:pre-line">' + escHtml(b.agenda) + '</div>' +
+        '</div>' : '') +
         (tagsHtml ? '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.5rem;justify-content:center">' + tagsHtml + '</div>' : '') +
       '</div>' +
       topJoinHtml +

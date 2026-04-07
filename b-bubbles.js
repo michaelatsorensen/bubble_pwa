@@ -570,6 +570,7 @@ function openCreateEventModal() {
     if (edg) edg.style.display = 'block';
     if (etg) etg.style.display = 'block';
     if (etge) etge.style.display = 'block';
+    var _ag = document.getElementById('cb-agenda-group'); if (_ag) _ag.style.display = 'block';
     var dateInput = document.getElementById('cb-event-date');
     if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
   }, 50);
@@ -620,6 +621,7 @@ function openCreateEventFromBubble(parentBubbleId) {
     if (edg) edg.style.display = 'block';
     if (etg) etg.style.display = 'block';
     if (etge) etge.style.display = 'block';
+    var _ag2 = document.getElementById('cb-agenda-group'); if (_ag2) _ag2.style.display = 'block';
     // Default date to today
     var dateInput = document.getElementById('cb-event-date');
     if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
@@ -668,6 +670,7 @@ function openCreateSubBubble(parentBubbleId) {
     if (edg) edg.style.display = 'none';
     if (etg) etg.style.display = 'none';
     if (etge) etge.style.display = 'none';
+    var cag3 = document.getElementById('cb-agenda-group'); if (cag3) cag3.style.display = 'none';
     sb.from('bubbles').select('name').eq('id', parentBubbleId).maybeSingle().then(function(r) {
       if (r.data && parentLabel) {
         parentLabel.textContent = 'Sub-boble under: ' + r.data.name;
@@ -695,6 +698,7 @@ function openCreateNetworkModal() {
   var etge = document.getElementById('cb-event-time-end-group');
   if (edg) edg.style.display = 'none';
   if (etg) etg.style.display = 'none';
+  var cag4 = document.getElementById('cb-agenda-group'); if (cag4) cag4.style.display = 'none';
   if (etge) etge.style.display = 'none';
   bbOpen('create-bubble');
   var _cbTitle = document.getElementById('cb-sheet-title');
@@ -760,6 +764,7 @@ function cbRenderPillSelect(selectId, options) {
         if (edg) edg.style.display = isEvt ? 'block' : 'none';
         if (etg) etg.style.display = isEvt ? 'block' : 'none';
         if (etge) etge.style.display = isEvt ? 'block' : 'none';
+        var cag = document.getElementById('cb-agenda-group'); if (cag) cag.style.display = isEvt ? 'block' : 'none';
       }
       if (selectId === 'eb-type') {
         var isEvt2 = (opt.value === 'event' || opt.value === 'live');
@@ -771,6 +776,7 @@ function cbRenderPillSelect(selectId, options) {
         if (edg2) edg2.style.display = isEvt2 ? 'block' : 'none';
         if (etg2) etg2.style.display = isEvt2 ? 'block' : 'none';
         if (etge2) etge2.style.display = isEvt2 ? 'block' : 'none';
+        var eag2 = document.getElementById('eb-agenda-group'); if (eag2) eag2.style.display = isEvt2 ? 'block' : 'none';
       }
     };
     wrap.appendChild(btn);
@@ -808,6 +814,8 @@ async function createBubble() {
     if (type === 'event' || type === 'live') {
       var checkinMode = document.getElementById('cb-checkin-mode')?.value || 'self';
       insertData.checkin_mode = checkinMode;
+      var agendaVal = (document.getElementById('cb-agenda')?.value || '').trim();
+      if (agendaVal) insertData.agenda = agendaVal;
       // Event date/time
       var dateVal = document.getElementById('cb-event-date')?.value;
       var timeVal = document.getElementById('cb-event-time')?.value;
@@ -896,9 +904,13 @@ async function openEditBubble(bubbleId) {
     if (edg) edg.style.display = isEvent ? 'block' : 'none';
     if (etg) etg.style.display = isEvent ? 'block' : 'none';
     if (etge) etge.style.display = isEvent ? 'block' : 'none';
+    var eag = document.getElementById('eb-agenda-group');
+    if (eag) eag.style.display = isEvent ? 'block' : 'none';
     if (isEvent) {
       var cmEl = document.getElementById('eb-checkin-mode');
       if (cmEl) cmEl.value = b.checkin_mode || 'self';
+      var agEl = document.getElementById('eb-agenda');
+      if (agEl) agEl.value = b.agenda || '';
       var edEl = document.getElementById('eb-event-date');
       var etEl = document.getElementById('eb-event-time');
       var etEndEl = document.getElementById('eb-event-time-end');
@@ -981,6 +993,8 @@ async function saveEditBubble() {
         updateObj.event_date = new Date(eventDateTime).toISOString();
         updateObj.event_end_date = timeEndVal ? new Date(dateVal + 'T' + timeEndVal).toISOString() : null;
       }
+      var agendaVal = (document.getElementById('eb-agenda')?.value || '').trim();
+      updateObj.agenda = agendaVal || null;
     }
     var editResult = await dbActions.updateBubble(currentEditBubbleId, updateObj);
     if (!editResult.ok) return;
