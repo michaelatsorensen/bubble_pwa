@@ -167,7 +167,7 @@ function _showMinimalOnboarding(hasName, hasWorkplace, autoName) {
 
   var ov = document.createElement('div');
   ov.id = 'mini-onboarding-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:550;background:var(--bg);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 2rem) 1.5rem 2rem';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:550;background:var(--bg);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 2rem) 1.5rem 2rem;overflow-y:auto;-webkit-overflow-scrolling:touch';
 
   ov.innerHTML =
     '<div style="flex:1;display:flex;flex-direction:column;justify-content:center;max-width:400px;width:100%;margin:0 auto">' +
@@ -182,7 +182,8 @@ function _showMinimalOnboarding(hasName, hasWorkplace, autoName) {
       '</label>' +
       '<button class="btn-primary" id="mini-ob-save" onclick="_miniObSave()" style="margin-top:0.8rem" disabled>' + (flowGet('event_flow') ? 'Gå til event →' : 'Fortsæt') + '</button>' +
       '<div style="text-align:center;font-size:0.72rem;color:var(--muted);margin-top:0.5rem">Du kan tilføje interesser, titel og mere bagefter</div>' +
-    '</div>';
+    '</div>' +
+    '<div style="min-height:40vh;flex-shrink:0"></div>';
 
   document.body.appendChild(ov);
 
