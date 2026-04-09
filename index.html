@@ -12,41 +12,44 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=8156">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=8156">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=8156">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=8156">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=8156">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=8156">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=8156">
+<link rel="manifest" href="manifest.json?v=8158">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=8158">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=8158">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=8158">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=8158">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=8158">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=8158">
 
-<link rel="stylesheet" href="app.css?v=8156">
+<link rel="stylesheet" href="app.css?v=8158">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-<script src="bubble-icons.js?v=8156" defer></script>
-<script src="tag-data.js?v=8156" defer></script>
-<script src="b-i18n.js?v=8156" defer></script>
-<script src="b-config.js?v=8156" defer></script>
-<script src="b-utils.js?v=8156" defer></script>
-<script src="b-auth.js?v=8156" defer></script>
-<script src="b-home.js?v=8156" defer></script>
-<script src="b-bubbles.js?v=8156" defer></script>
-<script src="b-profile.js?v=8156" defer></script>
-<script src="b-radar.js?v=8156" defer></script>
-<script src="b-messages.js?v=8156" defer></script>
-<script src="b-realtime.js?v=8156" defer></script>
-<script src="b-onboarding.js?v=8156" defer></script>
-<script src="b-chat.js?v=8156" defer></script>
-<script src="b-notifications.js?v=8156" defer></script>
-<script src="b-live.js?v=8156" defer></script>
-<script src="b-admin.js?v=8156" defer></script>
-<script src="b-navigation.js?v=8156" defer></script>
-<script src="b-boot.js?v=8156" defer></script>
+<script src="bubble-icons.js?v=8158" defer></script>
+<script src="tag-data.js?v=8158" defer></script>
+<script src="b-i18n.js?v=8158" defer></script>
+<script src="b-config.js?v=8158" defer></script>
+<script src="b-utils.js?v=8158" defer></script>
+<script src="b-auth.js?v=8158" defer></script>
+<script src="b-home.js?v=8158" defer></script>
+<script src="b-bubbles.js?v=8158" defer></script>
+<script src="b-profile.js?v=8158" defer></script>
+<script src="b-radar.js?v=8158" defer></script>
+<script src="b-messages.js?v=8158" defer></script>
+<script src="b-realtime.js?v=8158" defer></script>
+<script src="b-onboarding.js?v=8158" defer></script>
+<script src="b-chat.js?v=8158" defer></script>
+<script src="b-notifications.js?v=8158" defer></script>
+<script src="b-live.js?v=8158" defer></script>
+<script src="b-admin.js?v=8158" defer></script>
+<script src="b-navigation.js?v=8158" defer></script>
+<script src="b-boot.js?v=8158" defer></script>
   
 
 
 <style>
+/* Critical: hide all screens before app.css loads (prevents FOUC) */
+.screen { display:none !important; }
+.screen.active { display:flex !important; }
 
 /* ═══ V4.0 — Radar Card Gradient ═══ */
 .radar-card-v4 { background:#FFFFFF; border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:1rem 1.1rem; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 3px rgba(30,27,46,0.06), 0 1px 2px rgba(30,27,46,0.04); }
@@ -216,7 +219,7 @@
   <div id="auth-interests" style="display:none"></div>
 
   <!-- AUTH FORMS (hidden initially) -->
-  <div id="auth-forms" style="display:none;text-align:center;padding:0 1.2rem 40vh;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <div id="auth-forms" style="display:none;text-align:center;padding:0 1.2rem 350px;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
     <div style="margin-bottom:1rem">
       <div style="text-align:center;margin-bottom:0.3rem"><img src="bubble-logo-splash.png" alt="bubble" style="height:32px;width:auto"></div>
       <div style="font-size:0.82rem;color:var(--muted)" data-t="auth_network_radar">Network Radar for Business</div>
@@ -282,7 +285,7 @@
     </div>
     <div class="input-group">
       <div class="input-label">Bekræft adgangskode</div>
-      <input class="input" type="password" id="signup-password-confirm" placeholder="Gentag adgangskode" autocomplete="new-password">
+      <input class="input" type="password" id="signup-password-confirm" placeholder="Gentag adgangskode" autocomplete="new-password" onfocus="setTimeout(function(){var el=document.getElementById('signup-password-confirm');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},400)">
     </div>
     <button class="btn-primary" onclick="handleSignup()" data-t="auth_signup_btn">Opret konto</button>
     <button class="btn-secondary" onclick="switchToLogin()" data-t="auth_has_account">Har allerede en konto</button>
@@ -300,7 +303,7 @@
      SCREEN: ONBOARDING
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-onboarding">
-  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(1.5rem + env(safe-area-inset-top, 0px)) 1.5rem 40vh;display:flex;flex-direction:column">
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(1.5rem + env(safe-area-inset-top, 0px)) 1.5rem 350px;display:flex;flex-direction:column">
 
     <!-- ═══ TRIN 1: Navn + Arbejdsplads + Consent ═══ -->
     <div id="ob-step-1">
@@ -324,7 +327,7 @@
 
       <div class="input-group">
         <div class="input-label">Arbejdsplads *</div>
-        <input class="input" id="ob-workplace" maxlength="80" placeholder="f.eks. Danfoss, SDU, selvstændig..." data-t-placeholder="ob_workplace_ph" oninput="obCheckProgress()">
+        <input class="input" id="ob-workplace" maxlength="80" placeholder="f.eks. Danfoss, SDU, selvstændig..." data-t-placeholder="ob_workplace_ph" oninput="obCheckProgress()" onfocus="setTimeout(function(){var el=document.getElementById('ob-consent-row');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},400)">
       </div>
 
       <label class="ob-consent-row" id="ob-consent-row" onclick="obToggleConsent()">
