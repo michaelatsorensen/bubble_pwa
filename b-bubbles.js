@@ -559,6 +559,7 @@ function openCreateEventModal() {
   document.getElementById('cb-name').value = '';
   document.getElementById('cb-desc').value = '';
   document.getElementById('cb-location').value = '';
+  var _cbUrl = document.getElementById('cb-external-url'); if (_cbUrl) _cbUrl.value = '';
   var _cbAg = document.getElementById('cb-agenda'); if (_cbAg) _cbAg.value = '';
   var _cbTm = document.getElementById('cb-event-time'); if (_cbTm) _cbTm.value = '';
   var _cbTe = document.getElementById('cb-event-time-end'); if (_cbTe) _cbTe.value = '';
@@ -614,6 +615,7 @@ function openCreateEventFromBubble(parentBubbleId) {
   document.getElementById('cb-name').value = '';
   document.getElementById('cb-desc').value = '';
   document.getElementById('cb-location').value = '';
+  var _cbUrl = document.getElementById('cb-external-url'); if (_cbUrl) _cbUrl.value = '';
   var _cbAg = document.getElementById('cb-agenda'); if (_cbAg) _cbAg.value = '';
   var _cbTm = document.getElementById('cb-event-time'); if (_cbTm) _cbTm.value = '';
   var _cbTe = document.getElementById('cb-event-time-end'); if (_cbTe) _cbTe.value = '';
@@ -671,6 +673,7 @@ function openCreateSubBubble(parentBubbleId) {
   document.getElementById('cb-name').value = '';
   document.getElementById('cb-desc').value = '';
   document.getElementById('cb-location').value = '';
+  var _cbUrl = document.getElementById('cb-external-url'); if (_cbUrl) _cbUrl.value = '';
   var _cbAg = document.getElementById('cb-agenda'); if (_cbAg) _cbAg.value = '';
   var _cbTm = document.getElementById('cb-event-time'); if (_cbTm) _cbTm.value = '';
   var _cbTe = document.getElementById('cb-event-time-end'); if (_cbTe) _cbTe.value = '';
@@ -720,6 +723,7 @@ function openCreateNetworkModal() {
   document.getElementById('cb-name').value = '';
   document.getElementById('cb-desc').value = '';
   document.getElementById('cb-location').value = '';
+  var _cbUrl = document.getElementById('cb-external-url'); if (_cbUrl) _cbUrl.value = '';
   var _cbAg = document.getElementById('cb-agenda'); if (_cbAg) _cbAg.value = '';
   var _cbTm = document.getElementById('cb-event-time'); if (_cbTm) _cbTm.value = '';
   var _cbTe = document.getElementById('cb-event-time-end'); if (_cbTe) _cbTe.value = '';
@@ -851,6 +855,8 @@ async function createBubble() {
       name, type, type_label: typeLabel(type), description: desc, location,
       keywords: cbChips, created_by: currentUser.id, visibility
     };
+    var externalUrl = (document.getElementById('cb-external-url')?.value || '').trim();
+    if (externalUrl) insertData.external_url = externalUrl;
     if (parentBubbleId) insertData.parent_bubble_id = parentBubbleId;
     // Inherit icon from parent (or grandparent) if available
     if (parentBubbleId) {
@@ -940,6 +946,8 @@ async function openEditBubble(bubbleId) {
     document.getElementById('eb-visibility').value = b.visibility || 'public';
     document.getElementById('eb-desc').value = b.description || '';
     document.getElementById('eb-location').value = b.location || '';
+    var ebUrlEl = document.getElementById('eb-external-url');
+    if (ebUrlEl) ebUrlEl.value = b.external_url || '';
     ebChips = [...(b.keywords || [])];
     renderChips('eb-chips', ebChips, 'eb-chips-container', 'eb-chip-input');
     // Icon preview
@@ -1034,6 +1042,8 @@ async function saveEditBubble() {
       name, type, type_label: typeLabel(type),
       visibility, description: desc, location, keywords: ebChips
     };
+    var ebExtUrl = (document.getElementById('eb-external-url')?.value || '').trim();
+    updateObj.external_url = ebExtUrl || null;
     if (_pendingBubbleIcon) updateObj.icon_url = _pendingBubbleIcon;
     // Event date/time
     if (type === 'event' || type === 'live') {

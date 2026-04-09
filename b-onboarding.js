@@ -27,6 +27,34 @@ async function _downloadAvatarToStorage(externalUrl, userId) {
   } catch(e) { console.warn('[avatar] download failed:', e); return null; }
 }
 
+// Fire-and-forget avatar repair for returning users (non-blocking)
+function _repairAvatarInBackground(autoAvatar) {
+  setTimeout(async function() {
+    try {
+      if (!currentUser || !currentProfile) return;
+      // Save OAuth avatar if user doesn't have one
+      if (autoAvatar && !currentProfile.avatar_url) {
+        var saved = await _downloadAvatarToStorage(autoAvatar, currentUser.id);
+        if (saved) {
+          await sb.from('profiles').update({ avatar_url: saved }).eq('id', currentUser.id);
+          if (currentProfile) currentProfile.avatar_url = saved;
+        }
+      }
+      // Repair expired external URLs
+      if (currentProfile.avatar_url && !currentProfile.avatar_url.includes('supabase') && !currentProfile.avatar_url.includes('api.bubbleme')) {
+        var repaired = await _downloadAvatarToStorage(currentProfile.avatar_url, currentUser.id);
+        if (repaired) {
+          await sb.from('profiles').update({ avatar_url: repaired }).eq('id', currentUser.id);
+          currentProfile.avatar_url = repaired;
+        } else {
+          await sb.from('profiles').update({ avatar_url: null }).eq('id', currentUser.id);
+          currentProfile.avatar_url = null;
+        }
+      }
+    } catch(e) { console.warn('[avatar] bg repair failed:', e); }
+  }, 2000);
+}
+
 // ══════════════════════════════════════════════════════════
 //  ONBOARDING
 // ══════════════════════════════════════════════════════════
@@ -35,16 +63,22 @@ async function maybeShowOnboarding() {
     // Don't re-trigger if user explicitly skipped
     if (currentProfile?.onboarding_skipped) return false;
 
-    // v5.4: Require name + workplace. Title optional. Rest via profil-nudge.
     var provider = currentUser?.app_metadata?.provider || 'email';
     var meta = currentUser?.user_metadata || {};
     var autoName = meta.full_name || meta.name || '';
     var autoAvatar = meta.avatar_url || meta.picture || '';
-
-    // Auto-extract workplace from OAuth metadata (LinkedIn provides this)
     var autoWorkplace = meta.company || meta.organization || '';
 
-    // Auto-save avatar from OAuth if user doesn't have one
+    // Fast check: existing users with complete profiles skip instantly (no network calls)
+    var hasName = currentProfile?.name && currentProfile.name !== currentProfile?.id && currentProfile.name !== currentUser?.email;
+    var hasWorkplace = currentProfile?.workplace && currentProfile.workplace.trim().length > 0;
+    if (hasName && hasWorkplace) {
+      // Background avatar repair (non-blocking — don't delay app entry)
+      _repairAvatarInBackground(autoAvatar);
+      return false;
+    }
+
+    // New/incomplete user: do avatar work synchronously before showing onboarding
     if (autoAvatar && !currentProfile?.avatar_url) {
       try {
         var savedUrl = await _downloadAvatarToStorage(autoAvatar, currentUser.id);
@@ -52,36 +86,10 @@ async function maybeShowOnboarding() {
           await sb.from('profiles').update({ avatar_url: savedUrl }).eq('id', currentUser.id);
           if (currentProfile) currentProfile.avatar_url = savedUrl;
         }
-        // If download failed, don't save external URL — it will expire
       } catch(e) {}
     }
 
-    // Repair: existing users with external avatar URLs (LinkedIn/Google expire)
-    if (currentProfile?.avatar_url && !currentProfile.avatar_url.includes('supabase') && !currentProfile.avatar_url.includes('api.bubbleme')) {
-      try {
-        var repairedUrl = await _downloadAvatarToStorage(currentProfile.avatar_url, currentUser.id);
-        if (repairedUrl) {
-          await sb.from('profiles').update({ avatar_url: repairedUrl }).eq('id', currentUser.id);
-          currentProfile.avatar_url = repairedUrl;
-        } else {
-          // Download failed — URL is dead, clear it so initials show instead
-          await sb.from('profiles').update({ avatar_url: null }).eq('id', currentUser.id);
-          currentProfile.avatar_url = null;
-        }
-      } catch(e) {
-        // Network error — clear dead URL
-        try {
-          await sb.from('profiles').update({ avatar_url: null }).eq('id', currentUser.id);
-          if (currentProfile) currentProfile.avatar_url = null;
-        } catch(e2) {}
-      }
-    }
-
-    // Check if we already have what we need
-    var hasName = currentProfile?.name && currentProfile.name !== currentProfile?.id && currentProfile.name !== currentUser?.email;
-    var hasWorkplace = currentProfile?.workplace && currentProfile.workplace.trim().length > 0;
-
-    // LinkedIn may provide enough to skip onboarding entirely
+    // Auto-fill from OAuth if user is missing name/workplace
     if (!hasName && autoName) {
       try {
         await sb.from('profiles').update({ name: autoName }).eq('id', currentUser.id);
@@ -89,8 +97,6 @@ async function maybeShowOnboarding() {
         hasName = true;
       } catch(e) {}
     }
-
-    // Auto-save workplace from OAuth if available
     if (!hasWorkplace && autoWorkplace) {
       try {
         await sb.from('profiles').update({ workplace: autoWorkplace }).eq('id', currentUser.id);
@@ -99,7 +105,7 @@ async function maybeShowOnboarding() {
       } catch(e) {}
     }
 
-    if (hasName && hasWorkplace) return false; // Good enough
+    if (hasName && hasWorkplace) return false; // OAuth provided enough
 
     // Deep-link users: show minimal onboarding (just missing fields), not full flow
     var isDeepLink = flowGet('pending_contact') || flowGet('pending_join') || flowGet('event_flow');
