@@ -1661,6 +1661,8 @@ async function bcApproveMember(userId) {
       await ch.subscribe();
       await ch.send({ type: 'broadcast', event: 'approved', payload: { bubbleName: bubbleName, bubbleId: bcBubbleId } });
       setTimeout(function() { ch.unsubscribe(); }, 2000);
+      // Push notification to approved user
+      sendPush(userId, 'Du er godkendt!', 'Du er nu medlem af ' + bubbleName, { type: 'approved', bubble_id: bcBubbleId });
     } catch(e2) { console.debug('[approve] broadcast error:', e2); }
   } catch(e) { logError('bcApproveMember', e); errorToast('save', e); }
 }

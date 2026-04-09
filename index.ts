@@ -36,59 +36,60 @@ serve(async (req) => {
       });
     }
 
-    const { type, user_id, title, body, data } = await req.json();
+    const body = await req.json();
+    const { type, user_id, title, body: msgBody, data } = body;
 
     // Validate
     if (!user_id) {
       return new Response(JSON.stringify({ error: "user_id required" }), { status: 400 });
     }
 
-    // Get push subscription for user
-    const { data: sub, error: subErr } = await supabase
+    // Get ALL push subscriptions for user (multi-device support)
+    const { data: subs, error: subErr } = await supabase
       .from("push_subscriptions")
-      .select("endpoint, p256dh, auth")
-      .eq("user_id", user_id)
-      .single();
+      .select("id, endpoint, p256dh, auth")
+      .eq("user_id", user_id);
 
-    if (subErr || !sub) {
+    if (subErr || !subs || subs.length === 0) {
       return new Response(JSON.stringify({ error: "No push subscription", detail: subErr?.message }), { status: 404 });
     }
 
-    // Build push subscription object
-    const pushSubscription = {
-      endpoint: sub.endpoint,
-      keys: {
-        p256dh: sub.p256dh,
-        auth: sub.auth,
-      },
-    };
-
-    // Send notification
+    // Send notification to all devices
     const payload = JSON.stringify({
       title: title || "Bubble",
-      body: body || "Du har en ny notifikation",
+      body: msgBody || "Du har en ny notifikation",
       tag: type || "general",
       data: data || {},
     });
 
-    await webpush.sendNotification(pushSubscription, payload);
+    let sent = 0;
+    let expired: string[] = [];
+    for (const sub of subs) {
+      try {
+        await webpush.sendNotification({
+          endpoint: sub.endpoint,
+          keys: { p256dh: sub.p256dh, auth: sub.auth },
+        }, payload);
+        sent++;
+      } catch (pushErr: any) {
+        if (pushErr.statusCode === 410 || pushErr.statusCode === 404) {
+          expired.push(sub.id);
+        } else {
+          console.error("Push send error:", pushErr.message);
+        }
+      }
+    }
 
-    return new Response(JSON.stringify({ success: true }), {
+    // Clean up expired subscriptions
+    if (expired.length > 0) {
+      await supabase.from("push_subscriptions").delete().in("id", expired);
+    }
+
+    return new Response(JSON.stringify({ success: true, sent, expired: expired.length }), {
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
   } catch (err) {
     console.error("Push error:", err);
-
-    // If subscription expired, clean up
-    if (err.statusCode === 410 || err.statusCode === 404) {
-      // Subscription expired — delete it
-      const { user_id } = await req.json().catch(() => ({}));
-      if (user_id) {
-        await supabase.from("push_subscriptions").delete().eq("user_id", user_id);
-      }
-      return new Response(JSON.stringify({ error: "Subscription expired, cleaned up" }), { status: 410 });
-    }
-
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
 });

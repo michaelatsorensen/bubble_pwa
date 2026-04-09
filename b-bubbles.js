@@ -926,6 +926,8 @@ async function requestJoin(bubbleId) {
         await ch.subscribe();
         await ch.send({ type: 'broadcast', event: 'join_request', payload: { bubbleName: b.name || '', bubbleId: bubbleId, memberName: currentProfile?.name || '' } });
         setTimeout(function() { ch.unsubscribe(); }, 2000);
+        // Push notification to owner
+        sendPush(b.created_by, 'Ny anmodning', (currentProfile?.name || 'Nogen') + ' vil gerne med i ' + (b.name || 'din boble'), { type: 'join_request', bubble_id: bubbleId });
       }
     } catch(e2) { console.debug('[requestJoin] broadcast error:', e2); }
   } catch(e) { logError("requestJoin", e); errorToast("save", e); }
@@ -2153,6 +2155,7 @@ async function sendBubbleInvites() {
         try {
           sb.channel('member-notify-' + uid).send({ type: 'broadcast', event: 'invite', payload: { bubbleName: bubbleName, senderName: senderName, bubbleId: inviteBubbleId } });
         } catch(e2) {}
+        sendPush(uid, 'Invitation', senderName + ' inviterede dig til ' + bubbleName, { type: 'invitation', bubble_id: inviteBubbleId });
       });
     }
 

@@ -487,21 +487,7 @@ async function liveScanConfirmPersonCheckin() {
       setTimeout(function() { notifyChannel.unsubscribe(); }, 2000);
     } catch(e4) { console.debug('[scan] broadcast notify error:', e4); }
     // Send push notification to scanned user (backup for when app is closed)
-    try {
-      var { data: pushSub } = await sb.from('push_subscriptions').select('endpoint,p256dh,auth').eq('user_id', p.profile.id).maybeSingle();
-      if (pushSub && pushSub.endpoint) {
-        fetch(SUPABASE_URL + '/functions/v1/send-push', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (await sb.auth.getSession()).data.session?.access_token },
-          body: JSON.stringify({
-            subscription: { endpoint: pushSub.endpoint, keys: { p256dh: pushSub.p256dh, auth: pushSub.auth } },
-            title: 'Velkommen! ✓',
-            body: 'Du er checket ind i ' + eventName,
-            data: { type: 'checkin', bubble_id: p.bubbleId }
-          })
-        }).catch(function() {});
-      }
-    } catch(e3) { console.debug('[scan] push notify error:', e3); }
+    sendPush(p.profile.id, 'Velkommen! ✓', 'Du er checket ind i ' + eventName, { type: 'checkin', bubble_id: p.bubbleId });
     // Show success
     var confirmed = document.getElementById('live-scan-confirmed');
     var cName = document.getElementById('live-scan-confirmed-name');

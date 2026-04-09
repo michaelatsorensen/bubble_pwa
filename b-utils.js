@@ -311,6 +311,22 @@ function showWarningToast(message) {
   _renderToast(message, 'warn');
 }
 
+// ── Push notification helper — fire-and-forget ──
+function sendPush(userId, title, body, data) {
+  if (!userId || !currentUser || userId === currentUser.id) return; // Don't push to self
+  try {
+    sb.auth.getSession().then(function(r) {
+      var token = r.data?.session?.access_token;
+      if (!token) return;
+      fetch(SUPABASE_URL + '/functions/v1/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ user_id: userId, title: title || 'Bubble', body: body || '', data: data || {} })
+      }).catch(function() {});
+    }).catch(function() {});
+  } catch(e) {}
+}
+
 // ── Human-readable error toast — strips technical Supabase/JS errors ──
 function errorToast(context, error) {
   var msg = (error && error.message) ? error.message : String(error || '');
@@ -710,6 +726,8 @@ var dbActions = {
       });
       if (error) { errorToast('save', error); return { ok: false, error: error }; }
       trackEvent('contact_saved', { contact_id: contactId });
+      var senderName = currentProfile?.name || 'Nogen';
+      sendPush(contactId, 'Ny kontakt', senderName + ' har gemt din profil', { type: 'saved_contact', sender_id: currentUser.id });
       return { ok: true };
     } catch (e) { logError('dbActions.saveContact', e); errorToast('save', e); return { ok: false, error: e }; }
   },
@@ -794,6 +812,10 @@ var dbActions = {
       var { data, error } = await sb.from('messages').insert(payload).select().single();
       if (error) { errorToast('send', error); return { ok: false, error: error }; }
       trackEvent('dm_sent', { receiver_id: receiverId, has_file: !!opts.fileUrl, has_gif: !!opts.gifUrl });
+      // Push notification to receiver
+      var senderName = currentProfile?.name || 'Nogen';
+      var preview = content ? content.slice(0, 60) : (opts.gifUrl ? 'Sendte en GIF' : 'Sendte en fil');
+      sendPush(receiverId, senderName, preview, { type: 'new_message', sender_id: currentUser.id });
       return { ok: true, message: data };
     } catch (e) { logError('dbActions.sendDM', e); errorToast('send', e); return { ok: false, error: e }; }
   },

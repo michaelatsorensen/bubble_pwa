@@ -304,6 +304,7 @@ async function notifApproveJoin(bubbleId, userId, btn) {
       await ch.subscribe();
       await ch.send({ type: 'broadcast', event: 'approved', payload: { bubbleName: bub?.name || '', bubbleId: bubbleId } });
       setTimeout(function() { ch.unsubscribe(); }, 2000);
+      sendPush(userId, 'Du er godkendt!', 'Du er nu medlem af ' + (bub?.name || 'en boble'), { type: 'approved', bubble_id: bubbleId });
     } catch(e2) { console.debug('[approve] broadcast error:', e2); }
   } catch(e) { errorToast('save', e); }
 }
