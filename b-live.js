@@ -419,24 +419,21 @@ function liveQrPreviewLoop() {
       setTimeout(function() { _liveQrFrame = requestAnimationFrame(liveQrPreviewLoop); }, 200);
     });
   } else {
-    // jsQR fallback
+    // jsQR fallback — crop center 60% + scale for speed
     var canvas = document.getElementById('live-qr-canvas');
     if (!canvas) return;
     var ctx = canvas.getContext('2d', { willReadFrequently: true });
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    var vw = video.videoWidth, vh = video.videoHeight;
+    var cropW = Math.round(vw * 0.6), cropH = Math.round(vh * 0.6);
+    var cropX = Math.round((vw - cropW) / 2), cropY = Math.round((vh - cropH) / 2);
+    var scale = Math.min(1, 400 / cropW);
+    var outW = Math.round(cropW * scale), outH = Math.round(cropH * scale);
+    canvas.width = outW;
+    canvas.height = outH;
+    ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, outW, outH);
     if (typeof jsQR !== 'undefined') {
-      var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
-      if (!code && canvas.width > 200) {
-        var cx = Math.floor(canvas.width * 0.15);
-        var cy = Math.floor(canvas.height * 0.15);
-        var cw = Math.floor(canvas.width * 0.7);
-        var ch = Math.floor(canvas.height * 0.7);
-        var cropData = ctx.getImageData(cx, cy, cw, ch);
-        code = jsQR(cropData.data, cw, ch, { inversionAttempts: 'attemptBoth' });
-      }
+      var imgData = ctx.getImageData(0, 0, outW, outH);
+      var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'dontInvert' });
       if (code && code.data && !_liveQrPending) {
         _liveQrFound = code.data;
         liveScanAutoResolve(code.data);
@@ -886,19 +883,25 @@ function _connectScanLoop() {
     var canvas = document.getElementById('connect-qr-canvas');
     if (!canvas) return;
     var ctx = canvas.getContext('2d', { willReadFrequently: true });
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // Crop to center 60% of video (where scan box is) + scale down for speed
+    var vw = video.videoWidth, vh = video.videoHeight;
+    var cropW = Math.round(vw * 0.6), cropH = Math.round(vh * 0.6);
+    var cropX = Math.round((vw - cropW) / 2), cropY = Math.round((vh - cropH) / 2);
+    var scale = Math.min(1, 400 / cropW);
+    var outW = Math.round(cropW * scale), outH = Math.round(cropH * scale);
+    canvas.width = outW;
+    canvas.height = outH;
+    ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, outW, outH);
     if (typeof jsQR !== 'undefined') {
-      var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
+      var imgData = ctx.getImageData(0, 0, outW, outH);
+      var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'dontInvert' });
       if (code && code.data && !_connectPending) {
         _connectNativeAttempts = 0;
         _connectResolve(code.data);
         return;
       }
     }
-    setTimeout(function() { _connectFrame = requestAnimationFrame(_connectScanLoop); }, 120);
+    setTimeout(function() { _connectFrame = requestAnimationFrame(_connectScanLoop); }, 80);
   }
 }
 
