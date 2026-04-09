@@ -380,8 +380,27 @@ async function handleSignup() {
           '<div style="font-size:2rem;margin-bottom:0.8rem">📧</div>' +
           '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">Tjek din email</div>' +
           '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem">Vi har sendt en bekræftelsesmail til<br><strong style="color:var(--text)">' + escHtml(email) + '</strong><br><br>Klik på linket i mailen for at aktivere din konto. Tjek også spam-mappen.</div>' +
-          '<button class="btn-secondary" onclick="location.reload()" style="width:100%">Jeg har bekræftet — log ind</button>' +
+          '<button class="btn-primary" id="confirm-retry-btn" style="width:100%;margin-bottom:0.5rem">Jeg har bekræftet — log ind</button>' +
+          '<button class="btn-secondary" onclick="goTo(\'screen-auth\')" style="width:100%">Tilbage til login</button>' +
           '</div>';
+        document.getElementById('confirm-retry-btn').onclick = async function() {
+          this.textContent = 'Logger ind...';
+          this.disabled = true;
+          try {
+            var { data: d2, error: e2 } = await sb.auth.signInWithPassword({ email: email, password: pass });
+            if (e2 || !d2.session) {
+              showWarningToast('Email ikke bekræftet endnu — prøv igen');
+              this.textContent = 'Jeg har bekræftet — log ind';
+              this.disabled = false;
+              return;
+            }
+            currentUser = d2.user;
+            await resolvePostAuth();
+          } catch(err) {
+            this.textContent = 'Jeg har bekræftet — log ind';
+            this.disabled = false;
+          }
+        };
       }
       return;
     }

@@ -48,21 +48,33 @@ async function maybeShowOnboarding() {
     if (autoAvatar && !currentProfile?.avatar_url) {
       try {
         var savedUrl = await _downloadAvatarToStorage(autoAvatar, currentUser.id);
-        var finalUrl = savedUrl || autoAvatar;
-        await sb.from('profiles').update({ avatar_url: finalUrl }).eq('id', currentUser.id);
-        if (currentProfile) currentProfile.avatar_url = finalUrl;
+        if (savedUrl) {
+          await sb.from('profiles').update({ avatar_url: savedUrl }).eq('id', currentUser.id);
+          if (currentProfile) currentProfile.avatar_url = savedUrl;
+        }
+        // If download failed, don't save external URL — it will expire
       } catch(e) {}
     }
 
     // Repair: existing users with external avatar URLs (LinkedIn/Google expire)
-    if (currentProfile?.avatar_url && !currentProfile.avatar_url.includes('supabase')) {
+    if (currentProfile?.avatar_url && !currentProfile.avatar_url.includes('supabase') && !currentProfile.avatar_url.includes('api.bubbleme')) {
       try {
         var repairedUrl = await _downloadAvatarToStorage(currentProfile.avatar_url, currentUser.id);
         if (repairedUrl) {
           await sb.from('profiles').update({ avatar_url: repairedUrl }).eq('id', currentUser.id);
           currentProfile.avatar_url = repairedUrl;
+        } else {
+          // Download failed — URL is dead, clear it so initials show instead
+          await sb.from('profiles').update({ avatar_url: null }).eq('id', currentUser.id);
+          currentProfile.avatar_url = null;
         }
-      } catch(e) {}
+      } catch(e) {
+        // Network error — clear dead URL
+        try {
+          await sb.from('profiles').update({ avatar_url: null }).eq('id', currentUser.id);
+          if (currentProfile) currentProfile.avatar_url = null;
+        } catch(e2) {}
+      }
     }
 
     // Check if we already have what we need
