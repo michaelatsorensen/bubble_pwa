@@ -317,12 +317,15 @@ function sendPush(userId, title, body, data) {
   try {
     sb.auth.getSession().then(function(r) {
       var token = r.data?.session?.access_token;
-      if (!token) return;
+      if (!token) { console.warn('[push] no auth token'); return; }
       fetch(SUPABASE_URL + '/functions/v1/send-push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: JSON.stringify({ user_id: userId, title: title || 'Bubble', body: body || '', data: data || {} })
-      }).catch(function() {});
+      }).then(function(resp) {
+        resp.json().then(function(j) { console.debug('[push]', resp.status, j); }).catch(function() {});
+        if (!resp.ok) console.warn('[push] failed:', resp.status);
+      }).catch(function(e) { console.warn('[push] network error:', e.message); });
     }).catch(function() {});
   } catch(e) {}
 }
