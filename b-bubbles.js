@@ -852,6 +852,18 @@ async function createBubble() {
       keywords: cbChips, created_by: currentUser.id, visibility
     };
     if (parentBubbleId) insertData.parent_bubble_id = parentBubbleId;
+    // Inherit icon from parent (or grandparent) if available
+    if (parentBubbleId) {
+      try {
+        var { data: parentBub } = await sb.from('bubbles').select('icon_url, parent_bubble_id').eq('id', parentBubbleId).maybeSingle();
+        if (parentBub && parentBub.icon_url) {
+          insertData.icon_url = parentBub.icon_url;
+        } else if (parentBub && parentBub.parent_bubble_id) {
+          var { data: gpBub } = await sb.from('bubbles').select('icon_url').eq('id', parentBub.parent_bubble_id).maybeSingle();
+          if (gpBub && gpBub.icon_url) insertData.icon_url = gpBub.icon_url;
+        }
+      } catch(e) {}
+    }
     // Event check-in mode (self = auto check-in, scan = reverse QR)
     if (type === 'event' || type === 'live') {
       var checkinMode = document.getElementById('cb-checkin-mode')?.value || 'self';
