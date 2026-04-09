@@ -792,6 +792,8 @@ document.addEventListener('visibilitychange', function() {
 var _connectStream = null;
 var _connectFrame = null;
 var _connectPending = false;
+var _connectLastUrl = '';
+var _connectLastTime = 0;
 
 function openConnectScanner() {
   if (!currentUser) { _renderToast('Log ind først', 'error'); return; }
@@ -821,6 +823,8 @@ function openConnectScanner() {
   ov.style.display = 'flex';
   _connectPending = false;
   _connectNativeAttempts = 0;
+  _connectLastUrl = '';
+  _connectLastTime = 0;
   startConnectCamera();
 }
 
@@ -911,6 +915,14 @@ function _connectScanLoop() {
 }
 
 async function _connectResolve(rawUrl) {
+  // Debounce: ignore same QR within 5 seconds (prevents re-scan after cancel)
+  if (rawUrl === _connectLastUrl && Date.now() - _connectLastTime < 5000) {
+    _connectPending = false;
+    setTimeout(function() { _connectScanLoop(); }, 500);
+    return;
+  }
+  _connectLastUrl = rawUrl;
+  _connectLastTime = Date.now();
   _connectPending = true;
   if (_connectFrame) { cancelAnimationFrame(_connectFrame); _connectFrame = null; }
   try {
