@@ -131,6 +131,8 @@ async function maybeShowOnboarding() {
       obQrBanner.style.display = 'none';
     }
 
+    var obScroll = document.getElementById('ob-scroll');
+    if (obScroll) obScroll.style.visibility = 'visible';
     goTo('screen-onboarding');
     setTimeout(initInputConfirmButtons, 50);
     setTimeout(obCheckProgress, 80);
@@ -153,6 +155,8 @@ function reRunOnboarding() {
   var btn = document.getElementById('ob-save-btn');
   if (btn) { btn.textContent = 'Gem ændringer'; btn.disabled = false; }
   obCheckProgress();
+  var obScroll = document.getElementById('ob-scroll');
+  if (obScroll) obScroll.style.visibility = 'visible';
   goTo('screen-onboarding');
 }
 
