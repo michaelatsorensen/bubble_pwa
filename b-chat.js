@@ -552,6 +552,11 @@ async function bcRefreshMembership() {
       if (!wasAdmin && bcBubbleData._isAdmin) {
         showSuccessToast(t('bc_you_are_admin'));
       }
+      // Pending → approved: start realtime + load chat
+      if (!wasMember && isMember) {
+        bcSubscribeRealtime();
+        bcLoadMessages();
+      }
     }
   } catch(e) { logError('bcRefreshMembership', e); }
 }

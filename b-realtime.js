@@ -479,7 +479,39 @@ function initGlobalRealtime() {
   var chMember = sb.channel('member-notify-' + currentUser.id)
     .on('broadcast', { event: 'approved' }, function(msg) {
       var data = msg.payload || {};
-      showSuccessToast('Du er godkendt i ' + (data.bubbleName || 'en boble') + ' — velkommen! ✓');
+      var bName = data.bubbleName || 'en boble';
+      var bId = data.bubbleId || '';
+      // Persistent modal — requires active dismiss
+      if (typeof showCheckinModal === 'function') {
+        // Reuse modal infrastructure but with approval messaging
+        var existing = document.getElementById('checkin-confirm-overlay');
+        if (existing) existing.remove();
+        var ov = document.createElement('div');
+        ov.id = 'checkin-confirm-overlay';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.3s ease';
+        ov.innerHTML =
+          '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+            '<div style="width:56px;height:56px;border-radius:50%;background:rgba(26,158,142,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">' +
+              '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+            '</div>' +
+            '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.3rem">Du er godkendt!</div>' +
+            '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.25rem">' + escHtml(bName) + '</div>' +
+            (bId ? '<button id="approved-goto-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">Gå til boble →</button>' : '') +
+            '<button id="approved-ok-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">OK</button>' +
+          '</div>';
+        document.body.appendChild(ov);
+        var gotoBtn = document.getElementById('approved-goto-btn');
+        if (gotoBtn) gotoBtn.onclick = function() { ov.remove(); if (bId) openBubbleChat(bId, navState.screen || 'screen-home'); };
+        var okBtn = document.getElementById('approved-ok-btn');
+        if (okBtn) okBtn.onclick = function() { ov.style.transition = 'opacity 0.25s'; ov.style.opacity = '0'; setTimeout(function() { ov.remove(); }, 260); };
+      } else {
+        showSuccessToast('Du er godkendt i ' + bName + ' — velkommen! ✓');
+      }
+      // Refresh bubble chat if user is currently viewing the approved bubble
+      if (navState.screen === 'screen-bubble-chat' && bcBubbleId === bId) {
+        bcRefreshMembership();
+        bcLoadMembers();
+      }
       if (navState.screen === 'screen-home') {
         loadHome();
       }
