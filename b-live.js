@@ -810,7 +810,7 @@ function openConnectScanner() {
         '</div>' +
         '<div style="position:absolute;top:calc(env(safe-area-inset-top,12px) + 12px);left:16px;right:16px;display:flex;align-items:center;justify-content:space-between">' +
           '<button onclick="closeConnectScanner()" style="width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,0.15);color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>' +
-          '<div style="font-size:0.8rem;font-weight:700;color:white">Scan en profil-QR</div>' +
+          '<div style="font-size:0.8rem;font-weight:700;color:white">Scan en Bubble QR</div>' +
           '<div style="width:36px"></div>' +
         '</div>' +
         '<div id="connect-scan-status" style="position:absolute;bottom:calc(env(safe-area-inset-bottom,16px) + 80px);left:0;right:0;text-align:center;font-size:0.75rem;color:white;font-weight:600">Peg kameraet mod en Bubble QR-kode</div>' +
@@ -820,6 +820,7 @@ function openConnectScanner() {
   }
   ov.style.display = 'flex';
   _connectPending = false;
+  _connectNativeAttempts = 0;
   startConnectCamera();
 }
 
@@ -866,6 +867,8 @@ async function startConnectCamera() {
   }
 }
 
+var _connectNativeAttempts = 0;
+
 function _connectScanLoop() {
   var video = document.getElementById('connect-qr-video');
   if (!video || !_connectStream || _connectPending) return;
@@ -873,9 +876,13 @@ function _connectScanLoop() {
     _connectFrame = requestAnimationFrame(_connectScanLoop);
     return;
   }
-  if (_useNativeDetector && _barcodeDetector) {
+  // After 30 failed native attempts (~3s), fall back to jsQR
+  var useNative = _useNativeDetector && _barcodeDetector && _connectNativeAttempts < 30;
+  if (useNative) {
+    _connectNativeAttempts++;
     _barcodeDetector.detect(video).then(function(codes) {
       if (codes && codes.length > 0 && codes[0].rawValue && !_connectPending) {
+        _connectNativeAttempts = 0;
         _connectResolve(codes[0].rawValue);
         return;
       }
@@ -894,6 +901,7 @@ function _connectScanLoop() {
       var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
       if (code && code.data && !_connectPending) {
+        _connectNativeAttempts = 0;
         _connectResolve(code.data);
         return;
       }
@@ -957,21 +965,30 @@ async function _connectResolve(rawUrl) {
       return;
     }
 
-    // Handle event QR
-    if (eventId) {
-      closeConnectScanner();
-      flowSet('pending_join', eventId);
-      flowSet('event_flow', 'true');
-      await checkPendingJoin();
-      return;
-    }
-
-    // Handle join QR
-    if (joinId) {
-      closeConnectScanner();
-      await dbActions.joinBubble(joinId);
-      showSuccessToast(t('toast_joined'));
-      requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(joinId, 'screen-home'); }); });
+    // Handle event or join QR → show confirmation card
+    var bubbleId = eventId || joinId;
+    if (bubbleId) {
+      var { data: bub } = await sb.from('bubbles')
+        .select('id, name, type, location, event_date, event_end_date, icon_url, visibility, bubble_members(count)')
+        .eq('id', bubbleId).maybeSingle();
+      if (!bub) {
+        // Try by join_code
+        var { data: bub2 } = await sb.from('bubbles')
+          .select('id, name, type, location, event_date, event_end_date, icon_url, visibility, bubble_members(count)')
+          .eq('join_code', bubbleId).maybeSingle();
+        bub = bub2;
+      }
+      if (!bub) {
+        _renderToast(t('toast_not_found'), 'error');
+        _connectPending = false;
+        _connectScanLoop();
+        return;
+      }
+      // Pause camera, show bubble card
+      if (_connectFrame) { cancelAnimationFrame(_connectFrame); _connectFrame = null; }
+      var video = document.getElementById('connect-qr-video');
+      if (video) video.pause();
+      _connectShowBubbleCard(bub, !!eventId);
       return;
     }
 
@@ -983,6 +1000,90 @@ async function _connectResolve(rawUrl) {
     _renderToast(t('toast_generic_error'), 'error');
     _connectPending = false;
     _connectScanLoop();
+  }
+}
+
+// ── Bubble confirmation card inside scanner overlay ──
+var _connectBubbleData = null;
+var _connectBubbleIsEvent = false;
+
+function _connectShowBubbleCard(bub, isEventFlow) {
+  _connectBubbleData = bub;
+  _connectBubbleIsEvent = isEventFlow;
+  var isEvent = bub.type === 'event' || bub.type === 'live';
+  var isPrivate = bub.visibility === 'private' || bub.visibility === 'hidden';
+  var mc = bub.bubble_members?.[0]?.count || 0;
+  var memberLabel = isEvent ? (mc + ' tilmeldt') : (mc + ' medlemmer');
+
+  // Date string for events
+  var dateStr = '';
+  if (isEvent && bub.event_date) {
+    var d = new Date(bub.event_date);
+    dateStr = d.toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' });
+    if (bub.event_end_date) {
+      var e = new Date(bub.event_end_date);
+      dateStr += ' · ' + d.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) + '–' + e.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
+    }
+  }
+
+  // Icon
+  var iconHtml = bub.icon_url
+    ? '<img src="' + escHtml(bub.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:14px">'
+    : (isEvent ? '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="' + (isEvent ? '#2ECFCF' : '#7C5CFC') + '" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' : '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/></svg>');
+
+  // Button
+  var btnColor = isEvent ? 'linear-gradient(135deg,#1A9E8E,#17877A)' : 'linear-gradient(135deg,#7C5CFC,#6366F1)';
+  var btnText = isEvent ? '✓ Check ind' : (isPrivate ? '🔒 Anmod om adgang' : 'Bliv medlem');
+
+  var resultEl = document.getElementById('connect-scan-result');
+  if (!resultEl) return;
+  resultEl.style.display = 'block';
+  resultEl.innerHTML =
+    '<div style="background:rgba(255,255,255,0.97);border-radius:20px 20px 0 0;padding:1.5rem 1.2rem calc(1.2rem + env(safe-area-inset-bottom,0px));box-shadow:0 -4px 20px rgba(0,0,0,0.2)">' +
+      '<div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:1rem">' +
+        '<div style="width:52px;height:52px;border-radius:14px;background:' + (isEvent ? 'rgba(46,207,207,0.1)' : 'rgba(124,92,252,0.1)') + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">' + iconHtml + '</div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:1rem;font-weight:800;color:#1E1B2E">' + escHtml(bub.name) + '</div>' +
+          '<div style="font-size:0.75rem;color:#888;margin-top:2px">' +
+            (isEvent ? 'Event' : 'Netværk') + ' · ' + memberLabel +
+          '</div>' +
+          (dateStr ? '<div style="font-size:0.72rem;color:#0F6E56;font-weight:600;margin-top:2px">' + dateStr + '</div>' : '') +
+          (bub.location ? '<div style="font-size:0.72rem;color:#888;margin-top:1px">📍 ' + escHtml(bub.location) + '</div>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:0.5rem">' +
+        '<button onclick="_connectBubbleCancel()" style="flex:1;padding:0.75rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:#888;font-size:0.85rem;font-weight:600;font-family:inherit;cursor:pointer">Annuller</button>' +
+        '<button onclick="_connectBubbleConfirm()" style="flex:2;padding:0.75rem;border-radius:12px;border:none;background:' + btnColor + ';color:white;font-size:0.85rem;font-weight:700;font-family:inherit;cursor:pointer">' + btnText + '</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function _connectBubbleCancel() {
+  _connectBubbleData = null;
+  var resultEl = document.getElementById('connect-scan-result');
+  if (resultEl) { resultEl.style.display = 'none'; resultEl.innerHTML = ''; }
+  _connectPending = false;
+  var video = document.getElementById('connect-qr-video');
+  if (video && _connectStream) { video.play(); _connectScanLoop(); }
+}
+
+async function _connectBubbleConfirm() {
+  if (!_connectBubbleData) return;
+  var bub = _connectBubbleData;
+  var isEventFlow = _connectBubbleIsEvent;
+  _connectBubbleData = null;
+  closeConnectScanner();
+
+  if (isEventFlow) {
+    flowSet('pending_join', bub.id);
+    flowSet('event_flow', 'true');
+    await checkPendingJoin();
+  } else {
+    var joinResult = await dbActions.joinBubble(bub.id);
+    if (joinResult.ok) {
+      showSuccessToast(t('toast_joined'));
+    }
+    requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(bub.id, 'screen-home'); }); });
   }
 }
 
