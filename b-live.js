@@ -380,7 +380,9 @@ var _barcodeDetector = null;
 var _useNativeDetector = false;
 
 async function initBarcodeDetector() {
-  if (typeof BarcodeDetector !== 'undefined') {
+  // Skip native BarcodeDetector on iOS — unreliable across device generations
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if (!isIOS && typeof BarcodeDetector !== 'undefined') {
     try {
       var formats = await BarcodeDetector.getSupportedFormats();
       if (formats.includes('qr_code')) {
@@ -392,7 +394,7 @@ async function initBarcodeDetector() {
     } catch(e) {}
   }
   _useNativeDetector = false;
-  console.debug('[QR] Using jsQR fallback');
+  console.debug('[QR] Using jsQR' + (isIOS ? ' (iOS forced)' : ' fallback'));
 }
 
 function liveQrPreviewLoop() {
