@@ -284,47 +284,100 @@ function calcProfileStrength(profile) {
 }
 
 // ── Event checkin card — shown after QR scan auto-checkin ──
+// ── Shared check-in confirmation modal — used from home (QR) and inside event (auto/manual) ──
+// opts.fromHome: show "Gå til event" + "Bliv på forsiden"
+// opts.inEvent: show single "Forstået" (already inside the event)
+function showCheckinModal(eventName, opts) {
+  opts = opts || {};
+  var eventId = opts.eventId || null;
+
+  // Remove any existing overlay
+  var existing = document.getElementById('checkin-confirm-overlay');
+  if (existing) existing.remove();
+
+  var ov = document.createElement('div');
+  ov.id = 'checkin-confirm-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.3s ease';
+
+  var buttonsHtml = '';
+  if (opts.fromHome && eventId) {
+    buttonsHtml =
+      '<button id="checkin-goto-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#1A9E8E,#17877A);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:center;gap:0.4rem">' + t('ob_goto_event') + '</button>' +
+      '<button id="checkin-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">Bliv på forsiden</button>';
+  } else {
+    buttonsHtml =
+      '<button id="checkin-ok-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#1A9E8E,#17877A);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.4rem">Forstået</button>';
+  }
+
+  ov.innerHTML =
+    '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+      '<div style="width:56px;height:56px;border-radius:50%;background:rgba(26,158,142,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">' +
+        '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+      '</div>' +
+      '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.3rem">' + t('toast_checkedin') + '</div>' +
+      '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;margin-bottom:0.25rem">' + escHtml(eventName || '') + '</div>' +
+      '<div style="display:flex;align-items:center;justify-content:center;gap:0.4rem;margin-bottom:1.25rem">' +
+        '<span class="live-dot"></span>' +
+        '<span style="font-size:0.8rem;font-weight:600;color:var(--accent3)">Du er live</span>' +
+      '</div>' +
+      buttonsHtml +
+    '</div>';
+
+  document.body.appendChild(ov);
+
+  // Wire buttons
+  var gotoBtn = document.getElementById('checkin-goto-btn');
+  var stayBtn = document.getElementById('checkin-stay-btn');
+  var okBtn = document.getElementById('checkin-ok-btn');
+
+  if (gotoBtn) {
+    gotoBtn.onclick = function() {
+      ov.remove();
+      if (eventId) {
+        openBubbleChat(eventId, 'screen-home');
+        setTimeout(function() { if (typeof bcSwitchTab === 'function') bcSwitchTab('info'); }, 300);
+      }
+    };
+  }
+  if (stayBtn) {
+    stayBtn.onclick = function() {
+      ov.style.transition = 'opacity 0.25s';
+      ov.style.opacity = '0';
+      setTimeout(function() { ov.remove(); }, 260);
+    };
+  }
+  if (okBtn) {
+    okBtn.onclick = function() {
+      ov.style.transition = 'opacity 0.25s';
+      ov.style.opacity = '0';
+      setTimeout(function() { ov.remove(); }, 260);
+    };
+  }
+}
+
+// ── Home screen wrapper: reads from sessionStorage (QR flow) ──
 function showEventCheckinCard() {
-  var el = document.getElementById('home-event-card');
-  if (!el) return;
   var eventName, eventId;
   try {
     eventName = sessionStorage.getItem('event_greeting');
     eventId = sessionStorage.getItem('event_greeting_id');
   } catch(e) { return; }
-  if (!eventName || !eventId) { el.style.display = 'none'; return; }
+  if (!eventName || !eventId) return;
 
-  el.innerHTML =
-    '<div style="background:#FFFFFF;border:1px solid rgba(26,158,142,0.2);border-radius:16px;padding:1rem 1.1rem;position:relative">' +
-      '<button onclick="dismissEventCard()" style="position:absolute;top:0.6rem;right:0.7rem;background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;line-height:1;padding:0.2rem" aria-label="Luk">×</button>' +
-      '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">' +
-        '<div style="width:24px;height:24px;border-radius:50%;background:rgba(26,158,142,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">' +
-          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
-        '</div>' +
-        '<div style="font-size:0.85rem;font-weight:700;color:#085041">' + t('event_greeting', { name: escHtml(eventName) }) + '</div>' +
-      '</div>' +
-      '<button onclick="goToEventFromCard()" style="width:100%;padding:0.6rem;border-radius:10px;font-size:0.82rem;font-weight:700;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,#1A9E8E,#17877A);color:white;border:none">' + t('ob_goto_event') + '</button>' +
-    '</div>';
-  el.style.display = 'block';
-}
-
-function goToEventFromCard() {
-  var eventId;
-  try { eventId = sessionStorage.getItem('event_greeting_id'); } catch(e) {}
-  dismissEventCard();
-  if (eventId) openBubbleChat(eventId, 'screen-home');
-}
-
-function dismissEventCard() {
+  // Consume immediately — only show once
   try {
     sessionStorage.removeItem('event_greeting');
     sessionStorage.removeItem('event_greeting_id');
   } catch(e) {}
-  var el = document.getElementById('home-event-card');
-  if (!el) return;
-  el.style.transition = 'opacity 0.25s';
-  el.style.opacity = '0';
-  setTimeout(function() { el.style.display = 'none'; }, 260);
+
+  showCheckinModal(eventName, { fromHome: true, eventId: eventId });
+}
+
+// Legacy aliases (safe to call from other files)
+function goToEventFromCard() {}
+function dismissEventCard() {
+  var ov = document.getElementById('checkin-confirm-overlay');
+  if (ov) ov.remove();
 }
 
 // ── Welcome card — shown once to brand new users ──
@@ -332,9 +385,9 @@ function showWelcomeCard() {
   var el = document.getElementById('home-welcome-card');
   if (!el || !currentProfile) return;
   if (localStorage.getItem('bubble_welcome_card_dismissed')) return;
-  // Suppress if event checkin card is already showing
-  var eventCard = document.getElementById('home-event-card');
-  if (eventCard && eventCard.style.display !== 'none' && eventCard.innerHTML) return;
+  // Suppress if event checkin overlay is showing
+  var eventOverlay = document.getElementById('checkin-confirm-overlay');
+  if (eventOverlay) return;
   // Only show if profile is truly fresh — name + workplace but nothing else
   var isNewUser = !currentProfile.title &&
     !(currentProfile.keywords && currentProfile.keywords.length) &&

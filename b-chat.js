@@ -129,12 +129,14 @@ let bcEditingId = null;
 let bcMsgHistories = {};
 let bcSubscription = null;
 let bcBubbleData = null;
+var _bcLivePollTimer = null;
 
 // ── REALTIME CLEANUP HELPER ──
 // v5.2: chat only cleans up its own subscriptions.
 // Global channels are owned by b-realtime.js → rtUnsubscribeAll().
 function bcUnsubscribe() {
   if (bcSubscription) { bcSubscription.unsubscribe(); bcSubscription = null; }
+  if (_bcLivePollTimer) { clearInterval(_bcLivePollTimer); _bcLivePollTimer = null; }
 }
 function dmUnsubscribe() {
   if (chatSubscription) { chatSubscription.unsubscribe(); chatSubscription = null; }
@@ -366,6 +368,29 @@ async function bcLoadMembership(b, bubbleId) {
 
   // Event greeting banner (shown once after QR auto-checkin)
   _bcShowEventGreeting();
+
+  // Auto check-in: if member opens an event that is currently "I gang"
+  if (bcBubbleData._isMember && (b.type === 'event' || b.type === 'live') && b.event_date) {
+    await _bcAutoCheckin(b, bubbleId);
+  }
+
+  // Live polling: refresh member list every 15s for active events
+  // (postgres_changes may not deliver other users' check-ins due to RLS)
+  if (_bcLivePollTimer) { clearInterval(_bcLivePollTimer); _bcLivePollTimer = null; }
+  if (bcBubbleData._isMember && (b.type === 'event' || b.type === 'live') && b.event_date) {
+    var _pollNow = new Date();
+    var _pollStart = new Date(b.event_date);
+    var _pollEnd = b.event_end_date ? new Date(b.event_end_date) : new Date(_pollStart.getTime() + 4 * 3600000);
+    if (_pollNow >= _pollStart && _pollNow <= _pollEnd) {
+      _bcLivePollTimer = setInterval(function() {
+        if (_activeScreen === 'screen-bubble-chat' && bcBubbleId === bubbleId) {
+          bcLoadMembers();
+        } else {
+          clearInterval(_bcLivePollTimer); _bcLivePollTimer = null;
+        }
+      }, 15000);
+    }
+  }
 }
 
 // ── Event greeting banner (shown once after QR auto-checkin) ──
@@ -394,6 +419,60 @@ function _bcShowEventGreeting() {
       setTimeout(function() { banner.remove(); }, 400);
     }
   }, 6000);
+}
+
+// ── Auto check-in for active events ──
+async function _bcAutoCheckin(b, bubbleId) {
+  try {
+    var now = new Date();
+    var start = new Date(b.event_date);
+    var end = b.event_end_date ? new Date(b.event_end_date) : new Date(start.getTime() + 4 * 3600000);
+    // Only if event is "I gang"
+    if (now < start || now > end) return;
+
+    // Check if already checked in
+    var { data: mem } = await sb.from('bubble_members')
+      .select('checked_in_at, checked_out_at')
+      .eq('bubble_id', bubbleId).eq('user_id', currentUser.id)
+      .maybeSingle();
+    if (mem && mem.checked_in_at && !mem.checked_out_at) {
+      // Already live — just ensure live state is synced
+      if (typeof loadLiveBubbleStatus === 'function') loadLiveBubbleStatus();
+      return;
+    }
+
+    // Auto check-in
+    var ciResult = await dbActions.checkIn(bubbleId);
+    if (!ciResult.ok) {
+      console.warn('[_bcAutoCheckin] checkIn failed:', ciResult.error);
+      return;
+    }
+
+    // Update client-side live state
+    if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus();
+    if (typeof loadLiveBanner === 'function') loadLiveBanner();
+
+    // Refresh member list to show live dot
+    bcLoadMembers();
+    // Show check-in confirmation modal (requires active dismiss)
+    if (typeof showCheckinModal === 'function') showCheckinModal(b.name || '', { inEvent: true });
+  } catch(e) { logError('_bcAutoCheckin', e); }
+}
+
+// ── Manual check-in button handler ──
+async function bcManualCheckIn() {
+  if (!currentUser || !bcBubbleId) return;
+  try {
+    var result = await dbActions.checkIn(bcBubbleId);
+    if (result.ok) {
+      if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus();
+      if (typeof loadLiveBanner === 'function') loadLiveBanner();
+      bcLoadMembers();
+      // Show check-in confirmation modal (requires active dismiss)
+      var evName = bcBubbleData ? bcBubbleData.name : '';
+      if (typeof showCheckinModal === 'function') showCheckinModal(evName, { inEvent: true });
+    }
+  } catch(e) { logError('bcManualCheckIn', e); }
 }
 
 // Render or hide pending membership banner
@@ -1441,6 +1520,30 @@ async function bcLoadMembers() {
     // Section labels — event-aware terminology
     var isEvent = bcBubbleData?.type === 'event' || bcBubbleData?.type === 'live';
     let html = '';
+
+    // Live status banner for active events
+    if (isEvent && bcBubbleData?.event_date) {
+      var _evNow = new Date();
+      var _evStart = new Date(bcBubbleData.event_date);
+      var _evEnd = bcBubbleData.event_end_date ? new Date(bcBubbleData.event_end_date) : new Date(_evStart.getTime() + 4 * 3600000);
+      if (_evNow >= _evStart && _evNow <= _evEnd) {
+        var _myMem = members.find(function(m) { return m.user_id === currentUser.id; });
+        var _amILive = _myMem && _myMem.checked_in_at && !_myMem.checked_out_at;
+        if (_amILive) {
+          html += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;margin-bottom:0.6rem;border-radius:10px;background:rgba(46,207,207,0.08);border:1px solid rgba(46,207,207,0.2)">' +
+            '<span class="live-dot"></span>' +
+            '<span style="font-size:0.78rem;font-weight:700;color:var(--accent3)">Du er live</span>' +
+            '<span style="font-size:0.72rem;color:var(--muted);margin-left:auto">' + liveCount + ' til stede</span>' +
+          '</div>';
+        } else {
+          html += '<div style="text-align:center;padding:0.5rem 0.75rem;margin-bottom:0.6rem">' +
+            '<button onclick="bcManualCheckIn()" style="width:100%;padding:0.55rem;border-radius:10px;font-size:0.8rem;font-weight:700;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,var(--accent3),#22B8CF);color:white;border:none;display:flex;align-items:center;justify-content:center;gap:0.4rem">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+            'Check ind</button>' +
+          '</div>';
+        }
+      }
+    }
 
     // Pending requests section (only visible to owner/admin)
     if (pendingMembers.length > 0 && (isOwner || bcBubbleData?._isAdmin)) {

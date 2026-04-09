@@ -1300,10 +1300,13 @@ async function checkPendingJoin() {
 
     if (!result.ok && !isEventFlow) return; // Keep pending_join for retry on next auth
     if (!result.ok && isEventFlow) {
-      // Already a member but came via event QR — still show event card
+      // Already a member but came via event QR — still show event card + check in
       consumeFlow('pending_join');
       var { data: bubble } = await sb.from('bubbles').select('id,name,type,checkin_mode').eq('id', joinId).maybeSingle();
-      if (bubble && (bubble.type === 'event' || bubble.type === 'live')) await dbActions.checkIn(joinId);
+      if (bubble && (bubble.type === 'event' || bubble.type === 'live')) {
+        await dbActions.checkIn(joinId);
+        if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus();
+      }
       consumeFlow('event_flow');
       try {
         sessionStorage.setItem('event_greeting', bubble ? bubble.name : '');
@@ -1316,11 +1319,7 @@ async function checkPendingJoin() {
     // Join succeeded — consume the flag
     consumeFlow('pending_join');
 
-    // Check if this is an event flow
-    var isEventFlow = flowGet('event_flow');
-
     // Fetch bubble to check type and checkin_mode
-    // Uses select('*') because checkin_mode may not be migrated yet
     var { data: bubble } = await sb.from('bubbles')
       .select('*')
       .eq('id', joinId).maybeSingle();
@@ -1334,7 +1333,10 @@ async function checkPendingJoin() {
       showSuccessToast(t('toast_joined'));
     } else if (isEventFlow) {
       // Mode A: event QR flow → auto check-in + home with event card
-      if (isEvent) await dbActions.checkIn(joinId);
+      if (isEvent) {
+        await dbActions.checkIn(joinId);
+        if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus();
+      }
       consumeFlow('event_flow');
       try {
         sessionStorage.setItem('event_greeting', bubble ? bubble.name : '');

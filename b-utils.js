@@ -845,13 +845,21 @@ var dbActions = {
     if (!currentUser || !bubbleId) return { ok: false };
     try {
       var now = new Date().toISOString();
-      var { error } = await sb.from('bubble_members').upsert({
-        bubble_id: bubbleId,
-        user_id: currentUser.id,
+      // Try UPDATE first (more RLS-friendly — user already has a row)
+      var { error } = await sb.from('bubble_members').update({
         checked_in_at: now,
         checked_out_at: null
-      }, { onConflict: 'bubble_id,user_id' });
-      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      }).eq('bubble_id', bubbleId).eq('user_id', currentUser.id);
+      if (error) {
+        // Fallback: upsert (handles edge case where row doesn't exist)
+        var { error: e2 } = await sb.from('bubble_members').upsert({
+          bubble_id: bubbleId,
+          user_id: currentUser.id,
+          checked_in_at: now,
+          checked_out_at: null
+        }, { onConflict: 'bubble_id,user_id' });
+        if (e2) { errorToast('save', e2); return { ok: false, error: e2 }; }
+      }
       return { ok: true };
     } catch(e) { logError('dbActions.checkIn', e); errorToast('save', e); return { ok: false, error: e }; }
   },
