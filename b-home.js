@@ -303,10 +303,10 @@ function showCheckinModal(eventName, opts) {
   if (opts.fromHome && eventId) {
     buttonsHtml =
       '<button id="checkin-goto-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#1A9E8E,#17877A);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:center;gap:0.4rem">' + t('ob_goto_event') + '</button>' +
-      '<button id="checkin-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">Bliv på forsiden</button>';
+      '<button id="checkin-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_stay_home') + '</button>';
   } else {
     buttonsHtml =
-      '<button id="checkin-ok-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#1A9E8E,#17877A);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.4rem">Forstået</button>';
+      '<button id="checkin-ok-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#1A9E8E,#17877A);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.4rem">' + t('modal_understood') + '</button>';
   }
 
   ov.innerHTML =
@@ -318,7 +318,7 @@ function showCheckinModal(eventName, opts) {
       '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;margin-bottom:0.25rem">' + escHtml(eventName || '') + '</div>' +
       '<div style="display:flex;align-items:center;justify-content:center;gap:0.4rem;margin-bottom:1.25rem">' +
         '<span class="live-dot"></span>' +
-        '<span style="font-size:0.8rem;font-weight:600;color:var(--accent3)">Du er live</span>' +
+        '<span style="font-size:0.8rem;font-weight:600;color:var(--accent3)">' + t('modal_you_are_live') + '</span>' +
       '</div>' +
       buttonsHtml +
     '</div>';

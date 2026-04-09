@@ -2039,7 +2039,7 @@ async function bcLoadInfo() {
         (b.description ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;line-height:1.6;text-align:left;padding:0.7rem 0.85rem;border-radius:10px;background:rgba(30,27,46,0.03);border:0.5px solid #D8D5E4;white-space:pre-line">' + escHtml(b.description) + '</div>' : '') +
         (b.external_url ? '<a href="' + escHtml(b.external_url) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;padding:0.6rem 0.85rem;border-radius:10px;background:rgba(124,92,252,0.05);border:0.5px solid rgba(124,92,252,0.15);text-decoration:none;cursor:pointer">' +
           '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="2" stroke-linecap="round" style="flex-shrink:0"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
-          '<div style="flex:1;min-width:0"><div style="font-size:0.68rem;color:var(--muted);margin-bottom:1px">Tilmelding / hjemmeside</div>' +
+          '<div style="flex:1;min-width:0"><div style="font-size:0.68rem;color:var(--muted);margin-bottom:1px">' + t('bi_link_label') + '</div>' +
           '<div style="font-size:0.78rem;font-weight:600;color:#534AB7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(b.external_url.replace(/^https?:\/\//, '')) + '</div></div>' +
           '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0"><path d="M9 6l6 6-6 6"/></svg>' +
         '</a>' : '') +

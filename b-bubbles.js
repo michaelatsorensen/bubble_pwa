@@ -1324,14 +1324,14 @@ async function checkPendingJoin() {
     if (!result.ok && isEventFlow) {
       // Already a member but came via event QR — still show event card + check in
       consumeFlow('pending_join');
-      var { data: bubble } = await sb.from('bubbles').select('id,name,type,checkin_mode').eq('id', joinId).maybeSingle();
-      if (bubble && (bubble.type === 'event' || bubble.type === 'live')) {
+      var { data: existBubble } = await sb.from('bubbles').select('id,name,type,checkin_mode').eq('id', joinId).maybeSingle();
+      if (existBubble && (existBubble.type === 'event' || existBubble.type === 'live')) {
         await dbActions.checkIn(joinId);
         if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus();
       }
       consumeFlow('event_flow');
       try {
-        sessionStorage.setItem('event_greeting', bubble ? bubble.name : '');
+        sessionStorage.setItem('event_greeting', existBubble ? existBubble.name : '');
         sessionStorage.setItem('event_greeting_id', joinId);
       } catch(e2) {}
       goTo('screen-home');
