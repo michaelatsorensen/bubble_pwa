@@ -330,6 +330,9 @@ function goTo(screenId) {
     }
   } catch(e) { console.error('[nav] nav update error:', e); }
 
+  // Update Home nav dot visibility based on current screen
+  try { if (typeof unreadState !== 'undefined') unreadState.render(); } catch(e) {}
+
   // ── Phase 4: Enter new screen ──
   try {
     var enterHook = _screenHooks[screenId];

@@ -33,6 +33,12 @@ var unreadState = {
       if (this.notif > 0) { notifEl.textContent = this.notif > 9 ? '9+' : String(this.notif); notifEl.style.display = 'flex'; }
       else { notifEl.style.display = 'none'; }
     }
+    // Home nav dot (shows when not on home screen)
+    var homeDot = document.getElementById('home-notif-dot');
+    if (homeDot) {
+      var onHome = navState && navState.screen === 'screen-home';
+      homeDot.style.display = (this.notif > 0 && !onHome) ? 'block' : 'none';
+    }
   },
 
   // ── DM operations ──
