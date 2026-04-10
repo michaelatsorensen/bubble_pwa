@@ -265,6 +265,10 @@ async function sendMessage() {
           try { chatSubscription.send({ type: 'broadcast', event: 'new_message', payload: newMsg }); } catch(e) { logError("dm:new_message_broadcast", e); }
         }
         trackEvent('message_sent', { type: 'dm' });
+        // Push notification to recipient
+        var senderName = currentProfile?.name || 'Nogen';
+        var preview = content ? content.slice(0, 60) : '';
+        sendPush(currentChatUser, senderName, preview, { type: 'new_message', sender_id: currentUser.id });
       }
     }
   } catch(e) { logError("sendMessage", e); errorToast("send", e); }
@@ -278,6 +282,8 @@ async function sendDirectMessage(toId, content) {
       receiver_id: toId,
       content
     });
+    var senderName = currentProfile?.name || 'Nogen';
+    sendPush(toId, senderName, content ? content.slice(0, 60) : '', { type: 'new_message', sender_id: currentUser.id });
   } catch(e) { logError("sendDirectMessage", e); errorToast("send", e); }
 }
 
@@ -334,6 +340,8 @@ async function dmHandleFile(input) {
       const el = document.getElementById('chat-messages');
       dmReduceMsg(newMsg);
       showToast(t('toast_sent'));
+      var senderName = currentProfile?.name || 'Nogen';
+      sendPush(currentChatUser, senderName, 'Sendte en fil', { type: 'new_message', sender_id: currentUser.id });
     }
     input.value = '';
   } catch(e) { logError("dmHandleFile", e); errorToast("upload", e); }
