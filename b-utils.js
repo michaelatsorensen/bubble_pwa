@@ -724,7 +724,8 @@ var dbActions = {
       if (error) { errorToast('save', error); return { ok: false, error: error }; }
       trackEvent('contact_saved', { contact_id: contactId });
       var senderName = currentProfile?.name || 'Nogen';
-      sendPush(contactId, 'Ny kontakt', senderName + ' har gemt din profil', { type: 'saved_contact', sender_id: currentUser.id });
+      // Push disabled for free tier — reactivate for Profile Views premium
+      // sendPush(contactId, 'Ny kontakt', senderName + ' har gemt din profil', { type: 'saved_contact', sender_id: currentUser.id });
       return { ok: true };
     } catch (e) { logError('dbActions.saveContact', e); errorToast('save', e); return { ok: false, error: e }; }
   },
