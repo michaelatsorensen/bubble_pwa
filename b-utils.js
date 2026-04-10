@@ -32,7 +32,7 @@ function matchLabel(score) {
 function matchBadgeHtml(score) {
   var m = matchLabel(score);
   if (!m.text) return '';
-  return '<span style="font-size:0.6rem;font-weight:700;color:' + m.color + ';background:' + m.bg + ';padding:0.15rem 0.45rem;border-radius:6px;white-space:nowrap">' + m.text + '</span>';
+  return '<span style="font-size:0.58rem;font-weight:700;color:' + m.color + ';background:' + m.bg + ';padding:0.18rem 0.5rem;border-radius:99px;white-space:nowrap;letter-spacing:0.01em">' + m.text + '</span>';
 }
 
 // ══════════════════════════════════════════════════════════
