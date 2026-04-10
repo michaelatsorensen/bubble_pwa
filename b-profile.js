@@ -192,18 +192,18 @@ async function _personRenderMatch(p, userId, myNav) {
       var INITIAL_SHOW = 6;
       var allTagsHtml = overlap.map(function(k) {
         var original = (p.keywords || []).find(function(t) { return t.toLowerCase() === k; }) || k;
-        return '<span class="tag mint">' + icon("check") + ' ' + escHtml(original) + '</span>';
+        return '<span class="tag mint">' + escHtml(original) + '</span>';
       });
       var visibleHtml = allTagsHtml.slice(0, INITIAL_SHOW).join('');
       var hiddenHtml = allTagsHtml.slice(INITIAL_SHOW).join('');
       var hasMore = overlap.length > INITIAL_SHOW;
       
-      overlapEl.innerHTML = '<div class="person-section-title" style="margin-bottom:0.4rem">Fælles interesser · ' + overlap.length + '</div>' +
+      overlapEl.innerHTML = '<div class="person-section-title" style="margin-bottom:0.4rem">'+t('ps_shared_interests')+' · ' + overlap.length + '</div>' +
         '<div id="person-tags-visible">' + visibleHtml + '</div>' +
         (hasMore ? '<div id="person-tags-hidden" style="display:none">' + hiddenHtml + '</div>' +
-          '<button id="person-tags-toggle" onclick="togglePersonTags()" style="font-size:0.7rem;font-weight:600;color:var(--accent);background:none;border:none;padding:0.4rem 0;cursor:pointer;font-family:inherit">Vis alle ' + overlap.length + ' →</button>' : '');
+          '<button id="person-tags-toggle" onclick="togglePersonTags()" style="font-size:0.7rem;font-weight:600;color:var(--accent);background:none;border:none;padding:0.4rem 0;cursor:pointer;font-family:inherit">'+t('ps_show_all',{n:overlap.length})+'</button>' : '');
     } else {
-      overlapEl.innerHTML = '<span class="fs-085 text-muted">Ingen fælles interesser fundet</span>';
+      overlapEl.innerHTML = '<span class="fs-085 text-muted">'+t('ps_no_shared')+'</span>';
     }
   } catch(e) { logError('_personRenderMatch', e); }
 }
@@ -211,7 +211,7 @@ async function _personRenderMatch(p, userId, myNav) {
 function _personRenderDynamic(p) {
   var dynEl = document.getElementById('person-dynamic-keywords');
   if ((p.dynamic_keywords||[]).length) {
-    dynEl.innerHTML = '<div class="person-section-title">Søger nu</div>' + p.dynamic_keywords.map(k => `<span class="tag gold">${icon("fire")} ${escHtml(k)}</span>`).join('');
+    dynEl.innerHTML = '<div class="person-section-title">'+t("ps_seeking_now")+'</div>' + p.dynamic_keywords.map(k => `<span class="tag gold">${icon("fire")} ${escHtml(k)}</span>`).join('');
   } else { dynEl.innerHTML = ''; }
 }
 
@@ -928,7 +928,7 @@ async function loadProfileBubbles() {
         html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem"><div style="display:flex;align-items:center;gap:0.6rem">';
         html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7C5CFC;overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : ico('bubble')) + '</div>';
         html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
-        html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(b.visibility) + mc + ' medlemmer' + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div></div></div>';
+        html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(b.visibility) + mc + ' ' + t('ps_members') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div></div></div>';
       });
     }
     if (events.length > 0) {
@@ -1420,7 +1420,7 @@ function _renderDashboardTagsCard() {
         '<div style="font-size:0.68rem;font-weight:600;color:var(--accent);flex-shrink:0">Dine tags</div>' +
         '<div id="dash-et-tray-preview" style="display:flex;gap:0.3rem;flex:1;overflow:hidden;min-width:0;align-items:center"></div>' +
         '<button onclick="etToggleTray()" id="dash-et-tray-btn" style="display:flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem;border-radius:99px;border:0.5px solid var(--glass-border);background:rgba(124,92,252,0.04);cursor:pointer;font-family:inherit;flex-shrink:0">' +
-          '<span id="dash-et-tray-btn-lbl" style="font-size:0.65rem;font-weight:600;color:var(--accent)">Se alle</span>' +
+          '<span id="dash-et-tray-btn-lbl" style="font-size:0.65rem;font-weight:600;color:var(--accent)">'+t('ps_see_all')+'</span>' +
           '<span id="dash-et-tray-chev" style="font-size:0.6rem;color:var(--accent);transition:transform 0.2s">▾</span>' +
         '</button>' +
       '</div>' +
@@ -1463,7 +1463,7 @@ function togglePersonTags() {
   if (!hidden || !btn) return;
   var isHidden = hidden.style.display === 'none';
   hidden.style.display = isHidden ? '' : 'none';
-  btn.textContent = isHidden ? '← Vis færre' : 'Vis alle →';
+  btn.textContent = isHidden ? t('ps_show_less') : t('ps_see_all') + ' →';
 }
 
 function personSetStar(userId, rating) {
@@ -1641,7 +1641,7 @@ async function loadPersonBubbles(userId, navRef) {
     }).join('');
 
     if (total > PERSON_BUBBLES_MAX) {
-      html += '<button class="person-bubbles-more" onclick="showAllPersonBubbles(\'' + userId + '\')">Se alle ' + total + ' →</button>';
+      html += '<button class="person-bubbles-more" onclick="showAllPersonBubbles(\'' + userId + '\')">'+t('ps_show_all',{n:total})+'</button>';
     }
 
     list.innerHTML = html;
