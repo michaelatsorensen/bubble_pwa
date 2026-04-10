@@ -1442,16 +1442,16 @@ function _bbEventCard(e, parentMap, gpMap, isPast) {
   var gpName = (parent && parent.parent_bubble_id && gpMap[parent.parent_bubble_id]) ? gpMap[parent.parent_bubble_id] : '';
   var breadcrumb = '';
   if (gpName && parentName) {
-    breadcrumb = '<div class="bb-breadcrumb"><span class="bb-bc-pill">\u21B3 ' + escHtml(gpName) + '</span><span class="bb-bc-chev">\u203A</span><span class="bb-bc-pill2">' + escHtml(parentName) + '</span></div>';
+    breadcrumb = '<div class="bb-breadcrumb"><span class="bb-bc-pill">' + escHtml(gpName) + '</span><span class="bb-bc-chev">\u203A</span><span class="bb-bc-pill2">' + escHtml(parentName) + '</span></div>';
   } else if (parentName) {
-    breadcrumb = '<div class="bb-breadcrumb"><span class="bb-bc-pill">\u21B3 ' + escHtml(parentName) + '</span></div>';
+    breadcrumb = '<div class="bb-breadcrumb"><span class="bb-bc-pill">' + escHtml(parentName) + '</span></div>';
   }
   var evCardLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === e.id);
-  return '<div class="bb-tree-evt" data-action="openBubble" data-id="' + e.id + '" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5;' : '') + '">' +
+  return '<div class="bb-tree-evt" data-action="openBubble" data-id="' + e.id + '" style="margin-bottom:0.45rem;' + (isPast ? 'opacity:0.5;' : '') + '">' +
     '<div class="bb-tree-evt-ico">' + (e.icon_url ? '<img src="' + escHtml(e.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px">' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>') + '</div>' +
     '<div style="flex:1;min-width:0">' +
-    '<div style="font-size:0.8rem;font-weight:600">' + escHtml(e.name) + '</div>' +
-    '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;flex-wrap:wrap;gap:2px">' + visIcon(e.visibility) + dateStr + '</div>' +
+    '<div style="font-size:0.82rem;font-weight:700;line-height:1.3">' + escHtml(e.name) + '</div>' +
+    '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;flex-wrap:wrap;gap:2px;margin-top:2px">' + visIcon(e.visibility) + dateStr + '</div>' +
     breadcrumb +
     '</div><div class="bb-tree-go">\u203A</div></div>';
 }
