@@ -570,7 +570,7 @@ async function requestPushPermission() {
     return true;
   } catch(e) {
     logError('requestPushPermission', e);
-    _renderToast('Kunne ikke aktivere notifikationer', 'error');
+    _renderToast(t('err_push_activate'), 'error');
     return false;
   }
 }

@@ -231,10 +231,10 @@ async function _miniObSave() {
   var name = nameEl ? nameEl.value.trim() : currentProfile?.name;
   var wp = wpEl ? wpEl.value.trim() : currentProfile?.workplace;
   if (!name || !wp) return;
-  if (!_miniObConsentGiven) return showWarningToast('Du skal acceptere betingelserne');
+  if (!_miniObConsentGiven) return showWarningToast(t('val_accept_terms'));
 
   var btn = document.getElementById('mini-ob-save');
-  if (btn) { btn.textContent = 'Gemmer...'; btn.disabled = true; }
+  if (btn) { btn.textContent = t('ui_saving'); btn.disabled = true; }
 
   try {
     var update = { terms_accepted_at: new Date().toISOString() };
@@ -294,7 +294,7 @@ async function skipOnboarding() {
   if (!name && currentUser?.email) name = currentUser.email.split('@')[0];
   var workplace = (document.getElementById('ob-workplace')?.value || '').trim();
   if (!name) { showWarningToast('Skriv dit navn først'); return; }
-  if (!workplace) { showWarningToast('Tilføj arbejdsplads — det er alt der mangler'); return; }
+  if (!workplace) { showWarningToast(t('val_add_workplace')); return; }
 
   try {
     await sb.from('profiles').upsert({
@@ -728,14 +728,14 @@ function epCustomTag(event, cat, input) {
 
 async function saveOnboarding() {
   try {
-    if (!_obConsentGiven) return showWarningToast('Du skal acceptere betingelserne');
+    if (!_obConsentGiven) return showWarningToast(t('val_accept_terms'));
     const name      = (document.getElementById('ob-name')?.value || '').trim();
     const workplace = (document.getElementById('ob-workplace')?.value || '').trim();
-    if (!name)      return showWarningToast('Navn er påkrævet');
-    if (!workplace) return showWarningToast('Virksomhed er påkrævet');
+    if (!name)      return showWarningToast(t('val_name_required'));
+    if (!workplace) return showWarningToast(t('val_workplace_required'));
     var isEventFlow = !!flowGet('event_flow');
     var btn = document.getElementById('ob-save-btn');
-    if (btn) { btn.textContent = 'Gemmer...'; btn.disabled = true; }
+    if (btn) { btn.textContent = t('ui_saving'); btn.disabled = true; }
     const { error } = await sb.from('profiles').upsert({
       id: currentUser.id, name, workplace, is_anon: false,
       terms_accepted_at: new Date().toISOString()

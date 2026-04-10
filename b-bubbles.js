@@ -39,7 +39,7 @@ async function toggleBubbleUpvote(bubbleId) {
   try {
     if (myUpvotes[bubbleId]) {
       var { error } = await sb.from('bubble_upvotes').delete().eq('user_id', currentUser.id).eq('bubble_id', bubbleId);
-      if (error) { _renderToast('Kunne ikke fjerne anbefaling', 'error'); return; }
+      if (error) { _renderToast(t('err_remove_upvote'), 'error'); return; }
       delete myUpvotes[bubbleId];
       bubbleUpvotes[bubbleId] = Math.max((bubbleUpvotes[bubbleId] || 1) - 1, 0);
       showToast(t('toast_updated'));
@@ -48,7 +48,7 @@ async function toggleBubbleUpvote(bubbleId) {
       if (error) {
         // Duplicate check — already upvoted (race or stale state)
         if (String(error.message || '').includes('duplicate')) { myUpvotes[bubbleId] = true; }
-        else { _renderToast('Kunne ikke anbefale', 'error'); }
+        else { _renderToast(t('err_upvote'), 'error'); }
         return;
       }
       myUpvotes[bubbleId] = true;
@@ -205,7 +205,7 @@ async function loadDiscoverNetworks() {
     await _fetchDiscoverData();
     var nets = allBubbles.filter(function(b) { return b.type !== 'event'; });
     _renderDiscoverList(list, nets, 'netværk');
-  } catch(e) { showRetryState('discover-net-list', 'loadDiscoverNetworks', 'Kunne ikke hente netværk'); }
+  } catch(e) { showRetryState('discover-net-list', 'loadDiscoverNetworks', t('err_load_networks')); }
 }
 
 async function loadDiscoverEvents() {
@@ -216,7 +216,7 @@ async function loadDiscoverEvents() {
     await _fetchDiscoverData();
     var evts = _discoverUpcomingEvents();
     _renderDiscoverList(list, evts, 'events');
-  } catch(e) { showRetryState('discover-evt-list', 'loadDiscoverEvents', 'Kunne ikke hente events'); }
+  } catch(e) { showRetryState('discover-evt-list', 'loadDiscoverEvents', t('err_load_events')); }
 }
 
 function _discoverUpcomingEvents() {
@@ -419,7 +419,7 @@ async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
     var result = await dbActions.transferBubble(bubbleId, newOwnerId);
     if (!result.ok) { if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Bekræft overdragelse'; } return; }
     if (!result.data || result.data.length === 0) {
-      _renderToast('Kunne ikke overdrage — du er muligvis ikke ejer længere', 'error');
+      _renderToast(t('err_transfer'), 'error');
       if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Bekræft overdragelse'; }
       return;
     }
@@ -1150,7 +1150,7 @@ async function loadJsPdf() {
     const s = document.createElement('script');
     s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
     s.onload = resolve;
-    s.onerror = () => reject(new Error('Kunne ikke indlæse jsPDF'));
+    s.onerror = () => reject(new Error(t('err_load_jspdf')));
     document.head.appendChild(s);
   });
   _jsPdfLoaded = true;
@@ -1161,7 +1161,7 @@ async function downloadQRPdf() {
   try {
   await loadJsPdf();
   const { data: b, error } = await sb.from('bubbles').select('*').eq('id', currentQRBubble).maybeSingle();
-  if (error || !b) return _renderToast('Kunne ikke hente boble-data', 'error');
+  if (error || !b) return _renderToast(t('err_load_bubble'), 'error');
 
   showToast('Genererer PDF...');
 
@@ -1390,14 +1390,14 @@ async function downloadMembersPdf(bubbleId) {
 
     // ── Fetch data ──
     const { data: b } = await sb.from('bubbles').select('*').eq('id', bubbleId).maybeSingle();
-    if (!b) { _renderToast('Kunne ikke hente boble-data', 'error'); return; }
+    if (!b) { _renderToast(t('err_load_bubble'), 'error'); return; }
 
     const { data: members } = await sb.from('bubble_members')
       .select('user_id, joined_at, checked_in_at, checked_out_at')
       .eq('bubble_id', bubbleId)
       .order('checked_in_at', { ascending: true, nullsFirst: false });
 
-    if (!members || members.length === 0) { showWarningToast('Ingen deltagere endnu'); return; }
+    if (!members || members.length === 0) { showWarningToast(t('err_no_participants')); return; }
 
     const userIds = members.map(m => m.user_id);
     const { data: profiles } = await sb.from('profiles')
@@ -1649,7 +1649,7 @@ async function generateEventReport(bubbleId) {
     var guests = guestsRes.data || [];
     var invites = invitesRes.data || [];
 
-    if (members.length === 0) { showWarningToast('Ingen deltagere endnu'); return; }
+    if (members.length === 0) { showWarningToast(t('err_no_participants')); return; }
 
     // ── 2. Fetch profiles for all members ──
     var userIds = members.map(function(m) { return m.user_id; });
@@ -2014,7 +2014,7 @@ async function exportReportEmail(bubbleId) {
   try {
     var b = window._lastReportBubble;
     var stats = window._lastReportStats;
-    if (!b || !stats) { showWarningToast('Ingen rapport at sende'); return; }
+    if (!b || !stats) { showWarningToast(t('err_no_report')); return; }
 
     // Ask for email
     var email = prompt('Indtast email-adresse til rapporten:');
@@ -2131,7 +2131,7 @@ async function sendBubbleInvites() {
   if (inviteSelected.length === 0) return showWarningToast(t('bb_select_min_one'));
   try {
     var btn = document.getElementById('invite-send-btn');
-    if (btn) { btn.textContent = 'Sender...'; btn.disabled = true; btn.classList.add('btn-loading'); }
+    if (btn) { btn.textContent = t('ui_sending'); btn.disabled = true; btn.classList.add('btn-loading'); }
 
     // Filter out users who already have a pending invite (prevents duplicate errors)
     var { data: existing } = await sb.from('bubble_invitations')

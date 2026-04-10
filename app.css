@@ -2278,3 +2278,8 @@ a:not(.btn-primary):not(.btn-secondary):active {
 
 /* ── Nav bar refinement ── */
 #global-nav .nav-row { box-shadow: 0 -1px 12px rgba(30,27,46,0.04); }
+
+/* ── Tap highlight cleanup (v8.15.39) ── */
+.btn-ghost, .btn-sm, .btn-accent, .back-btn, .notif-btn, .send-btn, .chat-send-btn, .bp-card, .ob-role-chip, .interest-btn {
+  -webkit-tap-highlight-color: transparent;
+}

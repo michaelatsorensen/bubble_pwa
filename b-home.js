@@ -487,12 +487,12 @@ function showProfileSetupCTA() {
   // Contextual match-position message based on what's missing
   var nextLabel = '';
   var tags = currentProfile.keywords ? currentProfile.keywords.length : 0;
-  if (!currentProfile.title && tags < 3) nextLabel = 'Tilføj titel og tags — ryk mod midten af andres radar';
-  else if (tags < 3) nextLabel = 'Tilføj ' + (3 - tags) + ' tags mere — bliv et bedre match';
-  else if (!currentProfile.title) nextLabel = 'Tilføj en titel — gør det lettere at connecte';
-  else if (tags < 6) nextLabel = 'Flere tags = flere matches tæt på midten';
-  else if (!currentProfile.bio) nextLabel = 'En bio giver kontekst og bedre matches';
-  else nextLabel = 'Din profil er næsten komplet';
+  if (!currentProfile.title && tags < 3) nextLabel = t('pf_hint_title_tags');
+  else if (tags < 3) nextLabel = t('pf_hint_more_tags', {n: 3 - tags});
+  else if (!currentProfile.title) nextLabel = t('pf_hint_title');
+  else if (tags < 6) nextLabel = t('pf_hint_tags6');
+  else if (!currentProfile.bio) nextLabel = t('pf_hint_bio');
+  else nextLabel = t('pf_hint_almost');
 
   // Avatar
   var avEl = document.getElementById('setup-cta-avatar');
@@ -558,7 +558,7 @@ async function saveSetupWorkplace() {
   var input = document.getElementById('setup-workplace-input');
   if (!input) return;
   var val = input.value.trim();
-  if (!val) return showWarningToast('Virksomhed er påkrævet');
+  if (!val) return showWarningToast(t('val_workplace_required'));
   try {
     var { error } = await sb.from('profiles').update({ workplace: val }).eq('id', currentUser.id);
     if (error) return errorToast('save', error);

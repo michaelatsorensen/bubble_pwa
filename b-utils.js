@@ -319,8 +319,7 @@ function sendPush(userId, title, body, data) {
       body: { user_id: userId, title: title || 'Bubble', body: body || '', data: data || {} }
     }).then(function(r) {
       if (r.error) console.warn('[push] error:', r.error.message);
-      else console.debug('[push] sent to', userId);
-    }).catch(function(e) { console.warn('[push] invoke error:', e.message); });
+    }).catch(function() {});
   } catch(e) {}
 }
 

@@ -1113,7 +1113,7 @@ async function saveProfile() {
     const bio       = document.getElementById('ep-bio').value.trim();
     const linkedin  = (document.getElementById('ep-linkedin')?.value || '').trim();
     const workplace = (document.getElementById('ep-workplace')?.value || '').trim();
-    if (!name) return showWarningToast('Navn er påkrævet');
+    if (!name) return showWarningToast(t('val_name_required'));
     const { error } = await sb.from('profiles').upsert({
       id: currentUser.id, name, title, bio, linkedin, workplace,
       dynamic_keywords: epDynChips, is_anon: isAnon
@@ -1157,7 +1157,7 @@ function toggleAnon() {
     isAnon = !isAnon;
     updateAnonToggle();
     logError('toggleAnon', e);
-    _renderToast('Kunne ikke \u00e6ndre synlighed', 'error');
+    _renderToast(t('err_visibility'), 'error');
   });
 }
 
@@ -1538,7 +1538,7 @@ async function sendBubbleUpInvitation(toUserId) {
       .eq('to_user_id', toUserId)
       .eq('status', 'pending')
       .maybeSingle();
-    if (existing) { showWarningToast('Du har allerede sendt en invitation til denne person'); return; }
+    if (existing) { showWarningToast(t('err_already_invited')); return; }
 
     // Create a hidden private bubble first
     const myName = currentProfile?.name || 'Min boble';
@@ -1551,7 +1551,7 @@ async function sendBubbleUpInvitation(toUserId) {
       description: 'Privat boble'
     }).select().maybeSingle();
 
-    if (!bubble) { _renderToast('Noget gik galt', 'error'); return; }
+    if (!bubble) { _renderToast(t('err_generic'), 'error'); return; }
 
     // Add creator as member
     await sb.from('bubble_members').insert({bubble_id: bubble.id, user_id: currentUser.id});
