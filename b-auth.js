@@ -80,10 +80,12 @@ async function resolvePostAuthDestination() {
     }
   }
 
-  // Step 3b: if contact was saved from QR → navigate directly to their profile
+  // Step 3b: if contact was saved from QR → show modal on home
   if (savedContactId) {
     flowClearAll();
-    goToThen('screen-home', function() { openPerson(savedContactId, 'screen-home'); });
+    goTo('screen-home');
+    // Show contact-saved modal after home loads
+    setTimeout(function() { _showSavedContactModal(savedContactId); }, 400);
     return;
   }
 

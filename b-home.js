@@ -378,6 +378,52 @@ function goToEventFromCard() {}
 function dismissEventCard() {
   var ov = document.getElementById('checkin-confirm-overlay');
   if (ov) ov.remove();
+
+// ── Saved contact modal (shown after QR scan signup) ──
+async function _showSavedContactModal(contactId) {
+  try {
+    var { data: p } = await sb.from('profiles').select('id, name, title, workplace, avatar_url, keywords').eq('id', contactId).maybeSingle();
+    if (!p) return;
+    var existing = document.getElementById('saved-contact-overlay');
+    if (existing) existing.remove();
+
+    var name = p.name || '?';
+    var ini = name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    var subtitle = [p.title, p.workplace].filter(Boolean).join(' · ');
+    var avHtml = p.avatar_url
+      ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+      : '<span style="font-size:1.1rem;font-weight:700;color:white">' + escHtml(ini) + '</span>';
+
+    var ov = document.createElement('div');
+    ov.id = 'saved-contact-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+
+    ov.innerHTML =
+      '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+        '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#6366F1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;box-shadow:0 4px 12px rgba(124,92,252,0.25)">' + avHtml + '</div>' +
+        '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">' + escHtml(name) + '</div>' +
+        (subtitle ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.3rem">' + escHtml(subtitle) + '</div>' : '') +
+        '<div style="display:flex;align-items:center;justify-content:center;gap:0.4rem;margin-bottom:1.25rem">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+          '<span style="font-size:0.78rem;font-weight:600;color:#1A9E8E">Kontakt gemt</span>' +
+        '</div>' +
+        '<button id="sc-view-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">Se profil →</button>' +
+        '<button id="sc-close-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_ok') + '</button>' +
+      '</div>';
+
+    document.body.appendChild(ov);
+
+    document.getElementById('sc-view-btn').onclick = function() {
+      ov.remove();
+      openPerson(contactId, 'screen-home');
+    };
+    document.getElementById('sc-close-btn').onclick = function() {
+      ov.style.transition = 'opacity 0.25s';
+      ov.style.opacity = '0';
+      setTimeout(function() { ov.remove(); }, 260);
+    };
+  } catch(e) { logError('_showSavedContactModal', e); }
+}
 }
 
 // ── Welcome card — shown once to brand new users ──

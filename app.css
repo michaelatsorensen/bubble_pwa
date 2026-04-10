@@ -62,7 +62,7 @@
   --radius-pill: 99px;
 }
 
-html { height:100vh; overflow:hidden; overscroll-behavior:none; }
+html { height:100vh; height:100dvh; overflow:hidden; overscroll-behavior:none; }
 
 /* ── DESKTOP PHONE FRAME ── */
 
@@ -75,6 +75,7 @@ body {
   -webkit-text-size-adjust: 100%;
   margin: 0;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
 }
@@ -132,10 +133,8 @@ body {
   box-shadow: 0 -1px 4px rgba(30,27,46,0.04);
   padding-bottom: 0px;
 }
-/* Only add safe-area padding in standalone PWA — Safari browser handles it natively */
-@media all and (display-mode: standalone) {
-  #global-nav { padding-bottom: env(safe-area-inset-bottom, 0px); }
-}
+/* Safe-area padding for nav — applies in all modes for iOS Safari compatibility */
+#global-nav { padding-bottom: env(safe-area-inset-bottom, 0px); }
 #global-nav .nav-row {
   display: flex;
   justify-content: space-around;
