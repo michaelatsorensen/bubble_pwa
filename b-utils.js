@@ -812,7 +812,7 @@ var dbActions = {
       // Push notification to receiver
       var senderName = currentProfile?.name || 'Nogen';
       var preview = content ? content.slice(0, 60) : (opts.gifUrl ? 'Sendte en GIF' : 'Sendte en fil');
-      sendPush(receiverId, senderName, preview, { type: 'new_message', sender_id: currentUser.id });
+      sendPush(receiverId, 'Ny besked', senderName + ': ' + preview, { type: 'new_message', sender_id: currentUser.id });
       return { ok: true, message: data };
     } catch (e) { logError('dbActions.sendDM', e); errorToast('send', e); return { ok: false, error: e }; }
   },

@@ -268,7 +268,7 @@ async function sendMessage() {
         // Push notification to recipient
         var senderName = currentProfile?.name || 'Nogen';
         var preview = content ? content.slice(0, 60) : '';
-        sendPush(currentChatUser, senderName, preview, { type: 'new_message', sender_id: currentUser.id });
+        sendPush(currentChatUser, 'Ny besked', senderName + ': ' + preview, { type: 'new_message', sender_id: currentUser.id });
       }
     }
   } catch(e) { logError("sendMessage", e); errorToast("send", e); }
@@ -283,7 +283,7 @@ async function sendDirectMessage(toId, content) {
       content
     });
     var senderName = currentProfile?.name || 'Nogen';
-    sendPush(toId, senderName, content ? content.slice(0, 60) : '', { type: 'new_message', sender_id: currentUser.id });
+    sendPush(toId, 'Ny besked', senderName + ': ' + (content ? content.slice(0, 60) : ''), { type: 'new_message', sender_id: currentUser.id });
   } catch(e) { logError("sendDirectMessage", e); errorToast("send", e); }
 }
 
@@ -341,7 +341,7 @@ async function dmHandleFile(input) {
       dmReduceMsg(newMsg);
       showToast(t('toast_sent'));
       var senderName = currentProfile?.name || 'Nogen';
-      sendPush(currentChatUser, senderName, 'Sendte en fil', { type: 'new_message', sender_id: currentUser.id });
+      sendPush(currentChatUser, 'Ny besked', senderName + ': Sendte en fil', { type: 'new_message', sender_id: currentUser.id });
     }
     input.value = '';
   } catch(e) { logError("dmHandleFile", e); errorToast("upload", e); }
