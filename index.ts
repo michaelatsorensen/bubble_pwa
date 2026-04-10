@@ -26,14 +26,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 serve(async (req) => {
   try {
     // CORS
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
+    };
+
     if (req.method === "OPTIONS") {
-      return new Response(null, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        },
-      });
+      return new Response(null, { headers: corsHeaders });
     }
 
     const body = await req.json();
@@ -41,7 +41,7 @@ serve(async (req) => {
 
     // Validate
     if (!user_id) {
-      return new Response(JSON.stringify({ error: "user_id required" }), { status: 400 });
+      return new Response(JSON.stringify({ error: "user_id required" }), { status: 400, headers: corsHeaders });
     }
 
     // Get ALL push subscriptions for user (multi-device support)
@@ -51,7 +51,7 @@ serve(async (req) => {
       .eq("user_id", user_id);
 
     if (subErr || !subs || subs.length === 0) {
-      return new Response(JSON.stringify({ error: "No push subscription", detail: subErr?.message }), { status: 404 });
+      return new Response(JSON.stringify({ error: "No push subscription", detail: subErr?.message }), { status: 404, headers: corsHeaders });
     }
 
     // Send notification to all devices
@@ -86,10 +86,13 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ success: true, sent, expired: expired.length }), {
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (err) {
     console.error("Push error:", err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   }
 });
