@@ -18,9 +18,11 @@ var _rtReconnectTimer = null;
 var _rtReconnectAttempt = 0;
 var _rtReconnectMax = 10;
 var _rtChannelStates = {};
+var _rtSuppressed = false;
 
 function rtSetState(newState) {
   if (_rtState === newState) return;
+  if (_rtSuppressed) return; // Suppress during logout
   var prev = _rtState;
   _rtState = newState;
   console.debug('[rt] state:', prev, '→', newState);
@@ -155,6 +157,7 @@ var _radarScreenActive = false;
 
 // ── Teardown: only b-realtime owns this cleanup ──
 function rtUnsubscribeAll() {
+  _rtSuppressed = true;
   _globalRtChannels.forEach(function(ch) { try { ch.unsubscribe(); } catch(e) {} });
   _globalRtChannels = [];
   _rtChannelStates = {};
@@ -332,6 +335,7 @@ function rtStopRadarPolling() {
 
 // ── Main init ──
 function initGlobalRealtime() {
+  _rtSuppressed = false;
   // Clean up previous channels
   _globalRtChannels.forEach(function(ch) { try { ch.unsubscribe(); } catch(e) {} });
   _globalRtChannels = [];
