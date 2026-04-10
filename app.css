@@ -133,8 +133,10 @@ body {
   box-shadow: 0 -1px 4px rgba(30,27,46,0.04);
   padding-bottom: 0px;
 }
-/* Safe-area padding for nav — applies in all modes for iOS Safari compatibility */
-#global-nav { padding-bottom: env(safe-area-inset-bottom, 0px); }
+/* Safe-area padding only in standalone PWA — browser uses dvh for viewport sizing */
+@media all and (display-mode: standalone) {
+  #global-nav { padding-bottom: env(safe-area-inset-bottom, 0px); }
+}
 #global-nav .nav-row {
   display: flex;
   justify-content: space-around;
