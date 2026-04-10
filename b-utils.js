@@ -320,7 +320,7 @@ function sendPush(userId, title, body, data) {
       if (!token) { console.warn('[push] no auth token'); return; }
       fetch(SUPABASE_URL + '/functions/v1/send-push', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'apikey': SUPABASE_ANON_KEY },
         body: JSON.stringify({ user_id: userId, title: title || 'Bubble', body: body || '', data: data || {} })
       }).then(function(resp) {
         resp.json().then(function(j) { console.debug('[push]', resp.status, j); }).catch(function() {});

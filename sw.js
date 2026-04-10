@@ -3,7 +3,7 @@
 // ══════════════════════════════════════
 // Version managed by CACHE_NAME below
 
-const CACHE_NAME = 'bubble-v8.15.22';
+const CACHE_NAME = 'bubble-v8.15.23';
 const CACHE_URLS = [
   './', './index.html', './app.css',
   './bubble-icons.js',
@@ -58,7 +58,9 @@ self.addEventListener('fetch', function(event) {
 
   event.respondWith(
     fetch(event.request).then(function(res) {
-      if (res.ok) caches.open(CACHE_NAME).then(function(c) { c.put(cacheRequest, res.clone()); });
+      if (res.ok && res.type !== 'opaque' && res.status !== 206) {
+        try { var clone = res.clone(); caches.open(CACHE_NAME).then(function(c) { c.put(cacheRequest, clone); }); } catch(e) {}
+      }
       return res;
     }).catch(function() { return caches.match(cacheRequest); })
   );
