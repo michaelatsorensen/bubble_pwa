@@ -1303,7 +1303,8 @@ a.person-action-btn { text-decoration:none; }
     position: relative;
     max-width: 680px;
     margin: 0 auto;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
     border-left: 1px solid rgba(124,92,252,0.06);
     border-right: 1px solid rgba(124,92,252,0.06);
     box-shadow:
