@@ -1309,8 +1309,11 @@ a.person-action-btn { text-decoration:none; }
     border-right: 1px solid rgba(124,92,252,0.06);
     box-shadow:
       -40px 0 60px rgba(30,27,46,0.15),
-      40px 0 60px rgba(30,27,46,0.15),
-      0 0 200px rgba(124,92,252,0.02);
+      40px 0 60px rgba(30,27,46,0.15);
+  }
+
+  #global-nav {
+    box-shadow: 0 -1px 8px rgba(30,27,46,0.06);
   }
 
   /* Nav is in flow — inherits width from app-shell/body */
@@ -2278,7 +2281,6 @@ a:not(.btn-primary):not(.btn-secondary):active {
 .divider { background: rgba(216,213,228,0.4); }
 
 /* ── Nav bar refinement ── */
-#global-nav .nav-row { box-shadow: 0 -1px 12px rgba(30,27,46,0.04); }
 
 /* ── Tap highlight cleanup (v8.15.39) ── */
 .btn-ghost, .btn-sm, .btn-accent, .back-btn, .notif-btn, .send-btn, .chat-send-btn, .bp-card, .ob-role-chip, .interest-btn {
