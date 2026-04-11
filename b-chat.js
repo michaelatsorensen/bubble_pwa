@@ -2023,9 +2023,9 @@ async function bcLoadInfo() {
     list.innerHTML =
       parentHtml +
       '<div style="text-align:center;padding:0.25rem 0 1rem">' +
-        '<div style="width:52px;height:52px;border-radius:15px;background:' + (b.icon_url ? 'transparent' : iconBg) + ';display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;color:' + accentStroke + ';font-size:24px;overflow:hidden">' + heroIcon + '</div>' +
+        '<div style="width:52px;height:52px;border-radius:15px;background:' + (b.icon_url ? 'transparent' : iconBg) + ';display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;color:' + accentStroke + ';font-size:24px;overflow:hidden;position:relative">' + heroIcon + (bcBubbleData._isMember ? '<div style="position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#1A9E8E;display:flex;align-items:center;justify-content:center;border:2.5px solid var(--bg)"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>' : '') + '</div>' +
         '<div style="font-size:1rem;font-weight:800;color:var(--text)">' + escHtml(b.name) + '</div>' +
-        '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.15rem">' + typeLabel(b.type) + (b.location ? ' · ' + escHtml(b.location) : '') + ' · ' + mc + ' ' + memberLabel + '</div>' +
+        '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.15rem">' + typeLabel(b.type) + (b.location ? ' · ' + escHtml(b.location) : '') + ' · ' + mc + ' ' + memberLabel + (bcBubbleData._isMember ? ' · <span style="color:#1A9E8E;font-weight:600"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="3" stroke-linecap="round" style="vertical-align:-1px"><polyline points="20 6 9 17 4 12"/></svg> ' + (isEvent ? t('dl_attending') : t('dl_member')) + '</span>' : '') + '</div>' +
         (isEvent && b.event_date ? (function() {
           var evD = new Date(b.event_date);
           var evPast = new Date(b.event_end_date || b.event_date) < new Date();
