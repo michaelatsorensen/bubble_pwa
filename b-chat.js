@@ -1024,7 +1024,7 @@ function bcRenderMsg(m) {
   row.className = 'msg-row msg-' + gp + (isMe ? ' me' : '');
   row.id = 'bc-msg-' + m.id;
   row.setAttribute('data-bc-msg-id', m.id);
-  row.setAttribute('oncontextmenu', "event.preventDefault();bcLongPress('" + m.id + "'," + isMe + ")");
+  row.setAttribute('oncontextmenu', "if(!window.getSelection().toString()){event.preventDefault();bcLongPress('" + m.id + "'," + isMe + ")}");
   row.setAttribute('ontouchstart', "bcTouchStart(event,'" + m.id + "'," + isMe + ")");
   row.setAttribute('ontouchend', 'bcTouchEnd()');
   row.setAttribute('ontouchmove', 'bcTouchEnd()');
@@ -1273,6 +1273,7 @@ function bcTouchEnd() {
 }
 
 function bcLongPress(msgId, isMe) {
+  if (window.getSelection().toString()) return; // Let native text selection work
   if (navigator.vibrate) navigator.vibrate(10);
   var msgEl = document.getElementById('bc-msg-' + msgId);
   if (!msgEl) return;

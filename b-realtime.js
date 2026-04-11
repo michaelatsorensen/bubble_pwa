@@ -747,7 +747,7 @@ function dmReduceMsg(msg, opts) {
       pendingEl.id = 'dm-msg-' + msg.id;
       pendingEl.setAttribute('data-msg-id', msg.id);
       pendingEl.classList.remove('msg-pending');
-      pendingEl.setAttribute('oncontextmenu', "event.preventDefault();dmLongPress('" + msg.id + "',true)");
+      pendingEl.setAttribute('oncontextmenu', "if(!window.getSelection().toString()){event.preventDefault();dmLongPress('" + msg.id + "',true)}");
       pendingEl.setAttribute('ontouchstart', "dmTouchStart(event,'" + msg.id + "',true)");
       var bubble = pendingEl.querySelector('.msg-bubble');
       if (bubble) bubble.id = 'dm-bubble-' + msg.id;
@@ -889,7 +889,7 @@ function dmRenderMsg(m) {
   var rowClass = 'msg-row msg-' + gp + (sent ? ' me' : '');
   var msgTs = new Date(m.created_at).getTime();
 
-  return '<div class="' + rowClass + '" id="dm-msg-' + m.id + '" data-msg-id="' + m.id + '" data-ts="' + msgTs + '" oncontextmenu="event.preventDefault();dmLongPress(\'' + m.id + '\',' + sent + ')" ontouchstart="dmTouchStart(event,\'' + m.id + '\',' + sent + ')" ontouchend="dmTouchEnd()" ontouchmove="dmTouchEnd()">' +
+  return '<div class="' + rowClass + '" id="dm-msg-' + m.id + '" data-msg-id="' + m.id + '" data-ts="' + msgTs + '" oncontextmenu="if(!window.getSelection().toString()){event.preventDefault();dmLongPress(\'' + m.id + '\',' + sent + ')}" ontouchstart="dmTouchStart(event,\'' + m.id + '\',' + sent + ')" ontouchend="dmTouchEnd()" ontouchmove="dmTouchEnd()">' +
     '<div class="msg-avatar"' + avatarClick + ' style="' + avatarStyle + '">' + avatarInner + '</div>' +
     '<div class="msg-body">' +
     '<div class="msg-content">' + bubble + '</div>' +
@@ -999,6 +999,7 @@ function dmTouchEnd() {
 }
 
 function dmLongPress(msgId, isSent) {
+  if (window.getSelection().toString()) return; // Let native text selection work
   _dmLongPressId = msgId;
   if (navigator.vibrate) navigator.vibrate(10);
 
