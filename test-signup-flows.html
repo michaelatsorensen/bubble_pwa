@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bubble — Signup Flow Tests</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root { --bg:#FAFAFE; --text:#1E1B2E; --muted:#73726c; --accent:#7C5CFC; --accent2:#E879A8; --teal:#1A9E8E; --border:rgba(216,213,228,0.5); --green:#10B981; --red:#E24B4A; --amber:#EF9F27; }
+* { box-sizing:border-box; margin:0; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); padding:1rem; max-width:720px; margin:0 auto; }
+h1 { font-size:1.3rem; font-weight:800; margin-bottom:0.3rem; }
+h2 { font-size:0.92rem; font-weight:700; margin:1.5rem 0 0.5rem; color:var(--accent); text-transform:uppercase; letter-spacing:0.04em; }
+.subtitle { font-size:0.78rem; color:var(--muted); margin-bottom:1rem; }
+.card { background:white; border:1px solid var(--border); border-radius:12px; padding:1rem; margin-bottom:0.6rem; }
+.card-title { font-size:0.82rem; font-weight:700; margin-bottom:0.3rem; }
+.card-desc { font-size:0.72rem; color:var(--muted); margin-bottom:0.6rem; line-height:1.4; }
+.btn { padding:0.5rem 1rem; border-radius:8px; border:none; font-size:0.78rem; font-weight:700; cursor:pointer; font-family:inherit; transition:all 0.15s; }
+.btn-primary { background:var(--accent); color:white; }
+.btn-primary:hover { opacity:0.9; }
+.btn-danger { background:rgba(226,75,74,0.1); color:var(--red); border:1px solid rgba(226,75,74,0.2); }
+.btn-sm { padding:0.35rem 0.7rem; font-size:0.7rem; }
+.btn:disabled { opacity:0.4; cursor:not-allowed; }
+.row { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; }
+.tag { font-size:0.62rem; padding:2px 8px; border-radius:99px; font-weight:600; }
+.tag-ok { background:rgba(16,185,129,0.1); color:var(--teal); }
+.tag-pending { background:rgba(239,159,39,0.1); color:var(--amber); }
+.tag-fail { background:rgba(226,75,74,0.1); color:var(--red); }
+#log { font-family:'SF Mono',Menlo,monospace; font-size:0.68rem; background:#1E1B2E; color:#d4d4d4; border-radius:10px; padding:0.8rem; max-height:300px; overflow-y:auto; white-space:pre-wrap; line-height:1.5; }
+.log-ok { color:#10B981; }
+.log-err { color:#E24B4A; }
+.log-info { color:#7C5CFC; }
+.log-warn { color:#EF9F27; }
+.input { padding:0.4rem 0.7rem; border-radius:8px; border:1px solid var(--border); font-size:0.78rem; font-family:inherit; width:100%; }
+.user-row { display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0; border-bottom:1px solid var(--border); font-size:0.72rem; }
+.user-row:last-child { border-bottom:none; }
+.mono { font-family:'SF Mono',Menlo,monospace; font-size:0.65rem; color:var(--muted); }
+.config-row { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem; }
+.config-label { font-size:0.72rem; font-weight:600; min-width:120px; }
+</style>
+</head>
+<body>
+
+<h1>🫧 Signup Flow Tests</h1>
+<div class="subtitle">Opretter test-brugere og simulerer signup flows. Email-bekræftelse er slået fra.</div>
+
+<h2>Konfiguration</h2>
+<div class="card">
+  <div class="config-row">
+    <span class="config-label">Event bubble ID:</span>
+    <input class="input" id="cfg-event-id" placeholder="Paste event bubble ID" style="flex:1">
+  </div>
+  <div class="config-row">
+    <span class="config-label">Netværk bubble ID:</span>
+    <input class="input" id="cfg-network-id" placeholder="Paste network bubble ID" style="flex:1">
+  </div>
+  <div class="config-row">
+    <span class="config-label">Kontakt user ID:</span>
+    <input class="input" id="cfg-contact-id" value="0015de9c-c128-477a-8110-2cbb38a625f4" style="flex:1">
+  </div>
+  <div style="margin-top:0.5rem">
+    <button class="btn btn-sm btn-primary" onclick="loadBubbleOptions()">Hent mine bobler →</button>
+    <span id="cfg-status" style="font-size:0.68rem;color:var(--muted);margin-left:0.5rem"></span>
+  </div>
+</div>
+
+<h2>Signup Flows</h2>
+
+<div class="card">
+  <div class="card-title">1. Normal signup</div>
+  <div class="card-desc">Bruger lander på auth-screen → signup → minimal onboarding (navn + arbejdsplads + terms) → welcome → home med profil CTA.</div>
+  <button class="btn btn-primary" onclick="runFlow('normal')">Kør test →</button>
+</div>
+
+<div class="card">
+  <div class="card-title">2. Event QR signup</div>
+  <div class="card-desc">Bruger scanner event QR → auth → minimal onboarding → auto-join event → event info tab.</div>
+  <button class="btn btn-primary" onclick="runFlow('event')">Kør test →</button>
+</div>
+
+<div class="card">
+  <div class="card-title">3. Personligt QR signup</div>
+  <div class="card-desc">Bruger scanner personligt QR → auth → minimal onboarding → gem kontakt → saved-contact modal på home.</div>
+  <button class="btn btn-primary" onclick="runFlow('contact')">Kør test →</button>
+</div>
+
+<div class="card">
+  <div class="card-title">4. Netværk invite signup</div>
+  <div class="card-desc">Bruger klikker invite link → auth → minimal onboarding → auto-join netværk → bubble chat.</div>
+  <button class="btn btn-primary" onclick="runFlow('invite')">Kør test →</button>
+</div>
+
+<h2>Oprettede test-brugere</h2>
+<div class="card">
+  <div id="user-list"><div style="font-size:0.72rem;color:var(--muted)">Ingen test-brugere endnu</div></div>
+  <div style="margin-top:0.6rem;display:flex;gap:0.4rem;flex-wrap:wrap">
+    <button class="btn btn-sm btn-danger" onclick="cleanupAll()">Slet alle test-brugere</button>
+    <button class="btn btn-sm btn-danger" onclick="showCleanupSQL()">Vis SQL fallback</button>
+    <button class="btn btn-sm" style="background:var(--border);color:var(--muted)" onclick="clearUserList()">Ryd liste</button>
+  </div>
+</div>
+
+<div id="cleanup-sql" style="display:none;margin-top:0.6rem">
+  <div class="card" style="background:#1E1B2E;border:none">
+    <pre id="cleanup-sql-content" style="font-family:'SF Mono',Menlo,monospace;font-size:0.68rem;color:#d4d4d4;white-space:pre-wrap;margin:0"></pre>
+  </div>
+</div>
+
+<h2>Log</h2>
+<div id="log"></div>
+
+<script>
+var SUPABASE_URL = 'https://api.bubbleme.dk';
+var SUPABASE_ANON_KEY = 'sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A';
+var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+var TEST_PREFIX = 'test-';
+var TEST_DOMAIN = '@bubbleme.dk';
+var testUsers = JSON.parse(localStorage.getItem('_signup_test_users') || '[]');
+
+function log(msg, type) {
+  var el = document.getElementById('log');
+  var cls = type === 'ok' ? 'log-ok' : type === 'err' ? 'log-err' : type === 'warn' ? 'log-warn' : 'log-info';
+  var ts = new Date().toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  el.innerHTML += '<span class="'+cls+'">[' + ts + '] ' + msg + '</span>\n';
+  el.scrollTop = el.scrollHeight;
+}
+
+function generateEmail() {
+  var id = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  return TEST_PREFIX + id + TEST_DOMAIN;
+}
+
+function saveUsers() {
+  localStorage.setItem('_signup_test_users', JSON.stringify(testUsers));
+  renderUsers();
+}
+
+function renderUsers() {
+  var el = document.getElementById('user-list');
+  if (testUsers.length === 0) {
+    el.innerHTML = '<div style="font-size:0.72rem;color:var(--muted)">Ingen test-brugere endnu</div>';
+    return;
+  }
+  el.innerHTML = testUsers.map(function(u, i) {
+    var delBtn = u.cleaned ? '<span class="tag tag-ok">slettet</span>' :
+      '<button class="btn btn-sm btn-danger" onclick="cleanupUser('+i+')">Slet</button>';
+    return '<div class="user-row">' +
+      '<span style="flex:1;font-weight:600">' + u.email + '</span>' +
+      '<span class="tag tag-' + (u.cleaned ? 'ok' : u.status || 'pending') + '">' + (u.flow || '?') + '</span>' +
+      '<span class="mono">' + (u.id || '?').slice(0,8) + '</span>' +
+      delBtn +
+      '</div>';
+  }).join('');
+}
+
+async function loadBubbleOptions() {
+  var status = document.getElementById('cfg-status');
+  status.textContent = 'Henter...';
+  try {
+    var { data: session } = await sb.auth.getSession();
+    if (!session?.session) { status.textContent = 'Ikke logget ind'; return; }
+    var uid = session.session.user.id;
+
+    var { data: memberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', uid);
+    var ids = (memberships || []).map(function(m) { return m.bubble_id; });
+    if (ids.length === 0) { status.textContent = 'Ingen bobler fundet'; return; }
+
+    var { data: bubbles } = await sb.from('bubbles').select('id, name, type, visibility').in('id', ids).order('name');
+
+    var events = (bubbles || []).filter(function(b) { return b.type === 'event' || b.type === 'live'; });
+    var networks = (bubbles || []).filter(function(b) { return b.type !== 'event' && b.type !== 'live'; });
+
+    if (events.length > 0 && !document.getElementById('cfg-event-id').value) {
+      document.getElementById('cfg-event-id').value = events[0].id;
+    }
+    if (networks.length > 0 && !document.getElementById('cfg-network-id').value) {
+      document.getElementById('cfg-network-id').value = networks[0].id;
+    }
+
+    status.textContent = events.length + ' events, ' + networks.length + ' netværk fundet';
+    log('Fandt ' + events.length + ' events og ' + networks.length + ' netværk', 'ok');
+    events.forEach(function(e) { log('  Event: ' + e.name + ' (' + e.id.slice(0,8) + ')', 'info'); });
+    networks.forEach(function(n) { log('  Netværk: ' + n.name + ' (' + n.id.slice(0,8) + ')', 'info'); });
+  } catch(e) {
+    status.textContent = 'Fejl: ' + e.message;
+    log('Fejl ved hentning: ' + e.message, 'err');
+  }
+}
+
+async function runFlow(flow) {
+  var email = generateEmail();
+  var password = 'TestBubble2026!';
+  log('── Flow: ' + flow + ' ──', 'info');
+  log('Opretter bruger: ' + email, 'info');
+
+  try {
+    // 1. Sign up
+    var { data, error } = await sb.auth.signUp({ email: email, password: password });
+    if (error) { log('SignUp fejl: ' + error.message, 'err'); return; }
+    var userId = data.user?.id;
+    if (!userId) { log('Ingen user ID returneret', 'err'); return; }
+    log('Bruger oprettet: ' + userId.slice(0,8), 'ok');
+
+    // Track user
+    testUsers.push({ email: email, id: userId, flow: flow, status: 'ok', created: new Date().toISOString() });
+    saveUsers();
+
+    // 2. Sign out (so the app tab gets a clean auth state)
+    await sb.auth.signOut();
+    log('Logget ud af test runner', 'info');
+
+    // 3. Build target URL
+    var baseUrl = window.location.origin + '/';
+    var url = '';
+    switch(flow) {
+      case 'normal':
+        url = baseUrl + '?auth=1&test_email=' + encodeURIComponent(email) + '&test_pass=' + encodeURIComponent(password);
+        break;
+      case 'event':
+        var eventId = document.getElementById('cfg-event-id').value;
+        if (!eventId) { log('Mangler event bubble ID — udfyld konfiguration', 'err'); return; }
+        url = baseUrl + '?join=' + eventId + '&test_email=' + encodeURIComponent(email) + '&test_pass=' + encodeURIComponent(password);
+        break;
+      case 'contact':
+        var contactId = document.getElementById('cfg-contact-id').value;
+        if (!contactId) { log('Mangler kontakt user ID — udfyld konfiguration', 'err'); return; }
+        url = baseUrl + '?contact=' + contactId + '&test_email=' + encodeURIComponent(email) + '&test_pass=' + encodeURIComponent(password);
+        break;
+      case 'invite':
+        var networkId = document.getElementById('cfg-network-id').value;
+        if (!networkId) { log('Mangler netværk bubble ID — udfyld konfiguration', 'err'); return; }
+        url = baseUrl + '?join=' + networkId + '&test_email=' + encodeURIComponent(email) + '&test_pass=' + encodeURIComponent(password);
+        break;
+    }
+
+    log('Åbner app i nyt vindue...', 'info');
+    log('Email: ' + email, 'warn');
+    log('Password: ' + password, 'warn');
+    log('URL: ' + url, 'info');
+
+    // 4. Open in new tab
+    window.open(url, '_blank');
+
+    log('✓ Verificer manuelt:', 'ok');
+    switch(flow) {
+      case 'normal':
+        log('  → Auth screen vises', 'info');
+        log('  → Log ind med email/password ovenfor', 'info');
+        log('  → Minimal onboarding (navn + arbejdsplads + terms)', 'info');
+        log('  → Welcome screen', 'info');
+        log('  → Home med profil CTA', 'info');
+        break;
+      case 'event':
+        log('  → Event landing med signup-knapper', 'info');
+        log('  → Log ind med email/password ovenfor', 'info');
+        log('  → Minimal onboarding med "Gå til event →"', 'info');
+        log('  → Lander på event info tab', 'info');
+        break;
+      case 'contact':
+        log('  → Auth screen med kontakt-kontekst', 'info');
+        log('  → Log ind med email/password ovenfor', 'info');
+        log('  → Minimal onboarding', 'info');
+        log('  → Home med saved-contact modal', 'info');
+        break;
+      case 'invite':
+        log('  → Auth screen med invite-kontekst', 'info');
+        log('  → Log ind med email/password ovenfor', 'info');
+        log('  → Minimal onboarding', 'info');
+        log('  → Auto-join netværk → bubble chat', 'info');
+        break;
+    }
+  } catch(e) {
+    log('Fejl: ' + e.message, 'err');
+  }
+}
+
+function showCleanupSQL() {
+  var el = document.getElementById('cleanup-sql');
+  var content = document.getElementById('cleanup-sql-content');
+  if (testUsers.length === 0) { content.textContent = '-- Ingen test-brugere at slette'; el.style.display = 'block'; return; }
+
+  var ids = testUsers.map(function(u) { return "'" + u.id + "'"; }).join(',\n  ');
+  var emails = testUsers.map(function(u) { return u.email; }).join(', ');
+
+  var sql = '-- Cleanup test-brugere (' + testUsers.length + ' stk)\n';
+  sql += '-- Emails: ' + emails + '\n\n';
+  sql += '-- Brug "Slet alle" knappen i stedet — den kalder edge function.\n';
+  sql += '-- Manuel fallback:\n';
+  sql += 'DELETE FROM profiles WHERE id IN (\n  ' + ids + '\n);\n';
+
+  content.textContent = sql;
+  el.style.display = 'block';
+}
+
+var CLEANUP_ADMIN_KEY = 'bubble-test-cleanup-2026';
+
+async function cleanupUser(index) {
+  var u = testUsers[index];
+  if (!u || u.cleaned) return;
+  log('Sletter ' + u.email + '...', 'info');
+  try {
+    var res = await sb.functions.invoke('cleanup-test-user', {
+      body: { user_id: u.id, admin_key: CLEANUP_ADMIN_KEY }
+    });
+    if (res.error) { log('Edge function fejl: ' + res.error.message, 'err'); return; }
+    var result = res.data;
+    if (result.ok) {
+      log('✓ ' + u.email + ' slettet (auth: ' + result.auth_deleted + ', profil: ' + result.profile_deleted + ')', 'ok');
+      testUsers[index].cleaned = true;
+      saveUsers();
+    } else {
+      log('Fejl: ' + (result.error || 'ukendt'), 'err');
+    }
+  } catch(e) { log('Cleanup fejl: ' + e.message, 'err'); }
+}
+
+async function cleanupAll() {
+  var uncleaned = testUsers.filter(function(u) { return !u.cleaned; });
+  if (uncleaned.length === 0) { log('Ingen brugere at slette', 'warn'); return; }
+  if (!confirm('Slet ' + uncleaned.length + ' test-bruger(e)?')) return;
+  log('── Cleanup: ' + uncleaned.length + ' brugere ──', 'info');
+  for (var i = 0; i < testUsers.length; i++) {
+    if (!testUsers[i].cleaned) await cleanupUser(i);
+  }
+  log('Cleanup færdig', 'ok');
+}
+
+function clearUserList() {
+  if (!confirm('Ryd listen? (sletter ikke brugerne fra Supabase)')) return;
+  testUsers = [];
+  saveUsers();
+  document.getElementById('cleanup-sql').style.display = 'none';
+  log('Brugerliste ryddet', 'warn');
+}
+
+// Init
+renderUsers();
+log('Test runner klar. Supabase: ' + SUPABASE_URL, 'info');
+</script>
+</body>
+</html>
