@@ -128,8 +128,62 @@ function _rtStatusCallback(channelName) {
 }
 
 // Browser online/offline — fast path for network changes
+var _offlineTimer = null;
+var _offlineCooldown = 0;
+var _offlineShown = false;
+
+function _showOfflineModal() {
+  if (_offlineShown) return;
+  if (Date.now() - _offlineCooldown < 30000) return;
+  _offlineShown = true;
+  var existing = document.getElementById('offline-modal-overlay');
+  if (existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.id = 'offline-modal-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(30,27,46,0.4);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 4rem) 1.5rem 0;animation:fadeSlideUp 0.3s ease';
+  ov.innerHTML =
+    '<div style="background:#FAEEDA;border:1.5px solid rgba(239,159,39,0.35);border-radius:16px;padding:1.5rem 1.25rem;text-align:center;max-width:320px;width:100%">' +
+      '<style>@keyframes _obBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}@keyframes _obPulse{0%,100%{opacity:.4}50%{opacity:1}}</style>' +
+      '<div style="display:flex;justify-content:center;gap:8px;margin-bottom:14px">' +
+        '<div style="width:10px;height:10px;border-radius:50%;background:#2ECFCF;animation:_obBob 1.4s ease-in-out infinite"></div>' +
+        '<div style="width:10px;height:10px;border-radius:50%;background:#7C5CFC;animation:_obBob 1.4s ease-in-out infinite 0.15s"></div>' +
+        '<div style="width:10px;height:10px;border-radius:50%;background:#E879A8;animation:_obBob 1.4s ease-in-out infinite 0.3s"></div>' +
+      '</div>' +
+      '<div style="font-size:0.88rem;font-weight:700;color:#412402;margin-bottom:6px">' + t('offline_title') +
+        '<span style="display:inline-block;animation:_obPulse 1.2s ease-in-out infinite">.</span>' +
+        '<span style="display:inline-block;animation:_obPulse 1.2s ease-in-out infinite 0.2s">.</span>' +
+        '<span style="display:inline-block;animation:_obPulse 1.2s ease-in-out infinite 0.4s">.</span>' +
+      '</div>' +
+      '<div style="font-size:0.72rem;color:#854F0B;line-height:1.4;margin-bottom:16px">' + t('offline_body') + '</div>' +
+      '<button onclick="_retryConnection()" style="background:#EF9F27;color:#412402;border:none;border-radius:8px;padding:8px 24px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit">' + t('offline_retry') + '</button>' +
+    '</div>';
+  document.body.appendChild(ov);
+}
+
+function _hideOfflineModal() {
+  _offlineShown = false;
+  _offlineCooldown = Date.now();
+  clearTimeout(_offlineTimer);
+  _offlineTimer = null;
+  var ov = document.getElementById('offline-modal-overlay');
+  if (ov) { ov.style.opacity = '0'; ov.style.transition = 'opacity 0.3s'; setTimeout(function() { ov.remove(); }, 300); }
+}
+
+function _retryConnection() {
+  var btn = document.querySelector('#offline-modal-overlay button');
+  if (btn) { btn.textContent = t('offline_checking'); btn.disabled = true; }
+  if (navigator.onLine) {
+    fetch(SUPABASE_URL + '/rest/v1/', { method: 'HEAD', headers: { 'apikey': SUPABASE_ANON_KEY } })
+      .then(function() { _hideOfflineModal(); rtReconnect(); })
+      .catch(function() { if (btn) { btn.textContent = t('offline_retry'); btn.disabled = false; } });
+  } else {
+    setTimeout(function() { if (btn) { btn.textContent = t('offline_retry'); btn.disabled = false; } }, 1000);
+  }
+}
+
 window.addEventListener('online', function() {
   console.debug('[rt] browser online');
+  _hideOfflineModal();
   if (_rtState !== 'connected') {
     _rtReconnectAttempt = 0;
     clearTimeout(_rtReconnectTimer);
@@ -140,6 +194,8 @@ window.addEventListener('online', function() {
 window.addEventListener('offline', function() {
   console.debug('[rt] browser offline');
   rtSetState('disconnected');
+  clearTimeout(_offlineTimer);
+  _offlineTimer = setTimeout(_showOfflineModal, 3000);
 });
 
 // ══════════════════════════════════════════════════════════

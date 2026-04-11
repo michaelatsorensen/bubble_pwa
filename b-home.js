@@ -422,6 +422,7 @@ function goToEventFromCard() {}
 function dismissEventCard() {
   var ov = document.getElementById('checkin-confirm-overlay');
   if (ov) ov.remove();
+}
 
 // ── Saved contact modal (shown after QR scan signup) ──
 async function _showSavedContactModal(contactId) {
@@ -467,7 +468,6 @@ async function _showSavedContactModal(contactId) {
       setTimeout(function() { ov.remove(); }, 260);
     };
   } catch(e) { logError('_showSavedContactModal', e); }
-}
 }
 
 // ── Welcome card — shown once to brand new users ──
