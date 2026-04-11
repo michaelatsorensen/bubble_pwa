@@ -230,6 +230,7 @@ function openLiveCheckoutTray() {
   var tray = document.getElementById('live-checkout-tray');
   if (!backdrop || !tray) return;
   backdrop.style.display = 'block';
+  tray.style.visibility = 'visible';
   void tray.offsetHeight;
   tray.style.transform = 'translateY(0)';
 }
@@ -237,7 +238,7 @@ function closeLiveCheckoutTray() {
   var backdrop = document.getElementById('live-checkout-backdrop');
   var tray = document.getElementById('live-checkout-tray');
   if (backdrop) backdrop.style.display = 'none';
-  if (tray) tray.style.transform = 'translateY(100%)';
+  if (tray) { tray.style.transform = 'translateY(100%)'; setTimeout(function() { tray.style.visibility = 'hidden'; }, 350); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1914,6 +1915,7 @@ function openHomeTray() {
   var tray = document.getElementById('home-tray');
   if (!backdrop || !tray) return;
   backdrop.style.display = 'block';
+  tray.style.visibility = 'visible';
   void tray.offsetHeight;
   tray.style.transform = 'translateY(0)';
   renderHomeTrayList();
@@ -1923,7 +1925,7 @@ function closeHomeTray() {
   var backdrop = document.getElementById('home-tray-backdrop');
   var tray = document.getElementById('home-tray');
   if (backdrop) backdrop.style.display = 'none';
-  if (tray) tray.style.transform = 'translateY(100%)';
+  if (tray) { tray.style.transform = 'translateY(100%)'; setTimeout(function() { tray.style.visibility = 'hidden'; }, 350); }
 }
 
 function renderHomeTrayList() {
