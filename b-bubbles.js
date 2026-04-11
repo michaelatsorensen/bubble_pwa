@@ -1318,8 +1318,8 @@ async function checkPendingJoin() {
     const joinId = flowGet('pending_join');
     if (!joinId) return;
 
-    // Join bubble
-    var result = await dbActions.joinBubble(joinId);
+    // Join bubble (QR/invite bypass privacy gate)
+    var result = await dbActions.joinBubble(joinId, 'invite_link');
     var isEventFlow = flowGet('event_flow');
 
     if (!result.ok && !isEventFlow) return; // Keep pending_join for retry on next auth

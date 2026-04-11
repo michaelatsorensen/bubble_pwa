@@ -417,6 +417,91 @@ function showEventCheckinCard() {
   showCheckinModal(eventName, { fromHome: true, eventId: eventId });
 }
 
+// ══════════════════════════════════════════════════════════
+//  DEEP-LINK MODAL — unified confirmation for all QR/invite flows
+//  Types: 'contact' (profile QR), 'event' (event QR), 'network' (invite link)
+// ══════════════════════════════════════════════════════════
+async function showDeepLinkModal(type, targetId) {
+  try {
+    var existing = document.getElementById('deeplink-modal-overlay');
+    if (existing) existing.remove();
+
+    var title = '', subtitle = '', actionLabel = '', actionFn = null;
+    var iconHtml = '', nameText = '';
+
+    if (type === 'contact') {
+      var { data: p } = await sb.from('profiles').select('id, name, title, workplace, avatar_url').eq('id', targetId).maybeSingle();
+      if (!p) { showWarningToast(t('toast_not_found')); return; }
+      nameText = p.name || '?';
+      var ini = nameText.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      iconHtml = p.avatar_url
+        ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        : '<span style="font-size:1.1rem;font-weight:700;color:white">' + escHtml(ini) + '</span>';
+      title = escHtml(nameText);
+      subtitle = [p.title, p.workplace].filter(Boolean).join(' · ');
+      actionLabel = t('dl_save_contact');
+      actionFn = async function() {
+        var result = await dbActions.saveContact(targetId);
+        if (result.ok) showSuccessToast(t('toast_saved'));
+        openPerson(targetId, 'screen-home');
+      };
+    } else {
+      var { data: b } = await sb.from('bubbles').select('id, name, type, location, icon_url, visibility').eq('id', targetId).maybeSingle();
+      if (!b) { showWarningToast(t('toast_not_found')); return; }
+      nameText = b.name || '?';
+      var isEvent = b.type === 'event' || b.type === 'live';
+      var bColor = isEvent ? 'rgba(46,207,207,0.15)' : 'rgba(124,92,252,0.15)';
+      var bEmoji = isEvent ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="' + (isEvent ? '#0F6E56' : '#534AB7') + '" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#534AB7" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/></svg>';
+      iconHtml = b.icon_url
+        ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:14px">'
+        : bEmoji;
+      title = escHtml(nameText);
+      subtitle = b.location ? escHtml(b.location) : '';
+      actionLabel = isEvent ? t('dl_go_to_event') : t('dl_go_to_network');
+      actionFn = async function() {
+        var result = await dbActions.joinBubble(targetId, 'invite_link');
+        if (result.ok) showSuccessToast(t('toast_joined'));
+        if (isEvent) {
+          await dbActions.checkIn(targetId);
+          if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus();
+        }
+        openBubbleChat(targetId, 'screen-home');
+      };
+    }
+
+    var iconBg = type === 'contact' ? 'linear-gradient(135deg,#7C5CFC,#6366F1)' : (type === 'event' ? 'rgba(46,207,207,0.15)' : 'rgba(124,92,252,0.15)');
+    var iconSize = type === 'contact' ? '64px' : '56px';
+    var iconRadius = type === 'contact' ? '50%' : '14px';
+
+    var ov = document.createElement('div');
+    ov.id = 'deeplink-modal-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+
+    ov.innerHTML =
+      '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+        '<div style="width:' + iconSize + ';height:' + iconSize + ';border-radius:' + iconRadius + ';background:' + iconBg + ';display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;overflow:hidden">' + iconHtml + '</div>' +
+        '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">' + title + '</div>' +
+        (subtitle ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:1.25rem">' + escHtml(subtitle) + '</div>' : '<div style="margin-bottom:1.25rem"></div>') +
+        '<button id="dl-action-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + escHtml(actionLabel) + ' →</button>' +
+        '<button id="dl-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_stay_home') + '</button>' +
+      '</div>';
+
+    document.body.appendChild(ov);
+
+    document.getElementById('dl-action-btn').onclick = async function() {
+      this.disabled = true;
+      this.textContent = t('ui_saving');
+      try { await actionFn(); } catch(e) { logError('deepLinkAction', e); errorToast('save', e); }
+      ov.remove();
+    };
+    document.getElementById('dl-stay-btn').onclick = function() {
+      ov.style.transition = 'opacity 0.25s';
+      ov.style.opacity = '0';
+      setTimeout(function() { ov.remove(); }, 260);
+    };
+  } catch(e) { logError('showDeepLinkModal', e); }
+}
+
 // Legacy aliases (safe to call from other files)
 function goToEventFromCard() {}
 function dismissEventCard() {

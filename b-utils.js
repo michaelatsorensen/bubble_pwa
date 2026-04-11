@@ -740,19 +740,21 @@ var dbActions = {
   },
 
   // ── BUBBLE MEMBERSHIP ──
-  async joinBubble(bubbleId) {
+  async joinBubble(bubbleId, source) {
     if (!currentUser || !bubbleId) return { ok: false };
+    source = source || 'discover';
     try {
-      // Defense-in-depth: check visibility before join
-      var { data: bub } = await sb.from('bubbles').select('visibility,type').eq('id', bubbleId).maybeSingle();
-      if (bub && bub.visibility === 'private' && bub.type !== 'event' && bub.type !== 'live') {
-        // Private non-event bubble — must use requestJoin() instead
-        logError('dbActions.joinBubble', new Error('Attempted direct join on private bubble'), { bubble_id: bubbleId });
-        return { ok: false, error: 'private_bubble' };
-      }
-      if (bub && bub.visibility === 'hidden') {
-        logError('dbActions.joinBubble', new Error('Attempted direct join on hidden bubble'), { bubble_id: bubbleId });
-        return { ok: false, error: 'hidden_bubble' };
+      // Defense-in-depth: check visibility before join (bypass for QR/invite)
+      if (source === 'discover') {
+        var { data: bub } = await sb.from('bubbles').select('visibility,type').eq('id', bubbleId).maybeSingle();
+        if (bub && bub.visibility === 'private' && bub.type !== 'event' && bub.type !== 'live') {
+          logError('dbActions.joinBubble', new Error('Attempted direct join on private bubble'), { bubble_id: bubbleId });
+          return { ok: false, error: 'private_bubble' };
+        }
+        if (bub && bub.visibility === 'hidden') {
+          logError('dbActions.joinBubble', new Error('Attempted direct join on hidden bubble'), { bubble_id: bubbleId });
+          return { ok: false, error: 'hidden_bubble' };
+        }
       }
       var { error } = await sb.from('bubble_members').insert({
         bubble_id: bubbleId,
@@ -761,7 +763,7 @@ var dbActions = {
       if (error && !String(error.message || '').includes('duplicate')) {
         errorToast('save', error); return { ok: false, error: error };
       }
-      trackEvent('bubble_joined', { bubble_id: bubbleId });
+      trackEvent('bubble_joined', { bubble_id: bubbleId, source: source });
       return { ok: true };
     } catch (e) { logError('dbActions.joinBubble', e); errorToast('save', e); return { ok: false, error: e }; }
   },

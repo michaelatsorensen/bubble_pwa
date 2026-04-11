@@ -610,24 +610,14 @@ async function liveScanAutoResolve(data) {
             return;
           } else {
             // No bubble context — just save as contact
-            var confirmed = document.getElementById('live-scan-confirmed');
-            var cName = document.getElementById('live-scan-confirmed-name');
-            var cMeta = document.getElementById('live-scan-confirmed-meta');
-            if (cName) cName.textContent = '✓ ' + (scannedProfile.name || 'Bruger') + ' fundet!';
-            if (cMeta) cMeta.textContent = (scannedProfile.title || '') + (scannedProfile.workplace ? ' · ' + scannedProfile.workplace : '');
-            showSuccessToast(t('toast_checked_in_name', {name: scannedProfile.name || 'User'}));
-            // Auto-save as contact
             try { await dbActions.saveContact(scannedProfile.id); } catch(e2) {}
+            _liveQrPending = false;
+            // Show confirmation modal
+            if (typeof _showSavedContactModal === 'function') {
+              _showSavedContactModal(scannedProfile.id);
+            }
+            return;
           }
-
-          if (confirmed) confirmed.style.display = 'flex';
-          _liveQrPending = false;
-          setTimeout(function() {
-            if (confirmed) confirmed.style.display = 'none';
-            if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; }
-            liveQrPreviewLoop();
-          }, 3000);
-          return;
         } else {
           // userId found but no profile in DB
           if (status) { status.textContent = 'Bruger ikke fundet i Bubble'; status.className = 'live-scan-status error'; }

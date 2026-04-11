@@ -53,86 +53,68 @@ function initServices() {
 //  6. default → screen-home
 // ══════════════════════════════════════════════════════════
 async function resolvePostAuthDestination() {
-  // Step 3: pending contact (from QR scan before auth)
-  var savedContactId = await checkPendingContact();
-
-  // Push notification deep link
+  // Step 1: Push notification deep link (unchanged)
   var pushParams = new URLSearchParams(window.location.search);
   var pushAction = pushParams.get('push');
   if (pushAction) {
-    // Clean URL + flow flags (prevent ghost flows from surviving push early-return)
     history.replaceState(null, '', window.location.pathname);
     flowClearAll();
     if (pushAction === 'chat' && pushParams.get('uid')) {
-      var _pushUid = pushParams.get('uid');
-      goToThen('screen-home', function() { openChat(_pushUid, 'screen-messages'); });
+      goToThen('screen-home', function() { openChat(pushParams.get('uid'), 'screen-messages'); });
       return;
-    } else if (pushAction === 'messages') {
-      goTo('screen-messages');
-      return;
-    } else if (pushAction === 'notifications') {
-      goTo('screen-notifications');
-      return;
-    } else if (pushAction === 'bubble' && pushParams.get('id')) {
-      var _pushBid = pushParams.get('id');
-      goToThen('screen-home', function() { openBubbleChat(_pushBid, 'screen-home'); });
+    } else if (pushAction === 'messages') { goTo('screen-messages'); return; }
+    else if (pushAction === 'notifications') { goTo('screen-notifications'); return; }
+    else if (pushAction === 'bubble' && pushParams.get('id')) {
+      goToThen('screen-home', function() { openBubbleChat(pushParams.get('id'), 'screen-home'); });
       return;
     }
   }
 
-  // Step 3b: if contact was saved from QR → show modal on home
-  if (savedContactId) {
+  // Step 2: Deep-link flows → show confirmation modal
+  var pendingContact = consumeFlow('pending_contact');
+  var pendingJoin = consumeFlow('pending_join');
+  var isEventFlow = consumeFlow('event_flow');
+
+  if (pendingContact) {
     flowClearAll();
     goTo('screen-home');
-    // Show contact-saved modal after home loads
-    setTimeout(function() { _showSavedContactModal(savedContactId); }, 400);
+    setTimeout(function() { showDeepLinkModal('contact', pendingContact); }, 400);
     return;
   }
 
-  // Step 4: event flow (from event QR)
-  var isEventFlow = flowGet('event_flow');
-
-  if (isEventFlow) {
-    try {
-      await checkPendingJoin();
-    } catch(e) {
-      logError('resolvePostAuth:eventFlow', e);
-    } finally {
-      // Always consume event_flow — even if checkPendingJoin threw
-      var stillEventFlow = flowGet('event_flow');
-      if (stillEventFlow) {
-        consumeFlow('event_flow');
-        showEventReadyQR();
-      }
-    }
-  } else {
-    // Step 5: pending join (from bubble invite link)
-    await checkPendingJoin();
-    // Step 6: welcome screen for first-time users
-    // A user with name + workplace is treated as welcomed regardless of localStorage —
-    // covers returning users who pre-date the welcome screen and new-device logins.
-    var hasCompletedProfile = !!(currentProfile?.name && currentProfile?.workplace);
-    var hasWelcomedFlag = !!localStorage.getItem('bubble_welcomed');
-    // Backfill: any user with name OR workplace has been through onboarding already
-    if (!hasWelcomedFlag && (currentProfile?.name || currentProfile?.workplace)) {
-      localStorage.setItem('bubble_welcomed', '1');
-      hasWelcomedFlag = true;
-    }
-    if (!hasWelcomedFlag && !hasCompletedProfile) {
-      goTo('screen-welcome');
-      flowClearAll(); // Safety: no stale flags survive into welcome
-      return;
-    }
-    // Step 7: default
+  if (pendingJoin && isEventFlow) {
+    flowClearAll();
     goTo('screen-home');
+    setTimeout(function() { showDeepLinkModal('event', pendingJoin); }, 400);
+    return;
   }
-  // Safety: clear any unconsumed flow flags after destination resolved
+
+  if (pendingJoin) {
+    flowClearAll();
+    goTo('screen-home');
+    setTimeout(function() { showDeepLinkModal('network', pendingJoin); }, 400);
+    return;
+  }
+
+  // Step 3: Welcome screen for first-time users (no deep-link)
+  var hasWelcomedFlag = !!localStorage.getItem('bubble_welcomed');
+  if (!hasWelcomedFlag) {
+    localStorage.setItem('bubble_welcomed', '1');
+    goTo('screen-welcome');
+    return;
+  }
+
+  // Step 4: Default
+  goTo('screen-home');
   flowClearAll();
 }
 
 // Full orchestrator: single entry point after any successful auth
 // Steps 1-2 handled here, steps 3-6 delegated to resolvePostAuthDestination
 async function resolvePostAuth() {
+  // Ensure profile exists (covers guest flows where checkAuth was skipped)
+  var { data: { session: _epSession } } = await sb.auth.getSession();
+  if (_epSession) await ensureProfileExists(_epSession);
   await loadEssentials(); // Step 1: banned check inside loadCurrentProfile
   var needsOnboarding = await maybeShowOnboarding();
   if (needsOnboarding) return; // Step 2: onboarding calls resolvePostAuthDestination when done

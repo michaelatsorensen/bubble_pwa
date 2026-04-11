@@ -216,7 +216,6 @@ async function _miniObSave() {
     var { error } = await sb.from('profiles').update(update).eq('id', currentUser.id);
     if (error) { errorToast('save', error); if (btn) { btn.textContent = 'Fortsæt'; btn.disabled = false; } return; }
     await loadCurrentProfile();
-    localStorage.setItem('bubble_welcomed', '1');
 
     // Remove overlay
     var ov = document.getElementById('mini-onboarding-overlay');
