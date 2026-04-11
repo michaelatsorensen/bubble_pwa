@@ -252,6 +252,7 @@ textarea.input { min-height:80px; resize:vertical; }
 .person-sheet-btn { flex:1; padding:0.6rem 0.3rem; border-radius:var(--radius-sm); font-size:0.78rem; font-family:'Figtree',sans-serif; font-weight:600; cursor:pointer; border:none; text-align:center; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:0.3rem; }
 .person-sheet-btn.primary { background:var(--gradient-primary); border:1px solid var(--gradient-btn-border); color:white; box-shadow:0 2px 10px rgba(124,92,252,0.25); }
 .person-sheet-btn.secondary { background:#FFFFFF; border:1px solid rgba(216,213,228,0.5); color:var(--text-secondary); box-shadow:0 1px 3px rgba(30,27,46,0.04), 0 4px 12px rgba(30,27,46,0.03); }
+.person-sheet-btn.saved { background:rgba(26,158,142,0.08); border:1px solid rgba(26,158,142,0.25); color:#1A9E8E; }
 .person-section { padding:0.6rem 1.5rem; }
 .person-section + .person-section { border-top:1px solid rgba(30,27,46,0.04); }
 .person-section-title { font-size:0.58rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:0.4rem; }

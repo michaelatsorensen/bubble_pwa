@@ -218,6 +218,11 @@ function _personRenderDynamic(p) {
 async function _personRenderSaved(userId) {
   var { data: savedCheck } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
   document.getElementById('save-btn').innerHTML = savedCheck ? icon('checkCircle') + '<span>Gemt</span>' : icon('bookmark') + '<span>Gem</span>';
+  var psBtn = document.getElementById('ps-save-btn');
+  if (psBtn) {
+    psBtn.innerHTML = savedCheck ? icon('checkCircle') + ' Gemt' : icon('bookmark') + ' Gem';
+    psBtn.className = savedCheck ? 'person-sheet-btn saved' : 'person-sheet-btn secondary';
+  }
   var starSection = document.getElementById('person-star-section');
   var starRatingEl = document.getElementById('person-star-rating');
   if (starSection && starRatingEl) {
@@ -668,14 +673,14 @@ async function psSaveContact() {
     const btn = document.getElementById('ps-save-btn');
     if (existing) {
       await dbActions.removeContact(userId);
-      if (btn) btn.innerHTML = icon('bookmark') + ' Gem';
+      if (btn) { btn.innerHTML = icon('bookmark') + ' Gem'; btn.className = 'person-sheet-btn secondary'; }
       var sr = document.getElementById('ps-star-row');
       if (sr) sr.style.display = 'none';
       starSet(userId, 0);
       showToast(t('toast_deleted'));
     } else {
       await dbActions.saveContact(userId);
-      if (btn) btn.innerHTML = icon('bookmarkFill') + ' Gemt';
+      if (btn) { btn.innerHTML = icon('checkCircle') + ' Gemt'; btn.className = 'person-sheet-btn saved'; }
       // Show star rating row
       var sr2 = document.getElementById('ps-star-row');
       var starsEl2 = document.getElementById('ps-stars');

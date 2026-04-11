@@ -434,6 +434,7 @@ async function handleLogout() {
       }
     } catch(e2) { console.debug('[logout] push cleanup:', e2); }
     await sb.auth.signOut();
+    flowClearAll();
     resetAppState();
     redirectToLanding(); // Auth listener also calls this — safe to call twice
   } catch(e) { logError("handleLogout", e); errorToast("load", e); }
