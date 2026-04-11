@@ -12,9 +12,23 @@
 
 // ── Bubble chat unread state ──
 var _bubbleUnreadSet = {};
+var _allMyBubblesCache = [];
 function _renderBubblesUnreadDot() {
   var dot = document.getElementById('bubbles-unread-dot');
   if (dot) dot.style.display = Object.keys(_bubbleUnreadSet).length > 0 ? 'block' : 'none';
+}
+function _renderSubTabDots(allBubbles) {
+  var list = allBubbles || _allMyBubblesCache;
+  var hasNet = false, hasEvt = false;
+  (list || []).forEach(function(b) {
+    if (!_bubbleUnreadSet[b.id]) return;
+    if (b.type === 'event' || b.type === 'live') hasEvt = true;
+    else hasNet = true;
+  });
+  var netDot = document.getElementById('bb-sub-net-dot');
+  var evtDot = document.getElementById('bb-sub-evt-dot');
+  if (netDot) netDot.style.display = hasNet ? 'block' : 'none';
+  if (evtDot) evtDot.style.display = hasEvt ? 'block' : 'none';
 }
 async function _fetchBubbleUnread(membershipRows) {
   try {
@@ -32,6 +46,7 @@ async function _fetchBubbleUnread(membershipRows) {
     });
     _bubbleUnreadSet = unread;
     _renderBubblesUnreadDot();
+    _renderSubTabDots();
   } catch(e) { logError('_fetchBubbleUnread', e); }
 }
 var _bcUnreadDotHtml = '<div style="width:9px;height:9px;border-radius:50%;background:var(--accent2);flex-shrink:0"></div>';
@@ -1018,6 +1033,7 @@ async function loadMyNetworks() {
     if (fetchErr) { logError('loadMyNetworks:fetch', fetchErr); showRetryState('bb-net-list', 'loadMyNetworks', 'Kunne ikke hente netværk'); return; }
     if (_navVersion !== myNav) return;
     var allMy = allMyBubbles || [];
+    _allMyBubblesCache = allMy;
 
     var networks = allMy.filter(function(b) { return b.type !== 'event' && b.type !== 'live'; });
 
@@ -1352,6 +1368,7 @@ async function loadMyNetworks() {
       html = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke med i nogen netv\u00E6rk endnu</div><div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:center"><button class="btn-primary" onclick="bbSwitchTab(\'explore\')" style="font-size:0.82rem;padding:0.6rem 1.2rem">Opdag netv\u00E6rk</button><button class="btn-secondary" onclick="bbSwitchSub(\'evt\')" style="font-size:0.82rem;padding:0.6rem 1.2rem">Se events</button></div></div>';
     }
     list.innerHTML = html;
+    _renderSubTabDots();
   } catch(e) { logError("loadMyNetworks", e); showRetryState('bb-net-list', 'loadMyNetworks', 'Kunne ikke hente netv\u00E6rk'); }
 }
 

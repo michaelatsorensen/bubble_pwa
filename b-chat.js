@@ -299,6 +299,7 @@ async function bcLoadChatData(bubbleId) {
     sb.from('bubble_members').update({ last_read_at: new Date().toISOString() }).eq('bubble_id', bubbleId).eq('user_id', currentUser.id).then(function() {
       delete _bubbleUnreadSet[bubbleId];
       _renderBubblesUnreadDot();
+      _renderSubTabDots();
     });
   }
 
