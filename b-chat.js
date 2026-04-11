@@ -294,6 +294,14 @@ async function bcLoadChatData(bubbleId) {
   if (bcBubbleData._isMember) phase4.push(bcLoadMessages());
   await Promise.all(phase4);
 
+  // Mark bubble chat as read
+  if (bcBubbleData._isMember) {
+    sb.from('bubble_members').update({ last_read_at: new Date().toISOString() }).eq('bubble_id', bubbleId).eq('user_id', currentUser.id).then(function() {
+      delete _bubbleUnreadSet[bubbleId];
+      _renderBubblesUnreadDot();
+    });
+  }
+
   return true;
 }
 

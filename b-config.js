@@ -15,7 +15,7 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
 const BUILD_TIMESTAMP = '2026-04-06T13:08:12';
-const BUILD_VERSION  = 'v8.15.43';
+const BUILD_VERSION  = 'v8.16.1';
 const SUPABASE_URL  = "https://api.bubbleme.dk";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -355,6 +355,8 @@ function resetAppState() {
   if (debugFab) debugFab.remove();
   var debugOv = document.getElementById('debug-overlay');
   if (debugOv) debugOv.classList.remove('open');
+
+  if (typeof _bubbleUnreadSet !== 'undefined') _bubbleUnreadSet = {};
 
   console.debug('[resetAppState] All session state cleared');
 }
