@@ -107,35 +107,8 @@ async function maybeShowOnboarding() {
 
     if (hasName && hasWorkplace) return false; // OAuth provided enough
 
-    // Deep-link users: show minimal onboarding (just missing fields), not full flow
-    var isDeepLink = flowGet('pending_contact') || flowGet('pending_join') || flowGet('event_flow');
-    if (isDeepLink) {
-      _showMinimalOnboarding(hasName, hasWorkplace, autoName);
-      return true;
-    }
-
-    // Pre-fill from OAuth metadata
-    var obName = document.getElementById('ob-name');
-    if (obName) obName.value = autoName || currentProfile?.name || '';
-    var obWp = document.getElementById('ob-workplace');
-    if (obWp) obWp.value = currentProfile?.workplace || '';
-
-    // Show QR contact confirmation banner if pending
-    var pendingContact = flowGet('pending_contact');
-    var obQrBanner = document.getElementById('ob-qr-contact-banner');
-    if (obQrBanner && pendingContact && typeof _qrContactProfile !== 'undefined' && _qrContactProfile) {
-      var qrName = document.getElementById('ob-qr-contact-name');
-      if (qrName) qrName.textContent = _qrContactProfile.name || 'Kontakt';
-      obQrBanner.style.display = 'flex';
-    } else if (obQrBanner) {
-      obQrBanner.style.display = 'none';
-    }
-
-    var obScroll = document.getElementById('ob-scroll');
-    if (obScroll) obScroll.style.visibility = 'visible';
-    goTo('screen-onboarding');
-    setTimeout(initInputConfirmButtons, 50);
-    setTimeout(obCheckProgress, 80);
+    // All users without name+workplace get minimal onboarding (streamlined signup)
+    _showMinimalOnboarding(hasName, hasWorkplace, autoName);
     return true;
   } catch(e) { logError("maybeShowOnboarding", e); errorToast("load", e); }
 }
@@ -160,7 +133,7 @@ function reRunOnboarding() {
   goTo('screen-onboarding');
 }
 
-// ── Minimal onboarding for deep-link users (just name + workplace) ──
+// ── Minimal onboarding for all new users (streamlined signup) ──
 
 function _showMinimalOnboarding(hasName, hasWorkplace, autoName) {
   var existing = document.getElementById('mini-onboarding-overlay');
