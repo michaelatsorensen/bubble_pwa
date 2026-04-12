@@ -83,7 +83,7 @@ async function loadHome() {
     if (nameEl && currentProfile?.name) {
       var hour = new Date().getHours();
       var greetText = hour < 5 ? t('home_greeting_evening') : hour < 12 ? t('home_greeting_morning') : hour < 17 ? t('home_greeting_afternoon') : hour < 22 ? t('home_greeting_evening') : t('home_greeting_evening');
-      nameEl.textContent = greetText + ', ' + currentProfile.name.split(' ')[0] + ' · 19 personer';
+      nameEl.textContent = greetText + ', ' + currentProfile.name.split(' ')[0];
     }
 
     // Load all data in parallel — v5.2
