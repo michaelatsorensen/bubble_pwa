@@ -107,8 +107,8 @@
 .anon-title-bar { width:120px; height:8px; border-radius:4px; background:var(--glass-border-subtle); margin-top:0.2rem; }
 
 /* ═══ V5.0 — Radar Filter Chips ═══ */
-.radar-filter-chip { padding:0.3rem 0.55rem; border-radius:20px; font-size:0.64rem; font-weight:600; font-family:var(--font); border:1px solid var(--glass-border-subtle); background:#FFFFFF; color:var(--text-secondary); cursor:pointer; flex-shrink:0; transition:all 0.15s; -webkit-tap-highlight-color:transparent; white-space:nowrap; }
-.radar-filter-chip.active { background:linear-gradient(135deg,#7C5CFC,#6366F1); color:#fff; border-color:transparent; }
+.radar-filter-chip { padding:0.35rem 0.65rem; border-radius:99px; font-size:0.68rem; font-weight:500; font-family:var(--font); border:none; background:rgba(0,0,0,0.04); color:#777; cursor:pointer; flex-shrink:0; transition:all 0.15s; -webkit-tap-highlight-color:transparent; white-space:nowrap; }
+.radar-filter-chip.active { background:rgba(23,15,52,0.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:rgba(255,255,255,0.9); font-weight:600; }
 .radar-filter-chip:active { transform:scale(0.95); }
 /* ═══ Skeleton shimmer + screen transitions ═══ */
 @keyframes shimmer { 0% { background-position: -200px 0; } 100% { background-position: 200px 0; } }
@@ -584,7 +584,7 @@
   <div class="topbar">
     <img src="bubble-logo-topbar-v2.png" alt="bubble" onclick="goTo('screen-home')" style="cursor:pointer;height:22px;width:auto"><span style="font-size:7px;font-weight:700;color:white;background:rgba(23,15,52,0.84);padding:2px 5px;border-radius:4px;letter-spacing:0.5px;margin-left:4px;vertical-align:top">NEXT</span>
     <div style="flex:1"></div>
-    <button id="topbar-notif-btn" onclick="goTo('screen-notifications')" class="topbar-action-btn" title="Notifikationer">
+    <button id="topbar-notif-btn" onclick="goTo('screen-notifications')" class="topbar-action-btn glass-light" title="Notifikationer" style="border:none;box-shadow:none">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5A6 6 0 006 8.5c0 6-2.5 8.5-2.5 8.5h17S18 14.5 18 8.5"/><path d="M13.73 20a2 2 0 01-3.46 0"/></svg>
       <div id="topbar-notif-badge" class="topbar-badge" style="display:none">0</div>
     </button>
@@ -596,14 +596,14 @@
     <!-- Greeting + QR/Scanner -->
     <div style="padding:0.2rem 0 0.4rem;display:flex;align-items:center;justify-content:space-between">
       <div>
-        <div style="font-size:0.68rem;color:var(--muted);letter-spacing:0.04em;text-transform:uppercase;font-weight:600">Goddag,</div>
-        <div style="font-size:1.3rem;font-weight:800;letter-spacing:-0.02em;display:flex;align-items:center;gap:0.3rem" id="home-greeting-name"></div>
+        <div style="font-size:1.25rem;font-weight:800;letter-spacing:-0.03em;color:#1E1B2E" id="home-greeting-name"></div>
+        <div style="font-size:0.72rem;color:#9794A8;margin-top:1px" id="home-greeting-sub">Find dit næste match</div>
       </div>
       <div style="display:flex;gap:0.65rem;align-items:center">
-        <button onclick="openConnectScanner()" class="topbar-action-btn" title="Scan QR">
+        <button onclick="openConnectScanner()" class="topbar-action-btn glass-light" title="Scan QR" style="border:none;box-shadow:none">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7V2h5M17 2h5v5M22 17v5h-5M7 22H2v-5"/><line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2 2"/></svg>
         </button>
-        <button onclick="openMyQR()" class="topbar-qr-btn" title="Min QR-kode">
+        <button onclick="openMyQR()" class="topbar-qr-btn glass-dark" title="Min QR-kode" style="background:none;box-shadow:none">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="3.5" height="3.5"/><path d="M20 14h-2.5v3M14 20h3v-3M20 20h-3"/></svg>
         </button>
       </div>
@@ -640,7 +640,7 @@
       <!-- ═══ RADAR HERO (borderless dartboard) ═══ -->
       <div data-hs="radar">
         <div id="home-radar-dartboard" onclick="onDartboardTap(event)"
-             style="position:relative;width:100%;height:0;padding-bottom:min(100%,55vh);border-radius:16px;background:rgba(124,92,252,0.02);overflow:hidden;cursor:pointer">
+             style="position:relative;width:100%;height:0;padding-bottom:min(100%,55vh);border-radius:16px;background:transparent;overflow:hidden;cursor:pointer">
           <canvas id="home-prox-canvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
           <div id="home-prox-avatars" style="position:absolute;inset:0"></div>
           <div class="prox-center" id="home-prox-center">DU</div>
@@ -648,7 +648,8 @@
             <div class="spinner" style="width:24px;height:24px"></div>
           </div>
           <button onclick="event.stopPropagation();openHomeTray()" title="Vis liste"
-                  style="position:absolute;bottom:10px;right:0;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(30,27,46,0.08);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 4px rgba(30,27,46,0.08);z-index:10">
+                  class="glass-light"
+                  style="position:absolute;bottom:10px;right:0;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
               <circle cx="3" cy="6" r="1.2" fill="var(--text-secondary)" stroke="none"/>
@@ -674,10 +675,12 @@
 
       <!-- ═══ GEMTE PROFILER (story-bar) ═══ -->
       <div id="saved-profiles-bar" data-hs="saved" style="display:none">
-        <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">Gemte profiler <span id="saved-count-badge" class="saved-count-badge"></span></div>
-        <div style="display:flex;align-items:center;gap:0.5rem">
-          <div class="saved-story-scroll" id="saved-story-list" style="flex:1"></div>
-          <button class="btn-sm btn-ghost" onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('saved')},200)" style="font-size:0.62rem;flex-shrink:0;padding:0.25rem 0.5rem">Se alle</button>
+        <div class="glass-light" onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('saved')},200)" style="border-radius:16px;padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer">
+          <div style="display:flex" id="saved-story-list"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:0.78rem;font-weight:600;color:#1E1B2E"><span id="saved-count-badge"></span> gemte kontakter</div>
+          </div>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
         </div>
       </div>
 
@@ -689,17 +692,17 @@
 
       <!-- ═══ PROFILE MATCH CARD (altid synlig, toggle-bar) ═══ -->
       <div class="hs-slot hs-hidden" id="home-profile-setup-slot"><div id="home-profile-setup" data-hs="profile_cta" style="margin-bottom:0.5rem">
-        <div onclick="openNextProfileSetupSheet()" style="padding:0.7rem 0.9rem;border-radius:14px;background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.12);cursor:pointer">
+        <div onclick="openNextProfileSetupSheet()" class="glass-light" style="padding:0.7rem 0.9rem;border-radius:16px;cursor:pointer">
           <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.55rem">
             <div class="home-avatar-mini" id="setup-cta-avatar" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#7C5CFC);display:flex;align-items:center;justify-content:center;color:white;font-size:0.72rem;font-weight:700;flex-shrink:0;overflow:hidden">?</div>
             <div style="flex:1;min-width:0">
-              <div style="font-size:0.8rem;font-weight:700;color:var(--text)">Din match-position i radaren</div>
-              <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:0.05rem" id="setup-cta-next">Udfyld profilen og ryk mod midten</div>
+              <div style="font-size:0.8rem;font-weight:700;color:#1E1B2E">Profilstyrke</div>
+              <div style="font-size:0.68rem;color:#9794A8;margin-top:0.05rem" id="setup-cta-next">Udfyld profilen og ryk mod midten</div>
             </div>
-            <div style="font-size:0.72rem;font-weight:800;color:var(--accent);min-width:2rem;text-align:right" id="setup-cta-pct">0%</div>
+            <div style="font-size:0.78rem;font-weight:800;color:#1E1B2E;min-width:2rem;text-align:right" id="setup-cta-pct">0%</div>
           </div>
-          <div style="height:5px;border-radius:3px;background:rgba(124,92,252,0.08);overflow:hidden">
-            <div id="setup-cta-bar" style="height:100%;border-radius:3px;background:linear-gradient(90deg,#7C5CFC,#6366F1);transition:width 0.6s ease;width:0%"></div>
+          <div style="height:3px;border-radius:3px;background:rgba(0,0,0,0.05);overflow:hidden">
+            <div id="setup-cta-bar" style="height:100%;border-radius:3px;background:#1E1B2E;transition:width 0.6s ease;width:0%"></div>
           </div>
         </div>
       </div></div>
@@ -707,13 +710,13 @@
 
       <!-- ═══ FEEDBACK ═══ -->
       <div data-hs="feedback">
-        <div class="main-nav-card" onclick="openFeedback()">
-          <div class="main-nav-icon" style="background:rgba(124,92,252,0.12);color:var(--accent)"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
+        <div class="glass-light" onclick="openFeedback()" style="border-radius:16px;padding:0.7rem 0.9rem;display:flex;align-items:center;gap:0.6rem;cursor:pointer">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(0,0,0,0.03);display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
           <div style="flex:1">
-            <div class="section-title">Giv feedback</div>
-            <div class="sub-muted" data-t="pf_feedback_desc">Hjælp os med at gøre Bubble bedre</div>
+            <div style="font-size:0.78rem;font-weight:600;color:#1E1B2E">Giv feedback</div>
+            <div style="font-size:0.68rem;color:#9794A8" data-t="pf_feedback_desc">Hjælp os med at gøre Bubble bedre</div>
           </div>
-          <div class="icon-muted">›</div>
+          <div class="glass-dark" style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></div>
         </div>
       </div>
 

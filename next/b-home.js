@@ -83,9 +83,7 @@ async function loadHome() {
     if (nameEl && currentProfile?.name) {
       var hour = new Date().getHours();
       var greetText = hour < 5 ? t('home_greeting_evening') : hour < 12 ? t('home_greeting_morning') : hour < 17 ? t('home_greeting_afternoon') : hour < 22 ? t('home_greeting_evening') : t('home_greeting_evening');
-      var greetLabel = nameEl?.previousElementSibling;
-      if (greetLabel) greetLabel.textContent = greetText + ',';
-      nameEl.innerHTML = escHtml(currentProfile.name.split(' ')[0]) + '<span style="display:inline-flex;width:1.3rem;height:1.3rem">' + ico('wave') + '</span>';
+      nameEl.textContent = greetText + ', ' + currentProfile.name.split(' ')[0];
     }
 
     // Load all data in parallel — v5.2
@@ -1921,9 +1919,9 @@ function _homeDrawProxRings(canvas) {
   var ctx = canvas.getContext('2d'); ctx.scale(2,2); ctx.clearRect(0,0,w,h);
   var cx = w/2, cy = h/2, maxR = Math.min(cx,cy);
   var zones = [
-    {r:0.10,fill:'rgba(124,92,252,0.18)'},{r:0.26,fill:'rgba(124,92,252,0.10)'},
-    {r:0.42,fill:'rgba(46,207,207,0.08)'},{r:0.58,fill:'rgba(107,139,255,0.06)'},
-    {r:0.74,fill:'rgba(139,92,246,0.04)'},{r:0.90,fill:'rgba(124,92,252,0.02)'}
+    {r:0.10,fill:'rgba(124,92,252,0.06)'},{r:0.26,fill:'rgba(124,92,252,0.04)'},
+    {r:0.42,fill:'rgba(30,27,46,0.02)'},{r:0.58,fill:'rgba(30,27,46,0.015)'},
+    {r:0.74,fill:'rgba(30,27,46,0.01)'},{r:0.90,fill:'rgba(30,27,46,0.005)'}
   ];
   for (var i = zones.length-1; i >= 0; i--) {
     ctx.beginPath(); ctx.arc(cx,cy,zones[i].r*maxR,0,Math.PI*2);
@@ -1931,10 +1929,10 @@ function _homeDrawProxRings(canvas) {
   }
   for (var i = 0; i < zones.length; i++) {
     ctx.beginPath(); ctx.arc(cx,cy,zones[i].r*maxR,0,Math.PI*2);
-    ctx.strokeStyle = 'rgba(30,27,46,0.08)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.strokeStyle = 'rgba(30,27,46,0.05)'; ctx.lineWidth = 1; ctx.stroke();
   }
   var g = ctx.createRadialGradient(cx,cy,0,cx,cy,zones[0].r*maxR);
-  g.addColorStop(0,'rgba(124,92,252,0.12)'); g.addColorStop(1,'rgba(124,92,252,0)');
+  g.addColorStop(0,'rgba(124,92,252,0.06)'); g.addColorStop(1,'rgba(124,92,252,0)');
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx,cy,zones[0].r*maxR,0,Math.PI*2); ctx.fill();
 }
 
