@@ -207,6 +207,12 @@ document.addEventListener('click', (e) => {
   var RB_RESISTANCE = 3;
   var rbStartY = 0, rbEl = null, rbBouncing = false;
 
+  // Global reset — called from goTo on navigation
+  window._resetRubberBand = function() {
+    if (rbEl) { rbEl.style.transition = ''; rbEl.style.transform = ''; }
+    rbEl = null; rbBouncing = false;
+  };
+
   document.addEventListener('touchstart', function(e) {
     var el = e.target.closest('.scroll-area');
     if (!el) { rbEl = null; return; }
