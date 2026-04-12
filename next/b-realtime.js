@@ -1,0 +1,1192 @@
+// ══════════════════════════════════════════════════════════
+//  BUBBLE — GLOBAL REALTIME HUB + DM CHAT
+//  DOMAIN: realtime
+//  OWNS: _globalRtChannels, chatSubscription, currentChatUser, currentChatName
+//  OWNS: initGlobalRealtime, rtHandleMemberChange, openChat, loadMessages
+//  OWNS: _rtState, rtSetState, rtReconnect (connection lifecycle)
+//  READS: currentUser, currentLiveBubble, bcBubbleId, _homeViewMode, _homeRadarFilter
+//  Auto-split from app.js · v3.7.0
+// ══════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════
+//  CONNECTION STATE + RECONNECT
+//  States: connected | disconnected | reconnecting
+//  Banner shows when not connected. Auto-hides 2s after reconnect.
+// ══════════════════════════════════════════════════════════
+var _rtState = 'connected';
+var _rtReconnectTimer = null;
+var _rtReconnectAttempt = 0;
+var _rtReconnectMax = 10;
+var _rtChannelStates = {};
+var _rtSuppressed = false;
+
+function rtSetState(newState) {
+  if (_rtState === newState) return;
+  if (_rtSuppressed) return; // Suppress during logout
+  var prev = _rtState;
+  _rtState = newState;
+  console.debug('[rt] state:', prev, '→', newState);
+
+  var dot = document.getElementById('rt-status-dot');
+  var text = document.getElementById('rt-status-text');
+  if (!dot || !text) return;
+
+  if (newState === 'disconnected') {
+    dot.style.background = '#D06070';
+    text.textContent = 'Afbrudt — genopretter...';
+    text.style.color = '#D06070';
+  } else if (newState === 'reconnecting') {
+    dot.style.background = '#F59E0B';
+    text.textContent = 'Genopretter... (forsøg ' + _rtReconnectAttempt + ')';
+    text.style.color = '#92400E';
+  } else if (newState === 'connected') {
+    dot.style.background = '#1A9E8E';
+    text.textContent = 'Forbundet';
+    text.style.color = '';
+    _rtReconnectAttempt = 0;
+  }
+}
+
+function _rtEvalState() {
+  var states = Object.values(_rtChannelStates);
+  if (states.length === 0) return;
+  var subscribed = states.filter(function(s) { return s === 'SUBSCRIBED'; }).length;
+  var errored = states.filter(function(s) { return s === 'CHANNEL_ERROR' || s === 'TIMED_OUT' || s === 'CLOSED'; }).length;
+
+  if (subscribed === states.length) {
+    var wasDisconnected = _rtState !== 'connected';
+    rtSetState('connected');
+    if (wasDisconnected) {
+      // Recovery: refresh all data that could have drifted during disconnect
+      if (typeof unreadState !== 'undefined') unreadState.dmRecount();
+      if (typeof updateTopbarNotifBadge === 'function') updateTopbarNotifBadge();
+      // Reload active chat to catch missed messages
+      if (_activeScreen === 'screen-chat' && typeof currentChatUser !== 'undefined' && currentChatUser) {
+        if (typeof loadChatMessages === 'function') loadChatMessages(currentChatUser);
+      }
+      if (_activeScreen === 'screen-bubble-chat' && typeof bcBubbleId !== 'undefined' && bcBubbleId) {
+        if (typeof bcLoadChat === 'function') bcLoadChat();
+      }
+      // Refresh notifications screen if active
+      if (_activeScreen === 'screen-notifications' && typeof loadNotifications === 'function') {
+        loadNotifications();
+      }
+      // Refresh live status
+      if (typeof loadLiveBubbleStatus === 'function') loadLiveBubbleStatus();
+    }
+  } else if (errored > 0 && subscribed === 0) {
+    rtSetState('disconnected');
+    _rtScheduleReconnect();
+  } else if (errored > 0) {
+    rtSetState('reconnecting');
+    _rtScheduleReconnect();
+  }
+}
+
+function _rtScheduleReconnect() {
+  if (_rtReconnectTimer) return;
+  if (_rtReconnectAttempt >= _rtReconnectMax) {
+    console.warn('[rt] max reconnect attempts reached');
+    var text = document.getElementById('rt-status-text');
+    if (text) { text.textContent = 'Ikke forbundet'; text.style.color = '#D06070'; }
+    return;
+  }
+  var delay = Math.min(2000 * Math.pow(2, _rtReconnectAttempt), 30000);
+  _rtReconnectAttempt++;
+  rtSetState('reconnecting');
+  console.debug('[rt] reconnect in', delay, 'ms (attempt', _rtReconnectAttempt, ')');
+  _rtReconnectTimer = setTimeout(function() {
+    _rtReconnectTimer = null;
+    rtReconnect();
+  }, delay);
+}
+
+function rtReconnect() {
+  console.debug('[rt] reconnecting...');
+  if (!currentUser) return;
+  // Clean ALL subscriptions — global + chat-specific
+  rtUnsubscribeAll();
+  if (typeof chatSubscription !== 'undefined' && chatSubscription) { try { chatSubscription.unsubscribe(); } catch(e) {} chatSubscription = null; }
+  if (typeof bcSubscription !== 'undefined' && bcSubscription) { try { bcSubscription.unsubscribe(); } catch(e) {} bcSubscription = null; }
+  _rtChannelStates = {};
+  initGlobalRealtime();
+  // Re-subscribe DM chat if screen is open
+  if (_activeScreen === 'screen-chat' && currentChatUser) subscribeToChat();
+  // Re-subscribe bubble chat if screen is open
+  if (_activeScreen === 'screen-bubble-chat' && typeof bcBubbleId !== 'undefined' && bcBubbleId) {
+    if (typeof bcSubscribeRealtime === 'function') bcSubscribeRealtime();
+  }
+}
+
+// Subscribe status callback — shared by all channels
+function _rtStatusCallback(channelName) {
+  return function(status) {
+    console.debug('[rt] channel', channelName, ':', status);
+    _rtChannelStates[channelName] = status;
+    _rtEvalState();
+  };
+}
+
+// Browser online/offline — fast path for network changes
+var _offlineTimer = null;
+var _offlineCooldown = 0;
+var _offlineShown = false;
+
+function _showOfflineModal() {
+  if (_offlineShown) return;
+  if (Date.now() - _offlineCooldown < 30000) return;
+  _offlineShown = true;
+  var existing = document.getElementById('offline-modal-overlay');
+  if (existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.id = 'offline-modal-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(30,27,46,0.4);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 4rem) 1.5rem 0;animation:fadeSlideUp 0.3s ease';
+  ov.innerHTML =
+    '<div style="background:#FAEEDA;border:1.5px solid rgba(239,159,39,0.35);border-radius:16px;padding:1.5rem 1.25rem;text-align:center;max-width:320px;width:100%">' +
+      '<style>@keyframes _obBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}@keyframes _obPulse{0%,100%{opacity:.4}50%{opacity:1}}</style>' +
+      '<div style="display:flex;justify-content:center;gap:8px;margin-bottom:14px">' +
+        '<div style="width:10px;height:10px;border-radius:50%;background:#2ECFCF;animation:_obBob 1.4s ease-in-out infinite"></div>' +
+        '<div style="width:10px;height:10px;border-radius:50%;background:#7C5CFC;animation:_obBob 1.4s ease-in-out infinite 0.15s"></div>' +
+        '<div style="width:10px;height:10px;border-radius:50%;background:#E879A8;animation:_obBob 1.4s ease-in-out infinite 0.3s"></div>' +
+      '</div>' +
+      '<div style="font-size:0.88rem;font-weight:700;color:#412402;margin-bottom:6px">' + t('offline_title') +
+        '<span style="display:inline-block;animation:_obPulse 1.2s ease-in-out infinite">.</span>' +
+        '<span style="display:inline-block;animation:_obPulse 1.2s ease-in-out infinite 0.2s">.</span>' +
+        '<span style="display:inline-block;animation:_obPulse 1.2s ease-in-out infinite 0.4s">.</span>' +
+      '</div>' +
+      '<div style="font-size:0.72rem;color:#854F0B;line-height:1.4;margin-bottom:16px">' + t('offline_body') + '</div>' +
+      '<button onclick="_retryConnection()" style="background:#EF9F27;color:#412402;border:none;border-radius:8px;padding:8px 24px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit">' + t('offline_retry') + '</button>' +
+    '</div>';
+  document.body.appendChild(ov);
+}
+
+function _hideOfflineModal() {
+  _offlineShown = false;
+  _offlineCooldown = Date.now();
+  clearTimeout(_offlineTimer);
+  _offlineTimer = null;
+  var ov = document.getElementById('offline-modal-overlay');
+  if (ov) { ov.style.opacity = '0'; ov.style.transition = 'opacity 0.3s'; setTimeout(function() { ov.remove(); }, 300); }
+}
+
+function _retryConnection() {
+  var btn = document.querySelector('#offline-modal-overlay button');
+  if (btn) { btn.textContent = t('offline_checking'); btn.disabled = true; }
+  if (navigator.onLine) {
+    fetch(SUPABASE_URL + '/rest/v1/', { method: 'HEAD', headers: { 'apikey': SUPABASE_ANON_KEY } })
+      .then(function() { _hideOfflineModal(); rtReconnect(); })
+      .catch(function() { if (btn) { btn.textContent = t('offline_retry'); btn.disabled = false; } });
+  } else {
+    setTimeout(function() { if (btn) { btn.textContent = t('offline_retry'); btn.disabled = false; } }, 1000);
+  }
+}
+
+window.addEventListener('online', function() {
+  console.debug('[rt] browser online');
+  _hideOfflineModal();
+  if (_rtState !== 'connected') {
+    _rtReconnectAttempt = 0;
+    clearTimeout(_rtReconnectTimer);
+    _rtReconnectTimer = null;
+    rtReconnect();
+  }
+});
+window.addEventListener('offline', function() {
+  console.debug('[rt] browser offline');
+  rtSetState('disconnected');
+  clearTimeout(_offlineTimer);
+  _offlineTimer = setTimeout(_showOfflineModal, 3000);
+});
+
+// ══════════════════════════════════════════════════════════
+//  GLOBAL REALTIME HUB
+//  Kanal 1: messages       → nav badge + conv liste preview
+//  Kanal 2: bubble_members → live-boble kort + bc-members
+//  Kanal 3: invitations    → notif badge + notif-skærm
+//  Kanal 4: saved_contacts → notif badge
+//  Kanal 5: checkin        → broadcast greeting
+// ══════════════════════════════════════════════════════════
+
+var _globalRtChannels = [];
+var _radarRefreshTimer = null;
+var _radarScreenActive = false;
+
+// ── Teardown: only b-realtime owns this cleanup ──
+function rtUnsubscribeAll() {
+  _rtSuppressed = true;
+  _globalRtChannels.forEach(function(ch) { try { ch.unsubscribe(); } catch(e) {} });
+  _globalRtChannels = [];
+  _rtChannelStates = {};
+  if (_rtReconnectTimer) { clearTimeout(_rtReconnectTimer); _rtReconnectTimer = null; }
+  rtStopRadarPolling();
+}
+
+// ── Helpers: instant badge manipulation ──
+// Routes through central unreadState (b-messages.js)
+function dmBadgeClear() {
+  unreadState.dmRecount();
+}
+
+function notifBadgeSet(n) {
+  // Route through unreadState so it owns the render
+  if (typeof unreadState !== 'undefined') { unreadState.notifSet(n); return; }
+  // Fallback if called before b-messages.js loads (shouldn't happen)
+  var el = document.getElementById('topbar-notif-badge');
+  if (!el) return;
+  if (n > 0) { el.textContent = n > 9 ? '9+' : String(n); el.style.display = 'flex'; }
+  else { el.style.display = 'none'; }
+}
+
+// ── Conversations list: update preview row without full reload ──
+function rtUpdateConversationPreview(msg) {
+  var list = document.getElementById('conversations-list');
+  if (!list) return;
+  var partnerId = msg.sender_id === currentUser.id ? msg.receiver_id : msg.sender_id;
+  var row = list.querySelector('[data-conv-id="' + partnerId + '"]');
+  if (row) {
+    // Update preview text
+    var preview = row.querySelector('.conv-preview');
+    if (preview) {
+      var isMine = msg.sender_id === currentUser.id;
+      var text = msg.file_url ? t('dm_attachment_img') : escHtml((msg.content || '').slice(0, 50));
+      preview.innerHTML = isMine ? '<span style="color:var(--muted)">' + t('dm_you_prefix') + '</span> ' + text : text;
+    }
+    // Update time
+    var timeEl = row.querySelector('.conv-time');
+    if (timeEl) timeEl.textContent = timeAgo(msg.created_at);
+    // Unread dot + bold name
+    var isUnread = msg.receiver_id === currentUser.id && !msg.read_at;
+    if (isUnread) {
+      row.classList.add('unread');
+      if (!row.querySelector('.conv-unread-dot')) {
+        var dot = document.createElement('div');
+        dot.className = 'conv-unread-dot';
+        var flexRow = row.querySelector('.flex-row-center');
+        if (flexRow) flexRow.appendChild(dot);
+      }
+    }
+    // Move row to top
+    list.prepend(row);
+  } else {
+    // New conversation — reload list
+    if (navState.screen === 'screen-messages') {
+      loadMessages();
+    }
+  }
+}
+
+// ── Live bubble card: fast update on check-in/out ──
+function rtHandleMemberChange(payload) {
+  var m = payload.new || payload.old;
+  if (!m) return;
+
+  // If it's MY check-in/out → refresh live status + home banner + show toast
+  if (m.user_id === currentUser.id) {
+    loadLiveBubbleStatus().then(function() {
+      // Auto-activate live filter on home radar when I check in
+      if (m.checked_in_at && !m.checked_out_at) {
+        if (navState.screen === 'screen-home') {
+          if (typeof filterRadarHome === 'function' && appMode.checkedInIds.length > 0) {
+            filterRadarHome('live');
+          }
+        }
+      }
+    });
+    if (navState.screen === 'screen-home') {
+      loadLiveBanner();
+    }
+    // Show check-in confirmation to the user who was scanned in
+    if (m.checked_in_at && !m.checked_out_at) {
+      sb.from('bubbles').select('name').eq('id', m.bubble_id).maybeSingle().then(function(r) {
+        if (r.data) showSuccessToast('Du er checket ind i ' + r.data.name + ' — velkommen! ✓');
+      }).catch(function() {});
+    }
+    return;
+  }
+
+  // If bc chat is open for this bubble → reload members tab
+  if (bcBubbleId && m.bubble_id === bcBubbleId) {
+    bcLoadMembers();
+  }
+
+  // If it's in MY current live bubble → update member count + radar
+  if (currentLiveBubble && m.bubble_id === currentLiveBubble.bubble_id) {
+    loadLiveBubbleStatus().then(function() {
+      // Re-render home radar if live filter is active
+      if (navState.screen === 'screen-home' &&
+          typeof _homeRadarFilter !== 'undefined' && _homeRadarFilter === 'live') {
+        renderHomeDartboard();
+      }
+    });
+    // Re-render dartboard if in live mode
+    if (typeof _homeViewMode !== 'undefined' && _homeViewMode === 'live') {
+      loadEventDartboard();
+    }
+  }
+}
+
+// ── Realtime: bubble membership DELETED (bruger forlod boble) ──
+function rtHandleMemberDelete(payload) {
+  var m = payload.old;
+  if (!m) return;
+
+  // Det er mig der forlod — opdater boble-lister øjeblikkeligt
+  if (m.user_id === currentUser.id) {
+    // Fjern element direkte fra DOM hvis synligt
+    var el = document.querySelector('[data-bubble-id="' + m.bubble_id + '"]');
+    if (el) { el.style.transition = 'opacity 0.2s'; el.style.opacity = '0'; setTimeout(function() { el.remove(); }, 220); }
+    // Refresh aktiv skærm
+    if (navState.screen === 'screen-home') {
+      loadHome();
+    } else if (navState.screen === 'screen-bubbles') {
+      if (typeof loadMyBubbles === 'function') loadMyBubbles();
+    } else if (navState.screen === 'screen-profile') {
+      if (typeof loadProfileBubbles === 'function') loadProfileBubbles();
+    }
+    // Ryd live state hvis det var min check-in boble
+    if (currentLiveBubble && currentLiveBubble.bubble_id === m.bubble_id) {
+      currentLiveBubble = null;
+      appMode.clearLive();
+      if (navState.screen === 'screen-home' && typeof loadLiveBanner === 'function') loadLiveBanner();
+    }
+    return;
+  }
+
+  // En anden bruger forlod en boble jeg er i → opdater membertal
+  if (bcBubbleId && m.bubble_id === bcBubbleId) {
+    if (typeof bcLoadMembers === 'function') bcLoadMembers();
+  }
+  if (currentLiveBubble && m.bubble_id === currentLiveBubble.bubble_id) {
+    loadLiveBubbleStatus().then(function() {
+      if (navState.screen === 'screen-home' &&
+          typeof _homeRadarFilter !== 'undefined' && _homeRadarFilter === 'live') {
+        if (typeof renderHomeDartboard === 'function') renderHomeDartboard();
+      }
+    });
+  }
+}
+
+// ── Radar: soft refresh when screen is active ──
+function rtStartRadarPolling() {
+  rtStopRadarPolling(); // clear old interval first
+  _radarScreenActive = true; // set flag AFTER stop (stop resets it)
+  _radarRefreshTimer = setInterval(function() {
+    if (!_radarScreenActive) { rtStopRadarPolling(); return; }
+    if (!document.hidden) {
+      console.debug('[rt] radar soft refresh');
+      if (typeof _homeViewMode !== 'undefined' && _homeViewMode === 'live') {
+        // In live mode: refresh event dartboard + live status
+        loadLiveBubbleStatus();
+        loadEventDartboard();
+      } else {
+        loadProximityMap();
+      }
+    }
+  }, 20000);
+}
+function rtStopRadarPolling() {
+  _radarScreenActive = false;
+  if (_radarRefreshTimer) { clearInterval(_radarRefreshTimer); _radarRefreshTimer = null; }
+}
+
+// ── Main init ──
+function initGlobalRealtime() {
+  _rtSuppressed = false;
+  // Clean up previous channels
+  _globalRtChannels.forEach(function(ch) { try { ch.unsubscribe(); } catch(e) {} });
+  _globalRtChannels = [];
+
+  // ── Kanal 1: Indkommende beskeder ──
+  var chMessages = sb.channel('rt-messages-' + currentUser.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages',
+      filter: 'receiver_id=eq.' + currentUser.id }, function(payload) {
+      var m = payload.new;
+      if (!m) return;
+
+      // Nav badge: instant increment (no DB roundtrip)
+      var messagesScreenActive = navState.screen === 'screen-messages';
+      var chatScreenActive = navState.screen === 'screen-chat';
+      var chatIsOpenWithSender = chatScreenActive && currentChatUser === m.sender_id;
+
+      if (!chatIsOpenWithSender) {
+        // Instant local increment (no DB roundtrip)
+        unreadIncrement();
+      }
+
+      // Update conversations preview instantly
+      rtUpdateConversationPreview(m);
+
+      // If messages screen is open → update list
+      if (messagesScreenActive) loadMessages();
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages',
+      filter: 'sender_id=eq.' + currentUser.id }, function(payload) {
+      var m = payload.new;
+      // read_at just got set → update ✓✓ in open DM
+      if (m && m.read_at) dmUpdateReceipts([m.id]);
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' },
+      function(payload) {
+      var m = payload.old;
+      if (!m) return;
+      // Remove message from open DM chat
+      if (navState.screen === 'screen-chat' || navState.screen === 'screen-dm') {
+        var msgEl = document.querySelector('[data-msg-id="' + m.id + '"]');
+        if (msgEl) { msgEl.style.transition = 'opacity 0.2s'; msgEl.style.opacity = '0'; setTimeout(function() { msgEl.remove(); }, 220); }
+      }
+      // Update conversation preview if on messages screen
+      if (navState.screen === 'screen-messages') loadMessages();
+    })
+    .subscribe(_rtStatusCallback('rt-messages'));
+  _globalRtChannels.push(chMessages);
+
+  // ── Kanal 2: Boble-medlemmer — filter på user_id så RLS virker ──
+  var chMembers = sb.channel('rt-members-' + currentUser.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bubble_members',
+      filter: 'user_id=eq.' + currentUser.id },
+      function(payload) { rtHandleMemberChange(payload); })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'bubble_members',
+      filter: 'user_id=eq.' + currentUser.id },
+      function(payload) { rtHandleMemberChange(payload); })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'bubble_members',
+      filter: 'user_id=eq.' + currentUser.id },
+      function(payload) { rtHandleMemberDelete(payload); })
+    .subscribe(_rtStatusCallback('rt-members'));
+  _globalRtChannels.push(chMembers);
+
+  // ── Kanal: Bobler slettet — fjern fra alle lister øjeblikkeligt ──
+  var chBubbles = sb.channel('rt-bubbles-deleted-' + currentUser.id)
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'bubbles' },
+      function(payload) {
+      var b = payload.old;
+      if (!b) return;
+      // Remove from DOM instantly
+      var els = document.querySelectorAll('[data-bubble-id="' + b.id + '"]');
+      els.forEach(function(el) {
+        el.style.transition = 'opacity 0.2s';
+        el.style.opacity = '0';
+        setTimeout(function() { el.remove(); }, 220);
+      });
+      // If we're inside the deleted bubble's chat → go back
+      if (bcBubbleId === b.id) {
+        navBack();
+        showWarningToast('Denne boble er blevet slettet');
+      }
+      // Refresh relevant screens
+      if (navState.screen === 'screen-home') loadHome();
+      else if (navState.screen === 'screen-bubbles') { if (typeof loadMyBubbles === 'function') loadMyBubbles(); }
+    })
+    .subscribe(_rtStatusCallback('rt-bubbles'));
+  _globalRtChannels.push(chBubbles);
+
+  // ── Kanal: DM samtale slettet af modpart ──
+  var chDmNotify = sb.channel('dm-notify-' + currentUser.id)
+    .on('broadcast', { event: 'conv_deleted' }, function(msg) {
+      var fromId = msg.payload && msg.payload.from;
+      // Remove conversation card from list
+      var card = fromId ? document.querySelector('[data-conv-id="' + fromId + '"]') : null;
+      if (card) {
+        card.style.transition = 'opacity 0.2s';
+        card.style.opacity = '0';
+        setTimeout(function() { card.remove(); }, 220);
+      } else if (navState.screen === 'screen-messages') {
+        loadMessages();
+      }
+    })
+    .subscribe();
+  _globalRtChannels.push(chDmNotify);
+
+  // ── Kanal 3: Invitationer ──
+  var chInvites = sb.channel('rt-invites-' + currentUser.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bubble_invitations',
+      filter: 'to_user_id=eq.' + currentUser.id }, function() {
+      updateNotifNavBadge(); // recount from DB
+      if (navState.screen === 'screen-notifications') {
+        loadNotifications();
+      }
+    })
+    .subscribe(_rtStatusCallback('rt-invites'));
+  _globalRtChannels.push(chInvites);
+
+  // ── Kanal 4: Gemte kontakter (nogen gemte dig) ──
+  var chSaved = sb.channel('rt-saved-' + currentUser.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'saved_contacts',
+      filter: 'contact_id=eq.' + currentUser.id }, function() {
+      updateNotifNavBadge(); // recount from DB
+      if (navState.screen === 'screen-notifications') {
+        loadNotifications();
+      }
+    })
+    .subscribe(_rtStatusCallback('rt-saved'));
+  _globalRtChannels.push(chSaved);
+
+  // ── Kanal 5: Check-in broadcast (bypasses RLS — direct user notification) ──
+  var chCheckin = sb.channel('checkin-notify-' + currentUser.id)
+    .on('broadcast', { event: 'checkin' }, function(msg) {
+      var data = msg.payload || {};
+      showSuccessToast('Du er checket ind i ' + (data.bubbleName || 'et event') + ' — velkommen! ✓');
+      // Refresh live status so home banner + radar update
+      loadLiveBubbleStatus().then(function() {
+        if (navState.screen === 'screen-home') {
+          loadLiveBanner();
+        }
+      });
+    })
+    .subscribe(_rtStatusCallback('rt-checkin'));
+  _globalRtChannels.push(chCheckin);
+
+  // ── Kanal 6: Member notifications (approval, new joins) ──
+  var chMember = sb.channel('member-notify-' + currentUser.id)
+    .on('broadcast', { event: 'approved' }, function(msg) {
+      var data = msg.payload || {};
+      var bName = data.bubbleName || 'en boble';
+      var bId = data.bubbleId || '';
+      // Persistent modal — requires active dismiss
+      if (typeof showCheckinModal === 'function') {
+        // Reuse modal infrastructure but with approval messaging
+        var existing = document.getElementById('checkin-confirm-overlay');
+        if (existing) existing.remove();
+        var ov = document.createElement('div');
+        ov.id = 'checkin-confirm-overlay';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.3s ease';
+        ov.innerHTML =
+          '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+            '<div style="width:56px;height:56px;border-radius:50%;background:rgba(26,158,142,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">' +
+              '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+            '</div>' +
+            '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.3rem">' + t('modal_approved_title') + '</div>' +
+            '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.25rem">' + escHtml(bName) + '</div>' +
+            (bId ? '<button id="approved-goto-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + t('modal_goto_bubble') + '</button>' : '') +
+            '<button id="approved-ok-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_ok') + '</button>' +
+          '</div>';
+        document.body.appendChild(ov);
+        var gotoBtn = document.getElementById('approved-goto-btn');
+        if (gotoBtn) gotoBtn.onclick = function() { ov.remove(); if (bId) openBubbleChat(bId, navState.screen || 'screen-home'); };
+        var okBtn = document.getElementById('approved-ok-btn');
+        if (okBtn) okBtn.onclick = function() { ov.style.transition = 'opacity 0.25s'; ov.style.opacity = '0'; setTimeout(function() { ov.remove(); }, 260); };
+      } else {
+        showSuccessToast(t('modal_approved_title') + ' ' + bName);
+      }
+      // Refresh bubble chat if user is currently viewing the approved bubble
+      if (navState.screen === 'screen-bubble-chat' && bcBubbleId === bId) {
+        bcRefreshMembership();
+        bcLoadMembers();
+      }
+      if (navState.screen === 'screen-home') {
+        loadHome();
+      }
+    })
+    .on('broadcast', { event: 'new_member' }, function(msg) {
+      var data = msg.payload || {};
+      showToast((data.memberName || 'Nogen') + ' er nu medlem af ' + (data.bubbleName || 'din boble'));
+      updateTopbarNotifBadge();
+    })
+    .on('broadcast', { event: 'join_request' }, function(msg) {
+      var data = msg.payload || {};
+      showToast((data.memberName || 'Nogen') + ' anmoder om adgang til ' + (data.bubbleName || 'din boble') + ' 🔒');
+      updateTopbarNotifBadge();
+    })
+    .on('broadcast', { event: 'invite' }, function(msg) {
+      var data = msg.payload || {};
+      showSuccessToast((data.senderName || 'Nogen') + ' inviterede dig til ' + (data.bubbleName || 'en boble') + ' 🫧');
+      updateTopbarNotifBadge();
+      if (navState.screen === 'screen-profile') {
+        loadProfileInvitations();
+      }
+    })
+    .on('broadcast', { event: 'ownership' }, function(msg) {
+      var data = msg.payload || {};
+      showSuccessToast('👑 Du er nu ejer af ' + (data.bubbleName || 'en boble'));
+      if (navState.screen === 'screen-home') {
+        loadHome();
+      }
+    })
+    .on('broadcast', { event: 'admin' }, function(msg) {
+      var data = msg.payload || {};
+      showSuccessToast('⭐ Du er nu admin i ' + (data.bubbleName || 'en boble'));
+    })
+    .subscribe(_rtStatusCallback('rt-member'));
+  _globalRtChannels.push(chMember);
+}
+
+
+var _messagesLoading = false;
+async function loadMessages() {
+  if (_messagesLoading) return;
+  _messagesLoading = true;
+  try {
+    var myNav = _navVersion;
+    const list = document.getElementById('conversations-list');
+    if (!list) { _messagesLoading = false; return; }
+    list.innerHTML = skelCards(5);
+
+    const { data: convs } = await sb.from('messages')
+      .select('*')
+      .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+      .order('created_at', {ascending:false})
+      .limit(200);
+
+    if (_navVersion !== myNav) return;
+
+    if (!convs || convs.length === 0) {
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">'+t('dm_no_conversations')+'<br><span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400">'+t('dm_no_conversations_desc')+'</span></div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-home\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">'+t('dm_go_to_radar')+'</button></div></div>';
+      return;
+    }
+
+    const partnerMap = new Map();
+    for (const m of convs) {
+      const partnerId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
+      if (partnerId === currentUser.id) continue;
+      if (isBlocked(partnerId)) continue;
+      if (!partnerMap.has(partnerId)) {
+        partnerMap.set(partnerId, { partnerId, lastMsg: m });
+      }
+    }
+    const partners = Array.from(partnerMap.values());
+
+    const pIds = partners.map(p => p.partnerId);
+    const { data: profiles } = await sb.from('profiles').select('id,name,title,avatar_url,updated_at').in('id', pIds);
+    if (_navVersion !== myNav) return;
+    const profileMap = Object.fromEntries((profiles||[]).map(p=>[p.id,p]));
+
+    list.innerHTML = partners.map(({ partnerId, lastMsg }) => {
+      const p = profileMap[partnerId] || {};
+      const initials = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const isUnread = lastMsg.receiver_id === currentUser.id && !lastMsg.read_at;
+      const isMine = lastMsg.sender_id === currentUser.id;
+      const previewText = lastMsg.file_url ? t('dm_attachment_img') : escHtml((lastMsg.content||'').slice(0,50));
+      const preview = isMine ? '<span style="color:var(--muted)">' + t('dm_you_prefix') + '</span> ' + previewText : previewText;
+      const time = timeAgo(lastMsg.created_at);
+      const isOnline = p.updated_at && (Date.now() - new Date(p.updated_at).getTime()) < 300000;
+      const isPartnerLive = appMode.checkedInIds.indexOf(partnerId) >= 0;
+      const onlineDot = isPartnerLive ? '<div class="conv-online-dot" style="background:#10B981;animation:livePulse 2s ease-in-out infinite"></div>' : (isOnline ? '<div class="conv-online-dot"></div>' : '');
+      const liveBadge = isPartnerLive ? ' <span class="live-badge-mini">LIVE</span>' : '';
+      const convAvatar = '<div class="conv-avatar-wrap">' + (p.avatar_url ?
+        '<div class="avatar" style="width:44px;height:44px;overflow:hidden;border-radius:50%"><img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover"></div>' :
+        '<div class="avatar" style="background:linear-gradient(135deg,#6366F1,#7C5CFC);width:44px;height:44px">'+initials+'</div>') + onlineDot + '</div>';
+      return '<div class="card conv-card' + (isUnread ? ' unread' : '') + '" data-action="openChat" data-id="' + partnerId + '" data-from="screen-messages" data-conv-id="' + partnerId + '">' +
+        '<div class="flex-row-center" style="gap:0.75rem">' + convAvatar +
+        '<div style="flex:1;min-width:0">' +
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:0.5rem">' +
+        '<div class="conv-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.name||t('misc_unknown')) + liveBadge + '</div>' +
+        '<div class="conv-time">' + time + '</div></div>' +
+        '<div class="conv-preview" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;margin-top:0.1rem">' + preview + '</div>' +
+        '</div>' + (isUnread ? '<div class="conv-unread-dot"></div>' : '') +
+        '</div></div>';
+    }).join('');
+  } catch(e) { logError("loadMessages", e); showRetryState('conversations-list', 'loadMessages', t('toast_load_failed')); }
+  finally { _messagesLoading = false; }
+}
+
+async function openChat(userId, fromScreen) {
+  console.debug('[dm] openChat:', userId, 'from:', fromScreen);
+  if (isBlocked(userId)) { _renderToast('Denne bruger er blokeret', 'error'); return; }
+  try {
+    currentChatUser = userId;
+    navState.chatTarget = userId;
+    const { data: p } = await sb.from('profiles').select('name,title,workplace,avatar_url').eq('id', userId).maybeSingle();
+    currentChatName = p?.name || t('misc_unknown');
+    window._chatPartnerAvatar = p?.avatar_url || null;
+    document.getElementById('chat-name').textContent = currentChatName;
+    document.getElementById('chat-role').textContent = [p?.title, p?.workplace].filter(Boolean).join(' \u00B7 ');
+    // Online/Live status
+    var lastActive = p?.updated_at || p?.last_sign_in_at;
+    var roleEl = document.getElementById('chat-role');
+    var isDmPartnerLive = appMode.checkedInIds.indexOf(userId) >= 0;
+    if (isDmPartnerLive) {
+      var dmLiveName = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble) ? currentLiveBubble.bubble_name : '';
+      roleEl.innerHTML = '<span class="live-badge-mini">LIVE</span>' + (dmLiveName ? ' <span style="color:var(--muted);font-size:0.65rem">' + escHtml(dmLiveName) + '</span>' : '');
+    } else if (lastActive && (Date.now() - new Date(lastActive).getTime()) < 300000) {
+      roleEl.innerHTML = '<span style="color:#1A9E8E">● '+t('dm_active_now')+'</span>';
+    }
+    // Personalized placeholder
+    var chatInput = document.getElementById('chat-input');
+    if (chatInput) chatInput.placeholder = t('dm_write_to', { name: currentChatName.split(' ')[0] || '' });
+    var dmAvatar = document.getElementById('dm-topbar-avatar');
+    if (dmAvatar) {
+      if (p?.avatar_url) { dmAvatar.innerHTML = '<img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+      else { dmAvatar.textContent = (currentChatName).split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); }
+    }
+    const backBtn = document.getElementById('dm-back-btn');
+    if (backBtn) backBtn.onclick = () => goTo(fromScreen || 'screen-messages');
+    goTo('screen-chat');
+    await loadChatMessages();
+    subscribeToChat();
+
+    // Mark messages as read + update ✓✓ on sender's side
+    var { data: unread } = await sb.from('messages')
+      .select('id').eq('sender_id', userId).eq('receiver_id', currentUser.id).is('read_at', null);
+    var unreadIds = (unread || []).map(function(m) { return m.id; });
+    if (unreadIds.length > 0) {
+      await sb.from('messages').update({ read_at: new Date().toISOString() })
+        .in('id', unreadIds);
+      // Notify sender that their messages were read
+      if (chatSubscription) {
+        try { chatSubscription.send({ type: 'broadcast', event: 'read_receipt', payload: { msgIds: unreadIds } }); } catch(e) { logError("dm:read_receipt_broadcast", e); }
+      }
+      unreadDecrement(unreadIds.length);
+    }
+  } catch(e) { logError("openChat", e); errorToast("load", e); }
+}
+
+
+// ══════════════════════════════════════════════════════════
+//  DM MESSAGE REDUCER — single entry point for all message inserts
+//  Deduplicates by msg.id before any DOM mutation
+//  opts: { pending: bool, replaceTempId: string, skipScroll: bool, markRead: bool }
+// ══════════════════════════════════════════════════════════
+function dmReduceMsg(msg, opts) {
+  opts = opts || {};
+  var el = document.getElementById('chat-messages');
+  if (!el || !msg) return false;
+
+  // Replace: swap temp pending message with confirmed one
+  if (opts.replaceTempId) {
+    var pendingEl = document.getElementById('dm-msg-' + opts.replaceTempId);
+    if (pendingEl) {
+      pendingEl.id = 'dm-msg-' + msg.id;
+      pendingEl.setAttribute('data-msg-id', msg.id);
+      pendingEl.classList.remove('msg-pending');
+      pendingEl.setAttribute('oncontextmenu', "if(!window.getSelection().toString()){event.preventDefault();dmLongPress('" + msg.id + "',true)}");
+      pendingEl.setAttribute('ontouchstart', "dmTouchStart(event,'" + msg.id + "',true)");
+      var bubble = pendingEl.querySelector('.msg-bubble');
+      if (bubble) bubble.id = 'dm-bubble-' + msg.id;
+    }
+    return true;
+  }
+
+  // Dedup: skip if this msg.id already exists in DOM
+  if (msg.id && !String(msg.id).startsWith('_pending_') && el.querySelector('[data-msg-id="' + msg.id + '"]')) {
+    return false;
+  }
+
+  // Remove empty state hero if present
+  if (!opts.pending) {
+    var emptyHero = el.querySelector('[style*="flex-direction:column"]');
+    if (emptyHero && !el.querySelector('.msg-row')) emptyHero.remove();
+  }
+
+  // Insert: date separator + rendered message (sorted by created_at)
+  dmHideTyping();
+  var newTs = new Date(msg.created_at).getTime();
+  var rows = el.querySelectorAll('.msg-row[data-msg-id]');
+  var insertBefore = null;
+
+  // Walk backwards to find first message with later timestamp
+  for (var i = rows.length - 1; i >= 0; i--) {
+    var row = rows[i];
+    var rowTs = parseInt(row.getAttribute('data-ts') || '0', 10);
+    if (rowTs && rowTs > newTs) {
+      insertBefore = row;
+    } else {
+      break; // Found a message with earlier/equal timestamp, stop
+    }
+  }
+
+  if (!insertBefore) {
+    // Normal case: append to end (most recent message)
+    _dmMaybeInsertDateSep(el, msg.created_at);
+    el.insertAdjacentHTML('beforeend', dmRenderMsg(msg));
+  } else {
+    // Out-of-order: insert before the later message
+    var tmpDiv = document.createElement('div');
+    tmpDiv.innerHTML = dmRenderMsg(msg);
+    var newRow = tmpDiv.firstElementChild;
+    if (newRow) el.insertBefore(newRow, insertBefore);
+  }
+
+  if (opts.pending) {
+    var pendingRow = document.getElementById('dm-msg-' + msg.id);
+    if (pendingRow) pendingRow.classList.add('msg-pending');
+  }
+
+  if (!opts.skipScroll) el.scrollTop = el.scrollHeight;
+
+  // Mark as read if incoming
+  if (opts.markRead && msg.receiver_id === currentUser.id && msg.id) {
+    sb.from('messages').update({ read_at: new Date().toISOString() }).eq('id', msg.id)
+      .then(function(res) { if (res.error) logError('dm:read_at', res.error); });
+    if (chatSubscription) {
+      try { chatSubscription.send({ type: 'broadcast', event: 'read_receipt', payload: { msgIds: [msg.id] } }); } catch(e) {}
+    }
+  }
+
+  return true;
+}
+
+
+// ── Date separator: insert if last message in DOM is from a different day ──
+function _dmMaybeInsertDateSep(container, createdAt) {
+  if (!container || !createdAt) return;
+  var d = new Date(createdAt);
+  var loc = getLang() === 'en' ? 'en-GB' : _locale();
+  var newDate = d.toLocaleDateString(loc, {weekday:'short', day:'numeric', month:'short'}) + ', ' + d.toLocaleTimeString(loc, {hour:'2-digit', minute:'2-digit'});
+  var lastSep = container.querySelector('.chat-date-sep:last-of-type');
+  var lastDate = lastSep ? lastSep.textContent : '';
+  if (newDate !== lastDate) {
+    container.insertAdjacentHTML('beforeend', '<div class="chat-date-sep">' + newDate + '</div>');
+  }
+}
+
+function dmRenderMsg(m) {
+  const sent = m.sender_id === currentUser.id;
+  const gp = m._gp || 'single'; // single, first, cont, tail
+
+  // Read receipt: only on the last sent message (marked by _showReceipt)
+  let receipt = '';
+  if (sent && m._showReceipt) {
+    if (m.read_at) {
+      receipt = '<div class="msg-receipt" id="dm-receipt-' + m.id + '">'+t('dm_read')+'</div>';
+    } else {
+      receipt = '<div class="msg-receipt msg-receipt-sent" id="dm-receipt-' + m.id + '">'+t('dm_sent')+'</div>';
+    }
+  }
+
+  // Timestamp — shown on single/tail messages, but not if time-sep already shown
+  var timeHtml = '';
+  if ((gp === 'single' || gp === 'tail') && !m._showTimeSep) {
+    var msgTime = new Date(m.created_at);
+    timeHtml = '<div class="msg-timestamp">' + msgTime.toLocaleTimeString(_locale(), {hour:'2-digit', minute:'2-digit'}) + '</div>';
+  }
+
+  let bubble = '';
+  if (m.file_url) {
+    const safeUrl = escHtml(m.file_url);
+    const ext = m.file_name?.split('.').pop()?.toLowerCase() || '';
+    const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext) || (m.file_type||'').startsWith('image/');
+    if (isImg) {
+      bubble = '<a href="javascript:void(0)" onclick="chatLightbox(\'' + safeUrl + '\')"><img class="msg-img" src="' + safeUrl + '" alt="' + escHtml(m.file_name||'') + '"></a>';
+    } else {
+      const sz = m.file_size ? (m.file_size < 1048576 ? Math.round(m.file_size/1024)+'KB' : (m.file_size/1048576).toFixed(1)+'MB') : '';
+      bubble = '<a class="msg-file" href="' + safeUrl + '" target="_blank" rel="noopener">' + icon('clip') + ' ' + escHtml(m.file_name||t('dm_file_label')) + ' <span class="msg-file-sz">' + sz + '</span></a>';
+    }
+  } else {
+    var edited = m.edited ? ' <span class="msg-edited">' + t('misc_edited') + '</span>' : '';
+    var content = m.content || '';
+    var emojiOnly = isEmojiOnly(content);
+    if (emojiOnly) {
+      bubble = '<div class="msg-emoji" id="dm-bubble-' + m.id + '">' + escHtml(content) + '</div>';
+    } else {
+      bubble = '<div class="msg-bubble' + (sent ? ' sent' : '') + '" id="dm-bubble-' + m.id + '">' + linkify(escHtml(filterChatContent(content))) + edited + '</div>';
+    }
+  }
+
+  // Avatar: only show on tail and single (received only)
+  const showAvatar = gp === 'tail' || gp === 'single';
+  const theirAvUrl = window._chatPartnerAvatar;
+  let avatarInner = '';
+  if (!sent && showAvatar) {
+    if (theirAvUrl) {
+      avatarInner = '<img src="' + theirAvUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    } else {
+      avatarInner = (currentChatName||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    }
+  }
+
+  var avatarStyle = sent ? 'display:none' : ('background:linear-gradient(135deg,#CECBF6,#AFA9EC);overflow:hidden' + (showAvatar ? ';cursor:pointer' : ';visibility:hidden'));
+  var avatarClick = (!sent && showAvatar) ? ' onclick="dmOpenPersonSheet(\'' + m.sender_id + '\')"' : '';
+
+  var rowClass = 'msg-row msg-' + gp + (sent ? ' me' : '');
+  var msgTs = new Date(m.created_at).getTime();
+
+  return '<div class="' + rowClass + '" id="dm-msg-' + m.id + '" data-msg-id="' + m.id + '" data-ts="' + msgTs + '" oncontextmenu="if(!window.getSelection().toString()){event.preventDefault();dmLongPress(\'' + m.id + '\',' + sent + ')}" ontouchstart="dmTouchStart(event,\'' + m.id + '\',' + sent + ')" ontouchend="dmTouchEnd()" ontouchmove="dmTouchEnd()">' +
+    '<div class="msg-avatar"' + avatarClick + ' style="' + avatarStyle + '">' + avatarInner + '</div>' +
+    '<div class="msg-body">' +
+    '<div class="msg-content">' + bubble + '</div>' +
+    timeHtml + receipt +
+    '</div>' +
+  '</div>';
+}
+
+// Compute group positions for message list
+function _msgComputeGroups(msgs, senderKey) {
+  var GAP = 2 * 60 * 1000; // 2 min = same group
+  var TIME_SEP_GAP = 5 * 60 * 1000; // 5 min = show time separator
+  for (var i = 0; i < msgs.length; i++) {
+    var m = msgs[i];
+    var prev = i > 0 ? msgs[i-1] : null;
+    var next = i < msgs.length - 1 ? msgs[i+1] : null;
+    var ts = new Date(m.created_at).getTime();
+    var samePrev = prev && prev[senderKey] === m[senderKey] && (ts - new Date(prev.created_at).getTime()) < GAP;
+    var sameNext = next && next[senderKey] === m[senderKey] && (new Date(next.created_at).getTime() - ts) < GAP;
+
+    if (samePrev && sameNext) m._gp = 'cont';
+    else if (samePrev && !sameNext) m._gp = 'tail';
+    else if (!samePrev && sameNext) m._gp = 'first';
+    else m._gp = 'single';
+
+    // Time separator: show if 5+ min gap from previous message (any sender)
+    m._showTimeSep = prev && (ts - new Date(prev.created_at).getTime()) >= TIME_SEP_GAP;
+  }
+}
+
+async function loadChatMessages() {
+  try {
+    if (typeof t !== 'function') { console.warn('[dm] loadChatMessages: i18n not ready'); return; }
+    const el = document.getElementById('chat-messages');
+    const { data: msgs } = await sb.from('messages')
+      .select('*')
+      .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${currentChatUser}),and(sender_id.eq.${currentChatUser},receiver_id.eq.${currentUser.id})`)
+      .order('created_at', {ascending:false})
+      .limit(100);
+    
+    const sorted = (msgs||[]).reverse();
+
+    if (sorted.length === 0) {
+      var partnerName = currentChatName || t('misc_unknown');
+      var partnerAvatar = window._chatPartnerAvatar;
+      var partnerInit = partnerName.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var avHtml = partnerAvatar
+        ? '<img src="' + escHtml(partnerAvatar) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        : partnerInit;
+      el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;padding:3rem 1.5rem 1rem;text-align:center">' +
+        '<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#7C5CFC);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:white;overflow:hidden">' + avHtml + '</div>' +
+        '<div style="font-size:0.92rem;font-weight:700;margin-top:0.6rem">' + escHtml(partnerName) + '</div>' +
+        '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.2rem">'+t('dm_write_first')+'</div>' +
+        '</div>';
+      return;
+    }
+
+    // Compute grouping
+    _msgComputeGroups(sorted, 'sender_id');
+
+    // Mark only the LAST sent message for read receipt
+    for (var ri = sorted.length - 1; ri >= 0; ri--) {
+      if (sorted[ri].sender_id === currentUser.id) {
+        sorted[ri]._showReceipt = true;
+        break;
+      }
+    }
+
+    var html = '';
+    var lastDateKey = '';
+    sorted.forEach(function(m) {
+      var d = new Date(m.created_at);
+      // Date separator: only when DAY changes
+      var dateKey = d.toLocaleDateString(_locale());
+      if (dateKey !== lastDateKey) {
+        var dateLabel = d.toLocaleDateString(_locale(), {weekday:'short', day:'numeric', month:'short'});
+        html += '<div class="chat-date-sep">' + dateLabel + '</div>';
+        lastDateKey = dateKey;
+      }
+      // Time separator: 5+ min gap (but not right after a date sep)
+      if (m._showTimeSep) {
+        var timeStr = d.toLocaleTimeString(_locale(), {hour:'2-digit', minute:'2-digit'});
+        html += '<div class="msg-time-sep">' + timeStr + '</div>';
+      }
+      html += dmRenderMsg(m);
+    });
+    el.innerHTML = html;
+    el.scrollTop = el.scrollHeight;
+  } catch(e) { logError("loadChatMessages", e); errorToast("load", e); }
+}
+
+// ── DM Realtime: Broadcast for instant delivery + typing indicator ──
+var _dmTypingTimer = null;
+
+// ── Long-press context menu for DM messages ──
+var _dmLongPressTimer = null;
+var _dmLongPressId = null;
+
+function dmTouchStart(event, msgId, isSent) {
+  _dmLongPressTimer = setTimeout(function() {
+    dmLongPress(msgId, isSent);
+  }, 500);
+}
+
+function dmTouchEnd() {
+  if (_dmLongPressTimer) { clearTimeout(_dmLongPressTimer); _dmLongPressTimer = null; }
+}
+
+function dmLongPress(msgId, isSent) {
+  if (window.getSelection().toString()) return; // Let native text selection work
+  _dmLongPressId = msgId;
+  if (navigator.vibrate) navigator.vibrate(10);
+
+  // Get message element position
+  var msgEl = document.getElementById('dm-msg-' + msgId);
+  if (!msgEl) return;
+
+  var overlay = document.createElement('div');
+  overlay.className = 'dm-ctx-overlay';
+  overlay.onclick = function() { overlay.remove(); };
+
+  var container = document.createElement('div');
+  container.style.cssText = 'position:absolute;display:flex;flex-direction:column;align-items:' + (isSent ? 'flex-end' : 'flex-start') + ';padding:0 1rem;';
+
+  // Position near the message
+  var rect = msgEl.getBoundingClientRect();
+  container.style.top = Math.max(60, rect.top - 50) + 'px';
+  container.style.left = '0';
+  container.style.right = '0';
+
+  // Context menu
+  var menu = document.createElement('div');
+  menu.className = 'dm-ctx-menu';
+
+  var copyBtn = document.createElement('button');
+  copyBtn.textContent = t('misc_copy');
+  copyBtn.onclick = function(e) {
+    e.stopPropagation();
+    var bubble = document.getElementById('dm-bubble-' + msgId);
+    if (bubble) { navigator.clipboard.writeText(bubble.textContent).then(function() { showToast(t('misc_copied')); }); }
+    overlay.remove();
+  };
+  menu.appendChild(copyBtn);
+
+  if (isSent) {
+    var editBtn = document.createElement('button');
+    editBtn.textContent = t('misc_edit');
+    editBtn.onclick = function(e) { e.stopPropagation(); overlay.remove(); dmStartEdit(msgId); };
+    menu.appendChild(editBtn);
+  }
+
+  var delBtn = document.createElement('button');
+  delBtn.className = 'danger';
+  delBtn.textContent = t('misc_delete');
+  delBtn.onclick = function(e) {
+    e.stopPropagation();
+    overlay.remove();
+    dmDeleteMsg(msgId);
+  };
+  menu.appendChild(delBtn);
+
+  container.appendChild(menu);
+  overlay.appendChild(container);
+  document.body.appendChild(overlay);
+}
+
+function dmStartEdit(msgId) {
+  var bubble = document.getElementById('dm-bubble-' + msgId);
+  if (!bubble) return;
+  dmEditingId = msgId;
+  var input = document.getElementById('chat-input');
+  if (input) { input.value = bubble.textContent; input.focus(); }
+  var editBar = document.getElementById('dm-edit-bar');
+  if (editBar) editBar.style.display = 'flex';
+}
+
+async function dmDeleteMsg(msgId) {
+  try {
+    await sb.from('messages').delete().eq('id', msgId);
+    var el = document.getElementById('dm-msg-' + msgId);
+    if (el) { el.style.transition = 'opacity 0.2s'; el.style.opacity = '0'; setTimeout(function() { el.remove(); }, 200); }
+    showToast('Besked slettet');
+  } catch(e) { logError('dmDeleteMsg', e); errorToast('delete', e); }
+}
+
+function dmChannelName() {
+  var ids = [currentUser.id, currentChatUser].sort();
+  return 'dm-' + ids[0] + '-' + ids[1];
+}
+
+function dmShowTyping(name) {
+  var el = document.getElementById('dm-typing-indicator');
+  if (!el) return;
+  // Set avatar
+  var avEl = document.getElementById('dm-typing-avatar');
+  if (avEl) {
+    var avUrl = window._chatPartnerAvatar;
+    if (avUrl) { avEl.innerHTML = '<img src="' + avUrl + '">'; }
+    else {
+      var init = (name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      avEl.textContent = init;
+      avEl.style.cssText = 'width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#CECBF6,#AFA9EC);display:flex;align-items:center;justify-content:center;font-size:0.45rem;font-weight:800;color:white';
+    }
+  }
+  el.style.display = 'flex';
+  // Auto-scroll to keep indicator visible
+  var chatScroll = document.getElementById('chat-messages');
+  if (chatScroll) {
+    var isNearBottom = chatScroll.scrollHeight - chatScroll.scrollTop - chatScroll.clientHeight < 80;
+    if (isNearBottom) setTimeout(function() { chatScroll.scrollTop = chatScroll.scrollHeight; }, 50);
+  }
+  clearTimeout(_dmTypingTimer);
+  _dmTypingTimer = setTimeout(function() { if (el) el.style.display = 'none'; }, 3000);
+}
+
+function dmHideTyping() {
+  clearTimeout(_dmTypingTimer);
+  var el = document.getElementById('dm-typing-indicator');
+  if (el) el.style.display = 'none';
+}
+
+var _dmBroadcastTypingTimer = null;
+function dmOnInput() {
+  // Send button active state
+  var input = document.getElementById('chat-input');
+  var sendBtn = document.getElementById('chat-send-btn');
+  if (input && sendBtn) {
+    var hasContent = input.value.trim().length > 0;
+    sendBtn.classList.toggle('chat-send-active', hasContent);
+  }
+  // Typing broadcast
+  if (!chatSubscription) return;
+  clearTimeout(_dmBroadcastTypingTimer);
+  _dmBroadcastTypingTimer = setTimeout(function() {
+    try {
+      chatSubscription.send({ type: 'broadcast', event: 'typing',
+        payload: { userId: currentUser.id, name: currentProfile?.name || 'Nogen' } });
+    } catch(e) { if (window._debugRt) console.warn('typing broadcast:', e); }
+  }, 300);
+}
+
+function dmUpdateReceipts(msgIds) {
+  (msgIds || []).forEach(function(id) {
+    var el = document.getElementById('dm-receipt-' + id);
+    if (el) {
+      el.textContent = t('dm_read');
+      el.className = 'msg-receipt';
+    }
+  });
+}
+
+function subscribeToChat() {
+  if (chatSubscription) { try { chatSubscription.unsubscribe(); } catch(e) {} chatSubscription = null; }
+
+  chatSubscription = sb.channel(dmChannelName(), { config: { broadcast: { self: false } } })
+    // Instant new message via Broadcast
+    .on('broadcast', { event: 'new_message' }, function(payload) {
+      var m = payload.payload;
+      if (!m) return;
+      if (m.sender_id !== currentChatUser && m.receiver_id !== currentChatUser) return;
+      dmReduceMsg(m, { markRead: true });
+    })
+    // Typing indicator
+    .on('broadcast', { event: 'typing' }, function(payload) {
+      var p = payload.payload;
+      if (!p || p.userId === currentUser.id) return;
+      dmShowTyping(p.name || 'Den anden');
+    })
+    // Read receipt feedback to sender
+    .on('broadcast', { event: 'read_receipt' }, function(payload) {
+      var p = payload.payload;
+      if (p && p.msgIds) dmUpdateReceipts(p.msgIds);
+    })
+    // Fallback: Postgres Changes (covers edge cases like push notifications)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages',
+      filter: 'receiver_id=eq.' + currentUser.id }, function(payload) {
+      var m = payload.new;
+      if (!m || m.sender_id !== currentChatUser) return;
+      dmReduceMsg(m, { markRead: true });
+    })
+    .subscribe(_rtStatusCallback('dm-chat'));
+}
+
+// ── DM message context menu (⋯) ──
+// dmOpenMsgMenu removed — replaced by long-press context (dmLongPress)
+
+let dmEditingId = null;
+// dmEditMsg replaced by dmStartEdit in long-press handler
+
+function dmCancelEdit() {
+  dmEditingId = null;
+  var input = document.getElementById('chat-input');
+  if (input) input.value = '';
+  var editBar = document.getElementById('dm-edit-bar');
+  if (editBar) editBar.style.display = 'none';
+}
+
+// dmCopyMsg and dmDeleteMsg handled by long-press context menu
+
+

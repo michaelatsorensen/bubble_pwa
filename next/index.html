@@ -1,0 +1,1801 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.supabase.co https://api.bubbleme.dk; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://*.supabase.co https://api.bubbleme.dk https://media.tenor.com https://media1.tenor.com https://*.giphy.com https://*.licdn.com https://*.googleusercontent.com data: blob:; connect-src 'self' https://*.supabase.co https://api.bubbleme.dk https://api.emailjs.com https://api.giphy.com https://*.licdn.com https://*.googleusercontent.com https://cdn.jsdelivr.net wss://*.supabase.co wss://api.bubbleme.dk; base-uri 'self'; form-action 'self';">
+<meta name="author" content="Michael Christoffersen">
+<meta name="copyright" content="© 2026 Bubble. All rights reserved.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bubble">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light">
+<title>Bubble — Network Radar</title>
+<link rel="manifest" href="manifest.json?v=81704">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81704">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81704">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81704">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81704">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81704">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81704">
+
+<link rel="stylesheet" href="app.css?v=81704">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+<script src="bubble-icons.js?v=81704" defer></script>
+<script src="tag-data.js?v=81704" defer></script>
+<script src="b-i18n.js?v=81704" defer></script>
+<script src="b-config.js?v=81704" defer></script>
+<script src="b-utils.js?v=81704" defer></script>
+<script src="b-auth.js?v=81704" defer></script>
+<script src="b-home.js?v=81704" defer></script>
+<script src="b-bubbles.js?v=81704" defer></script>
+<script src="b-profile.js?v=81704" defer></script>
+<script src="b-radar.js?v=81704" defer></script>
+<script src="b-messages.js?v=81704" defer></script>
+<script src="b-realtime.js?v=81704" defer></script>
+<script src="b-onboarding.js?v=81704" defer></script>
+<script src="b-chat.js?v=81704" defer></script>
+<script src="b-notifications.js?v=81704" defer></script>
+<script src="b-live.js?v=81704" defer></script>
+<script src="b-admin.js?v=81704" defer></script>
+<script src="b-navigation.js?v=81704" defer></script>
+<script src="b-boot.js?v=81704" defer></script>
+  
+
+
+<style>
+/* Critical: hide all screens before app.css loads (prevents FOUC) */
+.screen { display:none !important; }
+.screen.active { display:flex !important; }
+
+/* ═══ V4.0 — Radar Card Gradient ═══ */
+.radar-card-v4 { background:#FFFFFF; border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:1rem 1.1rem; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 3px rgba(30,27,46,0.06), 0 1px 2px rgba(30,27,46,0.04); }
+.radar-card-v4:active { transform:scale(0.98); }
+.radar-dots-row { display:flex; gap:-4px; margin-top:0.4rem; }
+.radar-dots-row .avatar { width:24px; height:24px; font-size:0.5rem; margin-left:-6px; border:2px solid var(--bg); }
+.radar-dots-row .avatar:first-child { margin-left:0; }
+
+/* ═══ V5.6 — Topbar Action Buttons ═══ */
+.topbar-action-btn { position:relative; width:36px; height:36px; border-radius:12px; border:1px solid var(--glass-border-subtle); background:#FFFFFF; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 2px rgba(30,27,46,0.04); transition:transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); flex-shrink:0; -webkit-tap-highlight-color:transparent; }
+.topbar-action-btn:active { transform:scale(0.85); }
+.topbar-qr-btn { position:relative; width:36px; height:36px; border-radius:12px; background:var(--gradient-primary); border:none; color:white; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.15s; flex-shrink:0; }
+.topbar-qr-btn:active { transform:scale(0.92); }
+
+/* ═══ V5.6 — Home Avatar ═══ */
+.home-avatar { width:36px; height:36px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; color:white; overflow:hidden; flex-shrink:0; border:2px solid rgba(124,92,252,0.15); }
+.home-avatar img { width:100%; height:100%; object-fit:cover; }
+
+/* ═══ V4.0 — QR Preview Screen ═══ */
+.qr-profile-hero { text-align:center; padding:2rem 1.5rem 1rem; }
+.qr-profile-avatar { width:80px; height:80px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:800; color:white; background:linear-gradient(135deg,#7C5CFC,#6366F1); box-shadow:0 4px 24px rgba(124,92,252,0.2); }
+.qr-profile-name { font-size:1.25rem; font-weight:800; color:var(--text); margin-top:0.75rem; letter-spacing:-0.02em; }
+.qr-profile-title { font-size:0.82rem; color:var(--text-secondary); margin-top:0.15rem; }
+.qr-profile-tags { display:flex; gap:0.3rem; justify-content:center; flex-wrap:wrap; margin-top:0.6rem; }
+.qr-context-bar { display:flex; gap:0.4rem; padding:0.6rem 1.2rem; overflow-x:auto; }
+.qr-context-chip { display:flex; align-items:center; gap:0.35rem; padding:0.35rem 0.7rem; border-radius:20px; background:#FFFFFF; border:1px solid var(--glass-border-subtle); font-size:0.68rem; font-weight:600; color:var(--text-secondary); flex-shrink:0; box-shadow:0 1px 2px rgba(30,27,46,0.04); }
+.qr-context-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.qr-social-proof { text-align:center; padding:1rem; margin:0.5rem 1.2rem; border-radius:var(--radius); background:#FFFFFF; border:1px solid var(--glass-border-subtle); box-shadow:0 1px 3px rgba(30,27,46,0.06); }
+.qr-sp-number { font-size:1.8rem; font-weight:900; color:var(--accent); font-weight:900; }
+
+/* ═══ V4.0 — Blurred cards ═══ */
+.blur-card { filter:blur(3px); opacity:0.6; pointer-events:none; }
+.cta-bottom-overlay { position:sticky; bottom:0; left:0; right:0; padding:0.75rem 1.2rem calc(0.75rem + env(safe-area-inset-bottom,0px)); background:linear-gradient(to top,var(--bg) 60%,transparent); z-index:10; }
+
+/* ═══ V4.0 — Progressive Onboarding ═══ */
+.gs-v4-card { display:flex; align-items:center; gap:0.75rem; padding:0.85rem 1rem; margin:0 0 0.4rem; border-radius:var(--radius); background:#FFFFFF; border:1px solid var(--glass-border-subtle); cursor:pointer; transition:all 0.15s; box-shadow:0 1px 3px rgba(30,27,46,0.06); }
+.gs-v4-card:active { transform:scale(0.98); }
+.gs-v4-card.highlight { border:1.5px solid rgba(124,92,252,0.15); }
+.gs-v4-card.done { opacity:0.6; }
+.gs-v4-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+.gs-v4-icon svg { width:18px; height:18px; }
+.gs-v4-text { flex:1; }
+.gs-v4-title { font-size:0.82rem; font-weight:700; color:var(--text); }
+.gs-v4-sub { font-size:0.68rem; color:var(--text-secondary); margin-top:0.05rem; }
+.gs-v4-check { width:20px; height:20px; border-radius:50%; border:2px solid var(--glass-border); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:0.6rem; }
+.gs-v4-check.done { background:linear-gradient(135deg,#7C5CFC,#6366F1); border:none; color:white; }
+
+/* ═══ V4.0 — Social Proof Screen ═══ */
+.sp-filter-bar { display:flex; gap:0.35rem; padding:0.4rem 1.2rem; overflow-x:auto; }
+.sp-filter-chip { padding:0.35rem 0.75rem; border-radius:20px; font-size:0.68rem; font-weight:600; font-family:var(--font); border:1px solid var(--glass-border-subtle); background:var(--glass-bg); color:var(--text-muted); cursor:pointer; flex-shrink:0; transition:all 0.2s; }
+.sp-filter-chip.active { background:linear-gradient(135deg,#7C5CFC,#6366F1); color:#fff; border-color:transparent; }
+.anon-card { background:#FFFFFF; border:1px solid var(--glass-border-subtle); border-radius:var(--radius); padding:0.6rem 0.85rem; margin:0 1.2rem 0.35rem; display:flex; align-items:center; gap:0.6rem; box-shadow:0 1px 3px rgba(30,27,46,0.06); }
+.anon-name-bar { width:80px; height:10px; border-radius:4px; background:var(--glass-border); }
+.anon-title-bar { width:120px; height:8px; border-radius:4px; background:var(--glass-border-subtle); margin-top:0.2rem; }
+
+/* ═══ V5.0 — Radar Filter Chips ═══ */
+.radar-filter-chip { padding:0.3rem 0.55rem; border-radius:20px; font-size:0.64rem; font-weight:600; font-family:var(--font); border:1px solid var(--glass-border-subtle); background:#FFFFFF; color:var(--text-secondary); cursor:pointer; flex-shrink:0; transition:all 0.15s; -webkit-tap-highlight-color:transparent; white-space:nowrap; }
+.radar-filter-chip.active { background:linear-gradient(135deg,#7C5CFC,#6366F1); color:#fff; border-color:transparent; }
+.radar-filter-chip:active { transform:scale(0.95); }
+/* ═══ Skeleton shimmer + screen transitions ═══ */
+@keyframes shimmer { 0% { background-position: -200px 0; } 100% { background-position: 200px 0; } }
+.skel { background: linear-gradient(90deg, rgba(30,27,46,0.04) 25%, rgba(30,27,46,0.08) 50%, rgba(30,27,46,0.04) 75%); background-size: 400px 100%; animation: shimmer 1.5s ease-in-out infinite; border-radius: 8px; }
+.screen { transition: opacity 0.2s ease; }
+
+</style>
+
+</head>
+<script>
+// Instant screen swap when coming from landing page — prevents loading screen flash
+(function() {
+  if (new URLSearchParams(window.location.search).has('auth')) {
+    document.addEventListener('DOMContentLoaded', function() {
+      var loading = document.getElementById('screen-loading');
+      var auth = document.getElementById('screen-auth');
+      var splash = document.getElementById('auth-splash');
+      var forms = document.getElementById('auth-forms');
+      if (loading) loading.classList.remove('active');
+      if (auth) auth.classList.add('active');
+      if (splash) splash.style.display = 'none';
+      if (forms) forms.style.display = '';
+    });
+  }
+})();
+</script>
+<body id="app-root">
+
+<!-- LANDSCAPE LOCK -->
+<div class="landscape-lock">
+  <div class="landscape-lock-icon">📱</div>
+  <div style="font-size:1.1rem;font-weight:700">Drej din telefon</div>
+  <div style="font-size:0.78rem;color:var(--text-secondary)">Bubble virker bedst i portrait-mode</div>
+</div>
+
+<!-- ANIMATED BG -->
+<div class="bg-canvas">
+  <div class="orb o1"></div>
+  <div class="orb o2"></div>
+  <div class="orb o3"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- GIF Picker -->
+<div class="gif-picker-overlay" id="gif-picker-overlay" onclick="closeGifPicker()"></div>
+<div class="gif-picker" id="gif-picker">
+  <div class="gif-picker-header">
+    <input class="gif-picker-search" id="gif-search" placeholder="Søg GIFs..." data-t-placeholder="gif_search_ph" oninput="gifSearchDebounce()" autocomplete="off">
+    <button class="gif-picker-close" onclick="closeGifPicker()">✕</button>
+  </div>
+  <div class="gif-picker-grid" id="gif-grid">
+    <div style="text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">Søg efter en GIF...</div>
+  </div>
+  <div class="gif-picker-powered">Powered by GIPHY</div>
+</div>
+
+<!-- ═══ APP SHELL (only screens + nav) ═══ -->
+<div id="app-shell">
+<div id="screens-wrap">
+
+<!-- ════════════════════════════════════════
+     SCREEN: LOADING
+════════════════════════════════════════ -->
+<div class="screen active" id="screen-loading">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:2rem">
+    <div style="text-align:center;margin-bottom:2rem"><img src="bubble-logo-splash.png" alt="bubble" style="height:36px;width:auto"></div>
+    <div class="bubble-loader">
+      <div class="bubble-loader-dot"></div>
+      <div class="bubble-loader-dot"></div>
+      <div class="bubble-loader-dot"></div>
+    </div>
+    <div style="font-size:0.78rem;color:var(--muted);margin-top:1.5rem" id="loading-msg">Forbinder...</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: AUTH (Login / Signup)
+════════════════════════════════════════ -->
+<div class="screen" id="screen-auth">
+  <!-- INTRO SPLASH (shown first, hidden after tap) -->
+  <div id="auth-splash" style="text-align:center;padding:2rem 1.5rem 0">
+    <div style="text-align:center;margin-bottom:0.8rem"><img src="bubble-logo-splash.png" alt="bubble" style="height:40px;width:auto"></div>
+    <div style="font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:0.5rem" data-t="auth_tagline">Mød de rigtige mennesker</div>
+    <div style="font-size:0.82rem;color:var(--text-secondary);line-height:1.6;margin:0 auto 1.5rem" data-t="auth_desc">Bubble er en networking-radar der forbinder dig med relevante mennesker omkring dig — på events, i din by og i dit faglige netværk.</div>
+
+    <div style="display:flex;flex-direction:column;gap:0.6rem;margin:0 auto 1.8rem;text-align:left">
+      <div style="display:flex;gap:0.6rem;align-items:center">
+        <div style="width:32px;height:32px;border-radius:10px;background:rgba(124,92,252,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+        <div style="font-size:0.78rem;color:var(--text-secondary)" data-t-html="auth_feat_radar_line"><strong style="color:var(--text)">Smart Radar</strong> — find folk der matcher dine interesser</div>
+      </div>
+      <div style="display:flex;gap:0.6rem;align-items:center">
+        <div style="width:32px;height:32px;border-radius:10px;background:rgba(232,121,168,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent2)"><svg class="ico" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9.5" cy="9.5" r="5" opacity="0.8"/><circle cx="15" cy="13" r="4" opacity="0.6"/></svg></div>
+        <div style="font-size:0.78rem;color:var(--text-secondary)" data-t-html="auth_feat_bubbles_line"><strong style="color:var(--text)">Bobler</strong> — join communities og events omkring dig</div>
+      </div>
+      <div style="display:flex;gap:0.6rem;align-items:center">
+        <div style="width:32px;height:32px;border-radius:10px;background:rgba(26,158,142,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green)"><svg class="ico" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11.5c0 4-3.6 7-8 7l-4.4 2.1 1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
+        <div style="font-size:0.78rem;color:var(--text-secondary)" data-t-html="auth_feat_chat_line"><strong style="color:var(--text)">Chat</strong> — connect direkte med folk du vil møde</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="showAuthForms()" style="width:100%;margin:0 auto" data-t="auth_get_started">Kom i gang →</button>
+    <button onclick="showAuthForms()" style="margin-top:0.6rem;background:none;border:none;color:var(--muted);font-size:0.72rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.4rem;width:100%;text-align:center" data-t-html="auth_have_account_line">Har allerede en konto? <span style="color:var(--accent);font-weight:600">Log ind</span></button>
+    <div style="font-size:0.6rem;color:var(--muted);margin-top:0.5rem" data-t="auth_beta_label">Closed Beta · Sønderborg 2026</div>
+  </div>
+
+  <!-- Interest picker removed in v5.2 — profil-nudge on home handles this now -->
+  <div id="auth-interests" style="display:none"></div>
+
+  <!-- AUTH FORMS (hidden initially) -->
+  <div id="auth-forms" style="display:none;text-align:center;padding:0 1.2rem 350px;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div style="margin-bottom:1rem">
+      <div style="text-align:center;margin-bottom:0.3rem"><img src="bubble-logo-splash.png" alt="bubble" style="height:32px;width:auto"></div>
+      <div style="font-size:0.82rem;color:var(--muted)" data-t="auth_network_radar">Network Radar for Business</div>
+    </div>
+
+    <!-- QR context card (hidden unless QR flow) -->
+    <div id="auth-qr-context" style="display:none;margin-bottom:1rem">
+      <div style="display:flex;align-items:center;gap:0.6rem;padding:0.7rem 0.85rem;border-radius:14px;background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.1);text-align:left">
+        <div id="auth-qr-avatar" style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#7C5CFC);display:flex;align-items:center;justify-content:center;color:white;font-size:0.78rem;font-weight:700;flex-shrink:0">?</div>
+        <div style="flex:1">
+          <div style="font-size:0.82rem;font-weight:700;color:var(--text)" id="auth-qr-name">...</div>
+          <div style="font-size:0.68rem;color:var(--muted)" data-t="auth_wants_connect">vil gerne connecte med dig</div>
+        </div>
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(26,158,142,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+      </div>
+    </div>
+
+    <!-- Contextual heading (changes for QR flow) -->
+    <div id="auth-heading" style="display:none;margin-bottom:1rem">
+      <div style="font-size:1.1rem;font-weight:800;color:var(--text)" id="auth-heading-title" data-t="auth_create_profile">Opret din profil</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.2rem" id="auth-heading-sub" data-t="auth_save_discover">Gem kontakt og opdag netværket</div>
+    </div>
+
+  <div id="auth-login" style="width:100%">
+    <div class="input-group">
+      <div class="input-label" data-t="auth_email">Email</div>
+      <input class="input" type="email" id="login-email" data-t-placeholder="auth_placeholder_email" placeholder="din@email.dk" autocomplete="email">
+    </div>
+    <div class="input-group">
+      <div class="input-label" data-t="auth_password">Adgangskode</div>
+      <input class="input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-primary" onclick="handleLogin()" data-t="auth_login">Log ind</button>
+    <button type="button" onclick="handleForgotPassword()" style="background:none;border:none;color:var(--accent);font-size:0.75rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.3rem 0;margin-top:0.15rem" data-t="auth_forgot">Glemt adgangskode?</button>
+    <div style="display:flex;align-items:center;gap:0.75rem;margin:0.5rem 0">
+      <div class="divider"></div>
+      <div style="font-size:0.75rem;color:var(--muted)" data-t="auth_or">eller</div>
+      <div class="divider"></div>
+    </div>
+    <button class="btn-secondary" onclick="handleLinkedInLogin()" style="display:flex;align-items:center;justify-content:center;gap:0.6rem">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      <span data-t="auth_linkedin">Fortsæt med LinkedIn</span>
+    </button>
+    <button class="btn-secondary" onclick="handleGoogleLogin()" style="display:flex;align-items:center;justify-content:center;gap:0.6rem">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      <span data-t="auth_google">Fortsæt med Google</span>
+    </button>
+    <button class="btn-secondary" onclick="switchToSignup()" data-t="auth_email_signup">Opret med email</button>
+  </div>
+
+  <div id="auth-signup" style="width:100%;max-width:380px;display:none">
+    <div class="input-group">
+      <div class="input-label" data-t="auth_signup_name">Navn</div>
+      <input class="input" type="text" id="signup-name" data-t-placeholder="auth_placeholder_name" placeholder="Dit fulde navn" autocomplete="name">
+    </div>
+    <div class="input-group">
+      <div class="input-label" data-t="auth_signup_email">Email</div>
+      <input class="input" type="email" id="signup-email" data-t-placeholder="auth_placeholder_email" placeholder="din@email.dk" autocomplete="email">
+    </div>
+    <div class="input-group">
+      <div class="input-label" data-t="auth_signup_password">Adgangskode</div>
+      <input class="input" type="password" id="signup-password" data-t-placeholder="auth_placeholder_password_min" placeholder="Min. 6 tegn" autocomplete="new-password">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Bekræft adgangskode</div>
+      <input class="input" type="password" id="signup-password-confirm" placeholder="Gentag adgangskode" autocomplete="new-password" onfocus="setTimeout(function(){var el=document.getElementById('signup-password-confirm');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},400)">
+    </div>
+    <button class="btn-primary" onclick="handleSignup()" data-t="auth_signup_btn">Opret konto</button>
+    <button class="btn-secondary" onclick="switchToLogin()" data-t="auth_has_account">Har allerede en konto</button>
+  </div>
+
+  <!-- Terms link -->
+  <div style="text-align:center;margin-top:1.5rem;font-size:0.62rem;color:var(--muted)">
+    <span data-t="auth_terms_accept">Ved at fortsætte accepterer du vores</span><br>
+    <a href="#" onclick="event.preventDefault();showTerms()" style="color:var(--accent);text-decoration:underline" data-t="auth_terms_link">Betingelser & Privatlivspolitik</a>
+  </div>
+  </div><!-- /auth-forms -->
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: ONBOARDING
+════════════════════════════════════════ -->
+<div class="screen" id="screen-onboarding">
+  <div id="ob-scroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(1.5rem + env(safe-area-inset-top, 0px)) 1.5rem 350px;display:flex;flex-direction:column;visibility:hidden">
+
+    <!-- ═══ TRIN 1: Navn + Arbejdsplads + Consent ═══ -->
+    <div id="ob-step-1">
+
+      <!-- QR contact banner -->
+      <div id="ob-qr-contact-banner" style="display:none;align-items:center;gap:0.5rem;padding:0.6rem 0.75rem;border-radius:12px;background:rgba(26,158,142,0.05);border:1px solid rgba(26,158,142,0.12);margin-bottom:0.8rem">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+        <div style="font-size:0.78rem;color:#085041;font-weight:600"><span id="ob-qr-contact-name">Kontakt</span> gemmes automatisk</div>
+      </div>
+
+      <div style="text-align:center;margin-bottom:1.2rem">
+        <img src="bubble-logo-splash.png" alt="bubble" style="height:22px;width:auto;margin-bottom:1rem">
+        <div style="font-size:1.5rem;font-weight:800;margin-bottom:0.2rem">Velkommen!</div>
+        <div style="font-size:0.85rem;color:var(--text-secondary)">To hurtige felter og du er klar</div>
+      </div>
+
+      <div class="input-group">
+        <div class="input-label">Navn *</div>
+        <input class="input" id="ob-name" maxlength="60" placeholder="Dit fulde navn" data-t-placeholder="ob_name_ph" autocomplete="name" oninput="obCheckProgress()">
+      </div>
+
+      <div class="input-group">
+        <div class="input-label">Arbejdsplads *</div>
+        <input class="input" id="ob-workplace" maxlength="80" placeholder="f.eks. Danfoss, SDU, selvstændig..." data-t-placeholder="ob_workplace_ph" oninput="obCheckProgress()" onfocus="setTimeout(function(){var el=document.getElementById('ob-consent-row');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},400)">
+      </div>
+
+      <label class="ob-consent-row" id="ob-consent-row" onclick="obToggleConsent()">
+        <div class="ob-consent-check" id="ob-consent-check"></div>
+        <span class="ob-consent-text">Jeg accepterer Bubble's <a href="#" onclick="event.stopPropagation();showTerms()">betingelser</a> og <a href="#" onclick="event.stopPropagation();showTerms()">privatlivspolitik</a></span>
+      </label>
+
+      <button class="btn-primary" id="ob-save-btn" onclick="saveOnboarding()" style="margin-top:0.8rem" disabled>Kom i gang →</button>
+      <div style="text-align:center;font-size:0.72rem;color:var(--muted);margin-top:0.5rem">Du kan tilføje interesser, titel og mere i din profil bagefter</div>
+      <div style="margin-top:1.5rem;text-align:center">
+        <button type="button" onclick="abortOnboarding()" style="background:none;border:none;color:var(--muted);font-size:0.7rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.5rem;opacity:0.6">Afbryd og nulstil</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+<!-- ════════════════════════════════════════
+     SCREEN: WELCOME (post-onboarding)
+════════════════════════════════════════ -->
+<div class="screen" id="screen-welcome">
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(2rem + env(safe-area-inset-top,0px)) 1.5rem 2rem;display:flex;flex-direction:column;justify-content:center">
+    <div style="text-align:center;margin-bottom:2rem">
+      <div style="width:56px;height:56px;margin:0 auto 0.75rem;color:var(--accent)"><svg class="ico" style="width:56px;height:56px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
+      <div style="font-size:1.8rem;font-weight:900;margin-bottom:0.35rem" data-t="ob_welcome">Velkommen til Bubble!</div>
+      <div style="font-size:0.9rem;color:var(--text-secondary);max-width:320px;margin:0 auto">Lad os komme i gang — her er tre ting du kan gøre</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.8rem;max-width:380px;margin:0 auto;width:100%">
+      <!-- Step 1 -->
+      <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer;box-shadow:0 1px 3px rgba(30,27,46,0.06)" onclick="welcomeGo('discover')">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(124,92,252,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem" data-t="ob_step_discover">Udforsk bobler</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary)" data-t="ob_step_discover_desc">Find communities, events og netværk</div>
+        </div>
+        <div style="color:var(--muted);font-size:1.1rem">→</div>
+      </div>
+      <!-- Step 2 -->
+      <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer;box-shadow:0 1px 3px rgba(30,27,46,0.06)" onclick="welcomeGo('radar')">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(232,121,168,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent2)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem" data-t="ob_step_radar">Se hvem der er her</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary)" data-t="ob_step_radar_desc">Radaren viser profiler og match-%</div>
+        </div>
+        <div style="color:var(--muted);font-size:1.1rem">→</div>
+      </div>
+      <!-- Step 3 -->
+      <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer;box-shadow:0 1px 3px rgba(30,27,46,0.06)" onclick="welcomeGo('home')">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(26,158,142,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5v9a1.5 1.5 0 001.5 1.5H10v-5a2 2 0 014 0v5h3.5a1.5 1.5 0 001.5-1.5v-9"/></svg></div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem" data-t="ob_step_home">Gå til hjem</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary)" data-t="ob_step_home_desc">Dit dashboard med bobler, radar og mere</div>
+        </div>
+        <div style="color:var(--muted);font-size:1.1rem">→</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SCREEN: QR PROFILE PREVIEW (anon)
+════════════════════════════════════════ -->
+<div class="screen" id="screen-qr-preview">
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px)">
+
+    <!-- Logo -->
+    <div style="text-align:center;padding:1.2rem 1.5rem 0">
+      <img src="bubble-logo-splash.png" alt="bubble" style="height:20px;width:auto">
+    </div>
+
+    <!-- Profile hero -->
+    <div style="text-align:center;padding:1rem 1.5rem 0.8rem">
+      <div class="qr-profile-avatar" id="qr-preview-avatar" style="width:80px;height:80px;font-size:1.5rem;margin:0 auto 0.6rem;box-shadow:0 4px 16px rgba(124,92,252,0.25)">?</div>
+      <div style="font-size:1.25rem;font-weight:800;color:var(--text)" id="qr-preview-name">...</div>
+      <div style="font-size:0.82rem;color:var(--text-secondary);margin-top:0.15rem" id="qr-preview-title"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.6rem;justify-content:center" id="qr-preview-tags"></div>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:flex;justify-content:center;gap:1.5rem;padding:0 1.5rem 0.8rem">
+      <div style="text-align:center">
+        <div style="font-size:1.1rem;font-weight:800;color:var(--text)" id="qr-preview-network-count">0</div>
+        <div style="font-size:0.68rem;color:var(--muted)">kontakter</div>
+      </div>
+      <div style="width:1px;background:var(--glass-border-subtle)"></div>
+      <div style="text-align:center">
+        <div style="font-size:1.1rem;font-weight:800;color:var(--text)" id="qr-preview-bubble-count">0</div>
+        <div style="font-size:0.68rem;color:var(--muted)">bobler</div>
+      </div>
+    </div>
+
+    <!-- Bubble pills -->
+    <div style="display:flex;gap:0.35rem;padding:0 1.5rem 0.8rem;overflow-x:auto;-webkit-overflow-scrolling:touch" id="qr-preview-bubbles"></div>
+
+    <div style="height:1px;background:var(--glass-border-subtle);margin:0 1.5rem"></div>
+
+    <!-- Network contacts -->
+    <div style="padding:0.8rem 1.5rem 0">
+      <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.5rem" id="qr-preview-context-label">I netværket</div>
+      <div style="display:flex;flex-direction:column;gap:0.4rem" id="qr-preview-network-list"></div>
+      <div style="text-align:center;padding:0.5rem 0;font-size:0.75rem;color:var(--muted)" id="qr-preview-more-label"></div>
+    </div>
+
+    <!-- Spacer for sticky CTA -->
+    <div style="height:5.5rem"></div>
+  </div>
+
+  <!-- Sticky CTA -->
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:0.75rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom,0px));background:linear-gradient(to top,#FFFFFF 70%,rgba(255,255,255,0))">
+    <button class="btn-primary" onclick="qrPreviewSignup()" style="width:100%;font-size:0.95rem;padding:0.9rem">Join Bubble og gem kontakt</button>
+    <div style="text-align:center;margin-top:0.35rem;font-size:0.68rem;color:var(--muted)">Gratis · 30 sekunder</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: QR RADAR TEASER (anon)
+════════════════════════════════════════ -->
+<div class="screen" id="screen-qr-teaser">
+  <div class="screen-inner-scroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px);position:relative">
+    <div style="text-align:center;padding:1.2rem 1.2rem 0.5rem">
+      <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Hvem er i nærheden?</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.2rem" id="qr-teaser-count">Matches fundet i dit område</div>
+    </div>
+
+    <!-- Profile list (loaded from DB) -->
+    <div style="padding:0.5rem 0;display:flex;flex-direction:column;gap:0.35rem" id="qr-teaser-profiles">
+      <div style="text-align:center;padding:1rem"><div class="spinner" style="width:20px;height:20px"></div></div>
+    </div>
+
+    <div style="height:80px"></div>
+    <div class="cta-bottom-overlay">
+      <button class="btn-primary" onclick="qrTeaserSignup()">Opret gratis profil & se matches →</button>
+      <div style="font-size:0.68rem;color:var(--text-secondary);text-align:center;margin-top:0.5rem;line-height:1.5">Det tager 30 sekunder · du kan udfylde profilen senere</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: SOCIAL PROOF (opsøgende flow)
+════════════════════════════════════════ -->
+<div class="screen" id="screen-social-proof">
+  <div class="screen-inner-scroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px);position:relative">
+    <div style="text-align:center;padding:1.2rem 1.2rem 0.6rem">
+      <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Se hvem der er her</div>
+    </div>
+
+    <div class="qr-social-proof" style="margin:0 1.2rem 0.6rem">
+      <div class="qr-sp-number" id="sp-total-count">0</div>
+      <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.15rem">professionelle bruger Bubble i Danmark</div>
+    </div>
+
+    <div class="sp-filter-bar" id="sp-filters">
+      <div class="sp-filter-chip active" onclick="spFilter('all',this)">Alle</div>
+      <div class="sp-filter-chip" onclick="spFilter('tech',this)">Tech</div>
+      <div class="sp-filter-chip" onclick="spFilter('founders',this)">Founders</div>
+      <div class="sp-filter-chip" onclick="spFilter('design',this)">Design</div>
+      <div class="sp-filter-chip" onclick="spFilter('marketing',this)">Marketing</div>
+    </div>
+
+    <div id="sp-profile-list" style="padding:0.5rem 0">
+      <div class="anon-card"><div class="avatar" style="width:32px;height:32px;background:linear-gradient(135deg,#2ECFCF,#22B8CF);font-size:0.6rem">?</div><div><div style="display:flex;align-items:center;gap:0.35rem"><div class="anon-name-bar"></div><span class="tag" style="font-size:0.55rem;padding:0.1rem 0.35rem">Startups</span></div><div class="anon-title-bar"></div></div></div>
+      <div class="anon-card"><div class="avatar" style="width:32px;height:32px;background:linear-gradient(135deg,#8B5CF6,#A855F7);font-size:0.6rem">?</div><div><div style="display:flex;align-items:center;gap:0.35rem"><div class="anon-name-bar" style="width:65px"></div><span class="tag" style="font-size:0.55rem;padding:0.1rem 0.35rem">Tech</span><span class="tag" style="font-size:0.55rem;padding:0.1rem 0.35rem">AI</span></div><div class="anon-title-bar" style="width:100px"></div></div></div>
+      <div class="anon-card"><div class="avatar" style="width:32px;height:32px;background:linear-gradient(135deg,#6366F1,#7C5CFC);font-size:0.6rem">?</div><div><div style="display:flex;align-items:center;gap:0.35rem"><div class="anon-name-bar" style="width:90px"></div><span class="tag" style="font-size:0.55rem;padding:0.1rem 0.35rem">Investor</span></div><div class="anon-title-bar" style="width:140px"></div></div></div>
+      <div class="anon-card" style="opacity:0.4"><div class="avatar" style="width:32px;height:32px;background:linear-gradient(135deg,#E879A8,#EC4899);font-size:0.6rem">?</div><div><div class="anon-name-bar" style="width:70px"></div><div class="anon-title-bar" style="width:110px"></div></div></div>
+    </div>
+
+    <div style="height:70px"></div>
+    <div class="cta-bottom-overlay">
+      <button class="btn-primary" onclick="spContinueToSignup()">Opret profil & se navne →</button>
+      <div style="text-align:center;margin-top:0.35rem;font-size:0.62rem;color:var(--muted)">Gratis · ingen kreditkort</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SCREEN: EVENT LANDING (teaser → signup)
+════════════════════════════════════════ -->
+<div class="screen" id="screen-guest-checkin">
+  <div class="screen-inner-scroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px)">
+    <div style="text-align:center;padding:2.5rem 1.5rem 1rem">
+      <div style="text-align:center;margin-bottom:0.6rem"><img src="bubble-logo-splash.png" alt="bubble" style="height:40px;width:auto"></div>
+      <div style="font-size:1.25rem;font-weight:800;color:var(--text);line-height:1.3" id="guest-event-name">Event</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.25rem" id="guest-event-meta"></div>
+    </div>
+
+    <!-- Social proof: attendee count + blurred profiles -->
+    <div style="padding:0 1.5rem;margin-bottom:1rem">
+      <div style="text-align:center;margin-bottom:0.6rem">
+        <div id="event-attendee-count" style="font-size:0.82rem;font-weight:700;color:var(--accent)"></div>
+      </div>
+      <div id="event-blurred-profiles" style="display:flex;flex-direction:column;gap:0.35rem"></div>
+    </div>
+
+    <!-- Primary CTA: Sign up -->
+    <div style="padding:0 1.5rem">
+      <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:1.2rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">
+        <div style="font-size:0.92rem;font-weight:700;color:var(--text);margin-bottom:0.15rem">Opret profil på 30 sekunder</div>
+        <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.8rem;line-height:1.4">Se hvem der er her, match med relevante personer og start samtaler</div>
+        <button class="btn-primary" onclick="eventSignupGoogle()" style="font-size:0.88rem;padding:0.75rem;display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-bottom:0.4rem">
+          <svg width="16" height="16" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          Fortsæt med Google
+        </button>
+        <button class="btn-secondary" onclick="eventSignupLinkedIn()" style="font-size:0.82rem;padding:0.6rem;display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-bottom:0.4rem">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+          Fortsæt med LinkedIn
+        </button>
+        <div style="display:flex;align-items:center;gap:0.6rem;margin:0.4rem 0">
+          <div style="flex:1;height:1px;background:var(--glass-border-subtle)"></div>
+          <span style="font-size:0.68rem;color:var(--muted)">eller</span>
+          <div style="flex:1;height:1px;background:var(--glass-border-subtle)"></div>
+        </div>
+        <button class="btn-secondary" onclick="eventSignupEmail()" style="font-size:0.82rem;padding:0.6rem">Opret med email</button>
+      </div>
+
+      <div style="text-align:center;padding:1.2rem 0">
+        <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.3rem">Har du allerede Bubble?</div>
+        <button onclick="eventLoginExisting()" style="font-size:0.78rem;color:var(--accent);font-weight:600;background:none;border:none;font-family:inherit;cursor:pointer">Log ind her →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: EVENT READY — show QR after signup
+════════════════════════════════════════ -->
+<div class="screen" id="screen-event-ready">
+  <div class="screen-inner-scroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px)">
+    <div style="text-align:center;padding:2rem 1.5rem 0.5rem">
+      <div style="font-size:2rem;margin-bottom:0.3rem">✓</div>
+      <div style="font-size:1.2rem;font-weight:800;color:var(--text)">Din profil er klar!</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.2rem" id="event-ready-meta">Vis din QR-kode til arrangøren</div>
+      <div style="display:inline-flex;align-items:center;gap:0.3rem;margin-top:0.5rem;padding:0.3rem 0.8rem;background:rgba(26,158,142,0.08);border-radius:99px;font-size:0.72rem;font-weight:600;color:var(--green)">\u2713 Du er nu synlig for andre deltagere</div>
+    </div>
+
+    <div style="padding:0 1.5rem;text-align:center">
+      <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:1.5rem;box-shadow:0 1px 3px rgba(30,27,46,0.06);margin-bottom:0.75rem">
+        <div id="event-ready-qr" style="display:flex;justify-content:center;margin-bottom:1rem"></div>
+        <div style="font-size:1.05rem;font-weight:800;color:var(--text)" id="event-ready-name"></div>
+        <div style="font-size:0.78rem;color:var(--text-secondary)" id="event-ready-role"></div>
+      </div>
+
+      <button class="btn-primary" onclick="eventReadyGoToEvent()" style="font-size:0.88rem;padding:0.75rem">Se hvem der er her →</button>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:0.5rem">Du kan også få vist din QR fra Profil-fanen</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: HOME
+════════════════════════════════════════ -->
+<div class="screen" id="screen-home">
+  <div class="topbar">
+    <img src="bubble-logo-topbar-v2.png" alt="bubble" onclick="goTo('screen-home')" style="cursor:pointer;height:22px;width:auto"><span style="font-size:7px;font-weight:700;color:white;background:rgba(23,15,52,0.84);padding:2px 5px;border-radius:4px;letter-spacing:0.5px;margin-left:4px;vertical-align:top">NEXT</span>
+    <div style="flex:1"></div>
+    <button id="topbar-notif-btn" onclick="goTo('screen-notifications')" class="topbar-action-btn" title="Notifikationer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5A6 6 0 006 8.5c0 6-2.5 8.5-2.5 8.5h17S18 14.5 18 8.5"/><path d="M13.73 20a2 2 0 01-3.46 0"/></svg>
+      <div id="topbar-notif-badge" class="topbar-badge" style="display:none">0</div>
+    </button>
+    <div class="home-avatar" id="home-avatar" onclick="goTo('screen-profile')" style="background:linear-gradient(135deg,#6366F1,#7C5CFC)">?</div>
+  </div>
+
+  <div class="scroll-area" id="home-scroll">
+
+    <!-- Greeting + QR/Scanner -->
+    <div style="padding:0.2rem 0 0.4rem;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:0.68rem;color:var(--muted);letter-spacing:0.04em;text-transform:uppercase;font-weight:600">Goddag,</div>
+        <div style="font-size:1.3rem;font-weight:800;letter-spacing:-0.02em;display:flex;align-items:center;gap:0.3rem" id="home-greeting-name"></div>
+      </div>
+      <div style="display:flex;gap:0.65rem;align-items:center">
+        <button onclick="openConnectScanner()" class="topbar-action-btn" title="Scan QR">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7V2h5M17 2h5v5M22 17v5h-5M7 22H2v-5"/><line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2 2"/></svg>
+        </button>
+        <button onclick="openMyQR()" class="topbar-qr-btn" title="Min QR-kode">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="3.5" height="3.5"/><path d="M20 14h-2.5v3M14 20h3v-3M20 20h-3"/></svg>
+        </button>
+      </div>
+    </div>
+
+
+    <!-- ═══ ALL HOME CARDS (v5.2) ═══ -->
+    <div style="display:flex;flex-direction:column;gap:0.45rem">
+
+      <!-- ═══ SEGMENTED CONTROL: Alle / Live (only visible when checked in) ═══ -->
+      <div id="home-mode-tabs" style="display:none">
+        <div style="display:flex;background:rgba(30,27,46,0.04);border-radius:10px;padding:3px">
+          <button id="home-tab-all" onclick="homeSetMode('all')" class="home-mode-tab active" style="flex:1;text-align:center;padding:0.4rem 0;font-size:0.75rem;font-weight:700;border:none;cursor:pointer;border-radius:8px;font-family:var(--font);transition:all 0.2s;background:var(--gradient-primary);color:white">Alle</button>
+          <button id="home-tab-live" onclick="homeSetMode('live')" class="home-mode-tab" style="flex:1;text-align:center;padding:0.4rem 0;font-size:0.75rem;font-weight:600;border:none;cursor:pointer;border-radius:8px;font-family:var(--font);transition:all 0.2s;background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:0.3rem">
+            <span id="home-tab-live-dot" style="width:6px;height:6px;border-radius:50%;background:#1A9E8E;box-shadow:0 0 0 2px rgba(26,158,142,0.25);animation:livePulse 2s infinite"></span>
+            Live
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══ LIVE EVENT BANNER (shown when Live tab active) ═══ -->
+      <div class="hs-slot hs-hidden" id="home-live-banner-slot"><div id="home-live-banner">
+        <div onclick="openLiveCheckoutTray()" style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;border-radius:12px;background:rgba(26,158,142,0.07);border:1px solid rgba(26,158,142,0.18);cursor:pointer">
+          <div style="width:8px;height:8px;border-radius:50%;background:#1A9E8E;box-shadow:0 0 0 3px rgba(26,158,142,0.2);animation:livePulse 2s infinite;flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:0.62rem;font-weight:700;color:#1A9E8E;text-transform:uppercase;letter-spacing:0.04em">LIVE</div>
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="home-live-banner-name">...</div>
+          </div>
+          <div style="font-size:0.68rem;color:var(--muted);font-weight:600;flex-shrink:0" id="home-live-banner-count"></div>
+          <div style="font-size:0.88rem;color:var(--muted);flex-shrink:0">›</div>
+        </div>
+      </div></div>
+
+      <!-- ═══ RADAR HERO (borderless dartboard) ═══ -->
+      <div data-hs="radar">
+        <div id="home-radar-dartboard" onclick="onDartboardTap(event)"
+             style="position:relative;width:100%;height:0;padding-bottom:min(100%,55vh);border-radius:16px;background:rgba(124,92,252,0.02);overflow:hidden;cursor:pointer">
+          <canvas id="home-prox-canvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+          <div id="home-prox-avatars" style="position:absolute;inset:0"></div>
+          <div class="prox-center" id="home-prox-center">DU</div>
+          <div id="home-radar-spinner" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+            <div class="spinner" style="width:24px;height:24px"></div>
+          </div>
+          <button onclick="event.stopPropagation();openHomeTray()" title="Vis liste"
+                  style="position:absolute;bottom:10px;right:0;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(30,27,46,0.08);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 4px rgba(30,27,46,0.08);z-index:10">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+              <circle cx="3" cy="6" r="1.2" fill="var(--text-secondary)" stroke="none"/>
+              <circle cx="3" cy="12" r="1.2" fill="var(--text-secondary)" stroke="none"/>
+              <circle cx="3" cy="18" r="1.2" fill="var(--text-secondary)" stroke="none"/>
+            </svg>
+          </button>
+        </div>
+        <!-- Filter chips under dartboard -->
+        <div id="home-filter-chips" style="display:flex;gap:0.3rem;padding:0.4rem 0.2rem;overflow-x:auto;-webkit-overflow-scrolling:touch">
+          <button class="radar-filter-chip" onclick="filterRadarHome('live')" data-filter="live" id="radar-live-chip" style="display:none;background:rgba(46,207,207,0.12);color:#085041;border-color:rgba(46,207,207,0.3)">🟢 Live <span id="radar-live-count" style="opacity:0.6"></span></button>
+          <button class="radar-filter-chip active" onclick="filterRadarHome('all')" data-filter="all"><span data-t="home_all">Alle</span> <span id="radar-count-home" style="opacity:0.6"></span></button>
+          <button class="radar-filter-chip" onclick="filterRadarHome('interest')" data-filter="interest" data-t="ps_shared_interests">Fælles int.</button>
+          <button class="radar-filter-chip" onclick="filterRadarHome('good')" data-filter="good" data-t="ps_good_match">Godt match</button>
+          <button class="radar-filter-chip" onclick="filterRadarHome('strong')" data-filter="strong" data-t="ps_strong_match">Stærkt match</button>
+        </div>
+      </div>
+
+      <!-- TOP MATCHES (hidden — kept for JS compat) -->
+      <div id="home-top-matches" style="display:none">
+        <div id="home-top-matches-list"></div>
+      </div>
+
+      <!-- ═══ GEMTE PROFILER (story-bar) ═══ -->
+      <div id="saved-profiles-bar" data-hs="saved" style="display:none">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">Gemte profiler <span id="saved-count-badge" class="saved-count-badge"></span></div>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <div class="saved-story-scroll" id="saved-story-list" style="flex:1"></div>
+          <button class="btn-sm btn-ghost" onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('saved')},200)" style="font-size:0.62rem;flex-shrink:0;padding:0.25rem 0.5rem">Se alle</button>
+        </div>
+      </div>
+
+      <!-- ═══ EVENT CHECKIN CARD (efter QR scan, kan dismisses) ═══ -->
+      <div id="home-event-card" style="display:none;margin-bottom:0.5rem"></div>
+
+      <!-- ═══ WELCOME CARD (nye brugere, kan dismisses) ═══ -->
+      <div id="home-welcome-card" style="display:none;margin-bottom:0.5rem"></div>
+
+      <!-- ═══ PROFILE MATCH CARD (altid synlig, toggle-bar) ═══ -->
+      <div class="hs-slot hs-hidden" id="home-profile-setup-slot"><div id="home-profile-setup" data-hs="profile_cta" style="margin-bottom:0.5rem">
+        <div onclick="openNextProfileSetupSheet()" style="padding:0.7rem 0.9rem;border-radius:14px;background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.12);cursor:pointer">
+          <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.55rem">
+            <div class="home-avatar-mini" id="setup-cta-avatar" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#7C5CFC);display:flex;align-items:center;justify-content:center;color:white;font-size:0.72rem;font-weight:700;flex-shrink:0;overflow:hidden">?</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:0.8rem;font-weight:700;color:var(--text)">Din match-position i radaren</div>
+              <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:0.05rem" id="setup-cta-next">Udfyld profilen og ryk mod midten</div>
+            </div>
+            <div style="font-size:0.72rem;font-weight:800;color:var(--accent);min-width:2rem;text-align:right" id="setup-cta-pct">0%</div>
+          </div>
+          <div style="height:5px;border-radius:3px;background:rgba(124,92,252,0.08);overflow:hidden">
+            <div id="setup-cta-bar" style="height:100%;border-radius:3px;background:linear-gradient(90deg,#7C5CFC,#6366F1);transition:width 0.6s ease;width:0%"></div>
+          </div>
+        </div>
+      </div></div>
+      <div id="home-profile-mini"></div>
+
+      <!-- ═══ FEEDBACK ═══ -->
+      <div data-hs="feedback">
+        <div class="main-nav-card" onclick="openFeedback()">
+          <div class="main-nav-icon" style="background:rgba(124,92,252,0.12);color:var(--accent)"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
+          <div style="flex:1">
+            <div class="section-title">Giv feedback</div>
+            <div class="sub-muted" data-t="pf_feedback_desc">Hjælp os med at gøre Bubble bedre</div>
+          </div>
+          <div class="icon-muted">›</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ═══ LIST TRAY ═══ -->
+  <div id="home-tray-backdrop" onclick="closeHomeTray()" style="display:none;position:absolute;inset:0;background:rgba(30,27,46,0.25);z-index:50;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)"></div>
+  <div id="home-tray" style="visibility:hidden;position:absolute;bottom:0;left:0;right:0;height:72%;background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:24px 24px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,0.1);transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1);z-index:55;display:flex;flex-direction:column">
+    <div style="padding:10px 0 4px;display:flex;justify-content:center;flex-shrink:0"><div style="width:36px;height:4px;border-radius:2px;background:rgba(30,27,46,0.12)"></div></div>
+    <div style="padding:6px 1.2rem 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--glass-border-subtle);flex-shrink:0">
+      <div>
+        <div style="font-size:1rem;font-weight:800">Bedste matches</div>
+        <div style="font-size:0.72rem;color:var(--muted)" id="home-tray-subtitle">0 personer</div>
+      </div>
+      <button onclick="closeHomeTray()" style="width:32px;height:32px;border-radius:10px;border:1px solid var(--glass-border-subtle);background:rgba(255,255,255,0.8);cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;color:var(--muted);font-family:var(--font)">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:0.5rem 1.2rem;-webkit-overflow-scrolling:touch" id="home-tray-list">
+      <div style="text-align:center;padding:1rem"><div class="spinner" style="width:20px;height:20px"></div></div>
+    </div>
+  </div>
+
+  <!-- ═══ LIVE CHECKOUT TRAY ═══ -->
+  <div id="live-checkout-backdrop" onclick="closeLiveCheckoutTray()" style="display:none;position:absolute;inset:0;background:rgba(30,27,46,0.25);z-index:60;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)"></div>
+  <div id="live-checkout-tray" style="visibility:hidden;position:absolute;bottom:0;left:0;right:0;background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:24px 24px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,0.1);transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1);z-index:65;padding:0.6rem 1.5rem 2rem">
+    <div style="display:flex;justify-content:center;padding:0 0 0.8rem"><div style="width:36px;height:4px;border-radius:2px;background:rgba(30,27,46,0.12)"></div></div>
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.2rem">
+      <div style="width:44px;height:44px;border-radius:14px;background:rgba(26,158,142,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-3.5-3.5-6.5-7-6.5-10.5a6.5 6.5 0 0113 0c0 3.5-3 7-6.5 10.5z"/><circle cx="12" cy="11" r="2.5"/></svg>
+      </div>
+      <div>
+        <div style="font-size:1rem;font-weight:800;color:var(--text)" id="live-checkout-name">...</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:0.1rem" id="live-checkout-meta">Checked ind</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.5rem">
+      <button onclick="closeLiveCheckoutTray();openLiveBubble()" style="width:100%;padding:0.85rem;border-radius:14px;background:var(--gradient-primary);border:none;color:white;font-size:0.92rem;font-weight:700;cursor:pointer;font-family:var(--font)">Se event →</button>
+      <button id="live-checkout-btn" onclick="bbConfirm(this,{label:'Vil du checke ud?',confirmText:'Ja, check ud',confirmClass:'bb-confirm-btn-danger',onConfirm:'liveCheckout();closeLiveCheckoutTray()'})" style="width:100%;padding:0.85rem;border-radius:14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#DC2626;font-size:0.92rem;font-weight:700;cursor:pointer;font-family:var(--font)">Check ud</button>
+      <button onclick="closeLiveCheckoutTray()" style="width:100%;padding:0.65rem;border-radius:14px;background:none;border:none;color:var(--muted);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:var(--font)" data-t="misc_cancel">Annuller</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: BUBBLES
+════════════════════════════════════════ -->
+<div class="screen" id="screen-bubbles">
+  <div class="topbar">
+    <div class="topbar-title" data-t="bb_topbar">Bobler</div>
+    <button class="btn-sm btn-ghost" onclick="openCreateBubble()" style="font-size:0.75rem;padding:0.35rem 0.75rem">+ Ny</button>
+  </div>
+  <div class="bubble-tabs" style="flex-shrink:0;position:sticky;top:0;z-index:5;background:var(--bg);margin:0.4rem 1.1rem 0;padding:3px">
+    <button class="bubble-tab active" id="bb-tab-mine" onclick="bbSwitchTab('mine')" data-t="bb_mine">Mine</button>
+    <button class="bubble-tab" id="bb-tab-explore" onclick="bbSwitchTab('explore')" data-t="bb_discover">Opdag</button>
+  </div>
+  <div class="bubble-tabs bb-sub-tabs" id="bb-sub-tabs" style="margin:0.3rem 1.1rem 0">
+    <button class="bubble-tab bb-sub-tab active" id="bb-sub-net" onclick="bbSwitchSub('net')" data-t="home_networks" style="position:relative">Netværk<div id="bb-sub-net-dot" style="display:none;position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#E879A8"></div></button>
+    <button class="bubble-tab bb-sub-tab" id="bb-sub-evt" onclick="bbSwitchSub('evt')" data-t="home_events" style="position:relative">Events<div id="bb-sub-evt-dot" style="display:none;position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#E879A8"></div></button>
+  </div>
+  <div class="scroll-area" style="padding-top:0.5rem">
+    <div id="bb-panel-mine-net">
+      <div id="bb-pending-invites"></div>
+      <div id="bb-net-list"><div class="spinner"></div></div>
+    </div>
+    <div id="bb-panel-mine-evt" style="display:none">
+      <div id="bb-evt-list"><div class="spinner"></div></div>
+    </div>
+    <div id="bb-panel-explore-net" style="display:none">
+      <input class="input" type="search" placeholder="Søg netværk..." id="bubble-search-net" data-t-placeholder="bb_search_networks" oninput="filterBubbles('net')" style="margin-bottom:1rem">
+      <div id="discover-net-list"><div class="spinner"></div></div>
+    </div>
+    <div id="bb-panel-explore-evt" style="display:none">
+      <input class="input" type="search" placeholder="Søg events..." id="bubble-search-evt" data-t-placeholder="bb_search_events" oninput="filterBubbles('evt')" style="margin-bottom:1rem">
+      <div id="discover-evt-list"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: NOTIFICATIONS
+════════════════════════════════════════ -->
+<div class="screen" id="screen-notifications">
+  <div class="topbar">
+    <button class="back-btn" onclick="navBack()">←</button>
+    <div class="topbar-title" style="font-weight:800" data-t="nf_title">Notifikationer</div>
+  </div>
+  <div class="scroll-area">
+    <div id="notifications-list"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- screen-discover: content moved to screen-bubbles Udforsk tab -->
+
+<!-- ════════════════════════════════════════
+     SCREEN: BUBBLE DETAIL
+════════════════════════════════════════ -->
+<!-- screen-bubble-detail removed — integrated into screen-bubble-chat -->
+
+<!-- ════════════════════════════════════════
+     SCREEN: PERSON PROFILE
+════════════════════════════════════════ -->
+<div class="screen" id="screen-person" style="position:relative">
+  <div class="scroll-area" style="padding:0 0 calc(56px + env(safe-area-inset-bottom, 0px) + 1rem) 0">
+    <!-- Cover -->
+    <div class="person-cover" id="person-cover">
+      <div class="person-cover-gradient" id="person-cover-grad"></div>
+      <div class="person-cover-pattern"></div>
+      <div style="position:absolute;bottom:0.75rem;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:0 1rem;z-index:5">
+        <button id="person-back-btn" onclick="navBack()" style="background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);border:1px solid var(--glass-border-subtle);border-radius:99px;padding:0.3rem 0.8rem;color:var(--text);font-size:0.8rem;font-family:inherit;cursor:pointer;box-shadow:0 1px 4px rgba(30,27,46,0.1)">←</button>
+        <div id="person-match-label" style="border-radius:99px;padding:0.35rem 0.9rem;font-size:0.72rem;font-weight:700;color:white;box-shadow:0 2px 8px rgba(30,27,46,0.15);display:flex;align-items:center;justify-content:center;line-height:1;white-space:nowrap"></div>
+      </div>
+    </div>
+    <!-- Avatar + name -->
+    <div class="person-info-section">
+      <div class="person-avatar-wrap">
+        <div class="person-avatar-ring" id="person-avatar" onclick="viewAvatarFull(this)" style="cursor:pointer">?</div>
+      </div>
+      <div style="margin-top:0.6rem">
+        <div class="person-display-name" id="person-name">...</div>
+        <div class="person-display-title" id="person-role">...</div>
+        <div id="person-live-badge" style="display:none;font-size:0.68rem;color:#1A9E8E;margin-top:0.25rem"></div>
+      </div>
+    </div>
+    <!-- Bio (inline, under name — hidden if empty) -->
+    <div id="person-bio-inline" style="display:none;padding:0.35rem 1.5rem 0;text-align:center">
+      <div class="person-bio-text" id="person-bio"></div>
+    </div>
+    <!-- Action bar -->
+    <div class="person-action-bar">
+      <button class="person-action-btn" onclick="startChat()">
+        <svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><span data-t="ps_message">Besked</span>
+      </button>
+      <button class="person-action-btn" onclick="saveContact()" id="save-btn">
+        <svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4a1.5 1.5 0 011.5-1.5h9A1.5 1.5 0 0118 4v17l-6-3.5L6 21V4z"/></svg><span data-t="ps_save">Gem</span>
+      </button>
+      <a id="person-linkedin-btn" href="#" target="_blank" rel="noopener" class="person-action-btn linkedin" style="display:none">
+        <svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg><span>LinkedIn</span>
+      </a>
+    </div>
+    <!-- Star priority rating (only if saved) -->
+    <div class="person-section" id="person-star-section" style="display:none">
+      <div class="person-section-title">Prioritet</div>
+      <div class="person-star-rating" id="person-star-rating"></div>
+    </div>
+    <!-- Match -->
+    <div class="person-section" id="person-overlap-section">
+      <div id="person-overlap"></div>
+    </div>
+    <!-- Tags / Interesser -->
+    <div class="person-section" id="person-tags-section">
+      <div class="person-section-title">Interesser</div>
+      <div id="person-tags"></div>
+    </div>
+    <!-- Dynamic keywords -->
+    <div id="person-dynamic-keywords" style="padding:0 1.25rem 1rem"></div>
+    <!-- Public bubbles (identity badges) -->
+    <div id="person-bubbles-section" class="person-section" style="display:none">
+      <div class="person-section-title" id="person-bubbles-title">Bobler</div>
+      <div id="person-bubbles-list"></div>
+    </div>
+    <!-- Bubble-up -->
+    <div style="padding:0.5rem 1.25rem 1.5rem">
+      <button class="bubble-up-btn" id="person-bubbleup-btn" onclick="personTriggerBubbleUp()">
+        <svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg><span class="fw-600" id="person-bubbleup-label">Opret boble</span>
+      </button>
+      <div class="bubble-up-confirm" id="person-bubbleup-confirm" style="margin-top:0.65rem">
+        <div class="bubble-up-confirm-text">Send en boble-invitation til <span class="bubble-up-confirm-name" id="person-bubbleup-name"></span>?<br>De skal acceptere — begge bliver ejere.</div>
+        <div class="bubble-up-confirm-row" style="margin-top:0.4rem">
+          <button class="bubble-up-yes" onclick="personConfirmBubbleUp()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg> Send invitation</button>
+          <button class="bubble-up-no" onclick="personCancelBubbleUp()" data-t="misc_cancel">Annuller</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SCREEN: BOBLE CHAT (merged med detail)
+════════════════════════════════════════ -->
+<div class="screen" id="screen-bubble-chat">
+
+  <!-- Topbar: [← card] + [bubble card + ⓘ] + [✏️ card] -->
+  <div class="chat-topbar-cards">
+    <button class="chat-topbar-back" id="bc-back-btn" onclick="navBack()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div class="chat-topbar-identity" id="bc-topbar-card" onclick="bcToggleInfo()">
+      <div class="chat-topbar-icon" id="bc-topbar-icon"></div>
+      <div class="chat-topbar-text">
+        <div class="chat-topbar-name" id="bc-name">...</div>
+        <div class="chat-topbar-sub" id="bc-members-count">...</div>
+      </div>
+      <svg class="chat-topbar-info-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><circle cx="12" cy="8" r="0.5" fill="currentColor"/></svg>
+    </div>
+    <div id="bc-action-btns" style="display:none;gap:4px;flex-shrink:0"></div>
+  </div>
+
+
+  <!-- Tabs: Medlemmer > Events/Opslag > Chat > Info -->
+  <div class="bubble-tabs">
+    <button class="bubble-tab active" id="bc-tab-members" onclick="bcSwitchTab('members')" data-t="bc_members">Medlemmer</button>
+    <!-- Events tab removed in v8.6.1 — hierarchy shown via accordion in Info tab -->
+    <button class="bubble-tab" id="bc-tab-posts" onclick="bcSwitchTab('posts')" data-t="bc_posts">Opslag</button>
+    <button class="bubble-tab" id="bc-tab-chat" onclick="bcSwitchTab('chat')"><span data-t="bc_chat">Chat</span> <span class="bubble-tab-badge" id="bc-unread-badge" style="display:none">0</span></button>
+    <button class="bubble-tab" id="bc-tab-info" onclick="bcSwitchTab('info')" data-t="bc_info">Info</button>
+  </div>
+
+  <!-- Action bar: Invitér / Anbefal / QR -->
+  <div class="bc-action-bar" id="bc-action-bar" style="display:none"></div>
+
+  <!-- MEMBERS TAB (default) -->
+  <div id="bc-panel-members" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+    <div class="chat-members-list" id="bc-members-list"></div>
+  </div>
+
+  <!-- CHAT TAB -->
+  <div id="bc-panel-chat" class="chat-panel">
+    <div class="chat-scroll" id="bc-messages"></div>
+    <button id="bc-scroll-bottom" class="chat-scroll-fab" style="display:none" onclick="var el=document.getElementById('bc-messages');el.scrollTo({top:el.scrollHeight,behavior:'smooth'})">↓</button>
+    <div class="chat-composer">
+      <div class="chat-edit-bar" id="bc-edit-bar">
+        <span><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg> Redigerer besked</span>
+        <span class="chat-edit-cancel" onclick="bcCancelEdit()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17M7 7l10 10"/></svg></span>
+      </div>
+      <div class="chat-composer-row">
+        <input type="file" id="bc-file-input" style="display:none" accept="image/*,video/*,.pdf,.doc,.docx,.xlsx,.pptx" onchange="bcHandleFile(this)">
+        <button class="chat-plus-btn" onclick="toggleChatMenu('bc')">+</button>
+        <div class="chat-plus-menu" id="bc-plus-menu">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px;min-width:180px">
+            <button onclick="closeChatMenu('bc');var f=document.getElementById('bc-file-input');f.value='';f.click()" style="flex-direction:column;gap:6px;padding:14px 10px;border-radius:12px;background:var(--glass-bg)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              <span style="font-size:0.72rem;color:var(--text-secondary)">Billede / fil</span>
+            </button>
+            <button onclick="closeChatMenu('bc');toggleGifPicker('bc')" style="flex-direction:column;gap:6px;padding:14px 10px;border-radius:12px;background:var(--glass-bg)">
+              <div style="background:var(--accent);color:white;font-size:0.7rem;font-weight:800;padding:3px 8px;border-radius:6px;letter-spacing:0.5px">GIF</div>
+              <span style="font-size:0.72rem;color:var(--text-secondary)">Giphy</span>
+            </button>
+          </div>
+        </div>
+        <input class="chat-composer-input" id="bc-input" maxlength="2000" data-t-placeholder="bc_write_message" placeholder="Skriv en besked..." enterkeyhint="send" autocomplete="off" autocorrect="on" spellcheck="true">
+        <button class="chat-send-btn" id="bc-send-btn" ontouchstart="event.preventDefault()" ontouchend="event.preventDefault();bcSendMessage()" onclick="if(!('ontouchstart' in window))bcSendMessage()">→</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INFO TAB -->
+  <div id="bc-panel-info" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+    <div class="chat-info-list" id="bc-info-list"></div>
+  </div>
+
+  <!-- POSTS TAB -->
+  <div id="bc-panel-posts" style="display:none;flex-direction:column;flex:1;overflow:hidden;position:relative">
+    <div class="scroll-area" id="bc-posts-list" style="flex:1;overflow-y:auto;padding:0.8rem 1.1rem"></div>
+    <button id="bc-posts-fab" onclick="bcOpenCreatePost()" style="display:none;position:absolute;bottom:1.2rem;right:1.1rem;padding:0.55rem 1rem;border-radius:99px;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;border:none;font-size:0.78rem;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(124,92,252,0.25);z-index:10;font-family:inherit;align-items:center;gap:0.3rem">+ Nyt opslag</button>
+  </div>
+
+  <!-- EVENTS TAB (for network bubbles) -->
+  <!-- Events panel removed in v8.6.1 -->
+
+  <!-- Bottom nav -->
+</div>
+
+<!-- Person sheet (boble-chat avatar tap) -->
+<div class="person-sheet-overlay" id="ps-overlay" onclick="psClose()"></div>
+<div class="person-sheet" id="person-sheet-el">
+  <div class="person-sheet-handle" onclick="psClose()"></div>
+  <div class="person-sheet-header">
+    <div class="person-sheet-avatar" id="ps-avatar"></div>
+    <div>
+      <div class="person-sheet-name" id="ps-name"></div>
+      <div class="person-sheet-sub" id="ps-sub"></div>
+      <div id="ps-live-badge" style="display:none;font-size:0.68rem;color:#1A9E8E;margin-top:0.15rem"></div>
+    </div>
+    <button class="person-sheet-close" onclick="psClose()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17M7 7l10 10"/></svg></button>
+  </div>
+  <div class="person-sheet-bio" id="ps-bio"></div>
+  <div class="ps-star-row" id="ps-star-row" style="display:none">
+    <span style="font-size:0.72rem;color:var(--text-secondary);font-weight:600">Prioritet</span>
+    <div class="ps-stars" id="ps-stars"></div>
+  </div>
+  <div class="person-sheet-actions">
+    <button class="person-sheet-btn primary" onclick="psMessage()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg> Besked</button>
+    <button class="person-sheet-btn secondary" id="ps-save-btn" onclick="psSaveContact()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4a1.5 1.5 0 011.5-1.5h9A1.5 1.5 0 0118 4v17l-6-3.5L6 21V4z"/></svg> Gem</button>
+    <button class="person-sheet-btn secondary" onclick="psProfile()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg> Profil</button>
+    <a class="person-sheet-btn secondary" id="ps-linkedin-btn" href="#" target="_blank" rel="noopener" style="display:none;text-decoration:none"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> LinkedIn</a>
+  </div>
+  <!-- Bubble-up -->
+  <button class="bubble-up-btn" id="ps-bubbleup-btn" onclick="psTriggerBubbleUp()">
+    <svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg><span class="fw-600" id="ps-bubbleup-label">Opret boble</span>
+  </button>
+  <div class="bubble-up-confirm" id="ps-bubbleup-confirm">
+    <div class="bubble-up-confirm-text">Send en boble-invitation til <span class="bubble-up-confirm-name" id="ps-bubbleup-name"></span>?<br>De skal acceptere — begge bliver ejere.</div>
+    <div class="bubble-up-confirm-row">
+      <button class="bubble-up-yes" onclick="psConfirmBubbleUp()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg> Send invitation</button>
+      <button class="bubble-up-no" onclick="psCancelBubbleUp()" data-t="misc_cancel">Annuller</button>
+    </div>
+  </div>
+  <!-- Block & Report -->
+  <div class="ps-moderation">
+    <button class="ps-mod-btn" onclick="psReportUser()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg> Rapportér</button>
+    <button class="ps-mod-btn danger" onclick="psBlockUser()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg> Blokér</button>
+  </div>
+</div>
+
+
+
+<!-- TOP-DROP PERSON SHEET (radar) -->
+<div class="radar-person-overlay" id="radar-person-overlay" onclick="closeRadarPerson()"></div>
+<div class="radar-person-sheet" id="radar-person-sheet">
+  <div class="radar-person-inner">
+    <div class="radar-person-header">
+      <div class="radar-person-avatar" id="rp-avatar">?</div>
+      <div style="flex:1;min-width:0">
+        <div class="radar-person-name" id="rp-name">...</div>
+        <div class="radar-person-sub" id="rp-sub">...</div>
+        <div id="rp-live-badge" style="display:none;font-size:0.62rem;font-weight:600;color:#1A9E8E;background:rgba(46,207,207,0.08);padding:2px 8px;border-radius:99px;margin-top:3px;width:fit-content;display:none"></div>
+      </div>
+      <div class="radar-person-match" id="rp-match"></div>
+      <button class="radar-person-close" onclick="closeRadarPerson()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M17 7L7 17M7 7l10 10"/></svg></button>
+    </div>
+    <div class="radar-person-bio" id="rp-bio"></div>
+    <div id="rp-shared-bubbles" style="display:none;margin:0.4rem 0"></div>
+    <div class="radar-person-tags" id="rp-tags"></div>
+    <div class="radar-person-overlap" id="rp-overlap"></div>
+    <div class="radar-person-actions">
+      <button class="radar-person-action-btn primary" onclick="rpMessage()">Besked</button>
+      <button class="radar-person-action-btn" id="rp-save-btn" onclick="rpSaveContact()" data-t="rp_save">Gem</button>
+      <button class="radar-person-action-btn" onclick="rpFullProfile()" data-t="rp_profile">Profil</button>
+      <a class="radar-person-action-btn" id="rp-linkedin-btn" href="#" target="_blank" rel="noopener" style="display:none;text-decoration:none">LinkedIn</a>
+    </div>
+    <div class="radar-person-handle" onclick="closeRadarPerson()"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: MESSAGES LIST
+════════════════════════════════════════ -->
+<div class="screen" id="screen-messages">
+  <div class="topbar">
+    <div class="topbar-title" data-t="nav_messages">Beskeder</div>
+    <button class="btn-sm btn-ghost" id="conv-select-btn" onclick="convToggleSelectMode()" style="font-size:0.75rem;padding:0.35rem 0.75rem" data-t="misc_select">Vælg</button>
+  </div>
+  <!-- Conversation delete toolbar -->
+  <div class="dm-select-toolbar" id="conv-select-toolbar" style="display:none;flex-shrink:0">
+    <span id="conv-select-count" style="font-size:0.78rem;font-weight:600">0 valgt</span>
+    <div style="display:flex;gap:0.4rem">
+      <button class="btn-sm" id="conv-delete-btn" onclick="convDeleteSelected()" style="font-size:0.72rem;padding:0.3rem 0.6rem;background:rgba(232,121,168,0.15);color:var(--accent2);border:1px solid rgba(232,121,168,0.3);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600" disabled data-t="misc_delete">Slet</button>
+      <button class="btn-sm btn-ghost" onclick="convSelectAll()" style="font-size:0.72rem;padding:0.3rem 0.6rem" data-t="misc_select_all">Vælg alle</button>
+    </div>
+  </div>
+  <div class="scroll-area">
+    <div id="conversations-list"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: CHAT THREAD
+════════════════════════════════════════ -->
+<div class="screen" id="screen-chat">
+  <!-- Topbar: [← card] + [person card] -->
+  <div class="chat-topbar-cards">
+    <button class="chat-topbar-back" id="dm-back-btn" onclick="navBack()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div class="chat-topbar-identity" id="dm-topbar-profile" onclick="dmOpenPersonSheet(currentChatUser)">
+      <div class="chat-topbar-avatar" id="dm-topbar-avatar">?</div>
+      <div class="chat-topbar-text">
+        <div class="chat-topbar-name" id="chat-name">...</div>
+        <div class="chat-topbar-sub" id="chat-role">...</div>
+      </div>
+      <svg class="chat-topbar-info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+  </div>
+  <div class="chat-panel" id="dm-panel">
+    <div class="chat-scroll" id="chat-messages"></div>
+    <button id="dm-scroll-bottom" class="chat-scroll-fab" style="display:none" onclick="var el=document.getElementById('chat-messages');el.scrollTo({top:el.scrollHeight,behavior:'smooth'})">↓</button>
+    <div id="dm-typing-indicator" class="dm-typing-indicator" style="display:none">
+      <div class="dm-typing-avatar" id="dm-typing-avatar"></div>
+      <div class="dm-typing-bubble">
+        <div class="dm-typing-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+    <div class="chat-composer">
+      <div class="chat-edit-bar" id="dm-edit-bar">
+        <span><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg> Redigerer besked</span>
+        <span class="chat-edit-cancel" onclick="dmCancelEdit()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17M7 7l10 10"/></svg></span>
+      </div>
+      <div class="chat-composer-row">
+        <input type="file" id="dm-file-input" style="display:none" accept="image/*,video/*,.pdf,.doc,.docx,.xlsx,.pptx" onchange="dmHandleFile(this)">
+        <button class="chat-plus-btn" onclick="toggleChatMenu('dm')">+</button>
+        <div class="chat-plus-menu" id="dm-plus-menu">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px;min-width:180px">
+            <button onclick="closeChatMenu('dm');var f=document.getElementById('dm-file-input');f.value='';f.click()" style="flex-direction:column;gap:6px;padding:14px 10px;border-radius:12px;background:var(--glass-bg)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              <span style="font-size:0.72rem;color:var(--text-secondary)">Billede / fil</span>
+            </button>
+            <button onclick="closeChatMenu('dm');toggleGifPicker('dm')" style="flex-direction:column;gap:6px;padding:14px 10px;border-radius:12px;background:var(--glass-bg)">
+              <div style="background:var(--accent);color:white;font-size:0.7rem;font-weight:800;padding:3px 8px;border-radius:6px;letter-spacing:0.5px">GIF</div>
+              <span style="font-size:0.72rem;color:var(--text-secondary)">Giphy</span>
+            </button>
+          </div>
+        </div>
+        <input class="chat-composer-input" id="chat-input" placeholder="Skriv en besked..." data-t-placeholder="dm_write_placeholder" oninput="dmOnInput()" enterkeyhint="send" autocomplete="off" autocorrect="on" spellcheck="true">
+        <button class="chat-send-btn" id="chat-send-btn" ontouchstart="event.preventDefault()" ontouchend="event.preventDefault();sendMessage()" onclick="if(!('ontouchstart' in window))sendMessage()">→</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: MY PROFILE
+════════════════════════════════════════ -->
+<div class="screen" id="screen-profile">
+  <div class="topbar">
+    <div class="topbar-title" data-t="pf_my_profile">Min profil</div>
+    <div style="display:flex;align-items:center;gap:0.4rem">
+      <button class="btn-sm btn-ghost" onclick="openEditProfile()" style="font-size:0.75rem;padding:0.35rem 0.75rem" data-t="pf_edit_btn">Rediger</button>
+      <button class="btn-sm btn-ghost" onclick="openSettingsModal()" style="padding:0.35rem 0.45rem;color:var(--muted);display:flex;align-items:center;justify-content:center" title="Indstillinger" data-t-title="pf_settings"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem;display:block"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+    </div>
+  </div>
+
+  <!-- Scrollable area: hero + tags + nudge scroll with content, tabs stick -->
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;overscroll-behavior:contain">
+
+    <!-- Profile hero (compact, left-aligned) -->
+    <div class="profile-hero" style="flex-shrink:0;padding:0.6rem 1.1rem 0.4rem;display:flex;align-items:center;gap:0.8rem">
+      <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#6366F1);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:white;box-shadow:0 4px 16px rgba(124,92,252,0.3);border:2px solid rgba(30,27,46,0.05);flex-shrink:0;overflow:hidden;cursor:pointer" id="my-avatar" onclick="viewAvatarFull(this)">?</div>
+      <div style="flex:1;min-width:0;text-align:left">
+        <div style="font-size:1rem;font-weight:800;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-name">...</div>
+        <div style="font-size:0.75rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-role">...</div>
+      </div>
+    </div>
+    <!-- Quick stats — always visible -->
+    <div id="prof-quick-stats" style="flex-shrink:0;padding:0.2rem 1.1rem 0.4rem;display:flex;gap:0.75rem"></div>
+    <!-- Profil-styrke indikator (altid synlig) -->
+    <div style="flex-shrink:0;padding:0 1.1rem 0.6rem">
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <div style="flex:1;height:4px;border-radius:99px;background:rgba(124,92,252,0.08);overflow:hidden">
+          <div id="prof-strength-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#6366F1);transition:width 0.5s ease;width:0%"></div>
+        </div>
+        <div style="font-size:0.65rem;font-weight:700;color:var(--muted);min-width:2.2rem;text-align:right" id="prof-strength-pct">0%</div>
+        <div style="font-size:0.65rem;color:var(--text-secondary)" id="prof-strength-label"></div>
+      </div>
+    </div>
+
+    <!-- Tabs (sticky) -->
+    <div class="bubble-tabs" style="flex-shrink:0;position:sticky;top:0;z-index:5;background:var(--bg)">
+      <button class="bubble-tab active" id="prof-tab-dashboard" onclick="profSwitchTab('dashboard')">Dashboard</button>
+      <button class="bubble-tab" id="prof-tab-saved" onclick="profSwitchTab('saved')" data-t="pf_tab_saved">Gemte</button>
+      <button class="bubble-tab" id="prof-tab-bubbles" onclick="profSwitchTab('bubbles')" data-t="nav_bubbles">Bobler</button>
+    </div>
+
+    <!-- DASHBOARD TAB -->
+    <div id="prof-panel-dashboard" style="display:flex;flex-direction:column;flex:1;padding:0.75rem 1.1rem 8.5rem">
+      <div id="prof-dashboard-content"></div>
+    </div>
+
+    <!-- SAVED TAB -->
+    <div id="prof-panel-saved" style="display:none;flex-direction:column;flex:1;padding:0.75rem 1.1rem 8.5rem">
+      <div id="saved-contacts"></div>
+    </div>
+
+    <!-- BUBBLES TAB -->
+    <div id="prof-panel-bubbles" style="display:none;flex-direction:column;flex:1;padding:0.75rem 1.1rem 8.5rem">
+      <div id="profile-bubbles"><div class="spinner"></div></div>
+    </div>
+
+    <!-- INVITATIONS TAB -->
+    <div id="prof-panel-invites" style="display:none;flex-direction:column;flex:1;padding:0.75rem 1.1rem 6rem">
+      <div id="profile-invitations"></div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+
+  </div><!-- /scroll area -->
+
+</div>
+
+<!-- ════════════════════════════════════════
+     PROFILE SETUP SHEETS (bottom sheets from home CTA)
+════════════════════════════════════════ -->
+
+<!-- SHEET 1: Title -->
+<div class="modal-overlay" id="sheet-setup-title" onclick="if(event.target===this)closeModal('sheet-setup-title')" style="align-items:flex-end">
+  <div class="setup-sheet">
+    <div class="setup-sheet-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem">
+      <div>
+        <div style="display:flex;align-items:center;gap:0.5rem"><div class="setup-step-dots"><span class="setup-dot active"></span><span class="setup-dot" onclick="setupGoToStep(2)"></span><span class="setup-dot" onclick="setupGoToStep(3)"></span><span class="setup-dot" onclick="setupGoToStep(4)"></span></div><span style="font-size:0.58rem;color:var(--muted)">1/4</span></div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Hvad er din titel?</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--accent)" id="setup-title-pct">0%</div>
+        <div style="width:48px;height:4px;border-radius:99px;background:rgba(124,92,252,0.1);margin-top:3px;overflow:hidden"><div id="setup-title-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#6366F1);transition:width 0.4s;width:0%"></div></div>
+      </div>
+    </div>
+    <div class="input-group" style="margin-bottom:1rem">
+      <input class="input" id="setup-title-input" placeholder="f.eks. Founder, CTO, Projektleder..." autocomplete="off" oninput="setupTitleChanged()">
+    </div>
+    <button class="btn-primary" id="setup-title-save" onclick="saveSetupTitle()" style="width:100%;margin-bottom:0.5rem">Gem og fortsæt →</button>
+    <div onclick="skipSetupSheet('title')" style="text-align:center;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:0.3rem">Spring over</div>
+  </div>
+</div>
+
+<!-- SHEET 2: Beskæftigelse -->
+<div class="modal-overlay" id="sheet-setup-lifestage" onclick="if(event.target===this)closeModal('sheet-setup-lifestage')" style="align-items:flex-end">
+  <div class="setup-sheet">
+    <div class="setup-sheet-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem">
+      <div>
+        <div style="display:flex;align-items:center;gap:0.5rem"><span class="setup-back" onclick="setupGoToStep(1)">&#8249;</span><div class="setup-step-dots"><span class="setup-dot" onclick="setupGoToStep(1)"></span><span class="setup-dot active"></span><span class="setup-dot" onclick="setupGoToStep(3)"></span><span class="setup-dot" onclick="setupGoToStep(4)"></span></div><span style="font-size:0.58rem;color:var(--muted)">2/4</span></div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Hvad beskriver dig bedst?</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--accent)" id="setup-ls-pct">0%</div>
+        <div style="width:48px;height:4px;border-radius:99px;background:rgba(124,92,252,0.1);margin-top:3px;overflow:hidden"><div id="setup-ls-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#6366F1);transition:width 0.4s;width:0%"></div></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-bottom:1.2rem" id="setup-lifestage-grid">
+      <button type="button" class="setup-ls-btn" data-ls="student" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(59,130,246,0.1);color:#3B82F6"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 10l-10-5L2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg></div><span>Studerende</span></button>
+      <button type="button" class="setup-ls-btn" data-ls="employee" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(124,92,252,0.1);color:#7C5CFC"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg></div><span>Erhverv</span></button>
+      <button type="button" class="setup-ls-btn" data-ls="entrepreneur" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(232,121,168,0.1);color:#E879A8"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4.5 16.5c-1.5 1.5-2 5-2 5s3.5-.5 5-2c.8-.8 1-2 .4-2.8a2.1 2.1 0 00-3.4-.2z"/><path d="M14.5 2.5c-3 2-5 5.5-5.5 9l3.5 3.5c3.5-.5 7-2.5 9-5.5z"/></svg></div><span>Iværksætter</span></button>
+      <button type="button" class="setup-ls-btn" data-ls="freelancer" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(26,158,142,0.1);color:#1A9E8E"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg></div><span>Freelancer</span></button>
+      <button type="button" class="setup-ls-btn" data-ls="public" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(26,158,142,0.1);color:#1A9E8E"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M10 21v-3h4v3"/></svg></div><span>Offentlig / NGO</span></button>
+      <button type="button" class="setup-ls-btn" data-ls="practical" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(245,158,11,0.1);color:#F59E0B"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div><span>Håndværk & Teknik</span></button>
+      <button type="button" class="setup-ls-btn" data-ls="investor" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(245,158,11,0.1);color:#F59E0B"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div><span>Investor</span></button>
+      <button type="button" class="setup-ls-btn" data-ls="other" onclick="pickSetupLifestage(this)"><div class="setup-ls-icon" style="background:rgba(46,207,207,0.1);color:#2ECFCF"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v.01"/><path d="M12 8a2.5 2.5 0 011.13 4.74c-.46.27-.76.72-.87 1.26"/></svg></div><span>Andet</span></button>
+    </div>
+    <button class="btn-primary" id="setup-ls-save" onclick="saveSetupLifestage()" style="width:100%;margin-bottom:0.5rem" disabled>Vælg beskæftigelse</button>
+    <div onclick="skipSetupSheet('lifestage')" style="text-align:center;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:0.3rem">Spring over</div>
+  </div>
+</div>
+
+<!-- SHEET 3: Tags -->
+<div class="modal-overlay" id="sheet-setup-tags" onclick="if(event.target===this)closeModal('sheet-setup-tags')" style="align-items:flex-end">
+  <div class="setup-sheet" style="max-height:88vh;display:flex;flex-direction:column;overflow-y:hidden">
+    <div class="setup-sheet-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-shrink:0">
+      <div>
+        <div style="display:flex;align-items:center;gap:0.5rem"><span class="setup-back" onclick="setupGoToStep(2)">&#8249;</span><div class="setup-step-dots"><span class="setup-dot" onclick="setupGoToStep(1)"></span><span class="setup-dot" onclick="setupGoToStep(2)"></span><span class="setup-dot active"></span><span class="setup-dot" onclick="setupGoToStep(4)"></span></div><span style="font-size:0.58rem;color:var(--muted)">3/4</span></div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Faglige tags</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--accent)" id="setup-tags-pct">0%</div>
+        <div style="width:48px;height:4px;border-radius:99px;background:rgba(124,92,252,0.1);margin-top:3px;overflow:hidden"><div id="setup-tags-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#6366F1);transition:width 0.4s;width:0%"></div></div>
+      </div>
+    </div>
+    <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.75rem;flex-shrink:0">Vælg tags der beskriver din branche, rolle og interesser</div>
+    <div id="et-prog-bar-setup" style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.4rem;flex-shrink:0">
+      <div style="flex:1;height:3px;background:rgba(124,92,252,0.08);border-radius:99px;overflow:hidden"><div id="et-prog-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#E879A8);transition:width .4s;width:0%"></div></div>
+      <div id="et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:var(--accent);white-space:nowrap">0 valgt</div>
+    </div>
+    <div id="et-chips" style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-bottom:0.5rem;min-height:0;flex-shrink:0"></div>
+    <div id="et-acc-list" style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;margin-bottom:0.75rem"></div>
+    <div style="flex-shrink:0">
+      <button class="btn-primary" onclick="saveSetupTags()" style="width:100%;margin-bottom:0.5rem">Gem og fortsæt →</button>
+      <div onclick="skipSetupSheet('tags')" style="text-align:center;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:0.3rem">Spring over</div>
+    </div>
+  </div>
+</div>
+
+<!-- SHEET 4: Bio -->
+<div class="modal-overlay" id="sheet-setup-bio" onclick="if(event.target===this)closeModal('sheet-setup-bio')" style="align-items:flex-end">
+  <div class="setup-sheet">
+    <div class="setup-sheet-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem">
+      <div>
+        <div style="display:flex;align-items:center;gap:0.5rem"><span class="setup-back" onclick="setupGoToStep(3)">&#8249;</span><div class="setup-step-dots"><span class="setup-dot" onclick="setupGoToStep(1)"></span><span class="setup-dot" onclick="setupGoToStep(2)"></span><span class="setup-dot" onclick="setupGoToStep(3)"></span><span class="setup-dot active"></span></div><span style="font-size:0.58rem;color:var(--muted)">4/4</span></div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--text)">Kort om dig</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--accent)" id="setup-bio-pct">0%</div>
+        <div style="width:48px;height:4px;border-radius:99px;background:rgba(124,92,252,0.1);margin-top:3px;overflow:hidden"><div id="setup-bio-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#6366F1);transition:width 0.4s;width:0%"></div></div>
+      </div>
+    </div>
+    <div class="input-group" style="margin-bottom:0.75rem">
+      <textarea class="input" id="setup-bio-input" maxlength="300" rows="4" placeholder="Skriv kort om dig selv — hvad du arbejder med, hvad du brænder for, eller hvad du søger..." style="resize:none;line-height:1.5"></textarea>
+      <div style="font-size:0.62rem;color:var(--muted);margin-top:0.3rem;text-align:right"><span id="setup-bio-count">0</span>/300</div>
+    </div>
+    <button class="btn-primary" onclick="saveSetupBio()" style="width:100%;margin-bottom:0.5rem">Gem profil ✓</button>
+    <div onclick="skipSetupSheet('bio')" style="text-align:center;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:0.3rem">Udfyld senere →</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: EDIT BUBBLE
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-edit-bubble" onclick="if(event.target===this)closeModal('modal-edit-bubble')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" data-t="bb_edit">Rediger boble</div>
+    <div class="input-group">
+      <div class="input-label" data-t="cb_icon">Boble-ikon</div>
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem">
+        <div id="eb-icon-preview" style="width:52px;height:52px;border-radius:14px;background:var(--glass-bg-strong);border:1px solid var(--glass-border-subtle);display:flex;align-items:center;justify-content:center;font-size:1.3rem;overflow:hidden;flex-shrink:0;color:var(--muted)">?</div>
+        <div style="flex:1">
+          <input type="file" id="eb-icon-input" accept="image/*" onchange="handleBubbleIconUpload(this)" style="display:none">
+          <button type="button" class="btn-sm" style="background:var(--glass-bg-strong);border:1px solid var(--glass-border-subtle);color:var(--text-secondary);font-size:0.72rem;padding:0.4rem 0.8rem;border-radius:8px;cursor:pointer;font-family:inherit" onclick="document.getElementById('eb-icon-input').click()">Upload ikon</button>
+          <div style="font-size:0.58rem;color:var(--muted);margin-top:0.15rem">Maks 2MB · JPG, PNG, WebP</div>
+        </div>
+      </div>
+    </div>
+    <div class="input-group">
+      <div class="input-label" data-t="auth_signup_name">Navn</div>
+      <input class="input" id="eb-name" maxlength="100" data-t-placeholder="cb_name" placeholder="Boble navn">
+    </div>
+    <div class="input-group">
+      <div class="input-label" data-t="cb_type">Type</div>
+      <select class="input" id="eb-type">
+        <option value="network">🔵 Netværk — persistent gruppe</option>
+        <option value="event">🟣 Event — har dato og check-in</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <div class="input-label" data-t="cb_visibility">Synlighed</div>
+      <select class="input" id="eb-visibility">
+        <option value="public">🌍 Offentlig — synlig, alle kan joine</option>
+        <option value="private">🔒 Privat — synlig, join kræver anmodning</option>
+        <option value="hidden">👁️ Skjult — usynlig, kun via QR-invitation</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <div class="input-label" data-t="cb_desc">Beskrivelse</div>
+      <textarea class="input" id="eb-desc" maxlength="1000" data-t-placeholder="cb_desc_ph" placeholder="Hvad handler denne boble om?"></textarea>
+    </div>
+    <div class="input-group">
+      <div class="input-label" data-t="cb_keywords">Nøgleord</div>
+      <div class="chips-container" id="eb-chips-container" onclick="document.getElementById('eb-chip-input').focus()">
+        <input class="chip-input" id="eb-chip-input" data-t-placeholder="cb_keywords_ph" placeholder="Tilføj nøgleord..." onkeydown="handleChipInput(event,'eb-chips')">
+              <button type="button" onclick="addChipFromBtn('eb-chip-input','eb-chips')" class="ob-cat-custom-btn" title="Tilføj">✓</button>
+      </div>
+    </div>
+    <div class="input-group">
+      <div class="input-label" data-t="cb_location">Lokation (valgfrit)</div>
+      <input class="input" id="eb-location" maxlength="100" data-t-placeholder="cb_location_ph" placeholder="f.eks. København">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Link (valgfrit)</div>
+      <input class="input" id="eb-external-url" maxlength="500" placeholder="f.eks. https://tilmelding.dk/event" type="url" inputmode="url">
+    </div>
+    <div class="input-group" id="eb-checkin-mode-group" style="display:none">
+      <div class="input-label" data-t="cb_checkin_mode">Check-in metode</div>
+      <select class="input" id="eb-checkin-mode">
+        <option value="self">Selvbetjening (deltagere checker sig selv ind)</option>
+        <option value="scan">Reverse QR (arrangør scanner deltagere)</option>
+      </select>
+    </div>
+    <div class="input-group" id="eb-event-date-group" style="display:none">
+      <div class="input-label" data-t="cb_date">Dato</div>
+      <div style="display:flex"><input class="input" type="date" id="eb-event-date" style="flex:1;min-width:0"></div>
+    </div>
+    <div class="input-group" style="display:none" id="eb-event-time-row">
+      <div class="input-label" data-t="cb_time_start">Starttidspunkt</div>
+      <div style="display:flex"><input class="input" type="time" id="eb-event-time" style="flex:1;min-width:0"></div>
+    </div>
+    <div class="input-group" style="display:none" id="eb-event-time-end-group">
+      <div class="input-label" data-t="cb_time_end">Sluttidspunkt</div>
+      <div style="display:flex"><input class="input" type="time" id="eb-event-time-end" style="flex:1;min-width:0"></div>
+    </div>
+    <div class="input-group" id="eb-agenda-group" style="display:none">
+      <div class="input-label" data-t="cb_agenda">Program / Agenda</div>
+      <textarea class="input" id="eb-agenda" maxlength="2000" rows="4" data-t-placeholder="cb_agenda_ph" placeholder="f.eks. 09:00 Velkomst&#10;09:30 Workshop&#10;12:00 Frokost" style="white-space:pre-wrap"></textarea>
+    </div>
+
+    <button class="btn-primary" onclick="saveEditBubble()" data-t="misc_save_changes">Gem ændringer</button>
+    <button class="btn-secondary" onclick="closeModal('modal-edit-bubble')" data-t="misc_cancel">Annuller</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: CREATE BUBBLE
+════════════════════════════════════════ -->
+<!-- TYPE PICKER: Event vs Network -->
+<div class="modal-overlay" id="modal-create-picker" onclick="if(event.target===this)closeModal('modal-create-picker')">
+  <div class="modal-sheet" style="max-height:65vh">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Hvad vil du oprette?</div>
+    <div style="display:flex;flex-direction:column;gap:0.6rem;margin-top:0.5rem">
+      <div onclick="closeModal('modal-create-picker');openCreateEventModal()" style="background:#FFFFFF;border:1.5px solid rgba(46,207,207,0.2);border-radius:var(--radius);padding:1.1rem;cursor:pointer;box-shadow:0 1px 3px rgba(30,27,46,0.06);transition:all 0.15s">
+        <div style="display:flex;align-items:center;gap:0.75rem">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(46,207,207,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+          <div style="flex:1">
+            <div style="font-size:0.92rem;font-weight:700;color:var(--text)">Event</div>
+            <div style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.15rem;line-height:1.4">Konference, meetup, workshop eller fest. Med dato, check-in og QR scanning.</div>
+          </div>
+        </div>
+      </div>
+      <div onclick="closeModal('modal-create-picker');openCreateNetworkModal()" style="background:#FFFFFF;border:1.5px solid rgba(124,92,252,0.15);border-radius:var(--radius);padding:1.1rem;cursor:pointer;box-shadow:0 1px 3px rgba(30,27,46,0.06);transition:all 0.15s">
+        <div style="display:flex;align-items:center;gap:0.75rem">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7C5CFC"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
+          <div style="flex:1">
+            <div style="font-size:0.92rem;font-weight:700;color:var(--text)">Netværk</div>
+            <div style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.15rem;line-height:1.4">Permanent boble for fællesskab, virksomhed, emne eller by. Join via Opdag eller invitation.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:0.35rem;margin-top:0.6rem;flex-wrap:wrap">
+          <span style="font-size:0.6rem;padding:0.15rem 0.5rem;background:rgba(124,92,252,0.06);color:var(--accent);border-radius:99px;font-weight:600">Discover</span>
+          <span style="font-size:0.6rem;padding:0.15rem 0.5rem;background:rgba(124,92,252,0.06);color:var(--accent);border-radius:99px;font-weight:600">Invitation</span>
+          <span style="font-size:0.6rem;padding:0.15rem 0.5rem;background:rgba(124,92,252,0.06);color:var(--accent);border-radius:99px;font-weight:600">Permanent</span>
+        </div>
+      </div>
+    </div>
+    <button class="btn-secondary" onclick="closeModal('modal-create-picker')" style="margin-top:0.6rem" data-t="misc_cancel">Annuller</button>
+  </div>
+</div>
+
+<!-- MODAL: CREATE NETWORK BUBBLE -->
+<div class="bb-overlay" id="bb-overlay-create-bubble" onclick="if(event.target===this)bbClose('create-bubble')"></div>
+<div class="bb-sheet" id="bb-sheet-create-bubble" onclick="event.stopPropagation()">
+    <div class="bb-sheet-handle"></div>
+    <div class="bb-sheet-title" id="cb-sheet-title" data-t="bb_create_network">Opret boble</div>
+    <div id="cb-parent-label" style="display:none;font-size:0.7rem;font-weight:700;color:#2ECFCF;background:rgba(46,207,207,0.08);border:1px solid rgba(46,207,207,0.2);border-radius:8px;padding:5px 10px;margin-bottom:8px"></div>
+    <div class="input-group">
+      <div class="input-label" data-t="auth_signup_name">Navn</div>
+      <input class="input" id="cb-name" maxlength="100" data-t-placeholder="cb_name" placeholder="f.eks. Startup Sønderborg">
+    </div>
+    <div class="input-group">
+      <div class="input-label" data-t="cb_type">Type</div>
+      <select class="input" id="cb-type">
+        <option value="network">Netværk</option>
+        <option value="event">Event</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <div class="input-label" data-t="cb_visibility">Synlighed</div>
+      <select class="input" id="cb-visibility">
+        <option value="private">🔒 Privat — join kræver godkendelse</option>
+        <option value="public">🌍 Offentlig — alle kan joine</option>
+        <option value="hidden">👁️ Skjult — kun via invitation</option>
+      </select>
+    </div>
+    <div class="input-group" id="cb-event-date-group" style="display:none">
+      <div class="input-label" data-t="cb_date">Dato</div>
+      <div style="display:flex"><input class="input" type="date" id="cb-event-date" style="flex:1;min-width:0"></div>
+    </div>
+    <div class="input-group" style="display:none" id="cb-event-time-row">
+      <div class="input-label" data-t="cb_time_start">Starttidspunkt</div>
+      <div style="display:flex"><input class="input" type="time" id="cb-event-time" style="flex:1;min-width:0"></div>
+    </div>
+    <div class="input-group" style="display:none" id="cb-event-time-end-group">
+      <div class="input-label" data-t="cb_time_end">Sluttidspunkt</div>
+      <div style="display:flex"><input class="input" type="time" id="cb-event-time-end" style="flex:1;min-width:0"></div>
+    </div>
+    <div class="input-group" id="cb-checkin-mode-group" style="display:none">
+      <div class="input-label" data-t="cb_checkin_mode">Check-in metode</div>
+      <select class="input" id="cb-checkin-mode">
+        <option value="self">Selvbetjening (deltagere checker sig selv ind)</option>
+        <option value="scan">Reverse QR (arrangør scanner deltagere)</option>
+      </select>
+    </div>
+    <div class="input-group" id="cb-agenda-group" style="display:none">
+      <div class="input-label" data-t="cb_agenda">Program / Agenda</div>
+      <textarea class="input" id="cb-agenda" maxlength="2000" rows="4" data-t-placeholder="cb_agenda_ph" placeholder="f.eks. 09:00 Velkomst&#10;09:30 Workshop&#10;12:00 Frokost" style="white-space:pre-wrap"></textarea>
+    </div>
+    <div class="input-group">
+      <div class="input-label" data-t="cb_desc">Beskrivelse</div>
+      <textarea class="input" id="cb-desc" maxlength="1000" data-t-placeholder="cb_desc_ph" placeholder="Hvad handler denne boble om?"></textarea>
+    </div>
+    <div class="input-group">
+      <div class="input-label" data-t="cb_location">Lokation (valgfrit)</div>
+      <input class="input" id="cb-location" maxlength="100" data-t-placeholder="cb_location_ph" placeholder="f.eks. København">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Link (valgfrit)</div>
+      <input class="input" id="cb-external-url" maxlength="500" placeholder="f.eks. https://tilmelding.dk/event" type="url" inputmode="url">
+    </div>
+    <div class="input-group">
+      <div class="input-label" data-t="cb_keywords">Nøgleord</div>
+      <div class="chips-container" id="cb-chips-container" onclick="document.getElementById('cb-chip-input').focus()">
+        <input class="chip-input" id="cb-chip-input" data-t-placeholder="cb_keywords_ph" placeholder="Tilføj nøgleord..." onkeydown="handleChipInput(event,'cb-chips')">
+        <button type="button" onclick="addChipFromBtn('cb-chip-input','cb-chips')" class="ob-cat-custom-btn" title="Tilføj">✓</button>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="createBubble()" data-t="misc_create">Opret</button>
+    <button class="btn-secondary" onclick="bbClose('create-bubble')" data-t="misc_cancel">Annuller</button>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     MODAL: EDIT PROFILE
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-edit-profile" onclick="if(event.target===this)closeModal('modal-edit-profile')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Rediger profil</div>
+    <!-- Avatar upload -->
+    <div style="display:flex;align-items:center;gap:1rem;margin:0.5rem 0 1.2rem;padding:0.8rem;background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:14px">
+      <div id="ep-avatar-preview" style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#6366F1);display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:white;flex-shrink:0;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 4px 12px rgba(0,0,0,0.2)" onclick="document.getElementById('ep-avatar-input').click()">
+        <span id="ep-avatar-initials">?</span>
+        <img id="ep-avatar-img" alt="Profilbillede" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;display:none">
+      </div>
+      <div style="flex:1">
+        <button type="button" onclick="document.getElementById('ep-avatar-input').click()" style="background:none;border:1px solid var(--glass-border);border-radius:10px;padding:0.4rem 0.8rem;font-family:inherit;font-size:0.78rem;font-weight:600;color:var(--accent);cursor:pointer;transition:all 0.15s">Skift billede</button>
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:0.25rem;line-height:1.4">JPG, PNG eller WebP · maks 2MB<br>Billedet skaleres automatisk ned</div>
+      </div>
+      <input type="file" id="ep-avatar-input" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleAvatarUpload(this)">
+    </div>
+    <!-- Email (read-only, only visible to own user) -->
+    <div style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.75rem;margin-bottom:0.75rem;background:rgba(124,92,252,0.04);border-radius:10px">
+      <svg style="width:0.85rem;height:0.85rem;flex-shrink:0;color:var(--muted)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+      <span id="ep-email" style="font-size:0.72rem;color:var(--text-secondary)">...</span>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Navn</div>
+      <input class="input" id="ep-name">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Arbejdsplads / organisation</div>
+      <input class="input" id="ep-workplace" maxlength="80" placeholder="f.eks. Danfoss, SDU, Sønderborg Kommune...">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Titel / Rolle</div>
+      <input class="input" id="ep-title" maxlength="80" placeholder="f.eks. Founder · Bubble">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Om dig</div>
+      <textarea class="input" id="ep-bio" maxlength="300" placeholder="Skriv kort om dig selv og hvad du søger..."></textarea>
+    </div>
+    <div class="input-group">
+      <div class="input-label" data-t="ob_step_seeking">Søger lige nu</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.4rem">Vises på din profil og i andres radar — f.eks. "Søger investor", "Søger samarbejdspartner" eller "Open to coffee"</div>
+      <div class="chips-container" id="ep-dyn-chips-container" onclick="document.getElementById('ep-dyn-chip-input').focus()">
+        <input class="chip-input" id="ep-dyn-chip-input" placeholder="Skriv og tryk Enter..." onkeydown="handleChipInput(event,'ep-dyn-chips')">
+        <button type="button" onclick="addChipFromBtn('ep-dyn-chip-input','ep-dyn-chips')" class="ob-cat-custom-btn" title="Tilføj">✓</button>
+      </div>
+    </div>
+    <div class="input-group">
+      <div class="input-label">LinkedIn URL</div>
+      <input class="input" id="ep-linkedin" placeholder="https://linkedin.com/in/dit-navn" type="url">
+    </div>
+    <button class="btn-primary" onclick="saveProfile()"data-t="ob_save_profile">Gem profil</button>
+    <button class="btn-secondary" onclick="closeModal('modal-edit-profile')" data-t="misc_cancel">Annuller</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: EDIT TAGS
+════════════════════════════════════════ -->
+
+<!-- ════════════════════════════════════════
+     MODAL: SETTINGS
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-settings" onclick="if(event.target===this)closeModal('modal-settings')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" data-t="pf_settings">Indstillinger</div>
+
+    <div class="section-label" style="margin-bottom:0.25rem" data-t="settings_home_screen">Hjem-skærm</div>
+    <div class="settings-row" style="border-bottom:1px solid var(--glass-border-subtle)">
+      <div>
+        <div style="font-size:0.82rem;font-weight:600">Match-status</div>
+        <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:0.1rem">Vis profil-fremskridt på forsiden</div>
+      </div>
+      <div class="settings-toggle" id="hs-toggle-profile_cta" onclick="hsToggle('profile_cta')" data-on="true"><div class="settings-toggle-knob"></div></div>
+    </div>
+    <div class="settings-row" style="border-bottom:1px solid var(--glass-border-subtle)">
+      <div style="font-size:0.82rem;font-weight:600" data-t="settings_saved_profiles">Gemte profiler</div>
+      <div class="settings-toggle" id="hs-toggle-saved" onclick="hsToggle('saved')" data-on="true"><div class="settings-toggle-knob"></div></div>
+    </div>
+    <div class="settings-row">
+      <div style="font-size:0.82rem;font-weight:600" data-t="misc_feedback">Feedback</div>
+      <div class="settings-toggle" id="hs-toggle-feedback" onclick="hsToggle('feedback')" data-on="true"><div class="settings-toggle-knob"></div></div>
+    </div>
+
+    <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem" data-t="settings_notifications">Notifikationer</div>
+    <div class="settings-row">
+      <div style="flex:1">
+        <div style="font-size:0.85rem;font-weight:600" data-t="pf_push_notifications">Push-notifikationer</div>
+        <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:0.1rem" data-t="settings_push_desc">Få besked når nogen sender dig en besked eller gemmer din profil</div>
+      </div>
+      <button id="push-toggle-btn" onclick="togglePushNotifications()" style="font-size:0.75rem;font-weight:700;font-family:inherit;padding:0.35rem 0.85rem;border-radius:99px;cursor:pointer;transition:all 0.2s;white-space:nowrap;border:1.5px solid var(--glass-border);background:rgba(30,27,46,0.035);color:var(--muted)" data-t="settings_enable">Aktivér</button>
+    </div>
+
+    <!-- Anonymous mode: hidden for pilot, reactivate as premium feature later -->
+    <div class="section-label" style="display:none;margin-top:1.25rem;margin-bottom:0.25rem" data-t="settings_visibility">Synlighed</div>
+    <div class="settings-row" style="display:none">
+      <div style="flex:1">
+        <div style="font-size:0.85rem;font-weight:600" data-t="settings_anon_mode">Anonym tilstand</div>
+        <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:0.1rem" data-t="settings_anon_desc">Skjul dit navn og billede på radaren</div>
+      </div>
+      <div id="anon-toggle" onclick="toggleAnon()" style="width:46px;height:26px;background:var(--border);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0">
+        <div id="anon-knob" style="width:20px;height:20px;background:var(--muted);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem" data-t="pf_language">Sprog</div>
+    <div style="display:flex;gap:0.4rem;margin-bottom:0.5rem">
+      <button id="lang-btn-da" onclick="switchAppLanguage('da')" style="flex:1;padding:0.55rem;border-radius:10px;font-size:0.82rem;font-weight:600;font-family:inherit;cursor:pointer;border:1.5px solid rgba(124,92,252,0.5);background:rgba(124,92,252,0.12);color:var(--accent)">Dansk</button>
+      <button id="lang-btn-en" onclick="switchAppLanguage('en')" style="flex:1;padding:0.55rem;border-radius:10px;font-size:0.82rem;font-weight:600;font-family:inherit;cursor:pointer;border:1.5px solid var(--glass-border);background:rgba(30,27,46,0.03);color:var(--muted)">English</button>
+    </div>
+
+    <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem" data-t="settings_profile">Profil</div>
+    <button onclick="reRunOnboarding()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(124,92,252,0.12);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent);cursor:pointer" data-t="settings_rerun_setup">Kør profilopsætning igen</button>
+
+    <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem" data-t="settings_account">Konto</div>
+    <button onclick="handleLogout()" style="width:100%;padding:0.7rem;background:none;border:1px solid rgba(232,121,168,0.2);border-radius:12px;font-size:0.82rem;font-family:inherit;font-weight:600;color:var(--accent2);cursor:pointer" data-t="misc_log_out">Log ud</button>
+
+    <!-- Version -->
+    <div style="text-align:center;margin-top:1.5rem;margin-bottom:0.5rem">
+      <div style="font-size:0.62rem;color:var(--muted)" id="version-label"></div>
+      <div id="rt-connection-status" style="display:inline-flex;align-items:center;gap:0.3rem;margin-top:0.3rem;font-size:0.62rem;color:var(--muted)">
+        <div id="rt-status-dot" style="width:6px;height:6px;border-radius:50%;background:#1A9E8E"></div>
+        <span id="rt-status-text">Forbundet</span>
+      </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="admin-panel" style="display:none">
+      <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem;color:var(--accent2)">🔒 Admin</div>
+      <div style="background:rgba(232,121,168,0.06);border:1px solid rgba(232,121,168,0.15);border-radius:12px;padding:0.8rem;margin-bottom:0.5rem">
+        <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between">Rapporterede brugere<button class="btn-sm btn-ghost" onclick="adminLoadReports()" style="font-size:0.62rem" data-t="admin_refresh">Opdater</button></div>
+        <div id="admin-reports-list" style="font-size:0.72rem;color:var(--text-secondary)" data-t="admin_loading">Indlæser...</div>
+      </div>
+      <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:12px;padding:0.8rem;margin-bottom:0.5rem">
+        <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem" data-t="admin_search_user">Søg bruger</div>
+        <input class="input" id="admin-user-search" placeholder="Navn eller email..." data-t-placeholder="admin_search_ph" oninput="adminSearchUser(this.value)" style="margin-bottom:0.4rem">
+        <div id="admin-search-results"></div>
+      </div>
+      <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:12px;padding:0.8rem;margin-bottom:0.5rem">
+        <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between">Bannede brugere<button class="btn-sm btn-ghost" onclick="adminLoadBanned()" style="font-size:0.62rem" data-t="admin_refresh">Opdater</button></div>
+        <div id="admin-banned-list" style="font-size:0.72rem;color:var(--text-secondary)" data-t="admin_loading">Indlæser...</div>
+      </div>
+      <div style="background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:12px;padding:0.8rem">
+        <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem">Platform stats</div>
+        <div id="admin-stats" style="font-size:0.72rem;color:var(--text-secondary)" data-t="admin_loading">Indlæser...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: QR CODE
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-qr" onclick="if(event.target===this)closeModal('modal-qr')">
+  <div class="modal-sheet" style="text-align:center">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="qr-modal-title">QR-kode <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
+    <div style="font-size:0.85rem;color:var(--muted);margin-bottom:1.25rem" id="qr-modal-subtitle">Vis eller print denne kode ved indgangen</div>
+    <div style="display:flex;justify-content:center;margin-bottom:1.25rem">
+      <div id="qr-canvas-wrap" style="background:white;padding:16px;border-radius:16px;display:inline-block">
+        <div id="qr-code-el"></div>
+      </div>
+    </div>
+    <div style="font-size:0.78rem;color:var(--muted);margin-bottom:1.5rem">
+      Scan med iPhone-kamera for at joine boblen direkte
+    </div>
+    <button class="btn-primary" onclick="downloadQRPdf()">Download PDF til print</button>
+    <button class="btn-secondary" onclick="closeModal('modal-qr')">Luk</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: PROPOSE MEETING
+════════════════════════════════════════ -->
+<!-- modal-meeting removed — feature shelved -->
+
+<!-- ════════════════════════════════════════
+     MODAL: EDIT HISTORY
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-edit-history" onclick="if(event.target===this)closeModal('modal-edit-history')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Redigeringshistorik</div>
+    <div id="edit-history-content" style="max-height:60vh;overflow-y:auto;padding:0.5rem 0"></div>
+    <button class="btn-secondary" onclick="closeModal('modal-edit-history')">Luk</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: LIVE CHECK-IN
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-live-checkin" onclick="if(event.target===this)closeModal('modal-live-checkin')">
+  <div class="modal-sheet" style="max-height:80vh;overflow-y:auto">
+    <div class="modal-handle"></div>
+    <div class="modal-title"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#2ECFCF;flex-shrink:0"><path d="M12 21.5c-3.5-3.5-6.5-7-6.5-10.5a6.5 6.5 0 0113 0c0 3.5-3 7-6.5 10.5z"/><circle cx="12" cy="11" r="2.5"/></svg> Live Check-in</div>
+
+    <!-- QR SCANNER -->
+    <div class="live-scanner-viewport" id="live-scanner-viewport">
+      <video id="live-qr-video" autoplay playsinline></video>
+      <canvas id="live-qr-canvas" style="display:none"></canvas>
+      <div class="live-scanner-frame">
+        <div class="live-scanner-corner tl"></div>
+        <div class="live-scanner-corner tr"></div>
+        <div class="live-scanner-corner bl"></div>
+        <div class="live-scanner-corner br"></div>
+      </div>
+      <div class="live-scanner-line"></div>
+    </div>
+    <div id="live-scan-status" class="live-scan-status">Peg kameraet mod en Bubble QR-kode</div>
+
+    <!-- Confirmation after scan (replaces status) -->
+    <div id="live-scan-found" class="live-scan-found-card" style="display:none">
+      <div class="live-scan-found-name" id="live-scan-found-name"></div>
+      <div class="live-scan-found-meta" id="live-scan-found-meta"></div>
+      <div style="display:flex;gap:0.4rem;margin-top:0.5rem">
+        <button class="live-bubble-btn primary" id="live-scan-confirm-btn" onclick="liveScanConfirmJoin()" style="flex:1">Check ind her</button>
+        <button class="live-bubble-btn ghost" onclick="liveScanReset()" style="flex:0 0 auto" data-t="misc_cancel">Annuller</button>
+      </div>
+    </div>
+
+    <!-- Checked in confirmation -->
+    <div id="live-scan-confirmed" class="live-scan-confirmed" style="display:none">
+      <div class="live-scan-confirmed-icon">✓</div>
+      <div>
+        <div class="live-scan-confirmed-title" id="live-scan-confirmed-name">Checked ind!</div>
+        <div class="live-scan-confirmed-sub" id="live-scan-confirmed-meta">Du er nu her</div>
+      </div>
+    </div>
+
+    <div class="divider" style="margin:0.6rem 0"></div>
+
+    <button class="btn-secondary" onclick="closeLiveCheckinModal()" style="width:100%">Luk</button>
+  </div>
+</div>
+
+
+<!-- INVITE TO BUBBLE MODAL -->
+<div class="bb-overlay" id="bb-overlay-invite" onclick="bbClose('invite')"></div>
+<div class="bb-sheet" id="bb-sheet-invite" onclick="event.stopPropagation()">
+  <div class="bb-sheet-handle" onclick="bbClose('invite')"></div>
+  <div style="font-weight:700;font-size:1rem;margin-bottom:0.1rem">Invitér til boble</div>
+  <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.6rem" id="invite-subtitle">Vælg fra dine gemte kontakter</div>
+  <div id="invite-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0"></div>
+  <div style="display:flex;gap:0.5rem;margin-top:0.6rem;flex-shrink:0">
+    <button onclick="bbClose('invite')" style="flex:1;padding:0.65rem;font-size:0.82rem;font-weight:600;border-radius:12px;border:1px solid var(--glass-border);cursor:pointer;font-family:inherit;color:var(--text-secondary);background:transparent" data-t="misc_cancel">Annuller</button>
+    <button id="invite-send-btn" onclick="sendBubbleInvites()" style="flex:1;padding:0.65rem;font-size:0.82rem;font-weight:700;border-radius:12px;border:none;cursor:pointer;font-family:inherit;background:var(--gradient-primary);color:white;transition:opacity 0.2s" disabled>Send invitationer</button>
+  </div>
+</div>
+
+<!-- Create Post Sheet -->
+<div class="modal-overlay" id="sheet-create-post" onclick="if(event.target===this)closeModal('sheet-create-post')" style="align-items:flex-end">
+  <div class="modal-sheet" style="padding:1.5rem 1.5rem 2rem">
+    <div class="person-sheet-handle" onclick="closeModal('sheet-create-post')"></div>
+    <div style="font-weight:800;font-size:1.1rem;margin-bottom:0.2rem">Nyt opslag</div>
+    <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem">Synligt for alle medlemmer i boblen</div>
+    <div style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.2rem">Titel *</div>
+    <input id="bp-title" class="input" placeholder="Fx: Netværksmøde d. 28. marts" style="margin-bottom:0.8rem">
+    <div style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.2rem">Indhold</div>
+    <textarea id="bp-content" class="input" placeholder="Skriv dit opslag her..." style="min-height:100px;resize:vertical;margin-bottom:0.8rem"></textarea>
+    <div style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.2rem">Link til event (valgfrit)</div>
+    <div id="bp-event-picker" style="margin-bottom:1rem"></div>
+    <button onclick="bcSubmitPost()" style="width:100%;padding:0.7rem;border-radius:12px;border:none;background:var(--gradient-primary);color:white;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Publicer opslag</button>
+    <button onclick="closeModal('sheet-create-post')" style="width:100%;margin-top:0.4rem;padding:0.5rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--muted);font-family:inherit;font-size:0.78rem;cursor:pointer" data-t="misc_cancel">Annuller</button>
+  </div>
+</div>
+
+</div><!-- /screens-wrap -->
+
+<div id="global-nav" class="nav-hidden">
+  <div class="nav-row">
+    <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg><div id="home-notif-dot" style="display:none;position:absolute;top:0;right:0;width:8px;height:8px;border-radius:50%;background:#E879A8;box-shadow:0 0 6px rgba(232,121,168,0.5)"></div></span><span data-t="nav_home">Hjem</span></button>
+    <button class="nav-item" onclick="goTo('screen-bubbles')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg><div id="bubbles-unread-dot" style="display:none;position:absolute;top:0;right:0;width:8px;height:8px;border-radius:50%;background:#E879A8;box-shadow:0 0 6px rgba(232,121,168,0.5)"></div></span><span data-t="nav_bubbles">Bobler</span></button>
+    <button class="nav-item" onclick="goTo('screen-messages')"><span class="nav-icon" style="position:relative"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"/></svg><div class="msg-unread-badge" style="display:none"></div></span><span data-t="nav_messages">Beskeder</span></button>
+    <button class="nav-item" onclick="goTo('screen-profile')"><span class="nav-icon"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></span><span data-t="nav_profile">Profil</span></button>
+  </div>
+</div><!-- /global-nav -->
+</div><!-- /app-shell -->
+
+<div id="debug-overlay" class="debug-overlay" onclick="if(event.target===this)closeDebugOverlay()">
+  <div class="debug-sheet">
+    <div class="setup-sheet-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+      <div style="font-size:1rem;font-weight:800;color:var(--text)">Debug</div>
+      <button onclick="closeDebugOverlay()" class="btn-sm" style="background:var(--surface);border:1px solid var(--border-light);color:var(--muted);padding:0.3rem 0.75rem">Luk</button>
+    </div>
+    <div style="display:flex;gap:0.35rem;margin-bottom:0.9rem">
+      <button onclick="debugExportEmail()" style="flex:1;padding:0.5rem;border-radius:var(--radius-sm);font-size:0.72rem;font-weight:700;font-family:var(--font);cursor:pointer;background:var(--gradient-primary);color:white;border:none">Send fejlrapport</button>
+      <button onclick="_renderDebugContent()" style="flex:1;padding:0.5rem;border-radius:var(--radius-sm);font-size:0.72rem;font-weight:600;font-family:var(--font);cursor:pointer;background:var(--surface);border:1px solid var(--border-light);color:var(--text-secondary)">Opdater</button>
+      <button onclick="clearDebugBadge()" style="padding:0.5rem 0.65rem;border-radius:var(--radius-sm);font-size:0.72rem;font-weight:600;font-family:var(--font);cursor:pointer;background:var(--surface);border:1px solid var(--border-light);color:var(--text-secondary)">Ryd</button>
+    </div>
+    <div class="section-label" style="color:var(--accent);margin-bottom:0.3rem">Dit device</div>
+    <div id="debug-device-info" style="margin-bottom:0.6rem"></div>
+    <div class="section-label" style="color:var(--accent);margin-bottom:0.3rem">App state</div>
+    <div id="debug-state-info" style="margin-bottom:0.6rem"></div>
+    <div class="section-label" style="color:var(--accent);margin-bottom:0.3rem">Fejl-log</div>
+    <div id="debug-error-list" style="max-height:40vh;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
+  </div>
+</div>
+</body>
+</html>
