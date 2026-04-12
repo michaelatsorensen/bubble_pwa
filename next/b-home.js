@@ -1827,6 +1827,7 @@ var _homeRadarFilter = 'all';
 var _dartboardDataLoaded = false;
 
 async function loadHomeDartboardData() {
+  _dartboardDataLoaded = false;
   try {
     if (!currentUser || !currentProfile) return;
 
