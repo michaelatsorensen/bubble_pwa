@@ -303,43 +303,43 @@
 <!-- ════════════════════════════════════════
      SCREEN: ONBOARDING
 ════════════════════════════════════════ -->
-<div class="screen" id="screen-onboarding">
+<div class="screen" id="screen-onboarding" style="background:#170F34">
   <div id="ob-scroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(1.5rem + env(safe-area-inset-top, 0px)) 1.5rem 350px;display:flex;flex-direction:column;visibility:hidden">
 
     <!-- ═══ TRIN 1: Navn + Arbejdsplads + Consent ═══ -->
     <div id="ob-step-1">
 
       <!-- QR contact banner -->
-      <div id="ob-qr-contact-banner" style="display:none;align-items:center;gap:0.5rem;padding:0.6rem 0.75rem;border-radius:12px;background:rgba(26,158,142,0.05);border:1px solid rgba(26,158,142,0.12);margin-bottom:0.8rem">
+      <div id="ob-qr-contact-banner" style="display:none;align-items:center;gap:0.5rem;padding:0.6rem 0.75rem;border-radius:12px;background:rgba(26,158,142,0.1);border:0.5px solid rgba(26,158,142,0.2);margin-bottom:0.8rem">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
-        <div style="font-size:0.78rem;color:#085041;font-weight:600"><span id="ob-qr-contact-name">Kontakt</span> gemmes automatisk</div>
+        <div style="font-size:0.78rem;color:#1A9E8E;font-weight:600"><span id="ob-qr-contact-name">Kontakt</span> gemmes automatisk</div>
       </div>
 
       <div style="text-align:center;margin-bottom:1.2rem">
         <img src="bubble-logo-splash.png" alt="bubble" style="height:22px;width:auto;margin-bottom:1rem">
-        <div style="font-size:1.5rem;font-weight:800;margin-bottom:0.2rem">Velkommen!</div>
-        <div style="font-size:0.85rem;color:var(--text-secondary)">To hurtige felter og du er klar</div>
+        <div style="font-size:1.5rem;font-weight:800;margin-bottom:0.2rem;color:rgba(255,255,255,0.95)">Velkommen!</div>
+        <div style="font-size:0.85rem;color:rgba(255,255,255,0.4)">To hurtige felter og du er klar</div>
       </div>
 
       <div class="input-group">
-        <div class="input-label">Navn *</div>
-        <input class="input" id="ob-name" maxlength="60" placeholder="Dit fulde navn" data-t-placeholder="ob_name_ph" autocomplete="name" oninput="obCheckProgress()">
+        <div class="input-label" style="color:rgba(255,255,255,0.5)">Navn *</div>
+        <input class="input ob-dark-input" id="ob-name" maxlength="60" placeholder="Dit fulde navn" data-t-placeholder="ob_name_ph" autocomplete="name" oninput="obCheckProgress()">
       </div>
 
       <div class="input-group">
-        <div class="input-label">Arbejdsplads *</div>
-        <input class="input" id="ob-workplace" maxlength="80" placeholder="f.eks. Danfoss, SDU, selvstændig..." data-t-placeholder="ob_workplace_ph" oninput="obCheckProgress()" onfocus="setTimeout(function(){var el=document.getElementById('ob-consent-row');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},400)">
+        <div class="input-label" style="color:rgba(255,255,255,0.5)">Arbejdsplads *</div>
+        <input class="input ob-dark-input" id="ob-workplace" maxlength="80" placeholder="f.eks. Danfoss, SDU, selvstændig..." data-t-placeholder="ob_workplace_ph" oninput="obCheckProgress()" onfocus="setTimeout(function(){var el=document.getElementById('ob-consent-row');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},400)">
       </div>
 
-      <label class="ob-consent-row" id="ob-consent-row" onclick="obToggleConsent()">
-        <div class="ob-consent-check" id="ob-consent-check"></div>
-        <span class="ob-consent-text">Jeg accepterer Bubble's <a href="#" onclick="event.stopPropagation();showTerms()">betingelser</a> og <a href="#" onclick="event.stopPropagation();showTerms()">privatlivspolitik</a></span>
+      <label class="ob-consent-row" id="ob-consent-row" onclick="obToggleConsent()" style="background:rgba(100,180,230,0.06);border:0.5px solid rgba(100,180,230,0.12)">
+        <div class="ob-consent-check" id="ob-consent-check" style="border-color:rgba(100,180,230,0.5)"></div>
+        <span class="ob-consent-text" style="color:rgba(255,255,255,0.5)">Jeg accepterer Bubble's <a href="#" onclick="event.stopPropagation();showTerms()" style="color:rgba(100,180,230,0.8)">betingelser</a> og <a href="#" onclick="event.stopPropagation();showTerms()" style="color:rgba(100,180,230,0.8)">privatlivspolitik</a></span>
       </label>
 
-      <button class="btn-primary" id="ob-save-btn" onclick="saveOnboarding()" style="margin-top:0.8rem" disabled>Kom i gang →</button>
-      <div style="text-align:center;font-size:0.72rem;color:var(--muted);margin-top:0.5rem">Du kan tilføje interesser, titel og mere i din profil bagefter</div>
+      <button class="btn-primary ob-dark-btn" id="ob-save-btn" onclick="saveOnboarding()" style="margin-top:0.8rem;background:rgba(100,180,230,0.18);border:0.5px solid rgba(100,180,230,0.25);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:rgba(255,255,255,0.9);box-shadow:none" disabled>Kom i gang →</button>
+      <div style="text-align:center;font-size:0.72rem;color:rgba(255,255,255,0.3);margin-top:0.5rem">Du kan tilføje interesser, titel og mere i din profil bagefter</div>
       <div style="margin-top:1.5rem;text-align:center">
-        <button type="button" onclick="abortOnboarding()" style="background:none;border:none;color:var(--muted);font-size:0.7rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.5rem;opacity:0.6">Afbryd og nulstil</button>
+        <button type="button" onclick="abortOnboarding()" style="background:none;border:none;color:rgba(255,255,255,0.25);font-size:0.7rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.5rem;opacity:0.6">Afbryd og nulstil</button>
       </div>
     </div>
 
@@ -348,40 +348,40 @@
 <!-- ════════════════════════════════════════
      SCREEN: WELCOME (post-onboarding)
 ════════════════════════════════════════ -->
-<div class="screen" id="screen-welcome">
+<div class="screen" id="screen-welcome" style="background:#170F34">
   <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(2rem + env(safe-area-inset-top,0px)) 1.5rem 2rem;display:flex;flex-direction:column;justify-content:center">
     <div style="text-align:center;margin-bottom:2rem">
-      <div style="width:56px;height:56px;margin:0 auto 0.75rem;color:var(--accent)"><svg class="ico" style="width:56px;height:56px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
-      <div style="font-size:1.8rem;font-weight:900;margin-bottom:0.35rem" data-t="ob_welcome">Velkommen til Bubble!</div>
-      <div style="font-size:0.9rem;color:var(--text-secondary);max-width:320px;margin:0 auto">Lad os komme i gang — her er tre ting du kan gøre</div>
+      <div style="width:56px;height:56px;margin:0 auto 0.75rem;color:rgba(100,180,230,0.8)"><svg class="ico" style="width:56px;height:56px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
+      <div style="font-size:1.8rem;font-weight:900;margin-bottom:0.35rem;color:rgba(255,255,255,0.95)" data-t="ob_welcome">Velkommen til Bubble!</div>
+      <div style="font-size:0.9rem;color:rgba(255,255,255,0.4);max-width:320px;margin:0 auto">Lad os komme i gang — her er tre ting du kan gøre</div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:0.8rem;max-width:380px;margin:0 auto;width:100%">
+    <div style="display:flex;flex-direction:column;gap:0.6rem;max-width:380px;margin:0 auto;width:100%">
       <!-- Step 1 -->
-      <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer;box-shadow:0 1px 3px rgba(30,27,46,0.06)" onclick="welcomeGo('discover')">
-        <div style="width:44px;height:44px;border-radius:12px;background:rgba(124,92,252,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></div>
+      <div style="background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.08);border-radius:14px;padding:1rem 1.1rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer" onclick="welcomeGo('discover')">
+        <div style="width:40px;height:40px;border-radius:12px;background:rgba(100,180,230,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgba(100,180,230,0.8)"><svg class="ico" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg></div>
         <div style="flex:1">
-          <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem" data-t="ob_step_discover">Udforsk bobler</div>
-          <div style="font-size:0.78rem;color:var(--text-secondary)" data-t="ob_step_discover_desc">Find communities, events og netværk</div>
+          <div style="font-weight:700;font-size:0.88rem;margin-bottom:0.15rem;color:rgba(255,255,255,0.9)" data-t="ob_step_discover">Udforsk bobler</div>
+          <div style="font-size:0.75rem;color:rgba(255,255,255,0.4)" data-t="ob_step_discover_desc">Find communities, events og netværk</div>
         </div>
-        <div style="color:var(--muted);font-size:1.1rem">→</div>
+        <div style="color:rgba(255,255,255,0.25);font-size:1rem">→</div>
       </div>
       <!-- Step 2 -->
-      <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer;box-shadow:0 1px 3px rgba(30,27,46,0.06)" onclick="welcomeGo('radar')">
-        <div style="width:44px;height:44px;border-radius:12px;background:rgba(232,121,168,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent2)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div>
+      <div style="background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.08);border-radius:14px;padding:1rem 1.1rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer" onclick="welcomeGo('radar')">
+        <div style="width:40px;height:40px;border-radius:12px;background:rgba(232,121,168,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgba(232,121,168,0.8)"><svg class="ico" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div>
         <div style="flex:1">
-          <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem" data-t="ob_step_radar">Se hvem der er her</div>
-          <div style="font-size:0.78rem;color:var(--text-secondary)" data-t="ob_step_radar_desc">Radaren viser profiler og match-%</div>
+          <div style="font-weight:700;font-size:0.88rem;margin-bottom:0.15rem;color:rgba(255,255,255,0.9)" data-t="ob_step_radar">Se hvem der er her</div>
+          <div style="font-size:0.75rem;color:rgba(255,255,255,0.4)" data-t="ob_step_radar_desc">Radaren viser profiler og match-%</div>
         </div>
-        <div style="color:var(--muted);font-size:1.1rem">→</div>
+        <div style="color:rgba(255,255,255,0.25);font-size:1rem">→</div>
       </div>
       <!-- Step 3 -->
-      <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:16px;padding:1.1rem 1.2rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer;box-shadow:0 1px 3px rgba(30,27,46,0.06)" onclick="welcomeGo('home')">
-        <div style="width:44px;height:44px;border-radius:12px;background:rgba(26,158,142,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green)"><svg class="ico" style="width:22px;height:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5v9a1.5 1.5 0 001.5 1.5H10v-5a2 2 0 014 0v5h3.5a1.5 1.5 0 001.5-1.5v-9"/></svg></div>
+      <div style="background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.08);border-radius:14px;padding:1rem 1.1rem;display:flex;gap:0.9rem;align-items:center;cursor:pointer" onclick="welcomeGo('home')">
+        <div style="width:40px;height:40px;border-radius:12px;background:rgba(26,158,142,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgba(26,158,142,0.8)"><svg class="ico" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5v9a1.5 1.5 0 001.5 1.5H10v-5a2 2 0 014 0v5h3.5a1.5 1.5 0 001.5-1.5v-9"/></svg></div>
         <div style="flex:1">
-          <div style="font-weight:700;font-size:0.92rem;margin-bottom:0.15rem" data-t="ob_step_home">Gå til hjem</div>
-          <div style="font-size:0.78rem;color:var(--text-secondary)" data-t="ob_step_home_desc">Dit dashboard med bobler, radar og mere</div>
+          <div style="font-weight:700;font-size:0.88rem;margin-bottom:0.15rem;color:rgba(255,255,255,0.9)" data-t="ob_step_home">Gå til hjem</div>
+          <div style="font-size:0.75rem;color:rgba(255,255,255,0.4)" data-t="ob_step_home_desc">Dit dashboard med bobler, radar og mere</div>
         </div>
-        <div style="color:var(--muted);font-size:1.1rem">→</div>
+        <div style="color:rgba(255,255,255,0.25);font-size:1rem">→</div>
       </div>
     </div>
   </div>
