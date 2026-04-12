@@ -1882,15 +1882,17 @@ function _getFilteredProfiles() {
 
 // ── Filter chip handler ──
 var _radarFiltersOpen = false;
-function toggleRadarFilters() {
-  _radarFiltersOpen = !_radarFiltersOpen;
-  var chips = document.getElementById('home-filter-chips');
-  var icon = document.getElementById('home-filter-plus-icon');
-  if (chips) {
-    chips.style.maxWidth = _radarFiltersOpen ? '250px' : '0';
-    chips.style.opacity = _radarFiltersOpen ? '1' : '0';
-  }
-  if (icon) icon.textContent = _radarFiltersOpen ? '×' : '+';
+function openFilterTray() {
+  var backdrop = document.getElementById('filter-tray-backdrop');
+  var tray = document.getElementById('filter-tray');
+  if (backdrop) backdrop.style.display = 'block';
+  if (tray) { tray.style.visibility = 'visible'; setTimeout(function(){ tray.style.transform = 'translateY(0)'; }, 10); }
+}
+function closeFilterTray() {
+  var backdrop = document.getElementById('filter-tray-backdrop');
+  var tray = document.getElementById('filter-tray');
+  if (tray) tray.style.transform = 'translateY(100%)';
+  if (backdrop) setTimeout(function(){ backdrop.style.display = 'none'; }, 350);
 }
 
 function filterRadarHome(filter) {
@@ -1900,6 +1902,13 @@ function filterRadarHome(filter) {
   });
   renderHomeDartboard();
   updateFilterChipStyle();
+  closeFilterTray();
+  // Update filter label next to + button
+  var label = document.getElementById('home-filter-label');
+  if (label) {
+    var names = {all:'',interest:'Fælles interesser',good:'Godt match',strong:'Stærkt match',live:'Live'};
+    label.textContent = names[filter] || '';
+  }
 }
 
 // ── Tap dartboard background → open tray ──
