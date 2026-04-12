@@ -91,7 +91,8 @@ async function loadHome() {
       loadLiveBanner(),
       loadHomeDartboardData(),
       loadSavedContacts(),
-      updateTopbarNotifBadge()
+      updateTopbarNotifBadge(),
+      (typeof unreadState !== 'undefined') ? unreadState.dmRecount() : Promise.resolve()
     ].map(function(p) { return p.catch(function(e) { logError('loadHome:parallel', e); }); }));
 
     // Post-load: apply visibility toggles, show nudge
