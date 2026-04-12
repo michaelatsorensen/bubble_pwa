@@ -522,6 +522,8 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 
 /* ── SPINNER ── */
 .spinner { width:28px; height:28px; border:2px solid #D8D5E4; border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; margin:2rem auto; }
+#notif-tray-list .spinner,
+#home-tray-list .spinner { border-color:rgba(255,255,255,0.1); border-top-color:rgba(124,92,252,0.6); }
 @keyframes spin { to{transform:rotate(360deg)} }
 
 /* ── EMPTY STATES ── */
@@ -1993,6 +1995,12 @@ input[type="range"] {
   border-radius:var(--radius);
 }
 .skel-row { display:flex;align-items:center;gap:0.7rem;padding:0.6rem 0; }
+
+/* Dark skeleton variants for dark contexts */
+#notif-tray-list .skel,
+#home-tray-list .skel { background:linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; }
+#notif-tray-list .skel-card,
+#home-tray-list .skel-card { background:rgba(255,255,255,0.04); border:0.5px solid rgba(124,92,252,0.06); }
 
 /* ── SUCCESS PULSE ANIMATION ── */
 @keyframes successPulse {
