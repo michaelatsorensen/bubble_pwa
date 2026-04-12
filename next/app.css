@@ -96,7 +96,7 @@ body {
 /* ── APP SHELL (floating nav — position fixed, not in flow) ── */
 #app-shell { height:100%; display:flex; flex-direction:column; overflow:hidden; position:relative; }
 #screens-wrap { flex:1; position:relative; overflow:hidden; min-height:0; }
-.screen { position:absolute; inset:0; display:none; flex-direction:column; z-index:1; overflow:hidden; padding-bottom:76px; }
+.screen { position:absolute; inset:0; display:none; flex-direction:column; z-index:1; overflow:hidden; }
 .screen.active { display:flex; animation:screenFadeIn 0.2s cubic-bezier(0.22, 1, 0.36, 1); }
 @keyframes screenFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
 @media (prefers-reduced-motion: reduce) {
@@ -105,7 +105,7 @@ body {
 }
 
 /* ── TOPBAR ── */
-.topbar { display:flex; align-items:center; padding:0.6rem 1.2rem; padding-top:calc(0.6rem + env(safe-area-inset-top,0px)); gap:0.65rem; flex-shrink:0; background:rgba(255,255,255,0.95); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-bottom:none; box-shadow:0 1px 8px rgba(30,27,46,0.06); z-index:5; }
+.topbar { display:flex; align-items:center; padding:0.6rem 1.2rem; padding-top:calc(0.6rem + env(safe-area-inset-top,0px)); gap:0.65rem; flex-shrink:0; background:transparent; border-bottom:none; box-shadow:none; z-index:5; }
 .chat-topbar-cards { display:flex; align-items:center; gap:10px; padding:0.6rem 1rem; padding-top:calc(0.6rem + env(safe-area-inset-top,0px)); flex-shrink:0; background:rgba(255,255,255,0.95); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-bottom:none; box-shadow:0 1px 8px rgba(30,27,46,0.06); z-index:5; }
 .chat-topbar-back { width:32px; height:32px; border-radius:50%; background:none; border:none; display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; color:var(--accent); font-family:inherit; font-size:1.1rem; }
 .chat-topbar-back:active { background:rgba(124,92,252,0.08); }
@@ -122,7 +122,7 @@ body {
 .topbar-badge { position:absolute;top:4px;right:4px;min-width:14px;height:14px;border-radius:7px;background:var(--accent2);color:white;font-size:0.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1;box-shadow:0 0 0 2px #FFFFFF; }
 
 /* ── SCROLL AREA ── */
-.scroll-area { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:1rem 1.2rem 1.5rem; overscroll-behavior-x:none; }
+.scroll-area { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:1rem 1.2rem 5rem; overscroll-behavior-x:none; }
 
 /* ── FLOATING NAV (position fixed, midnight indigo pill) ── */
 #global-nav {
