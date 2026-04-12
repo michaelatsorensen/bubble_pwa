@@ -100,6 +100,8 @@ async function loadHome() {
     showEventCheckinCard();
     showWelcomeCard();
     showProfileSetupCTA();
+    // Delayed badge re-render — ensures nav is visible
+    setTimeout(function() { if (typeof unreadState !== 'undefined') unreadState.render(); }, 300);
   } catch(e) {
     logError("loadHome", e);
     // Silent fail on boot — no toast flash. User can pull-to-refresh.
