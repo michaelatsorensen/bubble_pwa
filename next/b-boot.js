@@ -775,8 +775,8 @@ function showUpdateBanner() {
     + 'background:rgba(23,15,52,0.84);'
     + 'backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);'
     + 'border-radius:16px;'
-    + 'border:0.5px solid rgba(124,92,252,0.08);'
-    + 'box-shadow:inset 0 0.5px 0 rgba(140,120,255,0.1);';
+    + 'border:0.5px solid rgba(255,255,255,0.12);'
+    + 'box-shadow:inset 0 0.5px 0 rgba(255,255,255,0.08);';
   banner.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;'
     + 'padding:0.6rem 0.8rem;gap:0.6rem;font-family:inherit">'
     + '<div style="display:flex;align-items:center;gap:0.5rem;min-width:0">'
