@@ -198,6 +198,46 @@ document.addEventListener('click', (e) => {
   }
 })();
 
+// ══════════════════════════════════════════════════════════
+//  RUBBER BAND SCROLL — elastic bounce within scroll-area
+//  Topbar/navbar stay pinned. Content bounces on overscroll.
+// ══════════════════════════════════════════════════════════
+(function initRubberBand() {
+  if (isDesktop) return;
+  var RB_RESISTANCE = 3;
+  var rbStartY = 0, rbEl = null, rbBouncing = false;
+
+  document.addEventListener('touchstart', function(e) {
+    var el = e.target.closest('.scroll-area');
+    if (!el) { rbEl = null; return; }
+    rbEl = el;
+    rbStartY = e.touches[0].clientY;
+    rbBouncing = false;
+    el.style.transition = '';
+  }, { passive: true });
+
+  document.addEventListener('touchmove', function(e) {
+    if (!rbEl) return;
+    var dy = e.touches[0].clientY - rbStartY;
+    var atTop = rbEl.scrollTop <= 0 && dy > 0;
+    var atBottom = (rbEl.scrollTop + rbEl.clientHeight >= rbEl.scrollHeight - 1) && dy < 0;
+    if (!atTop && !atBottom) {
+      if (rbBouncing) { rbEl.style.transform = ''; rbBouncing = false; }
+      return;
+    }
+    rbBouncing = true;
+    var travel = dy / RB_RESISTANCE;
+    rbEl.style.transform = 'translateY(' + travel + 'px)';
+  }, { passive: true });
+
+  document.addEventListener('touchend', function() {
+    if (!rbEl || !rbBouncing) return;
+    rbEl.style.transition = 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1)';
+    rbEl.style.transform = '';
+    rbBouncing = false;
+  }, { passive: true });
+})();
+
 
 // ══════════════════════════════════════════════════════════
 //  QR ANON ROUTING — preview profile without login
