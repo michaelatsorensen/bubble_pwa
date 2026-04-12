@@ -255,7 +255,7 @@ async function loadEventDartboard() {
 
     _homeDartboardProfiles = (profiles || []).map(function(p) {
       var matchScore = (typeof calcMatchScore === 'function') ? calcMatchScore(currentProfile, p, 1) : 0;
-      return { id:p.id, name:p.name, title:p.title, keywords:p.keywords, is_anon:p.is_anon, bio:p.bio, linkedin:p.linkedin, avatar_url:p.avatar_url, matchScore:matchScore, sharedBubbles:1 };
+      return { id:p.id, name:p.name, title:p.title, workplace:p.workplace, keywords:p.keywords, is_anon:p.is_anon, bio:p.bio, linkedin:p.linkedin, avatar_url:p.avatar_url, matchScore:matchScore, sharedBubbles:1 };
     }).sort(function(a,b) { return b.matchScore - a.matchScore; });
 
     renderHomeDartboard();
@@ -344,19 +344,19 @@ function showCheckinModal(eventName, opts) {
   if (opts.fromHome && eventId) {
     buttonsHtml =
       '<button id="checkin-goto-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#1A9E8E,#17877A);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:center;gap:0.4rem">' + t('ob_goto_event') + '</button>' +
-      '<button id="checkin-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_stay_home') + '</button>';
+      '<button id="checkin-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_stay_home') + '</button>';
   } else {
     buttonsHtml =
       '<button id="checkin-ok-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#1A9E8E,#17877A);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.4rem">' + t('modal_understood') + '</button>';
   }
 
   ov.innerHTML =
-    '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+    '<div style="background:rgba(23,15,52,0.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;border:0.5px solid rgba(255,255,255,0.1)">' +
       '<div style="width:56px;height:56px;border-radius:50%;background:rgba(26,158,142,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">' +
         '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
       '</div>' +
-      '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.3rem">' + t('toast_checkedin') + '</div>' +
-      '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;margin-bottom:0.25rem">' + escHtml(eventName || '') + '</div>' +
+      '<div style="font-size:1.15rem;font-weight:800;color:rgba(255,255,255,0.95);margin-bottom:0.3rem">' + t('toast_checkedin') + '</div>' +
+      '<div style="font-size:0.85rem;color:rgba(255,255,255,0.4);line-height:1.5;margin-bottom:0.25rem">' + escHtml(eventName || '') + '</div>' +
       '<div style="display:flex;align-items:center;justify-content:center;gap:0.4rem;margin-bottom:1.25rem">' +
         '<span class="live-dot"></span>' +
         '<span style="font-size:0.8rem;font-weight:600;color:var(--accent3)">' + t('modal_you_are_live') + '</span>' +
@@ -475,12 +475,12 @@ async function showDeepLinkModal(type, targetId) {
     ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
 
     ov.innerHTML =
-      '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+      '<div style="background:rgba(23,15,52,0.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;border:0.5px solid rgba(255,255,255,0.1)">' +
         '<div style="width:' + iconSize + ';height:' + iconSize + ';border-radius:' + iconRadius + ';background:' + iconBg + ';display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;overflow:hidden">' + iconHtml + '</div>' +
         '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">' + title + '</div>' +
         (subtitle ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:1.25rem">' + escHtml(subtitle) + '</div>' : '<div style="margin-bottom:1.25rem"></div>') +
         '<button id="dl-action-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + escHtml(actionLabel) + ' →</button>' +
-        '<button id="dl-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_stay_home') + '</button>' +
+        '<button id="dl-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_stay_home') + '</button>' +
       '</div>';
 
     document.body.appendChild(ov);
@@ -526,7 +526,7 @@ async function _showSavedContactModal(contactId) {
     ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
 
     ov.innerHTML =
-      '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+      '<div style="background:rgba(23,15,52,0.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;border:0.5px solid rgba(255,255,255,0.1)">' +
         '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#6366F1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;box-shadow:0 4px 12px rgba(124,92,252,0.25)">' + avHtml + '</div>' +
         '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">' + escHtml(name) + '</div>' +
         (subtitle ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.3rem">' + escHtml(subtitle) + '</div>' : '') +
@@ -535,7 +535,7 @@ async function _showSavedContactModal(contactId) {
           '<span style="font-size:0.78rem;font-weight:600;color:#1A9E8E">Kontakt gemt</span>' +
         '</div>' +
         '<button id="sc-view-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">Se profil →</button>' +
-        '<button id="sc-close-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_ok') + '</button>' +
+        '<button id="sc-close-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_ok') + '</button>' +
       '</div>';
 
     document.body.appendChild(ov);
@@ -1860,7 +1860,7 @@ async function loadHomeDartboardData() {
     var scored = allProfiles.map(function(p) {
       var sharedBubbles = (bmMap[p.id] || []).length;
       var matchScore = (typeof calcMatchScore === 'function') ? calcMatchScore(currentProfile, p, sharedBubbles) : 0;
-      return { id:p.id, name:p.name, title:p.title, keywords:p.keywords, is_anon:p.is_anon, bio:p.bio, linkedin:p.linkedin, avatar_url:p.avatar_url, matchScore:matchScore, sharedBubbles:sharedBubbles };
+      return { id:p.id, name:p.name, title:p.title, workplace:p.workplace, keywords:p.keywords, is_anon:p.is_anon, bio:p.bio, linkedin:p.linkedin, avatar_url:p.avatar_url, matchScore:matchScore, sharedBubbles:sharedBubbles };
     }).sort(function(a,b) { return b.matchScore - a.matchScore; });
 
     // Store all profiles for 'all' mode — but don't overwrite live dartboard
