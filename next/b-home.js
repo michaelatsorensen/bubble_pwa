@@ -1882,17 +1882,24 @@ function _getFilteredProfiles() {
 
 // ── Filter chip handler ──
 var _radarFiltersOpen = false;
-function openFilterTray() {
-  var backdrop = document.getElementById('filter-tray-backdrop');
-  var tray = document.getElementById('filter-tray');
-  if (backdrop) backdrop.style.display = 'block';
-  if (tray) { tray.style.visibility = 'visible'; setTimeout(function(){ tray.style.transform = 'translateY(0)'; }, 10); }
-}
-function closeFilterTray() {
-  var backdrop = document.getElementById('filter-tray-backdrop');
-  var tray = document.getElementById('filter-tray');
-  if (tray) tray.style.transform = 'translateY(100%)';
-  if (backdrop) setTimeout(function(){ backdrop.style.display = 'none'; }, 350);
+function toggleRadarFilters() {
+  _radarFiltersOpen = !_radarFiltersOpen;
+  var chips = document.getElementById('home-filter-chips');
+  var icon = document.getElementById('home-filter-plus-icon');
+  if (chips) {
+    if (_radarFiltersOpen) {
+      chips.style.maxHeight = '40px';
+      chips.style.opacity = '1';
+      chips.style.paddingTop = '0';
+      chips.style.paddingBottom = '10px';
+    } else {
+      chips.style.maxHeight = '0';
+      chips.style.opacity = '0';
+      chips.style.paddingTop = '0';
+      chips.style.paddingBottom = '0';
+    }
+  }
+  if (icon) icon.textContent = _radarFiltersOpen ? '×' : '+';
 }
 
 function filterRadarHome(filter) {
@@ -1902,7 +1909,6 @@ function filterRadarHome(filter) {
   });
   renderHomeDartboard();
   updateFilterChipStyle();
-  closeFilterTray();
   // Update filter label next to + button
   var label = document.getElementById('home-filter-label');
   if (label) {
