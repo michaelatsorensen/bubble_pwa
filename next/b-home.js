@@ -180,7 +180,7 @@ function homeSetMode(mode) {
     if (tabAll) { tabAll.style.background = 'var(--gradient-primary)'; tabAll.style.color = 'white'; tabAll.style.fontWeight = '700'; }
     if (tabLive) { tabLive.style.background = 'transparent'; tabLive.style.color = 'var(--muted)'; tabLive.style.fontWeight = '600'; }
     _homeRadarFilter = 'all';
-    renderHomeDartboard();
+    if (_dartboardDataLoaded) renderHomeDartboard();
   }
 
   // Live banner stays visible in BOTH modes as long as checked in
