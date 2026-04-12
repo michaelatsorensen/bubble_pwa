@@ -241,7 +241,7 @@ async function loadEventDartboard() {
     }
 
     var { data: profiles } = await sb.from('profiles')
-      .select('id,name,title,keywords,dynamic_keywords,bio,linkedin,is_anon,avatar_url')
+      .select('id,name,title,workplace,keywords,dynamic_keywords,bio,linkedin,is_anon,avatar_url')
       .in('id', memberIds);
 
     _homeDartboardProfiles = (profiles || []).map(function(p) {
@@ -1821,7 +1821,7 @@ async function loadHomeDartboardData() {
     if (!currentUser || !currentProfile) return;
 
     var { data: allProfiles } = await sb.from('profiles')
-      .select('id,name,title,keywords,dynamic_keywords,bio,linkedin,is_anon,avatar_url')
+      .select('id,name,title,workplace,keywords,dynamic_keywords,bio,linkedin,is_anon,avatar_url')
       .neq('id', currentUser.id).neq('banned', true).limit(200);
     if (!allProfiles || allProfiles.length === 0) {
       _dartboardDataLoaded = true;
