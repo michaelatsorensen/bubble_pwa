@@ -27,11 +27,10 @@ var unreadState = {
       if (self.dm > 0) { b.textContent = dmLabel; b.style.display = 'flex'; }
       else { b.style.display = 'none'; }
     });
-    // Notification badge (topbar bell)
+    // Notification dot (topbar bell — simple dot, no number)
     var notifEl = document.getElementById('topbar-notif-badge');
     if (notifEl) {
-      if (this.notif > 0) { notifEl.textContent = this.notif > 9 ? '9+' : String(this.notif); notifEl.style.display = 'flex'; }
-      else { notifEl.style.display = 'none'; }
+      notifEl.style.display = this.notif > 0 ? 'block' : 'none';
     }
     // Home nav dot (persistent until notifications cleared)
     var homeDot = document.getElementById('home-notif-dot');

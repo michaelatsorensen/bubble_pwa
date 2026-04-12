@@ -121,7 +121,7 @@ function _personRenderIdentity(p) {
   }
   // Name + title
   document.getElementById('person-name').textContent = p.is_anon ? t('ps_anonymous') : (p.name || '?');
-  document.getElementById('person-role').textContent = p.is_anon ? '' : ((p.title || '') + (p.workplace ? ' · ' + p.workplace : ''));
+  document.getElementById('person-role').textContent = p.is_anon ? '' : ((p.workplace || '') + (p.title && p.workplace ? ' · ' + p.title : (p.title || '')));
   // Bio (inline under name)
   document.getElementById('person-bio').textContent = p.bio || '';
   var bioInline = document.getElementById('person-bio-inline');
@@ -714,7 +714,7 @@ async function loadProfile() {
       else { myAvEl.textContent = initials; }
     }
     document.getElementById('my-name').textContent = currentProfile.name || '...';
-    document.getElementById('my-role').textContent = (currentProfile.title || '') + (currentProfile.workplace ? ' · ' + currentProfile.workplace : '');
+    document.getElementById('my-role').textContent = (currentProfile.workplace || '') + (currentProfile.title && currentProfile.workplace ? ' · ' + currentProfile.title : (currentProfile.title || ''));
 
     isAnon = currentProfile.is_anon || false;
     updateAnonToggle();

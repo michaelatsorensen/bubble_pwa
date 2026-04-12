@@ -218,18 +218,7 @@ function updateFilterChipStyle() {
       firstChip.childNodes[0].textContent = 'Alle ';
     }
   }
-  chips.querySelectorAll('.radar-filter-chip').forEach(function(c) {
-    c.style.background = '';
-    c.style.borderColor = '';
-  });
-  chips.querySelectorAll('.radar-filter-chip.active').forEach(function(c) {
-    if (isLive) {
-      c.style.background = 'linear-gradient(135deg,#1A9E8E,#10B981)';
-    } else {
-      c.style.background = 'linear-gradient(135deg,#7C5CFC,#6366F1)';
-    }
-    c.style.borderColor = 'transparent';
-  });
+  // Chip styling is handled by CSS classes — no inline overrides needed
 }
 
 // ── Event-aware dartboard: load only event members ──
