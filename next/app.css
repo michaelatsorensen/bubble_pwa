@@ -95,7 +95,6 @@ body {
 /* ── SCREENS ── */
 /* ── APP SHELL (floating nav — position fixed, not in flow) ── */
 #app-shell { height:100%; display:flex; flex-direction:column; overflow:hidden; position:relative; }
-#app-shell::after { content:''; position:fixed; bottom:0; left:0; right:0; height:80px; background:linear-gradient(to top, var(--bg) 20%, transparent); pointer-events:none; z-index:50; }
 #screens-wrap { flex:1; position:relative; overflow:hidden; min-height:0; }
 .screen { position:absolute; inset:0; display:none; flex-direction:column; z-index:1; overflow:hidden; padding-bottom:76px; }
 .screen.active { display:flex; animation:screenFadeIn 0.2s cubic-bezier(0.22, 1, 0.36, 1); }
@@ -133,9 +132,9 @@ body {
   transform: translateX(-50%);
   width: 240px;
   z-index: 100;
-  background: rgba(23,15,52,0.84);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  background: rgba(23,15,52,0.72);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
   border-radius: 24px;
   border: 0.5px solid rgba(124,92,252,0.08);
   box-shadow: 0 4px 24px rgba(23,15,52,0.25), inset 0 0.5px 0 rgba(140,120,255,0.1);
