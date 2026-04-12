@@ -581,10 +581,11 @@
      SCREEN: HOME
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-home">
-  <div class="topbar" style="background:rgba(23,15,52,0.92);padding-bottom:0;flex-direction:column;align-items:stretch">
-    <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px">
-    <div style="font-size:16px;font-weight:800;letter-spacing:-0.5px;color:white">bubble</div><span style="font-size:7px;font-weight:700;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.08);padding:2px 5px;border-radius:4px;letter-spacing:0.5px;margin-left:4px">NEXT</span>
-    <div style="flex:1"></div>
+  <div class="topbar" style="background:rgba(23,15,52,0.92)">
+    <div style="flex:1;min-width:0">
+      <div style="font-size:16px;font-weight:800;letter-spacing:-0.5px;color:white">bubble<span style="font-size:7px;font-weight:700;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.08);padding:2px 5px;border-radius:4px;letter-spacing:0.5px;margin-left:5px;vertical-align:middle">NEXT</span></div>
+      <div style="font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.5);margin-top:1px" id="home-greeting-name"></div>
+    </div>
     <button onclick="openConnectScanner()" class="topbar-action-btn" title="Scan QR" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;box-shadow:none;display:flex;align-items:center;justify-content:center">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"><path d="M2 7V2h5M17 2h5v5M22 17v5h-5M7 22H2v-5"/><line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2 2"/></svg>
     </button>
@@ -596,9 +597,6 @@
       <div id="topbar-notif-badge" class="topbar-badge" style="display:none;position:absolute;top:1px;right:1px;width:7px;height:7px;border-radius:50%;background:#E879A8;border:1.5px solid rgba(23,15,52,0.92);min-width:auto;padding:0">0</div>
     </button>
     <div class="home-avatar" id="home-avatar" onclick="goTo('screen-profile')" style="width:28px;height:28px;font-size:9px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#7C5CFC);border:1.5px solid rgba(255,255,255,0.2)">?</div>
-    </div>
-    <div style="font-size:1.1rem;font-weight:800;letter-spacing:-0.03em;color:white" id="home-greeting-name"></div>
-    <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);margin-top:1px;padding-bottom:0.5rem" id="home-greeting-sub">19 personer i dit netværk</div>
   </div>
 
   <div class="scroll-area" id="home-scroll">
