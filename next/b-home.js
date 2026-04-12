@@ -156,11 +156,22 @@ async function loadLiveBanner() {
         expiryStr: expiryStr
       });
 
-      if (tabs) tabs.style.display = 'block';
+      // Show teal glass section inside radar card
+      var glass = document.getElementById('radar-live-glass');
+      if (glass) {
+        glass.style.display = '';
+        var gName = document.getElementById('radar-live-name');
+        var gMeta = document.getElementById('radar-live-meta');
+        if (gName) gName.textContent = myLive.bubbles.name;
+        if (gMeta) gMeta.textContent = (liveCount || 0) + ' ' + t('live_here_now') + ' · ' + t('live_expires') + ' ' + expiryStr;
+      }
+      if (tabs) tabs.style.display = 'none'; // hide old tabs
       homeSetMode('live');
     } else {
       appMode.set('normal');
       if (tabs) tabs.style.display = 'none';
+      var glass2 = document.getElementById('radar-live-glass');
+      if (glass2) glass2.style.display = 'none';
       hsSlotHide('home-live-banner');
       homeSetMode('all');
     }
@@ -168,6 +179,8 @@ async function loadLiveBanner() {
     logError('loadLiveBanner', e);
     appMode.set('normal');
     if (tabs) tabs.style.display = 'none';
+    var glass3 = document.getElementById('radar-live-glass');
+    if (glass3) glass3.style.display = 'none';
     hsSlotHide('home-live-banner');
   }
 }
@@ -178,34 +191,31 @@ function homeSetMode(mode) {
   if (mode === 'live' && !appMode.is('live')) appMode.set('live', appMode.live);
   else if (mode !== 'live' && appMode.is('live')) {} // keep live context, just switch tab view
 
-  var tabAll = document.getElementById('home-tab-all');
-  var tabLive = document.getElementById('home-tab-live');
-  var banner = document.getElementById('home-live-banner');
   var ctx = appMode.live;
 
+  // Update teal glass toggle tabs
+  var gAll = document.getElementById('radar-glass-tab-all');
+  var gLive = document.getElementById('radar-glass-tab-live');
+  if (gAll && gLive) {
+    if (mode === 'live') {
+      gAll.style.cssText = 'flex:1;text-align:center;padding:4px;font-size:0.65rem;font-weight:500;border-radius:5px;color:rgba(26,158,142,0.4);background:transparent;border:0.5px solid transparent;cursor:pointer;font-family:inherit';
+      gLive.style.cssText = 'flex:1;text-align:center;padding:4px;font-size:0.65rem;font-weight:700;border-radius:5px;color:#0D5C52;background:rgba(26,158,142,0.12);border:0.5px solid rgba(26,158,142,0.15);cursor:pointer;font-family:inherit';
+    } else {
+      gAll.style.cssText = 'flex:1;text-align:center;padding:4px;font-size:0.65rem;font-weight:700;border-radius:5px;color:#0D5C52;background:rgba(26,158,142,0.12);border:0.5px solid rgba(26,158,142,0.15);cursor:pointer;font-family:inherit';
+      gLive.style.cssText = 'flex:1;text-align:center;padding:4px;font-size:0.65rem;font-weight:500;border-radius:5px;color:rgba(26,158,142,0.4);background:transparent;border:0.5px solid transparent;cursor:pointer;font-family:inherit';
+    }
+  }
+
   if (mode === 'live' && ctx) {
-    if (tabAll) { tabAll.style.background = 'transparent'; tabAll.style.color = 'var(--muted)'; tabAll.style.fontWeight = '600'; }
-    if (tabLive) { tabLive.style.background = 'linear-gradient(135deg,#1A9E8E,#10B981)'; tabLive.style.color = 'white'; tabLive.style.fontWeight = '700'; }
     loadEventDartboard();
   } else {
-    if (tabAll) { tabAll.style.background = 'var(--gradient-primary)'; tabAll.style.color = 'white'; tabAll.style.fontWeight = '700'; }
-    if (tabLive) { tabLive.style.background = 'transparent'; tabLive.style.color = 'var(--muted)'; tabLive.style.fontWeight = '600'; }
     _homeRadarFilter = 'all';
-    // Only re-render if mode actually changed (avoid double-render on boot)
     if (_prevHomeViewMode !== 'all' && _dartboardDataLoaded) renderHomeDartboard();
   }
   _prevHomeViewMode = mode;
 
-  // Live banner stays visible in BOTH modes as long as checked in
-  if (banner && ctx) {
-    hsSlotShow('home-live-banner');
-    var nameEl = document.getElementById('home-live-banner-name');
-    var countEl = document.getElementById('home-live-banner-count');
-    if (nameEl) nameEl.textContent = ctx.bubbleName;
-    if (countEl) countEl.textContent = ctx.memberCount + ' ' + t('live_here_now');
-  } else if (banner) {
-    hsSlotHide('home-live-banner');
-  }
+  // Hide old live banner (superseded by teal glass)
+  hsSlotHide('home-live-banner');
 
   // Update checkout tray info
   if (ctx) {

@@ -657,6 +657,18 @@
           <button class="radar-filter-chip" onclick="filterRadarHome('good')" data-filter="good" data-t="ps_good_match">Godt match</button>
           <button class="radar-filter-chip" onclick="filterRadarHome('strong')" data-filter="strong" data-t="ps_strong_match">Stærkt match</button>
         </div>
+        <!-- ═══ TEAL GLASS: Live section inside radar card ═══ -->
+        <div id="radar-live-glass" style="display:none;margin:6px 8px 2px;border-radius:12px;background:rgba(26,158,142,0.07);border:0.5px solid rgba(26,158,142,0.12);padding:8px 10px">
+          <div onclick="openLiveCheckoutTray()" style="display:flex;align-items:center;gap:7px;margin-bottom:6px;cursor:pointer">
+            <div style="width:7px;height:7px;border-radius:50%;background:#1A9E8E;box-shadow:0 0 0 3px rgba(26,158,142,0.12);flex-shrink:0"></div>
+            <div style="flex:1;min-width:0"><div style="font-size:0.72rem;font-weight:700;color:#0D5C52" id="radar-live-name">...</div><div style="font-size:0.6rem;color:rgba(26,158,142,0.5)" id="radar-live-meta"></div></div>
+            <div style="width:20px;height:20px;border-radius:50%;background:rgba(26,158,142,0.08);display:flex;align-items:center;justify-content:center"><svg width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="rgba(26,158,142,0.4)" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></div>
+          </div>
+          <div style="display:flex;background:rgba(26,158,142,0.06);border:0.5px solid rgba(26,158,142,0.08);border-radius:7px;padding:2px">
+            <button id="radar-glass-tab-all" onclick="homeSetMode('all')" style="flex:1;text-align:center;padding:4px;font-size:0.65rem;font-weight:500;border-radius:5px;color:rgba(26,158,142,0.4);background:transparent;border:0.5px solid transparent;cursor:pointer;font-family:inherit">Alle</button>
+            <button id="radar-glass-tab-live" onclick="homeSetMode('live')" style="flex:1;text-align:center;padding:4px;font-size:0.65rem;font-weight:700;border-radius:5px;color:#0D5C52;background:rgba(26,158,142,0.12);border:0.5px solid rgba(26,158,142,0.15);cursor:pointer;font-family:inherit">Live</button>
+          </div>
+        </div>
         </div>
       </div>
 
