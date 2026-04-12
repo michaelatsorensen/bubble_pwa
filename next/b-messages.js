@@ -40,12 +40,14 @@ var unreadState = {
   // ── DM operations ──
   dmRecount: async function() {
     try {
-      if (!currentUser) return;
-      var { count } = await sb.from('messages')
+      if (!currentUser) { console.debug('[DM] dmRecount: no currentUser'); return; }
+      var { count, error } = await sb.from('messages')
         .select('*', { count: 'exact', head: true })
         .eq('receiver_id', currentUser.id)
         .is('read_at', null);
+      if (error) { console.debug('[DM] dmRecount error:', error); return; }
       this.dm = count || 0;
+      console.debug('[DM] dmRecount:', this.dm, 'unread. Badge els:', document.querySelectorAll('.msg-unread-badge').length);
       this.render();
     } catch(e) { logError('unreadState.dmRecount', e); }
   },
