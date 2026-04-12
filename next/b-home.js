@@ -1647,7 +1647,7 @@ async function loadTopMatches() {
             '<div style="font-size:0.82rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(p.name || '?') + '</div>' +
             matchBadgeHtml(s.score) +
           '</div>' +
-          '<div style="font-size:0.68rem;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(p.title || '') + (p.workplace ? ' \u00b7 ' + escHtml(p.workplace) : '') + '</div>' +
+          '<div style="font-size:0.68rem;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(p.workplace || '') + (p.title && p.workplace ? ' \u00b7 ' + escHtml(p.title) : escHtml(p.title || '')) + '</div>' +
           '<div style="display:flex;gap:0.2rem;margin-top:0.2rem;flex-wrap:wrap">' + sharedTags + '</div>' +
         '</div>' +
       '</div>';
@@ -2114,7 +2114,7 @@ function renderHomeTrayList() {
           '<span style="font-weight:700;font-size:0.85rem;color:rgba(255,255,255,0.9)">' + escHtml(name) + '</span>' +
           (ml.text ? matchBadgeHtml(p.matchScore || 0) : '') +
         '</div>' +
-        '<div style="font-size:0.72rem;color:rgba(255,255,255,0.4);margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
+        '<div style="font-size:0.72rem;color:rgba(255,255,255,0.4);margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.workplace || '') + (p.title && p.workplace ? ' · ' + escHtml(p.title) : escHtml(p.title || '')) + '</div>' +
       '</div>' +
       '<span style="color:rgba(255,255,255,0.3);font-size:0.9rem;opacity:0.5">›</span>' +
     '</div>';
