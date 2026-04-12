@@ -771,7 +771,7 @@ function showUpdateBanner() {
   if (document.getElementById('update-banner')) return;
   var banner = document.createElement('div');
   banner.id = 'update-banner';
-  banner.style.cssText = 'position:fixed;top:12px;left:14px;right:14px;z-index:99999;'
+  banner.style.cssText = 'position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:14px;right:14px;z-index:99999;'
     + 'background:rgba(23,15,52,0.84);'
     + 'backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);'
     + 'border-radius:16px;'
