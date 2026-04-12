@@ -278,10 +278,8 @@ function _slideNavIndicator(idx) {
 }
 
 function goTo(screenId) {
-  // Close any open trays + reset rubber band
+  // Close any open trays
   try { if (typeof closeNotifTray === 'function') closeNotifTray(); } catch(e) {}
-  try { if (typeof _resetRubberBand === 'function') _resetRubberBand(); } catch(e) {}
-  try { document.querySelectorAll('.scroll-area').forEach(function(el) { el.style.transition = ''; el.style.transform = ''; }); } catch(e) {}
   // Auth guard
   if (!currentUser && _publicScreens.indexOf(screenId) < 0) {
     console.warn('[nav] auth guard: no user, redirecting to auth');
