@@ -129,14 +129,14 @@ body {
 #global-nav {
   position: fixed;
   bottom: 12px;
-  left: 14px;
-  right: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
   z-index: 100;
   background: rgba(23,15,52,0.84);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   border-radius: 24px;
-  border-top: none;
   border: 0.5px solid rgba(124,92,252,0.08);
   box-shadow: 0 4px 24px rgba(23,15,52,0.25), inset 0 0.5px 0 rgba(140,120,255,0.1);
   padding-bottom: 0px;
@@ -147,35 +147,29 @@ body {
 }
 #global-nav .nav-row {
   display: flex;
-  justify-content: space-around;
+  justify-content: center;
   align-items: center;
-  height: 52px;
-  padding: 0 8px;
+  height: 48px;
+  padding: 0 12px;
+  gap: 24px;
 }
 #global-nav.nav-hidden {
   display: none;
 }
 .nav-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  font-size: 0.55rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
   color: rgba(255,255,255,0.3);
   cursor: pointer;
   position: relative;
   padding: 0;
   border: none;
   background: none;
-  flex: 1;
-  min-width: 0;
-  height: 100%;
   -webkit-tap-highlight-color: transparent;
   line-height: 1;
 }
+.nav-item > span:not(.nav-icon) { display: none; }
 .nav-item.active { color: rgba(255,255,255,0.9); font-weight: 600; }
 .nav-item.active .nav-icon { width: 2rem; height: 2rem; border-radius: 50%; border: 1.5px solid rgba(124,92,252,0.5); background: rgba(124,92,252,0.18); box-shadow: 0 0 0 5px rgba(124,92,252,0.08); padding: 0; }
 .nav-item.active .nav-icon .ico { stroke: rgba(255,255,255,0.9); }
@@ -1325,12 +1319,7 @@ a.person-action-btn { text-decoration:none; }
       40px 0 60px rgba(30,27,46,0.15);
   }
 
-  #global-nav {
-    max-width: 652px;
-    left: 50%;
-    transform: translateX(-50%);
-    right: auto;
-  }
+  /* Floating nav is already centered via transform */
 
   /* Nav is in flow — inherits width from app-shell/body */
 
