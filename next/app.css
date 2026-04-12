@@ -62,7 +62,7 @@
   --radius-pill: 99px;
 }
 
-html { height:100vh; overflow:hidden; }
+html { height:100vh; overflow:hidden; overscroll-behavior:none; }
 
 /* ── DESKTOP PHONE FRAME ── */
 
@@ -76,6 +76,7 @@ body {
   margin: 0;
   height: 100vh;
   overflow: hidden;
+  overscroll-behavior: none;
 }
 
 /* ── ANIMATED BG ── */
@@ -487,6 +488,11 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 
 /* ── NOTIFICATIONS ── */
 .notif-card { background:#FFFFFF; border:1px solid rgba(216,213,228,0.5); border-radius:var(--radius); padding:0.75rem 1rem; margin-bottom:0.5rem; box-shadow:0 1px 3px rgba(30,27,46,0.04), 0 4px 12px rgba(30,27,46,0.03); transition:transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); -webkit-tap-highlight-color:transparent; }
+#notif-tray-list .notif-card { background:rgba(255,255,255,0.06); border:0.5px solid rgba(124,92,252,0.06); box-shadow:none; color:rgba(255,255,255,0.9); }
+#notif-tray-list .notif-card .notif-meta,
+#notif-tray-list .notif-card .notif-time { color:rgba(255,255,255,0.4) !important; }
+#notif-tray-list .notif-card .notif-title { color:rgba(255,255,255,0.9) !important; }
+#notif-tray-list .empty-state .empty-text { color:rgba(255,255,255,0.4); }
 .notif-section-label { font-size:0.72rem; font-weight:700; padding:0.5rem 0 0.3rem; display:flex; align-items:center; gap:0.3rem; }
 .notif-header { display:flex; align-items:center; gap:0.65rem; }
 .notif-avatar { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:700; color:white; flex-shrink:0; }

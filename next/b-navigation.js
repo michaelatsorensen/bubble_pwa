@@ -278,6 +278,8 @@ function _slideNavIndicator(idx) {
 }
 
 function goTo(screenId) {
+  // Close any open trays
+  try { if (typeof closeNotifTray === 'function') closeNotifTray(); } catch(e) {}
   // Auth guard
   if (!currentUser && _publicScreens.indexOf(screenId) < 0) {
     console.warn('[nav] auth guard: no user, redirecting to auth');
