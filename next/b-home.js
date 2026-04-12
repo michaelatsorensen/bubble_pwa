@@ -914,8 +914,7 @@ async function updateTopbarNotifBadge() {
     }
     var total = (invRes.count || 0) + (saveRes.count || 0) + pendingCount;
     if (total > 0) {
-      badge.textContent = total > 9 ? '9+' : total;
-      badge.style.display = 'flex';
+      badge.style.display = 'block';
     } else {
       badge.style.display = 'none';
     }
