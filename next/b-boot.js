@@ -771,25 +771,24 @@ function showUpdateBanner() {
   if (document.getElementById('update-banner')) return;
   var banner = document.createElement('div');
   banner.id = 'update-banner';
-  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;'
-    + 'padding-top:env(safe-area-inset-top,0px);'
-    + 'background:rgba(255,255,255,0.96);'
-    + 'backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);'
-    + 'border-bottom:1px solid rgba(124,92,252,0.25);'
-    + 'box-shadow:0 4px 24px rgba(30,27,46,0.12);';
+  banner.style.cssText = 'position:fixed;top:12px;left:14px;right:14px;z-index:99999;'
+    + 'background:rgba(23,15,52,0.84);'
+    + 'backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);'
+    + 'border-radius:16px;'
+    + 'border:0.5px solid rgba(124,92,252,0.08);'
+    + 'box-shadow:inset 0 0.5px 0 rgba(140,120,255,0.1);';
   banner.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;'
-    + 'padding:0.55rem 1rem;gap:0.75rem;font-family:inherit">'
+    + 'padding:0.6rem 0.8rem;gap:0.6rem;font-family:inherit">'
     + '<div style="display:flex;align-items:center;gap:0.5rem;min-width:0">'
-    + '<div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.75rem">✦</div>'
-    + '<span style="font-size:0.78rem;font-weight:600;color:var(--text)">Ny version klar</span>'
+    + '<span style="font-size:0.8rem;font-weight:600;color:rgba(255,255,255,0.9)">Ny version klar</span>'
     + '</div>'
     + '<div style="display:flex;gap:0.4rem;flex-shrink:0">'
-    + '<button onclick="window.location.reload()" style="background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;'
-    + 'color:#fff;padding:0.35rem 0.85rem;border-radius:99px;font-weight:700;font-size:0.72rem;'
-    + 'font-family:inherit;cursor:pointer;white-space:nowrap">Opdatér</button>'
-    + '<button onclick="this.closest(\'#update-banner\').remove()" style="background:none;border:1px solid var(--glass-border);'
-    + 'color:var(--muted);padding:0.35rem 0.6rem;border-radius:99px;font-size:0.72rem;'
-    + 'font-family:inherit;cursor:pointer">Senere</button>'
+    + '<button onclick="window.location.reload()" style="background:rgba(255,255,255,0.15);border:none;'
+    + 'color:rgba(255,255,255,0.9);padding:0.35rem 0.85rem;border-radius:99px;font-weight:600;font-size:0.72rem;'
+    + 'font-family:inherit;cursor:pointer;white-space:nowrap">Opdatér →</button>'
+    + '<button onclick="this.closest(\'#update-banner\').remove()" style="background:none;border:none;'
+    + 'color:rgba(255,255,255,0.4);padding:0.35rem 0.4rem;font-size:0.82rem;'
+    + 'font-family:inherit;cursor:pointer">✕</button>'
     + '</div></div>';
   document.body.prepend(banner);
 }
