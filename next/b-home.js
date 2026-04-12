@@ -74,6 +74,7 @@ function hsSlotHide(id) {
 
 // ── Live context: set when user is checked into an event ──
 var _homeViewMode = 'all'; // UI tab toggle: 'all' or 'live'
+var _prevHomeViewMode = 'all';
 
 var _homeLoading = false;
 async function loadHome() {
@@ -190,8 +191,10 @@ function homeSetMode(mode) {
     if (tabAll) { tabAll.style.background = 'var(--gradient-primary)'; tabAll.style.color = 'white'; tabAll.style.fontWeight = '700'; }
     if (tabLive) { tabLive.style.background = 'transparent'; tabLive.style.color = 'var(--muted)'; tabLive.style.fontWeight = '600'; }
     _homeRadarFilter = 'all';
-    if (_dartboardDataLoaded) renderHomeDartboard();
+    // Only re-render if mode actually changed (avoid double-render on boot)
+    if (_prevHomeViewMode !== 'all' && _dartboardDataLoaded) renderHomeDartboard();
   }
+  _prevHomeViewMode = mode;
 
   // Live banner stays visible in BOTH modes as long as checked in
   if (banner && ctx) {
