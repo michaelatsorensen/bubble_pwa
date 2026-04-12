@@ -581,7 +581,8 @@
      SCREEN: HOME
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-home">
-  <div class="topbar" style="background:rgba(23,15,52,0.92);padding-bottom:0">
+  <div class="topbar" style="background:rgba(23,15,52,0.92);padding-bottom:0;flex-direction:column;align-items:stretch">
+    <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px">
     <div style="font-size:16px;font-weight:800;letter-spacing:-0.5px;color:white">bubble</div><span style="font-size:7px;font-weight:700;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.08);padding:2px 5px;border-radius:4px;letter-spacing:0.5px;margin-left:4px">NEXT</span>
     <div style="flex:1"></div>
     <button onclick="openConnectScanner()" class="topbar-action-btn" title="Scan QR" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;box-shadow:none;display:flex;align-items:center;justify-content:center">
@@ -595,15 +596,12 @@
       <div id="topbar-notif-badge" class="topbar-badge" style="display:none;position:absolute;top:1px;right:1px;width:7px;height:7px;border-radius:50%;background:#E879A8;border:1.5px solid rgba(23,15,52,0.92);min-width:auto;padding:0">0</div>
     </button>
     <div class="home-avatar" id="home-avatar" onclick="goTo('screen-profile')" style="width:28px;height:28px;font-size:9px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#7C5CFC);border:1.5px solid rgba(255,255,255,0.2)">?</div>
+    </div>
+    <div style="font-size:1.1rem;font-weight:800;letter-spacing:-0.03em;color:white" id="home-greeting-name"></div>
+    <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);margin-top:1px;padding-bottom:0.5rem" id="home-greeting-sub">19 personer i dit netværk</div>
   </div>
 
   <div class="scroll-area" id="home-scroll">
-
-    <!-- Greeting (compact, in dark zone) -->
-    <div style="margin:-1rem -1.2rem 0.5rem;padding:0 1.2rem 0.7rem;background:rgba(23,15,52,0.92)">
-      <div style="font-size:1.1rem;font-weight:800;letter-spacing:-0.03em;color:white" id="home-greeting-name"></div>
-      <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);margin-top:1px" id="home-greeting-sub">19 personer i dit netværk</div>
-    </div>
 
 
     <!-- ═══ ALL HOME CARDS (v5.2) ═══ -->

@@ -1898,7 +1898,7 @@ function toggleRadarFilters() {
   var chips = document.getElementById('home-filter-chips');
   var icon = document.getElementById('home-filter-plus-icon');
   if (chips) {
-    chips.style.maxWidth = _radarFiltersOpen ? '400px' : '0';
+    chips.style.maxWidth = _radarFiltersOpen ? '250px' : '0';
     chips.style.opacity = _radarFiltersOpen ? '1' : '0';
   }
   if (icon) icon.textContent = _radarFiltersOpen ? '×' : '+';
