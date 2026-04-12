@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Bubble — Mød dit netværk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --accent: #7C5CFC;
+  --accent-end: #6366F1;
+  --pink: #E879A8;
+  --cyan: #2ECFCF;
+  --green: #1A9E8E;
+  --grad-start: #19D3C5;
+  --grad-mid: #6E63FF;
+  --grad-end: #FF6A9A;
+  --text: #1a1a2e;
+  --text-secondary: #6b6b80;
+  --bg: #ffffff;
+  --bg-alt: #f8f8fc;
+  --border: rgba(0,0,0,0.06);
+  --radius: 16px;
+  --max-w: 960px;
+}
+
+html { scroll-behavior: smooth; overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: 'Figtree', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  min-height: 100vh;
+}
+
+/* ── NAV ── */
+.nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.nav-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo { height: 26px; width: auto; }
+.nav-cta {
+  padding: 8px 22px; border-radius: 24px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-end));
+  color: #fff; font-size: 14px; font-weight: 500;
+  text-decoration: none; transition: transform 0.15s, opacity 0.15s;
+}
+.nav-cta:hover { transform: scale(1.03); opacity: 0.92; }
+
+/* ── HERO ── */
+.hero {
+  max-width: var(--max-w); margin: 0 auto;
+  padding: 56px 24px 40px;
+  display: flex; align-items: center; gap: 48px;
+  position: relative; overflow: visible;
+}
+.hero::before {
+  content: ''; position: absolute;
+  width: 400px; height: 400px; top: -60px; left: -100px;
+  background: radial-gradient(circle, rgba(110,99,255,0.12) 0%, rgba(25,211,197,0.08) 40%, transparent 70%);
+  border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: -1;
+}
+.hero::after {
+  content: ''; position: absolute;
+  width: 300px; height: 300px; bottom: -40px; right: -60px;
+  background: radial-gradient(circle, rgba(255,106,154,0.1) 0%, rgba(110,99,255,0.06) 40%, transparent 70%);
+  border-radius: 50%; filter: blur(50px); pointer-events: none; z-index: -1;
+}
+.hero-text { flex: 1; min-width: 0; position: relative; z-index: 1; }
+.hero-tagline {
+  font-size: clamp(36px, 6vw, 52px); font-weight: 600; line-height: 1.1;
+  background: linear-gradient(135deg, var(--grad-start), var(--grad-mid), var(--grad-end), var(--grad-start));
+  background-size: 300% 300%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; margin-bottom: 16px; padding: 0; margin-left: -2px;
+  animation: gradientShift 6s ease-in-out infinite;
+}
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.hero-sub {
+  font-size: clamp(16px, 2.2vw, 19px); color: var(--text-secondary);
+  max-width: 440px; margin-bottom: 24px; line-height: 1.55;
+}
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.btn-primary {
+  display: inline-block; padding: 14px 32px; border-radius: 28px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-end));
+  color: #fff; font-size: 16px; font-weight: 500;
+  text-decoration: none; transition: transform 0.15s, box-shadow 0.2s;
+  border: none; cursor: pointer;
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,92,252,0.3); }
+.btn-secondary {
+  display: inline-block; padding: 14px 32px; border-radius: 28px;
+  background: transparent; border: 1.5px solid var(--border);
+  color: var(--text); font-size: 16px; font-weight: 500;
+  text-decoration: none; cursor: pointer; transition: border-color 0.2s;
+}
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── PHONE MOCKUP ── */
+.hero-phone { flex-shrink: 0; animation: float 4s ease-in-out infinite; }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+.phone-frame {
+  width: 280px; background: #111; border-radius: 40px;
+  padding: 10px; position: relative;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.12), 0 2px 0 rgba(255,255,255,0.1) inset;
+  transition: box-shadow 0.4s ease;
+}
+.hero-phone:hover .phone-frame {
+  box-shadow: 0 50px 100px rgba(0,0,0,0.18), 0 2px 0 rgba(255,255,255,0.1) inset;
+}
+.phone-notch {
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+  width: 80px; height: 20px; background: #111;
+  border-radius: 0 0 12px 12px; z-index: 3;
+}
+.phone-screen {
+  background: #fff; border-radius: 28px; overflow: hidden;
+  aspect-ratio: 9/18; display: flex; flex-direction: column;
+}
+.phone-header {
+  padding: 34px 16px 6px 16px; display: flex; align-items: center;
+}
+.phone-logo-dot {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: linear-gradient(135deg, #19D3C5, #6E63FF, #FF6A9A);
+  display: flex; align-items: center; justify-content: center;
+}
+.phone-logo-dot::after {
+  content: ''; width: 9px; height: 9px; border-radius: 50%; background: #fff;
+}
+.phone-header span { font-size: 14px; font-weight: 600; color: #333; }
+.phone-radar { flex: 1; display: flex; align-items: center; justify-content: center; padding: 8px; }
+.radar-container { position: relative; width: 190px; height: 190px; }
+.radar-container::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0deg, transparent 340deg, rgba(124,92,252,0.15) 355deg, transparent 360deg);
+  animation: radarSweep 3s linear infinite;
+  pointer-events: none; z-index: 1;
+}
+@keyframes radarSweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.radar-ring {
+  position: absolute; border-radius: 50%;
+  border: 1px solid rgba(124,92,252,0.08);
+  animation: pulse 3s ease-in-out infinite;
+}
+.radar-ring:nth-child(1) { inset: 0; animation-delay: 0s; }
+.radar-ring:nth-child(2) { inset: 22px; border-color: rgba(124,92,252,0.12); animation-delay: 0.4s; }
+.radar-ring:nth-child(3) { inset: 44px; border-color: rgba(124,92,252,0.18); animation-delay: 0.8s; }
+.radar-ring:nth-child(4) { inset: 66px; border-color: rgba(124,92,252,0.26); animation-delay: 1.2s; }
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.015); }
+}
+.radar-center {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 0 4px rgba(124,92,252,0.2);
+}
+.radar-dot {
+  position: absolute; width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: #fff; font-weight: 600;
+  animation: fadeIn 0.6s ease-out both;
+}
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+.radar-dot:nth-child(6) { top: 18%; left: 60%; background: #E879A8; animation-delay: 0.3s; }
+.radar-dot:nth-child(7) { top: 56%; left: 14%; background: #2ECFCF; animation-delay: 0.5s; }
+.radar-dot:nth-child(8) { top: 12%; left: 30%; background: #1A9E8E; animation-delay: 0.7s; }
+.radar-dot:nth-child(9) { top: 66%; left: 64%; background: #7C5CFC; opacity: 0.75; animation-delay: 0.9s; }
+
+.phone-card {
+  margin: 0 12px 12px; background: #f8f7ff; border-radius: 12px;
+  padding: 8px 10px; display: flex; align-items: center; gap: 8px;
+  text-align: left;
+}
+.phone-card-avatar {
+  width: 28px; height: 28px; border-radius: 50%; background: #E879A8;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: #fff; font-weight: 600; flex-shrink: 0;
+}
+.phone-card-info { flex: 1; }
+.phone-card-name { font-size: 11px; font-weight: 600; color: #333; }
+.phone-card-meta { font-size: 9px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.phone-card-score { font-size: 11px; color: var(--accent); font-weight: 600; }
+
+.phone-nav {
+  display: flex; justify-content: space-around; padding: 8px 0 14px;
+  border-top: 1px solid #f0f0f0;
+}
+.phone-nav-item { text-align: center; font-size: 9px; color: #bbb; }
+.phone-nav-item.active { color: var(--accent); }
+.phone-nav-item .dot {
+  width: 20px; height: 20px; margin: 0 auto 2px;
+  border-radius: 50%; border: 2px solid #ddd;
+}
+.phone-nav-item.active .dot {
+  border-color: var(--accent); background: rgba(124,92,252,0.1);
+}
+.phone-home-bar {
+  position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+  width: 70px; height: 4px; border-radius: 2px; background: #555;
+}
+
+/* ── SECTIONS ── */
+.section {
+  max-width: var(--max-w); margin: 0 auto;
+  padding: 64px 24px;
+}
+.section-alt { background: var(--bg-alt); overflow: visible; }
+.section-alt .section { padding: 64px 24px; }
+.section-label {
+  font-size: 12px; font-weight: 600; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px;
+}
+.section-title {
+  font-size: clamp(24px, 3.5vw, 32px); font-weight: 600; line-height: 1.2;
+  margin-bottom: 32px; max-width: 520px;
+}
+
+/* ── STEPS ── */
+.steps { display: flex; flex-direction: column; gap: 24px; max-width: 520px; }
+.step { display: flex; gap: 16px; align-items: flex-start; }
+.step-num {
+  min-width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; font-weight: 600; margin-top: 0;
+}
+.step:nth-child(1) .step-num { background: rgba(124,92,252,0.1); color: var(--accent); }
+.step:nth-child(2) .step-num { background: rgba(46,207,207,0.1); color: var(--cyan); }
+.step:nth-child(3) .step-num { background: rgba(232,121,168,0.1); color: var(--pink); }
+.step-title { font-size: 17px; font-weight: 600; margin-bottom: 4px; line-height: 1.3; }
+.step-desc { font-size: 15px; color: var(--text-secondary); line-height: 1.5; }
+
+/* ── FEATURES ── */
+.features-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+.feature-card {
+  background: var(--bg); border-radius: var(--radius); padding: 20px;
+  border: 1px solid var(--border); transition: transform 0.2s, box-shadow 0.2s;
+}
+.feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.06);
+}
+.feature-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
+}
+.feature-card:nth-child(1) .feature-icon { background: rgba(124,92,252,0.1); }
+.feature-card:nth-child(2) .feature-icon { background: rgba(46,207,207,0.1); }
+.feature-card:nth-child(3) .feature-icon { background: rgba(232,121,168,0.1); }
+.feature-card:nth-child(4) .feature-icon { background: rgba(26,158,142,0.1); }
+.feature-name { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.feature-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.45; }
+
+/* ── STATS ── */
+.stats-row {
+  display: flex; justify-content: center; gap: 48px;
+  flex-wrap: wrap; margin-bottom: 32px;
+}
+.stat { text-align: center; }
+.stat-num {
+  font-size: clamp(32px, 5vw, 44px); font-weight: 600; color: var(--text);
+}
+.stat-label { font-size: 14px; color: var(--text-secondary); }
+.quote {
+  font-size: 18px; color: var(--text-secondary); font-style: italic;
+  line-height: 1.6; max-width: 440px; margin: 0 auto 8px; text-align: center;
+}
+.quote-author { font-size: 14px; color: var(--text-secondary); text-align: center; }
+
+/* ── FINAL CTA ── */
+.cta-section {
+  text-align: center; max-width: var(--max-w); margin: 0 auto;
+  padding: 64px 24px 80px;
+}
+.cta-title {
+  font-size: clamp(24px, 4vw, 36px); font-weight: 600; line-height: 1.15;
+  background: linear-gradient(135deg, var(--grad-start), var(--grad-mid), var(--grad-end));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; margin-bottom: 12px;
+}
+.cta-sub { font-size: 16px; color: var(--text-secondary); margin-bottom: 28px; }
+.cta-note { font-size: 13px; color: var(--text-secondary); margin-top: 16px; }
+
+/* ── FOOTER ── */
+.footer {
+  border-top: 1px solid var(--border); padding: 24px;
+  display: flex; justify-content: space-between; align-items: center;
+  max-width: var(--max-w); margin: 0 auto;
+  font-size: 13px; color: var(--text-secondary);
+}
+.footer-links { display: flex; gap: 24px; }
+.footer-links a { color: var(--text-secondary); text-decoration: none; }
+.footer-links a:hover { color: var(--accent); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 720px) {
+  .desktop-br { display: none; }
+  .hero {
+    flex-direction: column; text-align: center;
+    padding: 32px 20px 24px; gap: 24px;
+  }
+  .hero::before, .hero::after { display: none; }
+  .hero-tagline { font-size: 28px; margin-left: 0; }
+  .hero-sub { margin-left: auto; margin-right: auto; font-size: 15px; }
+  .hero-actions { justify-content: center; flex-wrap: wrap; }
+  .btn-primary, .btn-secondary { padding: 12px 28px; font-size: 15px; }
+  .hero-phone { animation: none; }
+  .phone-frame { width: 220px; }
+  .radar-container { width: 140px; height: 140px; }
+  .radar-dot { width: 26px; height: 26px; font-size: 9px; }
+  .section { padding: 48px 20px; }
+  .section-alt .section { padding: 48px 20px; }
+  .section-title { font-size: 22px; margin-bottom: 24px; }
+  .features-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .feature-card { padding: 16px; }
+  .feature-name { font-size: 14px; }
+  .feature-desc { font-size: 13px; }
+  .cta-section { padding: 48px 20px 60px; }
+  .footer { flex-direction: column; gap: 12px; text-align: center; }
+}
+@media (max-width: 400px) {
+  .hero { padding: 24px 16px 20px; gap: 20px; }
+  .hero-tagline { font-size: 26px; }
+  .phone-frame { width: 200px; }
+  .radar-container { width: 120px; height: 120px; }
+  .features-grid { grid-template-columns: 1fr; }
+  .btn-primary, .btn-secondary { width: 100%; text-align: center; }
+  .section { padding: 40px 16px; }
+  .section-alt .section { padding: 40px 16px; }
+}
+
+/* ── BUBBLE TIPS — Messenger-style chat bubbles ── */
+.has-tips { position: relative; overflow: visible; }
+.bubble-tip {
+  position: absolute; opacity: 0; pointer-events: none; z-index: 2;
+  transition: opacity 0.8s ease;
+}
+.bubble-tip.visible { opacity: 1; pointer-events: auto; }
+.bt-group {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+}
+.bt-group.bt-left { align-items: flex-start; }
+.bt-bubble {
+  background: #7C5CFC; color: #fff; font-size: 13px; line-height: 1.4;
+  padding: 8px 14px; max-width: 200px;
+  border-radius: 18px 18px 4px 18px;
+}
+.bt-group .bt-bubble:first-child { border-radius: 18px 18px 4px 18px; }
+.bt-group .bt-bubble:last-child { border-radius: 18px 4px 18px 18px; }
+.bt-group .bt-bubble:only-child { border-radius: 18px; }
+.bt-group .bt-bubble:not(:first-child):not(:last-child) { border-radius: 18px 4px 4px 18px; }
+
+.bt-group.bt-left .bt-bubble { border-radius: 18px 18px 18px 4px; }
+.bt-group.bt-left .bt-bubble:first-child { border-radius: 18px 18px 18px 4px; }
+.bt-group.bt-left .bt-bubble:last-child { border-radius: 4px 18px 18px 18px; }
+.bt-group.bt-left .bt-bubble:only-child { border-radius: 18px; }
+.bt-group.bt-left .bt-bubble:not(:first-child):not(:last-child) { border-radius: 4px 18px 18px 4px; }
+
+.bt-float1 { animation: btFloat1 5s ease-in-out infinite; }
+.bt-float2 { animation: btFloat2 6s ease-in-out infinite; }
+@keyframes btFloat1 { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes btFloat2 { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+@media (max-width: 720px) {
+  .bubble-tip { display: none; }
+}
+
+@media (max-width: 720px) {
+  .bubble-tip { display: none; }
+}
+
+/* ── SCROLL ANIMATIONS — all content slides up uniformly ── */
+.reveal, .reveal-left, .reveal-right {
+  opacity: 0; transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal.visible, .reveal-left.visible, .reveal-right.visible { opacity: 1; transform: translateY(0); }
+.reveal:nth-child(2), .reveal-left:nth-child(2), .reveal-right:nth-child(2) { transition-delay: 0.1s; }
+.reveal:nth-child(3), .reveal-left:nth-child(3), .reveal-right:nth-child(3) { transition-delay: 0.2s; }
+.reveal:nth-child(4), .reveal-left:nth-child(4), .reveal-right:nth-child(4) { transition-delay: 0.3s; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal-left, .reveal-right { opacity: 1; transform: none; transition: none; }
+  .hero-phone, .bt-float1, .bt-float2 { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#" style="display:flex;align-items:center"><img src="bubble-logo-topbar-v2.png" alt="Bubble" class="nav-logo"></a>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button id="lang-toggle" onclick="toggleLandingLang()" style="font-size:12px;font-weight:600;font-family:inherit;padding:4px 10px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer">EN</button>
+      <a href="./?auth=1" class="nav-cta" id="nav-cta-btn">Log ind</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-text">
+    <h1 class="hero-tagline">De rigtige mennesker <br class="desktop-br">er allerede omkring dig</h1>
+    <p class="hero-sub">Bubble viser dig hvem du bør møde — og hvorfor det giver mening at tage den samtale.</p>
+    <div class="hero-actions">
+      <a href="./?auth=1" class="btn-primary">Kom i gang</a>
+      <a href="#how" class="btn-secondary">Se hvordan det virker</a>
+    </div>
+    <p style="margin-top:14px;font-size:13px;color:var(--text-secondary);line-height:1.4">Gratis at oprette profil · Virker direkte på mobilen</p>
+  </div>
+  <div class="hero-phone">
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="phone-header">
+          <img src="bubble-logo-topbar-v2.png" alt="Bubble" style="height:18px;width:auto;">
+        </div>
+        <div class="phone-radar">
+          <div class="radar-container">
+            <div class="radar-ring"></div>
+            <div class="radar-ring"></div>
+            <div class="radar-ring"></div>
+            <div class="radar-ring"></div>
+            <div class="radar-center"></div>
+            <div class="radar-dot">MK</div>
+            <div class="radar-dot">SL</div>
+            <div class="radar-dot">JH</div>
+            <div class="radar-dot">AL</div>
+          </div>
+        </div>
+        <div class="phone-card">
+          <div class="phone-card-avatar">MK</div>
+          <div style="flex:1;min-width:0;text-align:left">
+            <div style="display:flex;align-items:center;gap:4px">
+              <div class="phone-card-name">Maria K.</div>
+              <div style="font-size:7px;font-weight:600;color:#1A9E8E;background:rgba(26,158,142,0.08);padding:1px 4px;border-radius:3px;flex-shrink:0">Match</div>
+            </div>
+            <div class="phone-card-meta">UX Designer · 4 fælles interesser</div>
+          </div>
+        </div>
+        <div class="phone-nav">
+          <div class="phone-nav-item"><div class="dot"></div>Hjem</div>
+          <div class="phone-nav-item active"><div class="dot"></div>Radar</div>
+          <div class="phone-nav-item"><div class="dot"></div>Chat</div>
+          <div class="phone-nav-item"><div class="dot"></div>Profil</div>
+        </div>
+      </div>
+      <div class="phone-home-bar"></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<div class="section-alt" id="how">
+  <section class="section has-tips">
+    <div class="section-label reveal">Sådan virker det</div>
+    <h2 class="section-title reveal">Tre skridt. Under ét minut.</h2>
+    <div class="steps">
+      <div class="step reveal-left" style="transition-delay:0s">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-title">Fortæl hvem du er</div>
+          <div class="step-desc">Interesser, rolle og hvad du leder efter.</div>
+        </div>
+      </div>
+      <div class="step reveal-left" style="transition-delay:0.15s">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-title">Se hvem du bør møde</div>
+          <div class="step-desc">Radaren viser hvem der er relevante — og hvorfor.</div>
+        </div>
+      </div>
+      <div class="step reveal-left" style="transition-delay:0.3s">
+        <div class="step-num">3</div>
+        <div>
+          <div class="step-title">Connect i det rigtige øjeblik</div>
+          <div class="step-desc">Skriv direkte, mød op, eller gem kontakten til senere.</div>
+        </div>
+      </div>
+    </div>
+    <div class="bubble-tip bt-float1" style="right:15%;top:45%">
+      <div class="bt-group">
+        <div class="bt-bubble">Sign up med Google, LinkedIn eller email</div>
+        <div class="bt-bubble">Tager under 30 sekunder</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- FEATURES -->
+<section class="section has-tips">
+
+  <div class="section-label reveal">Hvor Bubble giver mening</div>
+  <h2 class="section-title reveal">Skabt til virkelige møder — ikke bare forbindelser</h2>
+  <div class="features-grid">
+    <div class="feature-card reveal-left" style="transition-delay:0s">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18"/><path d="M8 2v4"/><path d="M16 2v4"/></svg>
+      </div>
+      <div class="feature-name">Konferencer & events</div>
+      <div class="feature-desc">Se hvem der er her, og hvem du faktisk bør møde.</div>
+    </div>
+    <div class="feature-card reveal-right" style="transition-delay:0.1s">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2ECFCF" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      </div>
+      <div class="feature-name">Lokale netværk</div>
+      <div class="feature-desc">Opdag relevante mennesker i dit område og dine fællesskaber.</div>
+    </div>
+    <div class="feature-card reveal-left" style="transition-delay:0.2s">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E879A8" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <div class="feature-name">Communities & faggrupper</div>
+      <div class="feature-desc">Saml mennesker i en Bubble og hold forbindelsen levende.</div>
+    </div>
+    <div class="feature-card reveal-right" style="transition-delay:0.3s">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3"/><path d="M21 14v3h-3"/><path d="M14 21h7"/></svg>
+      </div>
+      <div class="feature-name">Spontane forbindelser</div>
+      <div class="feature-desc">Del din profil med ét scan — uden LinkedIn-friktion.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CREATE YOUR OWN -->
+<div class="section-alt">
+
+  <section class="section has-tips">
+    <div style="text-align:center">
+      <div class="section-label reveal">Opret en Bubble</div>
+      <h2 class="section-title reveal" style="margin-left:auto;margin-right:auto">Gør dit event eller community levende i Bubble</h2>
+      <p style="font-size:15px;color:var(--text-secondary);max-width:460px;margin:0 auto 28px;line-height:1.55" class="reveal">En Bubble er et fællesskab du opretter — for din faggruppe, dit event, din forening eller bare din vennekreds. Alle i en Bubble kan se hinanden, chatte og matche.</p>
+      <p style="font-size:14px;color:var(--accent);font-weight:500;margin-top:12px" class="reveal">Perfekt til arrangører, communities og netværk der vil skabe reelle forbindelser.</p>
+    </div>
+    <div class="features-grid" style="max-width:680px;margin:0 auto">
+      <div class="feature-card reveal-left" style="transition-delay:0s">
+        <div class="feature-icon" style="background:rgba(124,92,252,0.1)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        </div>
+        <div class="feature-name">Meetups & faggrupper</div>
+        <div class="feature-desc">Saml din branche, studiegruppe eller interessegruppe — og lad radaren gøre resten.</div>
+      </div>
+      <div class="feature-card reveal-right" style="transition-delay:0.1s">
+        <div class="feature-icon" style="background:rgba(46,207,207,0.1)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2ECFCF" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18"/><circle cx="8" cy="15" r="1" fill="#2ECFCF"/><circle cx="12" cy="15" r="1" fill="#2ECFCF"/></svg>
+        </div>
+        <div class="feature-name">Events & konferencer</div>
+        <div class="feature-desc">QR check-in, smart matching mellem deltagere og fælles eventchat.</div>
+      </div>
+      <div class="feature-card reveal-left" style="transition-delay:0.2s">
+        <div class="feature-icon" style="background:rgba(232,121,168,0.1)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E879A8" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <div class="feature-name">Lokale fællesskaber</div>
+        <div class="feature-desc">Byg et netværk i dit lokalområde — nabolag, coworking space eller foreningsklub.</div>
+      </div>
+    </div>
+    <div class="bubble-tip bt-float2" style="right:20%;bottom:110px">
+      <div class="bt-group">
+        <div class="bt-bubble">Gem kontakter med 1–3 stjerner</div>
+        <div class="bt-bubble">Så du altid finder dem igen</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- EARLY ACCESS -->
+<div class="section-alt">
+  <section class="section has-tips" style="text-align:center">
+    <div class="section-label reveal">Tidlig beta</div>
+    <h2 class="section-title reveal" style="margin-left:auto;margin-right:auto">Vi bygger Bubble sammen med dig</h2>
+    <p class="quote reveal" style="font-style:normal;max-width:480px">Bubble bliver lige nu testet i udvalgte netværk, events og fællesskaber. Vi bygger det tæt sammen med de første brugere — og justerer løbende på baggrund af deres feedback.</p>
+  </section>
+</div>
+
+<!-- PWA INSTALL GUIDE -->
+<section class="section has-tips">
+
+  <div style="max-width:65%">
+    <div class="section-label reveal">Tilføj til hjemmeskærm</div>
+    <h2 class="section-title reveal">Brug Bubble som en&nbsp;app</h2>
+    <p style="font-size:15px;color:var(--text-secondary);max-width:440px;margin:0 0 24px;line-height:1.5" class="reveal">Bubble er en webapp — ingen App Store nødvendig. Tilføj den til din hjemmeskærm for den bedste oplevelse.</p>
+  </div>
+  <div style="display:flex;gap:12px;margin-bottom:24px" class="reveal">
+    <button onclick="showGuide('iphone')" id="tab-iphone" style="padding:10px 24px;border-radius:24px;background:linear-gradient(135deg,var(--accent),var(--accent-end));color:#fff;font-size:14px;font-weight:500;border:none;cursor:pointer;font-family:inherit">iPhone / Safari</button>
+    <button onclick="showGuide('android')" id="tab-android" style="padding:10px 24px;border-radius:24px;background:transparent;border:1.5px solid var(--border);color:var(--text);font-size:14px;font-weight:500;cursor:pointer;font-family:inherit">Android / Chrome</button>
+  </div>
+  <div style="max-width:520px">
+    <div id="guide-iphone" class="reveal">
+      <div class="step" style="margin-bottom:20px">
+        <div class="step-num" style="min-width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;background:rgba(124,92,252,0.1);color:var(--accent)">1</div>
+        <div>
+          <div class="step-title">Åbn Bubble i Safari</div>
+          <div class="step-desc">Gå til <strong>bubbleme.dk</strong> i Safari-browseren på din iPhone.</div>
+        </div>
+      </div>
+      <div class="step" style="margin-bottom:20px">
+        <div class="step-num" style="min-width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;background:rgba(124,92,252,0.1);color:var(--accent)">2</div>
+        <div>
+          <div class="step-title">Tryk på del-ikonet</div>
+          <div class="step-desc">Tryk på del-knappen <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:1.5px solid var(--accent);border-radius:5px;font-size:13px;color:var(--accent);vertical-align:middle;position:relative;top:-1px">↑</span> i bunden af Safari.</div>
+        </div>
+      </div>
+      <div class="step" style="margin-bottom:20px">
+        <div class="step-num" style="min-width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;background:rgba(124,92,252,0.1);color:var(--accent)">3</div>
+        <div>
+          <div class="step-title">Vælg "Føj til hjemmeskærm"</div>
+          <div class="step-desc">Scroll ned i menuen og tryk på "Føj til hjemmeskærm". Tryk derefter "Tilføj".</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num" style="min-width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;background:rgba(46,207,207,0.1);color:var(--cyan)">✓</div>
+        <div>
+          <div class="step-title">Færdig!</div>
+          <div class="step-desc">Bubble ligger nu på din hjemmeskærm som en rigtig app — uden browser-bar.</div>
+        </div>
+      </div>
+    </div>
+    <div id="guide-android" style="display:none" class="reveal">
+      <div class="step" style="margin-bottom:20px">
+        <div class="step-num" style="min-width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;background:rgba(124,92,252,0.1);color:var(--accent)">1</div>
+        <div>
+          <div class="step-title">Åbn Bubble i Chrome</div>
+          <div class="step-desc">Gå til <strong>bubbleme.dk</strong> i Chrome-browseren på din Android.</div>
+        </div>
+      </div>
+      <div class="step" style="margin-bottom:20px">
+        <div class="step-num" style="min-width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;background:rgba(124,92,252,0.1);color:var(--accent)">2</div>
+        <div>
+          <div class="step-title">Tryk på menuen ⋮</div>
+          <div class="step-desc">Tryk på de tre prikker i øverste højre hjørne af Chrome.</div>
+        </div>
+      </div>
+      <div class="step" style="margin-bottom:20px">
+        <div class="step-num" style="min-width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;background:rgba(124,92,252,0.1);color:var(--accent)">3</div>
+        <div>
+          <div class="step-title">Vælg "Føj til startskærm"</div>
+          <div class="step-desc">Tryk på "Føj til startskærm" eller "Installer app" og bekræft.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num" style="min-width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;background:rgba(46,207,207,0.1);color:var(--cyan)">✓</div>
+        <div>
+          <div class="step-title">Færdig!</div>
+          <div class="step-desc">Bubble ligger nu på din startskærm som en rigtig app — i fuld skærm.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="bubble-tip bt-float1" style="right:5%;top:35%">
+    <div class="bt-group">
+      <div class="bt-bubble">Ingen app nødvendig</div>
+      <div class="bt-bubble">Virker direkte i browseren</div>
+      <div class="bt-bubble">Tilføj til hjemmeskærm for fuld oplevelse</div>
+    </div>
+  </div>
+  <div class="bubble-tip bt-float2" style="right:8%;top:65%">
+    <div class="bt-group">
+      <div class="bt-bubble">Push notifikationer</div>
+      <div class="bt-bubble">Så du aldrig misser en invitation</div>
+    </div>
+  </div>
+</section>
+<section class="cta-section">
+  <h2 class="cta-title reveal">Klar til at møde de rigtige mennesker omkring dig?</h2>
+  <p class="cta-sub reveal">Gratis · Ingen reklamer · Bygget i Danmark</p>
+  <a href="./?auth=1" class="btn-primary reveal">Opret din profil</a>
+  <p class="cta-note reveal" style="margin-top:24px">Virker på alle enheder · Ingen download krævet</p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div style="max-width:var(--max-w);margin:0 auto;padding:32px 24px 20px;border-top:1px solid var(--border)">
+    <div style="text-align:center;margin-bottom:24px">
+      <p style="font-size:16px;font-weight:500;color:var(--text);margin-bottom:8px">Synes du Bubble lyder spændende?</p>
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px">Skriv til os — vi vil gerne høre fra dig. <span style="opacity:0.7">(vi svarer hurtigt)</span></p>
+      <a href="#" onclick="window.location='mai'+'lto:in'+'fo@bubb'+'leme.dk';return false" style="font-size:15px;color:var(--accent);text-decoration:none;font-weight:500"><span id="footer-email"></span></a>
+    </div>
+    <div class="footer" style="justify-content:center">
+      <span>&copy; 2026 Bubble · <a href="#" onclick="event.preventDefault();var el=document.getElementById('privacy');el.style.display=el.style.display==='none'?'block':'none'" style="color:var(--text-secondary);text-decoration:none">Betingelser & Privatlivspolitik</a></span>
+    </div>
+    <div id="privacy" style="display:none;max-width:560px;margin:24px auto 0;text-align:left;font-size:14px;color:var(--text-secondary);line-height:1.6">
+      <h3 style="font-size:16px;font-weight:600;color:var(--text);margin:24px 0 8px">1. Hvad er Bubble?</h3>
+      <p>Bubble er en networking-platform i lukket beta udviklet i Sønderborg, Danmark. Appen forbinder mennesker baseret på professionelle interesser og nærhed. Dataansvarlig er Bubble / Michael Brix Johansen, Sønderborg. Kontakt: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e881868e87a88a9d8a8a848d858dc68c83">[email&#160;protected]</a>.</p>
+      <h3 style="font-size:16px;font-weight:600;color:var(--text);margin:24px 0 8px">2. Beta-forbehold</h3>
+      <p>Bubble er i closed beta. Det betyder at funktioner kan ændres, tilføjes eller fjernes uden varsel. Der kan forekomme fejl, nedetid og datatab. Vi gør vores bedste, men giver ingen garantier for oppetid eller dataintegritet.</p>
+      <h3 style="font-size:16px;font-weight:600;color:var(--text);margin:24px 0 8px">3. Dine data (GDPR)</h3>
+      <p>Vi indsamler kun det du selv indtaster: navn, email, titel, arbejdsplads, bio, tags og profilbillede. Vi gemmer desuden hvilke bobler du joiner og kontakter du gemmer. Retsgrundlaget er samtykke (art. 6, stk. 1, litra a) og berettiget interesse i at levere tjenesten (art. 6, stk. 1, litra f).</p>
+      <p style="margin-top:8px">Beskeder i chat og bobler opbevares krypteret og læses ikke af os. Vi sælger aldrig dine data til tredjepart. Al data opbevares i EU via Supabase (Frankfurt, GDPR-compliant hosting).</p>
+      <h3 style="font-size:16px;font-weight:600;color:var(--text);margin:24px 0 8px">4. Cookies og lokal lagring</h3>
+      <p>Bubble bruger <strong>ingen tracking-cookies</strong> og ingen tredjeparts-analyse. Vi bruger udelukkende nødvendig lokal lagring til at få appen til at fungere:</p>
+      <ul style="margin:8px 0;padding-left:20px">
+        <li><strong>Login-token</strong> — gemmes af Supabase i browserens localStorage for at holde dig logget ind.</li>
+        <li><strong>App-præferencer</strong> — husker dine valg (f.eks. seneste tab, velkomstflow vist).</li>
+        <li><strong>Session-data</strong> — midlertidig navigationsstate der slettes når browseren lukkes.</li>
+      </ul>
+      <p>Ingen af disse data deles med tredjepart. Der bruges ingen cookies til reklame, profilering eller sporing på tværs af sider. Cloudflare (vores hosting) kan sætte en teknisk nødvendig cookie til sikkerhed (__cf_bm) — dette er uden for vores kontrol og bruges ikke til tracking.</p>
+      <h3 style="font-size:16px;font-weight:600;color:var(--text);margin:24px 0 8px">5. Dine rettigheder</h3>
+      <p>Du har efter GDPR ret til indsigt, berigtigelse, sletning, begrænsning, dataportabilitet og indsigelse. Du kan til enhver tid redigere eller slette din profil i appen, blokere andre brugere og anmode om fuld sletning af dine data ved at kontakte os på <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b3daddd5dcf3d1c6d1d1dfd6ded69dd7d8">[email&#160;protected]</a>. Vi svarer inden 30 dage.</p>
+      <h3 style="font-size:16px;font-weight:600;color:var(--text);margin:24px 0 8px">6. Adfærd</h3>
+      <p>Vi forventer at alle brugere opfører sig respektfuldt. Chikane, spam, hadefuldt indhold eller upassende profilbilleder tolereres ikke og kan resultere i fjernelse fra platformen.</p>
+      <h3 style="font-size:16px;font-weight:600;color:var(--text);margin:24px 0 8px">7. Ansvarsfraskrivelse</h3>
+      <p>Bubble leveres "as is" uden garanti. Vi er ikke ansvarlige for tab af data under beta, handlinger foretaget af andre brugere eller resultat af forbindelser skabt via platformen. Brug af Bubble sker på eget ansvar.</p>
+      <h3 style="font-size:16px;font-weight:600;color:var(--text);margin:24px 0 8px">8. Kontakt & klage</h3>
+      <p>Spørgsmål? Kontakt os på <a href="#" onclick="window.location='mai'+'lto:in'+'fo@bubb'+'leme.dk';return false" style="color:var(--accent);text-decoration:none;font-weight:500"><span class="dyn-email"></span></a></p>
+      <p style="margin-top:8px">Du kan også klage til Datatilsynet: <a href="https://www.datatilsynet.dk" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">datatilsynet.dk</a></p>
+      <p style="margin-top:12px;font-size:12px;color:var(--text-tertiary)">Sidst opdateret: april 2026</p>
+    </div>
+  </div>
+</footer>
+
+<!-- Cookie banner -->
+<div id="cookie-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:white;border-top:1px solid rgba(0,0,0,0.08);padding:16px 24px;box-shadow:0 -2px 12px rgba(0,0,0,0.06)">
+  <div style="max-width:560px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <div style="flex:1;min-width:200px;font-size:13px;color:#444;line-height:1.5">
+      Bubble bruger kun nødvendig lokal lagring til login og app-funktion. Ingen tracking, ingen reklamer.
+      <a href="#" onclick="event.preventDefault();var el=document.getElementById('privacy');el.style.display='block';el.scrollIntoView({behavior:'smooth'})" style="color:#7C5CFC;text-decoration:none;font-weight:500">Læs mere</a>
+    </div>
+    <button onclick="localStorage.setItem('bubble_cookie_ok','1');document.getElementById('cookie-banner').style.display='none'" style="padding:8px 20px;border-radius:8px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">Forstået</button>
+  </div>
+</div>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+if (!localStorage.getItem('bubble_cookie_ok')) document.getElementById('cookie-banner').style.display = 'block';
+</script>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+function showGuide(platform) {
+  document.getElementById('guide-iphone').style.display = platform === 'iphone' ? 'block' : 'none';
+  document.getElementById('guide-android').style.display = platform === 'android' ? 'block' : 'none';
+  var ti = document.getElementById('tab-iphone');
+  var ta = document.getElementById('tab-android');
+  if (platform === 'iphone') {
+    ti.style.background = 'linear-gradient(135deg,#7C5CFC,#6366F1)'; ti.style.color = '#fff'; ti.style.border = 'none';
+    ta.style.background = 'transparent'; ta.style.color = '#1a1a2e'; ta.style.border = '1.5px solid rgba(0,0,0,0.06)';
+  } else {
+    ta.style.background = 'linear-gradient(135deg,#7C5CFC,#6366F1)'; ta.style.color = '#fff'; ta.style.border = 'none';
+    ti.style.background = 'transparent'; ti.style.color = '#1a1a2e'; ti.style.border = '1.5px solid rgba(0,0,0,0.06)';
+  }
+}
+var obs = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
+  });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(function(el) { obs.observe(el); });
+
+var tipObs = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) {
+      var tips = e.target.querySelectorAll('.bubble-tip');
+      tips.forEach(function(t, i) {
+        setTimeout(function() { t.classList.add('visible'); }, 300 + i * 200);
+      });
+      tipObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.2 });
+document.querySelectorAll('section').forEach(function(s) {
+  if (s.querySelector('.bubble-tip')) tipObs.observe(s);
+});
+// Set emails dynamically to bypass CloudFlare obfuscation
+var _e = 'in'+'fo@'+'bubb'+'leme'+'.dk';
+var fe = document.getElementById('footer-email');
+if (fe) fe.textContent = _e;
+document.querySelectorAll('.dyn-email').forEach(function(el) { el.textContent = _e; });
+
+// ── Landing page i18n ──
+var _landingLang = localStorage.getItem('bubble_landing_lang') || (navigator.language && navigator.language.startsWith('da') ? 'da' : 'en');
+var _landingEN = {
+  // Nav
+  'nav-cta-btn': 'Sign in',
+  // Hero
+  '.hero-tagline': 'The right people are<br class="desktop-br"> already around you',
+  '.hero-sub': 'Bubble shows you who you should meet — and why that conversation matters.',
+  '.hero-actions .btn-primary': 'Get started',
+  '.hero-actions .btn-secondary': 'See how it works',
+  // Hero subtitle
+  '_hero_note': 'Free to create a profile · Works directly on mobile',
+  // Phone
+  '.phone-card-meta': 'UX Designer · 4 shared interests',
+  // How it works
+  '_how_label': 'How it works',
+  '_how_title': 'Three steps. Under one minute.',
+  '_step1_title': 'Tell us who you are',
+  '_step1_desc': 'Your interests, role and what you\'re looking for.',
+  '_step2_title': 'See who you should meet',
+  '_step2_desc': 'The radar shows who\'s relevant — and why.',
+  '_step3_title': 'Connect at the right moment',
+  '_step3_desc': 'Message directly, meet up, or save the contact for later.',
+  '_tip_how1': 'Sign up with Google, LinkedIn or email',
+  '_tip_how2': 'Takes under 30 seconds',
+  // Features
+  '_feat_label': 'Where Bubble makes sense',
+  '_feat_title': 'Built for real meetings — not just connections',
+  '_feat1_name': 'Conferences & events',
+  '_feat1_desc': 'See who\'s here and who you should actually meet.',
+  '_feat2_name': 'Local networks',
+  '_feat2_desc': 'Discover relevant people in your area and communities.',
+  '_feat3_name': 'Communities & groups',
+  '_feat3_desc': 'Bring people together in a Bubble and keep the connection alive.',
+  '_feat4_name': 'Spontaneous connections',
+  '_feat4_desc': 'Share your profile with one scan — no LinkedIn friction.',
+  // Create your own
+  '_create_label': 'Create a Bubble',
+  '_create_title': 'Bring your event or community to life in Bubble',
+  '_create_desc': 'A Bubble is a community you create — for your professional group, event, association or just your circle. Everyone in a Bubble can see each other, chat and match.',
+  '_create_note': 'Perfect for organizers, communities and networks that want to create real connections.',
+  '_create1_name': 'Meetups & groups',
+  '_create1_desc': 'Gather your industry, study group or interest group — and let the radar do the rest.',
+  '_create2_name': 'Events & conferences',
+  '_create2_desc': 'QR check-in, smart matching between attendees and shared event chat.',
+  '_create3_name': 'Local communities',
+  '_create3_desc': 'Build a network in your local area — neighborhood, coworking space or club.',
+  '_tip_create1': 'Save contacts with 1–3 stars',
+  '_tip_create2': 'So you always find them again',
+  // Early beta
+  '_beta_label': 'Early beta',
+  '_beta_title': 'We\'re building Bubble together with you',
+  '_beta_desc': 'Bubble is currently being tested in selected networks, events and communities. We build it closely with our first users — and adjust continuously based on their feedback.',
+  // PWA install
+  '_pwa_label': 'Add to home screen',
+  '_pwa_title': 'Use Bubble as an\u00a0app',
+  '_pwa_desc': 'Bubble is a web app — no App Store needed. Add it to your home screen for the best experience.',
+  '_pwa_iphone1_title': 'Open Bubble in Safari',
+  '_pwa_iphone1_desc': 'Go to <strong>bubbleme.dk</strong> in Safari on your iPhone.',
+  '_pwa_iphone2_title': 'Tap the share icon',
+  '_pwa_iphone2_desc': 'Tap the share button <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:1.5px solid var(--accent);border-radius:5px;font-size:13px;color:var(--accent);vertical-align:middle;position:relative;top:-1px">\u2191</span> at the bottom of Safari.',
+  '_pwa_iphone3_title': 'Choose "Add to Home Screen"',
+  '_pwa_iphone3_desc': 'Scroll down and tap "Add to Home Screen". Then tap "Add".',
+  '_pwa_android1_title': 'Open Bubble in Chrome',
+  '_pwa_android1_desc': 'Go to <strong>bubbleme.dk</strong> in Chrome on your Android.',
+  '_pwa_android2_title': 'Tap the menu \u22ee',
+  '_pwa_android2_desc': 'Tap the three dots in the top right corner of Chrome.',
+  '_pwa_android3_title': 'Choose "Add to Home screen"',
+  '_pwa_android3_desc': 'Tap "Add to Home screen" or "Install app" and confirm.',
+  '_pwa_done_title': 'Done!',
+  '_pwa_done_desc_iphone': 'Bubble is now on your home screen like a real app — without the browser bar.',
+  '_pwa_done_desc_android': 'Bubble is now on your home screen like a real app — in full screen.',
+  '_tip_pwa1': 'No app download needed',
+  '_tip_pwa2': 'Works directly in the browser',
+  '_tip_pwa3': 'Add to home screen for full experience',
+  '_tip_pwa4': 'Push notifications',
+  '_tip_pwa5': 'So you never miss an invitation',
+  // CTA
+  '_cta_title': 'Ready to meet the right people around you?',
+  '_cta_sub': 'Free · No ads · Built in Denmark',
+  '_cta_btn': 'Create your profile',
+  '_cta_note': 'Works on all devices · No download required',
+  // Footer
+  '_footer_interest': 'Think Bubble sounds interesting?',
+  '_footer_contact': 'Write to us — we\'d love to hear from you. <span style="opacity:0.7">(we reply quickly)</span>',
+  // Cookie banner
+  '_cookie_text': 'Bubble only uses necessary local storage for login and app function. No tracking, no ads.',
+  '_cookie_more': 'Read more',
+  '_cookie_ok': 'Got it'
+};
+
+function applyLandingLang(lang) {
+  if (lang === 'da') {
+    // Reload to restore Danish (original HTML)
+    if (_landingLang !== 'da') { localStorage.setItem('bubble_landing_lang', 'da'); location.reload(); }
+    return;
+  }
+  document.documentElement.lang = 'en';
+  document.title = 'Bubble — Meet your network';
+
+  // Nav
+  var navBtn = document.getElementById('nav-cta-btn');
+  if (navBtn) navBtn.textContent = _landingEN['nav-cta-btn'];
+
+  // Hero
+  var q = function(sel) { return document.querySelector(sel); };
+  var qa = function(sel) { return document.querySelectorAll(sel); };
+  var h1 = q('.hero-tagline'); if (h1) h1.innerHTML = _landingEN['.hero-tagline'];
+  var hs = q('.hero-sub'); if (hs) hs.textContent = _landingEN['.hero-sub'];
+  var hbp = q('.hero-actions .btn-primary'); if (hbp) hbp.textContent = _landingEN['.hero-actions .btn-primary'];
+  var hbs = q('.hero-actions .btn-secondary'); if (hbs) hbs.textContent = _landingEN['.hero-actions .btn-secondary'];
+  var hn = q('.hero-actions + p'); if (hn) hn.textContent = _landingEN['_hero_note'];
+  var pcm = q('.phone-card-meta'); if (pcm) pcm.textContent = _landingEN['.phone-card-meta'];
+
+  // Phone nav
+  var pnav = qa('.phone-nav-item');
+  if (pnav.length === 4) { pnav[0].innerHTML = '<div class="dot"></div>Home'; pnav[2].innerHTML = '<div class="dot"></div>Chat'; pnav[3].innerHTML = '<div class="dot"></div>Profile'; }
+
+  // How it works
+  var secs = qa('.section-label');
+  var titles = qa('.section-title');
+  var steps = qa('.step');
+  if (secs[0]) secs[0].textContent = _landingEN['_how_label'];
+  if (titles[0]) titles[0].textContent = _landingEN['_how_title'];
+
+  var stepTitles = qa('.step-title');
+  var stepDescs = qa('.step-desc');
+  if (stepTitles[0]) stepTitles[0].textContent = _landingEN['_step1_title'];
+  if (stepDescs[0]) stepDescs[0].textContent = _landingEN['_step1_desc'];
+  if (stepTitles[1]) stepTitles[1].textContent = _landingEN['_step2_title'];
+  if (stepDescs[1]) stepDescs[1].textContent = _landingEN['_step2_desc'];
+  if (stepTitles[2]) stepTitles[2].textContent = _landingEN['_step3_title'];
+  if (stepDescs[2]) stepDescs[2].textContent = _landingEN['_step3_desc'];
+
+  // How tips
+  var btBubbles = qa('.bt-bubble');
+  if (btBubbles[0]) btBubbles[0].textContent = _landingEN['_tip_how1'];
+  if (btBubbles[1]) btBubbles[1].textContent = _landingEN['_tip_how2'];
+
+  // Features
+  if (secs[1]) secs[1].textContent = _landingEN['_feat_label'];
+  if (titles[1]) titles[1].textContent = _landingEN['_feat_title'];
+  var fnames = qa('.feature-name');
+  var fdescs = qa('.feature-desc');
+  if (fnames[0]) fnames[0].textContent = _landingEN['_feat1_name'];
+  if (fdescs[0]) fdescs[0].textContent = _landingEN['_feat1_desc'];
+  if (fnames[1]) fnames[1].textContent = _landingEN['_feat2_name'];
+  if (fdescs[1]) fdescs[1].textContent = _landingEN['_feat2_desc'];
+  if (fnames[2]) fnames[2].textContent = _landingEN['_feat3_name'];
+  if (fdescs[2]) fdescs[2].textContent = _landingEN['_feat3_desc'];
+  if (fnames[3]) fnames[3].textContent = _landingEN['_feat4_name'];
+  if (fdescs[3]) fdescs[3].textContent = _landingEN['_feat4_desc'];
+
+  // Create your own
+  if (secs[2]) secs[2].textContent = _landingEN['_create_label'];
+  if (titles[2]) titles[2].textContent = _landingEN['_create_title'];
+  var createP = qa('.section.has-tips p');
+  // Create description + note
+  if (fnames[4]) fnames[4].textContent = _landingEN['_create1_name'];
+  if (fdescs[4]) fdescs[4].textContent = _landingEN['_create1_desc'];
+  if (fnames[5]) fnames[5].textContent = _landingEN['_create2_name'];
+  if (fdescs[5]) fdescs[5].textContent = _landingEN['_create2_desc'];
+  if (fnames[6]) fnames[6].textContent = _landingEN['_create3_name'];
+  if (fdescs[6]) fdescs[6].textContent = _landingEN['_create3_desc'];
+
+  if (btBubbles[2]) btBubbles[2].textContent = _landingEN['_tip_create1'];
+  if (btBubbles[3]) btBubbles[3].textContent = _landingEN['_tip_create2'];
+
+  // Beta
+  if (secs[3]) secs[3].textContent = _landingEN['_beta_label'];
+  if (titles[3]) titles[3].textContent = _landingEN['_beta_title'];
+
+  // PWA install
+  if (secs[4]) secs[4].textContent = _landingEN['_pwa_label'];
+  if (titles[4]) titles[4].textContent = _landingEN['_pwa_title'];
+
+  // PWA steps (iPhone + Android)
+  if (stepTitles[3]) stepTitles[3].textContent = _landingEN['_pwa_iphone1_title'];
+  if (stepDescs[3]) stepDescs[3].innerHTML = _landingEN['_pwa_iphone1_desc'];
+  if (stepTitles[4]) stepTitles[4].textContent = _landingEN['_pwa_iphone2_title'];
+  if (stepDescs[4]) stepDescs[4].innerHTML = _landingEN['_pwa_iphone2_desc'];
+  if (stepTitles[5]) stepTitles[5].textContent = _landingEN['_pwa_iphone3_title'];
+  if (stepDescs[5]) stepDescs[5].textContent = _landingEN['_pwa_iphone3_desc'];
+  if (stepTitles[6]) stepTitles[6].textContent = _landingEN['_pwa_done_title'];
+  if (stepDescs[6]) stepDescs[6].textContent = _landingEN['_pwa_done_desc_iphone'];
+
+  if (stepTitles[7]) stepTitles[7].textContent = _landingEN['_pwa_android1_title'];
+  if (stepDescs[7]) stepDescs[7].innerHTML = _landingEN['_pwa_android1_desc'];
+  if (stepTitles[8]) stepTitles[8].textContent = _landingEN['_pwa_android2_title'];
+  if (stepDescs[8]) stepDescs[8].textContent = _landingEN['_pwa_android2_desc'];
+  if (stepTitles[9]) stepTitles[9].textContent = _landingEN['_pwa_android3_title'];
+  if (stepDescs[9]) stepDescs[9].textContent = _landingEN['_pwa_android3_desc'];
+  if (stepTitles[10]) stepTitles[10].textContent = _landingEN['_pwa_done_title'];
+  if (stepDescs[10]) stepDescs[10].textContent = _landingEN['_pwa_done_desc_android'];
+
+  if (btBubbles[4]) btBubbles[4].textContent = _landingEN['_tip_pwa1'];
+  if (btBubbles[5]) btBubbles[5].textContent = _landingEN['_tip_pwa2'];
+  if (btBubbles[6]) btBubbles[6].textContent = _landingEN['_tip_pwa3'];
+  if (btBubbles[7]) btBubbles[7].textContent = _landingEN['_tip_pwa4'];
+  if (btBubbles[8]) btBubbles[8].textContent = _landingEN['_tip_pwa5'];
+
+  // Final CTA
+  var ctaTitle = q('.cta-title'); if (ctaTitle) ctaTitle.textContent = _landingEN['_cta_title'];
+  var ctaSub = q('.cta-sub'); if (ctaSub) ctaSub.textContent = _landingEN['_cta_sub'];
+  var ctaBtn = q('.cta-section .btn-primary'); if (ctaBtn) ctaBtn.textContent = _landingEN['_cta_btn'];
+  var ctaNote = q('.cta-note'); if (ctaNote) ctaNote.textContent = _landingEN['_cta_note'];
+
+  // Toggle button
+  var lb = document.getElementById('lang-toggle');
+  if (lb) lb.textContent = 'DA';
+}
+
+function toggleLandingLang() {
+  var next = _landingLang === 'da' ? 'en' : 'da';
+  localStorage.setItem('bubble_landing_lang', next);
+  applyLandingLang(next);
+  _landingLang = next;
+}
+
+// Auto-apply on load
+if (_landingLang === 'en') {
+  applyLandingLang('en');
+}
+</script>
+</body>
+</html>
