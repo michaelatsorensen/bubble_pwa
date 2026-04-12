@@ -2088,7 +2088,7 @@ function renderHomeTrayList() {
   if (subtitle) subtitle.textContent = sorted.length + ' personer';
 
   if (sorted.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:var(--muted)">Ingen matches' + (_homeRadarFilter !== 'all' ? ' i denne kategori' : '') + '</div>';
+    list.innerHTML = '<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:rgba(255,255,255,0.4)">Ingen matches' + (_homeRadarFilter !== 'all' ? ' i denne kategori' : '') + '</div>';
     return;
   }
 
@@ -2101,16 +2101,16 @@ function renderHomeTrayList() {
     var avHtml = p.avatar_url && !p.is_anon
       ? '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>'
       : '<div style="width:40px;height:40px;border-radius:50%;background:' + col + ';display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;color:white;flex-shrink:0">' + escHtml(ini) + '</div>';
-    return '<div onclick="openRadarPerson(\'' + p.id + '\')" style="display:flex;align-items:center;gap:0.75rem;padding:0.7rem 0.85rem;margin-bottom:0.4rem;border-radius:14px;background:#FFFFFF;border:1px solid rgba(216,213,228,0.4);box-shadow:0 1px 3px rgba(30,27,46,0.03);cursor:pointer;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);-webkit-tap-highlight-color:transparent" ontouchstart="this.style.transform=\'scale(0.97)\'" ontouchend="this.style.transform=\'scale(1)\'">' +
+    return '<div onclick="openRadarPerson(\'' + p.id + '\')" style="display:flex;align-items:center;gap:0.75rem;padding:0.7rem 0.85rem;margin-bottom:0.4rem;border-radius:14px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(124,92,252,0.06);cursor:pointer;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);-webkit-tap-highlight-color:transparent" ontouchstart="this.style.transform=\'scale(0.97)\'" ontouchend="this.style.transform=\'scale(1)\'">' +
       avHtml +
       '<div style="flex:1;min-width:0">' +
         '<div style="display:flex;align-items:center;gap:0.4rem">' +
-          '<span style="font-weight:700;font-size:0.85rem">' + escHtml(name) + '</span>' +
+          '<span style="font-weight:700;font-size:0.85rem;color:rgba(255,255,255,0.9)">' + escHtml(name) + '</span>' +
           (ml.text ? matchBadgeHtml(p.matchScore || 0) : '') +
         '</div>' +
-        '<div style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
+        '<div style="font-size:0.72rem;color:rgba(255,255,255,0.4);margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
       '</div>' +
-      '<span style="color:var(--muted);font-size:0.9rem;opacity:0.3">›</span>' +
+      '<span style="color:rgba(255,255,255,0.3);font-size:0.9rem;opacity:0.5">›</span>' +
     '</div>';
   }).join('');
 }
