@@ -52,6 +52,12 @@ async function _fetchBubbleUnread(membershipRows) {
 var _bcUnreadDotHtml = '<div style="width:9px;height:9px;border-radius:50%;background:var(--accent2);flex-shrink:0"></div>';
 function _unreadDot(id) { return _bubbleUnreadSet[id] ? _bcUnreadDotHtml : ''; }
 
+async function _bootBubbleUnread() {
+  if (!currentUser) return;
+  var { data: memberships } = await sb.from('bubble_members').select('bubble_id, status, last_read_at').eq('user_id', currentUser.id);
+  if (memberships && memberships.length > 0) _fetchBubbleUnread(memberships);
+}
+
 function hsSlotShow(id) {
   var slot = document.getElementById(id + '-slot');
   if (slot) { slot.classList.remove('hs-hidden'); slot.classList.add('hs-visible'); }
@@ -92,7 +98,8 @@ async function loadHome() {
       loadHomeDartboardData(),
       loadSavedContacts(),
       updateTopbarNotifBadge(),
-      (typeof unreadState !== 'undefined') ? unreadState.dmRecount() : Promise.resolve()
+      (typeof unreadState !== 'undefined') ? unreadState.dmRecount() : Promise.resolve(),
+      _bootBubbleUnread()
     ].map(function(p) { return p.catch(function(e) { logError('loadHome:parallel', e); }); }));
 
     // Post-load: apply visibility toggles, show nudge
