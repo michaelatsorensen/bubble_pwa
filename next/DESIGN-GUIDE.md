@@ -1,5 +1,19 @@
-# Bubble /next/ Design Guide v5.0
+# Bubble /next/ Design Guide v6.0
 ## Strandglas-æstetik — mat, subtil translucens, som glas slebet af havet
+
+---
+
+## DESIGNPRINCIP
+
+Alt i Bubble er havglas. Tre niveauer af glass-behandling baseret på formål og position:
+
+| Niveau | Navn | Teknik | Hvornår |
+|---|---|---|---|
+| **Niveau 1** | Frostet glas | `backdrop-filter: blur()` + transparency | Elementer der flyder OVER indhold |
+| **Niveau 2** | Tonet glas | Farvet `rgba()` fill, ingen blur | Elementer der kommunikerer funktion via farve |
+| **Niveau 3** | Slebet glas | Solid fill + border + radius | Statiske containere, inputs, neutrale kort |
+
+**Regel:** Maks 3-4 samtidige blur-lag synlige. Blur er dyrt — brug det kun hvor gennemsigtighed giver mening.
 
 ---
 
@@ -8,111 +22,156 @@
 ### Primære farver
 | Rolle | Farve | Brug |
 |---|---|---|
-| Midnight base | `#170F34` / `rgba(23,15,52,...)` | Alle baggrunde, kort, sheets, modals |
-| Page bg | `#F0EEF5` | Lilla-grå bag radar-kort |
-| Hvid tekst | `rgba(255,255,255,0.95)` | Headings, navne |
-| Sekundær tekst | `rgba(255,255,255,0.4)` | Subtitles, metadata |
-| Muted tekst | `rgba(255,255,255,0.3)` | Section labels, hints |
+| Midnight base | `#170F34` / `rgba(23,15,52,...)` | Baggrunde, kort, sheets |
+| Page bg | `#F0EEF5` | Bag radar-kort |
+
+### Tekst (3 niveauer — ikke flere)
+| Niveau | Opacity | Brug |
+|---|---|---|
+| Primær | `rgba(255,255,255,0.9)` | Headings, navne, vigtig info |
+| Sekundær | `rgba(255,255,255,0.4)` | Subtitles, metadata, timestamps |
+| Muted | `rgba(255,255,255,0.25)` | Section labels, hints, placeholders |
 
 ### Accent farver
 | Rolle | Farve | Brug |
 |---|---|---|
-| **Isblå** (primær CTA) | `rgb(100,180,230)` | Knapper, match badges, navbar ring, progressbars |
+| **Isblå** | `rgb(100,180,230)` | CTA-knapper, match badges, navbar ring, progressbars |
 | **Teal** | `#1A9E8E` | Live mode, events, "Gemt" state, checkin |
-| **Pink** | `#E879A8` | Notification dots KUN (ingen anden brug) |
-| **Brand gradient** | `#19D3C5 → #6E63FF → #FF6A9A` | Logo KUN (ingen knapper/kort) |
-| **Rød** | `#EF4444` | Log ud, check ud, destruktive handlinger |
+| **Pink** | `#E879A8` | Notification dots KUN, toast-ikon for notifikationer |
+| **Grøn** | `#2ECFCF` | Success, bekræftelse (toast-ikon) |
+| **Rød** | `#EF4444` | Destruktive handlinger, fejl (toast-ikon) |
+| **Brand gradient** | `#19D3C5 → #6E63FF → #FF6A9A` | Logo KUN |
 
-### Lilac (`#7C5CFC`) er UDFASET
-Brug isblå eller teal i stedet. Gradient beholder lilla som midtpunkt kun i logo.
+### Udfaset
+- `#7C5CFC` (lilac) — brug isblå eller teal
+- `var(--accent)`, `var(--text)`, `var(--muted)` — brug direkte rgba
+
+### Border farver (2 niveauer — ikke flere)
+| Niveau | Farve | Brug |
+|---|---|---|
+| Standard | `rgba(255,255,255,0.08)` | Kort, containere, inputs |
+| Subtle | `rgba(255,255,255,0.06)` | Separatorer, sektion-dividers |
 
 ---
 
-## OVERFLADER
+## NIVEAU 1: FROSTET GLAS
+Ægte `backdrop-filter: blur()`. Baggrunden skinner igennem.
+Brug KUN på elementer der visuelt flyder over andet indhold.
 
-### Glass-dark (standard for alle kort/sheets)
+### Radar-kort (hero)
 ```css
-background: rgba(23,15,52,0.82);
-backdrop-filter: blur(12px) saturate(130%);
-border: 0.5px solid rgba(124,92,252,0.08);
-/* Til sheets/modals: brug 0.94 opacity */
-```
-
-### Glass-light (KUN radar-kort)
-```css
-background: rgba(255,255,255,0.88);
+background: rgba(255,255,255,0.85);
 backdrop-filter: blur(20px);
+-webkit-backdrop-filter: blur(20px);
 border: 0.5px solid rgba(0,0,0,0.06);
 box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+border-radius: 18px;
 ```
 
-### Sheet/Modal baggrund
+### Topbar
+```css
+background: rgba(23,15,52,0.82);
+backdrop-filter: blur(12px);
+-webkit-backdrop-filter: blur(12px);
+border-bottom: 0.5px solid rgba(255,255,255,0.06);
+```
+
+### Navbar
+```css
+background: rgba(23,15,52,0.65);
+backdrop-filter: blur(20px);
+-webkit-backdrop-filter: blur(20px);
+border: 0.5px solid rgba(255,255,255,0.1);
+box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.06);
+border-radius: 22px;
+```
+
+### Toasts
+```css
+background: rgba(23,15,52,0.85);
+backdrop-filter: blur(16px);
+-webkit-backdrop-filter: blur(16px);
+border: 0.5px solid rgba(255,255,255,0.08);
+border-radius: 14px;
+box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+```
+
+### Sheets / Modals
 ```css
 background: rgba(23,15,52,0.94);
 backdrop-filter: blur(20px);
+-webkit-backdrop-filter: blur(20px);
 border-radius: 24px 24px 0 0;
-/* Ingen box-shadow — blur er nok */
+/* Højere opacity = mere læsbar tekst */
 ```
 
-### Overlay/backdrop
+### Overlay / Backdrop
 ```css
 background: rgba(23,15,52,0.35);
 backdrop-filter: blur(6px);
+-webkit-backdrop-filter: blur(6px);
 ```
 
 ---
 
-## KNAPPER (Strandglas)
+## NIVEAU 2: TONET GLAS
+Farvet fill uden blur. Farven kommunikerer funktion.
+Brug på elementer der skal skille sig ud via farve.
 
-### Primær CTA — "Isblå" (#5)
+### Teal glass (live/event)
 ```css
-background: rgba(100,180,230,0.18);
-border: 0.5px solid rgba(100,180,230,0.25);
-backdrop-filter: blur(8px);
-color: rgba(255,255,255,0.9);
+background: rgba(26,158,142,0.07);
+border: 0.5px solid rgba(26,158,142,0.12);
 border-radius: 12px;
-padding: 11px;
-font-weight: 700;
+/* Tekst i teal-toner: #0D5C52 primær, rgba(26,158,142,0.5) sekundær */
 ```
 
-### Sekundær
+### Isblå glass (CTA/handling)
 ```css
-background: rgba(255,255,255,0.06);
+background: rgba(100,180,230,0.08);
+border: 0.5px solid rgba(100,180,230,0.12);
+border-radius: 14px;
+/* Tekst: rgb(70,150,210) primær, rgba(100,180,230,0.5) sekundær */
+```
+
+### Pink glass (notifikation — kun toasts)
+```css
+/* Ikon-cirkel i toast, ikke kort-baggrund */
+background: rgba(232,121,168,0.2);
+border-radius: 50%;
+```
+
+### Grøn glass (success — kun toasts)
+```css
+background: rgba(46,207,207,0.2);
+border-radius: 50%;
+```
+
+### Rød glass (fejl — kun toasts)
+```css
+background: rgba(239,68,68,0.2);
+border-radius: 50%;
+```
+
+---
+
+## NIVEAU 3: SLEBET GLAS
+Solid fill + border + radius. Ingen blur, ingen farvetoning.
+Brug på statiske containere, inputs, og neutrale kort.
+
+### Midnight kort (standard)
+```css
+background: rgba(23,15,52,0.78);
 border: 0.5px solid rgba(255,255,255,0.08);
-color: rgba(255,255,255,0.5);
-border-radius: 12px;
+border-radius: 14px;
 ```
 
-### Teal (live/event CTA)
-```css
-background: linear-gradient(135deg, #1A9E8E, #17877A);
-border: none;
-color: white;
-```
-
-### Saved/Gemt state
-```css
-background: rgba(26,158,142,0.12);
-border: 0.5px solid rgba(26,158,142,0.2);
-color: #1A9E8E;
-```
-
-### Destruktiv (log ud, check ud)
-```css
-background: rgba(239,68,68,0.1);
-border: none;
-color: #EF4444;
-```
-
----
-
-## INPUTS (i mørk kontekst)
-
+### Inputs
 ```css
 background: rgba(255,255,255,0.06);
 border: 0.5px solid rgba(255,255,255,0.1);
-color: rgba(255,255,255,0.9);
 border-radius: 10px;
+color: rgba(255,255,255,0.9);
 ```
 ```css
 /* Placeholder */
@@ -122,11 +181,15 @@ border-color: rgba(100,180,230,0.3);
 box-shadow: 0 0 0 3px rgba(100,180,230,0.08);
 ```
 
----
+### Sekundære knapper
+```css
+background: rgba(255,255,255,0.06);
+border: 0.5px solid rgba(255,255,255,0.08);
+color: rgba(255,255,255,0.5);
+border-radius: 12px;
+```
 
-## CHIPS/TAGS/PILLS
-
-### Inaktiv
+### Chips / Tags (inaktiv)
 ```css
 background: rgba(255,255,255,0.06);
 border: 0.5px solid rgba(255,255,255,0.08);
@@ -134,163 +197,138 @@ color: rgba(255,255,255,0.5);
 border-radius: 99px;
 ```
 
-### Aktiv/Valgt
+### Chips / Tags (aktiv)
 ```css
 background: rgba(100,180,230,0.15);
-border: 0.5px solid rgba(100,180,230,0.3);
+border: 0.5px solid rgba(100,180,230,0.25);
 color: rgb(100,180,230);
-```
-
-### Match badge
-```css
-background: rgba(100,180,230,0.12);
-color: rgb(100,180,230);
-font-size: 7px;
-padding: 2px 6px;
 border-radius: 99px;
 ```
 
 ---
 
-## NOTIFICATION DOTS
+## KNAPPER
 
-Alle dots er identiske — simpel pink cirkel, ingen tal:
+### Primær CTA — Isblå strandglas
 ```css
-width: 8px;
-height: 8px;
-border-radius: 50%;
-background: #E879A8;
-box-shadow: 0 0 6px rgba(232,121,168,0.5);
+background: rgba(100,180,230,0.18);
+border: 0.5px solid rgba(100,180,230,0.25);
+color: rgba(255,255,255,0.9);
+border-radius: 12px;
+padding: 11px;
+font-weight: 700;
+/* Niveau 3 — ingen blur, fill er nok */
+```
+
+### Teal (live/event CTA)
+```css
+background: linear-gradient(135deg, #1A9E8E, #17877A);
+border: none;
+color: white;
+```
+
+### Saved / Gemt
+```css
+background: rgba(26,158,142,0.12);
+border: 0.5px solid rgba(26,158,142,0.2);
+color: #1A9E8E;
+```
+
+### Destruktiv
+```css
+background: rgba(239,68,68,0.1);
+border: none;
+color: #EF4444;
 ```
 
 ---
 
-## NAVBAR
+## TOASTS
 
+Niveau 1 glass (frostet). Farvekodet ikon signalerer type.
+
+### Struktur
+```
+[ikon-cirkel 24px] [titel + body]
+```
+
+### Typer
+| Type | Ikon-bg | Ikon-stroke | Titel eksempel |
+|---|---|---|---|
+| Success | `rgba(46,207,207,0.2)` | `#2ECFCF` | "Kontakt gemt" |
+| Fejl | `rgba(239,68,68,0.2)` | `#EF4444` | "Kunne ikke gemme" |
+| Notifikation | `rgba(232,121,168,0.2)` | `#E879A8` | "Ny invitation" |
+| Info | `rgba(100,180,230,0.2)` | `rgb(100,180,230)` | "Ny funktion" |
+
+### CSS
+```css
+/* Container — alle typer */
+background: rgba(23,15,52,0.85);
+backdrop-filter: blur(16px);
+border: 0.5px solid rgba(255,255,255,0.08);
+border-radius: 14px;
+padding: 10px 12px;
+box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+
+/* Titel: 0.72rem, weight 700, white */
+/* Body: 0.62rem, rgba(255,255,255,0.6) */
+/* Animation: toastIn 0.3s cubic-bezier(0.34,1.56,0.64,1) */
+```
+
+---
+
+## TEAL GLASS LIVE-SEKTION
+
+Niveau 2 glass. Inde i radar-kortets container, under +/liste-knapper.
+Kun synlig når brugeren er checked ind.
+
+```css
+background: rgba(26,158,142,0.07);
+border: 0.5px solid rgba(26,158,142,0.12);
+border-radius: 12px;
+margin: 6px 8px 2px;
+padding: 8px 10px;
+/* Niveau 2 — ingen blur */
+```
+
+### Indhold
+- Pulserende teal dot (7px, `box-shadow: 0 0 0 3px rgba(26,158,142,0.12)`)
+- Event-navn: `0.72rem; weight 700; color #0D5C52`
+- Meta: `0.6rem; color rgba(26,158,142,0.5)`
+- Chevron-cirkel: `background rgba(26,158,142,0.08)`
+- Alle/Live toggle med teal fill på aktiv tab
+
+### Toggle pills
 ```css
 /* Container */
-width: 240px;
-background: rgba(23,15,52,0.72);
-backdrop-filter: blur(20px);
-border-radius: 24px;
-border: 0.5px solid rgba(255,255,255,0.12);
-box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.08);
+background: rgba(26,158,142,0.06);
+border: 0.5px solid rgba(26,158,142,0.08);
+border-radius: 7px;
 
-/* Sliding indicator ring */
-width: 36px; height: 36px;
-border-radius: 50%;
-border: 1.5px solid rgba(100,180,230,0.5);
-background: rgba(100,180,230,0.18);
-box-shadow: 0 0 0 4px rgba(100,180,230,0.08);
-transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
-
-/* Aktiv ikon */
-stroke: rgba(255,255,255,0.9);
-/* Inaktiv ikon */
-stroke: rgba(255,255,255,0.3);
+/* Aktiv: bg rgba(26,158,142,0.12), border rgba(26,158,142,0.15), color #0D5C52, weight 700 */
+/* Inaktiv: transparent, color rgba(26,158,142,0.4), weight 500 */
 ```
 
 ---
 
-## TOPBAR (Home)
+## HANDLES, CLOSE, CHEVRONS, SEPARATORER
 
 ```css
-background: rgba(23,15,52,0.92);
-/* Indhold: Logo (gradient tekst) + greeting (0.72rem, rgba(255,255,255,0.5)) */
-/* Ikoner: 28px runde, rgba(255,255,255,0.08) bg, rgba(255,255,255,0.6) stroke */
-```
-
----
-
-## SEPARATORER
-
-```css
-/* Mellem sektioner */
-border-top: 0.5px solid rgba(255,255,255,0.06);
-/* Mellem kort (flex gap) */
-gap: 0.45rem;
-```
-
----
-
-## HANDLES (sheets/trays)
-
-```css
-width: 32px;
-height: 3px;
-border-radius: 2px;
+/* Handle */
+width: 32px; height: 3px; border-radius: 2px;
 background: rgba(255,255,255,0.15);
-```
 
----
+/* Close */
+width: 28px; height: 28px; border-radius: 50%;
+background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4);
 
-## CLOSE BUTTONS
-
-```css
-width: 28px; height: 28px;
-border-radius: 50%;
+/* Chevron */
+width: 20px; height: 20px; border-radius: 50%;
 background: rgba(255,255,255,0.08);
-border: none;
-color: rgba(255,255,255,0.4);
-font-size: 11px;
-```
+/* SVG: 6px, stroke rgba(255,255,255,0.4), width 2.5 */
 
----
-
-## CHEVRONS (circle style)
-
-```css
-width: 22px; height: 22px;
-border-radius: 50%;
-background: rgba(255,255,255,0.1);
-/* SVG: 8px, stroke rgba(255,255,255,0.5), stroke-width 2.5 */
-```
-
----
-
-## SKELETON LOADERS (i mørk kontekst)
-
-```css
-/* Shimmer */
-background: linear-gradient(90deg,
-  rgba(255,255,255,0.04) 25%,
-  rgba(255,255,255,0.08) 50%,
-  rgba(255,255,255,0.04) 75%);
-background-size: 200% 100%;
-
-/* Kort container */
-background: rgba(255,255,255,0.04);
-border: 0.5px solid rgba(124,92,252,0.06);
-
-/* Spinner */
-border-color: rgba(255,255,255,0.1);
-border-top-color: rgba(100,180,230,0.6);
-```
-
----
-
-## RADAR
-
-### Ringe (midnight indigo)
-```
-Zone opaciteter: 0.06 / 0.04 / 0.025 / 0.018 / 0.012 / 0.006
-Ring strokes: rgba(23,15,52,0.06)
-Center glow: rgba(23,15,52,0.08) → transparent
-```
-
-### Center avatar
-```css
-background: linear-gradient(135deg, rgb(100,180,230), rgb(70,150,210));
-border: 2px solid white;
-box-shadow: 0 2px 8px rgba(100,180,230,0.3);
-```
-
-### + og liste knapper
-```css
-width: 30px; height: 30px;
-border-radius: 50%;
-background: rgba(23,15,52,0.78);
-/* SVG ikoner: 14px, stroke rgba(255,255,255,0.9) */
+/* Separator */
+border-top: 0.5px solid rgba(255,255,255,0.06);
 ```
 
 ---
@@ -301,41 +339,57 @@ background: rgba(23,15,52,0.78);
 |---|---|---|
 | Spring-back tap | `cubic-bezier(0.34,1.56,0.64,1)` | 0.3s |
 | Sheet slide-up | `cubic-bezier(0.32,0.72,0,1)` | 0.35s |
+| Toast slide-in | `cubic-bezier(0.34,1.56,0.64,1)` | 0.3s |
 | Drip-in (radar) | `cubic-bezier(0.34,1.56,0.64,1)` | 0.45s, stagger 40ms |
 | Nav slide | `cubic-bezier(0.34,1.56,0.64,1)` | 0.4s |
-| Badge pop | scale(0) → scale(1) | 0.3s |
 
 ---
 
-## HIERARKI PRINCIP
+## PERFORMANCE REGLER
+
+1. Maks 3-4 samtidige `backdrop-filter` lag synlige
+2. Sheets/modals: blur OK (dækker hele skærmen, kun 1 lag)
+3. Home screen: radar + topbar + navbar = 3 blur-lag (grænsen)
+4. Kort under radar: Niveau 3 (ingen blur)
+5. Toasts: blur OK (kortvarigt, ét lag ovenpå)
+6. Knapper: ALDRIG blur
+7. Test på iPhone SE / iPhone 8 ved 60fps som baseline
+
+---
+
+## HIERARKI
 
 ```
-Mørk topbar (0.92)
+N1: Topbar (blur, 0.82)
   ↓
-Lys radar-kort (0.88 hvid) ← HERO ELEMENT, eneste lyse
+N1: Radar-kort (blur, 0.85 hvid) ← HERO
+  ↓ inde i radar:
+  N2: Teal glass live-sektion (fill, 0.07 teal)
   ↓
-Mørke kort (0.82) ← gemte, profilstyrke, feedback
+N3: Midnight kort (solid, 0.78) ← gemte, feedback
+N2: Isblå kort (fill, 0.08 isblå) ← profilstyrke
   ↓
-Mørk navbar (0.72 + 0.12 hvid kant)
+N1: Navbar (blur, 0.65)
+  ↑ ovenpå alt:
+N1: Toasts (blur, 0.85)
+N1: Sheets/modals (blur, 0.94)
 ```
-
-Radaren er "vinduet af lys" i et mørkt interface.
 
 ---
 
 ## SCREENS STATUS
 
-| Skærm | Konverteret | Noter |
+| Skærm | Konverteret | Glass-niveau |
 |---|---|---|
-| Home | ✅ | Topbar, radar, alle kort, trays |
-| Onboarding | ✅ | Inputs, consent, CTA |
-| Welcome | ✅ | Action-kort med farvede ikoner |
-| Person sheet | ✅ CSS | Kræver deploy |
-| Modal sheets | ✅ CSS | Setup, settings, QR — kræver deploy |
-| Deep-link modal | ✅ JS | Kræver deploy |
-| Checkin modal | ✅ JS | Kræver deploy |
+| Home | ✅ | N1: topbar+radar+navbar. N2: teal live, isblå profil. N3: kort |
+| Onboarding | ✅ | N3: inputs, knapper. Solid midnight bg |
+| Welcome | ✅ | N3: action-kort |
+| Person sheet | ✅ CSS | N1: sheet bg. N3: knapper, tags |
+| Modal sheets | ✅ CSS | N1: sheet bg. N3: inputs, knapper |
+| Deep-link modal | ✅ JS | N1: modal bg |
+| Checkin modal | ✅ JS | N1: modal bg |
+| Toasts | ❌ | N1: blur + farvekodet ikon |
 | Bobler | ❌ | Næste prioritet |
 | Beskeder | ❌ | |
 | Profil | ❌ | Mest kompleks |
 | Chat | ❌ | |
-| Notifikationer (screen) | ❌ | Tray er konverteret |
