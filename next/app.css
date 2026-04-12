@@ -2154,8 +2154,12 @@ input[type="range"] {
   max-height: 0 !important;
   opacity: 0;
   pointer-events: none;
+  margin: 0;
+  padding: 0;
+  display: none;
 }
 .hs-slot.hs-visible {
+  display: block;
   opacity: 1;
 }
 
