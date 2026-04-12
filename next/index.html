@@ -581,32 +581,28 @@
      SCREEN: HOME
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-home">
-  <div class="topbar">
-    <img src="bubble-logo-topbar-v2.png" alt="bubble" onclick="goTo('screen-home')" style="cursor:pointer;height:22px;width:auto"><span style="font-size:7px;font-weight:700;color:white;background:rgba(23,15,52,0.84);padding:2px 5px;border-radius:4px;letter-spacing:0.5px;margin-left:4px;vertical-align:top">NEXT</span>
+  <div class="topbar" style="background:rgba(23,15,52,0.92);padding-bottom:0">
+    <div style="font-size:16px;font-weight:800;letter-spacing:-0.5px;color:white">bubble</div><span style="font-size:7px;font-weight:700;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.08);padding:2px 5px;border-radius:4px;letter-spacing:0.5px;margin-left:4px">NEXT</span>
     <div style="flex:1"></div>
-    <button id="topbar-notif-btn" onclick="goTo('screen-notifications')" class="topbar-action-btn glass-light" title="Notifikationer" style="border:none;box-shadow:none">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5A6 6 0 006 8.5c0 6-2.5 8.5-2.5 8.5h17S18 14.5 18 8.5"/><path d="M13.73 20a2 2 0 01-3.46 0"/></svg>
-      <div id="topbar-notif-badge" class="topbar-badge" style="display:none">0</div>
+    <button onclick="openConnectScanner()" class="topbar-action-btn" title="Scan QR" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;box-shadow:none;display:flex;align-items:center;justify-content:center">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"><path d="M2 7V2h5M17 2h5v5M22 17v5h-5M7 22H2v-5"/><line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2 2"/></svg>
     </button>
-    <div class="home-avatar" id="home-avatar" onclick="goTo('screen-profile')" style="background:linear-gradient(135deg,#6366F1,#7C5CFC)">?</div>
+    <button onclick="openMyQR()" class="topbar-action-btn" title="Min QR-kode" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;box-shadow:none;display:flex;align-items:center;justify-content:center">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3.5" height="3.5"/><path d="M20 14h-2.5v3M14 20h3v-3M20 20h-3"/></svg>
+    </button>
+    <button id="topbar-notif-btn" onclick="goTo('screen-notifications')" class="topbar-action-btn" title="Notifikationer" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;box-shadow:none;display:flex;align-items:center;justify-content:center;position:relative">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"><path d="M15 17h5l-1.4-1.4A6 6 0 0019 11V8a7 7 0 00-14 0v3a6 6 0 00.4 4.6L4 17h5m6 0a3 3 0 01-6 0m6 0H9"/></svg>
+      <div id="topbar-notif-badge" class="topbar-badge" style="display:none;position:absolute;top:1px;right:1px;width:7px;height:7px;border-radius:50%;background:#E879A8;border:1.5px solid rgba(23,15,52,0.92);min-width:auto;padding:0">0</div>
+    </button>
+    <div class="home-avatar" id="home-avatar" onclick="goTo('screen-profile')" style="width:28px;height:28px;font-size:9px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#7C5CFC);border:1.5px solid rgba(255,255,255,0.2)">?</div>
   </div>
 
   <div class="scroll-area" id="home-scroll">
 
-    <!-- Greeting + QR/Scanner -->
-    <div style="padding:0.2rem 0 0.4rem;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-size:1.25rem;font-weight:800;letter-spacing:-0.03em;color:#1E1B2E" id="home-greeting-name"></div>
-        <div style="font-size:0.72rem;color:#9794A8;margin-top:1px" id="home-greeting-sub">Find dit næste match</div>
-      </div>
-      <div style="display:flex;gap:0.65rem;align-items:center">
-        <button onclick="openConnectScanner()" class="topbar-action-btn glass-light" title="Scan QR" style="border:none;box-shadow:none">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7V2h5M17 2h5v5M22 17v5h-5M7 22H2v-5"/><line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2 2"/></svg>
-        </button>
-        <button onclick="openMyQR()" class="topbar-qr-btn glass-dark" title="Min QR-kode" style="background:none;box-shadow:none">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="3.5" height="3.5"/><path d="M20 14h-2.5v3M14 20h3v-3M20 20h-3"/></svg>
-        </button>
-      </div>
+    <!-- Greeting (compact, in dark zone) -->
+    <div style="margin:-1rem -1.2rem 0.5rem;padding:0 1.2rem 0.7rem;background:rgba(23,15,52,0.92)">
+      <div style="font-size:1.1rem;font-weight:800;letter-spacing:-0.03em;color:white" id="home-greeting-name"></div>
+      <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);margin-top:1px" id="home-greeting-sub">19 personer i dit netværk</div>
     </div>
 
 
@@ -637,34 +633,32 @@
         </div>
       </div></div>
 
-      <!-- ═══ RADAR HERO (borderless dartboard) ═══ -->
+      <!-- ═══ RADAR HERO (white glass card) ═══ -->
       <div data-hs="radar">
+        <div style="margin:0 -0.2rem;border-radius:20px;background:rgba(255,255,255,0.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:0.5px solid rgba(255,255,255,0.8);overflow:hidden">
         <div id="home-radar-dartboard" onclick="onDartboardTap(event)"
-             style="position:relative;width:100%;height:0;padding-bottom:min(100%,55vh);border-radius:16px;background:transparent;overflow:hidden;cursor:pointer">
+             style="position:relative;width:100%;height:0;padding-bottom:min(100%,55vh);background:transparent;overflow:hidden;cursor:pointer">
           <canvas id="home-prox-canvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
           <div id="home-prox-avatars" style="position:absolute;inset:0"></div>
           <div class="prox-center" id="home-prox-center">DU</div>
           <div id="home-radar-spinner" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
             <div class="spinner" style="width:24px;height:24px"></div>
           </div>
-          <button onclick="event.stopPropagation();openHomeTray()" title="Vis liste"
-                  class="glass-light"
-                  style="position:absolute;bottom:10px;right:0;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-              <circle cx="3" cy="6" r="1.2" fill="var(--text-secondary)" stroke="none"/>
-              <circle cx="3" cy="12" r="1.2" fill="var(--text-secondary)" stroke="none"/>
-              <circle cx="3" cy="18" r="1.2" fill="var(--text-secondary)" stroke="none"/>
-            </svg>
-          </button>
         </div>
-        <!-- Filter chips under dartboard -->
-        <div id="home-filter-chips" style="display:flex;gap:0.3rem;padding:0.4rem 0.2rem;overflow-x:auto;-webkit-overflow-scrolling:touch">
-          <button class="radar-filter-chip" onclick="filterRadarHome('live')" data-filter="live" id="radar-live-chip" style="display:none;background:rgba(46,207,207,0.12);color:#085041;border-color:rgba(46,207,207,0.3)">🟢 Live <span id="radar-live-count" style="opacity:0.6"></span></button>
-          <button class="radar-filter-chip active" onclick="filterRadarHome('all')" data-filter="all"><span data-t="home_all">Alle</span> <span id="radar-count-home" style="opacity:0.6"></span></button>
-          <button class="radar-filter-chip" onclick="filterRadarHome('interest')" data-filter="interest" data-t="ps_shared_interests">Fælles int.</button>
-          <button class="radar-filter-chip" onclick="filterRadarHome('good')" data-filter="good" data-t="ps_good_match">Godt match</button>
-          <button class="radar-filter-chip" onclick="filterRadarHome('strong')" data-filter="strong" data-t="ps_strong_match">Stærkt match</button>
+        <!-- Filter row with + toggle -->
+        <div style="display:flex;align-items:center;padding:6px 12px 10px">
+          <button id="home-filter-plus" onclick="toggleRadarFilters()" style="width:28px;height:28px;border-radius:50%;background:rgba(23,15,52,0.78);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;border:none;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);-webkit-tap-highlight-color:transparent;z-index:2"><span style="color:rgba(255,255,255,0.9);font-size:16px;font-weight:300;line-height:1" id="home-filter-plus-icon">+</span></button>
+          <div id="home-filter-chips" style="display:flex;gap:0.3rem;align-items:center;overflow:hidden;max-width:0;opacity:0;transition:max-width 0.4s cubic-bezier(0.34,1.56,0.64,1),opacity 0.3s;padding-left:4px">
+            <button class="radar-filter-chip" onclick="filterRadarHome('live')" data-filter="live" id="radar-live-chip" style="display:none;background:rgba(46,207,207,0.12);color:#085041">🟢 Live <span id="radar-live-count" style="opacity:0.6"></span></button>
+            <button class="radar-filter-chip active" onclick="filterRadarHome('all')" data-filter="all"><span data-t="home_all">Alle</span> <span id="radar-count-home" style="opacity:0.6"></span></button>
+            <button class="radar-filter-chip" onclick="filterRadarHome('interest')" data-filter="interest" data-t="ps_shared_interests">Fælles</button>
+            <button class="radar-filter-chip" onclick="filterRadarHome('good')" data-filter="good" data-t="ps_good_match">Godt match</button>
+            <button class="radar-filter-chip" onclick="filterRadarHome('strong')" data-filter="strong" data-t="ps_strong_match">Stærkt</button>
+            <button onclick="event.stopPropagation();openHomeTray()" title="Vis liste" style="width:28px;height:28px;border-radius:8px;background:rgba(0,0,0,0.04);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;border:none;-webkit-tap-highlight-color:transparent">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.5"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+            </button>
+          </div>
+        </div>
         </div>
       </div>
 
