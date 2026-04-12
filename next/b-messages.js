@@ -20,12 +20,10 @@ var unreadState = {
 
   // ── Render all badges ──
   render: function() {
-    // DM badge (messages nav tab)
-    var dmLabel = this.dm > 9 ? '9+' : (this.dm > 0 ? String(this.dm) : '');
+    // DM dot (messages nav tab — simple dot, no number)
     var self = this;
     document.querySelectorAll('.msg-unread-badge').forEach(function(b) {
-      if (self.dm > 0) { b.textContent = dmLabel; b.style.display = 'flex'; }
-      else { b.style.display = 'none'; }
+      b.style.display = self.dm > 0 ? 'block' : 'none';
     });
     // Notification dot (topbar bell — simple dot, no number)
     var notifEl = document.getElementById('topbar-notif-badge');

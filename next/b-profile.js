@@ -875,9 +875,9 @@ function renderSavedStoryBar(saved, profileMap) {
     var ml = i > 0 ? 'margin-left:-7px;' : '';
     var zi = 'z-index:' + (maxShow - i) + ';';
     if (p && p.avatar_url) {
-      return '<div style="width:24px;height:24px;border-radius:50%;border:2px solid white;overflow:hidden;position:relative;' + ml + zi + '"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
+      return '<div style="width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);overflow:hidden;position:relative;' + ml + zi + '"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
     }
-    return '<div style="width:24px;height:24px;border-radius:50%;background:' + col + ';border:2px solid white;font-size:7px;font-weight:600;color:white;display:flex;align-items:center;justify-content:center;position:relative;' + ml + zi + '">' + escHtml(ini) + '</div>';
+    return '<div style="width:24px;height:24px;border-radius:50%;background:' + col + ';border:2px solid rgba(255,255,255,0.2);font-size:7px;font-weight:600;color:white;display:flex;align-items:center;justify-content:center;position:relative;' + ml + zi + '">' + escHtml(ini) + '</div>';
   }).join('');
 }
 

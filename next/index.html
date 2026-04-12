@@ -665,12 +665,12 @@
 
       <!-- ═══ GEMTE PROFILER (story-bar) ═══ -->
       <div id="saved-profiles-bar" data-hs="saved" style="display:none">
-        <div class="glass-light" onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('saved')},200)" style="border-radius:16px;padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer">
+        <div class="glass-dark" onclick="goTo('screen-profile');setTimeout(function(){profSwitchTab('saved')},200)" style="border-radius:14px;padding:10px;display:flex;align-items:center;gap:8px;cursor:pointer">
           <div style="display:flex" id="saved-story-list"></div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:0.78rem;font-weight:600;color:#1E1B2E"><span id="saved-count-badge"></span> gemte kontakter</div>
+            <div style="font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.9)"><span id="saved-count-badge"></span> gemte kontakter</div>
           </div>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
         </div>
       </div>
 
@@ -682,17 +682,17 @@
 
       <!-- ═══ PROFILE MATCH CARD (altid synlig, toggle-bar) ═══ -->
       <div class="hs-slot hs-hidden" id="home-profile-setup-slot"><div id="home-profile-setup" data-hs="profile_cta">
-        <div onclick="openNextProfileSetupSheet()" class="glass-light" style="padding:10px;border-radius:14px;cursor:pointer">
+        <div onclick="openNextProfileSetupSheet()" class="glass-dark" style="padding:10px;border-radius:14px;cursor:pointer">
           <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem">
             <div class="home-avatar-mini" id="setup-cta-avatar" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#7C5CFC);display:flex;align-items:center;justify-content:center;color:white;font-size:0.65rem;font-weight:700;flex-shrink:0;overflow:hidden">?</div>
             <div style="flex:1;min-width:0">
-              <div style="font-size:0.72rem;font-weight:700;color:#1E1B2E">Profilstyrke</div>
-              <div style="font-size:0.62rem;color:#9794A8;margin-top:0.05rem" id="setup-cta-next">Udfyld profilen og ryk mod midten</div>
+              <div style="font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.9)">Profilstyrke</div>
+              <div style="font-size:0.62rem;color:rgba(255,255,255,0.4);margin-top:0.05rem" id="setup-cta-next">Udfyld profilen og ryk mod midten</div>
             </div>
-            <div style="font-size:0.72rem;font-weight:800;color:#1E1B2E;min-width:2rem;text-align:right" id="setup-cta-pct">0%</div>
+            <div style="font-size:0.72rem;font-weight:800;color:rgba(255,255,255,0.9);min-width:2rem;text-align:right" id="setup-cta-pct">0%</div>
           </div>
-          <div style="height:3px;border-radius:3px;background:rgba(0,0,0,0.05);overflow:hidden">
-            <div id="setup-cta-bar" style="height:100%;border-radius:3px;background:#1E1B2E;transition:width 0.6s ease;width:0%"></div>
+          <div style="height:3px;border-radius:3px;background:rgba(255,255,255,0.1);overflow:hidden">
+            <div id="setup-cta-bar" style="height:100%;border-radius:3px;background:rgba(255,255,255,0.7);transition:width 0.6s ease;width:0%"></div>
           </div>
         </div>
       </div></div>
@@ -700,13 +700,13 @@
 
       <!-- ═══ FEEDBACK ═══ -->
       <div data-hs="feedback">
-        <div class="glass-light" onclick="openFeedback()" style="border-radius:14px;padding:10px;display:flex;align-items:center;gap:0.5rem;cursor:pointer">
-          <div style="width:32px;height:32px;border-radius:10px;background:rgba(0,0,0,0.03);display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
+        <div class="glass-dark" onclick="openFeedback()" style="border-radius:14px;padding:10px;display:flex;align-items:center;gap:0.5rem;cursor:pointer">
+          <div style="width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
           <div style="flex:1">
-            <div style="font-size:0.72rem;font-weight:600;color:#1E1B2E">Giv feedback</div>
-            <div style="font-size:0.62rem;color:#9794A8" data-t="pf_feedback_desc">Hjælp os med at gøre Bubble bedre</div>
+            <div style="font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.9)">Giv feedback</div>
+            <div style="font-size:0.62rem;color:rgba(255,255,255,0.4)" data-t="pf_feedback_desc">Hjælp os med at gøre Bubble bedre</div>
           </div>
-          <div class="glass-dark" style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></div>
+          <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></div>
         </div>
       </div>
 
