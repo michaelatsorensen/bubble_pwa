@@ -168,14 +168,14 @@ async function loadLiveBanner() {
         if (gMeta) gMeta.textContent = (liveCount || 0) + ' ' + t('live_here_now') + ' · ' + t('live_expires') + ' ' + expiryStr;
       }
       if (tabs) tabs.style.display = 'none'; // hide old tabs
-      homeSetMode('live');
+      homeSetMode('live', true);
     } else {
       appMode.set('normal');
       if (tabs) tabs.style.display = 'none';
       var glass2 = document.getElementById('radar-live-glass');
       if (glass2) glass2.style.display = 'none';
       hsSlotHide('home-live-banner');
-      homeSetMode('all');
+      homeSetMode('all', true);
     }
   } catch(e) {
     logError('loadLiveBanner', e);
@@ -187,7 +187,7 @@ async function loadLiveBanner() {
   }
 }
 
-function homeSetMode(mode) {
+function homeSetMode(mode, skipRender) {
   _homeViewMode = mode; // 'all' or 'live' — UI tab state
   // Sync appMode (mode='live'→appMode live, mode='all'→appMode normal)
   if (mode === 'live' && !appMode.is('live')) appMode.set('live', appMode.live);
@@ -208,13 +208,18 @@ function homeSetMode(mode) {
     }
   }
 
-  if (mode === 'live' && ctx) {
+  if (!skipRender) {
+    if (mode === 'live' && ctx) {
+      loadEventDartboard();
+    } else {
+      _homeRadarFilter = 'all';
+      if (_dartboardDataLoaded) renderHomeDartboard();
+    }
+  } else if (mode === 'live' && ctx) {
     loadEventDartboard();
   } else {
     _homeRadarFilter = 'all';
-    if (_prevHomeViewMode !== 'all' && _dartboardDataLoaded) renderHomeDartboard();
   }
-  _prevHomeViewMode = mode;
 
   // Hide old live banner (superseded by teal glass)
   hsSlotHide('home-live-banner');
