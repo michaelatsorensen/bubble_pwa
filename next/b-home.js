@@ -1854,7 +1854,6 @@ async function loadHomeDartboardData() {
       .neq('id', currentUser.id).neq('banned', true).limit(200);
     if (!allProfiles || allProfiles.length === 0) {
       _dartboardDataLoaded = true;
-      if (_homeViewMode !== 'live') renderHomeDartboard();
       return;
     }
 
