@@ -108,6 +108,8 @@ async function loadHome() {
     showEventCheckinCard();
     showWelcomeCard();
     showProfileSetupCTA();
+    // Single render point — both loadHomeDartboardData and loadLiveBanner are done
+    if (_dartboardDataLoaded && _homeViewMode !== 'live') renderHomeDartboard();
     // Delayed badge re-render — ensures nav is visible
     setTimeout(function() { if (typeof unreadState !== 'undefined') unreadState.render(); }, 300);
   } catch(e) {
@@ -1881,7 +1883,6 @@ async function loadHomeDartboardData() {
     _dartboardDataLoaded = true;
     if (_homeViewMode !== 'live') {
       _homeDartboardProfiles = scored;
-      renderHomeDartboard();
     }
   } catch(e) { logError('loadHomeDartboardData', e); }
 }
