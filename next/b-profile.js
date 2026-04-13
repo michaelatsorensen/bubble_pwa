@@ -1357,9 +1357,9 @@ async function loadDashboard() {
     // Render
     var statCard = function(iconName, label, value, color) {
       var iconHtml = ico(iconName).replace('<svg ', '<svg style="width:18px;height:18px" ');
-      return '<div style="display:flex;align-items:center;gap:0.7rem;padding:0.7rem 0.9rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
+      return '<div style="display:flex;align-items:center;gap:0.7rem;padding:0.7rem 0.9rem;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:var(--radius);box-shadow:none">' +
         '<div style="width:36px;height:36px;border-radius:10px;background:' + color + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">' + iconHtml + '</div>' +
-        '<div style="flex:1;min-width:0"><div style="font-size:1.1rem;font-weight:800;color:var(--text)">' + value + '</div><div style="font-size:0.68rem;color:var(--text-secondary)">' + label + '</div></div>' +
+        '<div style="flex:1;min-width:0"><div style="font-size:1.1rem;font-weight:800;color:rgba(255,255,255,0.9)">' + value + '</div><div style="font-size:0.68rem;color:rgba(255,255,255,0.4)">' + label + '</div></div>' +
         '</div>';
     };
 
@@ -1374,13 +1374,13 @@ async function loadDashboard() {
       if ((currentProfile.keywords||[]).length < 3) missing.push('interesser');
       if (!currentProfile.title) missing.push('titel');
       ctaHtml = '<div style="font-size:0.65rem;color:var(--text-secondary);margin-top:0.3rem">Tilføj ' + missing.join(', ') + ' for bedre matches</div>' +
-        '<button onclick="openEditProfile()" style="width:100%;margin-top:0.5rem;padding:0.55rem;font-size:0.78rem;font-weight:600;font-family:inherit;background:rgba(124,92,252,0.08);color:var(--accent);border:1px solid rgba(124,92,252,0.15);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.3rem">' + icon('edit') + ' Fortsæt med at forbedre din profil</button>';
+        '<button onclick="openEditProfile()" style="width:100%;margin-top:0.5rem;padding:0.55rem;font-size:0.78rem;font-weight:600;font-family:inherit;background:rgba(100,180,230,0.08);color:rgb(100,180,230);border:0.5px solid rgba(100,180,230,0.15);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.3rem">' + icon('edit') + ' Fortsæt med at forbedre din profil</button>';
     }
 
     el.innerHTML =
-      '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.4rem">Din Bubble-uge</div>' +
+      '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgb(100,180,230);margin-bottom:0.4rem">Din Bubble-uge</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem">' +
-        statCard('eye', t('pf_dash_views'), views, 'rgba(124,92,252,0.08)') +
+        statCard('eye', t('pf_dash_views'), views, 'rgba(100,180,230,0.1)') +
         statCard('bookmark', t('pf_dash_saved_you'), savedBy, 'rgba(232,121,168,0.08)') +
         statCard('heart', t('pf_dash_you_saved'), mySaved, 'rgba(26,158,142,0.08)') +
         statCard('bubble', t('pf_stat_bubbles'), bubbles, 'rgba(46,207,207,0.08)') +
@@ -1400,28 +1400,28 @@ async function loadDashboard() {
 
 // ── Tags card in dashboard ──
 function _renderDashboardTagsCard() {
-  return '<div style="margin-top:0.75rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);box-shadow:0 1px 3px rgba(30,27,46,0.06);overflow:hidden">' +
+  return '<div style="margin-top:0.75rem;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:var(--radius);box-shadow:none;overflow:hidden">' +
 
     // ── Header ──
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem 0.5rem">' +
-      '<div style="font-size:0.72rem;font-weight:700;color:var(--text)">Tags &amp; interesser</div>' +
-      '<div id="dash-et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:var(--accent)">0 valgt</div>' +
+      '<div style="font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.9)">Tags &amp; interesser</div>' +
+      '<div id="dash-et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:rgb(100,180,230)">0 valgt</div>' +
     '</div>' +
 
     // ── Progress bar ──
     '<div style="padding:0 0.9rem 0.5rem;display:flex;align-items:center;gap:0.5rem">' +
-      '<div style="flex:1;height:3px;background:rgba(124,92,252,0.08);border-radius:99px;overflow:hidden"><div id="dash-et-prog-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#E879A8);transition:width .4s;width:0%"></div></div>' +
+      '<div style="flex:1;height:3px;background:rgba(100,180,230,0.1);border-radius:99px;overflow:hidden"><div id="dash-et-prog-bar" style="height:100%;border-radius:99px;background:rgb(100,180,230);transition:width .4s;width:0%"></div></div>' +
     '</div>' +
 
     // ── Tray: selected tags preview ──
     '<div style="border-top:0.5px solid var(--glass-border-subtle);border-bottom:0.5px solid var(--glass-border-subtle)">' +
       '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.55rem 0.9rem">' +
-        '<div style="width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0"></div>' +
-        '<div style="font-size:0.68rem;font-weight:600;color:var(--accent);flex-shrink:0">Dine tags</div>' +
+        '<div style="width:7px;height:7px;border-radius:50%;background:rgb(100,180,230);flex-shrink:0"></div>' +
+        '<div style="font-size:0.68rem;font-weight:600;color:rgb(100,180,230);flex-shrink:0">Dine tags</div>' +
         '<div id="dash-et-tray-preview" style="display:flex;gap:0.3rem;flex:1;overflow:hidden;min-width:0;align-items:center"></div>' +
-        '<button onclick="etToggleTray()" id="dash-et-tray-btn" style="display:flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem;border-radius:99px;border:0.5px solid var(--glass-border);background:rgba(124,92,252,0.04);cursor:pointer;font-family:inherit;flex-shrink:0">' +
+        '<button onclick="etToggleTray()" id="dash-et-tray-btn" style="display:flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem;border-radius:99px;border:0.5px solid rgba(100,180,230,0.15);background:rgba(100,180,230,0.06);cursor:pointer;font-family:inherit;flex-shrink:0">' +
           '<span id="dash-et-tray-btn-lbl" style="font-size:0.65rem;font-weight:600;color:var(--accent)">'+t('ps_see_all')+'</span>' +
-          '<span id="dash-et-tray-chev" style="font-size:0.6rem;color:var(--accent);transition:transform 0.2s">▾</span>' +
+          '<span id="dash-et-tray-chev" style="font-size:0.6rem;color:rgb(100,180,230);transition:transform 0.2s">▾</span>' +
         '</button>' +
       '</div>' +
       '<div id="dash-et-tray-drawer" style="display:none;flex-wrap:wrap;gap:0.3rem;padding:0.1rem 0.9rem 0.65rem;background:rgba(23,15,52,0.02)"></div>' +
@@ -1429,13 +1429,13 @@ function _renderDashboardTagsCard() {
 
     // ── Beskæftigelse (DB column: lifestage) ──
     '<div style="padding:0.55rem 0.9rem 0.1rem">' +
-      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.4rem">Beskæftigelse</div>' +
+      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgb(100,180,230);margin-bottom:0.4rem">Beskæftigelse</div>' +
       '<div id="dash-et-lifestage-btns" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem"></div>' +
     '</div>' +
 
     // ── Category accordions ──
     '<div style="padding:0.1rem 0.9rem 0.2rem">' +
-      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.35rem">Tilføj fra kategorier</div>' +
+      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgb(100,180,230);margin-bottom:0.35rem">Tilføj fra kategorier</div>' +
     '</div>' +
     '<div id="dash-et-acc-list" style="padding:0 0.6rem 0.75rem;display:flex;flex-direction:column;gap:0.35rem"></div>' +
 

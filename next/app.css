@@ -2470,3 +2470,13 @@ a:not(.btn-primary):not(.btn-secondary):active {
 .setup-sheet .input::placeholder { color:rgba(255,255,255,0.25); }
 .setup-sheet .input:focus { border-color:rgba(100,180,230,0.3); box-shadow:0 0 0 3px rgba(100,180,230,0.08); }
 .setup-sheet .input-label { color:rgba(255,255,255,0.5); }
+
+/* ═══ PROFILE SCREEN DARK ═══ */
+#screen-profile { background: #170F34; }
+#screen-profile .topbar { background: rgba(23,15,52,0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 0.5px solid rgba(255,255,255,0.06); }
+#screen-profile .topbar-title { color: rgba(255,255,255,0.9); }
+#screen-profile .btn-ghost { background: rgba(255,255,255,0.06); border: 0.5px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+#screen-profile .bubble-tabs { background: rgba(23,15,52,0.78); border: 0.5px solid rgba(255,255,255,0.08); box-shadow: none; }
+#screen-profile .bubble-tab { color: rgba(255,255,255,0.35); }
+#screen-profile .bubble-tab.active { background: rgba(100,180,230,0.15); border-color: rgba(100,180,230,0.25); color: rgb(100,180,230); box-shadow: none; }
+#screen-profile .bubble-tabs[style*="sticky"] { background: #170F34 !important; }
