@@ -1522,25 +1522,29 @@
      MODAL: EDIT PROFILE
 ════════════════════════════════════════ -->
 <div class="modal-overlay" id="modal-edit-profile" onclick="if(event.target===this)closeModal('modal-edit-profile')">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Rediger profil</div>
+  <div class="modal-sheet" style="display:flex;flex-direction:column;padding:0">
+    <div style="padding:10px 0 4px;display:flex;justify-content:center;flex-shrink:0"><div style="width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,0.15)"></div></div>
+    <div style="padding:6px 1.2rem 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid rgba(255,255,255,0.06);flex-shrink:0">
+      <div style="font-size:1rem;font-weight:800;color:rgba(255,255,255,0.9)">Rediger profil</div>
+      <button onclick="closeModal('modal-edit-profile')" style="width:32px;height:32px;border-radius:10px;border:none;background:rgba(255,255,255,0.08);cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);font-family:var(--font)">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.75rem 1.2rem 2rem;overscroll-behavior:contain">
     <!-- Avatar upload -->
-    <div style="display:flex;align-items:center;gap:1rem;margin:0.5rem 0 1.2rem;padding:0.8rem;background:var(--glass-bg);border:1px solid var(--glass-border-subtle);border-radius:14px">
-      <div id="ep-avatar-preview" style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#6366F1);display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:white;flex-shrink:0;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 4px 12px rgba(0,0,0,0.2)" onclick="document.getElementById('ep-avatar-input').click()">
+    <div style="display:flex;align-items:center;gap:1rem;margin:0 0 1rem;padding:0.8rem;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:14px">
+      <div id="ep-avatar-preview" style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210));display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:white;flex-shrink:0;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 4px 12px rgba(0,0,0,0.2)" onclick="document.getElementById('ep-avatar-input').click()">
         <span id="ep-avatar-initials">?</span>
         <img id="ep-avatar-img" alt="Profilbillede" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;display:none">
       </div>
       <div style="flex:1">
-        <button type="button" onclick="document.getElementById('ep-avatar-input').click()" style="background:none;border:1px solid var(--glass-border);border-radius:10px;padding:0.4rem 0.8rem;font-family:inherit;font-size:0.78rem;font-weight:600;color:var(--accent);cursor:pointer;transition:all 0.15s">Skift billede</button>
-        <div style="font-size:0.65rem;color:var(--muted);margin-top:0.25rem;line-height:1.4">JPG, PNG eller WebP · maks 2MB<br>Billedet skaleres automatisk ned</div>
+        <button type="button" onclick="document.getElementById('ep-avatar-input').click()" style="background:none;border:0.5px solid rgba(100,180,230,0.25);border-radius:10px;padding:0.4rem 0.8rem;font-family:inherit;font-size:0.78rem;font-weight:600;color:rgb(100,180,230);cursor:pointer;background:rgba(100,180,230,0.08);transition:all 0.15s">Skift billede</button>
+        <div style="font-size:0.65rem;color:rgba(255,255,255,0.25);margin-top:0.25rem;line-height:1.4">JPG, PNG eller WebP · maks 2MB<br>Billedet skaleres automatisk ned</div>
       </div>
       <input type="file" id="ep-avatar-input" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleAvatarUpload(this)">
     </div>
     <!-- Email (read-only, only visible to own user) -->
-    <div style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.75rem;margin-bottom:0.75rem;background:rgba(124,92,252,0.04);border-radius:10px">
-      <svg style="width:0.85rem;height:0.85rem;flex-shrink:0;color:var(--muted)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
-      <span id="ep-email" style="font-size:0.72rem;color:var(--text-secondary)">...</span>
+    <div style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.75rem;margin-bottom:0.75rem;background:rgba(100,180,230,0.06);border:0.5px solid rgba(100,180,230,0.1);border-radius:10px">
+      <svg style="width:0.85rem;height:0.85rem;flex-shrink:0;color:rgba(255,255,255,0.3)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+      <span id="ep-email" style="font-size:0.72rem;color:rgba(255,255,255,0.4)">...</span>
     </div>
     <div class="input-group">
       <div class="input-label">Navn</div>
@@ -1560,7 +1564,7 @@
     </div>
     <div class="input-group">
       <div class="input-label" data-t="ob_step_seeking">Søger lige nu</div>
-      <div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.4rem">Vises på din profil og i andres radar — f.eks. "Søger investor", "Søger samarbejdspartner" eller "Open to coffee"</div>
+      <div style="font-size:0.65rem;color:rgba(255,255,255,0.25);margin-bottom:0.4rem">Vises på din profil og i andres radar — f.eks. "Søger investor", "Søger samarbejdspartner" eller "Open to coffee"</div>
       <div class="chips-container" id="ep-dyn-chips-container" onclick="document.getElementById('ep-dyn-chip-input').focus()">
         <input class="chip-input" id="ep-dyn-chip-input" placeholder="Skriv og tryk Enter..." onkeydown="handleChipInput(event,'ep-dyn-chips')">
         <button type="button" onclick="addChipFromBtn('ep-dyn-chip-input','ep-dyn-chips')" class="ob-cat-custom-btn" title="Tilføj">✓</button>
@@ -1572,6 +1576,7 @@
     </div>
     <button class="btn-primary" onclick="saveProfile()"data-t="ob_save_profile">Gem profil</button>
     <button class="btn-secondary" onclick="closeModal('modal-edit-profile')" data-t="misc_cancel">Annuller</button>
+    </div><!-- /scroll -->
   </div>
 </div>
 
