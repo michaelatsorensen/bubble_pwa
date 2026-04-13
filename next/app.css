@@ -2167,9 +2167,11 @@ input[type="range"] {
 
 /* ═══ PROFILE SETUP SHEETS ═══ */
 .setup-sheet {
-  background: rgba(255,255,255,0.98);
-  border-radius: 20px 20px 0 0;
-  padding: 1.2rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  background: rgba(23,15,52,0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px 24px 0 0;
+  padding: 1.2rem 1.2rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
   width: 100%;
   max-width: 500px;
   max-height: 82vh;
@@ -2177,27 +2179,27 @@ input[type="range"] {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   touch-action: pan-y;
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
   transform: translateY(100%);
   transition: transform 0.12s ease-in;
+  color: rgba(255,255,255,0.9);
 }
 .modal-overlay.open .setup-sheet {
   transform: translateY(0);
   transition: transform 0.15s cubic-bezier(0.22,1,0.36,1);
 }
 .setup-sheet-handle {
-  width: 32px; height: 4px; border-radius: 2px; background: #D8D5E4;
+  width: 36px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.15);
   margin: 0 auto 1rem;
 }
 .setup-suggestion {
   font-size: 0.78rem; padding: 0.35rem 0.7rem; border-radius: 99px;
-  border: 1px solid rgba(216,213,228,0.5); background: rgba(30,27,46,0.02);
-  color: var(--muted); font-family: var(--font); cursor: pointer;
+  border: 0.5px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.5); font-family: var(--font); cursor: pointer;
   transition: all 0.15s;
 }
 .setup-suggestion.active {
-  border-color: rgba(124,92,252,0.4); background: rgba(124,92,252,0.08);
-  color: var(--accent); font-weight: 600;
+  border-color: rgba(100,180,230,0.3); background: rgba(100,180,230,0.12);
+  color: rgb(100,180,230); font-weight: 600;
 }
 .setup-interest-row {
   display: flex; align-items: center; gap: 0.55rem;
@@ -2316,10 +2318,10 @@ input[type="range"] {
 
 /* ══ Setup sheet step navigation ══ */
 .setup-step-dots{display:flex;gap:6px;align-items:center}
-.setup-dot{width:8px;height:8px;border-radius:50%;background:rgba(124,92,252,0.15);cursor:pointer;transition:background 0.2s,transform 0.2s;-webkit-tap-highlight-color:transparent}
-.setup-dot.active{background:var(--accent);transform:scale(1.25);cursor:default}
-.setup-dot:not(.active):hover{background:rgba(124,92,252,0.35)}
-.setup-back{font-size:1.4rem;line-height:1;color:var(--accent);cursor:pointer;padding:0 4px;font-weight:300;-webkit-tap-highlight-color:transparent}
+.setup-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.1);cursor:pointer;transition:background 0.2s,transform 0.2s;-webkit-tap-highlight-color:transparent}
+.setup-dot.active{background:rgb(100,180,230);transform:scale(1.25);cursor:default}
+.setup-dot:not(.active):hover{background:rgba(100,180,230,0.25)}
+.setup-back{font-size:1.4rem;line-height:1;color:rgba(255,255,255,0.4);cursor:pointer;padding:0 4px;font-weight:300;-webkit-tap-highlight-color:transparent}
 .setup-back:active{opacity:0.5}
 
 /* ══ PREMIUM POLISH (v8.15.28) ══ */
@@ -2461,3 +2463,10 @@ a:not(.btn-primary):not(.btn-secondary):active {
 .btn-ghost, .btn-sm, .btn-accent, .back-btn, .notif-btn, .send-btn, .chat-send-btn, .bp-card, .ob-role-chip, .interest-btn {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Setup sheet CTA override */
+.setup-sheet .btn-primary { background:rgba(100,180,230,0.18); border:0.5px solid rgba(100,180,230,0.25); color:rgba(255,255,255,0.9); box-shadow:none; }
+.setup-sheet .input { background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.9); box-shadow:none; }
+.setup-sheet .input::placeholder { color:rgba(255,255,255,0.25); }
+.setup-sheet .input:focus { border-color:rgba(100,180,230,0.3); box-shadow:0 0 0 3px rgba(100,180,230,0.08); }
+.setup-sheet .input-label { color:rgba(255,255,255,0.5); }
