@@ -560,7 +560,7 @@
     <div style="text-align:center;padding:2rem 1.5rem 0.5rem">
       <div style="font-size:2rem;margin-bottom:0.3rem">✓</div>
       <div style="font-size:1.2rem;font-weight:800;color:var(--text)">Din profil er klar!</div>
-      <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.2rem" id="event-ready-meta">Vis din QR-kode til arrangøren</div>
+      <div style="font-size:0.78rem;color:rgba(255,255,255,0.4);margin-top:0.2rem" id="event-ready-meta">Vis din QR-kode til arrangøren</div>
       <div style="display:inline-flex;align-items:center;gap:0.3rem;margin-top:0.5rem;padding:0.3rem 0.8rem;background:rgba(26,158,142,0.08);border-radius:99px;font-size:0.72rem;font-weight:600;color:var(--green)">\u2713 Du er nu synlig for andre deltagere</div>
     </div>
 
@@ -568,11 +568,11 @@
       <div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:1.5rem;box-shadow:0 1px 3px rgba(30,27,46,0.06);margin-bottom:0.75rem">
         <div id="event-ready-qr" style="display:flex;justify-content:center;margin-bottom:1rem"></div>
         <div style="font-size:1.05rem;font-weight:800;color:var(--text)" id="event-ready-name"></div>
-        <div style="font-size:0.78rem;color:var(--text-secondary)" id="event-ready-role"></div>
+        <div style="font-size:0.78rem;color:rgba(255,255,255,0.4)" id="event-ready-role"></div>
       </div>
 
       <button class="btn-primary" onclick="eventReadyGoToEvent()" style="font-size:0.88rem;padding:0.75rem">Se hvem der er her →</button>
-      <div style="font-size:0.65rem;color:var(--muted);margin-top:0.5rem">Du kan også få vist din QR fra Profil-fanen</div>
+      <div style="font-size:0.65rem;color:rgba(255,255,255,0.25);margin-top:0.5rem">Du kan også få vist din QR fra Profil-fanen</div>
     </div>
   </div>
 </div>
@@ -608,8 +608,8 @@
       <!-- ═══ SEGMENTED CONTROL: Alle / Live (only visible when checked in) ═══ -->
       <div id="home-mode-tabs" style="display:none">
         <div style="display:flex;background:rgba(30,27,46,0.04);border-radius:10px;padding:3px">
-          <button id="home-tab-all" onclick="homeSetMode('all')" class="home-mode-tab active" style="flex:1;text-align:center;padding:0.4rem 0;font-size:0.75rem;font-weight:700;border:none;cursor:pointer;border-radius:8px;font-family:var(--font);transition:all 0.2s;background:var(--gradient-primary);color:white">Alle</button>
-          <button id="home-tab-live" onclick="homeSetMode('live')" class="home-mode-tab" style="flex:1;text-align:center;padding:0.4rem 0;font-size:0.75rem;font-weight:600;border:none;cursor:pointer;border-radius:8px;font-family:var(--font);transition:all 0.2s;background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:0.3rem">
+          <button id="home-tab-all" onclick="homeSetMode('all')" class="home-mode-tab active" style="flex:1;text-align:center;padding:0.4rem 0;font-size:0.75rem;font-weight:700;border:none;cursor:pointer;border-radius:8px;font-family:var(--font);transition:all 0.2s;background:rgba(100,180,230,0.18);border:0.5px solid rgba(100,180,230,0.25);color:rgba(255,255,255,0.9)">Alle</button>
+          <button id="home-tab-live" onclick="homeSetMode('live')" class="home-mode-tab" style="flex:1;text-align:center;padding:0.4rem 0;font-size:0.75rem;font-weight:600;border:none;cursor:pointer;border-radius:8px;font-family:var(--font);transition:all 0.2s;background:transparent;color:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;gap:0.3rem">
             <span id="home-tab-live-dot" style="width:6px;height:6px;border-radius:50%;background:#1A9E8E;box-shadow:0 0 0 2px rgba(26,158,142,0.25);animation:livePulse 2s infinite"></span>
             Live
           </button>
@@ -758,7 +758,7 @@
       </div>
     </div>
     <div style="display:flex;flex-direction:column;gap:0.5rem">
-      <button onclick="closeLiveCheckoutTray();openLiveBubble()" style="width:100%;padding:0.85rem;border-radius:14px;background:var(--gradient-primary);border:none;color:white;font-size:0.92rem;font-weight:700;cursor:pointer;font-family:var(--font)">Se event →</button>
+      <button onclick="closeLiveCheckoutTray();openLiveBubble()" style="width:100%;padding:0.85rem;border-radius:14px;background:rgba(100,180,230,0.18);border:0.5px solid rgba(100,180,230,0.25);color:rgba(255,255,255,0.9);font-size:0.92rem;font-weight:700;cursor:pointer;font-family:var(--font)">Se event →</button>
       <button id="live-checkout-btn" onclick="bbConfirm(this,{label:'Vil du checke ud?',confirmText:'Ja, check ud',confirmClass:'bb-confirm-btn-danger',onConfirm:'liveCheckout();closeLiveCheckoutTray()'})" style="width:100%;padding:0.85rem;border-radius:14px;background:rgba(239,68,68,0.1);border:0.5px solid rgba(239,68,68,0.25);color:#EF4444;font-size:0.92rem;font-weight:700;cursor:pointer;font-family:var(--font)">Check ud</button>
       <button onclick="closeLiveCheckoutTray()" style="width:100%;padding:0.65rem;border-radius:14px;background:none;border:none;color:rgba(255,255,255,0.4);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:var(--font)" data-t="misc_cancel">Annuller</button>
     </div>

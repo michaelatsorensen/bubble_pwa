@@ -201,7 +201,7 @@ async function _personRenderMatch(p, userId, myNav) {
       overlapEl.innerHTML = '<div class="person-section-title" style="margin-bottom:0.4rem">'+t('ps_shared_interests')+' · ' + overlap.length + '</div>' +
         '<div id="person-tags-visible">' + visibleHtml + '</div>' +
         (hasMore ? '<div id="person-tags-hidden" style="display:none">' + hiddenHtml + '</div>' +
-          '<button id="person-tags-toggle" onclick="togglePersonTags()" style="font-size:0.7rem;font-weight:600;color:var(--accent);background:none;border:none;padding:0.4rem 0;cursor:pointer;font-family:inherit">'+t('ps_show_all',{n:overlap.length})+'</button>' : '');
+          '<button id="person-tags-toggle" onclick="togglePersonTags()" style="font-size:0.7rem;font-weight:600;color:var(--isbla);background:none;border:none;padding:0.4rem 0;cursor:pointer;font-family:inherit">'+t('ps_show_all',{n:overlap.length})+'</button>' : '');
     } else {
       overlapEl.innerHTML = '<span class="fs-085 text-muted">'+t('ps_no_shared')+'</span>';
     }
@@ -268,7 +268,7 @@ function removeSavedContact(savedId, btn) {
   confirm.className = 'remove-confirm';
   confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:10px;gap:0.5rem';
   confirm.onclick = function(e) { e.stopPropagation(); };
-  confirm.innerHTML = `<span style="font-size:0.72rem;color:var(--text-secondary)">Fjern kontakt?</span>
+  confirm.innerHTML = `<span style="font-size:0.72rem;color:rgba(255,255,255,0.4)">Fjern kontakt?</span>
     <div style="display:flex;gap:0.3rem">
       <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="event.stopPropagation();confirmRemoveSaved()">Fjern</button>
       <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelRemoveSaved(this)">Annuller</button>
@@ -354,7 +354,7 @@ function radarNextPage() {
 }
 var proxColors = [
   'linear-gradient(135deg,#2ECFCF,#22B8CF)',  // cyan
-  'linear-gradient(135deg,#6366F1,#7C5CFC)',  // indigo→purple
+  'linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))',  // indigo→purple
   'linear-gradient(135deg,#E879A8,#EC4899)',  // pink→rose
   'linear-gradient(135deg,#F59E0B,#EAB308)',  // amber
   'linear-gradient(135deg,#1A9E8E,#10B981)',  // teal→emerald
@@ -511,12 +511,12 @@ function drawProxRings(canvas) {
 
   var centerR = 0.10;
   var zones = [
-    { r: centerR, fill: 'rgba(124,92,252,0.18)' },
-    { r: 0.26, fill: 'rgba(124,92,252,0.10)' },
+    { r: centerR, fill: 'rgba(23,15,52,0.08)' },
+    { r: 0.26, fill: 'rgba(23,15,52,0.05)' },
     { r: 0.42, fill: 'rgba(46,207,207,0.08)' },
     { r: 0.58, fill: 'rgba(107,139,255,0.06)' },
     { r: 0.74, fill: 'rgba(139,92,246,0.04)' },
-    { r: 0.90, fill: 'rgba(124,92,252,0.02)' },
+    { r: 0.90, fill: 'rgba(23,15,52,0.02)' },
   ];
   // Draw filled zones from outside in so inner overlaps
   for (var i = zones.length - 1; i >= 0; i--) {
@@ -535,8 +535,8 @@ function drawProxRings(canvas) {
   }
   // Subtle center glow
   var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, zones[0].r * maxR);
-  g.addColorStop(0, 'rgba(124,92,252,0.12)');
-  g.addColorStop(1, 'rgba(124,92,252,0)');
+  g.addColorStop(0, 'rgba(23,15,52,0.06)');
+  g.addColorStop(1, 'rgba(23,15,52,0)');
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.arc(cx, cy, zones[0].r * maxR, 0, Math.PI * 2);
@@ -561,7 +561,7 @@ function toggleProximityVisibility() {
   var d = document.getElementById('prox-toggle-dot');
   var l = document.getElementById('prox-toggle-label');
   var c = document.getElementById('prox-center');
-  if (d) d.style.background = proxVisible ? '#1A9E8E' : 'var(--muted)';
+  if (d) d.style.background = proxVisible ? '#1A9E8E' : 'rgba(255,255,255,0.25)';
   if (l) l.textContent = proxVisible ? 'Synlig' : 'Skjult';
   // Restyle the whole button for clear on/off state
   if (btn) {
@@ -571,14 +571,14 @@ function toggleProximityVisibility() {
       btn.style.color = '#1A9E8E';
     } else {
       btn.style.background = 'rgba(30,27,46,0.04)';
-      btn.style.borderColor = 'var(--glass-border)';
-      btn.style.color = 'var(--muted)';
+      btn.style.borderColor = 'rgba(255,255,255,0.08)';
+      btn.style.color = 'rgba(255,255,255,0.25)';
     }
   }
   if (c) { if (proxVisible && currentProfile && currentProfile.name) { 
     if (currentProfile.avatar_url) { c.innerHTML = '<img src="' + escHtml(currentProfile.avatar_url) + '">'; } 
     else { c.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); }
-    c.style.background = 'var(--gradient-primary)'; } else { c.textContent = '?'; c.style.background = 'rgba(30,27,46,0.06)'; } }
+    c.style.background = 'linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))'; } else { c.textContent = '?'; c.style.background = 'rgba(30,27,46,0.06)'; } }
   var hint = document.getElementById('prox-toggle-hint');
   if (hint) hint.textContent = proxVisible ? 'Andre kan se dig på radar' : 'Du er usynlig på radar';
   toggleAnon();
@@ -731,7 +731,7 @@ async function loadProfile() {
           sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).then(function(r) { return r.count || 0; }).catch(function() { return 0; })
         ]);
         function qStat(val, label) {
-          return '<div style="text-align:center;flex:1"><div style="font-size:1rem;font-weight:800;color:var(--text)">' + val + '</div><div style="font-size:0.6rem;color:var(--text-secondary);font-weight:500">' + label + '</div></div>';
+          return '<div style="text-align:center;flex:1"><div style="font-size:1rem;font-weight:800;color:rgba(255,255,255,0.9)">' + val + '</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);font-weight:500">' + label + '</div></div>';
         }
         qs.innerHTML = qStat(qViews, t('pf_stat_views')) + qStat(qSaved, t('pf_stat_saved_you')) + qStat(qBubbles, t('pf_stat_bubbles'));
       } catch(e) { qs.innerHTML = ''; }
@@ -789,7 +789,7 @@ async function loadSavedContacts() {
 
     if (savedErr) {
       console.error('loadSavedContacts query error:', savedErr);
-      if (savedEl) savedEl.innerHTML = '<div class="empty-state" style="padding:1rem 0"><div class="empty-text" style="font-size:0.72rem;color:var(--muted)">Kunne ikke hente kontakter</div></div>';
+      if (savedEl) savedEl.innerHTML = '<div class="empty-state" style="padding:1rem 0"><div class="empty-text" style="font-size:0.72rem;color:rgba(255,255,255,0.25)">Kunne ikke hente kontakter</div></div>';
       renderSavedStoryBar(null, {});
       return;
     }
@@ -815,7 +815,7 @@ async function loadSavedContacts() {
     // Update home screen story bar
     renderSavedStoryBar(saved, profileMap);
 
-    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
+    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
 
     // Sort by star rating (highest first), then by date
     // .slice() creates a mutable copy — Supabase objects are frozen on iOS Safari
@@ -825,7 +825,7 @@ async function loadSavedContacts() {
       return new Date(b.created_at) - new Date(a.created_at);
     });
 
-    if (savedEl) savedEl.innerHTML = '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.5rem">Du har ' + saved.length + ' gemte profil' + (saved.length !== 1 ? 'er' : '') + '</div>' + saved.map((s, i) => {
+    if (savedEl) savedEl.innerHTML = '<div style="font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:0.5rem">Du har ' + saved.length + ' gemte profil' + (saved.length !== 1 ? 'er' : '') + '</div>' + saved.map((s, i) => {
       const p = profileMap[s.contact_id] || {};
       if (s.contact_id === currentUser?.id) return '';
       const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -866,7 +866,7 @@ function renderSavedStoryBar(saved, profileMap) {
     var sa = starGet(a.contact_id), sb2 = starGet(b.contact_id);
     return sb2 - sa;
   });
-  var colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)'];
+  var colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)'];
   var maxShow = Math.min(saved.length, 5);
   list.innerHTML = saved.slice(0, maxShow).map(function(s, i) {
     var p = profileMap[s.contact_id];
@@ -922,24 +922,24 @@ async function loadProfileBubbles() {
     var events = bubbles.filter(function(b) { return b.type === 'event' || b.type === 'live'; });
     var html = '';
     if (networks.length > 0) {
-      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Netværk (' + networks.length + ')</div>';
+      html += '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Netværk (' + networks.length + ')</div>';
       networks.forEach(function(b) {
         var mc = b.member_count ?? b.bubble_members?.[0]?.count ?? 0;
         html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem"><div style="display:flex;align-items:center;gap:0.6rem">';
-        html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7C5CFC;overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : ico('bubble')) + '</div>';
+        html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(100,180,230,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgb(100,180,230);overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : ico('bubble')) + '</div>';
         html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
-        html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(b.visibility) + mc + ' ' + t('ps_members') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div></div></div>';
+        html += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.25)">' + visIcon(b.visibility) + mc + ' ' + t('ps_members') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div></div></div>';
       });
     }
     if (events.length > 0) {
-      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin:0.6rem 0 0.4rem">Events (' + events.length + ')</div>';
+      html += '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.04em;margin:0.6rem 0 0.4rem">Events (' + events.length + ')</div>';
       events.forEach(function(b) {
         var dateStr = b.event_date ? new Date(b.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
         var isPast = b.event_date && new Date(b.event_date) < new Date();
         html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5' : '') + '"><div style="display:flex;align-items:center;gap:0.6rem">';
         html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E;overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : ico('calendar')) + '</div>';
         html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
-        html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(b.visibility) + dateStr + '</div></div></div></div>';
+        html += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.25)">' + visIcon(b.visibility) + dateStr + '</div></div></div></div>';
       });
     }
     el.innerHTML = html;
@@ -988,7 +988,7 @@ async function loadProfileInvitations() {
       (bubbles || []).forEach(b => { bubbleMap[b.id] = b; });
     }
 
-    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
+    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
 
     list.innerHTML = invites.map((inv, i) => {
       const p = profileMap[inv.from_user_id] || {};
@@ -1045,7 +1045,7 @@ function profDeclineInvite(inviteId, btn) {
   const confirm = document.createElement('div');
   confirm.className = 'remove-confirm';
   confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:10px;gap:0.5rem';
-  confirm.innerHTML = `<span style="font-size:0.72rem;color:var(--text-secondary)">Afvis invitation?</span>
+  confirm.innerHTML = `<span style="font-size:0.72rem;color:rgba(255,255,255,0.4)">Afvis invitation?</span>
     <div style="display:flex;gap:0.3rem">
       <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="confirmDeclineInvite()">Afvis</button>
       <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelDeclineInvite(this)">Annuller</button>
@@ -1131,8 +1131,8 @@ function _updateLangBtns() {
   var lang = getLang();
   var da = document.getElementById('lang-btn-da');
   var en = document.getElementById('lang-btn-en');
-  if (da) { da.style.borderColor = lang === 'da' ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)'; da.style.background = lang === 'da' ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)'; da.style.color = lang === 'da' ? 'var(--accent)' : 'var(--muted)'; }
-  if (en) { en.style.borderColor = lang === 'en' ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)'; en.style.background = lang === 'en' ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)'; en.style.color = lang === 'en' ? 'var(--accent)' : 'var(--muted)'; }
+  if (da) { da.style.borderColor = lang === 'da' ? 'rgba(100,180,230,0.3)' : 'rgba(255,255,255,0.08)'; da.style.background = lang === 'da' ? 'rgba(100,180,230,0.1)' : 'rgba(255,255,255,0.04)'; da.style.color = lang === 'da' ? 'rgb(100,180,230)' : 'rgba(255,255,255,0.4)'; }
+  if (en) { en.style.borderColor = lang === 'en' ? 'rgba(100,180,230,0.3)' : 'rgba(255,255,255,0.08)'; en.style.background = lang === 'en' ? 'rgba(100,180,230,0.1)' : 'rgba(255,255,255,0.04)'; en.style.color = lang === 'en' ? 'rgb(100,180,230)' : 'rgba(255,255,255,0.4)'; }
 }
 
 function switchAppLanguage(lang) {
@@ -1394,7 +1394,7 @@ async function loadDashboard() {
 
   } catch(e) {
     logError('loadDashboard', e);
-    el.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">Kunne ikke hente dashboard-data</div>';
+    el.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.78rem;color:rgba(255,255,255,0.25)">Kunne ikke hente dashboard-data</div>';
   }
 }
 
@@ -1424,7 +1424,7 @@ function _renderDashboardTagsCard() {
           '<span id="dash-et-tray-chev" style="font-size:0.6rem;color:var(--accent);transition:transform 0.2s">▾</span>' +
         '</button>' +
       '</div>' +
-      '<div id="dash-et-tray-drawer" style="display:none;flex-wrap:wrap;gap:0.3rem;padding:0.1rem 0.9rem 0.65rem;background:rgba(124,92,252,0.02)"></div>' +
+      '<div id="dash-et-tray-drawer" style="display:none;flex-wrap:wrap;gap:0.3rem;padding:0.1rem 0.9rem 0.65rem;background:rgba(23,15,52,0.02)"></div>' +
     '</div>' +
 
     // ── Beskæftigelse (DB column: lifestage) ──
