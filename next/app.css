@@ -2480,3 +2480,19 @@ a:not(.btn-primary):not(.btn-secondary):active {
 #screen-profile .bubble-tab { color: rgba(255,255,255,0.35); }
 #screen-profile .bubble-tab.active { background: rgba(100,180,230,0.15); border-color: rgba(100,180,230,0.25); color: rgb(100,180,230); box-shadow: none; }
 #screen-profile .bubble-tabs[style*="sticky"] { background: #170F34 !important; }
+
+/* Profile screen — global class overrides */
+#screen-profile .card { background:rgba(255,255,255,0.04); border:0.5px solid rgba(255,255,255,0.08); box-shadow:none; color:rgba(255,255,255,0.9); }
+#screen-profile .text-muted { color:rgba(255,255,255,0.25); }
+#screen-profile .fw-600 { color:rgba(255,255,255,0.9); }
+#screen-profile .fs-075.text-muted { color:rgba(255,255,255,0.4); }
+#screen-profile .saved-action-btn { border:0.5px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.4); }
+#screen-profile .saved-action-btn.danger { color:#EF4444; border-color:rgba(239,68,68,0.15); }
+#screen-profile .interest-btn { background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.08); }
+#screen-profile .interest-btn .interest-label { color:rgba(255,255,255,0.5); }
+#screen-profile .interest-btn.selected { background:rgba(100,180,230,0.12); border-color:rgba(100,180,230,0.25); }
+#screen-profile .interest-btn.selected .interest-label { color:rgb(100,180,230); }
+#screen-profile .interest-count { color:rgba(255,255,255,0.3); }
+#screen-profile .interest-btn.selected .interest-count { color:rgb(100,180,230); }
+#screen-profile .section-label { color:rgba(255,255,255,0.25); }
+#screen-profile .input { background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.9); box-shadow:none; }

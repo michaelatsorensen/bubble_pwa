@@ -1414,7 +1414,7 @@ function _renderDashboardTagsCard() {
     '</div>' +
 
     // ── Tray: selected tags preview ──
-    '<div style="border-top:0.5px solid var(--glass-border-subtle);border-bottom:0.5px solid var(--glass-border-subtle)">' +
+    '<div style="border-top:0.5px solid rgba(255,255,255,0.06);border-bottom:0.5px solid rgba(255,255,255,0.06)">' +
       '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.55rem 0.9rem">' +
         '<div style="width:7px;height:7px;border-radius:50%;background:rgb(100,180,230);flex-shrink:0"></div>' +
         '<div style="font-size:0.68rem;font-weight:600;color:rgb(100,180,230);flex-shrink:0">Dine tags</div>' +
@@ -1424,7 +1424,7 @@ function _renderDashboardTagsCard() {
           '<span id="dash-et-tray-chev" style="font-size:0.6rem;color:rgb(100,180,230);transition:transform 0.2s">▾</span>' +
         '</button>' +
       '</div>' +
-      '<div id="dash-et-tray-drawer" style="display:none;flex-wrap:wrap;gap:0.3rem;padding:0.1rem 0.9rem 0.65rem;background:rgba(23,15,52,0.02)"></div>' +
+      '<div id="dash-et-tray-drawer" style="display:none;flex-wrap:wrap;gap:0.3rem;padding:0.1rem 0.9rem 0.65rem;background:rgba(255,255,255,0.02)"></div>' +
     '</div>' +
 
     // ── Beskæftigelse (DB column: lifestage) ──
