@@ -1584,14 +1584,12 @@
 ════════════════════════════════════════ -->
 <div class="modal-overlay" id="modal-settings" onclick="if(event.target===this)closeModal('modal-settings')">
   <div class="modal-sheet" style="display:flex;flex-direction:column">
-    <div style="flex-shrink:0;padding:0.5rem 1.5rem 0">
-      <div class="modal-handle"></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:0.6rem;border-bottom:0.5px solid rgba(255,255,255,0.06)">
-        <div class="modal-title" data-t="pf_settings" style="margin:0;padding:0">Indstillinger</div>
-        <button onclick="closeModal('modal-settings')" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:0.78rem;cursor:pointer">✕</button>
-      </div>
+    <div style="padding:10px 0 4px;display:flex;justify-content:center;flex-shrink:0"><div style="width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,0.15)"></div></div>
+    <div style="padding:6px 1.2rem 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid rgba(255,255,255,0.06);flex-shrink:0">
+      <div style="font-size:1rem;font-weight:800;color:rgba(255,255,255,0.9)" data-t="pf_settings">Indstillinger</div>
+      <button onclick="closeModal('modal-settings')" style="width:32px;height:32px;border-radius:10px;border:none;background:rgba(255,255,255,0.08);cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);font-family:var(--font)">✕</button>
     </div>
-    <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.5rem 1.5rem 2rem;overscroll-behavior:contain">
+    <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.5rem 1.2rem 2rem;overscroll-behavior:contain">
 
     <div class="section-label" style="margin-bottom:0.25rem;color:rgba(255,255,255,0.25)" data-t="settings_home_screen">Hjem-skærm</div>
     <div class="settings-row" style="border-bottom:0.5px solid rgba(255,255,255,0.06)">
