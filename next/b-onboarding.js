@@ -948,7 +948,7 @@ function etBuild() {
   lsEl.innerHTML = ET_LS.map(function(ls){
     var isSel = etLifestage === ls.id;
     var style = isSel
-      ? 'background:rgba(245,158,11,0.12);border:2px solid #F59E0B;color:#B45309;font-weight:700'
+      ? 'background:rgba(245,158,11,0.15);border:2px solid #F59E0B;color:#F59E0B;font-weight:700'
       : 'background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.4);font-weight:500';
     return '<span style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.7rem;border-radius:99px;font-size:0.68rem;cursor:pointer;font-family:inherit;'+style+'" onclick="etSelectLifestage(\''+ls.id+'\')">' +
       '<span style="display:flex;align-items:center;width:14px;height:14px;flex-shrink:0">' + etIco(ls.icon) + '</span>' +
