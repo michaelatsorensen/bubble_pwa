@@ -884,16 +884,16 @@ function etCountSec(id){ var n=0; etSelected.forEach(function(v){ if(v.sec===id)
 function etBuildBody(s) {
   var h = '';
   s.groups.forEach(function(g){
-    h += '<div><div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:0.25rem 0 0.1rem">' + g.label + '</div><div style="display:flex;flex-wrap:wrap;gap:0.3rem">';
+    h += '<div><div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.25);padding:0.25rem 0 0.1rem">' + g.label + '</div><div style="display:flex;flex-wrap:wrap;gap:0.3rem">';
     g.tags.forEach(function(tag){
       var isSel = etSelected.has(tag);
-      var style = isSel ? 'background:'+s.color+';border-color:'+s.color+';color:white' : 'background:'+s.bg+';border-color:'+s.bg+';color:'+s.color;
+      var style = isSel ? 'background:'+s.color+';border-color:'+s.color+';color:white' : 'background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5)';
       h += '<span style="padding:0.27rem 0.65rem;border-radius:99px;font-size:0.7rem;font-weight:500;cursor:pointer;border:1.5px solid;transition:all .13s;'+style+'" onclick="etTgl(\''+etEsc(tag)+'\',\''+s.id+'\')">' + tag + '</span>';
     });
     h += '</div></div>';
   });
   // Custom tags
-  h += '<div style="margin-top:0.4rem;padding-top:0.5rem;border-top:1.5px dashed var(--glass-border)">';
+  h += '<div style="margin-top:0.4rem;padding-top:0.5rem;border-top:1px dashed rgba(255,255,255,0.08)">';
   var ct = etCustom[s.id] || [];
   if (ct.length > 0) {
     h += '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.35rem">';
@@ -909,9 +909,9 @@ function etBuildBody(s) {
     h += '<button style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.3rem 0.75rem;border-radius:99px;font-size:0.7rem;font-weight:600;cursor:pointer;border:1.5px dashed '+s.color+'40;color:'+s.color+';background:transparent;font-family:inherit" onclick="etShowIn(\''+s.id+'\')"><span style="font-size:0.9rem;line-height:1">+</span> Tilføj eget tag</button>';
   } else {
     h += '<div style="display:flex;gap:0.35rem;align-items:center;margin-top:0.4rem">' +
-      '<input id="etci-'+s.id+'" style="flex:1;padding:0.35rem 0.65rem;border-radius:99px;font-size:0.72rem;font-family:inherit;border:1.5px solid var(--glass-border);background:var(--bg);outline:none;color:var(--text);min-width:0" placeholder="Skriv dit tag..." maxlength="40" oninput="etCiChk(\''+s.id+'\')" onkeydown="etCiKey(event,\''+s.id+'\')">' +
+      '<input id="etci-'+s.id+'" style="flex:1;padding:0.35rem 0.65rem;border-radius:99px;font-size:0.72rem;font-family:inherit;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);outline:none;color:rgba(255,255,255,0.9);min-width:0" placeholder="Skriv dit tag..." maxlength="40" oninput="etCiChk(\''+s.id+'\')" onkeydown="etCiKey(event,\''+s.id+'\')">' +
       '<button id="etci-btn-'+s.id+'" disabled style="padding:0.35rem 0.75rem;border-radius:99px;font-size:0.7rem;font-weight:700;font-family:inherit;border:none;background:'+s.color+';color:white;cursor:pointer;opacity:0.35" onclick="etConfirmC(\''+s.id+'\')">Tilføj</button>' +
-      '<button style="padding:0.35rem 0.6rem;border-radius:99px;font-size:0.7rem;font-weight:600;font-family:inherit;border:1px solid var(--glass-border);background:var(--bg);cursor:pointer;color:var(--muted)" onclick="etHideIn(\''+s.id+'\')">×</button>' +
+      '<button style="padding:0.35rem 0.6rem;border-radius:99px;font-size:0.7rem;font-weight:600;font-family:inherit;border:0.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.06);cursor:pointer;color:rgba(255,255,255,0.4)" onclick="etHideIn(\''+s.id+'\')">×</button>' +
     '</div>';
   }
   h += '</div>';
@@ -919,7 +919,7 @@ function etBuildBody(s) {
   var n = etCountSec(s.id);
   h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0 0.8rem;margin-top:0.1rem">' +
     '<div style="font-size:0.7rem;font-weight:600;color:'+s.color+'">'+n+' valgt</div>' +
-    '<button style="padding:0.38rem 1rem;border-radius:99px;font-size:0.72rem;font-weight:700;font-family:inherit;border:none;cursor:pointer;background:'+s.bg+';color:'+s.color+'" onclick="etCloseSec(\''+s.id+'\')">Gem &amp; luk ✓</button>' +
+    '<button style="padding:0.38rem 1rem;border-radius:99px;font-size:0.72rem;font-weight:700;font-family:inherit;border:none;cursor:pointer;background:rgba(255,255,255,0.08);color:'+s.color+'" onclick="etCloseSec(\''+s.id+'\')">Gem &amp; luk ✓</button>' +
   '</div>';
   return h;
 }
@@ -929,16 +929,16 @@ function etBuild() {
   list.innerHTML = '';
   ET_SECTIONS.forEach(function(s){
     var div = document.createElement('div');
-    div.style.cssText = 'background:var(--bg);border:1px solid var(--glass-border-subtle);border-radius:13px;margin-bottom:0.35rem' + (etOpenSec===s.id?';border-color:rgba(124,92,252,0.18);box-shadow:0 2px 10px rgba(30,27,46,0.06)':'');
+    div.style.cssText = 'background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.06);border-radius:13px;margin-bottom:0.35rem' + (etOpenSec===s.id?';border-color:rgba(100,180,230,0.25);box-shadow:none':'');
     div.id = _etPrefix + 'et-acc-' + s.id;
     var n = etCountSec(s.id);
-    var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.bg+';color:'+s.color+'">'+n+'</span>' : '';
+    var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.color+'20;color:'+s.color+'">' +n+'</span>' : '';
     div.innerHTML =
       '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.75rem 0.85rem;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" onclick="etToggle(\''+s.id+'\')">' +
-        '<div style="width:32px;height:32px;border-radius:9px;background:'+s.bg+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+'">' + etIco(s.icon) + '</span></div>' +
+        '<div style="width:32px;height:32px;border-radius:9px;background:'+s.color+'18;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+'">' + etIco(s.icon) + '</span></div>' +
         '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700">'+s.label+'</div><div style="font-size:0.6rem;color:var(--muted);margin-top:1px">'+s.desc+'</div></div>' +
         badgeHtml +
-        '<div style="color:var(--muted);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===s.id?'transform:rotate(180deg)':'')+'">▼</div>' +
+        '<div style="color:rgba(255,255,255,0.3);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===s.id?'transform:rotate(180deg)':'')+'">▼</div>' +
       '</div>' +
       (etOpenSec===s.id ? '<div style="padding:0 0.75rem;display:flex;flex-direction:column;gap:0.45rem">'+etBuildBody(s)+'</div>' : '');
     list.appendChild(div);
@@ -949,7 +949,7 @@ function etBuild() {
     var isSel = etLifestage === ls.id;
     var style = isSel
       ? 'background:rgba(245,158,11,0.12);border:2px solid #F59E0B;color:#B45309;font-weight:700'
-      : 'background:var(--bg);border:1.5px solid var(--glass-border);color:var(--muted);font-weight:500';
+      : 'background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.4);font-weight:500';
     return '<span style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.7rem;border-radius:99px;font-size:0.68rem;cursor:pointer;font-family:inherit;'+style+'" onclick="etSelectLifestage(\''+ls.id+'\')">' +
       '<span style="display:flex;align-items:center;width:14px;height:14px;flex-shrink:0">' + etIco(ls.icon) + '</span>' +
       ls.label + '</span>';
@@ -961,16 +961,16 @@ function etRebuildSec(id){
   var el = _etEl('et-acc-'+id);
   if (!el) return;
   var n = etCountSec(id);
-  var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.bg+';color:'+s.color+'">'+n+'</span>' : '';
+  var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.color+'20;color:'+s.color+'">' +n+'</span>' : '';
   el.innerHTML =
     '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.75rem 0.85rem;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" onclick="etToggle(\''+s.id+'\')">' +
-      '<div style="width:32px;height:32px;border-radius:9px;background:'+s.bg+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+'">' + etIco(s.icon) + '</span></div>' +
+      '<div style="width:32px;height:32px;border-radius:9px;background:'+s.color+'18;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+'">' + etIco(s.icon) + '</span></div>' +
       '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700">'+s.label+'</div><div style="font-size:0.6rem;color:var(--muted);margin-top:1px">'+s.desc+'</div></div>' +
       badgeHtml +
-      '<div style="color:var(--muted);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===id?'transform:rotate(180deg)':'')+'">▼</div>' +
+      '<div style="color:rgba(255,255,255,0.3);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===id?'transform:rotate(180deg)':'')+'">▼</div>' +
     '</div>' +
     (etOpenSec===id ? '<div style="padding:0 0.75rem;display:flex;flex-direction:column;gap:0.45rem">'+etBuildBody(s)+'</div>' : '');
-  el.style.cssText = 'background:var(--bg);border:1px solid var(--glass-border-subtle);border-radius:13px;margin-bottom:0.35rem' + (etOpenSec===id?';border-color:rgba(124,92,252,0.18);box-shadow:0 2px 10px rgba(30,27,46,0.06)':'');
+  el.style.cssText = 'background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.06);border-radius:13px;margin-bottom:0.35rem' + (etOpenSec===id?';border-color:rgba(100,180,230,0.25);box-shadow:none':'');
 }
 
 function etToggle(id) {
@@ -1045,8 +1045,8 @@ function etUpdateUI(){
     var rest=all.length-3;
     preview.innerHTML=shown.map(function(e){
       var v=e[1];
-      return '<span style="padding:0.18rem 0.5rem;border-radius:99px;font-size:0.62rem;font-weight:600;background:'+v.bg+';color:'+v.color+';border:0.5px solid '+v.color+'30;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px">'+escHtml(e[0])+'</span>';
-    }).join('')+(rest>0?'<span style="font-size:0.62rem;font-weight:600;color:var(--muted);white-space:nowrap">+'+rest+' mere</span>':'');
+      return '<span style="padding:0.18rem 0.5rem;border-radius:99px;font-size:0.62rem;font-weight:600;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);border:0.5px solid rgba(255,255,255,0.12);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px">'+escHtml(e[0])+'</span>';
+    }).join('')+(rest>0?'<span style="font-size:0.62rem;font-weight:600;color:rgba(255,255,255,0.3);white-space:nowrap">+'+rest+' mere</span>':'');
   }
 
   // ── Tray btn: hide if 0 tags ──
@@ -1058,7 +1058,7 @@ function etUpdateUI(){
   if(drawer&&drawer.style.display!=='none'){
     drawer.innerHTML=Array.from(etSelected.entries()).map(function(e){
       var tg=e[0],v=e[1];
-      return '<span style="display:inline-flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem 0.2rem 0.55rem;border-radius:99px;font-size:0.65rem;font-weight:600;background:'+v.bg+';color:'+v.color+';border:0.5px solid '+v.color+'30">' +
+      return '<span style="display:inline-flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem 0.2rem 0.55rem;border-radius:99px;font-size:0.65rem;font-weight:600;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);border:0.5px solid rgba(255,255,255,0.12)">' +
         escHtml(tg)+
         '<span onclick="etRemoveTag(\''+etEsc(tg)+'\')" style="cursor:pointer;opacity:0.45;font-size:0.65rem;margin-left:1px;line-height:1">×</span></span>';
     }).join('');

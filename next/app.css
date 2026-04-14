@@ -2481,3 +2481,10 @@ a:not(.btn-primary):not(.btn-secondary):active {
 #screen-profile .empty-text { color:rgba(255,255,255,0.35); }
 #screen-profile .empty-icon { color:rgba(255,255,255,0.15); }
 #screen-profile .section-label { color:rgba(255,255,255,0.35); }
+
+#screen-profile .interest-btn { background:rgba(255,255,255,0.04); border:0.5px solid rgba(255,255,255,0.06); }
+#screen-profile .interest-btn .interest-label { color:rgba(255,255,255,0.5); }
+#screen-profile .interest-btn .interest-count { color:rgba(255,255,255,0.25); }
+#screen-profile .interest-btn.selected { background:rgba(100,180,230,0.12); border-color:rgba(100,180,230,0.25); }
+#screen-profile .interest-btn.selected .interest-label { color:rgb(100,180,230); }
+#screen-profile .interest-btn.selected .interest-count { color:rgb(100,180,230); }
