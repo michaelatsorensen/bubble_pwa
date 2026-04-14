@@ -825,7 +825,7 @@ async function loadSavedContacts() {
       return new Date(b.created_at) - new Date(a.created_at);
     });
 
-    if (savedEl) savedEl.innerHTML = '<div style="font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:0.5rem">Du har ' + saved.length + ' gemte profil' + (saved.length !== 1 ? 'er' : '') + '</div>' + saved.map((s, i) => {
+    if (savedEl) savedEl.innerHTML = '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.5rem">Du har ' + saved.length + ' gemte profil' + (saved.length !== 1 ? 'er' : '') + '</div>' + saved.map((s, i) => {
       const p = profileMap[s.contact_id] || {};
       if (s.contact_id === currentUser?.id) return '';
       const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -922,24 +922,24 @@ async function loadProfileBubbles() {
     var events = bubbles.filter(function(b) { return b.type === 'event' || b.type === 'live'; });
     var html = '';
     if (networks.length > 0) {
-      html += '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Netværk (' + networks.length + ')</div>';
+      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Netværk (' + networks.length + ')</div>';
       networks.forEach(function(b) {
         var mc = b.member_count ?? b.bubble_members?.[0]?.count ?? 0;
         html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem"><div style="display:flex;align-items:center;gap:0.6rem">';
         html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(100,180,230,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgb(100,180,230);overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : ico('bubble')) + '</div>';
         html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
-        html += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.25)">' + visIcon(b.visibility) + mc + ' ' + t('ps_members') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div></div></div>';
+        html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(b.visibility) + mc + ' ' + t('ps_members') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div></div></div>';
       });
     }
     if (events.length > 0) {
-      html += '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.04em;margin:0.6rem 0 0.4rem">Events (' + events.length + ')</div>';
+      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin:0.6rem 0 0.4rem">Events (' + events.length + ')</div>';
       events.forEach(function(b) {
         var dateStr = b.event_date ? new Date(b.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
         var isPast = b.event_date && new Date(b.event_date) < new Date();
         html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5' : '') + '"><div style="display:flex;align-items:center;gap:0.6rem">';
         html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E;overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : ico('calendar')) + '</div>';
         html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
-        html += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.25)">' + visIcon(b.visibility) + dateStr + '</div></div></div></div>';
+        html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(b.visibility) + dateStr + '</div></div></div></div>';
       });
     }
     el.innerHTML = html;
@@ -1357,9 +1357,9 @@ async function loadDashboard() {
     // Render
     var statCard = function(iconName, label, value, color) {
       var iconHtml = ico(iconName).replace('<svg ', '<svg style="width:18px;height:18px" ');
-      return '<div style="display:flex;align-items:center;gap:0.7rem;padding:0.7rem 0.9rem;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:var(--radius);box-shadow:none">' +
+      return '<div style="display:flex;align-items:center;gap:0.7rem;padding:0.7rem 0.9rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
         '<div style="width:36px;height:36px;border-radius:10px;background:' + color + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">' + iconHtml + '</div>' +
-        '<div style="flex:1;min-width:0"><div style="font-size:1.1rem;font-weight:800;color:rgba(255,255,255,0.9)">' + value + '</div><div style="font-size:0.68rem;color:rgba(255,255,255,0.4)">' + label + '</div></div>' +
+        '<div style="flex:1;min-width:0"><div style="font-size:1.1rem;font-weight:800;color:var(--text)">' + value + '</div><div style="font-size:0.68rem;color:var(--text-secondary)">' + label + '</div></div>' +
         '</div>';
     };
 
@@ -1374,7 +1374,7 @@ async function loadDashboard() {
       if ((currentProfile.keywords||[]).length < 3) missing.push('interesser');
       if (!currentProfile.title) missing.push('titel');
       ctaHtml = '<div style="font-size:0.65rem;color:var(--text-secondary);margin-top:0.3rem">Tilføj ' + missing.join(', ') + ' for bedre matches</div>' +
-        '<button onclick="openEditProfile()" style="width:100%;margin-top:0.5rem;padding:0.55rem;font-size:0.78rem;font-weight:600;font-family:inherit;background:rgba(100,180,230,0.08);color:rgb(100,180,230);border:0.5px solid rgba(100,180,230,0.15);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.3rem">' + icon('edit') + ' Fortsæt med at forbedre din profil</button>';
+        '<button onclick="openEditProfile()" style="width:100%;margin-top:0.5rem;padding:0.55rem;font-size:0.78rem;font-weight:600;font-family:inherit;background:rgba(100,180,230,0.08);color:rgb(70,150,210);border:1px solid rgba(100,180,230,0.2);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.3rem">' + icon('edit') + ' Fortsæt med at forbedre din profil</button>';
     }
 
     el.innerHTML =
@@ -1400,11 +1400,11 @@ async function loadDashboard() {
 
 // ── Tags card in dashboard ──
 function _renderDashboardTagsCard() {
-  return '<div style="margin-top:0.75rem;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:var(--radius);box-shadow:none;overflow:hidden">' +
+  return '<div style="margin-top:0.75rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);box-shadow:0 1px 3px rgba(30,27,46,0.06);overflow:hidden">' +
 
     // ── Header ──
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem 0.5rem">' +
-      '<div style="font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.9)">Tags &amp; interesser</div>' +
+      '<div style="font-size:0.72rem;font-weight:700;color:var(--text)">Tags &amp; interesser</div>' +
       '<div id="dash-et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:rgb(100,180,230)">0 valgt</div>' +
     '</div>' +
 
@@ -1414,7 +1414,7 @@ function _renderDashboardTagsCard() {
     '</div>' +
 
     // ── Tray: selected tags preview ──
-    '<div style="border-top:0.5px solid rgba(255,255,255,0.06);border-bottom:0.5px solid rgba(255,255,255,0.06)">' +
+    '<div style="border-top:0.5px solid var(--glass-border-subtle);border-bottom:0.5px solid var(--glass-border-subtle)">' +
       '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.55rem 0.9rem">' +
         '<div style="width:7px;height:7px;border-radius:50%;background:rgb(100,180,230);flex-shrink:0"></div>' +
         '<div style="font-size:0.68rem;font-weight:600;color:rgb(100,180,230);flex-shrink:0">Dine tags</div>' +
@@ -1424,7 +1424,7 @@ function _renderDashboardTagsCard() {
           '<span id="dash-et-tray-chev" style="font-size:0.6rem;color:rgb(100,180,230);transition:transform 0.2s">▾</span>' +
         '</button>' +
       '</div>' +
-      '<div id="dash-et-tray-drawer" style="display:none;flex-wrap:wrap;gap:0.3rem;padding:0.1rem 0.9rem 0.65rem;background:rgba(255,255,255,0.02)"></div>' +
+      '<div id="dash-et-tray-drawer" style="display:none;flex-wrap:wrap;gap:0.3rem;padding:0.1rem 0.9rem 0.65rem;background:rgba(23,15,52,0.02)"></div>' +
     '</div>' +
 
     // ── Beskæftigelse (DB column: lifestage) ──
