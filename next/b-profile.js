@@ -715,6 +715,8 @@ async function loadProfile() {
     }
     document.getElementById('my-name').textContent = currentProfile.name || '...';
     document.getElementById('my-role').textContent = (currentProfile.workplace || '') + (currentProfile.title && currentProfile.workplace ? ' · ' + currentProfile.title : (currentProfile.title || ''));
+    var profSub = document.getElementById('prof-topbar-sub');
+    if (profSub) profSub.textContent = currentProfile.name || '';
 
     isAnon = currentProfile.is_anon || false;
     updateAnonToggle();

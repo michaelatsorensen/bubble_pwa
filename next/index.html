@@ -582,9 +582,9 @@
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-home">
   <div class="topbar">
-    <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px">
-      <img src="bubble-logo-topbar-v2.png" alt="bubble" onclick="goTo('screen-home')" style="cursor:pointer;height:18px;width:auto"><span style="font-size:7px;font-weight:700;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.08);padding:2px 5px;border-radius:4px;letter-spacing:0.5px">NEXT</span>
-      <div style="font-size:0.68rem;font-weight:600;color:rgba(255,255,255,0.35);margin-left:2px" id="home-greeting-name"></div>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:5px"><img src="bubble-logo-topbar-v2.png" alt="bubble" onclick="goTo('screen-home')" style="cursor:pointer;height:18px;width:auto"><span style="font-size:7px;font-weight:700;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.08);padding:2px 5px;border-radius:4px;letter-spacing:0.5px">NEXT</span></div>
+      <div style="font-size:0.68rem;font-weight:600;color:rgba(255,255,255,0.35);margin-top:1px" id="home-greeting-name"></div>
     </div>
     <button onclick="openConnectScanner()" class="topbar-action-btn" title="Scan QR" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;box-shadow:none;display:flex;align-items:center;justify-content:center">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"><path d="M2 7V2h5M17 2h5v5M22 17v5h-5M7 22H2v-5"/><line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2 2"/></svg>
@@ -785,7 +785,10 @@
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-bubbles">
   <div class="topbar">
-    <div class="topbar-title" data-t="bb_topbar">Bobler</div>
+    <div style="flex:1;min-width:0">
+      <div class="topbar-title" data-t="bb_topbar">Bobler</div>
+      <div style="font-size:0.68rem;font-weight:600;color:rgba(255,255,255,0.35);margin-top:1px" id="bb-topbar-sub">Dine netværk og events</div>
+    </div>
     <button class="btn-sm btn-ghost" onclick="openCreateBubble()" style="font-size:0.75rem;padding:0.35rem 0.75rem">+ Ny</button>
   </div>
   <div class="bubble-tabs" style="flex-shrink:0;position:sticky;top:0;z-index:5;background:var(--bg);margin:0.4rem 1.1rem 0;padding:3px">
@@ -1077,7 +1080,10 @@
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-messages">
   <div class="topbar">
-    <div class="topbar-title" data-t="nav_messages">Beskeder</div>
+    <div style="flex:1;min-width:0">
+      <div class="topbar-title" data-t="nav_messages">Beskeder</div>
+      <div style="font-size:0.68rem;font-weight:600;color:rgba(255,255,255,0.35);margin-top:1px" id="msg-topbar-sub">Dine samtaler</div>
+    </div>
     <button class="btn-sm btn-ghost" id="conv-select-btn" onclick="convToggleSelectMode()" style="font-size:0.75rem;padding:0.35rem 0.75rem" data-t="misc_select">Vælg</button>
   </div>
   <!-- Conversation delete toolbar -->
@@ -1154,7 +1160,10 @@
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-profile">
   <div class="topbar">
-    <div class="topbar-title" data-t="pf_my_profile">Min profil</div>
+    <div style="flex:1;min-width:0">
+      <div class="topbar-title" data-t="pf_my_profile">Min profil</div>
+      <div style="font-size:0.68rem;font-weight:600;color:rgba(255,255,255,0.35);margin-top:1px" id="prof-topbar-sub"></div>
+    </div>
     <div style="display:flex;align-items:center;gap:0.4rem">
       <button class="btn-sm btn-ghost" onclick="openEditProfile()" style="font-size:0.75rem;padding:0.35rem 0.75rem" data-t="pf_edit_btn">Rediger</button>
       <button class="btn-sm btn-ghost" onclick="openSettingsModal()" style="padding:0.35rem 0.45rem;display:flex;align-items:center;justify-content:center" title="Indstillinger" data-t-title="pf_settings"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem;display:block"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
