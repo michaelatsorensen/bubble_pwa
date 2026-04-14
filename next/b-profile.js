@@ -791,7 +791,7 @@ async function loadSavedContacts() {
 
     if (savedErr) {
       console.error('loadSavedContacts query error:', savedErr);
-      if (savedEl) savedEl.innerHTML = '<div class="empty-state" style="padding:1rem 0"><div class="empty-text" style="font-size:0.72rem;color:rgba(255,255,255,0.25)">Kunne ikke hente kontakter</div></div>';
+      if (savedEl) savedEl.innerHTML = '<div class="empty-state" style="padding:1rem 0"><div class="empty-text" style="font-size:0.72rem;color:rgba(255,255,255,0.35)">Kunne ikke hente kontakter</div></div>';
       renderSavedStoryBar(null, {});
       return;
     }
@@ -827,7 +827,7 @@ async function loadSavedContacts() {
       return new Date(b.created_at) - new Date(a.created_at);
     });
 
-    if (savedEl) savedEl.innerHTML = '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.5rem">Du har ' + saved.length + ' gemte profil' + (saved.length !== 1 ? 'er' : '') + '</div>' + saved.map((s, i) => {
+    if (savedEl) savedEl.innerHTML = '<div style="font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:0.5rem">Du har ' + saved.length + ' gemte profil' + (saved.length !== 1 ? 'er' : '') + '</div>' + saved.map((s, i) => {
       const p = profileMap[s.contact_id] || {};
       if (s.contact_id === currentUser?.id) return '';
       const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -924,24 +924,24 @@ async function loadProfileBubbles() {
     var events = bubbles.filter(function(b) { return b.type === 'event' || b.type === 'live'; });
     var html = '';
     if (networks.length > 0) {
-      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Netværk (' + networks.length + ')</div>';
+      html += '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Netværk (' + networks.length + ')</div>';
       networks.forEach(function(b) {
         var mc = b.member_count ?? b.bubble_members?.[0]?.count ?? 0;
         html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem"><div style="display:flex;align-items:center;gap:0.6rem">';
         html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(100,180,230,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgb(100,180,230);overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : ico('bubble')) + '</div>';
         html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
-        html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(b.visibility) + mc + ' ' + t('ps_members') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div></div></div>';
+        html += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.3)">' + visIcon(b.visibility) + mc + ' ' + t('ps_members') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div></div></div>';
       });
     }
     if (events.length > 0) {
-      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin:0.6rem 0 0.4rem">Events (' + events.length + ')</div>';
+      html += '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.04em;margin:0.6rem 0 0.4rem">Events (' + events.length + ')</div>';
       events.forEach(function(b) {
         var dateStr = b.event_date ? new Date(b.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
         var isPast = b.event_date && new Date(b.event_date) < new Date();
         html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5' : '') + '"><div style="display:flex;align-items:center;gap:0.6rem">';
         html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E;overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : ico('calendar')) + '</div>';
         html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
-        html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(b.visibility) + dateStr + '</div></div></div></div>';
+        html += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.3)">' + visIcon(b.visibility) + dateStr + '</div></div></div></div>';
       });
     }
     el.innerHTML = html;
@@ -1399,7 +1399,7 @@ async function loadDashboard() {
 
   } catch(e) {
     logError('loadDashboard', e);
-    el.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.78rem;color:rgba(255,255,255,0.25)">Kunne ikke hente dashboard-data</div>';
+    el.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.78rem;color:rgba(255,255,255,0.35)">Kunne ikke hente dashboard-data</div>';
   }
 }
 
