@@ -2128,9 +2128,11 @@ input[type="range"] {
 
 /* Dark skeleton variants for dark contexts */
 #notif-tray-list .skel,
-#home-tray-list .skel { background:linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; }
+#home-tray-list .skel,
+#screen-profile .skel { background:linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; }
 #notif-tray-list .skel-card,
-#home-tray-list .skel-card { background:rgba(255,255,255,0.04); border:0.5px solid rgba(124,92,252,0.06); }
+#home-tray-list .skel-card,
+#screen-profile .skel-card { background:rgba(255,255,255,0.04); border:0.5px solid rgba(255,255,255,0.06); }
 
 /* ── SUCCESS PULSE ANIMATION ── */
 @keyframes successPulse {
