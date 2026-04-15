@@ -78,7 +78,7 @@ async function loadHome() {
   _homeBooting = true;
   _dartboardDataLoaded = false; // reset så homeSetMode ikke renderer stale data under reload
   try {
-    if (!currentUser) { _homeLoading = false; return; }
+    if (!currentUser) { _homeLoading = false; _homeBooting = false; return; }
     if (!currentProfile) await loadCurrentProfile();
     updateHomeAvatar();
 
@@ -1972,6 +1972,10 @@ function renderHomeDartboard() {
         : 'DU';
       ce.textContent = ini;
     }
+    // Re-trigger dripCenter animation ved hver render
+    ce.style.animation = 'none';
+    void ce.offsetHeight;
+    ce.style.animation = '';
   }
 
   if (profiles.length === 0) {
