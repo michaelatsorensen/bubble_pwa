@@ -342,7 +342,7 @@ function errorToast(context, error) {
   if (msg.includes('not found') || msg.includes('404')) return _renderToast(t('toast_not_found'), 'error');
   if (msg.includes('Invalid login') || msg.includes('invalid_credentials')) return _renderToast(t('toast_wrong_credentials'), 'error');
   if (msg.includes('Email not confirmed')) return _renderToast(t('toast_confirm_email'), 'warn');
-  if (msg.includes('User already registered')) return _renderToast(t('toast_already_registered'), 'warn');
+  if (msg.includes('User already registered')) return _renderToast(t('toast_already_registered_oauth'), 'warn');
 
   // Default: friendly context message
   var friendly = {

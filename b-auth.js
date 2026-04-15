@@ -129,11 +129,26 @@ async function checkAuth() {
   if (!initSupabase()) return;
   setupAuthListener();
   try {
-    // Handle OAuth redirect
+    // Handle implicit flow (Google) — access_token in hash
     if (window.location.hash && window.location.hash.includes('access_token')) {
       document.getElementById('loading-msg').textContent = 'Login...';
       await new Promise(r => setTimeout(r, 500));
       window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // Handle PKCE flow (LinkedIn, Apple) — code in query string
+    var _pkceParams = new URLSearchParams(window.location.search);
+    if (_pkceParams.has('code')) {
+      document.getElementById('loading-msg').textContent = 'Logger ind...';
+      try {
+        await sb.auth.exchangeCodeForSession(window.location.href);
+      } catch(e) {
+        logError('pkce_exchange', e);
+      }
+      // Clean ?code= and any other OAuth params from URL
+      _pkceParams.delete('code');
+      var _cleanPkce = window.location.pathname + (_pkceParams.toString() ? '?' + _pkceParams.toString() : '');
+      window.history.replaceState({}, document.title, _cleanPkce);
     }
 
     var { data: { session } } = await sb.auth.getSession();
@@ -351,8 +366,27 @@ async function handleSignup() {
 
     // Check if email confirmation is required
     if (data.user && data.user.identities && data.user.identities.length === 0) {
-      // Email already exists
-      showWarningToast(t('toast_already_registered'));
+      // Email already exists — likely registered via OAuth (LinkedIn/Google/Apple).
+      // Vis vejledende besked i stedet for generisk toast.
+      var formArea = document.getElementById('auth-forms');
+      if (formArea) {
+        formArea.innerHTML =
+          '<div style="text-align:center;padding:2rem 1rem">' +
+            '<div style="font-size:2rem;margin-bottom:0.8rem">🔗</div>' +
+            '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">' + t('auth_email_exists_title') + '</div>' +
+            '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem">' +
+              t('auth_email_exists_body', { email: escHtml(email) }) +
+            '</div>' +
+            '<button class="btn-primary" id="existing-linkedin-btn" style="width:100%;margin-bottom:0.6rem">' +
+              '<svg style="width:1rem;height:1rem;vertical-align:middle;margin-right:0.4rem" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14m-.5 15.5v-5.3a3.26 3.26 0 00-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 011.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 001.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 00-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>' +
+              t('auth_continue_linkedin') +
+            '</button>' +
+            '<button class="btn-secondary" onclick="goTo(\'screen-auth\')" style="width:100%">' + t('misc_back') + '</button>' +
+          '</div>';
+        document.getElementById('existing-linkedin-btn').onclick = function() { handleLinkedInLogin(); };
+      } else {
+        showWarningToast(t('toast_already_registered'));
+      }
       return;
     }
 

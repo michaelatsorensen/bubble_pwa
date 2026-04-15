@@ -20,6 +20,7 @@ function shouldBypassLanding() {
   var params = new URLSearchParams(window.location.search);
   return params.has('qrt') || params.has('profile') || params.has('join') ||
          params.has('event') || params.has('push') || params.has('auth') ||
+         params.has('code') || // PKCE OAuth callback (LinkedIn, Apple, etc.)
          (window.location.hash && window.location.hash.includes('access_token'));
 }
 
