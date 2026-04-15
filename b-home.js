@@ -1832,6 +1832,7 @@ function updateAnonToggle() {
 var _homeDartboardProfiles = [];
 var _homeRadarFilter = 'all';
 var _dartboardDataLoaded = false;
+var _renderDartboardTimer = null;
 
 async function loadHomeDartboardData() {
   try {
@@ -1944,6 +1945,13 @@ function _homeDrawProxRings(canvas) {
 }
 
 function renderHomeDartboard() {
+  // Debounce: koalescer alle kald inden for samme event loop tick til ét render.
+  // Løser dobbelt-render race condition mellem loadLiveBanner + loadHomeDartboardData.
+  clearTimeout(_renderDartboardTimer);
+  _renderDartboardTimer = setTimeout(_doRenderHomeDartboard, 0);
+}
+
+function _doRenderHomeDartboard() {
   var canvas  = document.getElementById('home-prox-canvas');
   var av      = document.getElementById('home-prox-avatars');
   var ce      = document.getElementById('home-prox-center');
