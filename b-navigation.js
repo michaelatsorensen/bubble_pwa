@@ -264,7 +264,22 @@ function _runHook(hookVal) {
 // ── Main router ──
 var _publicScreens = ['screen-auth','screen-loading','screen-onboarding','screen-qr-preview','screen-qr-teaser','screen-social-proof','screen-guest-checkin','screen-event-ready','screen-welcome'];
 
+function _slideNavIndicator(idx) {
+  var indicator = document.getElementById('nav-slide-indicator');
+  var navRow = indicator ? indicator.parentElement : null;
+  if (!indicator || !navRow) return;
+  var items = navRow.querySelectorAll('.nav-item');
+  if (idx < 0 || idx >= items.length) return;
+  var item = items[idx];
+  var rowRect = navRow.getBoundingClientRect();
+  var itemRect = item.getBoundingClientRect();
+  var cx = itemRect.left + itemRect.width / 2 - rowRect.left;
+  indicator.style.transform = 'translateX(' + (cx - 18) + 'px)';
+}
+
 function goTo(screenId) {
+  // Close any open trays
+  try { if (typeof closeNotifTray === 'function') closeNotifTray(); } catch(e) {}
   // Auth guard
   if (!currentUser && _publicScreens.indexOf(screenId) < 0) {
     console.warn('[nav] auth guard: no user, redirecting to auth');
@@ -326,6 +341,7 @@ function goTo(screenId) {
         globalNav.querySelectorAll('.nav-item').forEach(function(btn, i) {
           btn.classList.toggle('active', i === activeIdx);
         });
+        _slideNavIndicator(activeIdx);
       }
     }
   } catch(e) { console.error('[nav] nav update error:', e); }

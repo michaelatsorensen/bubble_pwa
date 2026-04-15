@@ -121,7 +121,7 @@ function _personRenderIdentity(p) {
   }
   // Name + title
   document.getElementById('person-name').textContent = p.is_anon ? t('ps_anonymous') : (p.name || '?');
-  document.getElementById('person-role').textContent = p.is_anon ? '' : ((p.title || '') + (p.workplace ? ' · ' + p.workplace : ''));
+  document.getElementById('person-role').textContent = p.is_anon ? '' : ((p.workplace || '') + (p.title && p.workplace ? ' · ' + p.title : (p.title || '')));
   // Bio (inline under name)
   document.getElementById('person-bio').textContent = p.bio || '';
   var bioInline = document.getElementById('person-bio-inline');
@@ -201,7 +201,7 @@ async function _personRenderMatch(p, userId, myNav) {
       overlapEl.innerHTML = '<div class="person-section-title" style="margin-bottom:0.4rem">'+t('ps_shared_interests')+' · ' + overlap.length + '</div>' +
         '<div id="person-tags-visible">' + visibleHtml + '</div>' +
         (hasMore ? '<div id="person-tags-hidden" style="display:none">' + hiddenHtml + '</div>' +
-          '<button id="person-tags-toggle" onclick="togglePersonTags()" style="font-size:0.7rem;font-weight:600;color:var(--accent);background:none;border:none;padding:0.4rem 0;cursor:pointer;font-family:inherit">'+t('ps_show_all',{n:overlap.length})+'</button>' : '');
+          '<button id="person-tags-toggle" onclick="togglePersonTags()" style="font-size:0.7rem;font-weight:600;color:var(--isbla);background:none;border:none;padding:0.4rem 0;cursor:pointer;font-family:inherit">'+t('ps_show_all',{n:overlap.length})+'</button>' : '');
     } else {
       overlapEl.innerHTML = '<span class="fs-085 text-muted">'+t('ps_no_shared')+'</span>';
     }
@@ -268,7 +268,7 @@ function removeSavedContact(savedId, btn) {
   confirm.className = 'remove-confirm';
   confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:10px;gap:0.5rem';
   confirm.onclick = function(e) { e.stopPropagation(); };
-  confirm.innerHTML = `<span style="font-size:0.72rem;color:var(--text-secondary)">Fjern kontakt?</span>
+  confirm.innerHTML = `<span style="font-size:0.72rem;color:rgba(255,255,255,0.4)">Fjern kontakt?</span>
     <div style="display:flex;gap:0.3rem">
       <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="event.stopPropagation();confirmRemoveSaved()">Fjern</button>
       <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelRemoveSaved(this)">Annuller</button>
@@ -354,7 +354,7 @@ function radarNextPage() {
 }
 var proxColors = [
   'linear-gradient(135deg,#2ECFCF,#22B8CF)',  // cyan
-  'linear-gradient(135deg,#6366F1,#7C5CFC)',  // indigo→purple
+  'linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))',  // indigo→purple
   'linear-gradient(135deg,#E879A8,#EC4899)',  // pink→rose
   'linear-gradient(135deg,#F59E0B,#EAB308)',  // amber
   'linear-gradient(135deg,#1A9E8E,#10B981)',  // teal→emerald
@@ -511,12 +511,12 @@ function drawProxRings(canvas) {
 
   var centerR = 0.10;
   var zones = [
-    { r: centerR, fill: 'rgba(124,92,252,0.18)' },
-    { r: 0.26, fill: 'rgba(124,92,252,0.10)' },
+    { r: centerR, fill: 'rgba(23,15,52,0.08)' },
+    { r: 0.26, fill: 'rgba(23,15,52,0.05)' },
     { r: 0.42, fill: 'rgba(46,207,207,0.08)' },
     { r: 0.58, fill: 'rgba(107,139,255,0.06)' },
     { r: 0.74, fill: 'rgba(139,92,246,0.04)' },
-    { r: 0.90, fill: 'rgba(124,92,252,0.02)' },
+    { r: 0.90, fill: 'rgba(23,15,52,0.02)' },
   ];
   // Draw filled zones from outside in so inner overlaps
   for (var i = zones.length - 1; i >= 0; i--) {
@@ -535,8 +535,8 @@ function drawProxRings(canvas) {
   }
   // Subtle center glow
   var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, zones[0].r * maxR);
-  g.addColorStop(0, 'rgba(124,92,252,0.12)');
-  g.addColorStop(1, 'rgba(124,92,252,0)');
+  g.addColorStop(0, 'rgba(23,15,52,0.06)');
+  g.addColorStop(1, 'rgba(23,15,52,0)');
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.arc(cx, cy, zones[0].r * maxR, 0, Math.PI * 2);
@@ -561,7 +561,7 @@ function toggleProximityVisibility() {
   var d = document.getElementById('prox-toggle-dot');
   var l = document.getElementById('prox-toggle-label');
   var c = document.getElementById('prox-center');
-  if (d) d.style.background = proxVisible ? '#1A9E8E' : 'var(--muted)';
+  if (d) d.style.background = proxVisible ? '#1A9E8E' : 'rgba(255,255,255,0.25)';
   if (l) l.textContent = proxVisible ? 'Synlig' : 'Skjult';
   // Restyle the whole button for clear on/off state
   if (btn) {
@@ -571,14 +571,14 @@ function toggleProximityVisibility() {
       btn.style.color = '#1A9E8E';
     } else {
       btn.style.background = 'rgba(30,27,46,0.04)';
-      btn.style.borderColor = 'var(--glass-border)';
-      btn.style.color = 'var(--muted)';
+      btn.style.borderColor = 'rgba(255,255,255,0.08)';
+      btn.style.color = 'rgba(255,255,255,0.25)';
     }
   }
   if (c) { if (proxVisible && currentProfile && currentProfile.name) { 
     if (currentProfile.avatar_url) { c.innerHTML = '<img src="' + escHtml(currentProfile.avatar_url) + '">'; } 
     else { c.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); }
-    c.style.background = 'var(--gradient-primary)'; } else { c.textContent = '?'; c.style.background = 'rgba(30,27,46,0.06)'; } }
+    c.style.background = 'linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))'; } else { c.textContent = '?'; c.style.background = 'rgba(30,27,46,0.06)'; } }
   var hint = document.getElementById('prox-toggle-hint');
   if (hint) hint.textContent = proxVisible ? 'Andre kan se dig på radar' : 'Du er usynlig på radar';
   toggleAnon();
@@ -714,7 +714,9 @@ async function loadProfile() {
       else { myAvEl.textContent = initials; }
     }
     document.getElementById('my-name').textContent = currentProfile.name || '...';
-    document.getElementById('my-role').textContent = (currentProfile.title || '') + (currentProfile.workplace ? ' · ' + currentProfile.workplace : '');
+    document.getElementById('my-role').textContent = (currentProfile.workplace || '') + (currentProfile.title && currentProfile.workplace ? ' · ' + currentProfile.title : (currentProfile.title || ''));
+    var profSub = document.getElementById('prof-topbar-sub');
+    if (profSub) profSub.textContent = currentProfile.name || '';
 
     isAnon = currentProfile.is_anon || false;
     updateAnonToggle();
@@ -731,7 +733,7 @@ async function loadProfile() {
           sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).then(function(r) { return r.count || 0; }).catch(function() { return 0; })
         ]);
         function qStat(val, label) {
-          return '<div style="text-align:center;flex:1"><div style="font-size:1rem;font-weight:800;color:var(--text)">' + val + '</div><div style="font-size:0.6rem;color:var(--text-secondary);font-weight:500">' + label + '</div></div>';
+          return '<div style="text-align:center;flex:1"><div style="font-size:1rem;font-weight:800;color:rgba(255,255,255,0.9)">' + val + '</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);font-weight:500">' + label + '</div></div>';
         }
         qs.innerHTML = qStat(qViews, t('pf_stat_views')) + qStat(qSaved, t('pf_stat_saved_you')) + qStat(qBubbles, t('pf_stat_bubbles'));
       } catch(e) { qs.innerHTML = ''; }
@@ -789,7 +791,7 @@ async function loadSavedContacts() {
 
     if (savedErr) {
       console.error('loadSavedContacts query error:', savedErr);
-      if (savedEl) savedEl.innerHTML = '<div class="empty-state" style="padding:1rem 0"><div class="empty-text" style="font-size:0.72rem;color:var(--muted)">Kunne ikke hente kontakter</div></div>';
+      if (savedEl) savedEl.innerHTML = '<div class="empty-state" style="padding:1rem 0"><div class="empty-text" style="font-size:0.72rem;color:rgba(255,255,255,0.35)">Kunne ikke hente kontakter</div></div>';
       renderSavedStoryBar(null, {});
       return;
     }
@@ -815,7 +817,7 @@ async function loadSavedContacts() {
     // Update home screen story bar
     renderSavedStoryBar(saved, profileMap);
 
-    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
+    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
 
     // Sort by star rating (highest first), then by date
     // .slice() creates a mutable copy — Supabase objects are frozen on iOS Safari
@@ -825,7 +827,7 @@ async function loadSavedContacts() {
       return new Date(b.created_at) - new Date(a.created_at);
     });
 
-    if (savedEl) savedEl.innerHTML = '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.5rem">Du har ' + saved.length + ' gemte profil' + (saved.length !== 1 ? 'er' : '') + '</div>' + saved.map((s, i) => {
+    if (savedEl) savedEl.innerHTML = '<div style="font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:0.5rem">Du har ' + saved.length + ' gemte profil' + (saved.length !== 1 ? 'er' : '') + '</div>' + saved.map((s, i) => {
       const p = profileMap[s.contact_id] || {};
       if (s.contact_id === currentUser?.id) return '';
       const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -862,27 +864,22 @@ function renderSavedStoryBar(saved, profileMap) {
   if (!saved || saved.length === 0) { bar.style.display = 'none'; return; }
   bar.style.display = 'block';
   if (badge) badge.textContent = saved.length;
-  // Sort by stars for story bar too
   saved = saved.slice().sort(function(a, b) {
     var sa = starGet(a.contact_id), sb2 = starGet(b.contact_id);
     return sb2 - sa;
   });
-  var colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
-  list.innerHTML = saved.map(function(s, i) {
+  var colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)'];
+  var maxShow = Math.min(saved.length, 5);
+  list.innerHTML = saved.slice(0, maxShow).map(function(s, i) {
     var p = profileMap[s.contact_id];
-    if (s.contact_id === currentUser?.id) return '';
-    var name = p ? p.name : '?';
-    var ini = (name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    var ini = ((p && p.name) || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     var col = colors[i % colors.length];
-    var firstName = (name||'?').split(' ')[0];
-    var starCount = starGet(s.contact_id);
-    var starBadge = starCount > 0 ? '<span class="star-badge">' + '★'.repeat(starCount) + '</span>' : '';
-    var storyAvatar = (p && p.avatar_url) ?
-      '<div style="position:relative"><div class="saved-story-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>' + starBadge + '</div>' :
-      '<div style="position:relative"><div class="saved-story-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>' + starBadge + '</div>';
-    return '<div class="saved-story-item" onclick="openPerson(\'' + s.contact_id + '\',\'screen-home\')">' +
-      storyAvatar +
-      '<div class="saved-story-name">' + escHtml(firstName) + '</div></div>';
+    var ml = i > 0 ? 'margin-left:-7px;' : '';
+    var zi = 'z-index:' + (maxShow - i) + ';';
+    if (p && p.avatar_url) {
+      return '<div style="width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);overflow:hidden;position:relative;' + ml + zi + '"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
+    }
+    return '<div style="width:24px;height:24px;border-radius:50%;background:' + col + ';border:2px solid rgba(255,255,255,0.2);font-size:7px;font-weight:600;color:white;display:flex;align-items:center;justify-content:center;position:relative;' + ml + zi + '">' + escHtml(ini) + '</div>';
   }).join('');
 }
 
@@ -927,24 +924,24 @@ async function loadProfileBubbles() {
     var events = bubbles.filter(function(b) { return b.type === 'event' || b.type === 'live'; });
     var html = '';
     if (networks.length > 0) {
-      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Netværk (' + networks.length + ')</div>';
+      html += '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Netværk (' + networks.length + ')</div>';
       networks.forEach(function(b) {
         var mc = b.member_count ?? b.bubble_members?.[0]?.count ?? 0;
         html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem"><div style="display:flex;align-items:center;gap:0.6rem">';
-        html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7C5CFC;overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : ico('bubble')) + '</div>';
+        html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(100,180,230,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgb(100,180,230);overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : ico('bubble')) + '</div>';
         html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
-        html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(b.visibility) + mc + ' ' + t('ps_members') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div></div></div>';
+        html += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.3)">' + visIcon(b.visibility) + mc + ' ' + t('ps_members') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div></div></div>';
       });
     }
     if (events.length > 0) {
-      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin:0.6rem 0 0.4rem">Events (' + events.length + ')</div>';
+      html += '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.04em;margin:0.6rem 0 0.4rem">Events (' + events.length + ')</div>';
       events.forEach(function(b) {
         var dateStr = b.event_date ? new Date(b.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
         var isPast = b.event_date && new Date(b.event_date) < new Date();
         html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5' : '') + '"><div style="display:flex;align-items:center;gap:0.6rem">';
         html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E;overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : ico('calendar')) + '</div>';
         html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
-        html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(b.visibility) + dateStr + '</div></div></div></div>';
+        html += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.3)">' + visIcon(b.visibility) + dateStr + '</div></div></div></div>';
       });
     }
     el.innerHTML = html;
@@ -993,7 +990,7 @@ async function loadProfileInvitations() {
       (bubbles || []).forEach(b => { bubbleMap[b.id] = b; });
     }
 
-    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
+    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
 
     list.innerHTML = invites.map((inv, i) => {
       const p = profileMap[inv.from_user_id] || {};
@@ -1050,7 +1047,7 @@ function profDeclineInvite(inviteId, btn) {
   const confirm = document.createElement('div');
   confirm.className = 'remove-confirm';
   confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:10px;gap:0.5rem';
-  confirm.innerHTML = `<span style="font-size:0.72rem;color:var(--text-secondary)">Afvis invitation?</span>
+  confirm.innerHTML = `<span style="font-size:0.72rem;color:rgba(255,255,255,0.4)">Afvis invitation?</span>
     <div style="display:flex;gap:0.3rem">
       <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="confirmDeclineInvite()">Afvis</button>
       <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelDeclineInvite(this)">Annuller</button>
@@ -1136,8 +1133,8 @@ function _updateLangBtns() {
   var lang = getLang();
   var da = document.getElementById('lang-btn-da');
   var en = document.getElementById('lang-btn-en');
-  if (da) { da.style.borderColor = lang === 'da' ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)'; da.style.background = lang === 'da' ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)'; da.style.color = lang === 'da' ? 'var(--accent)' : 'var(--muted)'; }
-  if (en) { en.style.borderColor = lang === 'en' ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)'; en.style.background = lang === 'en' ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)'; en.style.color = lang === 'en' ? 'var(--accent)' : 'var(--muted)'; }
+  if (da) { da.style.borderColor = lang === 'da' ? 'rgba(100,180,230,0.3)' : 'rgba(255,255,255,0.08)'; da.style.background = lang === 'da' ? 'rgba(100,180,230,0.1)' : 'rgba(255,255,255,0.04)'; da.style.color = lang === 'da' ? 'rgb(100,180,230)' : 'rgba(255,255,255,0.4)'; }
+  if (en) { en.style.borderColor = lang === 'en' ? 'rgba(100,180,230,0.3)' : 'rgba(255,255,255,0.08)'; en.style.background = lang === 'en' ? 'rgba(100,180,230,0.1)' : 'rgba(255,255,255,0.04)'; en.style.color = lang === 'en' ? 'rgb(100,180,230)' : 'rgba(255,255,255,0.4)'; }
 }
 
 function switchAppLanguage(lang) {
@@ -1362,9 +1359,9 @@ async function loadDashboard() {
     // Render
     var statCard = function(iconName, label, value, color) {
       var iconHtml = ico(iconName).replace('<svg ', '<svg style="width:18px;height:18px" ');
-      return '<div style="display:flex;align-items:center;gap:0.7rem;padding:0.7rem 0.9rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
-        '<div style="width:36px;height:36px;border-radius:10px;background:' + color + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">' + iconHtml + '</div>' +
-        '<div style="flex:1;min-width:0"><div style="font-size:1.1rem;font-weight:800;color:var(--text)">' + value + '</div><div style="font-size:0.68rem;color:var(--text-secondary)">' + label + '</div></div>' +
+      return '<div style="display:flex;align-items:center;gap:0.7rem;padding:0.65rem 0.8rem;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.06);border-radius:12px">' +
+        '<div style="width:34px;height:34px;border-radius:10px;background:' + color + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">' + iconHtml + '</div>' +
+        '<div style="flex:1;min-width:0"><div style="font-size:1.05rem;font-weight:800;color:rgba(255,255,255,0.95)">' + value + '</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.4)">' + label + '</div></div>' +
         '</div>';
     };
 
@@ -1378,20 +1375,23 @@ async function loadDashboard() {
       if (!currentProfile.avatar_url) missing.push('billede');
       if ((currentProfile.keywords||[]).length < 3) missing.push('interesser');
       if (!currentProfile.title) missing.push('titel');
-      ctaHtml = '<div style="font-size:0.65rem;color:var(--text-secondary);margin-top:0.3rem">Tilføj ' + missing.join(', ') + ' for bedre matches</div>' +
-        '<button onclick="openEditProfile()" style="width:100%;margin-top:0.5rem;padding:0.55rem;font-size:0.78rem;font-weight:600;font-family:inherit;background:rgba(124,92,252,0.08);color:var(--accent);border:1px solid rgba(124,92,252,0.15);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.3rem">' + icon('edit') + ' Fortsæt med at forbedre din profil</button>';
+      ctaHtml = '<div style="font-size:0.65rem;color:rgba(255,255,255,0.4);margin-top:0.3rem">Tilføj ' + missing.join(', ') + ' for bedre matches</div>' +
+        '<button onclick="openEditProfile()" style="width:100%;margin-top:0.5rem;padding:0.55rem;font-size:0.78rem;font-weight:600;font-family:inherit;background:rgba(100,180,230,0.15);color:rgb(100,180,230);border:0.5px solid rgba(100,180,230,0.25);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.3rem">' + icon('edit') + ' Fortsæt med at forbedre din profil</button>';
     }
 
     el.innerHTML =
-      '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.4rem">Din Bubble-uge</div>' +
+      '<div style="background:rgba(23,15,52,0.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:0.5px solid rgba(255,255,255,0.06);border-radius:16px;padding:0.8rem;margin-bottom:0.5rem">' +
+      '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.4);margin-bottom:0.4rem">Din Bubble-uge</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem">' +
-        statCard('eye', t('pf_dash_views'), views, 'rgba(124,92,252,0.08)') +
-        statCard('bookmark', t('pf_dash_saved_you'), savedBy, 'rgba(232,121,168,0.08)') +
-        statCard('heart', t('pf_dash_you_saved'), mySaved, 'rgba(26,158,142,0.08)') +
-        statCard('bubble', t('pf_stat_bubbles'), bubbles, 'rgba(46,207,207,0.08)') +
+        statCard('eye', t('pf_dash_views'), views, 'rgba(100,180,230,0.15)') +
+        statCard('bookmark', t('pf_dash_saved_you'), savedBy, 'rgba(232,121,168,0.12)') +
+        statCard('heart', t('pf_dash_you_saved'), mySaved, 'rgba(26,158,142,0.12)') +
+        statCard('bubble', t('pf_stat_bubbles'), bubbles, 'rgba(46,207,207,0.12)') +
       '</div>' +
       '<div style="margin-top:0.4rem">' +
-        statCard('target', t('pf_dash_strong'), strongMatches, 'rgba(26,158,142,0.08)') +
+        statCard('target', t('pf_dash_strong'), strongMatches, 'rgba(26,158,142,0.12)') +
+      '</div>' +
+      ctaHtml +
       '</div>' +
       _renderDashboardTagsCard();
     _etPrefix = 'dash-';
@@ -1399,48 +1399,48 @@ async function loadDashboard() {
 
   } catch(e) {
     logError('loadDashboard', e);
-    el.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">Kunne ikke hente dashboard-data</div>';
+    el.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.78rem;color:rgba(255,255,255,0.35)">Kunne ikke hente dashboard-data</div>';
   }
 }
 
 // ── Tags card in dashboard ──
 function _renderDashboardTagsCard() {
-  return '<div style="margin-top:0.75rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);box-shadow:0 1px 3px rgba(30,27,46,0.06);overflow:hidden">' +
+  return '<div style="margin-top:0.75rem;background:rgba(23,15,52,0.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:0.5px solid rgba(255,255,255,0.06);border-radius:var(--radius);box-shadow:none;overflow:hidden">' +
 
     // ── Header ──
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem 0.5rem">' +
-      '<div style="font-size:0.72rem;font-weight:700;color:var(--text)">Tags &amp; interesser</div>' +
-      '<div id="dash-et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:var(--accent)">0 valgt</div>' +
+      '<div style="font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.9)">Tags &amp; interesser</div>' +
+      '<div id="dash-et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:rgb(100,180,230)">0 valgt</div>' +
     '</div>' +
 
     // ── Progress bar ──
     '<div style="padding:0 0.9rem 0.5rem;display:flex;align-items:center;gap:0.5rem">' +
-      '<div style="flex:1;height:3px;background:rgba(124,92,252,0.08);border-radius:99px;overflow:hidden"><div id="dash-et-prog-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#E879A8);transition:width .4s;width:0%"></div></div>' +
+      '<div style="flex:1;height:3px;background:rgba(100,180,230,0.1);border-radius:99px;overflow:hidden"><div id="dash-et-prog-bar" style="height:100%;border-radius:99px;background:rgb(100,180,230);transition:width .4s;width:0%"></div></div>' +
     '</div>' +
 
     // ── Tray: selected tags preview ──
-    '<div style="border-top:0.5px solid var(--glass-border-subtle);border-bottom:0.5px solid var(--glass-border-subtle)">' +
+    '<div style="border-top:0.5px solid rgba(255,255,255,0.06);border-bottom:0.5px solid rgba(255,255,255,0.06)">' +
       '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.55rem 0.9rem">' +
-        '<div style="width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0"></div>' +
-        '<div style="font-size:0.68rem;font-weight:600;color:var(--accent);flex-shrink:0">Dine tags</div>' +
+        '<div style="width:7px;height:7px;border-radius:50%;background:rgb(100,180,230);flex-shrink:0"></div>' +
+        '<div style="font-size:0.68rem;font-weight:600;color:rgb(100,180,230);flex-shrink:0">Dine tags</div>' +
         '<div id="dash-et-tray-preview" style="display:flex;gap:0.3rem;flex:1;overflow:hidden;min-width:0;align-items:center"></div>' +
-        '<button onclick="etToggleTray()" id="dash-et-tray-btn" style="display:flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem;border-radius:99px;border:0.5px solid var(--glass-border);background:rgba(124,92,252,0.04);cursor:pointer;font-family:inherit;flex-shrink:0">' +
-          '<span id="dash-et-tray-btn-lbl" style="font-size:0.65rem;font-weight:600;color:var(--accent)">'+t('ps_see_all')+'</span>' +
-          '<span id="dash-et-tray-chev" style="font-size:0.6rem;color:var(--accent);transition:transform 0.2s">▾</span>' +
+        '<button onclick="etToggleTray()" id="dash-et-tray-btn" style="display:flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem;border-radius:99px;border:0.5px solid rgba(100,180,230,0.15);background:rgba(100,180,230,0.06);cursor:pointer;font-family:inherit;flex-shrink:0">' +
+          '<span id="dash-et-tray-btn-lbl" style="font-size:0.65rem;font-weight:600;color:rgb(100,180,230)">'+t('ps_see_all')+'</span>' +
+          '<span id="dash-et-tray-chev" style="font-size:0.6rem;color:rgb(100,180,230);transition:transform 0.2s">▾</span>' +
         '</button>' +
       '</div>' +
-      '<div id="dash-et-tray-drawer" style="display:none;flex-wrap:wrap;gap:0.3rem;padding:0.1rem 0.9rem 0.65rem;background:rgba(124,92,252,0.02)"></div>' +
+      '<div id="dash-et-tray-drawer" style="display:none;flex-wrap:wrap;gap:0.3rem;padding:0.1rem 0.9rem 0.65rem;background:rgba(255,255,255,0.03)"></div>' +
     '</div>' +
 
     // ── Beskæftigelse (DB column: lifestage) ──
     '<div style="padding:0.55rem 0.9rem 0.1rem">' +
-      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.4rem">Beskæftigelse</div>' +
+      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgb(100,180,230);margin-bottom:0.4rem">Beskæftigelse</div>' +
       '<div id="dash-et-lifestage-btns" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem"></div>' +
     '</div>' +
 
     // ── Category accordions ──
     '<div style="padding:0.1rem 0.9rem 0.2rem">' +
-      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.35rem">Tilføj fra kategorier</div>' +
+      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgb(100,180,230);margin-bottom:0.35rem">Tilføj fra kategorier</div>' +
     '</div>' +
     '<div id="dash-et-acc-list" style="padding:0 0.6rem 0.75rem;display:flex;flex-direction:column;gap:0.35rem"></div>' +
 
