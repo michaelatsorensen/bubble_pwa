@@ -210,6 +210,52 @@ window.addEventListener('offline', function() {
 var _globalRtChannels = [];
 var _radarRefreshTimer = null;
 var _radarScreenActive = false;
+var _liveMembersChannel = null; // Dynamisk kanal: andre brugeres check-in/out i min live-boble
+
+// ── Live bubble channel: lyt på ALLE ændringer i den aktive live-boble ──
+function rtSubscribeLiveBubble(bubbleId) {
+  rtUnsubscribeLiveBubble();
+  if (!bubbleId || !currentUser) return;
+  _liveMembersChannel = sb.channel('rt-live-bubble-' + bubbleId)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bubble_members',
+      filter: 'bubble_id=eq.' + bubbleId },
+      function(payload) {
+        var m = payload.new;
+        if (!m || m.user_id === currentUser.id) return;
+        loadLiveBubbleStatus().then(function() {
+          if (navState.screen === 'screen-home') {
+            if (typeof _homeViewMode !== 'undefined' && _homeViewMode === 'live') loadEventDartboard();
+            else if (typeof _homeRadarFilter !== 'undefined' && _homeRadarFilter === 'live') renderHomeDartboard();
+            if (typeof loadLiveBanner === 'function') loadLiveBanner();
+          }
+        });
+        if (typeof bcBubbleId !== 'undefined' && bcBubbleId === bubbleId && typeof bcLoadMembers === 'function') bcLoadMembers();
+      })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'bubble_members',
+      filter: 'bubble_id=eq.' + bubbleId },
+      function(payload) {
+        var m = payload.new;
+        if (!m || m.user_id === currentUser.id) return;
+        loadLiveBubbleStatus().then(function() {
+          if (navState.screen === 'screen-home') {
+            if (typeof _homeViewMode !== 'undefined' && _homeViewMode === 'live') loadEventDartboard();
+            else if (typeof _homeRadarFilter !== 'undefined' && _homeRadarFilter === 'live') renderHomeDartboard();
+            if (typeof loadLiveBanner === 'function') loadLiveBanner();
+          }
+        });
+        if (typeof bcBubbleId !== 'undefined' && bcBubbleId === bubbleId && typeof bcLoadMembers === 'function') bcLoadMembers();
+      })
+    .subscribe(function(status) {
+      console.debug('[rt] live-bubble channel:', bubbleId, status);
+    });
+}
+
+function rtUnsubscribeLiveBubble() {
+  if (_liveMembersChannel) {
+    try { _liveMembersChannel.unsubscribe(); } catch(e) {}
+    _liveMembersChannel = null;
+  }
+}
 
 // ── Teardown: only b-realtime owns this cleanup ──
 function rtUnsubscribeAll() {
@@ -219,6 +265,7 @@ function rtUnsubscribeAll() {
   _rtChannelStates = {};
   if (_rtReconnectTimer) { clearTimeout(_rtReconnectTimer); _rtReconnectTimer = null; }
   rtStopRadarPolling();
+  rtUnsubscribeLiveBubble();
 }
 
 // ── Helpers: instant badge manipulation ──
