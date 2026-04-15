@@ -77,6 +77,8 @@ async function loadHome() {
   _homeLoading = true;
   _homeBooting = true;
   _dartboardDataLoaded = false; // reset så homeSetMode ikke renderer stale data under reload
+  var _avEl = document.getElementById('home-prox-avatars');
+  if (_avEl) _avEl.innerHTML = '';
   try {
     if (!currentUser) { _homeLoading = false; _homeBooting = false; return; }
     if (!currentProfile) await loadCurrentProfile();
