@@ -13,6 +13,7 @@
 // ── Bubble chat unread state ──
 var _bubbleUnreadSet = {};
 var _allMyBubblesCache = [];
+var _myBubbleMemberIds = []; // Global liste af mine boble-IDs — bruges af b-realtime til unread nav-dot
 function _renderBubblesUnreadDot() {
   var dot = document.getElementById('bubbles-unread-dot');
   if (dot) dot.style.display = Object.keys(_bubbleUnreadSet).length > 0 ? 'block' : 'none';
@@ -1110,6 +1111,7 @@ async function loadMyNetworks() {
     }
     _fetchBubbleUnread(memberships);
     var myIds = memberships.map(function(m) { return m.bubble_id; });
+    _myBubbleMemberIds = myIds; // eksponér til b-realtime.js
     var pendingSet = {};
     memberships.forEach(function(m) { if (m.status === 'pending') pendingSet[m.bubble_id] = true; });
 

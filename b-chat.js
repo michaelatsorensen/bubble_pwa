@@ -844,6 +844,17 @@ function bcSwitchTab(tab) {
     const badge = document.getElementById('bc-unread-badge');
     if (badge) badge.style.display = 'none';
     setTimeout(() => bcScrollToBottom(), 100);
+    // Opdater last_read_at og ryd nav unread dot
+    if (bcBubbleId && currentUser) {
+      sb.from('bubble_members').update({ last_read_at: new Date().toISOString() })
+        .eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id).then(function() {
+          if (typeof _bubbleUnreadSet !== 'undefined') {
+            delete _bubbleUnreadSet[bcBubbleId];
+            if (typeof _renderBubblesUnreadDot === 'function') _renderBubblesUnreadDot();
+            if (typeof _renderSubTabDots === 'function') _renderSubTabDots();
+          }
+        });
+    }
   }
   if (tab === 'info') bcLoadInfo();
   if (tab === 'posts') bcLoadPosts();

@@ -526,6 +526,31 @@ function initGlobalRealtime() {
     .subscribe(_rtStatusCallback('rt-bubbles'));
   _globalRtChannels.push(chBubbles);
 
+  // ── Kanal: Nye boble-beskeder → opdater nav unread dot real-time ──
+  // Lytter uden filter (RLS leverer kun beskeder fra bobler brugeren er med i).
+  // Bruger _myBubbleMemberIds som client-side guard og opdaterer _bubbleUnreadSet direkte
+  // uden dyr RPC-roundtrip, så nav-dot'en lyser øjeblikkeligt.
+  var chBubbleMsgs = sb.channel('rt-bubble-msgs-' + currentUser.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bubble_messages' },
+      function(payload) {
+        var m = payload.new;
+        if (!m) return;
+        // Ignorer egne beskeder
+        if (m.user_id === currentUser.id) return;
+        // Ignorer hvis vi allerede ser denne boblechat
+        if (typeof bcBubbleId !== 'undefined' && bcBubbleId === m.bubble_id) return;
+        // Kun bobler vi er med i
+        if (typeof _myBubbleMemberIds === 'undefined' || _myBubbleMemberIds.indexOf(m.bubble_id) < 0) return;
+        // Opdater unread set og re-render nav dot + sub-tab dots øjeblikkeligt
+        if (typeof _bubbleUnreadSet !== 'undefined') {
+          _bubbleUnreadSet[m.bubble_id] = true;
+          if (typeof _renderBubblesUnreadDot === 'function') _renderBubblesUnreadDot();
+          if (typeof _renderSubTabDots === 'function') _renderSubTabDots();
+        }
+      })
+    .subscribe(_rtStatusCallback('rt-bubble-msgs'));
+  _globalRtChannels.push(chBubbleMsgs);
+
   // ── Kanal: DM samtale slettet af modpart ──
   var chDmNotify = sb.channel('dm-notify-' + currentUser.id)
     .on('broadcast', { event: 'conv_deleted' }, function(msg) {
