@@ -74,6 +74,7 @@ var _homeLoading = false;
 async function loadHome() {
   if (_homeLoading) return;
   _homeLoading = true;
+  _dartboardDataLoaded = false; // reset så homeSetMode ikke renderer stale data under reload
   try {
     if (!currentUser) { _homeLoading = false; return; }
     if (!currentProfile) await loadCurrentProfile();
@@ -183,7 +184,9 @@ function homeSetMode(mode) {
     if (tabAll) { tabAll.style.background = 'var(--gradient-primary)'; tabAll.style.color = 'white'; tabAll.style.fontWeight = '700'; }
     if (tabLive) { tabLive.style.background = 'transparent'; tabLive.style.color = 'var(--muted)'; tabLive.style.fontWeight = '600'; }
     _homeRadarFilter = 'all';
-    renderHomeDartboard();
+    // Guard: skip render hvis dartboard-data ikke er loaded endnu —
+    // loadHomeDartboardData() kalder renderHomeDartboard() selv når det er klar
+    if (_dartboardDataLoaded) renderHomeDartboard();
   }
 
   // Live banner stays visible in BOTH modes as long as checked in
