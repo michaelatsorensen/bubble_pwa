@@ -542,12 +542,12 @@ function showTerms() {
 
 function openFeedback() {
   var { overlay, sheet } = bbDynOpen();
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
-    '<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem;color:rgba(255,255,255,0.95)">Giv feedback</h2>' +
-    '<p style="font-size:0.78rem;color:rgba(255,255,255,0.4);margin-bottom:1rem">Vi er i beta — din feedback er guld værd og hjælper os med at bygge det bedste produkt.</p>' +
-    '<textarea id="feedback-text" placeholder="Hvad virker godt? Hvad kan gøres bedre? Har du oplevet fejl?" style="width:100%;height:120px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:0.7rem;font-family:Figtree,sans-serif;font-size:0.82rem;color:rgba(255,255,255,0.9);resize:none;outline:none"></textarea>' +
-    '<button onclick="submitFeedback()" style="width:100%;margin-top:0.8rem;padding:0.7rem;border-radius:12px;border:0.5px solid rgba(100,180,230,0.25);background:rgba(100,180,230,0.18);color:rgba(255,255,255,0.9);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Send feedback →</button>' +
-    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:0.4rem;padding:0.5rem;border-radius:12px;border:0.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.4);font-family:inherit;font-size:0.78rem;cursor:pointer">Annuller</button>';
+  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.08);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
+    '<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem">Giv feedback</h2>' +
+    '<p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Vi er i beta — din feedback er guld værd og hjælper os med at bygge det bedste produkt.</p>' +
+    '<textarea id="feedback-text" placeholder="Hvad virker godt? Hvad kan gøres bedre? Har du oplevet fejl?" style="width:100%;height:120px;background:rgba(30,27,46,0.03);border:1px solid var(--glass-border);border-radius:12px;padding:0.7rem;font-family:Figtree,sans-serif;font-size:0.82rem;color:var(--text);resize:none;outline:none"></textarea>' +
+    '<button onclick="submitFeedback()" style="width:100%;margin-top:0.8rem;padding:0.7rem;border-radius:12px;border:none;background:var(--gradient-accent);color:white;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Send feedback →</button>' +
+    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:0.4rem;padding:0.5rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--muted);font-family:inherit;font-size:0.78rem;cursor:pointer">Annuller</button>';
 
   setTimeout(function(){ var ta = document.getElementById('feedback-text'); if(ta) ta.focus(); }, 300);
 }

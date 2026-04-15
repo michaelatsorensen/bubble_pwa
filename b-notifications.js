@@ -26,30 +26,12 @@ function ttlSince(type) {
   return new Date(Date.now() - ms).toISOString();
 }
 
-var _notifTrayTarget = null;
-
-function openNotifTray() {
-  var backdrop = document.getElementById('notif-tray-backdrop');
-  var tray = document.getElementById('notif-tray');
-  if (backdrop) backdrop.style.display = 'block';
-  if (tray) { tray.style.visibility = 'visible'; setTimeout(function(){ tray.style.transform = 'translateY(0)'; }, 10); }
-  _notifTrayTarget = 'notif-tray-list';
-  loadNotifications();
-}
-function closeNotifTray() {
-  var backdrop = document.getElementById('notif-tray-backdrop');
-  var tray = document.getElementById('notif-tray');
-  if (tray) tray.style.transform = 'translateY(100%)';
-  if (backdrop) setTimeout(function(){ backdrop.style.display = 'none'; }, 350);
-  _notifTrayTarget = null;
-}
-
 async function loadNotifications() {
   try {
     var myNav = _navVersion;
     localStorage.setItem('bubble_notifs_seen', new Date().toISOString());
     updateTopbarNotifBadge();
-    const list = document.getElementById(_notifTrayTarget || 'notifications-list');
+    const list = document.getElementById('notifications-list');
     if (!list) return;
     list.innerHTML = skelCards(4);
 

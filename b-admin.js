@@ -22,7 +22,7 @@ async function adminLoadReports() {
       .select('id, type, reason, created_at, reporter_id, reported_id, profiles!reports_reporter_id_fkey(name), reported:profiles!reports_reported_id_fkey(name, banned)')
       .order('created_at', { ascending: false }).limit(20);
     if (!data || data.length === 0) {
-      el.innerHTML = '<div style="color:rgba(255,255,255,0.25);padding:0.3rem 0">Ingen rapporter</div>';
+      el.innerHTML = '<div style="color:var(--muted);padding:0.3rem 0">Ingen rapporter</div>';
       return;
     }
     el.innerHTML = data.map(function(r) {
@@ -33,14 +33,14 @@ async function adminLoadReports() {
       return '<div style="padding:0.4rem 0;border-bottom:1px solid rgba(30,27,46,0.025)">' +
         '<div style="display:flex;justify-content:space-between;align-items:center">' +
         '<div><span style="font-weight:600">' + escHtml(reportedName) + '</span>' +
-        (isBanned ? ' <span style="font-size:0.55rem;background:rgba(26,122,138,0.2);color:var(--pink);padding:0.1rem 0.3rem;border-radius:4px">Banned</span>' : '') +
-        '<div style="font-size:0.62rem;color:rgba(255,255,255,0.25)">' + escHtml(r.type || 'report') + ' · ' + escHtml(r.reason || t('admin_no_reason')) + ' · ' + timeAgo + '</div>' +
-        '<div style="font-size:0.6rem;color:rgba(255,255,255,0.25)">Af: ' + escHtml(reporterName) + '</div></div>' +
-        (!isBanned ? '<button class="btn-sm" onclick="adminBanUser(\'' + r.reported_id + '\',\'' + escHtml(reportedName).replace(/'/g,"\\'") + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(124,92,252,0.12);color:var(--pink);border:1px solid rgba(26,122,138,0.3);border-radius:6px;flex-shrink:0">Ban</button>' :
+        (isBanned ? ' <span style="font-size:0.55rem;background:rgba(26,122,138,0.2);color:var(--accent2);padding:0.1rem 0.3rem;border-radius:4px">Banned</span>' : '') +
+        '<div style="font-size:0.62rem;color:var(--muted)">' + escHtml(r.type || 'report') + ' · ' + escHtml(r.reason || t('admin_no_reason')) + ' · ' + timeAgo + '</div>' +
+        '<div style="font-size:0.6rem;color:var(--muted)">Af: ' + escHtml(reporterName) + '</div></div>' +
+        (!isBanned ? '<button class="btn-sm" onclick="adminBanUser(\'' + r.reported_id + '\',\'' + escHtml(reportedName).replace(/'/g,"\\'") + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(124,92,252,0.12);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:6px;flex-shrink:0">Ban</button>' :
         '<button class="btn-sm" onclick="adminUnbanUser(\'' + r.reported_id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,158,142,0.15);color:var(--green);border:1px solid rgba(26,158,142,0.3);border-radius:6px;flex-shrink:0">Unban</button>') +
         '</div></div>';
     }).join('');
-  } catch(e) { el.innerHTML = '<div style="color:var(--pink)">Fejl: ' + escHtml(e.message) + '</div>'; }
+  } catch(e) { el.innerHTML = '<div style="color:var(--accent2)">Fejl: ' + escHtml(e.message) + '</div>'; }
   } catch(e) { logError("adminLoadReports", e); }
 }
 
@@ -52,17 +52,17 @@ async function adminLoadBanned() {
   try {
     var { data } = await sb.from('profiles').select('id, name, email, banned').eq('banned', true).order('name');
     if (!data || data.length === 0) {
-      el.innerHTML = '<div style="color:rgba(255,255,255,0.25);padding:0.3rem 0">Ingen bannede brugere</div>';
+      el.innerHTML = '<div style="color:var(--muted);padding:0.3rem 0">Ingen bannede brugere</div>';
       return;
     }
     el.innerHTML = data.map(function(p) {
       return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid rgba(30,27,46,0.025)">' +
         '<div><span style="font-weight:600">' + escHtml(p.name || t('misc_unknown')) + '</span>' +
-        '<div style="font-size:0.6rem;color:rgba(255,255,255,0.25)">' + escHtml(p.email || p.id.slice(0,8)) + '</div></div>' +
+        '<div style="font-size:0.6rem;color:var(--muted)">' + escHtml(p.email || p.id.slice(0,8)) + '</div></div>' +
         '<button class="btn-sm" onclick="adminUnbanUser(\'' + p.id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,158,142,0.15);color:var(--green);border:1px solid rgba(26,158,142,0.3);border-radius:6px">Unban</button>' +
         '</div>';
     }).join('');
-  } catch(e) { el.innerHTML = '<div style="color:var(--pink)">Fejl: ' + escHtml(e.message) + '</div>'; }
+  } catch(e) { el.innerHTML = '<div style="color:var(--accent2)">Fejl: ' + escHtml(e.message) + '</div>'; }
   } catch(e) { logError("adminLoadBanned", e); }
 }
 
@@ -111,7 +111,7 @@ async function adminLoadStats() {
     function trayHtml(id) {
       return '<div class="dash-tray" id="dtray-' + id + '"><div class="dash-tray-collapse"><div class="dash-tray-inner" id="dti-' + id + '">' +
         '<div style="font-size:0.72rem;font-weight:700" id="dtitle-' + id + '"></div>' +
-        '<div style="font-size:0.55rem;color:rgba(255,255,255,0.25)" id="dsub-' + id + '"></div>' +
+        '<div style="font-size:0.55rem;color:var(--muted)" id="dsub-' + id + '"></div>' +
         '<div class="dash-chart-wrap"><canvas id="dcv-' + id + '"></canvas></div></div></div></div>';
     }
 
@@ -125,12 +125,12 @@ async function adminLoadStats() {
     el.innerHTML =
       // Row 1: Brugere + Bobler
       '<div class="dash-pair"><div class="dash-row">' +
-        dCard('s-users','user','rgba(100,180,230,0.1)','rgb(100,180,230)', uc, t('admin_users_label'), uNew.count, 'accent') +
+        dCard('s-users','user','rgba(124,92,252,0.08)','var(--accent)', uc, t('admin_users_label'), uNew.count, 'accent') +
         dCard('s-bubbles','bubble','rgba(46,207,207,0.08)','var(--teal)', bc, 'Bobler', bNew.count, 'teal') +
       '</div>' + trayHtml('s1') + '</div>' +
       // Row 2: Medlemskaber + Boble-beskeder
       '<div class="dash-pair"><div class="dash-row">' +
-        dCard('s-members','link','rgba(100,180,230,0.1)','rgb(100,180,230)', mc, 'Medlemskaber', mNew.count, 'accent') +
+        dCard('s-members','link','rgba(124,92,252,0.08)','var(--accent)', mc, 'Medlemskaber', mNew.count, 'accent') +
         dCard('s-msgs','chat','rgba(232,121,168,0.08)','var(--pink)', fmtK(bmc), 'Boble-chat', bmNew.count, 'pink') +
       '</div>' + trayHtml('s2') + '</div>' +
       // Row 3: Gemte kontakter + DMs
@@ -139,27 +139,27 @@ async function adminLoadStats() {
         dCard('s-dms','send','rgba(232,121,168,0.08)','var(--pink)', fmtK(dmc), 'DMs', dmNew.count, 'pink') +
       '</div>' + trayHtml('s3') + '</div>' +
       // Summary: DAU/WAU/MAU + Live/Banned/Views
-      '<div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:rgba(255,255,255,0.25);margin:4px 0 6px">' + icon('target') + ' Aktivitet</div>' +
+      '<div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);margin:4px 0 6px">' + icon('target') + ' Aktivitet</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">' +
         _adminMini(ico('fire'), 'DAU', dauRes, 'var(--teal)') +
-        _adminMini(ico('fire'), 'WAU', wauRes, 'rgb(100,180,230)') +
+        _adminMini(ico('fire'), 'WAU', wauRes, 'var(--accent)') +
         _adminMini(ico('fire'), 'MAU', mauRes, 'var(--pink)') +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">' +
         _adminMini(ico('pin'), 'Live nu', liveRes.count||0, 'var(--teal)') +
         _adminMini(ico('lock'), t('admin_banned_label'), bannedRes.count||0, '#EF4444') +
-        _adminMini(ico('eye'), 'Visninger /7d', viewsRes.count||0, 'rgb(100,180,230)') +
+        _adminMini(ico('eye'), 'Visninger /7d', viewsRes.count||0, 'var(--accent)') +
       '</div>';
 
-  } catch(e) { el.innerHTML = '<div style="color:var(--pink)">Fejl: ' + escHtml(e.message) + '</div>'; }
+  } catch(e) { el.innerHTML = '<div style="color:var(--accent2)">Fejl: ' + escHtml(e.message) + '</div>'; }
   } catch(e) { logError("adminLoadStats", e); }
 }
 
 function _adminMini(icoHtml, label, val, color) {
-  return '<div style="background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px;text-align:center">' +
+  return '<div style="background:rgba(30,27,46,0.02);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center">' +
     '<div style="color:' + color + ';margin-bottom:2px;display:flex;justify-content:center;font-size:16px;line-height:1">' + icoHtml + '</div>' +
     '<div style="font-size:1rem;font-weight:800;color:' + color + '">' + val + '</div>' +
-    '<div style="font-size:0.52rem;color:rgba(255,255,255,0.25);font-weight:600;text-transform:uppercase">' + label + '</div></div>';
+    '<div style="font-size:0.52rem;color:var(--muted);font-weight:600;text-transform:uppercase">' + label + '</div></div>';
 }
 
 // ── Dashboard chart helpers ──
@@ -276,8 +276,8 @@ async function adminBanUser(userId, userName) {
         tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0.5rem;margin-top:0.3rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:8px;gap:0.4rem';
         tray.innerHTML = '<span style="font-size:0.68rem;color:var(--text-secondary)">Ban ' + escHtml(userName||'bruger') + '?</span>' +
           '<div style="display:flex;gap:0.25rem">' +
-          '<button style="font-size:0.65rem;padding:0.2rem 0.5rem;background:rgba(124,92,252,0.12);color:var(--pink);border:1px solid rgba(26,122,138,0.3);border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600" onclick="adminConfirmBan()">Ban</button>' +
-          '<button style="font-size:0.65rem;padding:0.2rem 0.5rem;background:none;color:rgba(255,255,255,0.25);border:1px solid var(--glass-border);border-radius:6px;cursor:pointer;font-family:inherit" onclick="adminCancelBan(this)">Annuller</button>' +
+          '<button style="font-size:0.65rem;padding:0.2rem 0.5rem;background:rgba(124,92,252,0.12);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600" onclick="adminConfirmBan()">Ban</button>' +
+          '<button style="font-size:0.65rem;padding:0.2rem 0.5rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:6px;cursor:pointer;font-family:inherit" onclick="adminCancelBan(this)">Annuller</button>' +
           '</div>';
         row.appendChild(tray);
       }
@@ -336,7 +336,7 @@ function adminSearchUser(query) {
         .or('name.ilike.%' + safeQ + '%,email.ilike.%' + safeQ + '%')
         .limit(5);
       if (!data || data.length === 0) {
-        el.innerHTML = '<div style="font-size:0.68rem;color:rgba(255,255,255,0.25);padding:0.3rem 0">Ingen resultater</div>';
+        el.innerHTML = '<div style="font-size:0.68rem;color:var(--muted);padding:0.3rem 0">Ingen resultater</div>';
         return;
       }
       el.innerHTML = data.map(function(p) {
@@ -344,15 +344,15 @@ function adminSearchUser(query) {
         return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid rgba(30,27,46,0.025)">' +
           '<div style="flex:1;min-width:0">' +
           '<div style="font-size:0.75rem;font-weight:600">' + escHtml(p.name || t('misc_unknown')) +
-          (isBanned ? ' <span style="font-size:0.55rem;background:rgba(26,122,138,0.2);color:var(--pink);padding:0.1rem 0.3rem;border-radius:4px">Banned</span>' : '') + '</div>' +
-          '<div style="font-size:0.6rem;color:rgba(255,255,255,0.25)">' + escHtml(p.title || '') + ' · ' + escHtml(p.email || p.id.slice(0,8)) + '</div>' +
+          (isBanned ? ' <span style="font-size:0.55rem;background:rgba(26,122,138,0.2);color:var(--accent2);padding:0.1rem 0.3rem;border-radius:4px">Banned</span>' : '') + '</div>' +
+          '<div style="font-size:0.6rem;color:var(--muted)">' + escHtml(p.title || '') + ' · ' + escHtml(p.email || p.id.slice(0,8)) + '</div>' +
           '</div>' +
           (!isBanned ?
-            '<button class="btn-sm" onclick="adminBanUser(\'' + p.id + '\',\'' + escHtml(p.name||'').replace(/'/g,"\\'") + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(124,92,252,0.12);color:var(--pink);border:1px solid rgba(26,122,138,0.3);border-radius:6px;flex-shrink:0">Ban</button>' :
+            '<button class="btn-sm" onclick="adminBanUser(\'' + p.id + '\',\'' + escHtml(p.name||'').replace(/'/g,"\\'") + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(124,92,252,0.12);color:var(--accent2);border:1px solid rgba(26,122,138,0.3);border-radius:6px;flex-shrink:0">Ban</button>' :
             '<button class="btn-sm" onclick="adminUnbanUser(\'' + p.id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,158,142,0.15);color:var(--green);border:1px solid rgba(26,158,142,0.3);border-radius:6px;flex-shrink:0">Unban</button>') +
           '</div>';
       }).join('');
-    } catch(e) { el.innerHTML = '<div style="color:var(--pink);font-size:0.68rem">Fejl: ' + escHtml(e.message) + '</div>'; }
+    } catch(e) { el.innerHTML = '<div style="color:var(--accent2);font-size:0.68rem">Fejl: ' + escHtml(e.message) + '</div>'; }
   }, 300);
 }
 
@@ -539,7 +539,7 @@ function _renderDebugContent() {
     var flowKeys = Object.keys(cs.flows);
     var flowHtml = flowKeys.length > 0
       ? flowKeys.map(function(k) { return '<span class="debug-pill-err">' + k + '</span>'; }).join(' ')
-      : '<span style="color:rgba(255,255,255,0.25)">ingen</span>';
+      : '<span style="color:var(--muted)">ingen</span>';
     var stackHtml = cs.navStack.length > 0 ? cs.navStack.slice(-3).join(' → ') : '-';
     var html =
       _debugRow('Screen', _debugMono(cs.screen || '-')) +
@@ -570,7 +570,7 @@ function _renderDebugErrorList() {
   var el = document.getElementById('debug-error-list');
   if (!el) return;
   if (_debugErrors.length === 0) {
-    el.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.72rem;padding:1rem 0">Ingen fejl</div>';
+    el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:0.72rem;padding:1rem 0">Ingen fejl</div>';
     return;
   }
   el.innerHTML = _debugErrors.slice(0, 30).map(function(e) {

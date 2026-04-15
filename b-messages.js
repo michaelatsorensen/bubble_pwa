@@ -20,20 +20,24 @@ var unreadState = {
 
   // ── Render all badges ──
   render: function() {
-    // DM dot (messages nav tab — simple dot, no number)
+    // DM badge (messages nav tab)
+    var dmLabel = this.dm > 9 ? '9+' : (this.dm > 0 ? String(this.dm) : '');
     var self = this;
     document.querySelectorAll('.msg-unread-badge').forEach(function(b) {
-      b.style.display = self.dm > 0 ? 'block' : 'none';
+      if (self.dm > 0) { b.textContent = dmLabel; b.style.display = 'flex'; }
+      else { b.style.display = 'none'; }
     });
-    // Notification dot (topbar bell — simple dot, no number)
+    // Notification badge (topbar bell)
     var notifEl = document.getElementById('topbar-notif-badge');
     if (notifEl) {
-      notifEl.style.display = this.notif > 0 ? 'block' : 'none';
+      if (this.notif > 0) { notifEl.textContent = this.notif > 9 ? '9+' : String(this.notif); notifEl.style.display = 'flex'; }
+      else { notifEl.style.display = 'none'; }
     }
-    // Home nav dot (persistent until notifications cleared)
+    // Home nav dot (shows when not on home screen)
     var homeDot = document.getElementById('home-notif-dot');
     if (homeDot) {
-      homeDot.style.display = (this.notif > 0) ? 'block' : 'none';
+      var onHome = navState && navState.screen === 'screen-home';
+      homeDot.style.display = (this.notif > 0 && !onHome) ? 'block' : 'none';
     }
   },
 
