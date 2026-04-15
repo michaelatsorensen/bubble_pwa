@@ -129,11 +129,26 @@ async function checkAuth() {
   if (!initSupabase()) return;
   setupAuthListener();
   try {
-    // Handle OAuth redirect
+    // Handle implicit flow (Google) — access_token in hash
     if (window.location.hash && window.location.hash.includes('access_token')) {
       document.getElementById('loading-msg').textContent = 'Login...';
       await new Promise(r => setTimeout(r, 500));
       window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // Handle PKCE flow (LinkedIn, Apple) — code in query string
+    var _pkceParams = new URLSearchParams(window.location.search);
+    if (_pkceParams.has('code')) {
+      document.getElementById('loading-msg').textContent = 'Logger ind...';
+      try {
+        await sb.auth.exchangeCodeForSession(window.location.href);
+      } catch(e) {
+        logError('pkce_exchange', e);
+      }
+      // Clean ?code= and any other OAuth params from URL
+      _pkceParams.delete('code');
+      var _cleanPkce = window.location.pathname + (_pkceParams.toString() ? '?' + _pkceParams.toString() : '');
+      window.history.replaceState({}, document.title, _cleanPkce);
     }
 
     var { data: { session } } = await sb.auth.getSession();
@@ -320,7 +335,35 @@ async function handleLogin() {
     if (!email || !pass) { _authLock = false; return showWarningToast('Udfyld email og adgangskode'); }
     showToast(t('misc_loading'));
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-    if (error) { _authLock = false; return errorToast('login', error); }
+    if (error) {
+      _authLock = false;
+      // Hvis "invalid credentials" og email ligner en OAuth-konto — giv bedre vejledning
+      var errMsg = error.message || '';
+      if (errMsg.includes('Invalid login') || errMsg.includes('invalid_credentials')) {
+        var formArea = document.getElementById('auth-forms');
+        if (formArea) {
+          formArea.innerHTML =
+            '<div style="text-align:center;padding:2rem 1rem">' +
+              '<div style="font-size:2rem;margin-bottom:0.8rem">🔒</div>' +
+              '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">' + t('auth_login_failed_title') + '</div>' +
+              '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem">' + t('auth_login_failed_body', { email: escHtml(email) }) + '</div>' +
+              '<button class="btn-primary" id="login-linkedin-btn" style="width:100%;margin-bottom:0.6rem">' +
+                '<svg style="width:1rem;height:1rem;vertical-align:middle;margin-right:0.4rem" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14m-.5 15.5v-5.3a3.26 3.26 0 00-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 011.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 001.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 00-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>' +
+                t('auth_continue_linkedin') +
+              '</button>' +
+              '<button class="btn-secondary" id="login-google-btn" style="width:100%;margin-bottom:0.6rem">' +
+                '<svg style="width:1rem;height:1rem;vertical-align:middle;margin-right:0.4rem" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>' +
+                t('auth_continue_google') +
+              '</button>' +
+              '<button class="btn-secondary" onclick="goTo(\'screen-auth\')" style="width:100%">' + t('misc_back') + '</button>' +
+            '</div>';
+          document.getElementById('login-linkedin-btn').onclick = function() { handleLinkedInLogin(); };
+          document.getElementById('login-google-btn').onclick = function() { handleGoogleLogin(); };
+          return;
+        }
+      }
+      return errorToast('login', error);
+    }
     currentUser = data.user;
     await resolvePostAuth();
   } catch(e) { logError("handleLogin", e); errorToast("login", e); }
@@ -351,8 +394,32 @@ async function handleSignup() {
 
     // Check if email confirmation is required
     if (data.user && data.user.identities && data.user.identities.length === 0) {
-      // Email already exists
-      showWarningToast(t('toast_already_registered'));
+      // Email already exists — likely registered via OAuth (LinkedIn/Google/Apple).
+      // Vis vejledende besked i stedet for generisk toast.
+      var formArea = document.getElementById('auth-forms');
+      if (formArea) {
+        formArea.innerHTML =
+          '<div style="text-align:center;padding:2rem 1rem">' +
+            '<div style="font-size:2rem;margin-bottom:0.8rem">🔗</div>' +
+            '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">' + t('auth_email_exists_title') + '</div>' +
+            '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem">' +
+              t('auth_email_exists_body', { email: escHtml(email) }) +
+            '</div>' +
+            '<button class="btn-primary" id="existing-linkedin-btn" style="width:100%;margin-bottom:0.6rem">' +
+              '<svg style="width:1rem;height:1rem;vertical-align:middle;margin-right:0.4rem" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14m-.5 15.5v-5.3a3.26 3.26 0 00-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 011.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 001.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 00-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>' +
+              t('auth_continue_linkedin') +
+            '</button>' +
+            '<button class="btn-secondary" id="existing-google-btn" style="width:100%;margin-bottom:0.6rem">' +
+              '<svg style="width:1rem;height:1rem;vertical-align:middle;margin-right:0.4rem" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>' +
+              t('auth_continue_google') +
+            '</button>' +
+            '<button class="btn-secondary" onclick="goTo(\'screen-auth\')" style="width:100%">' + t('misc_back') + '</button>' +
+          '</div>';
+        document.getElementById('existing-linkedin-btn').onclick = function() { handleLinkedInLogin(); };
+        document.getElementById('existing-google-btn').onclick = function() { handleGoogleLogin(); };
+      } else {
+        showWarningToast(t('toast_already_registered'));
+      }
       return;
     }
 
@@ -542,12 +609,12 @@ function showTerms() {
 
 function openFeedback() {
   var { overlay, sheet } = bbDynOpen();
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
-    '<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem;color:rgba(255,255,255,0.95)">Giv feedback</h2>' +
-    '<p style="font-size:0.78rem;color:rgba(255,255,255,0.4);margin-bottom:1rem">Vi er i beta — din feedback er guld værd og hjælper os med at bygge det bedste produkt.</p>' +
-    '<textarea id="feedback-text" placeholder="Hvad virker godt? Hvad kan gøres bedre? Har du oplevet fejl?" style="width:100%;height:120px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:0.7rem;font-family:Figtree,sans-serif;font-size:0.82rem;color:rgba(255,255,255,0.9);resize:none;outline:none"></textarea>' +
-    '<button onclick="submitFeedback()" style="width:100%;margin-top:0.8rem;padding:0.7rem;border-radius:12px;border:0.5px solid rgba(100,180,230,0.25);background:rgba(100,180,230,0.18);color:rgba(255,255,255,0.9);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Send feedback →</button>' +
-    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:0.4rem;padding:0.5rem;border-radius:12px;border:0.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.4);font-family:inherit;font-size:0.78rem;cursor:pointer">Annuller</button>';
+  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.08);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
+    '<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem">Giv feedback</h2>' +
+    '<p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Vi er i beta — din feedback er guld værd og hjælper os med at bygge det bedste produkt.</p>' +
+    '<textarea id="feedback-text" placeholder="Hvad virker godt? Hvad kan gøres bedre? Har du oplevet fejl?" style="width:100%;height:120px;background:rgba(30,27,46,0.03);border:1px solid var(--glass-border);border-radius:12px;padding:0.7rem;font-family:Figtree,sans-serif;font-size:0.82rem;color:var(--text);resize:none;outline:none"></textarea>' +
+    '<button onclick="submitFeedback()" style="width:100%;margin-top:0.8rem;padding:0.7rem;border-radius:12px;border:none;background:var(--gradient-accent);color:white;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Send feedback →</button>' +
+    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:0.4rem;padding:0.5rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--muted);font-family:inherit;font-size:0.78rem;cursor:pointer">Annuller</button>';
 
   setTimeout(function(){ var ta = document.getElementById('feedback-text'); if(ta) ta.focus(); }, 300);
 }
