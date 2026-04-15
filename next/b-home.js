@@ -468,7 +468,7 @@ async function showDeepLinkModal(type, targetId) {
       nameText = b.name || '?';
       var isEvent = b.type === 'event' || b.type === 'live';
       var bColor = isEvent ? 'rgba(46,207,207,0.15)' : 'rgba(100,180,230,0.15)';
-      var bEmoji = isEvent ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="' + (isEvent ? '#0F6E56' : '#534AB7') + '" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#534AB7" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/></svg>';
+      var bEmoji = isEvent ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgb(100,180,230)" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/></svg>';
       iconHtml = b.icon_url
         ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:14px">'
         : bEmoji;
@@ -1257,7 +1257,7 @@ async function loadMyNetworks() {
       var mode = ev.checkin_mode || 'self';
       var win = _eventTimeWindow(ev);
       var isLiveHere = appMode.live && appMode.live.bubbleId === ev.id;
-      if (isLiveHere) return '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.15);color:#0F6E56;font-weight:700">LIVE</span>';
+      if (isLiveHere) return '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.15);color:rgba(26,158,142,0.9);font-weight:700">LIVE</span>';
       if (mode === 'scan') return '<span style="font-size:0.55rem;color:rgba(255,255,255,0.25)">' + t('live_scan_checkin') + '</span>';
       if (win === 'before') {
         var dateStr = new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' });
@@ -1716,8 +1716,8 @@ function bubbleCard(b, joined) {
   var childPills = '';
   if (b._childNetCount > 0 || b._childEventCount > 0) {
     var pills = [];
-    if (b._childNetCount > 0) pills.push('<span style="font-size:0.62rem;padding:2px 7px;border-radius:6px;background:rgba(255,255,255,0.06);color:#534AB7;font-weight:600;display:inline-flex;align-items:center;gap:3px">' + ico('bubble') + ' ' + b._childNetCount + ' netværk</span>');
-    if (b._childEventCount > 0) pills.push('<span style="font-size:0.62rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.06);color:#0F6E56;font-weight:600;display:inline-flex;align-items:center;gap:3px">' + ico('calendar') + ' ' + b._childEventCount + ' event' + (b._childEventCount > 1 ? 's' : '') + '</span>');
+    if (b._childNetCount > 0) pills.push('<span style="font-size:0.62rem;padding:2px 7px;border-radius:6px;background:rgba(100,180,230,0.08);color:rgb(100,180,230);font-weight:600;display:inline-flex;align-items:center;gap:3px">' + ico('bubble') + ' ' + b._childNetCount + ' netværk</span>');
+    if (b._childEventCount > 0) pills.push('<span style="font-size:0.62rem;padding:2px 7px;border-radius:6px;background:rgba(26,158,142,0.08);color:rgba(26,158,142,0.85);font-weight:600;display:inline-flex;align-items:center;gap:3px">' + ico('calendar') + ' ' + b._childEventCount + ' event' + (b._childEventCount > 1 ? 's' : '') + '</span>');
     childPills = '<div style="display:flex;gap:4px;margin-top:0.15rem">' + pills.join('') + '</div>';
   }
 
@@ -1731,12 +1731,12 @@ function bubbleCard(b, joined) {
         (b.event_end_date ? ' – ' + new Date(b.event_end_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '')
       : '');
     var evBadge = evIsPast
-      ? '<span style="font-size:0.58rem;padding:1px 5px;border-radius:99px;background:rgba(30,27,46,0.06);color:rgba(255,255,255,0.25);font-weight:600">Afsluttet</span>'
-      : '<span style="font-size:0.58rem;padding:1px 5px;border-radius:99px;background:rgba(46,207,207,0.12);color:#085041;font-weight:600">' + t('bb_coming') + '</span>';
+      ? '<span style="font-size:0.58rem;padding:1px 5px;border-radius:99px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.25);font-weight:600">Afsluttet</span>'
+      : '<span style="font-size:0.58rem;padding:1px 5px;border-radius:99px;background:rgba(26,158,142,0.12);color:rgba(26,158,142,0.9);font-weight:600">' + t('bb_coming') + '</span>';
     eventDateHtml = '<div style="display:flex;align-items:center;gap:0.25rem;margin-top:0.2rem;opacity:' + (evIsPast ? '0.55' : '1') + '">' +
-      '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="' + (evIsPast ? 'currentColor' : '#0F6E56') + '" stroke-width="1.4" style="flex-shrink:0"><rect x="1" y="2" width="10" height="9" rx="1.5"/><path d="M4 1v2M8 1v2M1 5h10"/></svg>' +
-      '<span style="font-size:0.68rem;font-weight:600;color:' + (evIsPast ? 'var(--muted)' : '#0F6E56') + '">' + evDateStr + '</span>' +
-      '<span style="width:2px;height:2px;border-radius:50%;background:var(--muted);flex-shrink:0"></span>' +
+      '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="' + (evIsPast ? 'rgba(255,255,255,0.3)' : '#1A9E8E') + '" stroke-width="1.4" style="flex-shrink:0"><rect x="1" y="2" width="10" height="9" rx="1.5"/><path d="M4 1v2M8 1v2M1 5h10"/></svg>' +
+      '<span style="font-size:0.68rem;font-weight:600;color:' + (evIsPast ? 'rgba(255,255,255,0.25)' : 'rgba(26,158,142,0.9)') + '">' + evDateStr + '</span>' +
+      '<span style="width:2px;height:2px;border-radius:50%;background:rgba(255,255,255,0.2);flex-shrink:0"></span>' +
       evBadge + '</div>';
   }
 

@@ -384,12 +384,14 @@ N1: Sheets/modals (blur, 0.94)
 | Home | ✅ | N1: topbar+radar+navbar. N2: teal live, isblå profil. N3: kort |
 | Onboarding | ✅ | N3: inputs, knapper. Solid midnight bg |
 | Welcome | ✅ | N3: action-kort |
+| Bobler | ✅ | N3: tree-kort, discover-kort. Isblå/teal accenter |
+| Beskeder | ✅ | N3: conv-cards. Isblå unread dot |
+| Chat (DM + bubble) | ✅ | N1: topbar+composer. N3: beskedbobler. Isblå sendt |
 | Person sheet | ✅ CSS | N1: sheet bg. N3: knapper, tags |
+| Person screen (fuld) | ✅ | N1: sheet bg. N3: action-knapper isblå/dark. Cover dark fade |
 | Modal sheets | ✅ CSS | N1: sheet bg. N3: inputs, knapper |
 | Deep-link modal | ✅ JS | N1: modal bg |
 | Checkin modal | ✅ JS | N1: modal bg |
-| Toasts | ❌ | N1: blur + farvekodet ikon |
-| Bobler | ❌ | Næste prioritet |
-| Beskeder | ❌ | |
-| Profil | ❌ | Mest kompleks |
-| Chat | ❌ | |
+| Toasts | ✅ | N1: blur + farvekodet ikon |
+| Notifikationer | ⏳ | Næste |
+| Profil (dashboard) | ✅ | Tidligere sessioner |
