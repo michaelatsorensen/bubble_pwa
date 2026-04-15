@@ -60,6 +60,8 @@ async function loadLiveBubbleStatus() {
         memberCount: count || 1,
         expiryStr: _expiryStr
       });
+      // Subscribe til andre brugeres check-in/out i min live-boble
+      if (typeof rtSubscribeLiveBubble === 'function') rtSubscribeLiveBubble(myLive.bubble_id);
       // Fetch live member IDs for radar filtering
       try {
         var { data: liveMembers } = await sb.from('bubble_members')
@@ -74,6 +76,8 @@ async function loadLiveBubbleStatus() {
       currentLiveBubble = null;
       appMode.set('normal');
       appMode.setCheckedInIds([]);
+      // Nedlæg live-boble kanal
+      if (typeof rtUnsubscribeLiveBubble === 'function') rtUnsubscribeLiveBubble();
     }
     // Show/hide Live radar chip
     var liveChip = document.getElementById('radar-live-chip');
