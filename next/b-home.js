@@ -71,9 +71,11 @@ function hsSlotHide(id) {
 var _homeViewMode = 'all'; // UI tab toggle: 'all' or 'live'
 
 var _homeLoading = false;
+var _homeBooting = false; // true under initial loadHome — forhindrer homeSetMode i at rendere
 async function loadHome() {
   if (_homeLoading) return;
   _homeLoading = true;
+  _homeBooting = true;
   _dartboardDataLoaded = false; // reset så homeSetMode ikke renderer stale data under reload
   try {
     if (!currentUser) { _homeLoading = false; return; }
@@ -105,9 +107,9 @@ async function loadHome() {
     showProfileSetupCTA();
   } catch(e) {
     logError("loadHome", e);
-    // Silent fail on boot — no toast flash. User can pull-to-refresh.
   } finally {
     _homeLoading = false;
+    _homeBooting = false;
   }
 }
 
@@ -186,7 +188,7 @@ function homeSetMode(mode) {
     _homeRadarFilter = 'all';
     // Guard: skip render hvis dartboard-data ikke er loaded endnu —
     // loadHomeDartboardData() kalder renderHomeDartboard() selv når det er klar
-    if (_dartboardDataLoaded) renderHomeDartboard();
+    if (!_homeBooting) renderHomeDartboard();
   }
 
   // Live banner stays visible in BOTH modes as long as checked in
