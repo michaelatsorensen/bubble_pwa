@@ -15,7 +15,7 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
 const BUILD_TIMESTAMP = '2026-04-06T13:08:12';
-const BUILD_VERSION  = 'v8.17.14';
+const BUILD_VERSION  = 'v8.17.15';
 const SUPABASE_URL  = "https://api.bubbleme.dk";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -255,6 +255,11 @@ function consumeFlow(key) {
   if (val) flowRemove(key);
   return val;
 }
+
+// ── UUID validator: used to validate IDs from URL params before storing as flow flags ──
+// Prevents injection attacks via ?profile=<malicious> or ?join=<malicious>
+var _uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isUuid(s) { return typeof s === 'string' && _uuidRe.test(s); }
 
 // Safety clear — removes ALL flow flags to prevent stale state
 function flowClearAll() {

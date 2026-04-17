@@ -209,7 +209,13 @@ async function checkQRAnonPreview() {
     var profileId = params.get('profile');
     var joinId = params.get('join');
     var qrToken = params.get('qrt');
-    
+
+    // Reject malformed UUIDs early — prevents injection via crafted URLs
+    if (profileId && !isUuid(profileId)) profileId = null;
+    if (joinId && !isUuid(joinId)) joinId = null;
+    // qrToken is short-lived random string, not UUID — keep as-is but cap length
+    if (qrToken && (typeof qrToken !== 'string' || qrToken.length > 40 || !/^[a-z0-9]+$/i.test(qrToken))) qrToken = null;
+
     // Resolve QR token → profile ID
     if (qrToken && !profileId) {
       try {
@@ -810,15 +816,15 @@ window.addEventListener('load', async () => {
   // ── Read flow intent from OAuth redirectTo URL params ──
   // b-auth.js encodes pending_contact/_join/event_flow as _fc/_fj/_fe in redirectTo.
   // After OAuth redirect, we restore them here before any auth/flow logic runs.
-  // Values are validated (non-empty strings only) before storing.
+  // UUID validation prevents injection attacks via crafted OAuth callback URLs.
   (function restoreFlowFromUrl() {
     try {
       var p = new URLSearchParams(window.location.search);
       var fc = p.get('_fc'); // pending_contact
       var fj = p.get('_fj'); // pending_join
       var fe = p.get('_fe'); // event_flow
-      if (fc && fc.length > 0) flowSet('pending_contact', fc);
-      if (fj && fj.length > 0) flowSet('pending_join', fj);
+      if (fc && isUuid(fc)) flowSet('pending_contact', fc);
+      if (fj && isUuid(fj)) flowSet('pending_join', fj);
       if (fe) flowSet('event_flow', 'true');
       // Clean flow params from URL (keep other params like ?auth=)
       if (fc || fj || fe) {
@@ -840,8 +846,11 @@ window.addEventListener('load', async () => {
     // Capture ?join= BEFORE auth so resolvePostAuthDestination handles it
     // This prevents the double-join race between checkPendingJoin + checkQRJoin
     var _joinParam = new URLSearchParams(window.location.search).get('join');
-    if (_joinParam) {
+    if (_joinParam && isUuid(_joinParam)) {
       flowSet('pending_join', _joinParam);
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (_joinParam) {
+      // Invalid UUID — clean URL but don't store
       window.history.replaceState({}, '', window.location.pathname);
     }
 
