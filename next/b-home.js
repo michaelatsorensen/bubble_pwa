@@ -76,7 +76,9 @@ async function loadHome() {
   if (_homeLoading) return;
   _homeLoading = true;
   _homeBooting = true;
-  _dartboardDataLoaded = false; // reset så homeSetMode ikke renderer stale data under reload
+  _dartboardDataLoaded = false;
+  // Ryd gamle dots med det samme — ellers ses stale dots under screenFadeIn (0.2s)
+  // og kombinationen med ny drip-animation ser ud som dobbelt drip
   var _avEl = document.getElementById('home-prox-avatars');
   if (_avEl) _avEl.innerHTML = '';
   try {
@@ -188,8 +190,6 @@ function homeSetMode(mode) {
     if (tabAll) { tabAll.style.background = 'var(--gradient-primary)'; tabAll.style.color = 'white'; tabAll.style.fontWeight = '700'; }
     if (tabLive) { tabLive.style.background = 'transparent'; tabLive.style.color = 'var(--muted)'; tabLive.style.fontWeight = '600'; }
     _homeRadarFilter = 'all';
-    // Guard: skip render hvis dartboard-data ikke er loaded endnu —
-    // loadHomeDartboardData() kalder renderHomeDartboard() selv når det er klar
     if (!_homeBooting) renderHomeDartboard();
   }
 
@@ -429,85 +429,376 @@ function showEventCheckinCard() {
 //  DEEP-LINK MODAL — unified confirmation for all QR/invite flows
 //  Types: 'contact' (profile QR), 'event' (event QR), 'network' (invite link)
 // ══════════════════════════════════════════════════════════
+// ── Format event timing for modal subtitle ──
+// Returns { html, isLive, isEnded } based on event_date / event_end_date
+function _formatEventTiming(eventDate, endDate) {
+  var now = Date.now();
+  var startMs = eventDate ? new Date(eventDate).getTime() : null;
+  var endMs = endDate ? new Date(endDate).getTime() : null;
+  var loc = (typeof _locale === 'function') ? _locale() : 'da-DK';
+
+  // Helper: format HH:MM
+  function _hm(d) {
+    return d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // Live now: between start and end (or after start with no end)
+  if (startMs && startMs <= now && (!endMs || endMs > now)) {
+    if (endMs) {
+      return {
+        html: '<span class="bb-dl-live-dot"></span>' + escHtml(t('dl_live_now_until', { time: _hm(new Date(endMs)) })),
+        isLive: true, isEnded: false, isUpcoming: false
+      };
+    }
+    return {
+      html: '<span class="bb-dl-live-dot"></span>' + escHtml(t('dl_live_now')),
+      isLive: true, isEnded: false, isUpcoming: false
+    };
+  }
+
+  // Ended: end date in the past (or start in past with no end)
+  if ((endMs && endMs <= now) || (!endMs && startMs && startMs <= now)) {
+    return {
+      html: escHtml(t('dl_event_ended')),
+      isLive: false, isEnded: true, isUpcoming: false
+    };
+  }
+
+  // Upcoming: start in future
+  if (startMs && startMs > now) {
+    var startDate = new Date(startMs);
+    var diffMs = startMs - now;
+    var diffMin = Math.round(diffMs / 60000);
+    var diffDays = Math.floor(diffMs / (24 * 3600000));
+    var sameDay = startDate.toDateString() === new Date().toDateString();
+
+    // < 60 min: countdown
+    if (diffMin < 60) {
+      return {
+        html: escHtml(t('dl_starts_in_min', { n: diffMin, s: diffMin === 1 ? '' : 'ter' })),
+        isLive: false, isEnded: false, isUpcoming: true
+      };
+    }
+    // Today: time only
+    if (sameDay) {
+      return {
+        html: escHtml(t('dl_starts_today', { time: _hm(startDate) })),
+        isLive: false, isEnded: false, isUpcoming: true
+      };
+    }
+    // 1-7 days: weekday + time + days
+    if (diffDays >= 1 && diffDays <= 7) {
+      var weekday = startDate.toLocaleDateString(loc, { weekday: 'long' });
+      return {
+        html: escHtml(t('dl_starts_weekday', { weekday: weekday, time: _hm(startDate), n: diffDays, s: diffDays === 1 ? '' : 'e' })),
+        isLive: false, isEnded: false, isUpcoming: true
+      };
+    }
+    // > 7 days: full date
+    var dateStr = startDate.toLocaleDateString(loc, { day: 'numeric', month: 'long' });
+    return {
+      html: escHtml(t('dl_starts_date', { date: dateStr, time: _hm(startDate) })),
+      isLive: false, isEnded: false, isUpcoming: true
+    };
+  }
+
+  // No date: treat as upcoming with no info (shouldn't happen for events)
+  return { html: '', isLive: false, isEnded: false, isUpcoming: true };
+}
+
+// ── Inject one-time CSS for live-pulse dot used in event modal ──
+function _ensureDlStyles() {
+  if (document.getElementById('bb-dl-styles')) return;
+  var style = document.createElement('style');
+  style.id = 'bb-dl-styles';
+  style.textContent =
+    '.bb-dl-live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#1A9E8E;margin-right:6px;vertical-align:middle;animation:bbDlPulse 1.5s ease-in-out infinite}' +
+    '@keyframes bbDlPulse{0%,100%{opacity:1}50%{opacity:0.5}}';
+  document.head.appendChild(style);
+}
+
 async function showDeepLinkModal(type, targetId) {
   try {
+    _ensureDlStyles();
     var existing = document.getElementById('deeplink-modal-overlay');
     if (existing) existing.remove();
 
-    var title = '', subtitle = '', actionLabel = '', actionFn = null;
-    var iconHtml = '', nameText = '';
-
+    // ── CONTACT flow (unchanged from previous version) ──
     if (type === 'contact') {
       var { data: p } = await sb.from('profiles').select('id, name, title, workplace, avatar_url').eq('id', targetId).maybeSingle();
       if (!p) { showWarningToast(t('toast_not_found')); return; }
-      nameText = p.name || '?';
+      var nameText = p.name || '?';
       var ini = nameText.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-      iconHtml = p.avatar_url
+      var iconHtml = p.avatar_url
         ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
         : '<span style="font-size:1.1rem;font-weight:700;color:white">' + escHtml(ini) + '</span>';
-      title = escHtml(nameText);
-      subtitle = [p.title, p.workplace].filter(Boolean).join(' · ');
-      actionLabel = t('dl_save_contact');
-      actionFn = async function() {
-        var result = await dbActions.saveContact(targetId);
-        if (result.ok) showSuccessToast(t('toast_saved'));
-        openPerson(targetId, 'screen-home');
-      };
-    } else {
-      var { data: b } = await sb.from('bubbles').select('id, name, type, location, icon_url, visibility').eq('id', targetId).maybeSingle();
-      if (!b) { showWarningToast(t('toast_not_found')); return; }
-      nameText = b.name || '?';
-      var isEvent = b.type === 'event' || b.type === 'live';
-      var bColor = isEvent ? 'rgba(46,207,207,0.15)' : 'rgba(124,92,252,0.15)';
-      var bEmoji = isEvent ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="' + (isEvent ? '#0F6E56' : '#534AB7') + '" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#534AB7" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/></svg>';
-      iconHtml = b.icon_url
-        ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:14px">'
-        : bEmoji;
-      title = escHtml(nameText);
-      subtitle = b.location ? escHtml(b.location) : '';
-      actionLabel = isEvent ? t('dl_go_to_event') : t('dl_go_to_network');
-      actionFn = async function() {
-        var result = await dbActions.joinBubble(targetId, 'invite_link');
-        if (result.ok) showSuccessToast(t('toast_joined'));
-        if (isEvent) {
-          await dbActions.checkIn(targetId);
-          if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus();
+      var title = escHtml(nameText);
+      var subtitle = [p.title, p.workplace].filter(Boolean).join(' · ');
+      _renderSimpleDeepLinkModal({
+        iconBg: 'linear-gradient(135deg,#7C5CFC,#6366F1)', iconSize: '64px', iconRadius: '50%',
+        iconHtml: iconHtml, title: title, subtitle: subtitle,
+        primaryLabel: t('dl_save_contact') + ' →',
+        primaryFn: async function() {
+          var result = await dbActions.saveContact(targetId);
+          if (result.ok) showSuccessToast(t('toast_saved'));
+          openPerson(targetId, 'screen-home');
         }
-        openBubbleChat(targetId, 'screen-home');
-      };
+      });
+      return;
     }
 
-    var iconBg = type === 'contact' ? 'linear-gradient(135deg,#7C5CFC,#6366F1)' : (type === 'event' ? 'rgba(46,207,207,0.15)' : 'rgba(124,92,252,0.15)');
-    var iconSize = type === 'contact' ? '64px' : '56px';
-    var iconRadius = type === 'contact' ? '50%' : '14px';
+    // ── BUBBLE flow: fetch bubble + check membership ──
+    var { data: b } = await sb.from('bubbles')
+      .select('id, name, type, location, icon_url, visibility, event_date, event_end_date, created_by')
+      .eq('id', targetId)
+      .maybeSingle();
+    if (!b) { showWarningToast(t('toast_not_found')); return; }
 
-    var ov = document.createElement('div');
-    ov.id = 'deeplink-modal-overlay';
-    ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+    var isEvent = b.type === 'event' || b.type === 'live';
 
-    ov.innerHTML =
-      '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
-        '<div style="width:' + iconSize + ';height:' + iconSize + ';border-radius:' + iconRadius + ';background:' + iconBg + ';display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;overflow:hidden">' + iconHtml + '</div>' +
-        '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">' + title + '</div>' +
-        (subtitle ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:1.25rem">' + escHtml(subtitle) + '</div>' : '<div style="margin-bottom:1.25rem"></div>') +
-        '<button id="dl-action-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + escHtml(actionLabel) + ' →</button>' +
-        '<button id="dl-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_stay_home') + '</button>' +
-      '</div>';
+    // ── If NOT an event → use simple "Go to network" flow (unchanged behavior) ──
+    if (!isEvent) {
+      var bEmoji = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#534AB7" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/></svg>';
+      var iconHtmlN = b.icon_url
+        ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:14px">'
+        : bEmoji;
+      _renderSimpleDeepLinkModal({
+        iconBg: 'rgba(124,92,252,0.15)', iconSize: '56px', iconRadius: '14px',
+        iconHtml: iconHtmlN, title: escHtml(b.name || '?'),
+        subtitle: b.location ? escHtml(b.location) : '',
+        primaryLabel: t('dl_go_to_network') + ' →',
+        primaryFn: async function() {
+          var result = await dbActions.joinBubble(targetId, 'invite_link');
+          if (result.ok) showSuccessToast(t('toast_joined'));
+          openBubbleChat(targetId, 'screen-home');
+        }
+      });
+      return;
+    }
 
-    document.body.appendChild(ov);
+    // ── EVENT flow: check membership + timing ──
+    var isMember = false;
+    if (currentUser) {
+      var { data: memberRow } = await sb.from('bubble_members')
+        .select('user_id')
+        .eq('bubble_id', targetId)
+        .eq('user_id', currentUser.id)
+        .maybeSingle();
+      isMember = !!memberRow;
+    }
+    var timing = _formatEventTiming(b.event_date, b.event_end_date);
 
-    document.getElementById('dl-action-btn').onclick = async function() {
+    // Special case: already member + event ended → skip modal entirely (go straight to chat)
+    if (isMember && timing.isEnded) {
+      openBubbleChat(targetId, 'screen-home');
+      return;
+    }
+
+    // Build event modal
+    var iconHtmlE = b.icon_url
+      ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:14px">'
+      : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+
+    _renderEventDeepLinkModal({
+      bubbleId: targetId,
+      iconHtml: iconHtmlE,
+      iconOpacity: timing.isEnded ? '0.4' : '1',
+      title: escHtml(b.name || '?'),
+      subtitle: b.location ? escHtml(b.location) : '',
+      timingHtml: timing.html,
+      timingIsLive: timing.isLive,
+      timingIsEnded: timing.isEnded,
+      isMember: isMember
+    });
+  } catch(e) { logError('showDeepLinkModal', e); }
+}
+
+// Helper: render simple two-button modal (contact / network) — preserves prior behavior
+function _renderSimpleDeepLinkModal(opts) {
+  var ov = document.createElement('div');
+  ov.id = 'deeplink-modal-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+  ov.innerHTML =
+    '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+      '<div style="width:' + opts.iconSize + ';height:' + opts.iconSize + ';border-radius:' + opts.iconRadius + ';background:' + opts.iconBg + ';display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;overflow:hidden">' + opts.iconHtml + '</div>' +
+      '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">' + opts.title + '</div>' +
+      (opts.subtitle ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:1.25rem">' + opts.subtitle + '</div>' : '<div style="margin-bottom:1.25rem"></div>') +
+      '<button id="dl-action-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + escHtml(opts.primaryLabel) + '</button>' +
+      '<button id="dl-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_stay_home') + '</button>' +
+    '</div>';
+  document.body.appendChild(ov);
+  document.getElementById('dl-action-btn').onclick = async function() {
+    this.disabled = true;
+    this.textContent = t('ui_saving');
+    try { await opts.primaryFn(); } catch(e) { logError('deepLinkAction', e); errorToast('save', e); }
+    ov.remove();
+  };
+  document.getElementById('dl-stay-btn').onclick = function() {
+    ov.style.transition = 'opacity 0.25s';
+    ov.style.opacity = '0';
+    setTimeout(function() { ov.remove(); }, 260);
+  };
+}
+
+// Helper: render event-specific modal with timing + membership-aware buttons
+function _renderEventDeepLinkModal(opts) {
+  var bubbleId = opts.bubbleId;
+  var ov = document.createElement('div');
+  ov.id = 'deeplink-modal-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+
+  // Determine button set based on state
+  var primaryLabel = '', primaryFn = null;
+  var secondaryLabel = '', secondaryFn = null;
+  var showDecline = false;
+  var memberBanner = '';
+  var readonlyBanner = '';
+
+  // Common: "Se info" handler — joinless bubble open, lands on info tab via bcRenderActions()
+  var seeInfoFn = function() { openBubbleChat(bubbleId, 'screen-home'); };
+
+  if (opts.timingIsEnded) {
+    // Slut + ikke medlem: kun "Se info"
+    primaryLabel = t('dl_see_info') + ' →';
+    primaryFn = seeInfoFn;
+    readonlyBanner = '<div style="background:rgba(95,94,90,0.08);color:#5F5E5A;font-size:0.72rem;padding:0.5rem 0.75rem;border-radius:8px;text-align:center;margin-bottom:0.75rem">' + t('dl_event_ended_readonly') + '</div>';
+  } else if (opts.isMember) {
+    // Allerede medlem (event aktivt eller kommende)
+    memberBanner = '<div style="background:rgba(26,158,142,0.10);color:#0F6E56;font-size:0.72rem;font-weight:600;padding:0.5rem 0.75rem;border-radius:8px;text-align:center;margin-bottom:0.75rem">' + t('dl_already_member') + '</div>';
+    if (opts.timingIsLive) {
+      // Live + medlem: Tjek ind primær
+      primaryLabel = t('dl_check_in') + ' →';
+      primaryFn = async function() {
+        var r = await dbActions.checkIn(bubbleId);
+        if (r.ok) { showSuccessToast(t('toast_saved')); if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus(); }
+        openBubbleChat(bubbleId, 'screen-home');
+      };
+      secondaryLabel = t('dl_see_info');
+      secondaryFn = seeInfoFn;
+    } else {
+      // Kommende + medlem: bare se info (ingen point i "Tjek ind" på fremtidigt event)
+      primaryLabel = t('dl_see_info') + ' →';
+      primaryFn = seeInfoFn;
+    }
+  } else if (opts.timingIsLive) {
+    // Live + ikke medlem
+    primaryLabel = t('dl_join_and_live') + ' →';
+    primaryFn = async function() {
+      var jr = await dbActions.joinBubble(bubbleId, 'invite_link');
+      if (jr.ok) {
+        var cr = await dbActions.checkIn(bubbleId);
+        if (cr.ok && typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus();
+        showSuccessToast(t('toast_joined'));
+      }
+      openBubbleChat(bubbleId, 'screen-home');
+    };
+    secondaryLabel = t('dl_see_info');
+    secondaryFn = seeInfoFn;
+    showDecline = true;
+  } else {
+    // Kommende + ikke medlem (default for upcoming events)
+    primaryLabel = t('dl_accept_invitation') + ' →';
+    primaryFn = async function() {
+      var r = await dbActions.joinBubble(bubbleId, 'invite_link');
+      if (r.ok) showSuccessToast(t('toast_joined'));
+      openBubbleChat(bubbleId, 'screen-home');
+    };
+    secondaryLabel = t('dl_see_info');
+    secondaryFn = seeInfoFn;
+    showDecline = true;
+  }
+
+  // Build modal HTML
+  var primaryBtnHtml = '<button id="dl-event-primary" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + primaryLabel + '</button>';
+  var secondaryBtnHtml = secondaryLabel ? '<button id="dl-event-secondary" style="width:100%;padding:0.75rem;border-radius:12px;border:1px solid rgba(124,92,252,0.18);background:none;color:#534AB7;font-size:0.82rem;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:0.4rem">' + secondaryLabel + '</button>' : '';
+  var declineBtnHtml = showDecline ? '<button id="dl-event-decline" style="width:100%;padding:0.6rem;border-radius:12px;border:none;background:none;color:#993556;font-size:0.75rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_decline_invitation') + '</button>' : '';
+
+  ov.innerHTML =
+    '<div id="dl-event-card" style="background:#FFFFFF;border-radius:20px;padding:1.75rem 1.5rem 1.25rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(30,27,46,0.12);position:relative">' +
+      '<button id="dl-event-close" style="position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;background:rgba(30,27,46,0.06);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;color:#6B6680;border:none;font-family:inherit">×</button>' +
+      '<div id="dl-event-fadable">' +
+        '<div style="width:56px;height:56px;border-radius:14px;background:rgba(46,207,207,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 0.85rem;overflow:hidden;opacity:' + opts.iconOpacity + '">' + opts.iconHtml + '</div>' +
+        '<div style="font-size:1.05rem;font-weight:700;color:#1E1B2E;margin-bottom:0.2rem">' + opts.title + '</div>' +
+        (opts.subtitle ? '<div style="font-size:0.78rem;color:#6B6680;margin-bottom:0.25rem">' + opts.subtitle + '</div>' : '') +
+        (opts.timingHtml ? '<div style="font-size:0.72rem;color:' + (opts.timingIsLive ? '#0F6E56' : (opts.timingIsEnded ? '#888780' : '#6B6680')) + ';margin-bottom:1rem;font-weight:500">' + opts.timingHtml + '</div>' : '<div style="margin-bottom:1rem"></div>') +
+        memberBanner +
+        readonlyBanner +
+      '</div>' +
+      '<div id="dl-event-actions">' +
+        primaryBtnHtml +
+        secondaryBtnHtml +
+        declineBtnHtml +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(ov);
+
+  // Wire up handlers
+  var card = document.getElementById('dl-event-card');
+  var closeAndRemove = function() {
+    ov.style.transition = 'opacity 0.25s';
+    ov.style.opacity = '0';
+    setTimeout(function() { if (ov.parentNode) ov.remove(); }, 260);
+  };
+
+  document.getElementById('dl-event-close').onclick = closeAndRemove;
+
+  var wirePrimary = function() {
+    var btn = document.getElementById('dl-event-primary');
+    if (!btn) return;
+    btn.onclick = async function() {
       this.disabled = true;
       this.textContent = t('ui_saving');
-      try { await actionFn(); } catch(e) { logError('deepLinkAction', e); errorToast('save', e); }
-      ov.remove();
+      try { await primaryFn(); } catch(e) { logError('deepLinkPrimary', e); errorToast('save', e); }
+      if (ov.parentNode) ov.remove();
     };
-    document.getElementById('dl-stay-btn').onclick = function() {
-      ov.style.transition = 'opacity 0.25s';
-      ov.style.opacity = '0';
-      setTimeout(function() { ov.remove(); }, 260);
+  };
+  var wireSecondary = function() {
+    var btn = document.getElementById('dl-event-secondary');
+    if (!btn) return;
+    btn.onclick = async function() {
+      this.disabled = true;
+      try { await secondaryFn(); } catch(e) { logError('deepLinkSecondary', e); }
+      if (ov.parentNode) ov.remove();
     };
-  } catch(e) { logError('showDeepLinkModal', e); }
+  };
+  wirePrimary();
+  if (secondaryFn) wireSecondary();
+
+  if (showDecline) {
+    var wireDeclineBtn = function() {
+      var declineBtn = document.getElementById('dl-event-decline');
+      if (!declineBtn) return;
+      declineBtn.onclick = function() {
+        // Replace actions area with confirmation tray; fade rest of card
+        var fadable = document.getElementById('dl-event-fadable');
+        if (fadable) fadable.style.opacity = '0.5';
+        var actions = document.getElementById('dl-event-actions');
+        if (!actions) return;
+        actions.innerHTML =
+          '<div style="background:rgba(153,53,86,0.06);border:1px solid rgba(153,53,86,0.15);border-radius:12px;padding:0.85rem 0.75rem 0.75rem">' +
+            '<div style="font-size:0.78rem;color:#993556;font-weight:600;text-align:center;margin-bottom:0.6rem">' + t('dl_decline_confirm_q') + '</div>' +
+            '<div style="display:flex;gap:0.5rem">' +
+              '<button id="dl-decline-undo" style="flex:1;padding:0.6rem;border-radius:10px;border:1px solid rgba(30,27,46,0.12);background:white;color:#1E1B2E;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_undo') + '</button>' +
+              '<button id="dl-decline-yes" style="flex:1;padding:0.6rem;border-radius:10px;border:none;background:#993556;color:white;font-size:0.78rem;font-weight:700;font-family:inherit;cursor:pointer">' + t('dl_yes_decline') + '</button>' +
+            '</div>' +
+          '</div>';
+        document.getElementById('dl-decline-undo').onclick = function() {
+          // Restore original buttons + handlers
+          if (fadable) fadable.style.opacity = opts.iconOpacity;
+          actions.innerHTML = primaryBtnHtml + secondaryBtnHtml + declineBtnHtml;
+          wirePrimary();
+          if (secondaryFn) wireSecondary();
+          wireDeclineBtn();
+        };
+        document.getElementById('dl-decline-yes').onclick = function() {
+          showToast(t('toast_invitation_dismissed'));
+          closeAndRemove();
+        };
+      };
+    };
+    wireDeclineBtn();
+  }
 }
 
 // Legacy aliases (safe to call from other files)
@@ -1949,6 +2240,8 @@ function _homeDrawProxRings(canvas) {
 }
 
 function renderHomeDartboard() {
+  // Debounce: koalescer alle kald inden for samme event loop tick til ét render.
+  // Løser dobbelt-render race condition mellem loadLiveBanner + loadHomeDartboardData.
   clearTimeout(_renderDartboardTimer);
   _renderDartboardTimer = setTimeout(_doRenderHomeDartboard, 0);
 }
@@ -1982,7 +2275,7 @@ function _doRenderHomeDartboard() {
     }
     // Re-trigger dripCenter animation ved hver render
     ce.style.animation = 'none';
-    void ce.offsetHeight;
+    void ce.offsetHeight; // reflow
     ce.style.animation = '';
   }
 

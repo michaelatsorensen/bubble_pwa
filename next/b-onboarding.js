@@ -11,9 +11,37 @@
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 
+// Allowlist of trusted hosts for avatar downloads (OAuth providers).
+// Prevents SSRF where an attacker could supply a URL to internal/sensitive endpoints.
+function _isAllowedAvatarHost(url) {
+  try {
+    var u = new URL(url);
+    if (u.protocol !== 'https:') return false;
+    var allowed = [
+      'licdn.com',           // LinkedIn
+      'media.licdn.com',
+      'googleusercontent.com', // Google
+      'lh3.googleusercontent.com',
+      'lh4.googleusercontent.com',
+      'lh5.googleusercontent.com',
+      'lh6.googleusercontent.com',
+      'graph.microsoft.com', // Microsoft
+      'gravatar.com',        // Gravatar
+      'www.gravatar.com',
+      'secure.gravatar.com',
+      'appleid.cdn-apple.com' // Apple
+    ];
+    return allowed.some(function(d) { return u.hostname === d || u.hostname.endsWith('.' + d); });
+  } catch(e) { return false; }
+}
+
 // Download external avatar (LinkedIn/Google) to Supabase Storage → permanent URL
 async function _downloadAvatarToStorage(externalUrl, userId) {
   try {
+    if (!externalUrl || !_isAllowedAvatarHost(externalUrl)) {
+      console.warn('[avatar] rejected non-allowlisted URL:', externalUrl);
+      return null;
+    }
     var res = await fetch(externalUrl);
     if (!res.ok) return null;
     var blob = await res.blob();
