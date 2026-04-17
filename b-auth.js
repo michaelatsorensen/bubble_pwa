@@ -90,9 +90,11 @@ async function resolvePostAuthDestination() {
   }
 
   if (pendingJoin) {
+    // ?join= paths: route through event modal too. showDeepLinkModal auto-detects
+    // bubble type — events get the time-aware modal, plain networks get the simple one.
     flowClearAll();
     goTo('screen-home');
-    setTimeout(function() { showDeepLinkModal('network', pendingJoin); }, 400);
+    setTimeout(function() { showDeepLinkModal('event', pendingJoin); }, 400);
     return;
   }
 
