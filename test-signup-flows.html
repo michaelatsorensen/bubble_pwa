@@ -52,6 +52,26 @@ h2 { font-size:0.92rem; font-weight:700; margin:1.5rem 0 0.5rem; color:var(--acc
 <div class="card"><div class="card-title">3. Personligt QR signup</div><div class="card-desc">Profil-preview → auth → onboarding → modal: "Gem kontakt" / "Bliv på forsiden".</div><button class="btn btn-primary" onclick="runFlow('contact')">Kør test →</button></div>
 <div class="card"><div class="card-title">4. Netværk invite signup</div><div class="card-desc">Auth → onboarding → modal: "Gå til netværk" / "Bliv på forsiden".</div><button class="btn btn-primary" onclick="runFlow('invite')">Kør test →</button></div>
 
+<h2>Logged-in deep-link tests (v8.17.16)</h2>
+<div class="subtitle">Tester event-modal flowet for allerede logget-ind brugere. Kræver at du er logget ind på bubbleme.dk i en anden tab.</div>
+
+<div class="card"><div class="card-title">5. Logged-in event-link (?event=)</div><div class="card-desc">Åbner ?event=&lt;id&gt; direkte. Forventet: tids-aware modal med valg (ingen auto-checkin). Brug "Verificer DB" bagefter for at bekræfte at intet skete uden dit valg.</div><div style="display:flex;gap:0.4rem;flex-wrap:wrap"><button class="btn btn-primary" onclick="runLoggedInTest('event')">Åbn link →</button><button class="btn btn-sm" style="background:var(--border);color:var(--text)" onclick="verifyDbState()">Verificer DB</button></div></div>
+
+<div class="card"><div class="card-title">6. Logged-in ?join= på event</div><div class="card-desc">Åbner ?join=&lt;event-id&gt;. Forventet: samme tids-aware modal (auto-detect af type). Verificer bagefter.</div><div style="display:flex;gap:0.4rem;flex-wrap:wrap"><button class="btn btn-primary" onclick="runLoggedInTest('join')">Åbn link →</button><button class="btn btn-sm" style="background:var(--border);color:var(--text)" onclick="verifyDbState()">Verificer DB</button></div></div>
+
+<h2>Event tilstands-skifter (SQL)</h2>
+<div class="subtitle">Kør disse i Supabase SQL editor for at sætte testevent til hver tids-tilstand. Erstatter &lt;ID&gt; med dit event ID.</div>
+<div class="card">
+  <div class="card-title">Vælg tilstand</div>
+  <div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.5rem">
+    <button class="btn btn-sm" style="background:var(--teal);color:white" onclick="showSqlSnippet('live')">Live nu</button>
+    <button class="btn btn-sm" style="background:var(--accent);color:white" onclick="showSqlSnippet('soon')">Snart (om 23 min)</button>
+    <button class="btn btn-sm" style="background:var(--accent);color:white" onclick="showSqlSnippet('upcoming')">Kommende (om 3 dage)</button>
+    <button class="btn btn-sm" style="background:var(--muted);color:white" onclick="showSqlSnippet('ended')">Slut (for 1 time siden)</button>
+  </div>
+  <pre id="sql-snippet" style="display:none;font-family:'SF Mono',Menlo,monospace;font-size:0.7rem;background:#1E1B2E;color:#d4d4d4;padding:0.7rem;border-radius:8px;white-space:pre-wrap;margin:0;line-height:1.5"></pre>
+</div>
+
 <h2>Oprettede test-brugere</h2>
 <div class="card">
   <div id="user-list"><div style="font-size:0.72rem;color:var(--muted)">Ingen test-brugere endnu</div></div>
@@ -189,6 +209,95 @@ function clearUserList() {
   testUsers = []; saveUsers();
   document.getElementById('cleanup-sql').style.display = 'none';
   log('Liste ryddet', 'warn');
+}
+
+async function runLoggedInTest(kind) {
+  var bubbleId = document.getElementById('cfg-event-id').value;
+  if (!bubbleId) { log('Mangler event ID — tryk "Hent mine bobler" først', 'err'); return; }
+
+  var { data: { session } } = await sb.auth.getSession();
+  if (!session) {
+    log('IKKE logget ind i denne tab. Åbn bubbleme.dk i en anden tab og log ind først.', 'err');
+    log('(Test bench skal dele session med bubbleme.dk for at simulere logged-in flow)', 'warn');
+    return;
+  }
+
+  log('── Logged-in test: ?' + kind + '= ──', 'info');
+  log('Bruger ID: ' + session.user.id.slice(0,8), 'info');
+  log('Event ID: ' + bubbleId.slice(0,8), 'info');
+
+  var preState = await _snapshotMembership(session.user.id, bubbleId);
+  log('PRE: medlem=' + preState.isMember + ', checked_in=' + (preState.checkedInAt || 'nej'), 'info');
+
+  window._lastTestUid = session.user.id;
+  window._lastTestBubbleId = bubbleId;
+  window._lastTestPreState = preState;
+
+  var url = window.location.origin + '/?' + kind + '=' + bubbleId;
+  log('URL: ' + url, 'info');
+  window.open(url, '_blank');
+  log('✓ Åbnet i nyt vindue', 'ok');
+  log('→ Lad modal sidde åben uden at klikke. Kom tilbage og tryk "Verificer DB".', 'warn');
+}
+
+async function _snapshotMembership(userId, bubbleId) {
+  try {
+    var { data } = await sb.from('bubble_members')
+      .select('user_id, checked_in_at')
+      .eq('bubble_id', bubbleId)
+      .eq('user_id', userId)
+      .maybeSingle();
+    return { isMember: !!data, checkedInAt: data?.checked_in_at || null };
+  } catch(e) { return { isMember: false, checkedInAt: null, error: e.message }; }
+}
+
+async function verifyDbState() {
+  if (!window._lastTestUid || !window._lastTestBubbleId) {
+    log('Ingen aktiv test at verificere. Kør test 5 eller 6 først.', 'err');
+    return;
+  }
+  var pre = window._lastTestPreState;
+  var post = await _snapshotMembership(window._lastTestUid, window._lastTestBubbleId);
+
+  log('── DB Verifikation ──', 'info');
+  log('PRE:  medlem=' + pre.isMember + ', checked_in=' + (pre.checkedInAt || 'nej'), 'info');
+  log('POST: medlem=' + post.isMember + ', checked_in=' + (post.checkedInAt || 'nej'), 'info');
+
+  var memberChanged = pre.isMember !== post.isMember;
+  var checkinChanged = pre.checkedInAt !== post.checkedInAt;
+
+  if (!memberChanged && !checkinChanged) {
+    log('✓ INGEN ÆNDRING — modal har ikke auto-joinet/checked-in (forventet hvis du ikke klikkede primær-knap)', 'ok');
+  } else if (memberChanged && !post.checkedInAt) {
+    log('⚠ Bruger blev MEDLEM men IKKE tjekket ind — du klikkede måske "Accepter invitation"?', 'warn');
+  } else if (memberChanged && post.checkedInAt) {
+    log('✗ Bruger blev MEDLEM OG TJEKKET IND — bug eller du klikkede "Tilmeld og gå live"?', 'err');
+    log('  (Hvis du klikkede primær-knap er det forventet. Hvis ikke, er bug ikke fixet)', 'warn');
+  } else if (!memberChanged && checkinChanged) {
+    log('✗ Eksisterende medlem blev TJEKKET IND uden valg — bug ikke fixet!', 'err');
+  }
+}
+
+function showSqlSnippet(state) {
+  var bubbleId = document.getElementById('cfg-event-id').value || '<EVENT_ID>';
+  var sql = '';
+  switch(state) {
+    case 'live':
+      sql = '-- Live nu (slutter om 2 timer)\nUPDATE bubbles\nSET event_date = now(),\n    event_end_date = now() + interval \'2 hours\'\nWHERE id = \'' + bubbleId + '\';';
+      break;
+    case 'soon':
+      sql = '-- Snart (starter om 23 min)\nUPDATE bubbles\nSET event_date = now() + interval \'23 minutes\',\n    event_end_date = now() + interval \'2 hours 23 minutes\'\nWHERE id = \'' + bubbleId + '\';';
+      break;
+    case 'upcoming':
+      sql = '-- Kommende (om 3 dage, varer 4 timer)\nUPDATE bubbles\nSET event_date = now() + interval \'3 days\',\n    event_end_date = now() + interval \'3 days 4 hours\'\nWHERE id = \'' + bubbleId + '\';';
+      break;
+    case 'ended':
+      sql = '-- Slut (sluttede for 1 time siden)\nUPDATE bubbles\nSET event_date = now() - interval \'3 hours\',\n    event_end_date = now() - interval \'1 hour\'\nWHERE id = \'' + bubbleId + '\';';
+      break;
+  }
+  var el = document.getElementById('sql-snippet');
+  el.textContent = sql;
+  el.style.display = 'block';
 }
 
 renderUsers();
