@@ -86,14 +86,12 @@ async function loadHome() {
     if (!currentProfile) await loadCurrentProfile();
     updateHomeAvatar();
 
-    // Greeting
+    // Greeting — write directly to home-greeting-name (do NOT touch previousElementSibling)
     const nameEl = document.getElementById('home-greeting-name');
     if (nameEl && currentProfile?.name) {
       var hour = new Date().getHours();
       var greetText = hour < 5 ? t('home_greeting_evening') : hour < 12 ? t('home_greeting_morning') : hour < 17 ? t('home_greeting_afternoon') : hour < 22 ? t('home_greeting_evening') : t('home_greeting_evening');
-      var greetLabel = nameEl?.previousElementSibling;
-      if (greetLabel) greetLabel.textContent = greetText + ',';
-      nameEl.innerHTML = escHtml(currentProfile.name.split(' ')[0]) + '<span style="display:inline-flex;width:1.3rem;height:1.3rem">' + ico('wave') + '</span>';
+      nameEl.textContent = greetText + ', ' + currentProfile.name.split(' ')[0];
     }
 
     // Load all data in parallel — v5.2
@@ -1224,9 +1222,9 @@ async function updateTopbarNotifBadge() {
       pendingCount = pc || 0;
     }
     var total = (invRes.count || 0) + (saveRes.count || 0) + pendingCount;
+    // Topbar bell: pure dot only (no number) — matches unreadState.notifSet pattern
     if (total > 0) {
-      badge.textContent = total > 9 ? '9+' : total;
-      badge.style.display = 'flex';
+      badge.style.display = 'block';
     } else {
       badge.style.display = 'none';
     }

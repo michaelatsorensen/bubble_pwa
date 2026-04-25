@@ -301,6 +301,7 @@ da: {
 
   // ── Notifications ──
   nf_title: 'Notifikationer',
+  nf_subtitle: 'Aktivitet og invitationer',
   nf_empty: 'Ingen notifikationer endnu',
   nf_empty_desc: 'Gem profiler og join bobler — så ser du aktivitet her',
   nf_invitations: 'Invitationer',
@@ -935,6 +936,7 @@ en: {
 
   // ── Notifications ──
   nf_title: 'Notifications',
+  nf_subtitle: 'Activity and invitations',
   nf_empty: 'No notifications yet',
   nf_empty_desc: 'Save profiles and join bubbles — then you\'ll see activity here',
   nf_invitations: 'Invitations',
