@@ -1969,7 +1969,7 @@ async function loadTopMatches() {
 }
 
 function bubbleCard(b, joined) {
-  // Visibility pill (only meaningful pill on the card)
+  // Visibility pill (always shown — encodes synlighed)
   var visClass = b.visibility === 'open' ? 'bb-pill-open'
                : b.visibility === 'hidden' ? 'bb-pill-hidden'
                : 'bb-pill-private';
@@ -1989,21 +1989,41 @@ function bubbleCard(b, joined) {
       : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6"/><circle cx="16" cy="13.5" r="4.5"/></svg>';
   }
 
+  // Status badge — state of the bubble (placed inline with title)
+  // Computed BEFORE meta so we can also set is-past on the card
+  var isPast = false;
+  var statusBadge = '';
+  if (isEvent && b.event_date) {
+    var endTime = new Date(b.event_end_date || b.event_date);
+    var startTime = new Date(b.event_date);
+    var now = new Date();
+    if (endTime < now) {
+      isPast = true;
+      statusBadge = ' <span class="bb-pill bb-pill-past">' + (t('bb_status_past') || 'Afsluttet') + '</span>';
+    } else if (startTime <= now && endTime >= now) {
+      // Currently live
+      statusBadge = ' <span class="bb-pill bb-pill-live">' + (t('bb_status_live') || 'Live nu') + '</span>';
+    }
+  }
+  // Pending membership status (overrides past — relevant even for past events)
+  if (b._pending) {
+    statusBadge = ' <span class="bb-pill bb-pill-pending">' + (t('bb_status_pending') || 'Afventer') + '</span>';
+  }
+
   // Meta line — pill + dot-separated info (members, location, event date)
   var metaParts = [];
   var memberCount = b.member_count || 0;
   if (memberCount > 0) {
     metaParts.push(memberCount + ' ' + (memberCount === 1 ? (t('bb_member') || 'medlem') : (t('bb_members') || 'medlemmer')));
   }
-  if (b.location) metaParts.push(escHtml(b.location));
+  if (b.location && !isEvent) metaParts.push(escHtml(b.location));
 
-  // Event date overrides location for events
+  // Event date for events — formatted nicely on meta line
   if (isEvent && b.event_date) {
-    var evD = new Date(b.event_date);
-    var evIsPast = new Date(b.event_end_date || b.event_date) < new Date();
-    var evDateStr = evD.toLocaleDateString(_locale(), { weekday: 'short', day: 'numeric', month: 'short' }) +
-      (evD.getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + evD.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '');
-    metaParts.push(evDateStr + (evIsPast ? ' · ' + (t('bb_past') || 'afsluttet') : ''));
+    var evD2 = new Date(b.event_date);
+    var evDateStr = evD2.toLocaleDateString(_locale(), { weekday: 'short', day: 'numeric', month: 'short' }) +
+      (evD2.getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + evD2.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '');
+    metaParts.push(evDateStr);
   }
 
   // Child counts (Opdag tab) — replace location/members with breakdown
@@ -2016,13 +2036,13 @@ function bubbleCard(b, joined) {
 
   var metaText = metaParts.join(' · ');
 
-  // Joined indicator: pink dot replaces chevron-only when user is a member
-  var titleSuffix = joined ? '<span class="bb-pink-dot" style="margin-left:4px"></span>' : '';
+  // Card class — adds is-past for dimmed past events
+  var cardClass = 'bb-card-list' + (isPast ? ' is-past' : '');
 
-  return '<div class="bb-card-list" data-action="openBubble" data-id="' + b.id + '">' +
+  return '<div class="' + cardClass + '" data-action="openBubble" data-id="' + b.id + '">' +
     '<div class="' + iconClass + '">' + iconInner + '</div>' +
     '<div class="bb-card-text">' +
-      '<div class="bb-card-title">' + escHtml(b.name) + titleSuffix + '</div>' +
+      '<div class="bb-card-title">' + escHtml(b.name) + statusBadge + '</div>' +
       '<div class="bb-card-meta">' +
         '<span class="bb-pill ' + visClass + '">' + visLabel + '</span>' +
         (metaText ? '<span class="bb-card-meta-text">' + metaText + '</span>' : '') +

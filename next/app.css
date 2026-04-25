@@ -2497,13 +2497,13 @@ a:not(.btn-primary):not(.btn-secondary):active {
 #screen-messages .empty-icon { color:rgba(255,255,255,0.15); }
 
 /* ═══════════════════════════════════════════════════════════════════
-   BB CARD SYSTEM — unified design tokens (next-v7.20)
+   BB CARD SYSTEM — unified design tokens (next-v7.20, refined v7.21)
    Used across Bobler, Beskeder, Profil/Bobler, Profil/Gemte, Medlemmer
    ═══════════════════════════════════════════════════════════════════ */
 
 /* Dark glass list-item card (baseline for all list views) */
 .bb-card-list {
-  background: rgba(23,15,52,0.78);
+  background: rgba(23,15,52,0.85);
   backdrop-filter: blur(12px) saturate(130%);
   -webkit-backdrop-filter: blur(12px) saturate(130%);
   border: 0.5px solid rgba(255,255,255,0.06);
@@ -2516,9 +2516,10 @@ a:not(.btn-primary):not(.btn-secondary):active {
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease;
   -webkit-tap-highlight-color: transparent;
-  color: rgba(255,255,255,0.9);
+  color: #FFFFFF;
 }
 .bb-card-list:active { transform: scale(0.98); border-color: rgba(255,255,255,0.12); }
+.bb-card-list.is-past { opacity: 0.65; }
 
 /* Boble icon — squircle 40px with 8px radius */
 .bb-card-icon-sq {
@@ -2562,11 +2563,11 @@ a:not(.btn-primary):not(.btn-secondary):active {
   min-width: 0;
 }
 
-/* Line 1 — title */
+/* Line 1 — title (full white) */
 .bb-card-title {
   font-size: 14px;
   font-weight: 700;
-  color: rgba(255,255,255,0.95);
+  color: #FFFFFF;
   line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2576,10 +2577,10 @@ a:not(.btn-primary):not(.btn-secondary):active {
   gap: 6px;
 }
 
-/* Line 2 — meta (subtitle, pill, time) */
+/* Line 2 — meta (subtitle, pill, time) — 0.7 alpha for read */
 .bb-card-meta {
   font-size: 11px;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255,255,255,0.7);
   line-height: 1.4;
   margin-top: 2px;
   display: flex;
@@ -2596,7 +2597,7 @@ a:not(.btn-primary):not(.btn-secondary):active {
   min-width: 0;
 }
 
-/* Pills — visibility status only */
+/* Pills — visibility status (darker bg + lighter text per mockup) */
 .bb-pill {
   display: inline-flex;
   align-items: center;
@@ -2606,13 +2607,17 @@ a:not(.btn-primary):not(.btn-secondary):active {
   font-weight: 700;
   letter-spacing: 0.02em;
   flex-shrink: 0;
-  text-transform: capitalize;
 }
-.bb-pill-private { background: rgba(46,207,207,0.16); color: #5DCAA5; }
-.bb-pill-open { background: rgba(125,211,156,0.16); color: #97C459; }
-.bb-pill-hidden { background: rgba(212,83,126,0.18); color: #ED93B1; }
+.bb-pill-private { background: rgba(15,110,86,0.55); color: #9FE1CB; }
+.bb-pill-open { background: rgba(59,109,17,0.55); color: #C0DD97; }
+.bb-pill-hidden { background: rgba(114,36,62,0.55); color: #F4C0D1; }
 
-/* Chevron — subtle white circle (variant B) */
+/* Status pills — state, not type (placed inline with title) */
+.bb-pill-pending { background: rgba(133,79,11,0.5); color: #FAC775; }
+.bb-pill-past { background: rgba(95,94,90,0.4); color: #B4B2A9; }
+.bb-pill-live { background: rgba(15,95,165,0.5); color: #B5D4F4; }
+
+/* Chevron — subtle white circle (Variant B) */
 .bb-card-chev {
   width: 28px;
   height: 28px;
@@ -2628,6 +2633,23 @@ a:not(.btn-primary):not(.btn-secondary):active {
   transition: background 0.15s ease;
 }
 .bb-card-list:hover .bb-card-chev { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
+
+/* Expand chevron — for parents with children (purple accent) */
+.bb-card-chev-exp {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(124,92,252,0.18);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #AFA9EC;
+  font-size: 12px;
+  font-weight: 600;
+  transition: transform 0.2s ease, background 0.15s ease;
+}
+.bb-card-list.is-expanded .bb-card-chev-exp { transform: rotate(180deg); }
 
 /* Pink dot — unread/new indicator */
 .bb-pink-dot {
@@ -2660,9 +2682,61 @@ a:not(.btn-primary):not(.btn-secondary):active {
 }
 .bb-section-header:first-child { margin-top: 0; }
 
+/* ─── Tree-rail (Variant 2: medium air + soft curves, gray) ─── */
+.bb-tree-rail {
+  position: relative;
+  padding-left: 30px;
+  margin: 10px 0 12px;
+}
+.bb-tree-rail::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: -4px;
+  bottom: 22px;
+  width: 2px;
+  background: rgba(150,148,140,0.40);
+  border-radius: 2px;
+}
+.bb-tree-item {
+  position: relative;
+  margin-bottom: 10px;
+}
+.bb-tree-item::before {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: 14px;
+  width: 16px;
+  height: 16px;
+  border-bottom-left-radius: 12px;
+  border-left: 2px solid rgba(150,148,140,0.40);
+  border-bottom: 2px solid rgba(150,148,140,0.40);
+}
+.bb-tree-add {
+  position: relative;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #888780;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.bb-tree-add::before {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: 0;
+  width: 16px;
+  height: 22px;
+  border-bottom-left-radius: 12px;
+  border-left: 2px solid rgba(150,148,140,0.40);
+  border-bottom: 2px solid rgba(150,148,140,0.40);
+}
+
 /* Stat card — horizontal layout (Variant 1) */
 .bb-stat-card {
-  background: rgba(23,15,52,0.78);
+  background: rgba(23,15,52,0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 0.5px solid rgba(255,255,255,0.06);
