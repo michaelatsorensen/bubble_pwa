@@ -1969,75 +1969,67 @@ async function loadTopMatches() {
 }
 
 function bubbleCard(b, joined) {
-  var ups = b.upvote_count || bubbleUpvotes[b.id] || 0;
-  var upLabel = ups > 0 ? `<div class="fs-065" style="color:var(--accent);display:flex;align-items:center;gap:0.15rem">${icon('rocket')}<span style="font-weight:700">${ups}</span></div>` : '';
+  // Visibility pill (only meaningful pill on the card)
+  var visClass = b.visibility === 'open' ? 'bb-pill-open'
+               : b.visibility === 'hidden' ? 'bb-pill-hidden'
+               : 'bb-pill-private';
+  var visLabel = b.visibility === 'open' ? (t('bb_open') || 'Åben')
+                : b.visibility === 'hidden' ? (t('bb_hidden') || 'Skjult')
+                : (t('bb_private') || 'Privat');
 
-  // Contact avatars (from Discover)
-  var contactHtml = '';
-  var contacts = b._contacts || [];
-  if (contacts.length > 0) {
-    var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
-    var avs = contacts.map(function(c, i) {
-      var ini = (c.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-      var ml = i > 0 ? 'margin-left:-5px;' : '';
-      if (c.avatar_url) return '<div style="width:20px;height:20px;border-radius:50%;overflow:hidden;border:1.5px solid var(--bg);' + ml + 'position:relative;z-index:' + (3-i) + '"><img src="' + escHtml(c.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
-      return '<div style="width:20px;height:20px;border-radius:50%;background:' + avColors[i % 10] + ';display:flex;align-items:center;justify-content:center;font-size:0.4rem;font-weight:700;color:white;border:1.5px solid var(--bg);' + ml + 'position:relative;z-index:' + (3-i) + '">' + ini + '</div>';
-    }).join('');
-    contactHtml = '<div style="display:flex;align-items:center;gap:0.25rem;margin-top:0.2rem"><div style="display:flex;align-items:center">' + avs + '</div><span class="fs-065 text-muted">' + contacts.length + ' kontakt' + (contacts.length > 1 ? 'er' : '') + '</span></div>';
+  // Icon — squircle (8px radius) with type-tinted background if no logo
+  var isEvent = b.type === 'event' || b.type === 'live';
+  var iconClass = isEvent ? 'bb-card-icon-sq is-event' : 'bb-card-icon-sq';
+  var iconInner;
+  if (b.icon_url) {
+    iconInner = '<img src="' + escHtml(b.icon_url) + '" alt="">';
+  } else {
+    iconInner = isEvent
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6"/><circle cx="16" cy="13.5" r="4.5"/></svg>';
   }
 
-  var memberLabel = (b.member_count || 0) > 0 ? '<div class="fw-700" style="font-size:0.75rem">' + ico('users') + ' ' + b.member_count + '</div>' : '';
-  var parentRef = '';
-  if (b._grandparentName && b._parentName) {
-    parentRef = '<div class="bb-breadcrumb"><span class="bb-bc-pill">↳ ' + escHtml(b._grandparentName) + '</span><span class="bb-bc-chev">›</span><span class="bb-bc-pill2">' + escHtml(b._parentName) + '</span></div>';
-  } else if (b._parentName) {
-    parentRef = '<div class="bb-breadcrumb"><span class="bb-bc-pill">↳ ' + escHtml(b._parentName) + '</span></div>';
+  // Meta line — pill + dot-separated info (members, location, event date)
+  var metaParts = [];
+  var memberCount = b.member_count || 0;
+  if (memberCount > 0) {
+    metaParts.push(memberCount + ' ' + (memberCount === 1 ? (t('bb_member') || 'medlem') : (t('bb_members') || 'medlemmer')));
   }
+  if (b.location) metaParts.push(escHtml(b.location));
 
-  // Child count pills (Opdag: "◎ 6 netværk · 📅 2 events")
-  var childPills = '';
-  if (b._childNetCount > 0 || b._childEventCount > 0) {
-    var pills = [];
-    if (b._childNetCount > 0) pills.push('<span style="font-size:0.62rem;padding:2px 7px;border-radius:6px;background:rgba(124,92,252,0.06);color:#534AB7;font-weight:600;display:inline-flex;align-items:center;gap:3px">' + ico('bubble') + ' ' + b._childNetCount + ' netværk</span>');
-    if (b._childEventCount > 0) pills.push('<span style="font-size:0.62rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.06);color:#0F6E56;font-weight:600;display:inline-flex;align-items:center;gap:3px">' + ico('calendar') + ' ' + b._childEventCount + ' event' + (b._childEventCount > 1 ? 's' : '') + '</span>');
-    childPills = '<div style="display:flex;gap:4px;margin-top:0.15rem">' + pills.join('') + '</div>';
-  }
-
-  // Event date row — shown on event cards only
-  var eventDateHtml = '';
-  if ((b.type === 'event' || b.type === 'live') && b.event_date) {
+  // Event date overrides location for events
+  if (isEvent && b.event_date) {
     var evD = new Date(b.event_date);
     var evIsPast = new Date(b.event_end_date || b.event_date) < new Date();
     var evDateStr = evD.toLocaleDateString(_locale(), { weekday: 'short', day: 'numeric', month: 'short' }) +
-      (evD.getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + evD.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) +
-        (b.event_end_date ? ' – ' + new Date(b.event_end_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '')
-      : '');
-    var evBadge = evIsPast
-      ? '<span style="font-size:0.58rem;padding:1px 5px;border-radius:99px;background:rgba(30,27,46,0.06);color:var(--muted);font-weight:600">Afsluttet</span>'
-      : '<span style="font-size:0.58rem;padding:1px 5px;border-radius:99px;background:rgba(46,207,207,0.12);color:#085041;font-weight:600">' + t('bb_coming') + '</span>';
-    eventDateHtml = '<div style="display:flex;align-items:center;gap:0.25rem;margin-top:0.2rem;opacity:' + (evIsPast ? '0.55' : '1') + '">' +
-      '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="' + (evIsPast ? 'currentColor' : '#0F6E56') + '" stroke-width="1.4" style="flex-shrink:0"><rect x="1" y="2" width="10" height="9" rx="1.5"/><path d="M4 1v2M8 1v2M1 5h10"/></svg>' +
-      '<span style="font-size:0.68rem;font-weight:600;color:' + (evIsPast ? 'var(--muted)' : '#0F6E56') + '">' + evDateStr + '</span>' +
-      '<span style="width:2px;height:2px;border-radius:50%;background:var(--muted);flex-shrink:0"></span>' +
-      evBadge + '</div>';
+      (evD.getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + evD.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '');
+    metaParts.push(evDateStr + (evIsPast ? ' · ' + (t('bb_past') || 'afsluttet') : ''));
   }
 
-  return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}">
-    <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};color:${bubbleColor(b.type, 0.9)}">${b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : bubbleEmoji(b.type)}</div>
-    <div style="flex:1;min-width:0">
-      <div class="fw-600 fs-085">${escHtml(b.name)}</div>
-      <div style="font-size:0.68rem;color:var(--muted);display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap">${visIcon(b.visibility)} ${escHtml(b.type_label || b.type)} ${b.location ? '<span>·</span> <span>' + escHtml(b.location) + '</span>' : ''}</div>
-      ${eventDateHtml}
-      ${parentRef}
-      ${childPills}
-      ${contactHtml}
-    </div>
-    <div class="flex-col-end" style="align-items:flex-end;gap:0.15rem">
-      ${memberLabel}
-      ${upLabel}
-      ${joined ? '<div class="live-dot"></div>' : '<div class="fs-09" style="color:var(--accent)">+</div>'}
-    </div>
-  </div>`;
+  // Child counts (Opdag tab) — replace location/members with breakdown
+  if (b._childNetCount > 0 || b._childEventCount > 0) {
+    var childParts = [];
+    if (b._childNetCount > 0) childParts.push(b._childNetCount + ' netværk');
+    if (b._childEventCount > 0) childParts.push(b._childEventCount + ' event' + (b._childEventCount > 1 ? 's' : ''));
+    metaParts = childParts;
+  }
+
+  var metaText = metaParts.join(' · ');
+
+  // Joined indicator: pink dot replaces chevron-only when user is a member
+  var titleSuffix = joined ? '<span class="bb-pink-dot" style="margin-left:4px"></span>' : '';
+
+  return '<div class="bb-card-list" data-action="openBubble" data-id="' + b.id + '">' +
+    '<div class="' + iconClass + '">' + iconInner + '</div>' +
+    '<div class="bb-card-text">' +
+      '<div class="bb-card-title">' + escHtml(b.name) + titleSuffix + '</div>' +
+      '<div class="bb-card-meta">' +
+        '<span class="bb-pill ' + visClass + '">' + visLabel + '</span>' +
+        (metaText ? '<span class="bb-card-meta-text">' + metaText + '</span>' : '') +
+      '</div>' +
+    '</div>' +
+    '<div class="bb-card-chev">›</div>' +
+  '</div>';
 }
 
 
