@@ -3164,7 +3164,7 @@ a:not(.btn-primary):not(.btn-secondary):active {
   margin-left: 18px !important;
   padding-left: 0 !important;
   padding-right: 0 !important;
-  padding-top: 2px !important;
+  padding-top: 4px !important;
   padding-bottom: 0 !important;
   position: relative;
 }
@@ -3182,7 +3182,7 @@ a:not(.btn-primary):not(.btn-secondary):active {
   position: relative !important;
   padding-left: 14px !important;
   padding-right: 0 !important;
-  padding-top: 6px !important;
+  padding-top: 8px !important;
   margin-bottom: 0 !important;
 }
 .bb-tree-leaf::before,
@@ -3203,15 +3203,19 @@ a:not(.btn-primary):not(.btn-secondary):active {
   display: none !important;
 }
 
-/* "+ Opret" affordance — last item in tree, with curve */
+/* "+ Opret" affordance — last item in tree, with curve.
+   margin override: original CSS had margin: 6px 0 2px 28px which
+   created uneven spacing. Now matches siblings (8px top via padding,
+   0 margin everywhere else). */
 .bb-tree-add {
   position: relative !important;
   padding: 8px 14px !important;
   padding-left: 14px !important;
+  padding-top: 8px !important;
   font-size: 12px !important;
   font-weight: 600 !important;
   color: #888780 !important;
-  margin-left: 0 !important;
+  margin: 0 !important;
 }
 .bb-tree-add::before {
   content: '' !important;
