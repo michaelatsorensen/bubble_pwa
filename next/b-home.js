@@ -1760,6 +1760,41 @@ async function loadMyNetworks() {
     }
     list.innerHTML = html;
     _renderSubTabDots();
+    // DEBUG v7.45: Audit children inside OPEN trunk
+    setTimeout(function() {
+      var openTrunks = list.querySelectorAll('.bb-tree-trunk:not(.collapsed)');
+      var lines = [];
+      openTrunks.forEach(function(trunk, ti) {
+        lines.push('<div style="background:#ffeb3b;padding:4px;font-weight:bold">TRUNK #' + ti + '</div>');
+        var children = trunk.querySelectorAll(':scope > .bb-tree-branch, :scope > .bb-tree-leaf');
+        var prevBottom = trunk.getBoundingClientRect().top;
+        children.forEach(function(child, i) {
+          var rect = child.getBoundingClientRect();
+          var card = child.querySelector('.bb-card-list');
+          var cardR = card ? card.getBoundingClientRect() : null;
+          var s = window.getComputedStyle(child);
+          var cardS = card ? window.getComputedStyle(card) : null;
+          var gapToPrev = rect.top - prevBottom;
+          prevBottom = rect.bottom;
+          var name = card ? (card.querySelector('.bb-card-title') || {}).textContent : '?';
+          lines.push(
+            '<div style="border-bottom:1px solid #ccc;padding:2px 0">' +
+            '<b>' + i + ' ' + (name||'').slice(0,18) + '</b> GAP=<b>' + gapToPrev.toFixed(1) + '</b>' +
+            '<br>' + child.className + ' h=' + rect.height.toFixed(0) + ' pt=' + s.paddingTop + ' pb=' + s.paddingBottom + ' mt=' + s.marginTop + ' mb=' + s.marginBottom +
+            (cardS ? '<br>card h=' + cardR.height.toFixed(0) + ' mt=' + cardS.marginTop + ' mb=' + cardS.marginBottom : '') +
+            '</div>'
+          );
+        });
+      });
+      if (openTrunks.length === 0) {
+        lines.push('<div style="background:#f88;padding:4px">NO OPEN TRUNKS — open one first then refresh</div>');
+      }
+      var overlay = document.createElement('div');
+      overlay.id = 'spacing-debug-overlay';
+      overlay.style.cssText = 'background:#fff;color:#000;padding:8px;font-size:10px;font-family:monospace;border:2px solid red;margin-bottom:12px;max-height:60vh;overflow:auto;position:relative;z-index:99';
+      overlay.innerHTML = '<b>CHILDREN AUDIT v7.45 — open Sønderborg Vækstråd</b><br>' + lines.join('');
+      list.insertBefore(overlay, list.firstChild);
+    }, 200);
   } catch(e) { logError("loadMyNetworks", e); showRetryState('bb-net-list', 'loadMyNetworks', 'Kunne ikke hente netv\u00E6rk'); }
 }
 
