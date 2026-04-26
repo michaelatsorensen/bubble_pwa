@@ -1760,6 +1760,34 @@ async function loadMyNetworks() {
     }
     list.innerHTML = html;
     _renderSubTabDots();
+    // DEBUG v7.39: Show audit ON SCREEN (no console needed on iOS)
+    setTimeout(function() {
+      var accs = list.querySelectorAll('.bb-accordion');
+      var lines = [];
+      accs.forEach(function(acc, i) {
+        var root = acc.querySelector('.bb-tree-root');
+        var trunk = acc.querySelector('.bb-tree-trunk');
+        var nameEl = root ? root.querySelector('div[style*="font-weight"]') : null;
+        var name = nameEl ? nameEl.textContent.slice(0,18) : '?';
+        var accS = window.getComputedStyle(acc);
+        var trunkS = trunk ? window.getComputedStyle(trunk) : null;
+        var hasT = !!trunk;
+        var col = trunk ? trunk.classList.contains('collapsed') : false;
+        lines.push(
+          '<div style="border-bottom:1px solid #ccc;padding:2px 0">' +
+          '<b>' + i + ' ' + name + '</b> ' + (hasT ? (col ? '[collapsed]' : '[OPEN]') : '[no children]') +
+          '<br>acc h=' + acc.offsetHeight + ' mb=' + accS.marginBottom +
+          (trunkS ? '<br>trunk h=' + trunk.offsetHeight + ' mt=' + trunkS.marginTop + ' mb=' + trunkS.marginBottom + ' pt=' + trunkS.paddingTop + ' pb=' + trunkS.paddingBottom : '') +
+          '</div>'
+        );
+      });
+      // Inject overlay at top of list
+      var overlay = document.createElement('div');
+      overlay.id = 'spacing-debug-overlay';
+      overlay.style.cssText = 'background:#fff;color:#000;padding:8px;font-size:10px;font-family:monospace;border:2px solid red;margin-bottom:12px;max-height:50vh;overflow:auto';
+      overlay.innerHTML = '<b>SPACING AUDIT (v7.39)</b><br>' + lines.join('');
+      list.insertBefore(overlay, list.firstChild);
+    }, 200);
   } catch(e) { logError("loadMyNetworks", e); showRetryState('bb-net-list', 'loadMyNetworks', 'Kunne ikke hente netv\u00E6rk'); }
 }
 
