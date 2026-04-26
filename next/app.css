@@ -3106,32 +3106,33 @@ a:not(.btn-primary):not(.btn-secondary):active {
    Aggressive overrides because legacy CSS has competing rules.
    ═══════════════════════════════════════════════════════════════════ */
 
-/* Trunk: rail starts at parent's left edge area, children indented */
+/* Trunk: rail starts at parent's left edge area, children indented.
+   Using PROD's pattern (margin-left, minimal padding-top) so collapse
+   works correctly without phantom space. */
 .bb-tree-trunk {
-  margin-left: 0 !important;
-  padding-left: 30px !important;
+  margin-left: 18px !important;
+  padding-left: 0 !important;
   padding-right: 0 !important;
-  padding-top: 6px !important;
+  padding-top: 4px !important;
   padding-bottom: 0 !important;
   position: relative;
 }
 .bb-tree-trunk::before {
   content: '' !important;
   position: absolute !important;
-  left: 14px !important;
+  left: 0 !important;
   top: 0 !important;
-  bottom: 18px !important;
+  bottom: 14px !important;
   width: 2px !important;
   background: rgba(150,148,140,0.5) !important;
   border-radius: 2px !important;
 }
 
-/* Branch: child wrapper — only left padding (right edge stays aligned).
-   padding-top: 8px gives spacing between consecutive branches (this is
-   how prod does it — DO NOT change to 0 or spacing breaks). */
+/* Branch: child wrapper — prod-style padding-left for indent.
+   padding-top: 8px gives spacing between consecutive branches. */
 .bb-tree-branch {
   position: relative !important;
-  padding-left: 0 !important;
+  padding-left: 14px !important;
   padding-right: 0 !important;
   padding-top: 8px !important;
 }
@@ -3140,9 +3141,9 @@ a:not(.btn-primary):not(.btn-secondary):active {
 .bb-tree-branch::after {
   content: '' !important;
   position: absolute !important;
-  left: -16px !important;
+  left: 0 !important;
   top: 14px !important;
-  width: 16px !important;
+  width: 14px !important;
   height: 16px !important;
   border-bottom-left-radius: 12px !important;
   border-left: 2px solid rgba(150,148,140,0.5) !important;
@@ -3155,28 +3156,28 @@ a:not(.btn-primary):not(.btn-secondary):active {
   display: none !important;
 }
 
-/* Leaves trunk (level 3 events under child networks) */
+/* Leaves trunk (level 3 events under child networks) — prod pattern */
 .bb-tree-leaves {
-  margin-left: 0 !important;
-  padding-left: 30px !important;
+  margin-left: 18px !important;
+  padding-left: 0 !important;
   padding-right: 0 !important;
-  padding-top: 6px !important;
+  padding-top: 2px !important;
   padding-bottom: 0 !important;
   position: relative;
 }
 .bb-tree-leaves::before {
   content: '' !important;
   position: absolute !important;
-  left: 14px !important;
+  left: 0 !important;
   top: 0 !important;
-  bottom: 14px !important;
+  bottom: 10px !important;
   width: 2px !important;
   background: rgba(150,148,140,0.5) !important;
   border-radius: 2px !important;
 }
 .bb-tree-leaf {
   position: relative !important;
-  padding-left: 0 !important;
+  padding-left: 14px !important;
   padding-right: 0 !important;
   padding-top: 6px !important;
 }
@@ -3184,9 +3185,9 @@ a:not(.btn-primary):not(.btn-secondary):active {
 .bb-tree-leaf::after {
   content: '' !important;
   position: absolute !important;
-  left: -16px !important;
+  left: 0 !important;
   top: 14px !important;
-  width: 16px !important;
+  width: 14px !important;
   height: 16px !important;
   border-bottom-left-radius: 12px !important;
   border-left: 2px solid rgba(150,148,140,0.5) !important;
@@ -3202,6 +3203,7 @@ a:not(.btn-primary):not(.btn-secondary):active {
 .bb-tree-add {
   position: relative !important;
   padding: 8px 14px !important;
+  padding-left: 14px !important;
   font-size: 12px !important;
   font-weight: 600 !important;
   color: #888780 !important;
@@ -3210,9 +3212,9 @@ a:not(.btn-primary):not(.btn-secondary):active {
 .bb-tree-add::before {
   content: '' !important;
   position: absolute !important;
-  left: -16px !important;
+  left: 0 !important;
   top: 0 !important;
-  width: 16px !important;
+  width: 14px !important;
   height: 22px !important;
   border-bottom-left-radius: 12px !important;
   border-left: 2px solid rgba(150,148,140,0.5) !important;
@@ -3525,8 +3527,6 @@ a:not(.btn-primary):not(.btn-secondary):active {
   max-height: 0 !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
-  border-top: 0 !important;
-  border-bottom: 0 !important;
   opacity: 0 !important;
   pointer-events: none !important;
 }
