@@ -3517,10 +3517,16 @@ a:not(.btn-primary):not(.btn-secondary):active {
   box-sizing: border-box !important;
   transition:
     max-height 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    padding-top 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    padding-bottom 0.35s cubic-bezier(0.22, 1, 0.36, 1),
     opacity 0.25s ease !important;
 }
 .bb-tree-trunk.collapsed {
   max-height: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border-top: 0 !important;
+  border-bottom: 0 !important;
   opacity: 0 !important;
   pointer-events: none !important;
 }
