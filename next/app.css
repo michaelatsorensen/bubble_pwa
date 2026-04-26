@@ -3463,3 +3463,76 @@ a:not(.btn-primary):not(.btn-secondary):active {
   color: rgba(23,15,52,0.45);
   letter-spacing: 0.06em;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   BB-CARD-LIST EXTENSIONS (next-v7.27)
+   Support for tree-context: icon-wrap (checkmark anchor) + ghost styling
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Ensure bb-card-icon-sq with .icon-wrap can host absolutely positioned checkmark */
+.bb-card-icon-sq.icon-wrap {
+  position: relative;
+}
+
+/* Member checkmark (when nested inside .bb-card-icon-sq) */
+.bb-card-icon-sq .bb-mem-check {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #1A9E8E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(23,15,52,0.85);
+  box-shadow: 0 0 0 1px rgba(26,158,142,0.3), 0 0 8px rgba(26,158,142,0.4);
+  z-index: 2;
+  pointer-events: none;
+}
+.bb-card-icon-sq .bb-mem-check svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* Ghost styling — dashed border + dimmed for non-member parents */
+.bb-card-list.is-ghost {
+  opacity: 0.65;
+  border-style: dashed !important;
+  background: rgba(23,15,52,0.55) !important;
+}
+
+/* Live mini-badge (used inside title for active live events) */
+.bb-card-title .bb-pill-live {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+/* Tree-context: bb-card-list inside bb-tree-leaf or bb-tree-branch needs no extra margin */
+.bb-tree-branch > .bb-card-list,
+.bb-tree-leaf > .bb-card-list {
+  margin-bottom: 0;
+}
+
+/* Tree-toggle button styling — makes the chevron consistent */
+.bb-tree-toggle {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  background: rgba(124,92,252,0.18) !important;
+  border: none !important;
+  color: #AFA9EC !important;
+  font-size: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+.bb-tree-toggle.open { transform: rotate(180deg); }

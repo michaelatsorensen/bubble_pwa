@@ -1609,15 +1609,15 @@ async function loadMyNetworks() {
           var hasChildren = cnEvents.length > 0 || cnAdopted.length > 0;
 
           html += '<div class="bb-tree-branch">';
-          html += '<div class="bb-tree-net" style="' + (isGhost && !isMember ? 'opacity:0.55;border-style:dashed;' : '') + '">';
-          html += '<div style="position:relative">' + '<div class="bb-tree-net-ico">' + _bIco(cn, _netIcoSm, 8) + '</div>' + (isMember ? _memberCheck : '') + '</div>';
-          html += '<div class="bb-tree-body" onclick="event.stopPropagation();openBubbleChat(\'' + cn.id + '\',\'screen-bubbles\')">';
-          html += '<div style="font-size:0.75rem;font-weight:600">' + escHtml(cn.name) + '</div>';
-          html += '<div style="font-size:0.58rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(cn.visibility) + cnMc + ' ' + t('bb_members_short') + (cnEvents.length > 0 ? ' \u00B7 ' + cnEvents.length + ' ' + t('bb_events_count') : '') + '</div>';
+          html += '<div class="bb-card-list' + (isGhost && !isMember ? ' is-ghost' : '') + '">';
+          html += '<div class="bb-card-icon-sq icon-wrap">' + _bIco(cn, _netIcoSm, 8) + (isMember ? _memberCheck : '') + '</div>';
+          html += '<div class="bb-card-text" onclick="event.stopPropagation();openBubbleChat(\'' + cn.id + '\',\'screen-bubbles\')">';
+          html += '<div class="bb-card-title">' + escHtml(cn.name) + (pendingSet[cn.id] ? ' <span class="pending-badge">Afventer</span>' : '') + '</div>';
+          html += '<div class="bb-card-meta">' + visIcon(cn.visibility) + '<span class="bb-card-meta-text">' + cnMc + ' ' + t('bb_members_short') + (cnEvents.length > 0 ? ' \u00B7 ' + cnEvents.length + ' ' + t('bb_events_count') : '') + '</span></div>';
           html += '</div>';
           html += _unreadDot(cn.id);
           if (hasChildren) {
-            html += '<button class="bb-tree-toggle' + _togClass(cnAccId) + '" id="tog-' + cnAccId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + cnAccId + '\')" style="width:24px;height:24px">' + _chevSm + '</button>';
+            html += '<button class="bb-tree-toggle' + _togClass(cnAccId) + '" id="tog-' + cnAccId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + cnAccId + '\')">' + _chevSm + '</button>';
           }
           html += '</div>';
 
@@ -1629,11 +1629,13 @@ async function loadMyNetworks() {
             cnAdopted.forEach(function(gc) {
               var gcMc = gc.member_count ?? gc.bubble_members?.[0]?.count ?? 0;
 
-              html += '<div class="bb-tree-leaf"><div class="bb-tree-net" style="border-left-color:rgba(46,207,207,0.35)" onclick="event.stopPropagation();openBubbleChat(\'' + gc.id + '\',\'screen-bubbles\')">';
-              html += '<div class="bb-tree-net-ico">' + _bIco(cn, _netIcoSm, 8) + '</div>';
-              html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(gc.name) + '</div>';
-              html += '<div style="font-size:0.55rem;color:var(--muted)">' + visIcon(gc.visibility) + gcMc + ' medl.</div></div>';
-              html += _unreadDot(gc.id) + '<div class="bb-tree-go">\u203A</div>';
+              html += '<div class="bb-tree-leaf"><div class="bb-card-list" onclick="event.stopPropagation();openBubbleChat(\'' + gc.id + '\',\'screen-bubbles\')">';
+              html += '<div class="bb-card-icon-sq icon-wrap">' + _bIco(cn, _netIcoSm, 8) + '</div>';
+              html += '<div class="bb-card-text">';
+              html += '<div class="bb-card-title">' + escHtml(gc.name) + '</div>';
+              html += '<div class="bb-card-meta">' + visIcon(gc.visibility) + '<span class="bb-card-meta-text">' + gcMc + ' medl.</span></div>';
+              html += '</div>';
+              html += _unreadDot(gc.id) + '<div class="bb-card-chev">\u203A</div>';
               html += '</div></div>';
             });
 
@@ -1644,11 +1646,13 @@ async function loadMyNetworks() {
               var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
               var gcLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
               var evIsMember = myIds.indexOf(ev.id) >= 0;
-              html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast && !gcLive ? 'opacity:0.5' : '') + '">';
-              html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _bIco(ev, _calIco, 6) + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
-              html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
-              html += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</div></div>';
-              html += _unreadDot(ev.id) + (_goLiveBtn(ev, evIsMember) || '<div class="bb-tree-go">\u203A</div>');
+              html += '<div class="bb-tree-leaf"><div class="bb-card-list' + (isPast && !gcLive ? ' is-past' : '') + '" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')">';
+              html += '<div class="bb-card-icon-sq icon-wrap is-event">' + _bIco(ev, _calIco, 6) + (evIsMember ? _memberCheck : '') + '</div>';
+              html += '<div class="bb-card-text">';
+              html += '<div class="bb-card-title">' + escHtml(ev.name) + '</div>';
+              html += '<div class="bb-card-meta">' + visIcon(ev.visibility) + '<span class="bb-card-meta-text">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</span></div>';
+              html += '</div>';
+              html += _unreadDot(ev.id) + (_goLiveBtn(ev, evIsMember) || '<div class="bb-card-chev">\u203A</div>');
               html += '</div></div>';
             });
             if (isOwner) {
@@ -1666,11 +1670,13 @@ async function loadMyNetworks() {
           var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
           var evLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
           var evIsMember = myIds.indexOf(ev.id) >= 0;
-          html += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast && !evLive ? 'opacity:0.5' : '') + '">';
-          html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _bIco(ev, _calIco, 6) + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
-          html += '<div style="flex:1;min-width:0"><div style="font-size:0.75rem;font-weight:600">' + escHtml(ev.name) + '</div>';
-          html += '<div style="font-size:0.58rem;color:var(--muted)">' + visIcon(ev.visibility) + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</div></div>';
-          html += _unreadDot(ev.id) + (_goLiveBtn(ev, evIsMember) || '<div class="bb-tree-go">\u203A</div>');
+          html += '<div class="bb-tree-branch"><div class="bb-card-list' + (isPast && !evLive ? ' is-past' : '') + '" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')">';
+          html += '<div class="bb-card-icon-sq icon-wrap is-event">' + _bIco(ev, _calIco, 6) + (evIsMember ? _memberCheck : '') + '</div>';
+          html += '<div class="bb-card-text">';
+          html += '<div class="bb-card-title">' + escHtml(ev.name) + '</div>';
+          html += '<div class="bb-card-meta">' + visIcon(ev.visibility) + '<span class="bb-card-meta-text">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</span></div>';
+          html += '</div>';
+          html += _unreadDot(ev.id) + (_goLiveBtn(ev, evIsMember) || '<div class="bb-card-chev">\u203A</div>');
           html += '</div></div>';
         });
 
@@ -1728,11 +1734,13 @@ async function loadMyNetworks() {
           var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
           var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
           var evIsMember = myIds.indexOf(ev.id) >= 0;
-          html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
-          html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _bIco(ev, _calIco, 6) + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
-          html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
-          html += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</div></div>';
-          html += _unreadDot(ev.id) + (_goLiveBtn(ev, evIsMember) || '<div class="bb-tree-go">\u203A</div>');
+          html += '<div class="bb-tree-leaf"><div class="bb-card-list' + (isPast ? ' is-past' : '') + '" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')">';
+          html += '<div class="bb-card-icon-sq icon-wrap is-event">' + _bIco(ev, _calIco, 6) + (evIsMember ? _memberCheck : '') + '</div>';
+          html += '<div class="bb-card-text">';
+          html += '<div class="bb-card-title">' + escHtml(ev.name) + '</div>';
+          html += '<div class="bb-card-meta">' + visIcon(ev.visibility) + '<span class="bb-card-meta-text">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</span></div>';
+          html += '</div>';
+          html += _unreadDot(ev.id) + (_goLiveBtn(ev, evIsMember) || '<div class="bb-card-chev">\u203A</div>');
           html += '</div></div>';
         });
         if (isOwner) {
@@ -1881,13 +1889,13 @@ function _bbEventCard(e, parentMap, gpMap, isPast) {
     breadcrumb = '<div class="bb-breadcrumb"><span class="bb-bc-pill">' + escHtml(parentName) + '</span></div>';
   }
   var evCardLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === e.id);
-  return '<div class="bb-tree-evt" data-action="openBubble" data-id="' + e.id + '" style="margin-bottom:0.45rem;' + (isPast ? 'opacity:0.5;' : '') + '">' +
-    '<div class="bb-tree-evt-ico">' + (e.icon_url ? '<img src="' + escHtml(e.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px">' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>') + '</div>' +
-    '<div style="flex:1;min-width:0">' +
-    '<div style="font-size:0.82rem;font-weight:700;line-height:1.3">' + escHtml(e.name) + '</div>' +
-    '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;flex-wrap:wrap;gap:2px;margin-top:2px">' + visIcon(e.visibility) + dateStr + '</div>' +
+  return '<div class="bb-card-list' + (isPast && !evCardLive ? ' is-past' : '') + '" data-action="openBubble" data-id="' + e.id + '">' +
+    '<div class="bb-card-icon-sq icon-wrap is-event">' + (e.icon_url ? '<img src="' + escHtml(e.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px">' : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>') + _memberCheck + '</div>' +
+    '<div class="bb-card-text">' +
     breadcrumb +
-    '</div>' + _unreadDot(e.id) + '<div class="bb-tree-go">\u203A</div></div>';
+    '<div class="bb-card-title">' + escHtml(e.name) + '</div>' +
+    '<div class="bb-card-meta">' + visIcon(e.visibility) + '<span class="bb-card-meta-text">' + dateStr + '</span></div>' +
+    '</div>' + _unreadDot(e.id) + '<div class="bb-card-chev">\u203A</div></div>';
 }
 // ══════════════════════════════════════════════════════════
 //  TOP MATCHES — "Vigtigste personer du bør møde"
