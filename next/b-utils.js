@@ -602,27 +602,44 @@ function timeAgo(dateStr) {
   var _rafPending = false;
 
   function collectItems(scrollEl) {
-    // Collect "leaf" content items — skip pure wrapper divs
-    var containerH = scrollEl.clientHeight;
+    // Collect "leaf" content items — skip pure wrapper divs.
+    // Strategy: known leaf classes are pushed directly. Wrappers
+    // (panels, list containers) are recursed into to find leaves.
     var items = [];
+    function isLeaf(el) {
+      if (!el.classList) return false;
+      return el.classList.contains('bb-card-list') ||
+             el.classList.contains('bb-accordion') ||
+             el.classList.contains('bb-tree-root') ||
+             el.classList.contains('saved-card-v2') ||
+             el.classList.contains('card');
+    }
+    function isWrapperId(el) {
+      // Known wrapper IDs that should always be recursed into
+      var id = el.id || '';
+      return id.indexOf('bb-panel-') === 0 ||
+             id === 'bb-net-list' ||
+             id === 'bb-evt-list' ||
+             id === 'bb-pending-invites' ||
+             id === 'discover-net-list' ||
+             id === 'discover-evt-list' ||
+             id === 'notifications-list';
+    }
     function walk(parent) {
       var kids = parent.children;
       for (var i = 0; i < kids.length; i++) {
         var el = kids[i];
         if (el.offsetHeight < 10) continue;
-        // Known leaf elements (cards, accordions, tree-roots) — always animate
-        if (el.classList && (
-          el.classList.contains('bb-card-list') ||
-          el.classList.contains('bb-accordion') ||
-          el.classList.contains('bb-tree-root') ||
-          el.classList.contains('saved-card-v2') ||
-          el.classList.contains('card')
-        )) {
+        if (isLeaf(el)) {
           items.push(el);
           continue;
         }
-        // If element is taller than 60% of viewport, it's a wrapper — go deeper
-        if (el.offsetHeight > containerH * 0.6 && el.children.length > 1) {
+        if (isWrapperId(el) && el.children.length > 0) {
+          walk(el);
+          continue;
+        }
+        // Fallback: tall element with multiple children = wrapper
+        if (el.offsetHeight > 200 && el.children.length > 1) {
           walk(el);
         } else {
           items.push(el);
@@ -630,12 +647,6 @@ function timeAgo(dateStr) {
       }
     }
     walk(scrollEl);
-    return items;
-  }
-
-  function processScroll(scrollEl) {
-    var containerTop = scrollEl.getBoundingClientRect().top;
-    var items = collectItems(scrollEl);
 
     // DEBUG v7.49: show escalator state in overlay
     if (window._showEscDebug) {
@@ -646,14 +657,20 @@ function timeAgo(dateStr) {
         debugEl.style.cssText = 'position:fixed;top:8px;right:8px;background:#fff;color:#000;padding:6px;font-size:9px;font-family:monospace;border:2px solid red;z-index:99999;max-width:200px;max-height:200px;overflow:auto';
         document.body.appendChild(debugEl);
       }
-      var info = 'items=' + items.length + ' top=' + containerTop.toFixed(0) + '<br>';
+      var info = 'items=' + items.length + '<br>';
       items.slice(0, 6).forEach(function(it, i) {
-        var r = it.getBoundingClientRect();
         var cls = (it.className || '').toString().slice(0, 25);
-        info += i + ' h=' + it.offsetHeight + ' top=' + r.top.toFixed(0) + ' op=' + (it.style.opacity || '-') + '<br>' + cls + '<br>';
+        info += i + ' h=' + it.offsetHeight + ' op=' + (it.style.opacity || '-') + '<br>' + cls + '<br>';
       });
       debugEl.innerHTML = info;
     }
+
+    return items;
+  }
+
+  function processScroll(scrollEl) {
+    var containerTop = scrollEl.getBoundingClientRect().top;
+    var items = collectItems(scrollEl);
 
     for (var i = 0; i < items.length; i++) {
       var el = items[i];
