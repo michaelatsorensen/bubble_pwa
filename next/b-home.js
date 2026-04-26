@@ -1760,6 +1760,39 @@ async function loadMyNetworks() {
     }
     list.innerHTML = html;
     _renderSubTabDots();
+    // DEBUG v7.42: Detailed audit for vertical-position comparison
+    setTimeout(function() {
+      var accs = list.querySelectorAll('.bb-accordion');
+      var lines = [];
+      var prevBottom = 0;
+      accs.forEach(function(acc, i) {
+        var rect = acc.getBoundingClientRect();
+        var root = acc.querySelector('.bb-tree-root');
+        var trunk = acc.querySelector('.bb-tree-trunk');
+        var nameEl = root ? root.querySelector('div[style*="font-weight"]') : null;
+        var name = nameEl ? nameEl.textContent.slice(0,18) : '?';
+        var hasT = !!trunk;
+        var col = trunk ? trunk.classList.contains('collapsed') : false;
+        var gapToPrev = i > 0 ? (rect.top - prevBottom) : 0;
+        prevBottom = rect.bottom;
+        var rootR = root ? root.getBoundingClientRect() : null;
+        var trunkR = trunk ? trunk.getBoundingClientRect() : null;
+        lines.push(
+          '<div style="border-bottom:1px solid #ccc;padding:2px 0">' +
+          '<b>' + i + ' ' + name + '</b> ' + (hasT ? (col ? '[col]' : '[OPEN]') : '[none]') +
+          ' GAP_above=<b>' + gapToPrev.toFixed(1) + '</b>' +
+          '<br>acc top=' + rect.top.toFixed(0) + ' bot=' + rect.bottom.toFixed(0) + ' h=' + rect.height.toFixed(0) +
+          (rootR ? '<br>root h=' + rootR.height.toFixed(0) : '') +
+          (trunkR ? '<br>trunk h=' + trunkR.height.toFixed(0) + ' bot=' + trunkR.bottom.toFixed(0) : '') +
+          '</div>'
+        );
+      });
+      var overlay = document.createElement('div');
+      overlay.id = 'spacing-debug-overlay';
+      overlay.style.cssText = 'background:#fff;color:#000;padding:8px;font-size:10px;font-family:monospace;border:2px solid red;margin-bottom:12px;max-height:60vh;overflow:auto;position:relative;z-index:99';
+      overlay.innerHTML = '<b>SPACING AUDIT v7.42 — focus on GAP_above</b><br>' + lines.join('');
+      list.insertBefore(overlay, list.firstChild);
+    }, 200);
   } catch(e) { logError("loadMyNetworks", e); showRetryState('bb-net-list', 'loadMyNetworks', 'Kunne ikke hente netv\u00E6rk'); }
 }
 
