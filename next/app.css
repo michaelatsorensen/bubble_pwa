@@ -3527,23 +3527,27 @@ a:not(.btn-primary):not(.btn-secondary):active {
    together without jitter. The expanded trunk needs its full padding
    for tree-rail positioning; the collapsed trunk needs zero padding
    to truly disappear. */
+/* Smooth collapse without jitter:
+   Use box-sizing: border-box so max-height INCLUDES padding (instead
+   of adding to it). This way max-height:0 actually means 0px tall,
+   no need to animate padding separately. Browser animates max-height
+   smoothly because padding is mathematically part of the same height. */
 .bb-tree-trunk {
+  box-sizing: border-box !important;
   transition:
     max-height 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.25s ease,
-    padding 0.3s ease !important;
+    opacity 0.25s ease !important;
 }
 .bb-tree-trunk.collapsed {
   max-height: 0 !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
   margin-top: 0 !important;
   margin-bottom: 0 !important;
   opacity: 0 !important;
   pointer-events: none !important;
   border: 0 !important;
-  /* IMPORTANT: keep padding-left so children don't jump width during
-     collapse animation. Only kill vertical padding. */
+  /* Padding stays — but with box-sizing:border-box, max-height:0
+     overrides the padding's height contribution. No bredde-skift,
+     no padding animation needed. */
 }
 
 /* Flat list cards (Opdag, profile bubbles, etc — no accordion wrapper) */
