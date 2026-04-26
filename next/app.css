@@ -3536,3 +3536,88 @@ a:not(.btn-primary):not(.btn-secondary):active {
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 .bb-tree-toggle.open { transform: rotate(180deg); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   FIXES (next-v7.28)
+   1. Checkmark cropped by icon overflow:hidden — make checkmark sibling
+      of icon container (not child). The HTML refactor accompanies this.
+   2. Tree-rail darkens at intersection — use solid (non-blending) color
+   3. Card spacing inconsistent — standardize margins across types
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* FIX 1: Allow checkmark to overflow the icon container.
+   Previously .bb-card-icon-sq had overflow:hidden which cropped
+   the absolutely-positioned .bb-mem-check (which sits at -3px
+   bottom/right). Now we let the container overflow but ensure
+   the actual image/SVG inside is rounded via border-radius. */
+.bb-card-icon-sq.icon-wrap {
+  overflow: visible !important;
+  position: relative;
+}
+.bb-card-icon-sq.icon-wrap > svg,
+.bb-card-icon-sq.icon-wrap > img {
+  border-radius: inherit;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Override the universal img rule that sets full size */
+.bb-card-icon-sq.icon-wrap > svg {
+  width: 20px;
+  height: 20px;
+}
+/* Member check sits at bottom-right corner, slightly outside */
+.bb-card-icon-sq.icon-wrap > .bb-mem-check {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #1A9E8E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(23,15,52,0.85);
+  box-shadow: 0 0 0 1px rgba(26,158,142,0.3), 0 0 8px rgba(26,158,142,0.4);
+  z-index: 2;
+  pointer-events: none;
+}
+.bb-card-icon-sq.icon-wrap > .bb-mem-check svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* FIX 2: Tree-rail solid color (no alpha-stacking on intersections) */
+.bb-tree-trunk::before,
+.bb-tree-leaves::before {
+  background: #BAB8B0 !important;
+  opacity: 1 !important;
+}
+.bb-tree-branch::before,
+.bb-tree-leaf::before,
+.bb-tree-branch::after,
+.bb-tree-leaf::after,
+.bb-tree-add::before {
+  border-color: #BAB8B0 !important;
+  opacity: 1 !important;
+}
+
+/* FIX 3: Standardize card spacing */
+.bb-card-list {
+  margin-bottom: 8px !important;
+}
+#screen-bubbles .bb-tree-root,
+.bb-tree-root {
+  margin-bottom: 8px !important;
+}
+.bb-tree-branch > .bb-card-list,
+.bb-tree-leaf > .bb-card-list {
+  margin-bottom: 0 !important;
+}
+.bb-tree-branch {
+  margin-bottom: 8px !important;
+}
+.bb-tree-leaf {
+  margin-bottom: 8px !important;
+}
