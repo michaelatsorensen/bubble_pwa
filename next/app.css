@@ -2616,6 +2616,7 @@ a:not(.btn-primary):not(.btn-secondary):active {
 .bb-pill-pending { background: rgba(133,79,11,0.5); color: #FAC775; }
 .bb-pill-past { background: rgba(95,94,90,0.4); color: #B4B2A9; }
 .bb-pill-live { background: rgba(15,95,165,0.5); color: #B5D4F4; }
+.bb-pill-coming { background: rgba(35,75,135,0.6); color: #A5C5E8; }
 
 /* Chevron — subtle white circle (Variant B) */
 .bb-card-chev {
@@ -3327,4 +3328,62 @@ a:not(.btn-primary):not(.btn-secondary):active {
   color: rgba(255,255,255,0.4) !important;
   flex-shrink: 0 !important;
   font-weight: 400 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CHECKMARK FIX (next-v7.25) — ensure checkmark stays on icon
+   The inline `<div style="position:relative">` icon-wrap was stretching
+   beyond the icon, causing absolute-positioned checkmark to drift.
+   This makes the wrap exactly icon-sized.
+   ═══════════════════════════════════════════════════════════════════ */
+/* Inline icon-wrap divs in tree-rendering — force flex-shrink + size */
+.bb-tree-net > div[style*="position:relative"],
+.bb-tree-evt > div[style*="position:relative"] {
+  flex-shrink: 0 !important;
+  width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TREE TITLE TRUNCATION (next-v7.25) — Variant A
+   Single-line titles with ellipsis on tree-rendered children.
+   Prevents long titles from blowing up card height (e.g. "LAB TOUR:
+   Explore the Future of Energy at SDU CAPE & visit STEAR Lab").
+   ═══════════════════════════════════════════════════════════════════ */
+/* Target the title divs inside tree-net and tree-evt cards */
+.bb-tree-net > div[style*="flex:1"] > div:first-child,
+.bb-tree-evt > div[style*="flex:1"] > div:first-child,
+.bb-tree-body > div:first-child {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #FFFFFF !important;
+  line-height: 1.3 !important;
+}
+
+/* Meta line (under title) — also single-line truncate */
+.bb-tree-net > div[style*="flex:1"] > div:nth-child(2),
+.bb-tree-evt > div[style*="flex:1"] > div:nth-child(2),
+.bb-tree-body > div:nth-child(2) {
+  font-size: 11px !important;
+  color: rgba(255,255,255,0.7) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-wrap: nowrap !important;
+  overflow: hidden !important;
+}
+
+/* Right-side helper text (e.g. "Scan for check-in", "Starter 5. maj") */
+.bb-tree-evt > .bb-tree-go,
+.bb-tree-net > .bb-tree-go {
+  font-size: 14px !important;
+  color: rgba(255,255,255,0.5) !important;
+  flex-shrink: 0 !important;
+  align-self: center !important;
 }

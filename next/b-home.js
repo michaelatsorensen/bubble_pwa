@@ -1540,12 +1540,12 @@ async function loadMyNetworks() {
       var win = _eventTimeWindow(ev);
       var isLiveHere = appMode.live && appMode.live.bubbleId === ev.id;
       if (isLiveHere) return '<span class="bb-pill bb-pill-live" style="margin-right:4px">LIVE</span>';
-      if (mode === 'scan') return '<span style="font-size:10px;color:rgba(255,255,255,0.4);margin-right:4px">' + t('live_scan_checkin') + '</span>';
+      if (mode === 'scan') return '<span class="bb-pill bb-pill-coming" style="margin-right:4px">' + t('live_scan_checkin') + '</span>';
       if (win === 'before') {
         var dateStr = new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' });
-        return '<span style="font-size:10px;color:rgba(255,255,255,0.4);margin-right:4px">' + t('live_starts') + ' ' + dateStr + '</span>';
+        return '<span class="bb-pill bb-pill-coming" style="margin-right:4px">' + t('live_starts') + ' ' + dateStr + '</span>';
       }
-      if (win === 'after') return '<span style="font-size:10px;color:rgba(255,255,255,0.4);margin-right:4px">' + t('live_ended') + '</span>';
+      if (win === 'after') return '<span class="bb-pill bb-pill-past" style="margin-right:4px">' + t('live_ended') + '</span>';
       // Active window + self check-in — use new pink CTA button
       return '<button onclick="event.stopPropagation();quickGoLive(\'' + ev.id + '\',\'' + escHtml(ev.name).replace(/'/g,"\\'") + '\')" class="bb-go-live-btn">' + t('live_go_live') + '</button>';
     }
