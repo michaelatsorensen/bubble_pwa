@@ -3497,83 +3497,61 @@ a:not(.btn-primary):not(.btn-secondary):active {
   opacity: 1 !important;
 }
 
-/* FIX 3 (revised v7.31): Single source of truth for card spacing.
-   Top-level cards on Mine tab are wrapped in .bb-accordion (whether
-   they have children or not). So .bb-accordion is the ONLY thing
-   that should set margin-bottom on Mine — everything inside it is
-   "the block" with no internal margin spillover.
+/* ═══════════════════════════════════════════════════════════════════
+   SIMPLE SPACING MODEL (next-v7.35) — back to basics
+   Replaces the convoluted v7.30-v7.34 attempts with what was already
+   working in original CSS: small consistent gaps via accordion only,
+   no internal margin overrides. The key insight: original .bb-accordion
+   { margin-bottom: 0.4rem } already worked when nothing else fought it.
+   ═══════════════════════════════════════════════════════════════════ */
 
-   For Opdag tab and other flat lists, .bb-card-list provides its own
-   margin since there's no accordion wrapper. */
-
-/* Mine tab block spacing — accordion is the wrapper for parent+children */
+/* Top-level Mine cards: accordion is the only spacing source */
 .bb-accordion {
   margin-bottom: 8px !important;
 }
-/* Inside accordion: tree-root (parent card) has NO margin — accordion handles it */
+
+/* Inside accordion: tree-root has no extra margin (accordion handles) */
 .bb-accordion > .bb-tree-root {
   margin-bottom: 0 !important;
 }
-/* Inside accordion: tree-trunk OPEN has NO bottom margin — accordion handles it */
-.bb-accordion > .bb-tree-trunk:not(.collapsed) {
-  margin-bottom: 0 !important;
-}
 
-/* CRITICAL: When tree-trunk is COLLAPSED, max-height:0 alone doesn't
-   eliminate space because padding (top:6px, left:30px) is rendered
-   OUTSIDE max-height in CSS box model.
-
-   Solution: animate padding alongside max-height so they collapse
-   together without jitter. The expanded trunk needs its full padding
-   for tree-rail positioning; the collapsed trunk needs zero padding
-   to truly disappear. */
-/* Smooth collapse without jitter:
-   Use box-sizing: border-box so max-height INCLUDES padding (instead
-   of adding to it). This way max-height:0 actually means 0px tall,
-   no need to animate padding separately. Browser animates max-height
-   smoothly because padding is mathematically part of the same height. */
+/* Trunk: smooth collapse via border-box trick */
 .bb-tree-trunk {
   box-sizing: border-box !important;
   transition:
     max-height 0.35s cubic-bezier(0.22, 1, 0.36, 1),
     opacity 0.25s ease !important;
+  margin-bottom: 0 !important;
 }
 .bb-tree-trunk.collapsed {
   max-height: 0 !important;
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
   opacity: 0 !important;
   pointer-events: none !important;
   border: 0 !important;
-  /* Padding stays — but with box-sizing:border-box, max-height:0
-     overrides the padding's height contribution. No bredde-skift,
-     no padding animation needed. */
+  margin: 0 !important;
 }
 
-/* Flat list cards (Opdag, profile bubbles, etc — no accordion wrapper) */
-.bb-card-list {
-  margin-bottom: 8px !important;
+/* Children inside tree: each branch has small top-padding (NOT margin)
+   This is how original CSS did it — top-padding instead of margin-bottom
+   means clean rendering without margin-collapse issues. */
+.bb-tree-branch,
+.bb-tree-leaf {
+  margin-bottom: 0 !important;
+  padding-top: 8px !important;
 }
-/* But cards INSIDE a tree-branch/leaf get NO margin — branch handles it */
+/* First branch needs less top space */
+.bb-tree-branch:first-child,
+.bb-tree-leaf:first-child {
+  padding-top: 4px !important;
+}
+
+/* Cards INSIDE branch/leaf: no margin spillover */
 .bb-tree-branch > .bb-card-list,
 .bb-tree-leaf > .bb-card-list {
   margin-bottom: 0 !important;
 }
 
-/* Inside tree-trunk: each branch has 8px gap to next */
-.bb-tree-branch {
-  margin-bottom: 8px !important;
-}
-.bb-tree-leaf {
-  margin-bottom: 8px !important;
-}
-/* Last child needs less margin since trunk's padding-bottom is 0 */
-.bb-tree-branch:last-child,
-.bb-tree-leaf:last-child {
-  margin-bottom: 4px !important;
-}
-
-/* Standalone bb-tree-root (rare — not wrapped in accordion, e.g. orphans) */
-#screen-bubbles .bb-tree-root:not(.bb-accordion *) {
+/* Flat list cards (Opdag, profile bubbles, etc) — no accordion wrapper */
+.bb-card-list {
   margin-bottom: 8px !important;
 }
