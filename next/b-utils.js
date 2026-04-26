@@ -637,6 +637,24 @@ function timeAgo(dateStr) {
     var containerTop = scrollEl.getBoundingClientRect().top;
     var items = collectItems(scrollEl);
 
+    // DEBUG v7.49: show escalator state in overlay
+    if (window._showEscDebug) {
+      var debugEl = document.getElementById('esc-debug-overlay');
+      if (!debugEl) {
+        debugEl = document.createElement('div');
+        debugEl.id = 'esc-debug-overlay';
+        debugEl.style.cssText = 'position:fixed;top:8px;right:8px;background:#fff;color:#000;padding:6px;font-size:9px;font-family:monospace;border:2px solid red;z-index:99999;max-width:200px;max-height:200px;overflow:auto';
+        document.body.appendChild(debugEl);
+      }
+      var info = 'items=' + items.length + ' top=' + containerTop.toFixed(0) + '<br>';
+      items.slice(0, 6).forEach(function(it, i) {
+        var r = it.getBoundingClientRect();
+        var cls = (it.className || '').toString().slice(0, 25);
+        info += i + ' h=' + it.offsetHeight + ' top=' + r.top.toFixed(0) + ' op=' + (it.style.opacity || '-') + '<br>' + cls + '<br>';
+      });
+      debugEl.innerHTML = info;
+    }
+
     for (var i = 0; i < items.length; i++) {
       var el = items[i];
       var rect = el.getBoundingClientRect();
@@ -683,6 +701,7 @@ function timeAgo(dateStr) {
   }
 
   window.addEventListener('load', function() {
+    window._showEscDebug = true;  // v7.49 DEBUG — auto-enable for diagnosis
     document.querySelectorAll('.scroll-area').forEach(attach);
     new MutationObserver(function(muts) {
       muts.forEach(function(m) {
