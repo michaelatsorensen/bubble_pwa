@@ -108,15 +108,16 @@ async function loadHome() {
     showWelcomeCard();
     showProfileSetupCTA();
 
-    // v7.52: Fade out skeleton cards now that real data is in place
-    var skelEl = document.getElementById('home-skel-cards');
-    if (skelEl && skelEl.style.display !== 'none') {
-      skelEl.style.opacity = '0';
-      skelEl.style.maxHeight = '0';
-      skelEl.style.overflow = 'hidden';
-      setTimeout(function() {
-        if (skelEl) skelEl.style.display = 'none';
-      }, 400);
+    // v7.53: Fade in all data cards together once everything is ready.
+    // Cards stay invisible (opacity:0) while data loads — no pop-in,
+    // no skeleton, no layout-shift. Radar/dartboard fades in independently.
+    var cardsWrap = document.getElementById('home-cards-wrap');
+    if (cardsWrap) {
+      // requestAnimationFrame ensures the fade-in happens after the
+      // browser has applied the show* DOM updates above
+      requestAnimationFrame(function() {
+        cardsWrap.style.opacity = '1';
+      });
     }
   } catch(e) {
     logError("loadHome", e);
