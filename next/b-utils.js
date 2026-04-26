@@ -405,9 +405,9 @@ function typeLabel(type) {
 }
 
 function visIcon(v) {
-  if (v === 'hidden') return '<span style="font-size:0.55rem;padding:1px 5px;border-radius:4px;background:rgba(239,68,68,0.08);color:#A32D2D;margin-right:3px">Skjult</span>';
-  if (v === 'private') return '<span style="font-size:0.55rem;padding:1px 5px;border-radius:4px;background:rgba(99,102,241,0.08);color:#534AB7;margin-right:3px">Privat</span>';
-  return '<span style="font-size:0.55rem;padding:1px 5px;border-radius:4px;background:rgba(26,158,142,0.08);color:#085041;margin-right:3px">\u00C5ben</span>';
+  if (v === 'hidden') return '<span class="bb-pill bb-pill-hidden" style="margin-right:4px">Skjult</span>';
+  if (v === 'private') return '<span class="bb-pill bb-pill-private" style="margin-right:4px">Privat</span>';
+  return '<span class="bb-pill bb-pill-open" style="margin-right:4px">Åben</span>';
 }
 
 // Clock removed — iPhone shows native status bar

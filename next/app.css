@@ -2608,9 +2608,9 @@ a:not(.btn-primary):not(.btn-secondary):active {
   letter-spacing: 0.02em;
   flex-shrink: 0;
 }
-.bb-pill-private { background: rgba(15,110,86,0.55); color: #9FE1CB; }
-.bb-pill-open { background: rgba(59,109,17,0.55); color: #C0DD97; }
-.bb-pill-hidden { background: rgba(114,36,62,0.55); color: #F4C0D1; }
+.bb-pill-private { background: rgba(15,110,86,0.75); color: #C6F0DC; }
+.bb-pill-open { background: rgba(59,109,17,0.75); color: #DDF1B5; }
+.bb-pill-hidden { background: rgba(114,36,62,0.75); color: #F8D7E1; }
 
 /* Status pills — state, not type (placed inline with title) */
 .bb-pill-pending { background: rgba(133,79,11,0.5); color: #FAC775; }
@@ -3129,4 +3129,156 @@ a:not(.btn-primary):not(.btn-secondary):active {
 @keyframes bb-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BUBBLE TABS V8 (next-v7.23) — dark frosted container, white invert pill
+   Overrides legacy iceblue tabs for unified design system look
+   ═══════════════════════════════════════════════════════════════════ */
+.bubble-tabs {
+  background: rgba(23,15,52,0.92);
+  backdrop-filter: blur(20px) saturate(130%);
+  -webkit-backdrop-filter: blur(20px) saturate(130%);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 2px;
+  border: 0.5px solid rgba(255,255,255,0.06);
+}
+.bubble-tab {
+  color: rgba(255,255,255,0.55);
+  border-radius: 8px;
+  padding: 8px 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+}
+.bubble-tab.active {
+  background: rgba(255,255,255,0.95);
+  color: #1E1B2E;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  font-weight: 700;
+}
+.bubble-tab:active { transform: scale(0.97); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   TREE-RAIL FIX (next-v7.23) — child indented from left only,
+   right edge aligned with parent. Continuous rail line.
+   Aggressive overrides because legacy CSS has competing rules.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Trunk: rail starts at parent's left edge area, children indented */
+.bb-tree-trunk {
+  margin-left: 0 !important;
+  padding-left: 30px !important;
+  padding-right: 0 !important;
+  padding-top: 6px !important;
+  padding-bottom: 0 !important;
+  position: relative;
+}
+.bb-tree-trunk::before {
+  content: '' !important;
+  position: absolute !important;
+  left: 14px !important;
+  top: 0 !important;
+  bottom: 18px !important;
+  width: 2px !important;
+  background: rgba(150,148,140,0.5) !important;
+  border-radius: 2px !important;
+}
+
+/* Branch: child wrapper — only left padding (right edge stays aligned) */
+.bb-tree-branch {
+  position: relative !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-top: 0 !important;
+  margin-bottom: 10px !important;
+}
+/* The L-shaped curve from rail to child card */
+.bb-tree-branch::before,
+.bb-tree-branch::after {
+  content: '' !important;
+  position: absolute !important;
+  left: -16px !important;
+  top: 14px !important;
+  width: 16px !important;
+  height: 16px !important;
+  border-bottom-left-radius: 12px !important;
+  border-left: 2px solid rgba(150,148,140,0.5) !important;
+  border-bottom: 2px solid rgba(150,148,140,0.5) !important;
+  border-top: none !important;
+  border-right: none !important;
+}
+/* Kill the legacy square curve */
+.bb-tree-branch::after {
+  display: none !important;
+}
+
+/* Leaves trunk (level 3 events under child networks) */
+.bb-tree-leaves {
+  margin-left: 0 !important;
+  padding-left: 30px !important;
+  padding-right: 0 !important;
+  padding-top: 6px !important;
+  padding-bottom: 0 !important;
+  position: relative;
+}
+.bb-tree-leaves::before {
+  content: '' !important;
+  position: absolute !important;
+  left: 14px !important;
+  top: 0 !important;
+  bottom: 14px !important;
+  width: 2px !important;
+  background: rgba(150,148,140,0.5) !important;
+  border-radius: 2px !important;
+}
+.bb-tree-leaf {
+  position: relative !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-top: 0 !important;
+  margin-bottom: 10px !important;
+}
+.bb-tree-leaf::before,
+.bb-tree-leaf::after {
+  content: '' !important;
+  position: absolute !important;
+  left: -16px !important;
+  top: 14px !important;
+  width: 16px !important;
+  height: 16px !important;
+  border-bottom-left-radius: 12px !important;
+  border-left: 2px solid rgba(150,148,140,0.5) !important;
+  border-bottom: 2px solid rgba(150,148,140,0.5) !important;
+  border-top: none !important;
+  border-right: none !important;
+}
+.bb-tree-leaf::after {
+  display: none !important;
+}
+
+/* "+ Opret" affordance — last item in tree, with curve */
+.bb-tree-add {
+  position: relative !important;
+  padding: 8px 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #888780 !important;
+  margin-left: 0 !important;
+}
+.bb-tree-add::before {
+  content: '' !important;
+  position: absolute !important;
+  left: -16px !important;
+  top: 0 !important;
+  width: 16px !important;
+  height: 22px !important;
+  border-bottom-left-radius: 12px !important;
+  border-left: 2px solid rgba(150,148,140,0.5) !important;
+  border-bottom: 2px solid rgba(150,148,140,0.5) !important;
+  border-top: none !important;
+  border-right: none !important;
 }
