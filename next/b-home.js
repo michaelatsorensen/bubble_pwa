@@ -2039,9 +2039,25 @@ function bubbleCard(b, joined) {
   // Card class — adds is-past for dimmed past events
   var cardClass = 'bb-card-list' + (isPast ? ' is-past' : '');
 
+  // Breadcrumb (Variant A) — shown above title when bubble has a parent
+  // Format: "Grandparent › Parent" or just "Parent"
+  var breadcrumb = '';
+  if (b._grandparentName && b._parentName) {
+    breadcrumb = '<div class="bb-breadcrumb">' +
+      '<span class="bb-bc-pill">' + escHtml(b._grandparentName) + '</span>' +
+      '<span class="bb-bc-chev">›</span>' +
+      '<span class="bb-bc-pill2">' + escHtml(b._parentName) + '</span>' +
+    '</div>';
+  } else if (b._parentName) {
+    breadcrumb = '<div class="bb-breadcrumb">' +
+      '<span class="bb-bc-pill">' + escHtml(b._parentName) + '</span>' +
+    '</div>';
+  }
+
   return '<div class="' + cardClass + '" data-action="openBubble" data-id="' + b.id + '">' +
     '<div class="' + iconClass + '">' + iconInner + '</div>' +
     '<div class="bb-card-text">' +
+      breadcrumb +
       '<div class="bb-card-title">' + escHtml(b.name) + statusBadge + '</div>' +
       '<div class="bb-card-meta">' +
         '<span class="bb-pill ' + visClass + '">' + visLabel + '</span>' +
