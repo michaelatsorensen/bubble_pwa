@@ -3521,14 +3521,29 @@ a:not(.btn-primary):not(.btn-secondary):active {
 
 /* CRITICAL: When tree-trunk is COLLAPSED, max-height:0 alone doesn't
    eliminate space because padding (top:6px, left:30px) is rendered
-   OUTSIDE max-height in CSS box model. We must zero ALL padding too. */
+   OUTSIDE max-height in CSS box model.
+
+   Solution: animate padding alongside max-height so they collapse
+   together without jitter. The expanded trunk needs its full padding
+   for tree-rail positioning; the collapsed trunk needs zero padding
+   to truly disappear. */
+.bb-tree-trunk {
+  transition:
+    max-height 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.25s ease,
+    padding 0.3s ease !important;
+}
 .bb-tree-trunk.collapsed {
   max-height: 0 !important;
-  padding: 0 !important;
-  margin: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
   opacity: 0 !important;
   pointer-events: none !important;
   border: 0 !important;
+  /* IMPORTANT: keep padding-left so children don't jump width during
+     collapse animation. Only kill vertical padding. */
 }
 
 /* Flat list cards (Opdag, profile bubbles, etc — no accordion wrapper) */
