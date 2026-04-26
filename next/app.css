@@ -3137,29 +3137,31 @@ a:not(.btn-primary):not(.btn-secondary):active {
    Overrides legacy iceblue tabs for unified design system look
    ═══════════════════════════════════════════════════════════════════ */
 .bubble-tabs {
-  background: rgba(23,15,52,0.92);
-  backdrop-filter: blur(20px) saturate(130%);
-  -webkit-backdrop-filter: blur(20px) saturate(130%);
-  border-radius: 12px;
-  padding: 4px;
-  gap: 2px;
-  border: 0.5px solid rgba(255,255,255,0.06);
+  background: rgba(23,15,52,0.92) !important;
+  backdrop-filter: blur(20px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(130%) !important;
+  border-radius: 12px !important;
+  padding: 4px !important;
+  gap: 2px !important;
+  border: 0.5px solid rgba(255,255,255,0.06) !important;
 }
 .bubble-tab {
-  color: rgba(255,255,255,0.55);
-  border-radius: 8px;
-  padding: 8px 0.2rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  border: none;
-  background: transparent;
+  color: rgba(255,255,255,0.55) !important;
+  border-radius: 8px !important;
+  padding: 8px 0.2rem !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 .bubble-tab.active {
-  background: rgba(255,255,255,0.95);
-  color: #1E1B2E;
-  border: none;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  font-weight: 700;
+  background: rgba(255,255,255,0.95) !important;
+  color: #1E1B2E !important;
+  border: none !important;
+  border-color: transparent !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+  font-weight: 700 !important;
 }
 .bubble-tab:active { transform: scale(0.97); }
 
@@ -3386,4 +3388,78 @@ a:not(.btn-primary):not(.btn-secondary):active {
   color: rgba(255,255,255,0.5) !important;
   flex-shrink: 0 !important;
   align-self: center !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ANMOD CTA + CREATE BUTTONS + SECTION COUNT (next-v7.26)
+   Replaces lilla btn-primary on Info-tab with soft green frosted CTA
+   that better matches the new design palette
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Anmod om medlemskab — Variant D (soft grøn frosted) */
+.bb-cta-anmod {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  background: rgba(101,168,50,0.15);
+  color: #3F6920;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 14px;
+  border: 1px solid rgba(101,168,50,0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: pointer;
+  font-family: 'Figtree', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.bb-cta-anmod:active {
+  transform: scale(0.98);
+  background: rgba(101,168,50,0.22);
+}
+.bb-cta-anmod svg {
+  flex-shrink: 0;
+  stroke: currentColor;
+  fill: none;
+}
+
+/* Inline create buttons (Event / Sub-boble) — same family but smaller */
+.bb-cta-create {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  padding: 10px;
+  background: rgba(101,168,50,0.1);
+  color: #3F6920;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 12px;
+  border: 1px solid rgba(101,168,50,0.3);
+  cursor: pointer;
+  font-family: 'Figtree', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.bb-cta-create:active {
+  transform: scale(0.97);
+  background: rgba(101,168,50,0.18);
+}
+.bb-cta-create svg {
+  flex-shrink: 0;
+  stroke: currentColor;
+  fill: none;
+}
+
+/* Section count (number to the right of section header) */
+.bb-section-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(23,15,52,0.45);
+  letter-spacing: 0.06em;
 }

@@ -1498,7 +1498,7 @@ async function bcLoadMembers() {
       if (vis === 'hidden') {
         joinBtn = '<div style="font-size:0.78rem;color:var(--muted);margin-top:0.3rem">' + icon('eye') + ' Kun via invitation</div>';
       } else if (vis === 'private') {
-        joinBtn = '<button class="btn-primary" data-action="requestJoin" data-id="' + bcBubbleId + '" style="font-size:0.8rem;padding:0.5rem 1.4rem;margin-top:0.5rem">' + icon('lock') + ' Anmod om medlemskab</button>';
+        joinBtn = '<button class="bb-cta-anmod" data-action="requestJoin" data-id="' + bcBubbleId + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Anmod om medlemskab</button>';
       } else {
         joinBtn = '<button class="btn-primary" onclick="joinBubble(\'' + bcBubbleId + '\')" style="font-size:0.8rem;padding:0.5rem 1.4rem;margin-top:0.5rem">Bliv medlem</button>';
       }
@@ -1877,20 +1877,20 @@ async function bcLoadInfo() {
           });
 
           eventsHtml = '<div style="margin-bottom:0.9rem">' +
-            '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">' +
-            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">' + t('bi_network_events') + '</div>' +
-            '<div style="font-size:0.68rem;color:#0F6E56;font-weight:600">' + childBubbles.length + '</div></div>' +
-            '<div style="display:flex;flex-direction:column;gap:0.15rem">' + childCards + '</div>' +
+            '<div class="bb-section-header" style="display:flex;align-items:center;justify-content:space-between">' +
+            '<span>' + t('bi_network_events') + '</span>' +
+            '<span class="bb-section-count">' + childBubbles.length + '</span></div>' +
+            '<div class="bb-tree-trunk">' + childCards + '</div>' +
             (canEdit ? '<div style="display:flex;gap:0.4rem;margin-top:0.8rem">' +
-              '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('calendar') + ' Event</button>' +
-              '<button onclick="openCreateSubBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('bubble') + ' Sub-boble</button></div>' : '') +
+              '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" class="bb-cta-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Event</button>' +
+              '<button onclick="openCreateSubBubble(\'' + b.id + '\')" class="bb-cta-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6"/><circle cx="16" cy="13.5" r="4.5"/></svg>Sub-boble</button></div>' : '') +
             '</div>';
         } else if (canEdit) {
           eventsHtml = '<div style="margin-bottom:0.9rem">' +
-            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">' + t('bi_network_events') + '</div>' +
+            '<div class="bb-section-header">' + t('bi_network_events') + '</div>' +
             '<div style="display:flex;gap:0.4rem">' +
-            '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('calendar') + ' Event</button>' +
-            '<button onclick="openCreateSubBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('bubble') + ' Sub-boble</button></div></div>';
+            '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" class="bb-cta-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Event</button>' +
+            '<button onclick="openCreateSubBubble(\'' + b.id + '\')" class="bb-cta-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6"/><circle cx="16" cy="13.5" r="4.5"/></svg>Sub-boble</button></div></div>';
         }
       } catch(e) { logError('bcLoadInfo:children', e); }
     }
@@ -2024,7 +2024,7 @@ async function bcLoadInfo() {
       if (b.visibility === 'hidden') {
         topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem;font-size:0.78rem;color:var(--muted)">' + icon('eye') + ' Kun via invitation</div>';
       } else if (b.visibility === 'private') {
-        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem"><button class="btn-primary" data-action="requestJoin" data-id="' + b.id + '" style="font-size:0.8rem;padding:0.5rem 1.4rem">' + icon('lock') + ' Anmod om medlemskab</button></div>';
+        topJoinHtml = '<div style="padding:0.5rem 0 0.8rem"><button class="bb-cta-anmod" data-action="requestJoin" data-id="' + b.id + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Anmod om medlemskab</button></div>';
       } else {
         topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem"><button class="btn-primary" onclick="joinBubble(\'' + b.id + '\')" style="font-size:0.8rem;padding:0.5rem 1.4rem">Bliv medlem</button></div>';
       }
