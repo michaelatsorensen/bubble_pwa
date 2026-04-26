@@ -107,6 +107,17 @@ async function loadHome() {
     showEventCheckinCard();
     showWelcomeCard();
     showProfileSetupCTA();
+
+    // v7.52: Fade out skeleton cards now that real data is in place
+    var skelEl = document.getElementById('home-skel-cards');
+    if (skelEl && skelEl.style.display !== 'none') {
+      skelEl.style.opacity = '0';
+      skelEl.style.maxHeight = '0';
+      skelEl.style.overflow = 'hidden';
+      setTimeout(function() {
+        if (skelEl) skelEl.style.display = 'none';
+      }, 400);
+    }
   } catch(e) {
     logError("loadHome", e);
   } finally {
