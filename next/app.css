@@ -524,14 +524,6 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 .bb-tree-leaf { position:relative; padding-left:28px; padding-top:6px; }
 .bb-tree-leaf::after { content:''; position:absolute; left:11px; top:calc(50% - 7px); width:13px; height:14px; border-left:2px solid rgba(26,158,142,0.15); border-bottom:2px solid rgba(26,158,142,0.15); border-radius:0 0 0 8px; }
 
-/* ── F2 Tree: Event card (teal) ── */
-.bb-tree-evt { display:flex; align-items:center; gap:8px; padding:9px 12px; border-radius:var(--radius-sm); background:rgba(23,15,52,0.65); border:0.5px solid rgba(255,255,255,0.06); border-left:3px solid rgba(26,158,142,0.4); cursor:pointer; transition:transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); -webkit-tap-highlight-color:transparent; }
-.bb-tree-evt:active { transform:scale(0.97); }
-.bb-tree-evt-ico { width:24px; height:24px; border-radius:7px; overflow:hidden; background:rgba(26,158,142,0.1); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#1A9E8E; }
-
-/* ── F2 Tree: Navigate chevron ── */
-.bb-tree-go { font-size:0.85rem; color:var(--muted); padding:4px; flex-shrink:0; opacity:0.4; }
-
 /* ── F2 Tree: Add button ── */
 .bb-tree-add { display:flex; align-items:center; gap:0.4rem; padding:0.4rem 0.7rem; margin:6px 0 2px 28px; font-size:0.7rem; font-weight:600; color:var(--isbla); cursor:pointer; border-radius:8px; transition:background 0.2s; -webkit-tap-highlight-color:transparent; }
 .bb-tree-add:active { background:rgba(100,180,230,0.06); }
@@ -2975,63 +2967,6 @@ a:not(.btn-primary):not(.btn-secondary):active {
 }
 
 /* Event card under parent (or leaf) — same look as bb-card-list */
-.bb-tree-evt {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: rgba(23,15,52,0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 0.5px solid rgba(255,255,255,0.06);
-  border-left: 0.5px solid rgba(255,255,255,0.06);
-  cursor: pointer;
-  color: #FFFFFF;
-}
-.bb-tree-evt-ico {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  overflow: hidden;
-  background: rgba(46,207,207,0.18);
-  color: #5DCAA5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.bb-tree-evt-ico svg { width: 18px; height: 18px; }
-
-/* Event text content */
-.bb-tree-evt > div:not(.bb-tree-evt-ico) {
-  flex: 1;
-  min-width: 0;
-}
-.bb-tree-evt .fs-08,
-.bb-tree-evt .fs-085,
-.bb-tree-evt > div > div:first-child {
-  font-size: 14px !important;
-  font-weight: 700 !important;
-  color: #FFFFFF !important;
-  line-height: 1.3 !important;
-}
-.bb-tree-evt .fs-06,
-.bb-tree-evt .fs-065,
-.bb-tree-evt .fs-068 {
-  font-size: 11px !important;
-  color: rgba(255,255,255,0.7) !important;
-}
-
-/* Tree-go arrow — minimal subtle chevron at right */
-.bb-tree-go {
-  font-size: 14px;
-  color: rgba(255,255,255,0.5);
-  padding: 0 6px 0 4px;
-  flex-shrink: 0;
-  opacity: 1;
-}
-
 /* Member checkmark overlay (16px Variant 2 with glow) */
 .bb-mem-check {
   position: absolute;
@@ -3333,31 +3268,11 @@ a:not(.btn-primary):not(.btn-secondary):active {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   CHECKMARK FIX (next-v7.25) — ensure checkmark stays on icon
-   The inline `<div style="position:relative">` icon-wrap was stretching
-   beyond the icon, causing absolute-positioned checkmark to drift.
-   This makes the wrap exactly icon-sized.
+   TREE TITLE TRUNCATION (next-v7.25, simplified v7.29)
+   Now only targets bb-tree-body (used in ghost-orphan parent rendering).
+   Other tree-children use bb-card-list/bb-card-text directly with
+   their own truncation rules — no longer need to override here.
    ═══════════════════════════════════════════════════════════════════ */
-/* Inline icon-wrap divs in tree-rendering — force flex-shrink + size */
-.bb-tree-net > div[style*="position:relative"],
-.bb-tree-evt > div[style*="position:relative"] {
-  flex-shrink: 0 !important;
-  width: 40px !important;
-  height: 40px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   TREE TITLE TRUNCATION (next-v7.25) — Variant A
-   Single-line titles with ellipsis on tree-rendered children.
-   Prevents long titles from blowing up card height (e.g. "LAB TOUR:
-   Explore the Future of Energy at SDU CAPE & visit STEAR Lab").
-   ═══════════════════════════════════════════════════════════════════ */
-/* Target the title divs inside tree-net and tree-evt cards */
-.bb-tree-net > div[style*="flex:1"] > div:first-child,
-.bb-tree-evt > div[style*="flex:1"] > div:first-child,
 .bb-tree-body > div:first-child {
   overflow: hidden !important;
   text-overflow: ellipsis !important;
@@ -3367,10 +3282,6 @@ a:not(.btn-primary):not(.btn-secondary):active {
   color: #FFFFFF !important;
   line-height: 1.3 !important;
 }
-
-/* Meta line (under title) — also single-line truncate */
-.bb-tree-net > div[style*="flex:1"] > div:nth-child(2),
-.bb-tree-evt > div[style*="flex:1"] > div:nth-child(2),
 .bb-tree-body > div:nth-child(2) {
   font-size: 11px !important;
   color: rgba(255,255,255,0.7) !important;
@@ -3379,15 +3290,6 @@ a:not(.btn-primary):not(.btn-secondary):active {
   gap: 6px !important;
   flex-wrap: nowrap !important;
   overflow: hidden !important;
-}
-
-/* Right-side helper text (e.g. "Scan for check-in", "Starter 5. maj") */
-.bb-tree-evt > .bb-tree-go,
-.bb-tree-net > .bb-tree-go {
-  font-size: 14px !important;
-  color: rgba(255,255,255,0.5) !important;
-  flex-shrink: 0 !important;
-  align-self: center !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -3510,12 +3412,6 @@ a:not(.btn-primary):not(.btn-secondary):active {
   border-radius: 6px;
   vertical-align: middle;
   margin-left: 4px;
-}
-
-/* Tree-context: bb-card-list inside bb-tree-leaf or bb-tree-branch needs no extra margin */
-.bb-tree-branch > .bb-card-list,
-.bb-tree-leaf > .bb-card-list {
-  margin-bottom: 0;
 }
 
 /* Tree-toggle button styling — makes the chevron consistent */
