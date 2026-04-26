@@ -610,6 +610,17 @@ function timeAgo(dateStr) {
       for (var i = 0; i < kids.length; i++) {
         var el = kids[i];
         if (el.offsetHeight < 10) continue;
+        // Known leaf elements (cards, accordions, tree-roots) — always animate
+        if (el.classList && (
+          el.classList.contains('bb-card-list') ||
+          el.classList.contains('bb-accordion') ||
+          el.classList.contains('bb-tree-root') ||
+          el.classList.contains('saved-card-v2') ||
+          el.classList.contains('card')
+        )) {
+          items.push(el);
+          continue;
+        }
         // If element is taller than 60% of viewport, it's a wrapper — go deeper
         if (el.offsetHeight > containerH * 0.6 && el.children.length > 1) {
           walk(el);
