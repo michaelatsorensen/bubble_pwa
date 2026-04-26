@@ -3126,12 +3126,14 @@ a:not(.btn-primary):not(.btn-secondary):active {
   border-radius: 2px !important;
 }
 
-/* Branch: child wrapper — only left padding (right edge stays aligned) */
+/* Branch: child wrapper — only left padding (right edge stays aligned).
+   padding-top: 8px gives spacing between consecutive branches (this is
+   how prod does it — DO NOT change to 0 or spacing breaks). */
 .bb-tree-branch {
   position: relative !important;
   padding-left: 0 !important;
   padding-right: 0 !important;
-  padding-top: 0 !important;
+  padding-top: 8px !important;
 }
 /* The L-shaped curve from rail to child card */
 .bb-tree-branch::before,
@@ -3176,7 +3178,7 @@ a:not(.btn-primary):not(.btn-secondary):active {
   position: relative !important;
   padding-left: 0 !important;
   padding-right: 0 !important;
-  padding-top: 0 !important;
+  padding-top: 6px !important;
 }
 .bb-tree-leaf::before,
 .bb-tree-leaf::after {
@@ -3498,60 +3500,39 @@ a:not(.btn-primary):not(.btn-secondary):active {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   SIMPLE SPACING MODEL (next-v7.35) — back to basics
-   Replaces the convoluted v7.30-v7.34 attempts with what was already
-   working in original CSS: small consistent gaps via accordion only,
-   no internal margin overrides. The key insight: original .bb-accordion
-   { margin-bottom: 0.4rem } already worked when nothing else fought it.
+   ACCORDION SPACING (next-v7.36) — minimal additions on top of v7.23
+   v7.23 fix already handles tree-rail + branch spacing correctly via
+   padding-top: 8px (now restored). We only need:
+   1. Smooth collapse (box-sizing trick from v7.34)
+   2. Bigger gap between accordion blocks (8px instead of 0.4rem=6.4px)
    ═══════════════════════════════════════════════════════════════════ */
 
-/* Top-level Mine cards: accordion is the only spacing source */
+/* Slightly larger gap between top-level Mine cards */
 .bb-accordion {
   margin-bottom: 8px !important;
 }
 
-/* Inside accordion: tree-root has no extra margin (accordion handles) */
-.bb-accordion > .bb-tree-root {
-  margin-bottom: 0 !important;
-}
-
-/* Trunk: smooth collapse via border-box trick */
+/* Smooth collapse via border-box (so max-height includes padding) */
 .bb-tree-trunk {
   box-sizing: border-box !important;
   transition:
     max-height 0.35s cubic-bezier(0.22, 1, 0.36, 1),
     opacity 0.25s ease !important;
-  margin-bottom: 0 !important;
 }
 .bb-tree-trunk.collapsed {
   max-height: 0 !important;
   opacity: 0 !important;
   pointer-events: none !important;
-  border: 0 !important;
-  margin: 0 !important;
 }
 
-/* Children inside tree: each branch has small top-padding (NOT margin)
-   This is how original CSS did it — top-padding instead of margin-bottom
-   means clean rendering without margin-collapse issues. */
-.bb-tree-branch,
-.bb-tree-leaf {
-  margin-bottom: 0 !important;
-  padding-top: 8px !important;
-}
-/* First branch needs less top space */
-.bb-tree-branch:first-child,
-.bb-tree-leaf:first-child {
-  padding-top: 4px !important;
-}
-
-/* Cards INSIDE branch/leaf: no margin spillover */
+/* Cards INSIDE branch/leaf: no extra margin (branch padding-top
+   handles spacing — same as prod) */
 .bb-tree-branch > .bb-card-list,
 .bb-tree-leaf > .bb-card-list {
   margin-bottom: 0 !important;
 }
 
-/* Flat list cards (Opdag, profile bubbles, etc) — no accordion wrapper */
+/* Flat list cards (Opdag, profile bubbles) need their own margin */
 .bb-card-list {
   margin-bottom: 8px !important;
 }
