@@ -3497,41 +3497,52 @@ a:not(.btn-primary):not(.btn-secondary):active {
   opacity: 1 !important;
 }
 
-/* FIX 3: Standardize card spacing */
+/* FIX 3 (revised v7.31): Single source of truth for card spacing.
+   Top-level cards on Mine tab are wrapped in .bb-accordion (whether
+   they have children or not). So .bb-accordion is the ONLY thing
+   that should set margin-bottom on Mine — everything inside it is
+   "the block" with no internal margin spillover.
+
+   For Opdag tab and other flat lists, .bb-card-list provides its own
+   margin since there's no accordion wrapper. */
+
+/* Mine tab block spacing — accordion is the wrapper for parent+children */
+.bb-accordion {
+  margin-bottom: 8px !important;
+}
+/* Inside accordion: tree-root (parent card) has NO margin — accordion handles it */
+.bb-accordion > .bb-tree-root {
+  margin-bottom: 0 !important;
+}
+/* Inside accordion: tree-trunk (children block) has NO bottom margin — accordion handles it */
+.bb-accordion > .bb-tree-trunk:not(.collapsed) {
+  margin-bottom: 0 !important;
+}
+
+/* Flat list cards (Opdag, profile bubbles, etc — no accordion wrapper) */
 .bb-card-list {
   margin-bottom: 8px !important;
 }
-#screen-bubbles .bb-tree-root,
-.bb-tree-root {
-  margin-bottom: 8px !important;
-}
+/* But cards INSIDE a tree-branch/leaf get NO margin — branch handles it */
 .bb-tree-branch > .bb-card-list,
 .bb-tree-leaf > .bb-card-list {
   margin-bottom: 0 !important;
 }
+
+/* Inside tree-trunk: each branch has 8px gap to next */
 .bb-tree-branch {
   margin-bottom: 8px !important;
 }
 .bb-tree-leaf {
   margin-bottom: 8px !important;
 }
-
-/* FIX 4 (next-v7.30): When a parent has children (tree-trunk follows
-   a tree-root parent card), the trunk container needs its own
-   margin-bottom so the next root card has consistent gap.
-   Without this, tree-trunk had 0 margin-bottom causing the
-   "compressed" feeling between parent+children blocks. */
-.bb-tree-trunk:not(.collapsed) {
-  margin-bottom: 8px !important;
-}
-/* Also: when tree-root is followed by tree-trunk, parent's margin
-   should collapse to 0 so the trunk's padding handles the visual.
-   Otherwise we get 8px (root) + 6px (trunk padding-top) = too much */
-.bb-tree-root:has(+ .bb-tree-trunk),
-.bb-tree-root + .bb-tree-trunk {
-  /* Selectors :has() falls back gracefully if not supported */
-}
-.bb-tree-branch:last-of-type,
-.bb-tree-leaf:last-of-type {
+/* Last child needs less margin since trunk's padding-bottom is 0 */
+.bb-tree-branch:last-child,
+.bb-tree-leaf:last-child {
   margin-bottom: 4px !important;
+}
+
+/* Standalone bb-tree-root (rare — not wrapped in accordion, e.g. orphans) */
+#screen-bubbles .bb-tree-root:not(.bb-accordion *) {
+  margin-bottom: 8px !important;
 }
