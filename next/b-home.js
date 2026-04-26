@@ -1889,8 +1889,10 @@ function _bbEventCard(e, parentMap, gpMap, isPast) {
     breadcrumb = '<div class="bb-breadcrumb"><span class="bb-bc-pill">' + escHtml(parentName) + '</span></div>';
   }
   var evCardLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === e.id);
+  // User is always member of events shown on Mine/Events tab — show checkmark
+  var memCheck = '<div class="bb-mem-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M5 12.5l5 5L20 7"/></svg></div>';
   return '<div class="bb-card-list' + (isPast && !evCardLive ? ' is-past' : '') + '" data-action="openBubble" data-id="' + e.id + '">' +
-    '<div class="bb-card-icon-sq icon-wrap is-event">' + (e.icon_url ? '<img src="' + escHtml(e.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px">' : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>') + _memberCheck + '</div>' +
+    '<div class="bb-card-icon-sq icon-wrap is-event">' + (e.icon_url ? '<img src="' + escHtml(e.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px">' : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>') + memCheck + '</div>' +
     '<div class="bb-card-text">' +
     breadcrumb +
     '<div class="bb-card-title">' + escHtml(e.name) + '</div>' +

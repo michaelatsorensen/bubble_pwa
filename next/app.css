@@ -3132,7 +3132,6 @@ a:not(.btn-primary):not(.btn-secondary):active {
   padding-left: 0 !important;
   padding-right: 0 !important;
   padding-top: 0 !important;
-  margin-bottom: 10px !important;
 }
 /* The L-shaped curve from rail to child card */
 .bb-tree-branch::before,
@@ -3178,7 +3177,6 @@ a:not(.btn-primary):not(.btn-secondary):active {
   padding-left: 0 !important;
   padding-right: 0 !important;
   padding-top: 0 !important;
-  margin-bottom: 10px !important;
 }
 .bb-tree-leaf::before,
 .bb-tree-leaf::after {
@@ -3516,4 +3514,24 @@ a:not(.btn-primary):not(.btn-secondary):active {
 }
 .bb-tree-leaf {
   margin-bottom: 8px !important;
+}
+
+/* FIX 4 (next-v7.30): When a parent has children (tree-trunk follows
+   a tree-root parent card), the trunk container needs its own
+   margin-bottom so the next root card has consistent gap.
+   Without this, tree-trunk had 0 margin-bottom causing the
+   "compressed" feeling between parent+children blocks. */
+.bb-tree-trunk:not(.collapsed) {
+  margin-bottom: 8px !important;
+}
+/* Also: when tree-root is followed by tree-trunk, parent's margin
+   should collapse to 0 so the trunk's padding handles the visual.
+   Otherwise we get 8px (root) + 6px (trunk padding-top) = too much */
+.bb-tree-root:has(+ .bb-tree-trunk),
+.bb-tree-root + .bb-tree-trunk {
+  /* Selectors :has() falls back gracefully if not supported */
+}
+.bb-tree-branch:last-of-type,
+.bb-tree-leaf:last-of-type {
+  margin-bottom: 4px !important;
 }
