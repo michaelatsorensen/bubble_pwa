@@ -1518,8 +1518,8 @@ async function loadMyNetworks() {
         : fallback;
     }
 
-    // ── Membership checkmark overlay (small green ✓ on icon) ──
-    var _memberCheck = '<div style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:#1A9E8E;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--bg)"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M5 12.5l5 5L20 7"/></svg></div>';
+    // ── Membership checkmark overlay (16px teal badge with subtle glow — Variant 2) ──
+    var _memberCheck = '<div class="bb-mem-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M5 12.5l5 5L20 7"/></svg></div>';
 
     // ── Event time window check ──
     // Returns: 'before' | 'active' | 'after' | 'no_date'
@@ -1539,15 +1539,15 @@ async function loadMyNetworks() {
       var mode = ev.checkin_mode || 'self';
       var win = _eventTimeWindow(ev);
       var isLiveHere = appMode.live && appMode.live.bubbleId === ev.id;
-      if (isLiveHere) return '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.15);color:#0F6E56;font-weight:700">LIVE</span>';
-      if (mode === 'scan') return '<span style="font-size:0.55rem;color:var(--muted)">' + t('live_scan_checkin') + '</span>';
+      if (isLiveHere) return '<span class="bb-pill bb-pill-live" style="margin-right:4px">LIVE</span>';
+      if (mode === 'scan') return '<span style="font-size:10px;color:rgba(255,255,255,0.4);margin-right:4px">' + t('live_scan_checkin') + '</span>';
       if (win === 'before') {
         var dateStr = new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' });
-        return '<span style="font-size:0.55rem;color:var(--muted)">' + t('live_starts') + ' ' + dateStr + '</span>';
+        return '<span style="font-size:10px;color:rgba(255,255,255,0.4);margin-right:4px">' + t('live_starts') + ' ' + dateStr + '</span>';
       }
-      if (win === 'after') return '<span style="font-size:0.55rem;color:var(--muted)">' + t('live_ended') + '</span>';
-      // Active window + self check-in
-      return '<button onclick="event.stopPropagation();quickGoLive(\'' + ev.id + '\',\'' + escHtml(ev.name).replace(/'/g,"\\'") + '\')" style="font-size:0.58rem;font-weight:700;padding:3px 8px;border-radius:7px;border:none;background:linear-gradient(135deg,#2ECFCF,#1A9E8E);color:white;cursor:pointer;font-family:inherit;white-space:nowrap">' + t('live_go_live') + '</button>';
+      if (win === 'after') return '<span style="font-size:10px;color:rgba(255,255,255,0.4);margin-right:4px">' + t('live_ended') + '</span>';
+      // Active window + self check-in — use new pink CTA button
+      return '<button onclick="event.stopPropagation();quickGoLive(\'' + ev.id + '\',\'' + escHtml(ev.name).replace(/'/g,"\\'") + '\')" class="bb-go-live-btn">' + t('live_go_live') + '</button>';
     }
 
     // ── Accordion restore helper ──
