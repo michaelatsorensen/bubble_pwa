@@ -3537,24 +3537,3 @@ a:not(.btn-primary):not(.btn-secondary):active {
   margin-bottom: 8px !important;
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   DEBUG (next-v7.37) — Visualize spacing sources
-   Each tree element gets colored outline so we can SEE where space
-   is coming from. Remove after diagnosis.
-   ═══════════════════════════════════════════════════════════════════ */
-.bb-accordion {
-  outline: 2px solid red !important;
-  outline-offset: -1px !important;
-}
-.bb-accordion > .bb-tree-root {
-  outline: 2px solid blue !important;
-  outline-offset: -1px !important;
-}
-.bb-accordion > .bb-tree-trunk {
-  outline: 2px solid green !important;
-  outline-offset: -1px !important;
-}
-.bb-accordion > .bb-tree-trunk.collapsed {
-  outline: 2px solid lime !important;
-  outline-offset: -1px !important;
-}
