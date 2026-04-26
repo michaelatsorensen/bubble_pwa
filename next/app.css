@@ -3514,9 +3514,21 @@ a:not(.btn-primary):not(.btn-secondary):active {
 .bb-accordion > .bb-tree-root {
   margin-bottom: 0 !important;
 }
-/* Inside accordion: tree-trunk (children block) has NO bottom margin — accordion handles it */
+/* Inside accordion: tree-trunk OPEN has NO bottom margin — accordion handles it */
 .bb-accordion > .bb-tree-trunk:not(.collapsed) {
   margin-bottom: 0 !important;
+}
+
+/* CRITICAL: When tree-trunk is COLLAPSED, max-height:0 alone doesn't
+   eliminate space because padding (top:6px, left:30px) is rendered
+   OUTSIDE max-height in CSS box model. We must zero ALL padding too. */
+.bb-tree-trunk.collapsed {
+  max-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  border: 0 !important;
 }
 
 /* Flat list cards (Opdag, profile bubbles, etc — no accordion wrapper) */
