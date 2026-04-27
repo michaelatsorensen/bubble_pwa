@@ -184,8 +184,14 @@ async function openRadarPerson(userId) {
     var proxData = proxAllProfiles.find(function(pp) { return pp.id === p.id; });
     var score = proxData ? proxData.matchScore : calcMatchScore(currentProfile || {}, p, 0);
     var ml = matchLabel(score);
-    document.getElementById('rp-match').textContent = ml.text;
-    document.getElementById('rp-match').style.color = ml.color;
+    var matchEl = document.getElementById('rp-match');
+    matchEl.textContent = ml.text;
+    // Dark-context match badge colors (matchLabel uses light-mode colors)
+    if (score >= 60)      { matchEl.style.color = '#34D399'; matchEl.style.background = 'rgba(26,158,142,0.18)'; }
+    else if (score >= 40) { matchEl.style.color = '#A78BFA'; matchEl.style.background = 'rgba(124,92,252,0.18)'; }
+    else if (score >= 20) { matchEl.style.color = '#60A5FA'; matchEl.style.background = 'rgba(59,130,246,0.18)'; }
+    else if (score >= 1)  { matchEl.style.color = 'rgba(255,255,255,0.65)'; matchEl.style.background = 'rgba(255,255,255,0.08)'; }
+    else                  { matchEl.style.color = 'transparent'; matchEl.style.background = 'transparent'; }
     // Bio
     document.getElementById('rp-bio').textContent = p.bio || '';
     document.getElementById('rp-bio').style.display = p.bio ? 'block' : 'none';
@@ -203,15 +209,15 @@ async function openRadarPerson(userId) {
       var visibleTags = sortedTags.slice(0, maxTags);
       var hiddenCount = sortedTags.length - maxTags;
       var tagLabel = overlap.length > 0 ? 'Interesser \u00B7 ' + overlap.length + ' f\u00e6lles' : 'Interesser';
-      tagsEl.innerHTML = '<div style="font-size:0.6rem;font-weight:600;color:var(--muted);margin-bottom:3px">' + tagLabel + '</div>' +
+      tagsEl.innerHTML = '<div style="font-size:0.6rem;font-weight:600;color:rgba(255,255,255,0.55);margin-bottom:3px">' + tagLabel + '</div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:4px">' +
         visibleTags.map(function(k) {
           var isShared = myKw.indexOf(k.toLowerCase()) >= 0;
           return isShared
-            ? '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.08);color:#085041;font-weight:600">\u2713 ' + escHtml(k) + '</span>'
-            : '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(30,27,46,0.04);color:var(--muted)">' + escHtml(k) + '</span>';
+            ? '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.18);color:#34D399;font-weight:600">\u2713 ' + escHtml(k) + '</span>'
+            : '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7)">' + escHtml(k) + '</span>';
         }).join('') +
-        (hiddenCount > 0 ? '<span style="font-size:0.55rem;padding:2px 7px;color:var(--muted)">+' + hiddenCount + ' mere</span>' : '') +
+        (hiddenCount > 0 ? '<span style="font-size:0.55rem;padding:2px 7px;color:rgba(255,255,255,0.45)">+' + hiddenCount + ' mere</span>' : '') +
         '</div>';
       tagsEl.style.display = 'block';
     } else {
@@ -235,13 +241,13 @@ async function openRadarPerson(userId) {
         sb.from('bubbles').select('id, name, type').in('id', sharedIds).then(function(res) {
           var bubbles = res.data || [];
           if (bubbles.length === 0) return;
-          sharedEl.innerHTML = '<div style="font-size:0.6rem;font-weight:600;color:var(--muted);margin-bottom:3px">F\u00e6lles bobler \u00B7 ' + bubbles.length + '</div>' +
+          sharedEl.innerHTML = '<div style="font-size:0.6rem;font-weight:600;color:rgba(255,255,255,0.55);margin-bottom:3px">F\u00e6lles bobler \u00B7 ' + bubbles.length + '</div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:4px">' +
             bubbles.slice(0, 5).map(function(b) {
               var isEvt = b.type === 'event' || b.type === 'live';
-              return '<span style="font-size:0.58rem;padding:2px 8px;border-radius:6px;font-weight:600;background:' + (isEvt ? 'rgba(46,207,207,0.06);color:#085041;border:1px solid rgba(46,207,207,0.1)' : 'rgba(30,27,46,0.04);color:#1E1B2E;border:1px solid rgba(30,27,46,0.1)') + '">' + (isEvt ? '\uD83D\uDCC5 ' : '\uD83D\uDD17 ') + escHtml(b.name) + '</span>';
+              return '<span style="font-size:0.58rem;padding:2px 8px;border-radius:6px;font-weight:600;background:' + (isEvt ? 'rgba(46,207,207,0.15);color:#34D399;border:0.5px solid rgba(46,207,207,0.25)' : 'rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);border:0.5px solid rgba(255,255,255,0.12)') + '">' + (isEvt ? '\uD83D\uDCC5 ' : '\uD83D\uDD17 ') + escHtml(b.name) + '</span>';
             }).join('') +
-            (bubbles.length > 5 ? '<span style="font-size:0.55rem;color:var(--muted)">+' + (bubbles.length - 5) + ' mere</span>' : '') +
+            (bubbles.length > 5 ? '<span style="font-size:0.55rem;color:rgba(255,255,255,0.45)">+' + (bubbles.length - 5) + ' mere</span>' : '') +
             '</div>';
           sharedEl.style.display = 'block';
         }).catch(function(){});
