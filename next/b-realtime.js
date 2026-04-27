@@ -821,6 +821,9 @@ function dmReduceMsg(msg, opts) {
       pendingEl.classList.remove('msg-pending');
       pendingEl.setAttribute('oncontextmenu', "if(!window.getSelection().toString()){event.preventDefault();dmLongPress('" + msg.id + "',true)}");
       pendingEl.setAttribute('ontouchstart', "dmTouchStart(event,'" + msg.id + "',true)");
+      pendingEl.setAttribute('ontouchend', 'dmTouchEnd()');
+      pendingEl.setAttribute('ontouchmove', 'dmTouchEnd()');
+      pendingEl.setAttribute('onselectstart', 'dmTouchEnd()');
       var bubble = pendingEl.querySelector('.msg-bubble');
       if (bubble) bubble.id = 'dm-bubble-' + msg.id;
     }
@@ -961,7 +964,7 @@ function dmRenderMsg(m) {
   var rowClass = 'msg-row msg-' + gp + (sent ? ' me' : '');
   var msgTs = new Date(m.created_at).getTime();
 
-  return '<div class="' + rowClass + '" id="dm-msg-' + m.id + '" data-msg-id="' + m.id + '" data-ts="' + msgTs + '" oncontextmenu="if(!window.getSelection().toString()){event.preventDefault();dmLongPress(\'' + m.id + '\',' + sent + ')}" ontouchstart="dmTouchStart(event,\'' + m.id + '\',' + sent + ')" ontouchend="dmTouchEnd()" ontouchmove="dmTouchEnd()">' +
+  return '<div class="' + rowClass + '" id="dm-msg-' + m.id + '" data-msg-id="' + m.id + '" data-ts="' + msgTs + '" oncontextmenu="if(!window.getSelection().toString()){event.preventDefault();dmLongPress(\'' + m.id + '\',' + sent + ')}" ontouchstart="dmTouchStart(event,\'' + m.id + '\',' + sent + ')" ontouchend="dmTouchEnd()" ontouchmove="dmTouchEnd()" onselectstart="dmTouchEnd()">' +
     '<div class="msg-avatar"' + avatarClick + ' style="' + avatarStyle + '">' + avatarInner + '</div>' +
     '<div class="msg-body">' +
     '<div class="msg-content">' + bubble + '</div>' +
@@ -1061,9 +1064,12 @@ var _dmLongPressTimer = null;
 var _dmLongPressId = null;
 
 function dmTouchStart(event, msgId, isSent) {
+  // If user is interacting with text selection (e.g. tapping inside selected range), don't fire
+  var sel = window.getSelection();
+  if (sel && !sel.isCollapsed) return;
   _dmLongPressTimer = setTimeout(function() {
     dmLongPress(msgId, isSent);
-  }, 500);
+  }, 600);
 }
 
 function dmTouchEnd() {
@@ -1071,7 +1077,10 @@ function dmTouchEnd() {
 }
 
 function dmLongPress(msgId, isSent) {
-  if (window.getSelection().toString()) return; // Let native text selection work
+  // Check both selection text AND collapsed state — iOS may have started selection
+  // even if the resulting string is briefly empty mid-gesture
+  var sel = window.getSelection();
+  if (sel && (sel.toString() || !sel.isCollapsed)) return; // Let native text selection work
   _dmLongPressId = msgId;
   if (navigator.vibrate) navigator.vibrate(10);
 
