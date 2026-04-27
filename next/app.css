@@ -2300,7 +2300,7 @@ input[type="range"] {
 
 /* ══ Setup sheet step navigation ══ */
 .setup-step-dots{display:flex;gap:6px;align-items:center}
-.setup-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.1);cursor:pointer;transition:background 0.2s,transform 0.2s;-webkit-tap-highlight-color:transparent}
+.setup-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.25);cursor:pointer;transition:background 0.2s,transform 0.2s;-webkit-tap-highlight-color:transparent}
 .setup-dot.active{background:rgb(100,180,230);transform:scale(1.25);cursor:default}
 .setup-dot:not(.active):hover{background:rgba(100,180,230,0.25)}
 .setup-back{font-size:1.4rem;line-height:1;color:rgba(255,255,255,0.4);cursor:pointer;padding:0 4px;font-weight:300;-webkit-tap-highlight-color:transparent}
