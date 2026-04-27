@@ -928,7 +928,7 @@ async function loadProfileBubbles() {
       networks.forEach(function(b) {
         var mc = b.member_count ?? b.bubble_members?.[0]?.count ?? 0;
         html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem"><div style="display:flex;align-items:center;gap:0.6rem">';
-        html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(100,180,230,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgb(100,180,230);overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : ico('bubble')) + '</div>';
+        html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(100,180,230,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgb(100,180,230);filter:brightness(1.6) saturate(1.1);overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;filter:none">' : ico('bubble')) + '</div>';
         html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
         html += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.45)">' + visIcon(b.visibility) + mc + ' ' + t('ps_members') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div></div></div>';
       });
@@ -939,7 +939,7 @@ async function loadProfileBubbles() {
         var dateStr = b.event_date ? new Date(b.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
         var isPast = b.event_date && new Date(b.event_date) < new Date();
         html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5' : '') + '"><div style="display:flex;align-items:center;gap:0.6rem">';
-        html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E;overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : ico('calendar')) + '</div>';
+        html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E;filter:brightness(1.6) saturate(1.1);overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;filter:none">' : ico('calendar')) + '</div>';
         html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
         html += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.45)">' + visIcon(b.visibility) + dateStr + '</div></div></div></div>';
       });
@@ -1357,10 +1357,10 @@ async function loadDashboard() {
     var completePct = Math.round((completeness / totalFields) * 100);
 
     // Render
-    var statCard = function(iconName, label, value, color) {
+    var statCard = function(iconName, label, value, color, iconColor) {
       var iconHtml = ico(iconName).replace('<svg ', '<svg style="width:18px;height:18px" ');
       return '<div style="display:flex;align-items:center;gap:0.7rem;padding:0.65rem 0.8rem;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.06);border-radius:12px">' +
-        '<div style="width:34px;height:34px;border-radius:10px;background:' + color + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">' + iconHtml + '</div>' +
+        '<div style="width:34px;height:34px;border-radius:10px;background:' + color + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;color:' + iconColor + ';filter:brightness(1.6) saturate(1.1)">' + iconHtml + '</div>' +
         '<div style="flex:1;min-width:0"><div style="font-size:1.05rem;font-weight:800;color:rgba(255,255,255,0.95)">' + value + '</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.55)">' + label + '</div></div>' +
         '</div>';
     };
@@ -1383,13 +1383,13 @@ async function loadDashboard() {
       '<div style="background:rgba(23,15,52,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:0.5px solid rgba(255,255,255,0.06);border-radius:16px;padding:0.8rem;margin-bottom:0.5rem">' +
       '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.55);margin-bottom:0.4rem">Din Bubble-uge</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem">' +
-        statCard('eye', t('pf_dash_views'), views, 'rgba(100,180,230,0.15)') +
-        statCard('bookmark', t('pf_dash_saved_you'), savedBy, 'rgba(232,121,168,0.12)') +
-        statCard('heart', t('pf_dash_you_saved'), mySaved, 'rgba(26,158,142,0.12)') +
-        statCard('bubble', t('pf_stat_bubbles'), bubbles, 'rgba(46,207,207,0.12)') +
+        statCard('eye', t('pf_dash_views'), views, 'rgba(100,180,230,0.22)', 'rgb(100,180,230)') +
+        statCard('bookmark', t('pf_dash_saved_you'), savedBy, 'rgba(232,121,168,0.22)', '#E879A8') +
+        statCard('heart', t('pf_dash_you_saved'), mySaved, 'rgba(26,158,142,0.22)', '#1A9E8E') +
+        statCard('bubble', t('pf_stat_bubbles'), bubbles, 'rgba(46,207,207,0.22)', '#1A9E8E') +
       '</div>' +
       '<div style="margin-top:0.4rem">' +
-        statCard('target', t('pf_dash_strong'), strongMatches, 'rgba(26,158,142,0.12)') +
+        statCard('target', t('pf_dash_strong'), strongMatches, 'rgba(26,158,142,0.22)', '#1A9E8E') +
       '</div>' +
       ctaHtml +
       '</div>' +
