@@ -701,7 +701,7 @@ async function loadMessages() {
     if (_navVersion !== myNav) return;
 
     if (!convs || convs.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">'+t('dm_no_conversations')+'<br><span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400">'+t('dm_no_conversations_desc')+'</span></div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-home\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">'+t('dm_go_to_radar')+'</button></div></div>';
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">'+t('dm_no_conversations')+'<br><span style="font-size:0.72rem;color:rgba(255,255,255,0.55);font-weight:400">'+t('dm_no_conversations_desc')+'</span></div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-home\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">'+t('dm_go_to_radar')+'</button></div></div>';
       return;
     }
 
@@ -727,7 +727,7 @@ async function loadMessages() {
       const isUnread = lastMsg.receiver_id === currentUser.id && !lastMsg.read_at;
       const isMine = lastMsg.sender_id === currentUser.id;
       const previewText = lastMsg.file_url ? t('dm_attachment_img') : escHtml((lastMsg.content||'').slice(0,50));
-      const preview = isMine ? '<span style="color:var(--muted)">' + t('dm_you_prefix') + '</span> ' + previewText : previewText;
+      const preview = isMine ? '<span style="color:rgba(255,255,255,0.55)">' + t('dm_you_prefix') + '</span> ' + previewText : previewText;
       const time = timeAgo(lastMsg.created_at);
       const isOnline = p.updated_at && (Date.now() - new Date(p.updated_at).getTime()) < 300000;
       const isPartnerLive = appMode.checkedInIds.indexOf(partnerId) >= 0;

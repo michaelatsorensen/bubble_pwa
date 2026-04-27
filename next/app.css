@@ -217,7 +217,7 @@ body {
 /* ── TOPBAR ── */
 .topbar { display:flex; align-items:center; padding:0.6rem 1.2rem; padding-top:calc(0.6rem + env(safe-area-inset-top,0px)); gap:0.65rem; flex-shrink:0; background:rgba(23,15,52,0.92); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:0.5px solid rgba(255,255,255,0.06); box-shadow:none; z-index:5; }
 .topbar-title { font-size:1rem; font-weight:800; letter-spacing:-0.03em; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.25; color:rgba(255,255,255,0.9); }
-.chat-topbar-cards { display:flex; align-items:center; gap:10px; padding:0.6rem 1rem; padding-top:calc(0.6rem + env(safe-area-inset-top,0px)); flex-shrink:0; background:rgba(23,15,52,0.82); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:0.5px solid rgba(255,255,255,0.06); z-index:5; }
+.chat-topbar-cards { display:flex; align-items:center; gap:10px; padding:0.6rem 1rem; padding-top:calc(0.6rem + env(safe-area-inset-top,0px)); flex-shrink:0; background:rgba(23,15,52,0.85); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:0.5px solid rgba(255,255,255,0.06); z-index:5; }
 .chat-topbar-back { width:32px; height:32px; border-radius:50%; background:none; border:none; display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; color:rgba(255,255,255,0.6); font-family:inherit; font-size:1.1rem; }
 .chat-topbar-back:active { background:rgba(255,255,255,0.06); }
 .chat-topbar-identity { flex:1; display:flex; align-items:center; gap:10px; padding:0; background:none; border-radius:0; border:none; cursor:pointer; min-width:0; }
@@ -225,8 +225,8 @@ body {
 .chat-topbar-icon { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 .chat-topbar-avatar { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#CECBF6,#AFA9EC); display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:700; color:white; flex-shrink:0; overflow:hidden; position:relative; }
 .chat-topbar-text { flex:1; min-width:0; }
-.chat-topbar-name { font-size:0.88rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:rgba(255,255,255,0.9); }
-.chat-topbar-sub { font-size:0.62rem; color:rgba(255,255,255,0.4); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chat-topbar-name { font-size:0.88rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:rgba(255,255,255,0.95); }
+.chat-topbar-sub { font-size:0.62rem; color:rgba(255,255,255,0.55); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .chat-topbar-info-icon { display:none; }
 .topbar-logo { font-size:1.4rem; font-weight:900; letter-spacing:-0.05em; padding-right:0.05em; background:linear-gradient(135deg,#2ECFCF 0%,#6B8BFF 40%,#8B5CF6 70%,#E879A8 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 .topbar-badge { position:absolute;top:4px;right:4px;min-width:14px;height:14px;border-radius:7px;background:var(--accent2);color:white;font-size:0.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1;box-shadow:0 0 0 2px rgba(23,15,52,0.92); }
@@ -984,7 +984,7 @@ a.person-action-btn { text-decoration:none; }
 .chat-composer-row { display:flex; align-items:center; gap:0.4rem; }
 .chat-composer-input { flex:1; background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.1); border-radius:20px; padding:0.55rem 0.85rem; font-size:0.8rem; font-family:'Figtree',sans-serif; color:rgba(255,255,255,0.9); outline:none; transition:border-color 0.2s; }
 .chat-composer-input:focus { border-color:rgba(100,180,230,0.3); box-shadow:0 0 0 3px rgba(100,180,230,0.06); }
-.chat-composer-input::placeholder { color:rgba(255,255,255,0.25); }
+.chat-composer-input::placeholder { color:rgba(255,255,255,0.45); }
 .chat-send-btn { width:36px; height:36px; border-radius:50%; background:rgba(100,180,230,0.18); border:0.5px solid rgba(100,180,230,0.25); color:rgba(255,255,255,0.9); font-size:1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:opacity 0.15s, transform 0.1s; opacity:0.4; }
 .chat-send-btn.chat-send-active { opacity:1; }
 .chat-send-btn:active { transform:scale(0.92); }
@@ -1002,7 +1002,7 @@ a.person-action-btn { text-decoration:none; }
 .msg-avatar { width:24px; height:24px; border-radius:50%; font-size:0.48rem; font-weight:800; color:white; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
 .msg-body { min-width:0; max-width:78%; }
 .msg-row.me .msg-body { display:flex; flex-direction:column; align-items:flex-end; }
-.msg-time { font-size:0.5rem; color:rgba(255,255,255,0.25); }
+.msg-time { font-size:0.5rem; color:rgba(255,255,255,0.45); }
 .msg-edited { font-size:0.5rem; color:var(--accent); cursor:pointer; margin-left:0.15rem; }
 .msg-content { display:inline-flex; align-items:center; gap:0; max-width:100%; }
 .msg-row.me .msg-content { flex-direction:row-reverse; }
@@ -1017,7 +1017,7 @@ a.person-action-btn { text-decoration:none; }
 .msg-row.msg-cont { padding:0.04rem 0; }
 .msg-row.msg-cont .msg-avatar { visibility:hidden; }
 .msg-row.msg-first .msg-avatar { visibility:hidden; }
-.msg-time-sep { text-align:center; font-size:0.52rem; color:rgba(255,255,255,0.25); padding:0.35rem 0 0.15rem; }
+.msg-time-sep { text-align:center; font-size:0.52rem; color:rgba(255,255,255,0.45); padding:0.35rem 0 0.15rem; }
 /* Bubble tails — single messages */
 .msg-row.msg-single .msg-bubble { border-radius:18px 18px 18px 4px; }
 .msg-row.msg-single.me .msg-bubble { border-radius:18px 18px 4px 18px; }
@@ -1034,7 +1034,7 @@ a.person-action-btn { text-decoration:none; }
 .msg-receipt { display:block; font-size:0.52rem; color:#1A9E8E; margin-top:0.1rem; text-align:right; }
 .msg-receipt-sent { color:rgba(255,255,255,0.25); }
 /* Message timestamp */
-.msg-timestamp { font-size:0.48rem; color:rgba(255,255,255,0.25); margin-top:0.1rem; }
+.msg-timestamp { font-size:0.48rem; color:rgba(255,255,255,0.45); margin-top:0.1rem; }
 .msg-row.me .msg-timestamp { text-align:right; }
 /* Sender name in group/bubble chat */
 .msg-sender-name { font-size:0.58rem; font-weight:600; color:var(--accent); margin-bottom:0.1rem; }
@@ -2133,11 +2133,11 @@ input[type="range"] {
 /* ── CONVERSATION LIST POLISH ── */
 .conv-card { position:relative; transition:transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); -webkit-tap-highlight-color:transparent; }
 .conv-card:active { transform:scale(0.97); }
-.conv-card.unread .conv-name { font-weight:800; color:rgba(255,255,255,0.9); }
-.conv-card.unread .conv-preview { color:rgba(255,255,255,0.5); font-weight:600; }
-.conv-card:not(.unread) .conv-name { font-weight:600; color:rgba(255,255,255,0.45); }
-.conv-card:not(.unread) .conv-preview { color:rgba(255,255,255,0.25); }
-.conv-time { font-size:0.6rem; color:rgba(255,255,255,0.25); white-space:nowrap; }
+.conv-card.unread .conv-name { font-weight:800; color:rgba(255,255,255,0.95); }
+.conv-card.unread .conv-preview { color:rgba(255,255,255,0.7); font-weight:600; }
+.conv-card:not(.unread) .conv-name { font-weight:600; color:rgba(255,255,255,0.7); }
+.conv-card:not(.unread) .conv-preview { color:rgba(255,255,255,0.45); }
+.conv-time { font-size:0.6rem; color:rgba(255,255,255,0.55); white-space:nowrap; }
 .conv-unread-dot { width:8px;height:8px;border-radius:50%;background:var(--isbla);flex-shrink:0; }
 
 /* ── BUBBLE HERO HEADER ── */
@@ -2406,8 +2406,8 @@ a:not(.btn-primary):not(.btn-secondary):active {
 /* ══ PREMIUM POLISH PASS 4 (v8.15.29) ══ */
 
 /* ── Refined chat bubbles ── */
-.msg-bubble { box-shadow: 0 1px 2px rgba(30,27,46,0.04); }
-.msg-bubble.sent { background: linear-gradient(135deg, #E8E4FC, #DDD8F8); box-shadow: 0 1px 3px rgba(124,92,252,0.1); }
+.msg-bubble { box-shadow: none; }
+/* removed v7.76 — was overriding v7 ice-blue rule on line 1010 */
 
 /* ── Section labels with accent ── */
 .section-label { position: relative; padding-left: 0.5rem; }
@@ -2497,11 +2497,13 @@ a:not(.btn-primary):not(.btn-secondary):active {
 #screen-bubbles .empty-icon { color:rgba(255,255,255,0.15); }
 #screen-bubbles .bubble-icon { border:0.5px solid rgba(255,255,255,0.06); }
 
-/* ═══ BESKEDER SCREEN — dark glass cards (hybrid model) ═══ */
-#screen-messages .card { background:rgba(23,15,52,0.78); border:0.5px solid rgba(255,255,255,0.08); box-shadow:none; color:rgba(255,255,255,0.9); }
+/* ═══ BESKEDER SCREEN — dark glass (matches Bobler/Profil) ═══ */
+#screen-messages { background:rgba(23,15,52,0.92); }
+#screen-messages .card { background:rgba(23,15,52,0.85); border:0.5px solid rgba(255,255,255,0.06); box-shadow:none; color:rgba(255,255,255,0.95); }
 #screen-messages .card:hover { border-color:rgba(255,255,255,0.12); box-shadow:none; }
-#screen-messages .empty-text { color:rgba(255,255,255,0.35); }
-#screen-messages .empty-icon { color:rgba(255,255,255,0.15); }
+#screen-messages .empty-text { color:rgba(255,255,255,0.55); }
+#screen-messages .empty-icon { color:rgba(255,255,255,0.2); }
+#screen-chat { background:rgba(23,15,52,0.92); }
 
 /* ═══════════════════════════════════════════════════════════════════
    BB CARD SYSTEM — unified design tokens (next-v7.20, refined v7.21)
