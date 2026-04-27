@@ -964,7 +964,7 @@ function etBuild() {
     div.innerHTML =
       '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.75rem 0.85rem;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" onclick="etToggle(\''+s.id+'\')">' +
         '<div style="width:32px;height:32px;border-radius:9px;background:'+s.color+'18;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+'">' + etIco(s.icon) + '</span></div>' +
-        '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700;color:rgba(255,255,255,0.9)">'+s.label+'</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.35);margin-top:1px">'+s.desc+'</div></div>' +
+        '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700;color:rgba(255,255,255,0.95)">'+s.label+'</div><div style="font-size:0.62rem;color:rgba(255,255,255,0.55);margin-top:1px">'+s.desc+'</div></div>' +
         badgeHtml +
         '<div style="color:rgba(255,255,255,0.3);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===s.id?'transform:rotate(180deg)':'')+'">▼</div>' +
       '</div>' +
