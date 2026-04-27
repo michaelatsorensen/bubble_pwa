@@ -2433,7 +2433,7 @@ function renderHomeTrayList() {
   if (subtitle) subtitle.textContent = sorted.length + ' personer';
 
   if (sorted.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:var(--muted)">Ingen matches' + (_homeRadarFilter !== 'all' ? ' i denne kategori' : '') + '</div>';
+    list.innerHTML = '<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:rgba(255,255,255,0.45)">Ingen matches' + (_homeRadarFilter !== 'all' ? ' i denne kategori' : '') + '</div>';
     return;
   }
 
@@ -2441,21 +2441,31 @@ function renderHomeTrayList() {
   list.innerHTML = sorted.map(function(p, i) {
     var name = p.is_anon ? 'Anonym' : (p.name || '?');
     var ini = name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-    var col = p.is_anon ? 'var(--glass-border)' : colors[i % colors.length];
+    var col = p.is_anon ? 'rgba(255,255,255,0.1)' : colors[i % colors.length];
     var ml = matchLabel(p.matchScore || 0);
     var avHtml = p.avatar_url && !p.is_anon
       ? '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>'
       : '<div style="width:40px;height:40px;border-radius:50%;background:' + col + ';display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;color:white;flex-shrink:0">' + escHtml(ini) + '</div>';
-    return '<div onclick="openRadarPerson(\'' + p.id + '\')" style="display:flex;align-items:center;gap:0.75rem;padding:0.7rem 0.85rem;margin-bottom:0.4rem;border-radius:14px;background:#FFFFFF;border:1px solid rgba(216,213,228,0.4);box-shadow:0 1px 3px rgba(30,27,46,0.03);cursor:pointer;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);-webkit-tap-highlight-color:transparent" ontouchstart="this.style.transform=\'scale(0.97)\'" ontouchend="this.style.transform=\'scale(1)\'">' +
+    // Build match badge with dark-context-friendly colors (matchLabel uses light-mode colors which become invisible on dark glass)
+    var badgeHtml = '';
+    if (ml.text) {
+      var badgeColor, badgeBg;
+      if (p.matchScore >= 60)      { badgeColor = '#34D399'; badgeBg = 'rgba(26,158,142,0.18)'; }
+      else if (p.matchScore >= 40) { badgeColor = '#A78BFA'; badgeBg = 'rgba(124,92,252,0.18)'; }
+      else if (p.matchScore >= 20) { badgeColor = '#60A5FA'; badgeBg = 'rgba(59,130,246,0.18)'; }
+      else                          { badgeColor = 'rgba(255,255,255,0.65)'; badgeBg = 'rgba(255,255,255,0.08)'; }
+      badgeHtml = '<span style="font-size:0.58rem;font-weight:700;color:' + badgeColor + ';background:' + badgeBg + ';padding:0.18rem 0.5rem;border-radius:99px;white-space:nowrap;letter-spacing:0.01em">' + ml.text + '</span>';
+    }
+    return '<div onclick="openRadarPerson(\'' + p.id + '\')" style="display:flex;align-items:center;gap:0.75rem;padding:0.7rem 0.85rem;margin-bottom:0.4rem;border-radius:14px;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);cursor:pointer;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);-webkit-tap-highlight-color:transparent" ontouchstart="this.style.transform=\'scale(0.97)\'" ontouchend="this.style.transform=\'scale(1)\'">' +
       avHtml +
       '<div style="flex:1;min-width:0">' +
         '<div style="display:flex;align-items:center;gap:0.4rem">' +
-          '<span style="font-weight:700;font-size:0.85rem">' + escHtml(name) + '</span>' +
-          (ml.text ? matchBadgeHtml(p.matchScore || 0) : '') +
+          '<span style="font-weight:700;font-size:0.85rem;color:rgba(255,255,255,0.95)">' + escHtml(name) + '</span>' +
+          badgeHtml +
         '</div>' +
-        '<div style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
+        '<div style="font-size:0.72rem;color:rgba(255,255,255,0.55);margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
       '</div>' +
-      '<span style="color:var(--muted);font-size:0.9rem;opacity:0.3">›</span>' +
+      '<span style="color:rgba(255,255,255,0.3);font-size:0.9rem">›</span>' +
     '</div>';
   }).join('');
 }
