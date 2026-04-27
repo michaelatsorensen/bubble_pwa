@@ -2457,16 +2457,16 @@ a:not(.btn-primary):not(.btn-secondary):active {
 .setup-sheet .setup-ls-btn { color:rgba(255,255,255,0.7); border-color:rgba(255,255,255,0.1); }
 .setup-sheet .setup-ls-btn.active { color:var(--accent); border-color:rgba(124,92,252,0.4); background:rgba(124,92,252,0.1); }
 
-/* ═══ PROFILE SCREEN — dark glass cards (hybrid model) ═══ */
-#screen-profile .card { background:rgba(23,15,52,0.78); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:0.5px solid rgba(255,255,255,0.06); box-shadow:none; color:rgba(255,255,255,0.9); }
-#screen-profile .fw-600 { color:rgba(255,255,255,0.9); }
-#screen-profile .text-muted { color:rgba(255,255,255,0.35); }
-#screen-profile .saved-action-btn { border:0.5px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.4); }
+/* ═══ PROFILE SCREEN — dark glass cards (matches Bobler/Home) ═══ */
+#screen-profile .card { background:rgba(23,15,52,0.85); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:0.5px solid rgba(255,255,255,0.06); box-shadow:none; color:rgba(255,255,255,0.9); }
+#screen-profile .fw-600 { color:rgba(255,255,255,0.95); }
+#screen-profile .text-muted { color:rgba(255,255,255,0.55); }
+#screen-profile .saved-action-btn { border:0.5px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.55); }
 #screen-profile .saved-action-btn.danger { color:rgba(239,68,68,0.7); border-color:rgba(239,68,68,0.12); }
 #screen-profile .saved-action-btn:active { background:rgba(255,255,255,0.1); }
-#screen-profile .empty-text { color:rgba(255,255,255,0.35); }
-#screen-profile .empty-icon { color:rgba(255,255,255,0.15); }
-#screen-profile .section-label { color:rgba(255,255,255,0.35); }
+#screen-profile .empty-text { color:rgba(255,255,255,0.55); }
+#screen-profile .empty-icon { color:rgba(255,255,255,0.2); }
+#screen-profile .section-label { color:rgba(255,255,255,0.55); }
 
 #screen-profile .interest-btn { background:rgba(255,255,255,0.04); border:0.5px solid rgba(255,255,255,0.06); color:rgba(255,255,255,0.4); }
 #screen-profile .interest-btn .interest-label { color:rgba(255,255,255,0.5); }
