@@ -360,7 +360,7 @@ textarea.input { min-height:80px; resize:vertical; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
 /* ── SECTION LABELS ── */
-.section-label { font-size:0.58rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:rgba(255,255,255,0.25); padding:0.75rem 0 0.35rem; }
+.section-label { font-size:0.58rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:rgba(255,255,255,0.55); padding:0.75rem 0 0.35rem; }
 
 /* ── STAT BOXES ── */
 .stat-box { background:#FFFFFF; border:1px solid rgba(216,213,228,0.5); border-radius:var(--radius-sm); padding:0.6rem 0.8rem; text-align:center; box-shadow:0 1px 3px rgba(30,27,46,0.04), 0 4px 12px rgba(30,27,46,0.03); }
@@ -2463,7 +2463,7 @@ a:not(.btn-primary):not(.btn-secondary):active {
 .modal-sheet .input { background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.9); box-shadow:none; }
 .modal-sheet .input::placeholder { color:rgba(255,255,255,0.45); }
 .modal-sheet .input:focus { border-color:rgba(100,180,230,0.3); box-shadow:0 0 0 3px rgba(100,180,230,0.08); }
-.modal-sheet .input-label { color:rgba(255,255,255,0.7); }
+.modal-sheet .input-label { color:rgba(255,255,255,0.85); }
 .modal-sheet textarea.input { color:rgba(255,255,255,0.9); }
 
 /* ═══ PROFILE SCREEN — dark glass cards (matches Bobler/Home) ═══ */
