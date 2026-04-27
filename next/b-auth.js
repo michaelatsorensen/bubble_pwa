@@ -588,36 +588,36 @@ var _selectedInterests = (function() {
 
 function showTerms() {
   var { overlay, sheet } = bbDynOpen();
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.08);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
-    '<h2 style="font-size:1.2rem;font-weight:800;margin-bottom:0.8rem">Betingelser & Privatlivspolitik</h2>' +
-    '<div style="font-size:0.78rem;line-height:1.7;color:var(--text-secondary)">' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">1. Hvad er Bubble?</h3>' +
+  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
+    '<h2 style="font-size:1.2rem;font-weight:800;margin-bottom:0.8rem;color:rgba(255,255,255,0.95)">Betingelser & Privatlivspolitik</h2>' +
+    '<div style="font-size:0.78rem;line-height:1.7;color:rgba(255,255,255,0.7)">' +
+    '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">1. Hvad er Bubble?</h3>' +
     '<p>Bubble er en networking-platform i lukket beta udviklet i Sønderborg, Danmark. Appen forbinder mennesker baseret på professionelle interesser og nærhed.</p>' +
     '<p style="margin-top:4px">Dataansvarlig: Bubble / Michael Brix Johansen, Sønderborg. Kontakt: info@bubbleme.dk.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">2. Beta-forbehold</h3>' +
+    '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">2. Beta-forbehold</h3>' +
     '<p>Bubble er i <strong>closed beta</strong>. Funktioner kan ændres uden varsel. Der kan forekomme fejl, nedetid og datatab. Vi giver ingen garantier for oppetid eller dataintegritet.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">3. Dine data (GDPR)</h3>' +
+    '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">3. Dine data (GDPR)</h3>' +
     '<p>Vi indsamler kun det du selv indtaster: navn, email, titel, arbejdsplads, bio, tags og profilbillede. Vi gemmer desuden hvilke bobler du joiner og kontakter du gemmer.</p>' +
     '<p style="margin-top:4px">Retsgrundlag: samtykke (art. 6, stk. 1, litra a) og berettiget interesse (art. 6, stk. 1, litra f).</p>' +
     '<p style="margin-top:4px">Beskeder opbevares krypteret og læses ikke af os. Vi sælger <strong>aldrig</strong> dine data. Data opbevares i EU via Supabase (Frankfurt).</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">4. Cookies og lokal lagring</h3>' +
+    '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">4. Cookies og lokal lagring</h3>' +
     '<p>Bubble bruger <strong>ingen tracking-cookies</strong> og ingen tredjeparts-analyse. Vi bruger kun nødvendig lokal lagring:</p>' +
     '<p style="margin-top:4px">• <strong>Login-token</strong> — holder dig logget ind<br>' +
     '• <strong>App-præferencer</strong> — husker dine valg<br>' +
     '• <strong>Session-data</strong> — midlertidig, slettes ved browserlukning</p>' +
     '<p style="margin-top:4px">Ingen data deles med tredjepart. Ingen reklame- eller profileringscookies.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">5. Dine rettigheder</h3>' +
+    '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">5. Dine rettigheder</h3>' +
     '<p>Du har ret til indsigt, berigtigelse, sletning, begrænsning, dataportabilitet og indsigelse. Du kan redigere/slette din profil, blokere brugere og anmode om fuld datasletning via info@bubbleme.dk. Vi svarer inden 30 dage.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">6. Adfærd</h3>' +
+    '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">6. Adfærd</h3>' +
     '<p>Chikane, spam, hadefuldt indhold eller upassende profilbilleder tolereres ikke og kan resultere i fjernelse fra platformen.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">7. Ansvarsfraskrivelse</h3>' +
+    '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">7. Ansvarsfraskrivelse</h3>' +
     '<p>Bubble leveres "as is" uden garanti. Vi er ikke ansvarlige for tab af data, handlinger af andre brugere eller resultat af forbindelser via platformen.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">8. Kontakt & klage</h3>' +
+    '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">8. Kontakt & klage</h3>' +
     '<p>Kontakt os på <strong>info@bubbleme.dk</strong></p>' +
-    '<p style="margin-top:4px">Klage: <a href="https://www.datatilsynet.dk" target="_blank" rel="noopener" style="color:var(--accent)">datatilsynet.dk</a></p>' +
-    '<p style="margin-top:8px;font-size:0.68rem;color:var(--muted)">Sidst opdateret: april 2026</p>' +
+    '<p style="margin-top:4px">Klage: <a href="https://www.datatilsynet.dk" target="_blank" rel="noopener" style="color:rgb(100,180,230)">datatilsynet.dk</a></p>' +
+    '<p style="margin-top:8px;font-size:0.68rem;color:rgba(255,255,255,0.45)">Sidst opdateret: april 2026</p>' +
     '</div>' +
-    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:1.2rem;padding:0.7rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Luk</button>';
+    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:1.2rem;padding:0.7rem;border-radius:12px;border:0.5px solid rgba(255,255,255,0.1);background:none;color:rgba(255,255,255,0.7);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Luk</button>';
 }
 
 function openFeedback() {
@@ -753,12 +753,12 @@ async function openMyQR() {
   
   var { overlay, sheet } = bbDynOpen();
   sheet.style.textAlign = 'center';
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.12);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
-    '<div style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem">Min QR-kode</div>' +
-    '<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Gyldig i 10 minutter · opdateres automatisk</div>' +
+  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
+    '<div style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem;color:rgba(255,255,255,0.95)">Min QR-kode</div>' +
+    '<div style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin-bottom:1rem">Gyldig i 10 minutter · opdateres automatisk</div>' +
     '<div id="my-qr-container" style="display:flex;justify-content:center;margin-bottom:1rem"></div>' +
-    '<div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.8rem">' + escHtml(currentProfile.name) + ' · ' + escHtml(currentProfile.title || '') + '</div>' +
-    '<button onclick="navigator.clipboard.writeText(\'' + shareUrl + '\');this.textContent=\'Kopieret! ✓\';setTimeout(()=>this.textContent=\'Del profil\',2000)" style="width:100%;padding:0.7rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer">Del profil</button>';
+    '<div style="font-size:0.65rem;color:rgba(255,255,255,0.55);margin-bottom:0.8rem">' + escHtml(currentProfile.name) + ' · ' + escHtml(currentProfile.title || '') + '</div>' +
+    '<button onclick="navigator.clipboard.writeText(\'' + shareUrl + '\');this.textContent=\'Kopieret! ✓\';setTimeout(()=>this.textContent=\'Del profil\',2000)" style="width:100%;padding:0.7rem;border-radius:12px;border:0.5px solid rgba(100,180,230,0.25);background:rgba(100,180,230,0.18);color:rgba(255,255,255,0.95);font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer">Del profil</button>';
   
   setTimeout(function() {
     var container = document.getElementById('my-qr-container');

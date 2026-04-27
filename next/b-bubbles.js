@@ -323,9 +323,9 @@ function _buildMemberSheet(title, subtitle, members) {
 
   var avColors = proxColors || ['linear-gradient(135deg,#6366F1,#7C5CFC)'];
 
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.12);margin:0 auto 1rem;cursor:pointer" onclick="closeMemberSheet()"></div>' +
-    '<div style="font-size:1.05rem;font-weight:800;margin-bottom:0.3rem">' + title + '</div>' +
-    '<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">' + subtitle + '</div>' +
+  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 1rem;cursor:pointer" onclick="closeMemberSheet()"></div>' +
+    '<div style="font-size:1.05rem;font-weight:800;margin-bottom:0.3rem;color:rgba(255,255,255,0.95)">' + title + '</div>' +
+    '<div style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin-bottom:1rem">' + subtitle + '</div>' +
     '<div id="member-sheet-list">' +
     members.map(function(m, i) {
       var p = m.profiles || {};
