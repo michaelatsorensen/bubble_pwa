@@ -912,10 +912,10 @@ function etCountSec(id){ var n=0; etSelected.forEach(function(v){ if(v.sec===id)
 function etBuildBody(s) {
   var h = '';
   s.groups.forEach(function(g){
-    h += '<div><div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.25);padding:0.25rem 0 0.1rem">' + g.label + '</div><div style="display:flex;flex-wrap:wrap;gap:0.3rem">';
+    h += '<div><div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.5);padding:0.25rem 0 0.1rem">' + g.label + '</div><div style="display:flex;flex-wrap:wrap;gap:0.3rem">';
     g.tags.forEach(function(tag){
       var isSel = etSelected.has(tag);
-      var style = isSel ? 'background:'+s.color+';border-color:'+s.color+';color:white' : 'background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5)';
+      var style = isSel ? 'background:'+s.color+';border-color:'+s.color+';color:white' : 'background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.85)';
       h += '<span style="padding:0.27rem 0.65rem;border-radius:99px;font-size:0.7rem;font-weight:500;cursor:pointer;border:1.5px solid;transition:all .13s;'+style+'" onclick="etTgl(\''+etEsc(tag)+'\',\''+s.id+'\')">' + tag + '</span>';
     });
     h += '</div></div>';
@@ -934,7 +934,7 @@ function etBuildBody(s) {
     h += '</div>';
   }
   if (!etInputVis[s.id]) {
-    h += '<button style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.3rem 0.75rem;border-radius:99px;font-size:0.7rem;font-weight:600;cursor:pointer;border:1.5px dashed '+s.color+'40;color:'+s.color+';background:transparent;font-family:inherit" onclick="etShowIn(\''+s.id+'\')"><span style="font-size:0.9rem;line-height:1">+</span> Tilføj eget tag</button>';
+    h += '<button style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.3rem 0.75rem;border-radius:99px;font-size:0.7rem;font-weight:600;cursor:pointer;border:1.5px dashed rgba(100,180,230,0.4);color:rgba(100,180,230,0.9);background:transparent;font-family:inherit" onclick="etShowIn(\''+s.id+'\')"><span style="font-size:0.9rem;line-height:1">+</span> Tilføj eget tag</button>';
   } else {
     h += '<div style="display:flex;gap:0.35rem;align-items:center;margin-top:0.4rem">' +
       '<input id="etci-'+s.id+'" style="flex:1;padding:0.35rem 0.65rem;border-radius:99px;font-size:0.72rem;font-family:inherit;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);outline:none;color:rgba(255,255,255,0.9);min-width:0" placeholder="Skriv dit tag..." maxlength="40" oninput="etCiChk(\''+s.id+'\')" onkeydown="etCiKey(event,\''+s.id+'\')">' +
@@ -945,9 +945,10 @@ function etBuildBody(s) {
   h += '</div>';
   // Done row
   var n = etCountSec(s.id);
+  var hasSelected = n > 0;
   h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0 0.8rem;margin-top:0.1rem">' +
-    '<div style="font-size:0.7rem;font-weight:600;color:'+s.color+'">'+n+' valgt</div>' +
-    '<button style="padding:0.38rem 1rem;border-radius:99px;font-size:0.72rem;font-weight:700;font-family:inherit;border:none;cursor:pointer;background:rgba(255,255,255,0.08);color:'+s.color+'" onclick="etCloseSec(\''+s.id+'\')">Gem &amp; luk ✓</button>' +
+    '<div style="font-size:0.72rem;font-weight:600;color:'+(hasSelected?'rgb(100,180,230)':'rgba(255,255,255,0.55)')+'">'+n+' valgt</div>' +
+    '<button style="padding:0.38rem 1rem;border-radius:99px;font-size:0.72rem;font-weight:700;font-family:inherit;border:0.5px solid rgba(100,180,230,0.25);cursor:pointer;background:rgba(100,180,230,0.18);color:rgba(255,255,255,0.95)" onclick="etCloseSec(\''+s.id+'\')">Gem &amp; luk ✓</button>' +
   '</div>';
   return h;
 }
