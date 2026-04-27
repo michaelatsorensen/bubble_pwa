@@ -1731,16 +1731,16 @@ async function bcLoadInfo() {
 
     // Tags
     var tagsHtml = (b.keywords || []).map(function(k) {
-      var col = isEvent ? 'rgba(46,207,207,0.07)' : 'rgba(124,92,252,0.07)';
-      var txt = isEvent ? '#0F6E56' : '#534AB7';
-      return '<span style="font-size:0.68rem;padding:0.2rem 0.55rem;border-radius:99px;background:' + col + ';color:' + txt + ';font-weight:500">' + escHtml(k) + '</span>';
+      var col = isEvent ? 'rgba(46,207,207,0.18)' : 'rgba(100,180,230,0.18)';
+      var txt = isEvent ? '#34D399' : 'rgb(140,200,235)';
+      return '<span style="font-size:0.68rem;padding:0.2rem 0.55rem;border-radius:99px;background:' + col + ';color:' + txt + ';font-weight:600">' + escHtml(k) + '</span>';
     }).join('');
 
     // Color theming
-    var accentBg = isEvent ? 'rgba(46,207,207,' : 'rgba(124,92,252,';
-    var accentTxt = isEvent ? '#085041' : '#534AB7';
-    var accentStroke = isEvent ? '#2ECFCF' : '#7C5CFC';
-    var iconBg = isEvent ? 'rgba(46,207,207,0.1)' : 'rgba(124,92,252,0.1)';
+    var accentBg = isEvent ? 'rgba(46,207,207,' : 'rgba(100,180,230,';
+    var accentTxt = isEvent ? '#34D399' : 'rgb(140,200,235)';
+    var accentStroke = isEvent ? '#34D399' : 'rgb(100,180,230)';
+    var iconBg = isEvent ? 'rgba(46,207,207,0.22)' : 'rgba(100,180,230,0.22)';
     var heroIcon = b.icon_url
       ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:15px">'
       : (isEvent ? icon('calendar') : ico('bubble'));
@@ -1753,8 +1753,8 @@ async function bcLoadInfo() {
         if (parent) {
           parentHtml = '<div onclick="openBubble(\'' + parent.id + '\')" style="display:flex;align-items:center;gap:0.55rem;padding:0.55rem 0.7rem;border-radius:12px;background:rgba(100,180,230,0.08);border:0.5px solid rgba(100,180,230,0.18);margin-bottom:0.9rem;cursor:pointer">' +
             '<div style="width:24px;height:24px;border-radius:7px;background:rgba(100,180,230,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;color:rgb(100,180,230)">' + ico('bubble') + '</div>' +
-            '<div style="flex:1"><div style="font-size:0.68rem;color:var(--muted)">Del af</div><div style="font-size:0.78rem;font-weight:600;color:#534AB7">' + escHtml(parent.name) + '</div></div>' +
-            '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+            '<div style="flex:1"><div style="font-size:0.68rem;color:rgba(255,255,255,0.55)">Del af</div><div style="font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.95)">' + escHtml(parent.name) + '</div></div>' +
+            '<div style="font-size:0.88rem;color:rgba(255,255,255,0.4)">›</div></div>';
         }
       } catch(e) { /* silent */ }
     }
@@ -1937,11 +1937,11 @@ async function bcLoadInfo() {
 
         var childCount = allBubbleIds.length - 1;
         statsHtml = '<div style="margin-bottom:0.9rem">' +
-          '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">' + t('bi_statistics') + '</div>' +
+          '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">' + t('bi_statistics') + '</div>' +
           '<div class="dash-pair"><div class="dash-row">' +
             oCard('o-mem-' + b.id, 'users', 'rgba(124,92,252,0.08)', 'var(--accent)', memTotalCount, t('bi_members_label'), memNewCount, 'accent') +
             oCard('o-msg-' + b.id, 'chat', 'rgba(232,121,168,0.08)', 'var(--pink)', msgTotal.count || 0, t('bi_messages_label'), msgNew.count, 'pink') +
-          '</div><div class="dash-tray" id="dtray-o1-' + b.id.slice(0,8) + '"><div class="dash-tray-collapse"><div class="dash-tray-inner" id="dti-o1"><div style="font-size:0.72rem;font-weight:700" id="dtitle-o1"></div><div style="font-size:0.55rem;color:var(--muted)" id="dsub-o1"></div><div class="dash-chart-wrap"><canvas id="dcv-o1"></canvas></div></div></div></div></div>' +
+          '</div><div class="dash-tray" id="dtray-o1-' + b.id.slice(0,8) + '"><div class="dash-tray-collapse"><div class="dash-tray-inner" id="dti-o1"><div style="font-size:0.72rem;font-weight:700" id="dtitle-o1"></div><div style="font-size:0.55rem;color:rgba(255,255,255,0.55)" id="dsub-o1"></div><div class="dash-chart-wrap"><canvas id="dcv-o1"></canvas></div></div></div></div></div>' +
           '</div>';
       } catch(e) { logError('bcLoadInfo:stats', e); }
     }
@@ -1953,22 +1953,22 @@ async function bcLoadInfo() {
       // Shared: admins
       if (isOwner) {
         adminItems += '<div onclick="openAdminDesignation(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
-          '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('users') + '</span>' +
-          '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">' + t('bi_designate_admins') + '</div>' +
-          '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>' +
+          '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.55)">' + icon('users') + '</span>' +
+          '<div style="flex:1;font-size:0.8rem;color:rgba(255,255,255,0.85)">' + t('bi_designate_admins') + '</div>' +
+          '<div style="font-size:0.88rem;color:rgba(255,255,255,0.4)">›</div></div>' +
           '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>';
       }
       // Shared: download list
       adminItems += '<div onclick="downloadMembersPdf(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
-        '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('file') + '</span>' +
-        '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">Download ' + memberLabel + 'liste</div>' +
-        '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+        '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.55)">' + icon('file') + '</span>' +
+        '<div style="flex:1;font-size:0.8rem;color:rgba(255,255,255,0.85)">Download ' + memberLabel + 'liste</div>' +
+        '<div style="font-size:0.88rem;color:rgba(255,255,255,0.4)">›</div></div>';
       // Shared: chat lock toggle
       var chatLocked = b.chat_locked || false;
       adminItems += '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>' +
         '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem">' +
-        '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('lock') + '</span>' +
-        '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">' + t('bi_lock_chat') + '</div>' +
+        '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.55)">' + icon('lock') + '</span>' +
+        '<div style="flex:1;font-size:0.8rem;color:rgba(255,255,255,0.85)">' + t('bi_lock_chat') + '</div>' +
         '<label style="position:relative;width:36px;height:20px;flex-shrink:0;cursor:pointer">' +
         '<input type="checkbox" ' + (chatLocked ? 'checked' : '') + ' onchange="bcToggleChatLock(\'' + b.id + '\',this.checked)" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;margin:0">' +
         '<div style="position:absolute;inset:0;border-radius:10px;transition:background 0.2s;background:' + (chatLocked ? 'var(--accent)' : 'var(--border)') + '"></div>' +
@@ -1978,20 +1978,20 @@ async function bcLoadInfo() {
       if (isEvent) {
         adminItems += '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>' +
           '<div onclick="generateEventReport(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
-          '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('file') + '</span>' +
-          '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">' + t('bi_event_report') + '</div>' +
-          '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+          '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.55)">' + icon('file') + '</span>' +
+          '<div style="flex:1;font-size:0.8rem;color:rgba(255,255,255,0.85)">' + t('bi_event_report') + '</div>' +
+          '<div style="font-size:0.88rem;color:rgba(255,255,255,0.4)">›</div></div>';
       }
       // Owner: transfer
       if (isOwner) {
         adminItems += '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>' +
           '<div onclick="openTransferOwnership(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
-          '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('crown') + '</span>' +
-          '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">' + t('bi_transfer_ownership') + '</div>' +
-          '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+          '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.55)">' + icon('crown') + '</span>' +
+          '<div style="flex:1;font-size:0.8rem;color:rgba(255,255,255,0.85)">' + t('bi_transfer_ownership') + '</div>' +
+          '<div style="font-size:0.88rem;color:rgba(255,255,255,0.4)">›</div></div>';
       }
       adminHtml = '<div style="margin-bottom:0.9rem">' +
-        '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">' + (isEvent ? t('bi_event_admin') : t('bi_administration')) + '</div>' +
+        '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">' + (isEvent ? t('bi_event_admin') : t('bi_administration')) + '</div>' +
         '<div style="border-radius:12px;border:1px solid var(--glass-border-subtle);overflow:hidden">' + adminItems + '</div></div>';
     }
 
@@ -2014,12 +2014,12 @@ async function bcLoadInfo() {
 
       var checkoutBtn = '';
       if (isEvent && myCheckinLive) {
-        checkoutBtn = '<button onclick="bcCheckout()" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.2);color:#085041;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + t('bi_checkout') + '</button>';
+        checkoutBtn = '<button onclick="bcCheckout()" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(46,207,207,0.12);border:0.5px solid rgba(46,207,207,0.28);color:#34D399;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + t('bi_checkout') + '</button>';
       }
-      bottomHtml = '<div style="display:flex;flex-direction:column;gap:0.4rem;border-top:1px solid var(--glass-border-subtle);padding-top:0.8rem">' +
+      bottomHtml = '<div style="display:flex;flex-direction:column;gap:0.4rem;border-top:0.5px solid rgba(255,255,255,0.06);padding-top:0.8rem">' +
         checkoutBtn +
-        '<button data-action="leaveBubble" data-id="' + b.id + '" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.1);color:#A32D2D;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_leave_event') : t('bb_leave_bubble')) + '</button>' +
-        (isOwner ? '<button onclick="confirmPopBubble(\'' + b.id + '\')" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.1);color:#791F1F;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_delete_event') : t('bb_delete_bubble')) + '</button>' : '') +
+        '<button data-action="leaveBubble" data-id="' + b.id + '" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.08);border:0.5px solid rgba(239,68,68,0.2);color:#FCA5A5;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_leave_event') : t('bb_leave_bubble')) + '</button>' +
+        (isOwner ? '<button onclick="confirmPopBubble(\'' + b.id + '\')" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.12);border:0.5px solid rgba(239,68,68,0.3);color:#FCA5A5;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_delete_event') : t('bb_delete_bubble')) + '</button>' : '') +
         '</div>';
     } else if (bcBubbleData._isPending) {
       bottomHtml = ''; // Banner at top (bcLoadMembership) already shows pending state
@@ -2033,7 +2033,7 @@ async function bcLoadInfo() {
     var topJoinHtml = '';
     if (!bcBubbleData._isMember && !bcBubbleData._isPending) {
       if (b.visibility === 'hidden') {
-        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem;font-size:0.78rem;color:var(--muted)">' + icon('eye') + ' Kun via invitation</div>';
+        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem;font-size:0.78rem;color:rgba(255,255,255,0.55)">' + icon('eye') + ' Kun via invitation</div>';
       } else if (b.visibility === 'private') {
         topJoinHtml = '<div style="padding:0.5rem 0 0.8rem"><button class="bb-cta-anmod" data-action="requestJoin" data-id="' + b.id + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Anmod om medlemskab</button></div>';
       } else {
@@ -2047,8 +2047,8 @@ async function bcLoadInfo() {
       parentHtml +
       '<div style="text-align:center;padding:0.25rem 0 1rem">' +
         '<div style="width:52px;height:52px;border-radius:15px;background:' + (b.icon_url ? 'transparent' : iconBg) + ';display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;color:' + accentStroke + ';font-size:24px;position:relative"><div style="width:100%;height:100%;border-radius:15px;overflow:hidden;display:flex;align-items:center;justify-content:center">' + heroIcon + '</div>' + (bcBubbleData._isMember ? '<div style="position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#1A9E8E;display:flex;align-items:center;justify-content:center;border:2.5px solid var(--bg)"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>' : '') + '</div>' +
-        '<div style="font-size:1rem;font-weight:800;color:var(--text)">' + escHtml(b.name) + '</div>' +
-        '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.15rem">' + typeLabel(b.type) + (b.location ? ' · ' + escHtml(b.location) : '') + ' · ' + mc + ' ' + memberLabel + (bcBubbleData._isMember ? ' · <span style="color:#1A9E8E;font-weight:600"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="3" stroke-linecap="round" style="vertical-align:-1px"><polyline points="20 6 9 17 4 12"/></svg> ' + (isEvent ? t('dl_attending') : t('dl_member')) + '</span>' : '') + '</div>' +
+        '<div style="font-size:1rem;font-weight:800;color:rgba(255,255,255,0.95)">' + escHtml(b.name) + '</div>' +
+        '<div style="font-size:0.75rem;color:rgba(255,255,255,0.55);margin-top:0.15rem">' + typeLabel(b.type) + (b.location ? ' · ' + escHtml(b.location) : '') + ' · ' + mc + ' ' + memberLabel + (bcBubbleData._isMember ? ' · <span style="color:#1A9E8E;font-weight:600"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="3" stroke-linecap="round" style="vertical-align:-1px"><polyline points="20 6 9 17 4 12"/></svg> ' + (isEvent ? t('dl_attending') : t('dl_member')) + '</span>' : '') + '</div>' +
         (isEvent && b.event_date ? (function() {
           var evD = new Date(b.event_date);
           var evPast = new Date(b.event_end_date || b.event_date) < new Date();
@@ -2058,28 +2058,28 @@ async function bcLoadInfo() {
             ? (_lang === 'da' ? 'slutter kl. ' : 'ends at ') + new Date(b.event_end_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' })
             : '';
           var evBadge = evPast
-            ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(30,27,46,0.08);color:var(--muted);font-weight:600">Afsluttet</span>'
+            ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.55);font-weight:600">Afsluttet</span>'
             : (evD <= new Date()
-              ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(46,207,207,0.2);color:#085041;font-weight:600">I gang</span>'
+              ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(46,207,207,0.22);color:#34D399;font-weight:600;border:0.5px solid rgba(46,207,207,0.3)">I gang</span>'
               : '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(100,180,230,0.15);color:rgb(100,180,230);font-weight:600;border:0.5px solid rgba(100,180,230,0.25)">' + t('bb_coming') + '</span>');
-          return '<div style="background:rgba(46,207,207,0.08);border:0.5px solid rgba(46,207,207,0.25);border-radius:10px;padding:8px 12px;margin-top:0.6rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem">' +
+          return '<div style="background:rgba(46,207,207,0.12);border:0.5px solid rgba(46,207,207,0.28);border-radius:10px;padding:8px 12px;margin-top:0.6rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem">' +
             '<div style="text-align:left">' +
-              '<div style="font-size:0.8rem;font-weight:700;color:#085041">' + evDateStr + '</div>' +
-              (evEndStr ? '<div style="font-size:0.68rem;color:#0F6E56;margin-top:1px">' + evEndStr + '</div>' : '') +
+              '<div style="font-size:0.8rem;font-weight:700;color:#34D399">' + evDateStr + '</div>' +
+              (evEndStr ? '<div style="font-size:0.68rem;color:rgba(52,211,153,0.75);margin-top:1px">' + evEndStr + '</div>' : '') +
             '</div>' +
             evBadge +
           '</div>';
         })() : '') +
-        (b.description ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;line-height:1.6;text-align:left;padding:0.7rem 0.85rem;border-radius:10px;background:rgba(30,27,46,0.03);border:0.5px solid rgba(216,213,228,0.5);white-space:pre-line">' + escHtml(b.description) + '</div>' : '') +
-        (b.external_url ? '<a href="' + escHtml(b.external_url) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;padding:0.6rem 0.85rem;border-radius:10px;background:rgba(100,180,230,0.08);border:0.5px solid rgba(100,180,230,0.2);text-decoration:none;cursor:pointer">' +
-          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="2" stroke-linecap="round" style="flex-shrink:0"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
-          '<div style="flex:1;min-width:0"><div style="font-size:0.68rem;color:var(--muted);margin-bottom:1px">' + t('bi_link_label') + '</div>' +
-          '<div style="font-size:0.78rem;font-weight:600;color:#534AB7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(b.external_url.replace(/^https?:\/\//, '')) + '</div></div>' +
-          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0"><path d="M9 6l6 6-6 6"/></svg>' +
+        (b.description ? '<div style="font-size:0.8rem;color:rgba(255,255,255,0.85);margin-top:0.5rem;line-height:1.6;text-align:left;padding:0.7rem 0.85rem;border-radius:10px;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);white-space:pre-line">' + escHtml(b.description) + '</div>' : '') +
+        (b.external_url ? '<a href="' + escHtml(b.external_url) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;padding:0.6rem 0.85rem;border-radius:10px;background:rgba(100,180,230,0.1);border:0.5px solid rgba(100,180,230,0.22);text-decoration:none;cursor:pointer">' +
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(100,180,230)" stroke-width="2" stroke-linecap="round" style="flex-shrink:0"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
+          '<div style="flex:1;min-width:0"><div style="font-size:0.68rem;color:rgba(255,255,255,0.55);margin-bottom:1px">' + t('bi_link_label') + '</div>' +
+          '<div style="font-size:0.78rem;font-weight:600;color:rgb(100,180,230);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(b.external_url.replace(/^https?:\/\//, '')) + '</div></div>' +
+          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0"><path d="M9 6l6 6-6 6"/></svg>' +
         '</a>' : '') +
-        (b.agenda ? '<div style="margin-top:0.7rem;padding:0.7rem 0.85rem;border-radius:10px;background:rgba(46,207,207,0.06);border:0.5px solid rgba(46,207,207,0.2);text-align:left">' +
-          '<div style="font-size:0.68rem;font-weight:700;color:#0F6E56;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.35rem">' + icon('calendar') + ' ' + t('bi_agenda') + '</div>' +
-          '<div style="font-size:0.78rem;color:var(--text);line-height:1.6;white-space:pre-line">' + escHtml(b.agenda) + '</div>' +
+        (b.agenda ? '<div style="margin-top:0.7rem;padding:0.7rem 0.85rem;border-radius:10px;background:rgba(46,207,207,0.12);border:0.5px solid rgba(46,207,207,0.22);text-align:left">' +
+          '<div style="font-size:0.68rem;font-weight:700;color:#34D399;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.35rem">' + icon('calendar') + ' ' + t('bi_agenda') + '</div>' +
+          '<div style="font-size:0.78rem;color:rgba(255,255,255,0.85);line-height:1.6;white-space:pre-line">' + escHtml(b.agenda) + '</div>' +
         '</div>' : '') +
         (tagsHtml ? '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.5rem;justify-content:center">' + tagsHtml + '</div>' : '') +
       '</div>' +
