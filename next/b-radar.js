@@ -239,7 +239,7 @@ async function openRadarPerson(userId) {
             '<div style="display:flex;flex-wrap:wrap;gap:4px">' +
             bubbles.slice(0, 5).map(function(b) {
               var isEvt = b.type === 'event' || b.type === 'live';
-              return '<span style="font-size:0.58rem;padding:2px 8px;border-radius:6px;font-weight:600;background:' + (isEvt ? 'rgba(46,207,207,0.06);color:#085041;border:1px solid rgba(46,207,207,0.1)' : 'rgba(124,92,252,0.06);color:#534AB7;border:1px solid rgba(124,92,252,0.08)') + '">' + (isEvt ? '\uD83D\uDCC5 ' : '\uD83D\uDD17 ') + escHtml(b.name) + '</span>';
+              return '<span style="font-size:0.58rem;padding:2px 8px;border-radius:6px;font-weight:600;background:' + (isEvt ? 'rgba(46,207,207,0.06);color:#085041;border:1px solid rgba(46,207,207,0.1)' : 'rgba(30,27,46,0.04);color:#1E1B2E;border:1px solid rgba(30,27,46,0.1)') + '">' + (isEvt ? '\uD83D\uDCC5 ' : '\uD83D\uDD17 ') + escHtml(b.name) + '</span>';
             }).join('') +
             (bubbles.length > 5 ? '<span style="font-size:0.55rem;color:var(--muted)">+' + (bubbles.length - 5) + ' mere</span>' : '') +
             '</div>';
