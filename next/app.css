@@ -2449,7 +2449,7 @@ a:not(.btn-primary):not(.btn-secondary):active {
 /* Setup sheet CTA override */
 .setup-sheet .btn-primary { background:rgba(100,180,230,0.18); border:0.5px solid rgba(100,180,230,0.25); color:rgba(255,255,255,0.9); box-shadow:none; }
 .setup-sheet .input { background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.9); box-shadow:none; }
-.setup-sheet .input::placeholder { color:rgba(255,255,255,0.25); }
+.setup-sheet .input::placeholder { color:rgba(255,255,255,0.4); }
 .setup-sheet .input:focus { border-color:rgba(100,180,230,0.3); box-shadow:0 0 0 3px rgba(100,180,230,0.08); }
 .setup-sheet .input-label { color:rgba(255,255,255,0.5); }
 
