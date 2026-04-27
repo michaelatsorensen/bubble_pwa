@@ -964,10 +964,10 @@ function etBuild() {
     var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.color+'20;color:'+s.color+'">' +n+'</span>' : '';
     div.innerHTML =
       '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.75rem 0.85rem;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" onclick="etToggle(\''+s.id+'\')">' +
-        '<div style="width:32px;height:32px;border-radius:9px;background:'+s.color+'18;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+'">' + etIco(s.icon) + '</span></div>' +
+        '<div style="width:32px;height:32px;border-radius:9px;background:'+s.color+'33;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+';filter:brightness(1.6) saturate(1.1)">' + etIco(s.icon) + '</span></div>' +
         '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700;color:rgba(255,255,255,0.95)">'+s.label+'</div><div style="font-size:0.62rem;color:rgba(255,255,255,0.55);margin-top:1px">'+s.desc+'</div></div>' +
         badgeHtml +
-        '<div style="color:rgba(255,255,255,0.3);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===s.id?'transform:rotate(180deg)':'')+'">▼</div>' +
+        '<div style="color:rgba(255,255,255,0.55);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===s.id?'transform:rotate(180deg)':'')+'">▼</div>' +
       '</div>' +
       (etOpenSec===s.id ? '<div style="padding:0 0.75rem;display:flex;flex-direction:column;gap:0.45rem">'+etBuildBody(s)+'</div>' : '');
     list.appendChild(div);
@@ -996,7 +996,7 @@ function etRebuildSec(id){
       '<div style="width:32px;height:32px;border-radius:9px;background:'+s.color+'18;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+'">' + etIco(s.icon) + '</span></div>' +
       '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700;color:rgba(255,255,255,0.9)">'+s.label+'</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.35);margin-top:1px">'+s.desc+'</div></div>' +
       badgeHtml +
-      '<div style="color:rgba(255,255,255,0.3);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===id?'transform:rotate(180deg)':'')+'">▼</div>' +
+      '<div style="color:rgba(255,255,255,0.55);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===id?'transform:rotate(180deg)':'')+'">▼</div>' +
     '</div>' +
     (etOpenSec===id ? '<div style="padding:0 0.75rem;display:flex;flex-direction:column;gap:0.45rem">'+etBuildBody(s)+'</div>' : '');
   el.style.cssText = 'background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.06);border-radius:13px;margin-bottom:0.35rem' + (etOpenSec===id?';border-color:rgba(100,180,230,0.25);box-shadow:none':'');
