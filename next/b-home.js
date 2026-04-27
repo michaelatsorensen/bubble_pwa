@@ -879,18 +879,18 @@ function showWelcomeCard() {
   if (!isNewUser) return;
 
   el.innerHTML =
-    '<div style="background:#FFFFFF;border:1px solid rgba(124,92,252,0.15);border-radius:16px;padding:1rem 1.1rem;position:relative">' +
-      '<button onclick="dismissWelcomeCard()" style="position:absolute;top:0.6rem;right:0.7rem;background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;line-height:1;padding:0.2rem;font-family:inherit" aria-label="Luk">×</button>' +
+    '<div style="background:rgba(23,15,52,0.85);backdrop-filter:blur(12px) saturate(130%);-webkit-backdrop-filter:blur(12px) saturate(130%);border:0.5px solid rgba(255,255,255,0.06);border-radius:14px;padding:1rem 1.1rem;position:relative">' +
+      '<button onclick="dismissWelcomeCard()" style="position:absolute;top:0.6rem;right:0.7rem;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);font-size:1rem;line-height:1;padding:0.2rem;font-family:inherit" aria-label="Luk">×</button>' +
       '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">' +
-        '<div style="width:28px;height:28px;color:var(--accent);flex-shrink:0">' + ico('bubble') + '</div>' +
-        '<div style="font-size:0.88rem;font-weight:800;color:var(--text)">Velkommen til Bubble' + (currentProfile.name ? ', ' + currentProfile.name.split(' ')[0] : '') + '!</div>' +
+        '<div style="width:28px;height:28px;color:rgb(100,180,230);flex-shrink:0">' + ico('bubble') + '</div>' +
+        '<div style="font-size:0.88rem;font-weight:800;color:rgba(255,255,255,0.95)">Velkommen til Bubble' + (currentProfile.name ? ', ' + currentProfile.name.split(' ')[0] : '') + '!</div>' +
       '</div>' +
-      '<div style="font-size:0.78rem;color:var(--text-secondary);line-height:1.55;margin-bottom:0.75rem">' +
+      '<div style="font-size:0.78rem;color:rgba(255,255,255,0.7);line-height:1.55;margin-bottom:0.75rem">' +
         'Bubble matcher dig med relevante mennesker i nærheden — baseret på hvem du er og hvad du søger. Jo mere du udfylder, jo bedre og mere præcise matches får du i radaren.' +
       '</div>' +
       '<div style="display:flex;gap:0.5rem;align-items:center">' +
-        '<button onclick="dismissWelcomeCard();goTo(\'screen-profile\');setTimeout(function(){profSwitchTab(\'dashboard\')},200)" style="flex:1;padding:0.55rem;border-radius:10px;font-size:0.78rem;font-weight:700;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;border:none">Udfyld profil →</button>' +
-        '<button onclick="dismissWelcomeCard()" style="padding:0.55rem 0.8rem;border-radius:10px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;background:none;border:1px solid var(--glass-border);color:var(--muted)">Senere</button>' +
+        '<button onclick="dismissWelcomeCard();goTo(\'screen-profile\');setTimeout(function(){profSwitchTab(\'dashboard\')},200)" style="flex:1;padding:0.55rem;border-radius:10px;font-size:0.78rem;font-weight:700;font-family:inherit;cursor:pointer;background:rgba(100,180,230,0.18);border:0.5px solid rgba(100,180,230,0.25);color:rgba(255,255,255,0.95)">Udfyld profil →</button>' +
+        '<button onclick="dismissWelcomeCard()" style="padding:0.55rem 0.8rem;border-radius:10px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;background:none;border:0.5px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.45)">Senere</button>' +
       '</div>' +
     '</div>';
   el.style.display = 'block';
