@@ -13,37 +13,37 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=81776">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81776">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81776">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81776">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81776">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81776">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81776">
+<link rel="manifest" href="manifest.json?v=81777">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81777">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81777">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81777">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81777">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81777">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81777">
 
-<link rel="stylesheet" href="app.css?v=81776">
+<link rel="stylesheet" href="app.css?v=81777">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-<script src="bubble-icons.js?v=81776" defer></script>
-<script src="tag-data.js?v=81776" defer></script>
-<script src="b-i18n.js?v=81776" defer></script>
-<script src="b-config.js?v=81776" defer></script>
-<script src="b-utils.js?v=81776" defer></script>
-<script src="b-auth.js?v=81776" defer></script>
-<script src="b-home.js?v=81776" defer></script>
-<script src="b-bubbles.js?v=81776" defer></script>
-<script src="b-profile.js?v=81776" defer></script>
-<script src="b-radar.js?v=81776" defer></script>
-<script src="b-messages.js?v=81776" defer></script>
-<script src="b-realtime.js?v=81776" defer></script>
-<script src="b-onboarding.js?v=81776" defer></script>
-<script src="b-chat.js?v=81776" defer></script>
-<script src="b-notifications.js?v=81776" defer></script>
-<script src="b-live.js?v=81776" defer></script>
-<script src="b-admin.js?v=81776" defer></script>
-<script src="b-navigation.js?v=81776" defer></script>
-<script src="b-boot.js?v=81776" defer></script>
+<script src="bubble-icons.js?v=81777" defer></script>
+<script src="tag-data.js?v=81777" defer></script>
+<script src="b-i18n.js?v=81777" defer></script>
+<script src="b-config.js?v=81777" defer></script>
+<script src="b-utils.js?v=81777" defer></script>
+<script src="b-auth.js?v=81777" defer></script>
+<script src="b-home.js?v=81777" defer></script>
+<script src="b-bubbles.js?v=81777" defer></script>
+<script src="b-profile.js?v=81777" defer></script>
+<script src="b-radar.js?v=81777" defer></script>
+<script src="b-messages.js?v=81777" defer></script>
+<script src="b-realtime.js?v=81777" defer></script>
+<script src="b-onboarding.js?v=81777" defer></script>
+<script src="b-chat.js?v=81777" defer></script>
+<script src="b-notifications.js?v=81777" defer></script>
+<script src="b-live.js?v=81777" defer></script>
+<script src="b-admin.js?v=81777" defer></script>
+<script src="b-navigation.js?v=81777" defer></script>
+<script src="b-boot.js?v=81777" defer></script>
   
 
 
@@ -584,7 +584,7 @@
   <div class="topbar">
     <div style="flex:1;min-width:0">
       <div style="display:flex;align-items:center;gap:5px"><img src="bubble-logo-topbar-v2.png" alt="bubble" onclick="goTo('screen-home')" style="cursor:pointer;height:20px;width:auto"><span style="font-size:7px;font-weight:700;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.08);padding:2px 5px;border-radius:4px;letter-spacing:0.5px">NEXT</span></div>
-      <div style="font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.5);margin-top:1px" id="home-greeting-name"></div>
+      <div style="font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.55);margin-top:1px" id="home-greeting-name"></div>
     </div>
     <button onclick="openConnectScanner()" class="topbar-action-btn" title="Scan QR" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;box-shadow:none;display:flex;align-items:center;justify-content:center">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"><path d="M2 7V2h5M17 2h5v5M22 17v5h-5M7 22H2v-5"/><line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2 2"/></svg>
@@ -792,7 +792,7 @@
   <div class="topbar">
     <div style="flex:1;min-width:0">
       <div class="topbar-title" data-t="bb_topbar">Bobler</div>
-      <div style="font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.5);margin-top:1px" id="bb-topbar-sub">Dine netværk og events</div>
+      <div style="font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.55);margin-top:1px" id="bb-topbar-sub">Dine netværk og events</div>
     </div>
     <button onclick="openCreateBubble()" class="topbar-action-btn" title="Opret ny boble" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;box-shadow:none;display:flex;align-items:center;justify-content:center">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -833,7 +833,7 @@
     <button onclick="navBack()" class="topbar-action-btn" title="Tilbage" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;box-shadow:none;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.7);font-size:14px;font-family:inherit">←</button>
     <div style="flex:1;min-width:0">
       <div class="topbar-title" data-t="nf_title">Notifikationer</div>
-      <div style="font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.5);margin-top:1px" id="nf-topbar-sub" data-t="nf_subtitle">Aktivitet og invitationer</div>
+      <div style="font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.55);margin-top:1px" id="nf-topbar-sub" data-t="nf_subtitle">Aktivitet og invitationer</div>
     </div>
   </div>
   <div class="scroll-area">
@@ -1092,7 +1092,7 @@
   <div class="topbar">
     <div style="flex:1;min-width:0">
       <div class="topbar-title" data-t="nav_messages">Beskeder</div>
-      <div style="font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.5);margin-top:1px" id="msg-topbar-sub">Dine samtaler</div>
+      <div style="font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.55);margin-top:1px" id="msg-topbar-sub">Dine samtaler</div>
     </div>
     <button id="conv-select-btn" onclick="convToggleSelectMode()" class="topbar-action-btn" title="Vælg samtaler" data-t-title="misc_select" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;box-shadow:none;display:flex;align-items:center;justify-content:center">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
@@ -1100,7 +1100,7 @@
   </div>
   <!-- Conversation delete toolbar -->
   <div class="dm-select-toolbar" id="conv-select-toolbar" style="display:none;flex-shrink:0">
-    <span id="conv-select-count" style="font-size:0.78rem;font-weight:600">0 valgt</span>
+    <span id="conv-select-count" style="font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.95)">0 valgt</span>
     <div style="display:flex;gap:0.4rem">
       <button class="btn-sm" id="conv-delete-btn" onclick="convDeleteSelected()" style="font-size:0.72rem;padding:0.3rem 0.6rem;background:rgba(232,121,168,0.15);color:var(--accent2);border:1px solid rgba(232,121,168,0.3);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600" disabled data-t="misc_delete">Slet</button>
       <button class="btn-sm btn-ghost" onclick="convSelectAll()" style="font-size:0.72rem;padding:0.3rem 0.6rem" data-t="misc_select_all">Vælg alle</button>
@@ -1174,7 +1174,7 @@
   <div class="topbar">
     <div style="flex:1;min-width:0">
       <div class="topbar-title" data-t="pf_my_profile">Min profil</div>
-      <div style="font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.5);margin-top:1px" id="prof-topbar-sub"></div>
+      <div style="font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.55);margin-top:1px" id="prof-topbar-sub"></div>
     </div>
     <button onclick="openEditProfile()" class="topbar-action-btn" title="Rediger profil" data-t-title="pf_edit_btn" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;box-shadow:none;display:flex;align-items:center;justify-content:center">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>

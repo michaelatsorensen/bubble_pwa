@@ -561,10 +561,10 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 /* send-btn styles consolidated at line ~802 */
 
 /* DM select toolbar */
-.dm-select-toolbar { display:flex; align-items:center; justify-content:space-between; padding:0.5rem 0.8rem; background:rgba(26,122,138,0.06); border-top:1px solid rgba(26,122,138,0.15); }
+.dm-select-toolbar { display:flex; align-items:center; justify-content:space-between; padding:0.5rem 0.8rem; background:rgba(23,15,52,0.6); border-top:0.5px solid rgba(255,255,255,0.06); color:rgba(255,255,255,0.95); }
 
 /* Select checkboxes (conversations + messages) */
-.dm-check, .conv-check { width:22px; height:22px; border-radius:50%; border:2px solid #D8D5E4; flex-shrink:0; cursor:pointer; transition:all 0.15s; margin-right:0.4rem; }
+.dm-check, .conv-check { width:22px; height:22px; border-radius:50%; border:2px solid rgba(255,255,255,0.2); flex-shrink:0; cursor:pointer; transition:all 0.15s; margin-right:0.4rem; }
 .dm-check.checked, .conv-check.checked { background:var(--accent2); border-color:var(--accent2); }
 .dm-check.checked::after, .conv-check.checked::after { content:'✓'; display:flex; align-items:center; justify-content:center; color:white; font-size:0.6rem; font-weight:800; width:100%; height:100%; }
 
@@ -633,7 +633,9 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 /* ── SPINNER ── */
 .spinner { width:28px; height:28px; border:2px solid #D8D5E4; border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; margin:2rem auto; }
 #notif-tray-list .spinner,
-#home-tray-list .spinner { border-color:rgba(255,255,255,0.1); border-top-color:rgba(124,92,252,0.6); }
+#home-tray-list .spinner,
+#screen-messages .spinner,
+#screen-profile .spinner { border-color:rgba(255,255,255,0.1); border-top-color:rgba(100,180,230,0.7); }
 @keyframes spin { to{transform:rotate(360deg)} }
 
 /* ── EMPTY STATES ── */
@@ -2111,10 +2113,12 @@ input[type="range"] {
 /* Dark skeleton variants for dark contexts */
 #notif-tray-list .skel,
 #home-tray-list .skel,
-#screen-profile .skel { background:linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; }
+#screen-profile .skel,
+#screen-messages .skel { background:linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; }
 #notif-tray-list .skel-card,
 #home-tray-list .skel-card,
-#screen-profile .skel-card { background:rgba(255,255,255,0.04); border:0.5px solid rgba(255,255,255,0.06); }
+#screen-profile .skel-card,
+#screen-messages .skel-card { background:rgba(255,255,255,0.04); border:0.5px solid rgba(255,255,255,0.06); }
 
 /* ── SUCCESS PULSE ANIMATION ── */
 @keyframes successPulse {
