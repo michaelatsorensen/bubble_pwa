@@ -317,7 +317,7 @@ async function bcLoadBubbleCore(bubbleId) {
   var isEvent = b.type === 'event' || b.type === 'live';
   var iconEl = document.getElementById('bc-topbar-icon');
   if (iconEl) {
-    iconEl.style.background = isEvent ? 'rgba(46,207,207,0.1)' : 'rgba(124,92,252,0.1)';
+    iconEl.style.background = isEvent ? 'rgba(46,207,207,0.22)' : 'rgba(100,180,230,0.22)';
     iconEl.innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:1.2rem;height:1.2rem;border-radius:4px;object-fit:cover">' : bubbleEmoji(b.type);
   }
   document.getElementById('bc-name').textContent = b.name;
@@ -777,7 +777,7 @@ async function bcLoadBubbleInfo() {
     var iconEl = document.getElementById('bc-topbar-icon');
     if (iconEl) {
       var isEv = b.type === 'event' || b.type === 'live';
-      iconEl.style.background = isEv ? 'rgba(46,207,207,0.1)' : 'rgba(124,92,252,0.1)';
+      iconEl.style.background = isEv ? 'rgba(46,207,207,0.22)' : 'rgba(100,180,230,0.22)';
       iconEl.innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:1.2rem;height:1.2rem;border-radius:4px;object-fit:cover">' : bubbleEmoji(b.type);
     }
     document.getElementById('bc-name').textContent = b.name;
@@ -917,7 +917,7 @@ async function bcLoadEvents() {
         // Sub-bubble (network type)
         return '<div class="card" style="padding:0.75rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')">' +
           '<div style="display:flex;align-items:center;gap:0.6rem">' +
-          '<div style="width:38px;height:38px;border-radius:10px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;overflow:hidden">' + (ch.icon_url ? '<img src="' + escHtml(ch.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : bubbleEmoji(ch.type)) + '</div>' +
+          '<div style="width:38px;height:38px;border-radius:10px;background:rgba(100,180,230,0.22);display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;overflow:hidden;color:rgb(100,180,230)">' + (ch.icon_url ? '<img src="' + escHtml(ch.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : bubbleEmoji(ch.type)) + '</div>' +
           '<div style="flex:1;min-width:0">' +
           '<div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(ch.name) + '</div>' +
           '<div class="fs-072 text-muted">' + typeLabel(ch.type) + ' · ' + mc + ' medlem' + (mc !== 1 ? 'mer' : '') + '</div>' +
@@ -930,7 +930,7 @@ async function bcLoadEvents() {
     if (bcBubbleData?._canEdit) {
       html += '<div style="display:flex;gap:0.4rem;margin-top:0.8rem">' +
         '<button onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('calendar') + ' Event</button>' +
-        '<button onclick="openCreateSubBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('bubble') + ' Sub-boble</button>' +
+        '<button onclick="openCreateSubBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(100,180,230,0.15);border:0.5px solid rgba(100,180,230,0.25);color:rgb(100,180,230);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('bubble') + ' Sub-boble</button>' +
         '</div>';
     }
     list.innerHTML = html;
@@ -958,7 +958,7 @@ async function bcLoadMessages() {
     if (!msgs || msgs.length === 0) {
       var bName = bcBubbleData?.name || 'boblen';
       el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;padding:3rem 1.5rem 1rem;text-align:center">' +
-        '<div style="width:48px;height:48px;border-radius:14px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;margin-bottom:0.6rem">' + icon('chat') + '</div>' +
+        '<div style="width:48px;height:48px;border-radius:14px;background:rgba(100,180,230,0.15);display:flex;align-items:center;justify-content:center;margin-bottom:0.6rem;color:rgb(100,180,230)">' + icon('chat') + '</div>' +
         '<div style="font-size:0.88rem;font-weight:700">Start samtalen</div>' +
         '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.2rem">Skriv den første besked i ' + escHtml(bName) + '</div>' +
         '</div>';
@@ -1751,8 +1751,8 @@ async function bcLoadInfo() {
       try {
         var { data: parent } = await sb.from('bubbles').select('id,name').eq('id', b.parent_bubble_id).maybeSingle();
         if (parent) {
-          parentHtml = '<div onclick="openBubble(\'' + parent.id + '\')" style="display:flex;align-items:center;gap:0.55rem;padding:0.55rem 0.7rem;border-radius:12px;background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.1);margin-bottom:0.9rem;cursor:pointer">' +
-            '<div style="width:24px;height:24px;border-radius:7px;background:rgba(124,92,252,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px">' + ico('bubble') + '</div>' +
+          parentHtml = '<div onclick="openBubble(\'' + parent.id + '\')" style="display:flex;align-items:center;gap:0.55rem;padding:0.55rem 0.7rem;border-radius:12px;background:rgba(100,180,230,0.08);border:0.5px solid rgba(100,180,230,0.18);margin-bottom:0.9rem;cursor:pointer">' +
+            '<div style="width:24px;height:24px;border-radius:7px;background:rgba(100,180,230,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;color:rgb(100,180,230)">' + ico('bubble') + '</div>' +
             '<div style="flex:1"><div style="font-size:0.68rem;color:var(--muted)">Del af</div><div style="font-size:0.78rem;font-weight:600;color:#534AB7">' + escHtml(parent.name) + '</div></div>' +
             '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
         }
@@ -2061,7 +2061,7 @@ async function bcLoadInfo() {
             ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(30,27,46,0.08);color:var(--muted);font-weight:600">Afsluttet</span>'
             : (evD <= new Date()
               ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(46,207,207,0.2);color:#085041;font-weight:600">I gang</span>'
-              : '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(124,92,252,0.1);color:#534AB7;font-weight:600">' + t('bb_coming') + '</span>');
+              : '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(100,180,230,0.15);color:rgb(100,180,230);font-weight:600;border:0.5px solid rgba(100,180,230,0.25)">' + t('bb_coming') + '</span>');
           return '<div style="background:rgba(46,207,207,0.08);border:0.5px solid rgba(46,207,207,0.25);border-radius:10px;padding:8px 12px;margin-top:0.6rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem">' +
             '<div style="text-align:left">' +
               '<div style="font-size:0.8rem;font-weight:700;color:#085041">' + evDateStr + '</div>' +
@@ -2071,7 +2071,7 @@ async function bcLoadInfo() {
           '</div>';
         })() : '') +
         (b.description ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;line-height:1.6;text-align:left;padding:0.7rem 0.85rem;border-radius:10px;background:rgba(30,27,46,0.03);border:0.5px solid rgba(216,213,228,0.5);white-space:pre-line">' + escHtml(b.description) + '</div>' : '') +
-        (b.external_url ? '<a href="' + escHtml(b.external_url) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;padding:0.6rem 0.85rem;border-radius:10px;background:rgba(124,92,252,0.05);border:0.5px solid rgba(124,92,252,0.15);text-decoration:none;cursor:pointer">' +
+        (b.external_url ? '<a href="' + escHtml(b.external_url) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;padding:0.6rem 0.85rem;border-radius:10px;background:rgba(100,180,230,0.08);border:0.5px solid rgba(100,180,230,0.2);text-decoration:none;cursor:pointer">' +
           '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="2" stroke-linecap="round" style="flex-shrink:0"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
           '<div style="flex:1;min-width:0"><div style="font-size:0.68rem;color:var(--muted);margin-bottom:1px">' + t('bi_link_label') + '</div>' +
           '<div style="font-size:0.78rem;font-weight:600;color:#534AB7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(b.external_url.replace(/^https?:\/\//, '')) + '</div></div>' +
@@ -2160,7 +2160,7 @@ async function bcLoadPosts() {
       list.innerHTML = '<div class="empty-state" style="margin-top:2rem">' +
         '<div class="empty-icon">' + icon('file') + '</div>' +
         '<div class="empty-text">Ingen opslag endnu' +
-        (canPost ? '<br><span style="font-size:0.72rem;color:var(--accent);cursor:pointer" onclick="bcOpenCreatePost()">Opret det første opslag →</span>' : '<br><span style="font-size:0.72rem">Administratorer kan dele nyheder og opdateringer her</span>') +
+        (canPost ? '<br><span style="font-size:0.72rem;color:rgb(100,180,230);cursor:pointer" onclick="bcOpenCreatePost()">Opret det første opslag →</span>' : '<br><span style="font-size:0.72rem">Administratorer kan dele nyheder og opdateringer her</span>') +
         '</div></div>';
       return;
     }

@@ -13,37 +13,37 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=81781">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81781">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81781">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81781">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81781">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81781">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81781">
+<link rel="manifest" href="manifest.json?v=81782">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81782">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81782">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81782">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81782">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81782">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81782">
 
-<link rel="stylesheet" href="app.css?v=81781">
+<link rel="stylesheet" href="app.css?v=81782">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-<script src="bubble-icons.js?v=81781" defer></script>
-<script src="tag-data.js?v=81781" defer></script>
-<script src="b-i18n.js?v=81781" defer></script>
-<script src="b-config.js?v=81781" defer></script>
-<script src="b-utils.js?v=81781" defer></script>
-<script src="b-auth.js?v=81781" defer></script>
-<script src="b-home.js?v=81781" defer></script>
-<script src="b-bubbles.js?v=81781" defer></script>
-<script src="b-profile.js?v=81781" defer></script>
-<script src="b-radar.js?v=81781" defer></script>
-<script src="b-messages.js?v=81781" defer></script>
-<script src="b-realtime.js?v=81781" defer></script>
-<script src="b-onboarding.js?v=81781" defer></script>
-<script src="b-chat.js?v=81781" defer></script>
-<script src="b-notifications.js?v=81781" defer></script>
-<script src="b-live.js?v=81781" defer></script>
-<script src="b-admin.js?v=81781" defer></script>
-<script src="b-navigation.js?v=81781" defer></script>
-<script src="b-boot.js?v=81781" defer></script>
+<script src="bubble-icons.js?v=81782" defer></script>
+<script src="tag-data.js?v=81782" defer></script>
+<script src="b-i18n.js?v=81782" defer></script>
+<script src="b-config.js?v=81782" defer></script>
+<script src="b-utils.js?v=81782" defer></script>
+<script src="b-auth.js?v=81782" defer></script>
+<script src="b-home.js?v=81782" defer></script>
+<script src="b-bubbles.js?v=81782" defer></script>
+<script src="b-profile.js?v=81782" defer></script>
+<script src="b-radar.js?v=81782" defer></script>
+<script src="b-messages.js?v=81782" defer></script>
+<script src="b-realtime.js?v=81782" defer></script>
+<script src="b-onboarding.js?v=81782" defer></script>
+<script src="b-chat.js?v=81782" defer></script>
+<script src="b-notifications.js?v=81782" defer></script>
+<script src="b-live.js?v=81782" defer></script>
+<script src="b-admin.js?v=81782" defer></script>
+<script src="b-navigation.js?v=81782" defer></script>
+<script src="b-boot.js?v=81782" defer></script>
   
 
 
@@ -518,7 +518,7 @@
     <!-- Social proof: attendee count + blurred profiles -->
     <div style="padding:0 1.5rem;margin-bottom:1rem">
       <div style="text-align:center;margin-bottom:0.6rem">
-        <div id="event-attendee-count" style="font-size:0.82rem;font-weight:700;color:var(--accent)"></div>
+        <div id="event-attendee-count" style="font-size:0.82rem;font-weight:700;color:rgb(100,180,230)"></div>
       </div>
       <div id="event-blurred-profiles" style="display:flex;flex-direction:column;gap:0.35rem"></div>
     </div>
@@ -546,7 +546,7 @@
 
       <div style="text-align:center;padding:1.2rem 0">
         <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.3rem">Har du allerede Bubble?</div>
-        <button onclick="eventLoginExisting()" style="font-size:0.78rem;color:var(--accent);font-weight:600;background:none;border:none;font-family:inherit;cursor:pointer">Log ind her →</button>
+        <button onclick="eventLoginExisting()" style="font-size:0.78rem;color:rgb(100,180,230);font-weight:600;background:none;border:none;font-family:inherit;cursor:pointer">Log ind her →</button>
       </div>
     </div>
   </div>
@@ -1004,7 +1004,7 @@
   <!-- POSTS TAB -->
   <div id="bc-panel-posts" style="display:none;flex-direction:column;flex:1;overflow:hidden;position:relative">
     <div class="scroll-area" id="bc-posts-list" style="flex:1;overflow-y:auto;padding:0.8rem 1.1rem"></div>
-    <button id="bc-posts-fab" onclick="bcOpenCreatePost()" style="display:none;position:absolute;bottom:1.2rem;right:1.1rem;padding:0.55rem 1rem;border-radius:99px;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;border:none;font-size:0.78rem;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(124,92,252,0.25);z-index:10;font-family:inherit;align-items:center;gap:0.3rem">+ Nyt opslag</button>
+    <button id="bc-posts-fab" onclick="bcOpenCreatePost()" style="display:none;position:absolute;bottom:1.2rem;right:1.1rem;padding:0.55rem 1rem;border-radius:99px;background:rgba(100,180,230,0.22);color:rgba(255,255,255,0.95);border:0.5px solid rgba(100,180,230,0.3);font-size:0.78rem;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.25);z-index:10;font-family:inherit;align-items:center;gap:0.3rem;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">+ Nyt opslag</button>
   </div>
 
   <!-- EVENTS TAB (for network bubbles) -->
@@ -1309,8 +1309,8 @@
     </div>
     <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);margin-bottom:0.75rem;flex-shrink:0">Vælg tags der beskriver din branche, rolle og interesser</div>
     <div id="et-prog-bar-setup" style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.4rem;flex-shrink:0">
-      <div style="flex:1;height:3px;background:rgba(124,92,252,0.08);border-radius:99px;overflow:hidden"><div id="et-prog-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#E879A8);transition:width .4s;width:0%"></div></div>
-      <div id="et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:var(--accent);white-space:nowrap">0 valgt</div>
+      <div style="flex:1;height:3px;background:rgba(100,180,230,0.08);border-radius:99px;overflow:hidden"><div id="et-prog-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,rgb(100,180,230),#E879A8);transition:width .4s;width:0%"></div></div>
+      <div id="et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:rgb(100,180,230);white-space:nowrap">0 valgt</div>
     </div>
     <div id="et-chips" style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-bottom:0.5rem;min-height:0;flex-shrink:0"></div>
     <div id="et-acc-list" style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;margin-bottom:0.75rem"></div>

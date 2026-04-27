@@ -334,11 +334,11 @@ function _buildMemberSheet(title, subtitle, members) {
         '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
         '<div style="width:40px;height:40px;border-radius:50%;background:' + avColors[i % avColors.length] + ';display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>';
       var isAdmin = m.role === 'admin';
-      var adminBadge = isAdmin ? '<span class="admin-badge" style="font-size:0.55rem;background:rgba(124,92,252,0.1);color:var(--accent);padding:0.1rem 0.35rem;border-radius:6px;font-weight:600">Admin</span>' : '';
+      var adminBadge = isAdmin ? '<span class="admin-badge" style="font-size:0.55rem;background:rgba(100,180,230,0.15);color:rgb(100,180,230);padding:0.1rem 0.35rem;border-radius:6px;font-weight:600;border:0.5px solid rgba(100,180,230,0.25)">Admin</span>' : '';
       return '<div class="member-pick-row" data-uid="' + m.user_id + '" data-name="' + escHtml(p.name||'?').replace(/"/g,'&quot;') + '" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border-radius:12px;border:1px solid var(--glass-border-subtle);margin-bottom:0.4rem;cursor:pointer;transition:all 0.15s">' +
         avHtml +
         '<div style="flex:1"><div style="font-weight:600;font-size:0.85rem;display:flex;align-items:center;gap:0.3rem">' + escHtml(p.name||t('misc_unknown')) + ' ' + adminBadge + '</div><div style="font-size:0.72rem;color:var(--text-secondary)">' + escHtml(p.title||'') + '</div></div>' +
-        '<div style="color:var(--accent);font-size:0.72rem;font-weight:600">Vælg</div>' +
+        '<div style="color:rgb(100,180,230);font-size:0.72rem;font-weight:600">Vælg</div>' +
       '</div>';
     }).join('') +
     '</div>' +
@@ -1731,7 +1731,7 @@ async function generateEventReport(bubbleId) {
         return '<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.35rem">' +
           '<div style="width:120px;font-size:0.75rem;color:#1E1B2E;font-weight:500;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + d.label + '</div>' +
           '<div style="flex:1;height:22px;background:#F4F3F9;border-radius:6px;overflow:hidden">' +
-            '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#7C5CFC,#6366F1);border-radius:6px;min-width:2px"></div>' +
+            '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,rgb(100,180,230),rgb(70,150,210));border-radius:6px;min-width:2px"></div>' +
           '</div>' +
           '<div style="width:28px;font-size:0.72rem;font-weight:700;color:#7C5CFC;text-align:right">' + d.value + '</div>' +
           '</div>';
@@ -1883,7 +1883,7 @@ async function generateEventReport(bubbleId) {
         '<button onclick="closeReportTray()" style="border:none;background:none;font-size:1.2rem;cursor:pointer;padding:0.3rem;color:var(--text)">←</button>' +
         '<div style="font-size:0.82rem;font-weight:800;color:var(--text)">Event-rapport</div>' +
         '<div style="display:flex;gap:0.3rem">' +
-          '<button onclick="exportReportPdf(\'' + bubbleId + '\')" style="font-size:0.65rem;padding:0.3rem 0.5rem;background:rgba(124,92,252,0.08);color:var(--accent);border:1px solid rgba(124,92,252,0.15);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">PDF</button>' +
+          '<button onclick="exportReportPdf(\'' + bubbleId + '\')" style="font-size:0.65rem;padding:0.3rem 0.5rem;background:rgba(100,180,230,0.15);color:rgb(100,180,230);border:0.5px solid rgba(100,180,230,0.25);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">PDF</button>' +
           '<button onclick="exportReportEmail(\'' + bubbleId + '\')" style="font-size:0.65rem;padding:0.3rem 0.5rem;background:rgba(46,207,207,0.08);color:#085041;border:1px solid rgba(46,207,207,0.15);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Email</button>' +
         '</div>' +
       '</div>' +
@@ -1915,7 +1915,7 @@ async function generateEventReport(bubbleId) {
     // Top connectors
     if (topConnectors.length > 0) {
       trayHtml += '<div style="margin-bottom:1rem">' +
-        '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent);margin-bottom:0.4rem">Top networkere</div>';
+        '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgb(100,180,230);margin-bottom:0.4rem">Top networkere</div>';
       topConnectors.forEach(function(c, i) {
         trayHtml += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid var(--glass-border-subtle)">' +
           '<div style="width:22px;height:22px;border-radius:50%;background:var(--gradient-primary);color:white;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:800;flex-shrink:0">' + (i + 1) + '</div>' +
@@ -1929,7 +1929,7 @@ async function generateEventReport(bubbleId) {
     // Top interests
     if (topKeywords.length > 0) {
       trayHtml += '<div style="margin-bottom:1rem">' +
-        '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent);margin-bottom:0.4rem">Interesser</div>' +
+        '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgb(100,180,230);margin-bottom:0.4rem">Interesser</div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:0.25rem">';
       topKeywords.forEach(function(kw) {
         trayHtml += '<span class="tag">' + escHtml(kw[0]) + ' <span style="color:var(--muted);font-size:0.6rem">' + kw[1] + '</span></span>';
@@ -1939,7 +1939,7 @@ async function generateEventReport(bubbleId) {
 
     // Participant list
     trayHtml += '<div style="margin-bottom:1rem">' +
-      '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent);margin-bottom:0.4rem">Alle deltagere (' + totalMembers + ')</div>';
+      '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgb(100,180,230);margin-bottom:0.4rem">Alle deltagere (' + totalMembers + ')</div>';
 
     members.forEach(function(m) {
       var p = profileMap[m.user_id] || {};

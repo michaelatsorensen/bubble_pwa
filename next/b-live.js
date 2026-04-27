@@ -1029,7 +1029,7 @@ function _connectShowBubbleCard(bub, isEventFlow) {
     : (isEvent ? '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="' + (isEvent ? '#2ECFCF' : '#7C5CFC') + '" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' : '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/></svg>');
 
   // Button
-  var btnColor = isEvent ? 'linear-gradient(135deg,#1A9E8E,#17877A)' : 'linear-gradient(135deg,#7C5CFC,#6366F1)';
+  var btnColor = isEvent ? 'linear-gradient(135deg,#1A9E8E,#17877A)' : 'linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))';
   var btnText = isEvent ? '✓ Check ind' : (isPrivate ? '🔒 Anmod om adgang' : 'Bliv medlem');
 
   var resultEl = document.getElementById('connect-scan-result');
@@ -1038,7 +1038,7 @@ function _connectShowBubbleCard(bub, isEventFlow) {
   resultEl.innerHTML =
     '<div style="background:rgba(255,255,255,0.97);border-radius:20px 20px 0 0;padding:1.5rem 1.2rem calc(1.2rem + env(safe-area-inset-bottom,0px));box-shadow:0 -4px 20px rgba(0,0,0,0.2)">' +
       '<div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:1rem">' +
-        '<div style="width:52px;height:52px;border-radius:14px;background:' + (isEvent ? 'rgba(46,207,207,0.1)' : 'rgba(124,92,252,0.1)') + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">' + iconHtml + '</div>' +
+        '<div style="width:52px;height:52px;border-radius:14px;background:' + (isEvent ? 'rgba(46,207,207,0.22)' : 'rgba(100,180,230,0.22)') + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">' + iconHtml + '</div>' +
         '<div style="flex:1;min-width:0">' +
           '<div style="font-size:1rem;font-weight:800;color:#1E1B2E">' + escHtml(bub.name) + '</div>' +
           '<div style="font-size:0.75rem;color:#888;margin-top:2px">' +
@@ -1049,7 +1049,7 @@ function _connectShowBubbleCard(bub, isEventFlow) {
         '</div>' +
       '</div>' +
       '<div style="display:flex;gap:0.5rem">' +
-        '<button onclick="_connectBubbleCancel()" style="flex:1;padding:0.75rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:#888;font-size:0.85rem;font-weight:600;font-family:inherit;cursor:pointer">Annuller</button>' +
+        '<button onclick="_connectBubbleCancel()" style="flex:1;padding:0.75rem;border-radius:12px;border:0.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.7);font-size:0.85rem;font-weight:600;font-family:inherit;cursor:pointer">Annuller</button>' +
         '<button onclick="_connectBubbleConfirm()" style="flex:2;padding:0.75rem;border-radius:12px;border:none;background:' + btnColor + ';color:white;font-size:0.85rem;font-weight:700;font-family:inherit;cursor:pointer">' + btnText + '</button>' +
       '</div>' +
     '</div>';
@@ -1122,7 +1122,7 @@ function _connectShowProfileSheet(p, profileId) {
       '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 16px"></div>' +
       // Profile card
       '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">' +
-        '<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#6366F1);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">' + avatarHtml + '</div>' +
+        '<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210));display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">' + avatarHtml + '</div>' +
         '<div style="flex:1;min-width:0">' +
           '<div style="font-size:1rem;font-weight:800;color:white">' + escHtml(name) + '</div>' +
           (subtitle ? '<div style="font-size:0.75rem;color:rgba(255,255,255,0.6);margin-top:2px">' + escHtml(subtitle) + '</div>' : '') +
@@ -1135,7 +1135,7 @@ function _connectShowProfileSheet(p, profileId) {
       tagsHtml +
       // Actions
       '<div style="display:flex;gap:8px;margin-top:16px">' +
-        '<button onclick="_connectSaveContact()" style="flex:2;padding:12px;border-radius:14px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit">Gem kontakt</button>' +
+        '<button onclick="_connectSaveContact()" style="flex:2;padding:12px;border-radius:14px;border:0.5px solid rgba(100,180,230,0.3);background:rgba(100,180,230,0.22);color:rgba(255,255,255,0.95);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">Gem kontakt</button>' +
         '<button onclick="_connectDismissSheet()" style="flex:1;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.15);background:none;color:rgba(255,255,255,0.7);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">Annuller</button>' +
       '</div>' +
     '</div>';
@@ -1167,7 +1167,7 @@ async function _connectSaveContact() {
           '<div style="font-size:0.72rem;color:rgba(255,255,255,0.5);margin-top:4px">Du kan finde dem under Gemte kontakter</div>' +
         '</div>' +
         '<div style="display:flex;gap:8px;margin-top:16px">' +
-          '<button onclick="closeConnectScanner();setTimeout(function(){openPerson(\'' + savedId + '\',\'screen-home\')},300)" style="flex:1;padding:12px;border-radius:14px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit">Se profil</button>' +
+          '<button onclick="closeConnectScanner();setTimeout(function(){openPerson(\'' + savedId + '\',\'screen-home\')},300)" style="flex:1;padding:12px;border-radius:14px;border:0.5px solid rgba(100,180,230,0.3);background:rgba(100,180,230,0.22);color:rgba(255,255,255,0.95);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">Se profil</button>' +
           '<button onclick="closeConnectScanner();setTimeout(function(){openChat(\'' + savedId + '\',\'screen-home\')},300)" style="flex:1;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.15);background:none;color:rgba(255,255,255,0.7);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">Send besked</button>' +
         '</div>';
     }
