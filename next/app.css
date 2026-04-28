@@ -2291,13 +2291,16 @@ input[type="range"] {
 
 /* Dark skeleton variants for dark contexts */
 #notif-tray-list .skel,
-#home-tray-list .skel,
-#screen-profile .skel,
-#screen-messages .skel { background:linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; }
+#home-tray-list .skel { background:linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; }
 #notif-tray-list .skel-card,
-#home-tray-list .skel-card,
-#screen-profile .skel-card,
-#screen-messages .skel-card { background:rgba(255,255,255,0.04); border:0.5px solid rgba(255,255,255,0.06); }
+#home-tray-list .skel-card { background:rgba(255,255,255,0.04); border:0.5px solid rgba(255,255,255,0.06); }
+
+/* v7.98: screen-messages + screen-profile use light backdrop with dark glass cards (Bubbles pattern).
+   Skeleton must match the resulting card look — dark glass with brighter shimmer. */
+#screen-messages .skel,
+#screen-profile .skel { background:linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.08) 75%); background-size:200% 100%; }
+#screen-messages .skel-card,
+#screen-profile .skel-card { background:rgba(23,15,52,0.85); border:0.5px solid rgba(255,255,255,0.06); }
 
 /* ── SUCCESS PULSE ANIMATION ── */
 @keyframes successPulse {
