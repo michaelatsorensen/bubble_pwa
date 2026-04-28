@@ -516,6 +516,8 @@ async function handleLogout() {
     await sb.auth.signOut();
     flowClearAll();
     resetAppState();
+    // Clear came-from-landing flag so next fresh PWA open shows landing as intended
+    try { sessionStorage.removeItem('bubble_came_from_landing'); } catch(e) {}
     redirectToLanding(); // Auth listener also calls this — safe to call twice
   } catch(e) { logError("handleLogout", e); errorToast("load", e); }
 }
