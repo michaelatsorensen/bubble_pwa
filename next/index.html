@@ -13,37 +13,37 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=81789">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81789">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81789">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81789">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81789">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81789">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81789">
+<link rel="manifest" href="manifest.json?v=81790">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81790">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81790">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81790">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81790">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81790">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81790">
 
-<link rel="stylesheet" href="app.css?v=81789">
+<link rel="stylesheet" href="app.css?v=81790">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-<script src="bubble-icons.js?v=81789" defer></script>
-<script src="tag-data.js?v=81789" defer></script>
-<script src="b-i18n.js?v=81789" defer></script>
-<script src="b-config.js?v=81789" defer></script>
-<script src="b-utils.js?v=81789" defer></script>
-<script src="b-auth.js?v=81789" defer></script>
-<script src="b-home.js?v=81789" defer></script>
-<script src="b-bubbles.js?v=81789" defer></script>
-<script src="b-profile.js?v=81789" defer></script>
-<script src="b-radar.js?v=81789" defer></script>
-<script src="b-messages.js?v=81789" defer></script>
-<script src="b-realtime.js?v=81789" defer></script>
-<script src="b-onboarding.js?v=81789" defer></script>
-<script src="b-chat.js?v=81789" defer></script>
-<script src="b-notifications.js?v=81789" defer></script>
-<script src="b-live.js?v=81789" defer></script>
-<script src="b-admin.js?v=81789" defer></script>
-<script src="b-navigation.js?v=81789" defer></script>
-<script src="b-boot.js?v=81789" defer></script>
+<script src="bubble-icons.js?v=81790" defer></script>
+<script src="tag-data.js?v=81790" defer></script>
+<script src="b-i18n.js?v=81790" defer></script>
+<script src="b-config.js?v=81790" defer></script>
+<script src="b-utils.js?v=81790" defer></script>
+<script src="b-auth.js?v=81790" defer></script>
+<script src="b-home.js?v=81790" defer></script>
+<script src="b-bubbles.js?v=81790" defer></script>
+<script src="b-profile.js?v=81790" defer></script>
+<script src="b-radar.js?v=81790" defer></script>
+<script src="b-messages.js?v=81790" defer></script>
+<script src="b-realtime.js?v=81790" defer></script>
+<script src="b-onboarding.js?v=81790" defer></script>
+<script src="b-chat.js?v=81790" defer></script>
+<script src="b-notifications.js?v=81790" defer></script>
+<script src="b-live.js?v=81790" defer></script>
+<script src="b-admin.js?v=81790" defer></script>
+<script src="b-navigation.js?v=81790" defer></script>
+<script src="b-boot.js?v=81790" defer></script>
   
 
 
@@ -125,8 +125,12 @@
     document.addEventListener('DOMContentLoaded', function() {
       var loading = document.getElementById('screen-loading');
       var auth = document.getElementById('screen-auth');
+      var splash = document.getElementById('auth-splash');
+      var forms = document.getElementById('auth-forms');
       if (loading) loading.classList.remove('active');
       if (auth) auth.classList.add('active');
+      if (splash) splash.style.display = 'none';
+      if (forms) forms.style.display = '';
     });
   }
 })();
@@ -186,94 +190,113 @@
      SCREEN: AUTH (Login / Signup)
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-auth">
-  <!-- AUTH (merged splash + forms — visible immediately) -->
-  <div id="auth-forms" class="auth-merged" style="text-align:center;padding:0 1.2rem 350px;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <!-- INTRO SPLASH (shown first, hidden after tap) -->
+  <div id="auth-splash" style="text-align:center;padding:2rem 1.5rem 0">
+    <div style="text-align:center;margin-bottom:0.8rem"><img src="bubble-logo-splash.png" alt="bubble" style="height:40px;width:auto"></div>
+    <div style="font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:0.5rem" data-t="auth_tagline">Mød de rigtige mennesker</div>
+    <div style="font-size:0.82rem;color:var(--text-secondary);line-height:1.6;margin:0 auto 1.5rem" data-t="auth_desc">Bubble er en networking-radar der forbinder dig med relevante mennesker omkring dig — på events, i din by og i dit faglige netværk.</div>
 
-    <!-- Hero on light backdrop -->
-    <div class="auth-hero">
-      <div style="text-align:center;margin-bottom:0.6rem"><img src="bubble-logo-splash.png" alt="bubble" style="height:38px;width:auto"></div>
-      <div class="auth-hero-tagline" data-t="auth_tagline">Mød de rigtige mennesker</div>
-      <div class="auth-hero-sub" data-t="auth_network_radar">Network Radar for Business</div>
+    <div style="display:flex;flex-direction:column;gap:0.6rem;margin:0 auto 1.8rem;text-align:left">
+      <div style="display:flex;gap:0.6rem;align-items:center">
+        <div style="width:32px;height:32px;border-radius:10px;background:rgba(124,92,252,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)"><svg class="ico" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+        <div style="font-size:0.78rem;color:var(--text-secondary)" data-t-html="auth_feat_radar_line"><strong style="color:var(--text)">Smart Radar</strong> — find folk der matcher dine interesser</div>
+      </div>
+      <div style="display:flex;gap:0.6rem;align-items:center">
+        <div style="width:32px;height:32px;border-radius:10px;background:rgba(232,121,168,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent2)"><svg class="ico" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9.5" cy="9.5" r="5" opacity="0.8"/><circle cx="15" cy="13" r="4" opacity="0.6"/></svg></div>
+        <div style="font-size:0.78rem;color:var(--text-secondary)" data-t-html="auth_feat_bubbles_line"><strong style="color:var(--text)">Bobler</strong> — join communities og events omkring dig</div>
+      </div>
+      <div style="display:flex;gap:0.6rem;align-items:center">
+        <div style="width:32px;height:32px;border-radius:10px;background:rgba(26,158,142,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green)"><svg class="ico" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11.5c0 4-3.6 7-8 7l-4.4 2.1 1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"/></svg></div>
+        <div style="font-size:0.78rem;color:var(--text-secondary)" data-t-html="auth_feat_chat_line"><strong style="color:var(--text)">Chat</strong> — connect direkte med folk du vil møde</div>
+      </div>
     </div>
 
-    <!-- Form card (dark glass) -->
-    <div class="auth-card">
+    <button class="btn-primary" onclick="showAuthForms()" style="width:100%;margin:0 auto" data-t="auth_get_started">Kom i gang →</button>
+    <button onclick="showAuthForms()" style="margin-top:0.6rem;background:none;border:none;color:var(--muted);font-size:0.72rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.4rem;width:100%;text-align:center" data-t-html="auth_have_account_line">Har allerede en konto? <span style="color:var(--accent);font-weight:600">Log ind</span></button>
+    <div style="font-size:0.6rem;color:var(--muted);margin-top:0.5rem" data-t="auth_beta_label">Closed Beta · Sønderborg 2026</div>
+  </div>
 
-      <!-- QR context card (hidden unless QR flow) -->
-      <div id="auth-qr-context" style="display:none;margin-bottom:0.85rem">
-        <div style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.8rem;border-radius:12px;background:rgba(100,180,230,0.08);border:0.5px solid rgba(100,180,230,0.18);text-align:left">
-          <div id="auth-qr-avatar" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#7C5CFC);display:flex;align-items:center;justify-content:center;color:white;font-size:0.78rem;font-weight:700;flex-shrink:0">?</div>
-          <div style="flex:1">
-            <div style="font-size:0.8rem;font-weight:700;color:rgba(255,255,255,0.95)" id="auth-qr-name">...</div>
-            <div style="font-size:0.66rem;color:rgba(255,255,255,0.6)" data-t="auth_wants_connect">vil gerne connecte med dig</div>
-          </div>
-          <div style="width:22px;height:22px;border-radius:50%;background:rgba(26,158,142,0.18);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+  <!-- Interest picker removed in v5.2 — profil-nudge on home handles this now -->
+  <div id="auth-interests" style="display:none"></div>
+
+  <!-- AUTH FORMS (hidden initially) -->
+  <div id="auth-forms" style="display:none;text-align:center;padding:0 1.2rem 350px;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div style="margin-bottom:1rem">
+      <div style="text-align:center;margin-bottom:0.3rem"><img src="bubble-logo-splash.png" alt="bubble" style="height:32px;width:auto"></div>
+      <div style="font-size:0.82rem;color:var(--muted)" data-t="auth_network_radar">Network Radar for Business</div>
+    </div>
+
+    <!-- QR context card (hidden unless QR flow) -->
+    <div id="auth-qr-context" style="display:none;margin-bottom:1rem">
+      <div style="display:flex;align-items:center;gap:0.6rem;padding:0.7rem 0.85rem;border-radius:14px;background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.1);text-align:left">
+        <div id="auth-qr-avatar" style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#7C5CFC);display:flex;align-items:center;justify-content:center;color:white;font-size:0.78rem;font-weight:700;flex-shrink:0">?</div>
+        <div style="flex:1">
+          <div style="font-size:0.82rem;font-weight:700;color:var(--text)" id="auth-qr-name">...</div>
+          <div style="font-size:0.68rem;color:var(--muted)" data-t="auth_wants_connect">vil gerne connecte med dig</div>
         </div>
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(26,158,142,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
       </div>
-
-      <!-- Contextual heading (changes for QR flow) -->
-      <div id="auth-heading" style="display:none;margin-bottom:0.85rem">
-        <div style="font-size:1.05rem;font-weight:800;color:rgba(255,255,255,0.95)" id="auth-heading-title" data-t="auth_create_profile">Opret din profil</div>
-        <div style="font-size:0.76rem;color:rgba(255,255,255,0.6);margin-top:0.15rem" id="auth-heading-sub" data-t="auth_save_discover">Gem kontakt og opdag netværket</div>
-      </div>
-
-    <div id="auth-login" style="width:100%">
-      <div class="input-group">
-        <div class="input-label" data-t="auth_email">Email</div>
-        <input class="input" type="email" id="login-email" data-t-placeholder="auth_placeholder_email" placeholder="din@email.dk" autocomplete="email">
-      </div>
-      <div class="input-group">
-        <div class="input-label" data-t="auth_password">Adgangskode</div>
-        <input class="input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
-      </div>
-      <button class="btn-primary" onclick="handleLogin()" data-t="auth_login">Log ind</button>
-      <button type="button" onclick="handleForgotPassword()" class="auth-link-btn" data-t="auth_forgot">Glemt adgangskode?</button>
-      <div class="auth-divider">
-        <div class="divider"></div>
-        <div class="auth-divider-text" data-t="auth_or">eller</div>
-        <div class="divider"></div>
-      </div>
-      <button class="btn-secondary" onclick="handleLinkedInLogin()" style="display:flex;align-items:center;justify-content:center;gap:0.6rem">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-        <span data-t="auth_linkedin">Fortsæt med LinkedIn</span>
-      </button>
-      <button class="btn-secondary" onclick="handleGoogleLogin()" style="display:flex;align-items:center;justify-content:center;gap:0.6rem">
-        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-        <span data-t="auth_google">Fortsæt med Google</span>
-      </button>
-      <button class="btn-secondary auth-btn-tertiary" onclick="switchToSignup()" data-t="auth_email_signup">Opret med email</button>
     </div>
 
-    <div id="auth-signup" style="width:100%;display:none">
-      <div class="input-group">
-        <div class="input-label" data-t="auth_signup_name">Navn</div>
-        <input class="input" type="text" id="signup-name" data-t-placeholder="auth_placeholder_name" placeholder="Dit fulde navn" autocomplete="name">
-      </div>
-      <div class="input-group">
-        <div class="input-label" data-t="auth_signup_email">Email</div>
-        <input class="input" type="email" id="signup-email" data-t-placeholder="auth_placeholder_email" placeholder="din@email.dk" autocomplete="email">
-      </div>
-      <div class="input-group">
-        <div class="input-label" data-t="auth_signup_password">Adgangskode</div>
-        <input class="input" type="password" id="signup-password" data-t-placeholder="auth_placeholder_password_min" placeholder="Min. 6 tegn" autocomplete="new-password">
-      </div>
-      <div class="input-group">
-        <div class="input-label">Bekræft adgangskode</div>
-        <input class="input" type="password" id="signup-password-confirm" placeholder="Gentag adgangskode" autocomplete="new-password" onfocus="setTimeout(function(){var el=document.getElementById('signup-password-confirm');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},400)">
-      </div>
-      <button class="btn-primary" onclick="handleSignup()" data-t="auth_signup_btn">Opret konto</button>
-      <button class="btn-secondary auth-btn-tertiary" onclick="switchToLogin()" data-t="auth_has_account">Har allerede en konto</button>
+    <!-- Contextual heading (changes for QR flow) -->
+    <div id="auth-heading" style="display:none;margin-bottom:1rem">
+      <div style="font-size:1.1rem;font-weight:800;color:var(--text)" id="auth-heading-title" data-t="auth_create_profile">Opret din profil</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.2rem" id="auth-heading-sub" data-t="auth_save_discover">Gem kontakt og opdag netværket</div>
     </div>
 
-    </div><!-- /auth-card -->
-
-    <!-- Terms link (back on light backdrop) -->
-    <div class="auth-terms">
-      <span data-t="auth_terms_accept">Ved at fortsætte accepterer du vores</span><br>
-      <a href="#" onclick="event.preventDefault();showTerms()" data-t="auth_terms_link">Betingelser & Privatlivspolitik</a>
+  <div id="auth-login" style="width:100%">
+    <div class="input-group">
+      <div class="input-label" data-t="auth_email">Email</div>
+      <input class="input" type="email" id="login-email" data-t-placeholder="auth_placeholder_email" placeholder="din@email.dk" autocomplete="email">
     </div>
-    <div class="auth-beta-label" data-t="auth_beta_label">Closed Beta · Sønderborg 2026</div>
+    <div class="input-group">
+      <div class="input-label" data-t="auth_password">Adgangskode</div>
+      <input class="input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-primary" onclick="handleLogin()" data-t="auth_login">Log ind</button>
+    <button type="button" onclick="handleForgotPassword()" style="background:none;border:none;color:var(--accent);font-size:0.75rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.3rem 0;margin-top:0.15rem" data-t="auth_forgot">Glemt adgangskode?</button>
+    <div style="display:flex;align-items:center;gap:0.75rem;margin:0.5rem 0">
+      <div class="divider"></div>
+      <div style="font-size:0.75rem;color:var(--muted)" data-t="auth_or">eller</div>
+      <div class="divider"></div>
+    </div>
+    <button class="btn-secondary" onclick="handleLinkedInLogin()" style="display:flex;align-items:center;justify-content:center;gap:0.6rem">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      <span data-t="auth_linkedin">Fortsæt med LinkedIn</span>
+    </button>
+    <button class="btn-secondary" onclick="handleGoogleLogin()" style="display:flex;align-items:center;justify-content:center;gap:0.6rem">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      <span data-t="auth_google">Fortsæt med Google</span>
+    </button>
+    <button class="btn-secondary" onclick="switchToSignup()" data-t="auth_email_signup">Opret med email</button>
+  </div>
 
+  <div id="auth-signup" style="width:100%;max-width:380px;display:none">
+    <div class="input-group">
+      <div class="input-label" data-t="auth_signup_name">Navn</div>
+      <input class="input" type="text" id="signup-name" data-t-placeholder="auth_placeholder_name" placeholder="Dit fulde navn" autocomplete="name">
+    </div>
+    <div class="input-group">
+      <div class="input-label" data-t="auth_signup_email">Email</div>
+      <input class="input" type="email" id="signup-email" data-t-placeholder="auth_placeholder_email" placeholder="din@email.dk" autocomplete="email">
+    </div>
+    <div class="input-group">
+      <div class="input-label" data-t="auth_signup_password">Adgangskode</div>
+      <input class="input" type="password" id="signup-password" data-t-placeholder="auth_placeholder_password_min" placeholder="Min. 6 tegn" autocomplete="new-password">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Bekræft adgangskode</div>
+      <input class="input" type="password" id="signup-password-confirm" placeholder="Gentag adgangskode" autocomplete="new-password" onfocus="setTimeout(function(){var el=document.getElementById('signup-password-confirm');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},400)">
+    </div>
+    <button class="btn-primary" onclick="handleSignup()" data-t="auth_signup_btn">Opret konto</button>
+    <button class="btn-secondary" onclick="switchToLogin()" data-t="auth_has_account">Har allerede en konto</button>
+  </div>
+
+  <!-- Terms link -->
+  <div style="text-align:center;margin-top:1.5rem;font-size:0.62rem;color:var(--muted)">
+    <span data-t="auth_terms_accept">Ved at fortsætte accepterer du vores</span><br>
+    <a href="#" onclick="event.preventDefault();showTerms()" style="color:var(--accent);text-decoration:underline" data-t="auth_terms_link">Betingelser & Privatlivspolitik</a>
+  </div>
   </div><!-- /auth-forms -->
 </div>
 
