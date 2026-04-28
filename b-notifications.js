@@ -564,7 +564,11 @@ async function requestPushPermission() {
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
     });
 
-    await savePushSubscription(subscription);
+    var saveResult = await savePushSubscription(subscription);
+    if (!saveResult.ok) {
+      _renderToast(t('err_push_activate'), 'error');
+      return false;
+    }
     showToast('Notifikationer aktiveret!');
     trackEvent('push_enabled');
     return true;
@@ -579,15 +583,21 @@ async function savePushSubscription(subscription) {
   try {
     var sub = subscription.toJSON();
     // Multi-device: upsert on (user_id, endpoint) so each device keeps its own subscription
-    await sb.from('push_subscriptions').upsert({
+    var { error } = await sb.from('push_subscriptions').upsert({
       user_id: currentUser.id,
       endpoint: sub.endpoint,
       p256dh: sub.keys?.p256dh || '',
       auth: sub.keys?.auth || '',
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id,endpoint' });
+    if (error) {
+      logError('savePushSubscription', error);
+      return { ok: false, error: error };
+    }
+    return { ok: true };
   } catch(e) {
     logError('savePushSubscription', e);
+    return { ok: false, error: e };
   }
 }
 

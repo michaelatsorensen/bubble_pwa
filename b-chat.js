@@ -1177,13 +1177,19 @@ async function bcSendMessage() {
     if (!text) { bcSending = false; if (sendBtn) { sendBtn.disabled = false; } return; }
 
     if (bcEditingId) {
-      // Save edit to history first
+      // Save edit to history first (log on failure but don't block edit)
       const { data: orig } = await sb.from('bubble_messages').select('content').eq('id', bcEditingId).maybeSingle();
       if (orig) {
-        await sb.from('bubble_message_edits').insert({message_id: bcEditingId, content: orig.content});
+        var { error: histErr } = await sb.from('bubble_message_edits').insert({message_id: bcEditingId, content: orig.content});
+        if (histErr) logError('bcSendMessage:history', histErr);
       }
-      await sb.from('bubble_messages').update({content: text, edited: true, updated_at: new Date().toISOString()}).eq('id', bcEditingId).eq('user_id', currentUser.id);
-      // Update local
+      var { error: editErr } = await sb.from('bubble_messages').update({content: text, edited: true, updated_at: new Date().toISOString()}).eq('id', bcEditingId).eq('user_id', currentUser.id);
+      if (editErr) {
+        logError('bcSendMessage:edit', editErr);
+        errorToast('save', editErr);
+        return; // bcSending + button reset by finally block
+      }
+      // Update local (only after DB confirmed)
       const bubbleEl = document.getElementById('bc-bubble-' + bcEditingId);
       if (bubbleEl) {
         bubbleEl.textContent = text;
