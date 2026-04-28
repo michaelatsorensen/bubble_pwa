@@ -1201,12 +1201,14 @@ async function psBlockUser() {
   }
   _blockConfirm = null;
   try {
-    await sb.from('blocked_users').upsert({
+    var { error: blockErr } = await sb.from('blocked_users').upsert({
       user_id: currentUser.id, blocked_id: userId
     }, { onConflict: 'user_id,blocked_id' });
+    if (blockErr) { logError('psBlockUser', blockErr, { blocked: userId }); errorToast('save', blockErr); return; }
     _blockedUsers.push(userId);
-    // Also remove from saved contacts if saved
-    await sb.from('saved_contacts').delete().eq('user_id', currentUser.id).eq('contact_id', userId);
+    // Also remove from saved contacts if saved (best-effort, log on failure)
+    var { error: rmErr } = await sb.from('saved_contacts').delete().eq('user_id', currentUser.id).eq('contact_id', userId);
+    if (rmErr) logError('psBlockUser:rmSaved', rmErr);
     psClose();
     showToast(userName + ' er blokeret');
     // Refresh visible lists
@@ -1231,12 +1233,13 @@ async function psReportUser() {
   }
   _reportConfirm = null;
   try {
-    await sb.from('reports').insert({
+    var { error } = await sb.from('reports').insert({
       reporter_id: currentUser.id,
       reported_id: userId,
       type: 'user',
       reason: 'Rapporteret fra person sheet'
     });
+    if (error) { logError('psReportUser', error); errorToast('send', error); return; }
     // Also send email alert
     logError('USER_REPORT', new Error('Bruger rapporteret: ' + userName), { reported_id: userId, reporter_id: currentUser.id });
     showToast('Tak — ' + userName + ' er rapporteret. Vi kigger på det.');
@@ -1248,13 +1251,14 @@ async function psReportUser() {
 async function reportMessage(msgId, context) {
   if (!currentUser || !msgId) return;
   try {
-    await sb.from('reports').insert({
+    var { error } = await sb.from('reports').insert({
       reporter_id: currentUser.id,
       reported_id: null,
       type: 'message',
       reason: 'Besked rapporteret',
       ref_id: msgId
     });
+    if (error) { logError('reportMessage', error); errorToast('send', error); return; }
     logError('MSG_REPORT', new Error('Besked rapporteret'), { msg_id: msgId, context: context, reporter: currentUser.id });
     showToast('Besked rapporteret. Tak!');
   } catch(e) { logError('reportMessage', e); errorToast('send', e); }
