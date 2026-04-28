@@ -802,8 +802,19 @@ function showUpdateBanner() {
 }
 
 window.addEventListener('load', async () => {
-  // Save flag BEFORE cleaning URL — used by shouldBypassLanding() later
-  _cameFromLanding = new URLSearchParams(window.location.search).has('auth');
+  // Save flag BEFORE cleaning URL — used by shouldBypassLanding() later.
+  // Persist in sessionStorage so reload survives (in-memory _cameFromLanding
+  // would be reset by reload, and ?auth=1 URL param has already been stripped
+  // on first visit — without this, reload on auth screen → redirectToLanding
+  // → loop). sessionStorage clears on PWA close, so legitimate fresh opens
+  // still see landing as intended.
+  var _hadAuthParam = new URLSearchParams(window.location.search).has('auth');
+  try {
+    if (_hadAuthParam) sessionStorage.setItem('bubble_came_from_landing', '1');
+    _cameFromLanding = _hadAuthParam || sessionStorage.getItem('bubble_came_from_landing') === '1';
+  } catch(e) {
+    _cameFromLanding = _hadAuthParam;
+  }
 
   // Clean ?auth=1 param from landing page redirect (keep other params)
   var _urlParams = new URLSearchParams(window.location.search);
