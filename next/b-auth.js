@@ -636,12 +636,13 @@ async function submitFeedback() {
   var text = document.getElementById('feedback-text')?.value?.trim();
   if (!text) { showWarningToast('Skriv noget feedback først'); return; }
   try {
-    await sb.from('reports').insert({
+    var { error } = await sb.from('reports').insert({
       reporter_id: currentUser.id,
       reported_id: null,
       type: 'feedback',
       reason: text
     });
+    if (error) { logError('submitFeedback', error); errorToast('send', error); return; }
     logError('USER_FEEDBACK', new Error('Feedback modtaget'), { text: text, user: currentUser.id, name: currentProfile?.name });
     var dyn = document.querySelector('.bb-dyn-overlay');
     if (dyn) bbDynClose(dyn);

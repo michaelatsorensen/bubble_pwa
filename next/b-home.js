@@ -1036,7 +1036,8 @@ async function saveSetupTitle() {
   var title = (document.getElementById('setup-title-input')?.value || '').trim();
   if (!title) { showWarningToast('Skriv en titel'); return; }
   try {
-    await sb.from('profiles').update({ title: title }).eq('id', currentUser.id);
+    var { error } = await sb.from('profiles').update({ title: title }).eq('id', currentUser.id);
+    if (error) { logError('saveSetupTitle', error); errorToast('save', error); return; }
     if (currentProfile) currentProfile.title = title;
     closeModal('sheet-setup-title');
     showProfileSetupCTA();
@@ -1060,7 +1061,8 @@ async function saveSetupTags() {
   try {
     var tags = typeof etGetSelectedTags === 'function' ? etGetSelectedTags() : [];
     var lifestage = typeof etGetLifestage === 'function' ? etGetLifestage() : null;
-    await sb.from('profiles').update({ keywords: tags, lifestage: lifestage || currentProfile?.lifestage || null }).eq('id', currentUser.id);
+    var { error } = await sb.from('profiles').update({ keywords: tags, lifestage: lifestage || currentProfile?.lifestage || null }).eq('id', currentUser.id);
+    if (error) { logError('saveSetupTags', error); errorToast('save', error); return; }
     if (currentProfile) { currentProfile.keywords = tags; }
     closeModal('sheet-setup-tags');
     showProfileSetupCTA();
@@ -1090,7 +1092,8 @@ function openSetupBioSheet() {
 async function saveSetupBio() {
   var bio = (document.getElementById('setup-bio-input')?.value || '').trim();
   try {
-    await sb.from('profiles').update({ bio: bio }).eq('id', currentUser.id);
+    var { error } = await sb.from('profiles').update({ bio: bio }).eq('id', currentUser.id);
+    if (error) { logError('saveSetupBio', error); errorToast('save', error); return; }
     if (currentProfile) currentProfile.bio = bio;
     closeModal('sheet-setup-bio');
     showSuccessToast('Profil komplet! 🎉');
@@ -1137,7 +1140,8 @@ function updateSetupLifestageUI() {
 async function saveSetupLifestage() {
   if (!_setupSelectedLifestage) return;
   try {
-    await sb.from('profiles').update({ lifestage: _setupSelectedLifestage }).eq('id', currentUser.id);
+    var { error } = await sb.from('profiles').update({ lifestage: _setupSelectedLifestage }).eq('id', currentUser.id);
+    if (error) { logError('saveSetupLifestage', error); errorToast('save', error); return; }
     if (currentProfile) currentProfile.lifestage = _setupSelectedLifestage;
     closeModal('sheet-setup-lifestage');
     showProfileSetupCTA();

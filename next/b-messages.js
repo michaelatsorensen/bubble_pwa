@@ -220,7 +220,12 @@ async function sendMessage() {
     }
 
     if (dmEditingId) {
-      await sb.from('messages').update({ content, edited: true }).eq('id', dmEditingId);
+      var { error: dmEditErr } = await sb.from('messages').update({ content, edited: true }).eq('id', dmEditingId);
+      if (dmEditErr) {
+        logError('sendMessage:edit', dmEditErr);
+        errorToast('save', dmEditErr);
+        return; // dmSending + button reset by finally block
+      }
       const bubble = document.getElementById('dm-bubble-' + dmEditingId);
       if (bubble) bubble.textContent = content;
       dmEditingId = null;
