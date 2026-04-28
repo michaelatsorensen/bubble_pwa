@@ -13,37 +13,37 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=81795">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81795">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81795">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81795">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81795">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81795">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81795">
+<link rel="manifest" href="manifest.json?v=81796">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81796">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81796">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81796">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81796">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81796">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81796">
 
-<link rel="stylesheet" href="app.css?v=81795">
+<link rel="stylesheet" href="app.css?v=81796">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-<script src="bubble-icons.js?v=81795" defer></script>
-<script src="tag-data.js?v=81795" defer></script>
-<script src="b-i18n.js?v=81795" defer></script>
-<script src="b-config.js?v=81795" defer></script>
-<script src="b-utils.js?v=81795" defer></script>
-<script src="b-auth.js?v=81795" defer></script>
-<script src="b-home.js?v=81795" defer></script>
-<script src="b-bubbles.js?v=81795" defer></script>
-<script src="b-profile.js?v=81795" defer></script>
-<script src="b-radar.js?v=81795" defer></script>
-<script src="b-messages.js?v=81795" defer></script>
-<script src="b-realtime.js?v=81795" defer></script>
-<script src="b-onboarding.js?v=81795" defer></script>
-<script src="b-chat.js?v=81795" defer></script>
-<script src="b-notifications.js?v=81795" defer></script>
-<script src="b-live.js?v=81795" defer></script>
-<script src="b-admin.js?v=81795" defer></script>
-<script src="b-navigation.js?v=81795" defer></script>
-<script src="b-boot.js?v=81795" defer></script>
+<script src="bubble-icons.js?v=81796" defer></script>
+<script src="tag-data.js?v=81796" defer></script>
+<script src="b-i18n.js?v=81796" defer></script>
+<script src="b-config.js?v=81796" defer></script>
+<script src="b-utils.js?v=81796" defer></script>
+<script src="b-auth.js?v=81796" defer></script>
+<script src="b-home.js?v=81796" defer></script>
+<script src="b-bubbles.js?v=81796" defer></script>
+<script src="b-profile.js?v=81796" defer></script>
+<script src="b-radar.js?v=81796" defer></script>
+<script src="b-messages.js?v=81796" defer></script>
+<script src="b-realtime.js?v=81796" defer></script>
+<script src="b-onboarding.js?v=81796" defer></script>
+<script src="b-chat.js?v=81796" defer></script>
+<script src="b-notifications.js?v=81796" defer></script>
+<script src="b-live.js?v=81796" defer></script>
+<script src="b-admin.js?v=81796" defer></script>
+<script src="b-navigation.js?v=81796" defer></script>
+<script src="b-boot.js?v=81796" defer></script>
   
 
 
@@ -1168,11 +1168,11 @@
     <div class="profile-hero" style="flex-shrink:0;padding:0.5rem 1.1rem 0.5rem;display:flex;align-items:center;gap:0.7rem">
       <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#1A9E8E,#10B981);display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;color:white;box-shadow:0 2px 8px rgba(26,158,142,0.2);flex-shrink:0;overflow:hidden;cursor:pointer" id="my-avatar" onclick="viewAvatarFull(this)">?</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:0.92rem;font-weight:800;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:rgba(255,255,255,0.95)" id="my-name">...</div>
-        <div style="font-size:0.72rem;color:rgba(255,255,255,0.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-role">...</div>
+        <div style="font-size:0.92rem;font-weight:800;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-name">...</div>
+        <div style="font-size:0.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="my-role">...</div>
       </div>
       <div style="display:flex;align-items:center;gap:0.4rem;flex-shrink:0">
-        <div style="font-size:0.62rem;font-weight:700;color:rgba(255,255,255,0.55)" id="prof-strength-pct">0%</div>
+        <div style="font-size:0.62rem;font-weight:700" id="prof-strength-pct">0%</div>
         <div style="width:48px;height:4px;border-radius:99px;background:rgba(100,180,230,0.08);overflow:hidden">
           <div id="prof-strength-bar" style="height:100%;border-radius:99px;background:rgb(100,180,230);transition:width 0.5s ease;width:0%"></div>
         </div>

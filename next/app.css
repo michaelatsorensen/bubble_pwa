@@ -2651,15 +2651,17 @@ a:not(.btn-primary):not(.btn-secondary):active {
 .modal-sheet textarea.input { color:rgba(255,255,255,0.9); }
 
 /* ═══ PROFILE SCREEN — dark glass cards (matches Bobler/Home) ═══ */
-/* v7.95: removed #screen-profile dark bg — light backdrop matches Bubbles pattern.
-   Profile-hero gets its own dark glass zone (extends topbar visually).
-   Dark glass cards sit on body's #F0EEF5 like Bubbles screen. */
-#screen-profile .profile-hero {
-  background: rgba(23,15,52,0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 0.5px solid rgba(255,255,255,0.06);
-  margin-bottom: 0.5rem;
+/* v7.96: profile-hero now uses light backdrop too — full Bubbles-pattern.
+   Hero text colors are dark to read on light bg. */
+#screen-profile .profile-hero #my-name {
+  color: #170F34;
+}
+#screen-profile .profile-hero #my-role,
+#screen-profile .profile-hero #prof-strength-pct {
+  color: #56536E;
+}
+#screen-profile .profile-hero #prof-strength-bar {
+  /* keep ice-blue bar — works on both bg colors */
 }
 #screen-profile .card { background:rgba(23,15,52,0.85); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:0.5px solid rgba(255,255,255,0.06); box-shadow:none; color:rgba(255,255,255,0.9); }
 #screen-profile .fw-600 { color:rgba(255,255,255,0.95); }
