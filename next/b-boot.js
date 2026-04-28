@@ -26,19 +26,6 @@ function shouldBypassLanding() {
 
 function redirectToLanding() {
   if (!window.location.pathname.includes('landing.html')) {
-    // DIAG v7.92: visible banner before redirect to identify which path triggers
-    // Remove this block once landing-loop is confirmed fixed.
-    try {
-      var dbg = document.createElement('div');
-      var caller = (new Error()).stack || '';
-      var path = caller.split('\n')[2] || 'unknown';
-      dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#FF6A00;color:#fff;padding:8px 12px;font:600 11px/1.4 monospace;text-align:center';
-      dbg.textContent = '⚠ redirectToLanding — bypass=' + (typeof shouldBypassLanding === 'function' ? shouldBypassLanding() : 'N/A') + ' · ssFlag=' + (function(){ try { return sessionStorage.getItem('bubble_came_from_landing') || 'null'; } catch(e) { return 'err'; } })() + ' · path=' + path.replace(/^\s+at\s+/, '').slice(0, 60);
-      document.body && document.body.appendChild(dbg);
-      // Delay redirect 3s so user can read
-      setTimeout(function() { window.location.replace('landing.html'); }, 3000);
-      return;
-    } catch(e) {}
     window.location.replace('landing.html');
   }
 }

@@ -553,12 +553,9 @@ function switchToLogin() {
 }
 
 function showAuthForms(qrContext) {
-  var splash = document.getElementById('auth-splash');
-  var interests = document.getElementById('auth-interests');
-  var forms = document.getElementById('auth-forms');
-  if (splash) { splash.style.transition = 'opacity 0.3s'; splash.style.opacity = '0'; setTimeout(function(){ splash.style.display = 'none'; }, 300); }
-  if (interests) { interests.style.display = 'none'; }
-  if (forms) { forms.style.display = 'block'; forms.style.opacity = '0'; setTimeout(function(){ forms.style.transition = 'opacity 0.3s'; forms.style.opacity = '1'; }, 50); }
+  // Auth screen is now single-pane (splash merged into forms in next/v7.86).
+  // This function only handles the QR-context card + heading toggle.
+  // Existing callers (event-flow, QR-flow) work unchanged.
 
   // QR context: show "X vil gerne connecte" card + contextual heading
   var ctxCard = document.getElementById('auth-qr-context');

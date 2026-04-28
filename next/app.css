@@ -701,11 +701,185 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
   justify-content: center;
   padding: calc(2rem + env(safe-area-inset-top, 0px)) 2rem 2rem;
 }
+/* ═══════════════════════════════════════════
+   Auth screen (merged splash+forms — next-v7.86)
+   Hybrid: light backdrop + dark glass form card.
+   Matches Bubbles-screen pattern.
+═══════════════════════════════════════════ */
 #screen-auth {
   align-items: stretch;
-  justify-content: center;
-  padding: calc(2rem + env(safe-area-inset-top, 0px)) 1.5rem 2rem;
+  justify-content: flex-start;
+  padding: 0;
   text-align: center;
+  background: #F0EEF5;
+}
+/* light bg orbs (subtle ambient) */
+#screen-auth::before {
+  content:"";
+  position:absolute;
+  top:-30px; right:-40px;
+  width:160px; height:160px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(124,92,252,0.10), transparent 70%);
+  filter:blur(25px);
+  pointer-events:none;
+  z-index:0;
+}
+#screen-auth::after {
+  content:"";
+  position:absolute;
+  bottom:80px; left:-50px;
+  width:140px; height:140px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(232,121,168,0.08), transparent 70%);
+  filter:blur(20px);
+  pointer-events:none;
+  z-index:0;
+}
+#screen-auth .auth-merged {
+  position:relative;
+  z-index:1;
+  padding: calc(1.6rem + env(safe-area-inset-top, 0px)) 1.2rem 350px;
+}
+
+/* Hero on light backdrop */
+#screen-auth .auth-hero {
+  margin-bottom: 1.1rem;
+}
+#screen-auth .auth-hero-tagline {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #170F34;
+  margin-top: 0.4rem;
+  letter-spacing: -0.01em;
+}
+#screen-auth .auth-hero-sub {
+  font-size: 0.78rem;
+  color: #56536E;
+  margin-top: 0.2rem;
+}
+
+/* Dark glass form card */
+#screen-auth .auth-card {
+  background: rgba(23,15,52,0.92);
+  border: 0.5px solid rgba(255,255,255,0.04);
+  border-radius: 18px;
+  padding: 1.05rem 1rem 0.85rem;
+  box-shadow: 0 6px 28px rgba(23,15,52,0.14);
+  text-align: left;
+}
+
+/* Inputs inside the dark card */
+#screen-auth .auth-card .input-label {
+  color: rgba(255,255,255,0.55);
+  font-size: 0.72rem;
+}
+#screen-auth .auth-card .input {
+  background: rgba(255,255,255,0.06);
+  border: 0.5px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.95);
+}
+#screen-auth .auth-card .input::placeholder {
+  color: rgba(255,255,255,0.35);
+}
+#screen-auth .auth-card .input:focus {
+  border-color: rgba(100,180,230,0.4);
+  background: rgba(255,255,255,0.08);
+  outline: none;
+}
+
+/* Primary CTA — ice-blue beach glass */
+#screen-auth .auth-card .btn-primary {
+  background: rgba(100,180,230,0.22);
+  border: 0.5px solid rgba(100,180,230,0.3);
+  color: rgba(255,255,255,0.95);
+  font-weight: 600;
+  box-shadow: none;
+}
+#screen-auth .auth-card .btn-primary:hover,
+#screen-auth .auth-card .btn-primary:active {
+  background: rgba(100,180,230,0.3);
+  border-color: rgba(100,180,230,0.4);
+}
+
+/* Secondary buttons (LinkedIn / Google / Opret med email) */
+#screen-auth .auth-card .btn-secondary {
+  background: rgba(255,255,255,0.06);
+  border: 0.5px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.85);
+}
+#screen-auth .auth-card .btn-secondary:hover,
+#screen-auth .auth-card .btn-secondary:active {
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(255,255,255,0.14);
+}
+#screen-auth .auth-card .btn-secondary.auth-btn-tertiary {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.6);
+}
+
+/* Forgot-password link */
+#screen-auth .auth-card .auth-link-btn {
+  background: none;
+  border: none;
+  color: rgba(100,180,230,0.85);
+  font-size: 0.75rem;
+  font-family: 'Figtree', sans-serif;
+  cursor: pointer;
+  padding: 0.35rem 0;
+  margin-top: 0.1rem;
+  width: 100%;
+  text-align: center;
+}
+#screen-auth .auth-card .auth-link-btn:hover {
+  color: rgba(100,180,230,1);
+}
+
+/* Divider with "eller" */
+#screen-auth .auth-card .auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.6rem 0;
+}
+#screen-auth .auth-card .auth-divider .divider {
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  border: none;
+}
+#screen-auth .auth-card .auth-divider-text {
+  font-size: 0.74rem;
+  color: rgba(255,255,255,0.4);
+}
+
+/* QR context card inside auth-card */
+#screen-auth .auth-card #auth-qr-name {
+  color: rgba(255,255,255,0.95);
+}
+
+/* Terms link on light backdrop */
+#screen-auth .auth-terms {
+  text-align: center;
+  margin-top: 1.2rem;
+  font-size: 0.66rem;
+  color: #8885A0;
+  position: relative;
+  z-index: 1;
+}
+#screen-auth .auth-terms a {
+  color: #7C5CFC;
+  text-decoration: underline;
+  font-weight: 500;
+}
+#screen-auth .auth-beta-label {
+  text-align: center;
+  margin-top: 0.5rem;
+  font-size: 0.6rem;
+  color: #8885A0;
+  position: relative;
+  z-index: 1;
 }
 
 
