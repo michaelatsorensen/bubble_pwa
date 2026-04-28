@@ -739,7 +739,12 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 #screen-auth .auth-merged {
   position:relative;
   z-index:1;
-  padding: calc(1.6rem + env(safe-area-inset-top, 0px)) 1.2rem 350px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  min-height:100%;
+  /* max() ensures safe-area-inset (Dynamic Island) is always respected */
+  padding: max(1.5rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) 1.2rem 2.5rem;
 }
 
 /* Hero on light backdrop */
