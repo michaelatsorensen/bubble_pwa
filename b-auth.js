@@ -181,7 +181,15 @@ function setupAuthListener() {
       bcUnsubscribeAll();
       rtUnsubscribeAll();
       resetAppState();
-      redirectToLanding();
+      // v8.17.20: same guard as checkAuth — only redirect to landing if user
+      // didn't come from there. Reload while logged out can fire SIGNED_OUT
+      // or TOKEN_REFRESHED without session at boot, which previously caused
+      // the auth-screen-reload-loop landing redirect.
+      if (typeof shouldBypassLanding === 'function' && shouldBypassLanding()) {
+        goTo('screen-auth');
+      } else {
+        redirectToLanding();
+      }
     } else if (event === 'TOKEN_REFRESHED' && session) {
       // Token refreshed — update user reference
       currentUser = session.user;
