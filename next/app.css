@@ -710,6 +710,7 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
   align-items: stretch;
   justify-content: flex-start;
   padding: 0;
+  padding-top: env(safe-area-inset-top, 0px);
   text-align: center;
   background: #F0EEF5;
 }
@@ -739,7 +740,7 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 #screen-auth .auth-merged {
   position:relative;
   z-index:1;
-  padding: calc(1.6rem + env(safe-area-inset-top, 0px)) 1.2rem 350px;
+  padding: 1.6rem 1.2rem 350px;
 }
 
 /* Hero on light backdrop */
