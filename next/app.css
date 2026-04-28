@@ -2653,6 +2653,10 @@ a:not(.btn-primary):not(.btn-secondary):active {
 /* ═══ PROFILE SCREEN — dark glass cards (matches Bobler/Home) ═══ */
 /* v7.96: profile-hero now uses light backdrop too — full Bubbles-pattern.
    Hero text colors are dark to read on light bg. */
+#screen-profile .profile-hero {
+  /* override global .profile-hero rule on line 372 which sets text-align:center */
+  text-align: left;
+}
 #screen-profile .profile-hero #my-name {
   color: #170F34;
 }
