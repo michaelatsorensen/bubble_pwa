@@ -1888,7 +1888,7 @@ async function bcLoadInfo() {
             }
             childCards += '</div>';
             if (ch.agenda) {
-              childCards += '<div id="' + _agId + '" style="display:none;padding:0.4rem 0.6rem 0.5rem 2.2rem;font-size:0.7rem;color:rgba(255,255,255,0.85);line-height:1.5;white-space:pre-line;background:rgba(23,15,52,0.85);border:0.5px solid rgba(255,255,255,0.06);border-top:0;border-radius:0 0 12px 12px;margin-top:-4px">' + escHtml(ch.agenda) + '</div>';
+              childCards += '<div id="' + _agId + '" class="glass-dark" style="display:none;padding:0.4rem 0.6rem 0.5rem 2.2rem;font-size:0.7rem;line-height:1.5;white-space:pre-line;border-top:0;border-radius:0 0 12px 12px;margin-top:-4px">' + escHtml(ch.agenda) + '</div>';
             }
             childCards += '</div>';
           });
@@ -2076,14 +2076,14 @@ async function bcLoadInfo() {
             evBadge +
           '</div>';
         })() : '') +
-        (b.description ? '<div style="font-size:0.8rem;color:rgba(255,255,255,0.9);margin-top:0.5rem;line-height:1.6;text-align:left;padding:0.75rem 0.9rem;border-radius:12px;background:rgba(23,15,52,0.85);border:0.5px solid rgba(255,255,255,0.06);white-space:pre-line">' + escHtml(b.description) + '</div>' : '') +
+        (b.description ? '<div class="glass-dark" style="font-size:0.8rem;margin-top:0.5rem;line-height:1.6;text-align:left;padding:0.75rem 0.9rem;border-radius:12px;white-space:pre-line">' + escHtml(b.description) + '</div>' : '') +
         (b.external_url ? '<a href="' + escHtml(b.external_url) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;padding:0.6rem 0.85rem;border-radius:10px;background:rgba(100,180,230,0.12);border:0.5px solid rgba(100,180,230,0.25);text-decoration:none;cursor:pointer">' +
           '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(100,180,230)" stroke-width="2" stroke-linecap="round" style="flex-shrink:0"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
           '<div style="flex:1;min-width:0"><div class="text-on-light-muted" style="font-size:0.68rem;margin-bottom:1px">' + t('bi_link_label') + '</div>' +
           '<div style="font-size:0.78rem;font-weight:600;color:rgb(80,150,200);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(b.external_url.replace(/^https?:\/\//, '')) + '</div></div>' +
           '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#56536E" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0"><path d="M9 6l6 6-6 6"/></svg>' +
         '</a>' : '') +
-        (b.agenda ? '<div style="margin-top:0.7rem;padding:0.75rem 0.9rem;border-radius:12px;background:rgba(23,15,52,0.85);border:0.5px solid rgba(255,255,255,0.06);text-align:left">' +
+        (b.agenda ? '<div class="glass-dark" style="margin-top:0.7rem;padding:0.75rem 0.9rem;border-radius:12px;text-align:left">' +
           '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.35rem">' + icon('calendar') + ' ' + t('bi_agenda') + '</div>' +
           '<div style="font-size:0.78rem;color:rgba(255,255,255,0.9);line-height:1.6;white-space:pre-line">' + escHtml(b.agenda) + '</div>' +
         '</div>' : '') +
