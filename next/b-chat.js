@@ -1888,7 +1888,7 @@ async function bcLoadInfo() {
             }
             childCards += '</div>';
             if (ch.agenda) {
-              childCards += '<div id="' + _agId + '" style="display:none;padding:0.4rem 0.6rem 0.5rem 2.2rem;font-size:0.7rem;color:rgba(255,255,255,0.7);line-height:1.5;white-space:pre-line;background:rgba(46,207,207,0.05);border-radius:0 0 12px 12px;margin-top:-4px">' + escHtml(ch.agenda) + '</div>';
+              childCards += '<div id="' + _agId + '" style="display:none;padding:0.4rem 0.6rem 0.5rem 2.2rem;font-size:0.7rem;color:rgba(255,255,255,0.85);line-height:1.5;white-space:pre-line;background:rgba(23,15,52,0.85);border:0.5px solid rgba(255,255,255,0.06);border-top:0;border-radius:0 0 12px 12px;margin-top:-4px">' + escHtml(ch.agenda) + '</div>';
             }
             childCards += '</div>';
           });
@@ -2083,9 +2083,9 @@ async function bcLoadInfo() {
           '<div style="font-size:0.78rem;font-weight:600;color:rgb(80,150,200);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(b.external_url.replace(/^https?:\/\//, '')) + '</div></div>' +
           '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#56536E" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0"><path d="M9 6l6 6-6 6"/></svg>' +
         '</a>' : '') +
-        (b.agenda ? '<div style="margin-top:0.7rem;padding:0.7rem 0.85rem;border-radius:10px;background:rgba(46,207,207,0.12);border:0.5px solid rgba(46,207,207,0.22);text-align:left">' +
-          '<div style="font-size:0.68rem;font-weight:700;color:#34D399;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.35rem">' + icon('calendar') + ' ' + t('bi_agenda') + '</div>' +
-          '<div style="font-size:0.78rem;color:rgba(255,255,255,0.85);line-height:1.6;white-space:pre-line">' + escHtml(b.agenda) + '</div>' +
+        (b.agenda ? '<div style="margin-top:0.7rem;padding:0.75rem 0.9rem;border-radius:12px;background:rgba(23,15,52,0.85);border:0.5px solid rgba(255,255,255,0.06);text-align:left">' +
+          '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.35rem">' + icon('calendar') + ' ' + t('bi_agenda') + '</div>' +
+          '<div style="font-size:0.78rem;color:rgba(255,255,255,0.9);line-height:1.6;white-space:pre-line">' + escHtml(b.agenda) + '</div>' +
         '</div>' : '') +
         (tagsHtml ? '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.5rem;justify-content:center">' + tagsHtml + '</div>' : '') +
       '</div>' +
