@@ -2691,8 +2691,20 @@ a:not(.btn-primary):not(.btn-secondary):active {
 #screen-bubbles .card:hover { border-color:rgba(255,255,255,0.12); box-shadow:none; }
 #screen-bubbles .fw-600 { color:rgba(255,255,255,0.9); }
 #screen-bubbles .text-muted { color:rgba(255,255,255,0.3); }
-#screen-bubbles .empty-text { color:rgba(255,255,255,0.35); }
-#screen-bubbles .empty-icon { color:rgba(255,255,255,0.15); }
+/* v8.00: empty-state on light bg — was white-on-white before */
+#screen-bubbles .empty-text { color:#56536E; }
+#screen-bubbles .empty-icon { color:rgba(23,15,52,0.25); }
+/* Empty-state buttons on light bg need dark text (override v6 dark-context defaults) */
+#screen-bubbles .empty-state .btn-primary {
+  color: #170F34;
+  background: rgba(100,180,230,0.22);
+  border: 0.5px solid rgba(100,180,230,0.45);
+}
+#screen-bubbles .empty-state .btn-secondary {
+  color: #56536E;
+  background: rgba(23,15,52,0.05);
+  border: 0.5px solid rgba(23,15,52,0.12);
+}
 #screen-bubbles .bubble-icon { border:0.5px solid rgba(255,255,255,0.06); }
 
 /* ═══ BESKEDER SCREEN — dark glass (matches Bobler/Profil) ═══ */
