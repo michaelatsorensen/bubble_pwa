@@ -63,6 +63,50 @@
   --saved-bg: rgba(26,158,142,0.12);
   --saved-border: rgba(26,158,142,0.2);
 
+  /* ═══════════════════════════════════════════════════════════════════════
+     HYBRID PATTERN TOKENS (v7.95-v8.04 establishment)
+     ═══════════════════════════════════════════════════════════════════════
+     Til skærme med LIGHT backdrop (#F0EEF5) hvor dark glass cards lever.
+     Bruges på: Bobler, Beskeder, Profil, Auth — primært "main view" skærme.
+     Mørke chrome-zoner (topbar, navbar, modals) bruger stadig --text-1/2/3.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  /* Tekst på LIGHT backdrop (mørk tekst) */
+  --text-on-light:        var(--midnight);          /* #170F34 — primær tekst */
+  --text-on-light-muted:  var(--text-secondary);    /* #56536E — meta/labels */
+  --text-on-light-subtle: rgba(23,15,52,0.4);       /* placeholders/very secondary */
+
+  /* Borders på LIGHT backdrop */
+  --border-on-light:        rgba(23,15,52,0.08);    /* Cards/dividers på lys bg */
+  --border-on-light-strong: rgba(23,15,52,0.12);    /* Stronger separators */
+
+  /* Status badges (Afsluttet/Kommende/I gang) på LIGHT backdrop */
+  --status-ended-bg:     rgba(23,15,52,0.08);
+  --status-ended-text:   var(--text-on-light-muted);
+  --status-ended-border: var(--border-on-light-strong);
+  --status-coming-bg:     rgba(100,180,230,0.18);
+  --status-coming-text:   rgb(60,130,180);
+  --status-coming-border: rgba(100,180,230,0.35);
+  --status-live-bg:     rgba(46,207,127,0.22);
+  --status-live-text:   var(--teal-dark);
+  --status-live-border: rgba(46,207,127,0.4);
+
+  /* Danger buttons (Forlad/Slet) på LIGHT backdrop */
+  --danger-bg:            rgba(239,68,68,0.12);
+  --danger-bg-strong:     rgba(239,68,68,0.18);
+  --danger-border:        rgba(239,68,68,0.3);
+  --danger-border-strong: rgba(239,68,68,0.4);
+  --danger-text:          #B91C1C;
+  --danger-text-strong:   #991B1B;
+
+  /* Parent-link "Del af X" på LIGHT backdrop */
+  --parent-link-bg:     rgba(100,180,230,0.12);
+  --parent-link-border: rgba(100,180,230,0.25);
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     END HYBRID PATTERN TOKENS
+     ═══════════════════════════════════════════════════════════════════════ */
+
   /* ── Type scale ── */
   --font: 'Figtree', -apple-system, sans-serif;
   --text-xs: 0.5rem;
@@ -171,6 +215,111 @@
 
 /* Chevron circle */
 .chev { width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HYBRID PATTERN UTILITIES (v7.95-v8.04 establishment)
+   ───────────────────────────────────────────────────────────────────────────
+   Brug disse på skærme med LIGHT backdrop (#F0EEF5):
+     • Bobler (Mine + Opdag)
+     • Beskeder
+     • Profil
+     • Auth
+     • Bubble-info / event-info content
+   For mørke chrome-zoner (topbar, navbar, modals, sheets) bruges stadig
+   eksisterende v6 system: .t1/.t2/.t3, .glass-* osv.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Tekst på LIGHT backdrop */
+.text-on-light        { color: var(--text-on-light); }
+.text-on-light-muted  { color: var(--text-on-light-muted); }
+.text-on-light-subtle { color: var(--text-on-light-subtle); }
+
+/* Section-card: dark glass card med titel + indhold (Statistik, Administration, etc.) */
+.section-card {
+  background: var(--n3-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 0.5px solid var(--border-1);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.85rem;
+  margin-bottom: 0.9rem;
+}
+.section-card-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.4rem;
+}
+
+/* Parent-link "Del af X" — viser hierarki */
+.parent-link {
+  background: var(--parent-link-bg);
+  border: 0.5px solid var(--parent-link-border);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  cursor: pointer;
+}
+.parent-link-label { font-size: 0.68rem; color: var(--text-on-light-muted); }
+.parent-link-name  { font-size: 0.78rem; font-weight: 600; color: var(--text-on-light); }
+.parent-link-chev  { font-size: 0.88rem; color: var(--text-on-light-muted); }
+
+/* Status badges (Afsluttet, I gang, Kommende) */
+.badge-status {
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  border-width: 0.5px;
+  border-style: solid;
+}
+.badge-ended {
+  background: var(--status-ended-bg);
+  color: var(--status-ended-text);
+  border-color: var(--status-ended-border);
+}
+.badge-coming {
+  background: var(--status-coming-bg);
+  color: var(--status-coming-text);
+  border-color: var(--status-coming-border);
+}
+.badge-live {
+  background: var(--status-live-bg);
+  color: var(--status-live-text);
+  border-color: var(--status-live-border);
+}
+
+/* Danger buttons (Forlad/Slet) på LIGHT backdrop */
+.btn-danger-soft,
+.btn-danger-soft-strong {
+  width: 100%;
+  padding: 0.65rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  border-width: 0.5px;
+  border-style: solid;
+}
+.btn-danger-soft {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+.btn-danger-soft-strong {
+  background: var(--danger-bg-strong);
+  border-color: var(--danger-border-strong);
+  color: var(--danger-text-strong);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   END HYBRID PATTERN UTILITIES
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 html { height:100vh; overflow:hidden; overscroll-behavior:none; }
 
