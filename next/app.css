@@ -24,7 +24,7 @@
   --text-3: rgba(255,255,255,0.25);    /* hints, placeholders */
 
   /* ── Borders (2 levels only) ── */
-  --border-1: rgba(255,255,255,0.08);  /* cards, inputs */
+  --border-1: rgba(255,255,255,0.06);  /* v8.05: bumpet 0.08 → 0.06 (matcher hybrid pattern fra v7.95+) */
   --border-2: rgba(255,255,255,0.06);  /* separators */
 
   /* ── Accent colors ── */
@@ -33,7 +33,7 @@
   --pink: #E879A8;
   --green: #2ECFCF;
   --red: #EF4444;
-  --teal-dark: #0D5C52;
+  --teal-dark: #0F6E56;   /* v8.05: bumpet #0D5C52 → #0F6E56 (matcher event-status og dato-tekst fra v8.03) */
 
   /* ── Niveau 1: Frostet glas (backdrop-filter: blur) ── */
   --n1-radar: rgba(255,255,255,0.85);
@@ -50,7 +50,7 @@
   --n2-isbla-border: rgba(100,180,230,0.12);
 
   /* ── Niveau 3: Slebet glas (solid fill) ── */
-  --n3-card: rgba(23,15,52,0.78);
+  --n3-card: rgba(23,15,52,0.85);   /* v8.05: bumpet 0.78 → 0.85 (matcher hybrid pattern fra v7.95+) */
   --n3-input: rgba(255,255,255,0.06);
   --n3-btn-sec: rgba(255,255,255,0.06);
 
@@ -495,7 +495,7 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 .bb-accordion { margin-bottom:0.4rem; }
 
 /* ── F2 Tree: Root card ── */
-.bb-tree-root { display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:var(--radius); background:rgba(23,15,52,0.78); border:0.5px solid rgba(255,255,255,0.08); transition:transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); -webkit-tap-highlight-color:transparent; }
+.bb-tree-root { display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:var(--radius); background:var(--n3-card); border:0.5px solid var(--border-1); transition:transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); -webkit-tap-highlight-color:transparent; }
 .bb-tree-root-ico { width:36px; height:36px; border-radius:10px; overflow:hidden; background:rgba(100,180,230,0.08); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:rgb(100,180,230); }
 .bb-tree-body { flex:1; min-width:0; cursor:pointer; }
 
@@ -596,7 +596,7 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 /* ── BUBBLE UP ── */
 .bubble-up-btn { width:100%; padding:0.65rem 1rem; border-radius:var(--radius-sm); background:rgba(124,92,252,0.06); border:1px dashed rgba(124,92,252,0.35); color:var(--accent); font-size:0.82rem; font-family:'Figtree',sans-serif; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem; transition:all 0.2s; }
 .bubble-up-btn:hover { border-color:rgba(124,92,252,0.4); }
-.bubble-up-confirm { background:rgba(23,15,52,0.78); border:0.5px solid rgba(255,255,255,0.08); border-radius:var(--radius); padding:1rem; text-align:center; }
+.bubble-up-confirm { background:var(--n3-card); border:0.5px solid var(--border-1); border-radius:var(--radius); padding:1rem; text-align:center; }
 .bubble-up-confirm-name { font-size:0.95rem; font-weight:700; margin-bottom:0.15rem; }
 .bubble-up-confirm-text { font-size:0.72rem; color:rgba(255,255,255,0.5); margin-bottom:0.75rem; }
 .bubble-up-confirm-row { display:flex; gap:0.5rem; }
@@ -1856,7 +1856,7 @@ a.person-action-btn { text-decoration:none; }
 [data-hs-hidden="true"] { display:none !important; }
 
 /* Notification feed window on home */
-.notif-feed-window { background:rgba(23,15,52,0.78); border:0.5px solid rgba(255,255,255,0.08); }
+.notif-feed-window { background:var(--n3-card); border:0.5px solid var(--border-1); }
 .notif-feed-item { display:flex; align-items:flex-start; gap:0.5rem; padding:0.4rem 0; border-bottom:1px solid rgba(30,27,46,0.025); }
 .notif-feed-item:last-child { border-bottom:none; }
 .notif-feed-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; margin-top:0.35rem; }
@@ -2687,7 +2687,7 @@ a:not(.btn-primary):not(.btn-secondary):active {
 #screen-profile .interest-btn.selected .interest-count { color:rgb(100,180,230); }
 
 /* ═══ BOBLER SCREEN — dark glass cards (hybrid model) ═══ */
-#screen-bubbles .card { background:rgba(23,15,52,0.78); border:0.5px solid rgba(255,255,255,0.08); box-shadow:none; color:rgba(255,255,255,0.9); }
+#screen-bubbles .card { background:var(--n3-card); border:0.5px solid var(--border-1); box-shadow:none; color:rgba(255,255,255,0.9); }
 #screen-bubbles .card:hover { border-color:rgba(255,255,255,0.12); box-shadow:none; }
 #screen-bubbles .fw-600 { color:rgba(255,255,255,0.9); }
 #screen-bubbles .text-muted { color:rgba(255,255,255,0.3); }
