@@ -1942,8 +1942,8 @@ async function bcLoadInfo() {
         }
 
         var childCount = allBubbleIds.length - 1;
-        statsHtml = '<div style="margin-bottom:0.9rem;padding:0.75rem 0.85rem;border-radius:12px;background:rgba(23,15,52,0.85);border:0.5px solid rgba(255,255,255,0.06)">' +
-          '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">' + t('bi_statistics') + '</div>' +
+        statsHtml = '<div class="section-card">' +
+          '<div class="section-card-title">' + t('bi_statistics') + '</div>' +
           '<div class="dash-pair"><div class="dash-row">' +
             oCard('o-mem-' + b.id, 'users', 'rgba(124,92,252,0.08)', 'var(--accent)', memTotalCount, t('bi_members_label'), memNewCount, 'accent') +
             oCard('o-msg-' + b.id, 'chat', 'rgba(232,121,168,0.08)', 'var(--pink)', msgTotal.count || 0, t('bi_messages_label'), msgNew.count, 'pink') +
@@ -1996,9 +1996,9 @@ async function bcLoadInfo() {
           '<div style="flex:1;font-size:0.8rem;color:rgba(255,255,255,0.85)">' + t('bi_transfer_ownership') + '</div>' +
           '<div style="font-size:0.88rem;color:rgba(255,255,255,0.4)">›</div></div>';
       }
-      adminHtml = '<div style="margin-bottom:0.9rem;padding:0.75rem 0.85rem;border-radius:12px;background:rgba(23,15,52,0.85);border:0.5px solid rgba(255,255,255,0.06)">' +
-        '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">' + (isEvent ? t('bi_event_admin') : t('bi_administration')) + '</div>' +
-        '<div style="border-radius:8px;border:0.5px solid rgba(255,255,255,0.06);overflow:hidden">' + adminItems + '</div></div>';
+      adminHtml = '<div class="section-card">' +
+        '<div class="section-card-title">' + (isEvent ? t('bi_event_admin') : t('bi_administration')) + '</div>' +
+        '<div style="border-radius:8px;border:0.5px solid var(--border-1);overflow:hidden">' + adminItems + '</div></div>';
     }
 
     // ── Bottom actions: member-aware ──
