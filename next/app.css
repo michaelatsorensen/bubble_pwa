@@ -1869,11 +1869,11 @@ a.person-action-btn { text-decoration:none; }
 .hs-view-btn.active { background:rgba(124,92,252,0.15) !important; color:var(--accent) !important; border-color:rgba(124,92,252,0.3) !important; }
 
 /* Bubble action bar under tabs */
-.bc-action-bar { display:flex; gap:3px; padding:4px; margin:3px 1.1rem 0; flex-shrink:0; background:rgba(30,27,46,0.06); border-radius:10px; border:1px solid rgba(216,213,228,0.5); }
-.bc-bar-btn { display:flex; align-items:center; gap:0.25rem; font-size:0.72rem; font-weight:600; font-family:inherit; padding:0.45rem 0.6rem; border-radius:8px; border:none; background:transparent; color:rgba(255,255,255,0.4); cursor:pointer; transition:all 0.15s; white-space:nowrap; flex:1; justify-content:center; }
+.bc-action-bar { display:flex; gap:3px; padding:4px; margin:3px 1.1rem 0; flex-shrink:0; background:rgba(23,15,52,0.85); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-radius:10px; border:0.5px solid rgba(255,255,255,0.06); }
+.bc-bar-btn { display:flex; align-items:center; gap:0.25rem; font-size:0.72rem; font-weight:600; font-family:inherit; padding:0.45rem 0.6rem; border-radius:8px; border:none; background:transparent; color:rgba(255,255,255,0.85); cursor:pointer; transition:all 0.15s; white-space:nowrap; flex:1; justify-content:center; }
 .bc-bar-btn .ico { width:0.78rem; height:0.78rem; }
 .bc-bar-btn:active { background:rgba(255,255,255,0.06); transform:scale(0.97); }
-.bc-bar-btn.active { background:rgba(26,158,142,0.12); color:#10B981; }
+.bc-bar-btn.active { background:rgba(26,158,142,0.22); color:#34D399; }
 
 /* Person sheet star rating */
 .ps-star-row { display:flex; align-items:center; justify-content:space-between; padding:0.5rem 0; margin:0 1.2rem; border-top:1px solid rgba(216,213,228,0.4); }

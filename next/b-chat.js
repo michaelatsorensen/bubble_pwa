@@ -1942,7 +1942,7 @@ async function bcLoadInfo() {
         }
 
         var childCount = allBubbleIds.length - 1;
-        statsHtml = '<div style="margin-bottom:0.9rem">' +
+        statsHtml = '<div style="margin-bottom:0.9rem;padding:0.75rem 0.85rem;border-radius:12px;background:rgba(23,15,52,0.85);border:0.5px solid rgba(255,255,255,0.06)">' +
           '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">' + t('bi_statistics') + '</div>' +
           '<div class="dash-pair"><div class="dash-row">' +
             oCard('o-mem-' + b.id, 'users', 'rgba(124,92,252,0.08)', 'var(--accent)', memTotalCount, t('bi_members_label'), memNewCount, 'accent') +
@@ -1996,9 +1996,9 @@ async function bcLoadInfo() {
           '<div style="flex:1;font-size:0.8rem;color:rgba(255,255,255,0.85)">' + t('bi_transfer_ownership') + '</div>' +
           '<div style="font-size:0.88rem;color:rgba(255,255,255,0.4)">›</div></div>';
       }
-      adminHtml = '<div style="margin-bottom:0.9rem">' +
+      adminHtml = '<div style="margin-bottom:0.9rem;padding:0.75rem 0.85rem;border-radius:12px;background:rgba(23,15,52,0.85);border:0.5px solid rgba(255,255,255,0.06)">' +
         '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">' + (isEvent ? t('bi_event_admin') : t('bi_administration')) + '</div>' +
-        '<div style="border-radius:12px;border:1px solid var(--glass-border-subtle);overflow:hidden">' + adminItems + '</div></div>';
+        '<div style="border-radius:8px;border:0.5px solid rgba(255,255,255,0.06);overflow:hidden">' + adminItems + '</div></div>';
     }
 
     // ── Bottom actions: member-aware ──
@@ -2020,12 +2020,12 @@ async function bcLoadInfo() {
 
       var checkoutBtn = '';
       if (isEvent && myCheckinLive) {
-        checkoutBtn = '<button onclick="bcCheckout()" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(46,207,207,0.12);border:0.5px solid rgba(46,207,207,0.28);color:#34D399;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + t('bi_checkout') + '</button>';
+        checkoutBtn = '<button onclick="bcCheckout()" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(46,207,207,0.18);border:0.5px solid rgba(46,207,207,0.35);color:#0F6E56;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + t('bi_checkout') + '</button>';
       }
-      bottomHtml = '<div style="display:flex;flex-direction:column;gap:0.4rem;border-top:0.5px solid rgba(255,255,255,0.06);padding-top:0.8rem">' +
+      bottomHtml = '<div style="display:flex;flex-direction:column;gap:0.4rem;border-top:0.5px solid rgba(23,15,52,0.08);padding-top:0.8rem">' +
         checkoutBtn +
-        '<button data-action="leaveBubble" data-id="' + b.id + '" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.08);border:0.5px solid rgba(239,68,68,0.2);color:#FCA5A5;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_leave_event') : t('bb_leave_bubble')) + '</button>' +
-        (isOwner ? '<button onclick="confirmPopBubble(\'' + b.id + '\')" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.12);border:0.5px solid rgba(239,68,68,0.3);color:#FCA5A5;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_delete_event') : t('bb_delete_bubble')) + '</button>' : '') +
+        '<button data-action="leaveBubble" data-id="' + b.id + '" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.12);border:0.5px solid rgba(239,68,68,0.3);color:#B91C1C;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_leave_event') : t('bb_leave_bubble')) + '</button>' +
+        (isOwner ? '<button onclick="confirmPopBubble(\'' + b.id + '\')" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.18);border:0.5px solid rgba(239,68,68,0.4);color:#991B1B;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_delete_event') : t('bb_delete_bubble')) + '</button>' : '') +
         '</div>';
     } else if (bcBubbleData._isPending) {
       bottomHtml = ''; // Banner at top (bcLoadMembership) already shows pending state
@@ -2039,7 +2039,7 @@ async function bcLoadInfo() {
     var topJoinHtml = '';
     if (!bcBubbleData._isMember && !bcBubbleData._isPending) {
       if (b.visibility === 'hidden') {
-        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem;font-size:0.78rem;color:rgba(255,255,255,0.55)">' + icon('eye') + ' Kun via invitation</div>';
+        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem;font-size:0.78rem;color:#56536E">' + icon('eye') + ' Kun via invitation</div>';
       } else if (b.visibility === 'private') {
         topJoinHtml = '<div style="padding:0.5rem 0 0.8rem"><button class="bb-cta-anmod" data-action="requestJoin" data-id="' + b.id + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Anmod om medlemskab</button></div>';
       } else {
@@ -2064,14 +2064,14 @@ async function bcLoadInfo() {
             ? (_lang === 'da' ? 'slutter kl. ' : 'ends at ') + new Date(b.event_end_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' })
             : '';
           var evBadge = evPast
-            ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.55);font-weight:600">Afsluttet</span>'
+            ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(23,15,52,0.08);color:#56536E;font-weight:600;border:0.5px solid rgba(23,15,52,0.12)">Afsluttet</span>'
             : (evD <= new Date()
-              ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(46,207,207,0.22);color:#34D399;font-weight:600;border:0.5px solid rgba(46,207,207,0.3)">I gang</span>'
-              : '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(100,180,230,0.15);color:rgb(100,180,230);font-weight:600;border:0.5px solid rgba(100,180,230,0.25)">' + t('bb_coming') + '</span>');
+              ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(46,207,207,0.22);color:#0F6E56;font-weight:600;border:0.5px solid rgba(46,207,207,0.4)">I gang</span>'
+              : '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(100,180,230,0.18);color:rgb(60,130,180);font-weight:600;border:0.5px solid rgba(100,180,230,0.35)">' + t('bb_coming') + '</span>');
           return '<div style="background:rgba(46,207,207,0.12);border:0.5px solid rgba(46,207,207,0.28);border-radius:10px;padding:8px 12px;margin-top:0.6rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem">' +
             '<div style="text-align:left">' +
-              '<div style="font-size:0.8rem;font-weight:700;color:#34D399">' + evDateStr + '</div>' +
-              (evEndStr ? '<div style="font-size:0.68rem;color:rgba(52,211,153,0.75);margin-top:1px">' + evEndStr + '</div>' : '') +
+              '<div style="font-size:0.8rem;font-weight:700;color:#0F6E56">' + evDateStr + '</div>' +
+              (evEndStr ? '<div style="font-size:0.68rem;color:rgba(15,110,86,0.75);margin-top:1px">' + evEndStr + '</div>' : '') +
             '</div>' +
             evBadge +
           '</div>';
