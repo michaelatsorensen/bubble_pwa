@@ -1757,10 +1757,10 @@ async function bcLoadInfo() {
       try {
         var { data: parent } = await sb.from('bubbles').select('id,name').eq('id', b.parent_bubble_id).maybeSingle();
         if (parent) {
-          parentHtml = '<div onclick="openBubble(\'' + parent.id + '\')" style="display:flex;align-items:center;gap:0.55rem;padding:0.55rem 0.7rem;border-radius:12px;background:rgba(100,180,230,0.08);border:0.5px solid rgba(100,180,230,0.18);margin-bottom:0.9rem;cursor:pointer">' +
+          parentHtml = '<div onclick="openBubble(\'' + parent.id + '\')" style="display:flex;align-items:center;gap:0.55rem;padding:0.55rem 0.7rem;border-radius:12px;background:rgba(100,180,230,0.12);border:0.5px solid rgba(100,180,230,0.25);margin-bottom:0.9rem;cursor:pointer">' +
             '<div style="width:24px;height:24px;border-radius:7px;background:rgba(100,180,230,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;color:rgb(100,180,230)">' + ico('bubble') + '</div>' +
-            '<div style="flex:1"><div style="font-size:0.68rem;color:rgba(255,255,255,0.55)">Del af</div><div style="font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.95)">' + escHtml(parent.name) + '</div></div>' +
-            '<div style="font-size:0.88rem;color:rgba(255,255,255,0.4)">›</div></div>';
+            '<div style="flex:1"><div style="font-size:0.68rem;color:#56536E">Del af</div><div style="font-size:0.78rem;font-weight:600;color:#170F34">' + escHtml(parent.name) + '</div></div>' +
+            '<div style="font-size:0.88rem;color:#56536E">›</div></div>';
         }
       } catch(e) { /* silent */ }
     }
@@ -2053,8 +2053,8 @@ async function bcLoadInfo() {
       parentHtml +
       '<div style="text-align:center;padding:0.25rem 0 1rem">' +
         '<div style="width:52px;height:52px;border-radius:15px;background:' + (b.icon_url ? 'transparent' : iconBg) + ';display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;color:' + accentStroke + ';font-size:24px;position:relative"><div style="width:100%;height:100%;border-radius:15px;overflow:hidden;display:flex;align-items:center;justify-content:center">' + heroIcon + '</div>' + (bcBubbleData._isMember ? '<div style="position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#1A9E8E;display:flex;align-items:center;justify-content:center;border:2.5px solid var(--bg)"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>' : '') + '</div>' +
-        '<div style="font-size:1rem;font-weight:800;color:rgba(255,255,255,0.95)">' + escHtml(b.name) + '</div>' +
-        '<div style="font-size:0.75rem;color:rgba(255,255,255,0.55);margin-top:0.15rem">' + typeLabel(b.type) + (b.location ? ' · ' + escHtml(b.location) : '') + ' · ' + mc + ' ' + memberLabel + (bcBubbleData._isMember ? ' · <span style="color:#1A9E8E;font-weight:600"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="3" stroke-linecap="round" style="vertical-align:-1px"><polyline points="20 6 9 17 4 12"/></svg> ' + (isEvent ? t('dl_attending') : t('dl_member')) + '</span>' : '') + '</div>' +
+        '<div style="font-size:1rem;font-weight:800;color:#170F34">' + escHtml(b.name) + '</div>' +
+        '<div style="font-size:0.75rem;color:#56536E;margin-top:0.15rem">' + typeLabel(b.type) + (b.location ? ' · ' + escHtml(b.location) : '') + ' · ' + mc + ' ' + memberLabel + (bcBubbleData._isMember ? ' · <span style="color:#1A9E8E;font-weight:600"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="3" stroke-linecap="round" style="vertical-align:-1px"><polyline points="20 6 9 17 4 12"/></svg> ' + (isEvent ? t('dl_attending') : t('dl_member')) + '</span>' : '') + '</div>' +
         (isEvent && b.event_date ? (function() {
           var evD = new Date(b.event_date);
           var evPast = new Date(b.event_end_date || b.event_date) < new Date();
@@ -2076,12 +2076,12 @@ async function bcLoadInfo() {
             evBadge +
           '</div>';
         })() : '') +
-        (b.description ? '<div style="font-size:0.8rem;color:rgba(255,255,255,0.85);margin-top:0.5rem;line-height:1.6;text-align:left;padding:0.7rem 0.85rem;border-radius:10px;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);white-space:pre-line">' + escHtml(b.description) + '</div>' : '') +
-        (b.external_url ? '<a href="' + escHtml(b.external_url) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;padding:0.6rem 0.85rem;border-radius:10px;background:rgba(100,180,230,0.1);border:0.5px solid rgba(100,180,230,0.22);text-decoration:none;cursor:pointer">' +
+        (b.description ? '<div style="font-size:0.8rem;color:rgba(255,255,255,0.9);margin-top:0.5rem;line-height:1.6;text-align:left;padding:0.75rem 0.9rem;border-radius:12px;background:rgba(23,15,52,0.85);border:0.5px solid rgba(255,255,255,0.06);white-space:pre-line">' + escHtml(b.description) + '</div>' : '') +
+        (b.external_url ? '<a href="' + escHtml(b.external_url) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;padding:0.6rem 0.85rem;border-radius:10px;background:rgba(100,180,230,0.12);border:0.5px solid rgba(100,180,230,0.25);text-decoration:none;cursor:pointer">' +
           '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(100,180,230)" stroke-width="2" stroke-linecap="round" style="flex-shrink:0"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
-          '<div style="flex:1;min-width:0"><div style="font-size:0.68rem;color:rgba(255,255,255,0.55);margin-bottom:1px">' + t('bi_link_label') + '</div>' +
-          '<div style="font-size:0.78rem;font-weight:600;color:rgb(100,180,230);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(b.external_url.replace(/^https?:\/\//, '')) + '</div></div>' +
-          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0"><path d="M9 6l6 6-6 6"/></svg>' +
+          '<div style="flex:1;min-width:0"><div style="font-size:0.68rem;color:#56536E;margin-bottom:1px">' + t('bi_link_label') + '</div>' +
+          '<div style="font-size:0.78rem;font-weight:600;color:rgb(80,150,200);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(b.external_url.replace(/^https?:\/\//, '')) + '</div></div>' +
+          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#56536E" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0"><path d="M9 6l6 6-6 6"/></svg>' +
         '</a>' : '') +
         (b.agenda ? '<div style="margin-top:0.7rem;padding:0.7rem 0.85rem;border-radius:10px;background:rgba(46,207,207,0.12);border:0.5px solid rgba(46,207,207,0.22);text-align:left">' +
           '<div style="font-size:0.68rem;font-weight:700;color:#34D399;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.35rem">' + icon('calendar') + ' ' + t('bi_agenda') + '</div>' +
