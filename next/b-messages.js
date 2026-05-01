@@ -111,8 +111,8 @@ function convToggleSelectMode() {
     if (toolbar) toolbar.style.display = 'none';
     if (selectBtn) {
       selectBtn.innerHTML = SELECT_ICON;
-      selectBtn.style.background = '';
-      selectBtn.style.borderColor = '';
+      selectBtn.style.background = 'rgba(255,255,255,0.1)';
+      selectBtn.style.borderColor = 'rgba(255,255,255,0.12)';
       selectBtn.title = t('misc_select');
     }
     if (list) list.querySelectorAll('.conv-check').forEach(function(el) { el.remove(); });
