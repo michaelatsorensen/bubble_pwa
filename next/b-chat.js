@@ -330,7 +330,7 @@ async function bcLoadBubbleCore(bubbleId) {
   if (b.parent_bubble_id) {
     try {
       var { data: parentB } = await sb.from('bubbles').select('name').eq('id', b.parent_bubble_id).maybeSingle();
-      if (parentB) subText += ' · <span style="color:#534AB7">\u21B3 ' + escHtml(parentB.name) + '</span>';
+      if (parentB) subText += ' · <span style="color:var(--isbla)">\u21B3 ' + escHtml(parentB.name) + '</span>';
     } catch(e) {}
   }
   document.getElementById('bc-members-count').innerHTML = subText;
