@@ -450,6 +450,8 @@ da: {
   err_already_invited: 'Du har allerede sendt en invitation til denne person',
   err_generic: 'Noget gik galt',
   err_open_bubble: 'Kunne ikke åbne boblen',
+  err_join_failed: 'Kunne ikke tilmelde dig boblen',
+  err_checkin_failed: 'Tilmeldt — men check-in fejlede',
   err_file_link: 'Kunne ikke generere fil-link',
   err_push_activate: 'Kunne ikke aktivere notifikationer',
   // Validation
@@ -1090,6 +1092,8 @@ en: {
   err_already_invited: 'You have already invited this person',
   err_generic: 'Something went wrong',
   err_open_bubble: 'Could not open the bubble',
+  err_join_failed: 'Could not join the bubble',
+  err_checkin_failed: 'Joined — but check-in failed',
   err_file_link: 'Could not generate file link',
   err_push_activate: 'Could not activate notifications',
   val_accept_terms: 'You must accept the terms',

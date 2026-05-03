@@ -311,6 +311,10 @@ function showWarningToast(message) {
   _renderToast(message, 'warn');
 }
 
+function showErrorToast(message) {
+  _renderToast(message, 'error');
+}
+
 // ── Push notification helper — fire-and-forget ──
 function sendPush(userId, title, body, data) {
   if (!userId || !currentUser || userId === currentUser.id) return;

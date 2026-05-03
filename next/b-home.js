@@ -579,7 +579,11 @@ async function showDeepLinkModal(type, targetId) {
         primaryLabel: t('dl_go_to_network') + ' →',
         primaryFn: async function() {
           var result = await dbActions.joinBubble(targetId, 'invite_link');
-          if (result.ok) showSuccessToast(t('toast_joined'));
+          if (!result.ok) {
+            showErrorToast(t('err_join_failed'));
+            return;
+          }
+          showSuccessToast(t('toast_joined'));
           openBubbleChat(targetId, 'screen-home');
         }
       });
@@ -695,10 +699,16 @@ function _renderEventDeepLinkModal(opts) {
     primaryLabel = t('dl_join_and_live') + ' →';
     primaryFn = async function() {
       var jr = await dbActions.joinBubble(bubbleId, 'invite_link');
-      if (jr.ok) {
-        var cr = await dbActions.checkIn(bubbleId);
-        if (cr.ok && typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus();
+      if (!jr.ok) {
+        showErrorToast(t('err_join_failed'));
+        return;
+      }
+      var cr = await dbActions.checkIn(bubbleId);
+      if (cr.ok) {
+        if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus();
         showSuccessToast(t('toast_joined'));
+      } else {
+        showWarningToast(t('err_checkin_failed'));
       }
       openBubbleChat(bubbleId, 'screen-home');
     };
@@ -710,7 +720,11 @@ function _renderEventDeepLinkModal(opts) {
     primaryLabel = t('dl_accept_invitation') + ' →';
     primaryFn = async function() {
       var r = await dbActions.joinBubble(bubbleId, 'invite_link');
-      if (r.ok) showSuccessToast(t('toast_joined'));
+      if (!r.ok) {
+        showErrorToast(t('err_join_failed'));
+        return;
+      }
+      showSuccessToast(t('toast_joined'));
       openBubbleChat(bubbleId, 'screen-home');
     };
     secondaryLabel = t('dl_see_info');
