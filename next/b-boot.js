@@ -35,9 +35,12 @@ function redirectToLanding() {
 // ══════════════════════════════════════════════════════════
 async function preloadAllData() {
   try {
-    // Core: messages badge only. Bubbles load lazily on screen-bubbles enter via nav hook.
+    // Core: messages badge + bubbles badge for nav-bar.
+    // Bubble list itself still loads lazily on screen-bubbles enter via nav hook.
+    // _recountBubbleUnread is lightweight: 1 query for memberships + 1 RPC for latest msg times.
     await Promise.all([
-      loadMessages()
+      loadMessages(),
+      _recountBubbleUnread()
     ].map(function(p) { return p.catch(function(e) { logError('preload', e); }); }));
   } catch(e) { logError('preloadAllData', e); }
 }

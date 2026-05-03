@@ -50,6 +50,22 @@ async function _fetchBubbleUnread(membershipRows) {
     _renderSubTabDots();
   } catch(e) { logError('_fetchBubbleUnread', e); }
 }
+
+// Lightweight bubble-unread recount — fetches memberships then computes unread.
+// Used at boot (preloadAllData) so nav-badge appears before user taps Bobler tab.
+// Mirrors unreadState.dmRecount pattern for messages.
+async function _recountBubbleUnread() {
+  try {
+    if (!currentUser) return;
+    var { data: memberships } = await sb.from('bubble_members')
+      .select('bubble_id, last_read_at')
+      .eq('user_id', currentUser.id);
+    if (memberships && memberships.length > 0) {
+      _myBubbleMemberIds = memberships.map(function(m) { return m.bubble_id; });
+    }
+    await _fetchBubbleUnread(memberships || []);
+  } catch(e) { logError('_recountBubbleUnread', e); }
+}
 var _bcUnreadDotHtml = '<div style="width:9px;height:9px;border-radius:50%;background:var(--accent2);flex-shrink:0"></div>';
 function _unreadDot(id) { return _bubbleUnreadSet[id] ? _bcUnreadDotHtml : ''; }
 
