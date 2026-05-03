@@ -2152,7 +2152,7 @@ async function loadHomeDartboardData() {
     if (!currentUser || !currentProfile) return;
 
     var { data: allProfiles } = await sb.from('profiles')
-      .select('id,name,title,keywords,dynamic_keywords,bio,linkedin,is_anon,avatar_url')
+      .select('id,name,title,workplace,keywords,dynamic_keywords,bio,linkedin,is_anon,avatar_url')
       .neq('id', currentUser.id).neq('banned', true).limit(200);
     if (!allProfiles || allProfiles.length === 0) {
       _dartboardDataLoaded = true;
@@ -2182,7 +2182,7 @@ async function loadHomeDartboardData() {
     var scored = allProfiles.map(function(p) {
       var sharedBubbles = (bmMap[p.id] || []).length;
       var matchScore = (typeof calcMatchScore === 'function') ? calcMatchScore(currentProfile, p, sharedBubbles) : 0;
-      return { id:p.id, name:p.name, title:p.title, keywords:p.keywords, is_anon:p.is_anon, bio:p.bio, linkedin:p.linkedin, avatar_url:p.avatar_url, matchScore:matchScore, sharedBubbles:sharedBubbles };
+      return { id:p.id, name:p.name, title:p.title, workplace:p.workplace, keywords:p.keywords, is_anon:p.is_anon, bio:p.bio, linkedin:p.linkedin, avatar_url:p.avatar_url, matchScore:matchScore, sharedBubbles:sharedBubbles };
     }).sort(function(a,b) { return b.matchScore - a.matchScore; });
 
     // Store all profiles for 'all' mode — but don't overwrite live dartboard
