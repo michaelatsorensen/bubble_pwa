@@ -311,6 +311,10 @@ function showWarningToast(message) {
   _renderToast(message, 'warn');
 }
 
+function showErrorToast(message) {
+  _renderToast(message, 'error');
+}
+
 // ── Push notification helper — fire-and-forget ──
 function sendPush(userId, title, body, data) {
   if (!userId || !currentUser || userId === currentUser.id) return;
@@ -592,13 +596,21 @@ function timeAgo(dateStr) {
 // showSuccessToast now defined in toast system v2 above
 
 // ══════════════════════════════════════════════════════════
-//  ESCALATOR SCROLL EFFECT v3
+//  ESCALATOR SCROLL EFFECT v3.1
 //  Only individual card-sized elements get the fall-back
 //  effect as they exit the top. Large wrapper divs are
 //  skipped — their children are processed instead.
+//
+//  v3.1 (v8.17.22): cache collectItems result so DOM walk
+//  doesn't run on every scroll-tick. Cache invalidates on:
+//  - DOM mutation under scrollEl (MutationObserver)
+//  - element-not-in-DOM detected at process-time (lazy purge)
+//  Plus: micro-jitter skip if scrollDelta < 4px,
+//  and will-change hint applied to leaf items at attach time.
 // ══════════════════════════════════════════════════════════
 (function initEscalator() {
   var EXIT_ZONE = 90;
+  var MIN_SCROLL_DELTA = 4; // skip processing if user barely scrolled
   var _rafPending = false;
 
   function collectItems(scrollEl) {
@@ -619,15 +631,40 @@ function timeAgo(dateStr) {
       }
     }
     walk(scrollEl);
+    // Apply will-change hint once — tells browser to put on GPU layer.
+    // Avoids layer-thrashing during transform animation.
+    for (var j = 0; j < items.length; j++) {
+      if (!items[j]._escHinted) {
+        items[j].style.willChange = 'transform, opacity';
+        items[j]._escHinted = true;
+      }
+    }
     return items;
+  }
+
+  function getOrBuildItems(scrollEl) {
+    if (!scrollEl._escItems) {
+      scrollEl._escItems = collectItems(scrollEl);
+    }
+    return scrollEl._escItems;
+  }
+
+  function invalidateItems(scrollEl) {
+    scrollEl._escItems = null;
   }
 
   function processScroll(scrollEl) {
     var containerTop = scrollEl.getBoundingClientRect().top;
-    var items = collectItems(scrollEl);
+    var items = getOrBuildItems(scrollEl);
+    var staleDetected = false;
 
     for (var i = 0; i < items.length; i++) {
       var el = items[i];
+      // Lazy purge: if element no longer in DOM, mark stale and skip.
+      if (!el.isConnected) {
+        staleDetected = true;
+        continue;
+      }
       var rect = el.getBoundingClientRect();
 
       // How much of the element is still visible below the container top edge
@@ -653,14 +690,25 @@ function timeAgo(dateStr) {
         }
       }
     }
+
+    // If any item was stale, invalidate cache so next scroll rebuilds.
+    if (staleDetected) invalidateItems(scrollEl);
   }
 
   function onScroll(e) {
+    var scrollEl = e.target;
+    var currentScrollTop = scrollEl.scrollTop;
+    var lastScrollTop = scrollEl._escLastScroll || 0;
+    // Skip micro-jitter (sub-4px scrolls) — saves processing on iOS
+    // momentum-bounce frames and trackpad nudges.
+    if (Math.abs(currentScrollTop - lastScrollTop) < MIN_SCROLL_DELTA) return;
+    scrollEl._escLastScroll = currentScrollTop;
+
     if (_rafPending) return;
     _rafPending = true;
     requestAnimationFrame(function() {
       _rafPending = false;
-      processScroll(e.target);
+      processScroll(scrollEl);
     });
   }
 
@@ -668,6 +716,11 @@ function timeAgo(dateStr) {
     if (el._esc) return;
     if (el.closest('#screen-chat') || el.closest('#screen-bubble-chat')) return;
     el.addEventListener('scroll', onScroll, { passive: true });
+    // Watch for DOM changes inside this scroll container — invalidate
+    // cached item list when content changes (filtering, list updates).
+    var mo = new MutationObserver(function() { invalidateItems(el); });
+    mo.observe(el, { childList: true, subtree: true });
+    el._escMo = mo;
     el._esc = true;
   }
 
@@ -760,7 +813,13 @@ var dbActions = {
         bubble_id: bubbleId,
         user_id: currentUser.id
       });
-      if (error && !String(error.message || '').includes('duplicate')) {
+      if (error) {
+        if (String(error.message || '').includes('duplicate')) {
+          // Already a member — not a fresh join. Track separately so
+          // analytics for "new joins" stay clean.
+          trackEvent('bubble_join_duplicate', { bubble_id: bubbleId, source: source });
+          return { ok: true, duplicate: true };
+        }
         errorToast('save', error); return { ok: false, error: error };
       }
       trackEvent('bubble_joined', { bubble_id: bubbleId, source: source });
@@ -1061,16 +1120,19 @@ var dbActions = {
   async toggleReaction(postId) {
     if (!currentUser || !postId) return { ok: false };
     try {
-      var { data: existing } = await sb.from('bubble_post_reactions')
+      var { data: existing, error: lookupErr } = await sb.from('bubble_post_reactions')
         .select('id').eq('post_id', postId).eq('user_id', currentUser.id).maybeSingle();
+      if (lookupErr) { errorToast('save', lookupErr); return { ok: false, error: lookupErr }; }
       if (existing) {
-        await sb.from('bubble_post_reactions').delete().eq('id', existing.id);
+        var { error: delErr } = await sb.from('bubble_post_reactions').delete().eq('id', existing.id);
+        if (delErr) { errorToast('save', delErr); return { ok: false, error: delErr }; }
         return { ok: true, liked: false };
       } else {
-        await sb.from('bubble_post_reactions').insert({ post_id: postId, user_id: currentUser.id });
+        var { error: insErr } = await sb.from('bubble_post_reactions').insert({ post_id: postId, user_id: currentUser.id });
+        if (insErr) { errorToast('save', insErr); return { ok: false, error: insErr }; }
         return { ok: true, liked: true };
       }
-    } catch(e) { logError('dbActions.toggleReaction', e); return { ok: false, error: e }; }
+    } catch(e) { logError('dbActions.toggleReaction', e); errorToast('save', e); return { ok: false, error: e }; }
   }
 };
 

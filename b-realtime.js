@@ -1059,19 +1059,40 @@ var _dmTypingTimer = null;
 // ── Long-press context menu for DM messages ──
 var _dmLongPressTimer = null;
 var _dmLongPressId = null;
+var _dmLongPressSelMon = null;
 
 function dmTouchStart(event, msgId, isSent) {
+  // If user is interacting with text selection (e.g. tapping inside selected range), don't fire
+  var sel = window.getSelection();
+  if (sel && !sel.isCollapsed) return;
+
+  // Active monitor: cancel timer if iOS starts a selection during the long-press window.
+  // Polling is cheap and catches the case where selectstart event fires too late
+  // or doesn't propagate to our handler.
+  _dmLongPressSelMon = setInterval(function() {
+    var s = window.getSelection();
+    if (s && (s.toString() || !s.isCollapsed)) {
+      // iOS started selecting — abort our menu so we don't collide
+      dmTouchEnd();
+    }
+  }, 50);
+
+  // 400ms beats iOS native text-selection threshold (~600-700ms)
   _dmLongPressTimer = setTimeout(function() {
     dmLongPress(msgId, isSent);
-  }, 500);
+  }, 400);
 }
 
 function dmTouchEnd() {
   if (_dmLongPressTimer) { clearTimeout(_dmLongPressTimer); _dmLongPressTimer = null; }
+  if (_dmLongPressSelMon) { clearInterval(_dmLongPressSelMon); _dmLongPressSelMon = null; }
 }
 
 function dmLongPress(msgId, isSent) {
-  if (window.getSelection().toString()) return; // Let native text selection work
+  // Check both selection text AND collapsed state — iOS may have started selection
+  // even if the resulting string is briefly empty mid-gesture
+  var sel = window.getSelection();
+  if (sel && (sel.toString() || !sel.isCollapsed)) return; // Let native text selection work
   _dmLongPressId = msgId;
   if (navigator.vibrate) navigator.vibrate(10);
 

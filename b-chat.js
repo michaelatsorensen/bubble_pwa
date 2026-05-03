@@ -1389,17 +1389,32 @@ async function bcReact(emoji) {
   if (!bcCurrentMsgId) return;
   try {
     // Check if user already reacted with this emoji
-    const { data: existing } = await sb.from('bubble_message_reactions')
+    const { data: existing, error: lookupErr } = await sb.from('bubble_message_reactions')
       .select('id').eq('message_id', bcCurrentMsgId).eq('user_id', currentUser.id).eq('emoji', emoji).maybeSingle();
+    if (lookupErr) {
+      logError("bcReact:lookup", lookupErr);
+      showErrorToast(t('err_reaction_failed'));
+      return;
+    }
     if (existing) {
       // Remove reaction
-      await sb.from('bubble_message_reactions').delete().eq('id', existing.id);
+      const { error: delErr } = await sb.from('bubble_message_reactions').delete().eq('id', existing.id);
+      if (delErr) {
+        logError("bcReact:delete", delErr);
+        showErrorToast(t('err_reaction_failed'));
+        return;
+      }
     } else {
       // Add reaction
-      await sb.from('bubble_message_reactions').insert({ message_id: bcCurrentMsgId, user_id: currentUser.id, emoji });
+      const { error: insErr } = await sb.from('bubble_message_reactions').insert({ message_id: bcCurrentMsgId, user_id: currentUser.id, emoji });
+      if (insErr) {
+        logError("bcReact:insert", insErr);
+        showErrorToast(t('err_reaction_failed'));
+        return;
+      }
     }
     await bcLoadReactions(bcCurrentMsgId);
-  } catch(e) { logError("bcReact", e); }
+  } catch(e) { logError("bcReact", e); showErrorToast(t('err_reaction_failed')); }
 }
 
 async function bcLoadReactions(msgId) {

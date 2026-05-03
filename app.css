@@ -913,7 +913,7 @@ a.person-action-btn { text-decoration:none; }
 .conv-avatar-wrap { position:relative; flex-shrink:0; }
 .conv-online-dot { position:absolute; bottom:1px; right:1px; width:10px; height:10px; border-radius:50%; background:#1A9E8E; border:2px solid white; }
 /* Long-press context overlay */
-.dm-ctx-overlay { position:fixed; inset:0; z-index:600; background:rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; }
+.dm-ctx-overlay { position:fixed; inset:0; z-index:600; background:rgba(0,0,0,0.15); }
 .dm-ctx-menu { background:white; border-radius:12px; border:0.5px solid rgba(0,0,0,0.08); overflow:hidden; min-width:160px; margin-top:6px; }
 .dm-ctx-menu button { width:100%; padding:11px 16px; border:none; background:white; font-size:0.82rem; text-align:left; cursor:pointer; font-family:'Figtree',sans-serif; color:var(--text); border-bottom:0.5px solid rgba(0,0,0,0.06); display:flex; align-items:center; gap:8px; }
 .dm-ctx-menu button:last-child { border-bottom:none; }
