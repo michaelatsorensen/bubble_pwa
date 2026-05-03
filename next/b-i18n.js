@@ -452,6 +452,7 @@ da: {
   err_open_bubble: 'Kunne ikke åbne boblen',
   err_join_failed: 'Kunne ikke tilmelde dig boblen',
   err_checkin_failed: 'Tilmeldt — men check-in fejlede',
+  err_reaction_failed: 'Kunne ikke gemme reaktion',
   err_file_link: 'Kunne ikke generere fil-link',
   err_push_activate: 'Kunne ikke aktivere notifikationer',
   // Validation
@@ -1095,6 +1096,7 @@ en: {
   err_open_bubble: 'Could not open the bubble',
   err_join_failed: 'Could not join the bubble',
   err_checkin_failed: 'Joined — but check-in failed',
+  err_reaction_failed: 'Could not save reaction',
   err_file_link: 'Could not generate file link',
   err_push_activate: 'Could not activate notifications',
   val_accept_terms: 'You must accept the terms',

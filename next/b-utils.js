@@ -1148,16 +1148,19 @@ var dbActions = {
   async toggleReaction(postId) {
     if (!currentUser || !postId) return { ok: false };
     try {
-      var { data: existing } = await sb.from('bubble_post_reactions')
+      var { data: existing, error: lookupErr } = await sb.from('bubble_post_reactions')
         .select('id').eq('post_id', postId).eq('user_id', currentUser.id).maybeSingle();
+      if (lookupErr) { errorToast('save', lookupErr); return { ok: false, error: lookupErr }; }
       if (existing) {
-        await sb.from('bubble_post_reactions').delete().eq('id', existing.id);
+        var { error: delErr } = await sb.from('bubble_post_reactions').delete().eq('id', existing.id);
+        if (delErr) { errorToast('save', delErr); return { ok: false, error: delErr }; }
         return { ok: true, liked: false };
       } else {
-        await sb.from('bubble_post_reactions').insert({ post_id: postId, user_id: currentUser.id });
+        var { error: insErr } = await sb.from('bubble_post_reactions').insert({ post_id: postId, user_id: currentUser.id });
+        if (insErr) { errorToast('save', insErr); return { ok: false, error: insErr }; }
         return { ok: true, liked: true };
       }
-    } catch(e) { logError('dbActions.toggleReaction', e); return { ok: false, error: e }; }
+    } catch(e) { logError('dbActions.toggleReaction', e); errorToast('save', e); return { ok: false, error: e }; }
   }
 };
 
