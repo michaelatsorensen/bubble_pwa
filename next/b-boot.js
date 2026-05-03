@@ -872,8 +872,10 @@ window.addEventListener('load', async () => {
     }
   }
   await checkAuth();
-  // Note: checkQRJoin() removed — ?join= is now captured above and handled
-  // inside resolvePostAuthDestination() via checkPendingJoin()
+  // Note: ?join= is captured during initial auth flow and handled inside
+  // resolvePostAuthDestination() via showDeepLinkModal() (b-auth.js).
+  // Legacy checkQRJoin() in b-bubbles.js is deprecated as of v8.20 —
+  // see DEPRECATED comment there.
   if (currentUser) {
     // Realtime, badges, preload, pending actions already initialized by resolvePostAuth
     trackEvent('app_open');

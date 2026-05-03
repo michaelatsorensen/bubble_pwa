@@ -792,7 +792,13 @@ var dbActions = {
         bubble_id: bubbleId,
         user_id: currentUser.id
       });
-      if (error && !String(error.message || '').includes('duplicate')) {
+      if (error) {
+        if (String(error.message || '').includes('duplicate')) {
+          // Already a member — not a fresh join. Track separately so
+          // analytics for "new joins" stay clean.
+          trackEvent('bubble_join_duplicate', { bubble_id: bubbleId, source: source });
+          return { ok: true, duplicate: true };
+        }
         errorToast('save', error); return { ok: false, error: error };
       }
       trackEvent('bubble_joined', { bubble_id: bubbleId, source: source });

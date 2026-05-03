@@ -1278,6 +1278,13 @@ async function downloadQRPdf() {
 // ══════════════════════════════════════════════════════════
 //  AUTO-JOIN VIA QR SCAN
 // ══════════════════════════════════════════════════════════
+// @deprecated as of v8.20 — function is not called from anywhere.
+// ?join= deep-links are captured during auth flow and handled by
+// resolvePostAuthDestination() in b-auth.js, which renders modal via
+// showDeepLinkModal() in b-home.js.
+// Kept temporarily to allow runtime verification before removal.
+// Safe to delete in next major cleanup pass once smoke-tests confirm
+// no orphan callers (e.g. inline onclick handlers).
 async function checkQRJoin() {
   try {
     const params = new URLSearchParams(window.location.search);
