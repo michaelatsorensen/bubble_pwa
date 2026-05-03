@@ -164,6 +164,15 @@ App'en har **to backdrops**:
 - `chat-section-label`: hvid 0.25 → mørk muted på lys bg (v8.13)
 - `bb-sheet` scoped overrides: title, handle, input-label (v8.15)
 - `modal-create-picker` ("Hvad vil du oprette"): white cards → dark glass (v8.16)
+- `bb-sheet-invite`: titel, subtitle, navne, roller, separators, Send-knap til ice-blue (v8.17)
+- `bb-sheet` global text overrides: default white, .text-muted, invite-row, invite-check (v8.17)
+- **Guest flows til variant A (v8.18):**
+  - `.qr-social-proof`: white card → dark glass
+  - `.anon-card`: white card → dark glass
+  - `.anon-card .tag`: scoped isblå chip på dark glass
+  - Linje 505 (Opret profil CTA-card): white → dark glass
+  - Linje 545 (Event-ready QR-card): white → dark glass + bug-fix på role/disclaimer text
+  - "eller"-divider: lys → hvid på dark glass
 
 ### 🟥 Står tilbage — identificerede inkonsistenser
 
