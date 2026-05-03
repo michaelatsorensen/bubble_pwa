@@ -2283,13 +2283,13 @@ function confirmRequestJoin(bubbleId) {
   var bName = bcBubbleData?.name || '';
   var tray = document.createElement('div');
   tray.id = 'request-join-tray';
-  tray.style.cssText = 'position:fixed;bottom:0;left:0;right:0;padding:1.2rem 1rem;background:rgba(255,255,255,0.98);border-top:1px solid var(--glass-border-subtle);box-shadow:0 -4px 20px rgba(0,0,0,0.08);z-index:999;text-align:center;backdrop-filter:blur(12px)';
+  tray.style.cssText = 'position:fixed;bottom:0;left:0;right:0;padding:1.2rem 1rem;background:var(--n3-card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:0.5px solid var(--border-1);box-shadow:0 -4px 20px rgba(0,0,0,0.15);z-index:999;text-align:center;color:rgba(255,255,255,0.95)';
   tray.innerHTML =
-    '<div style="font-size:0.9rem;font-weight:700;margin-bottom:0.2rem">Anmod om medlemskab?</div>' +
-    '<div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.8rem">' + escHtml(bName) + ' er privat — din anmodning sendes til ejeren</div>' +
+    '<div style="font-size:0.9rem;font-weight:700;margin-bottom:0.2rem;color:rgba(255,255,255,0.95)">Anmod om medlemskab?</div>' +
+    '<div style="font-size:0.75rem;color:rgba(255,255,255,0.55);margin-bottom:0.8rem">' + escHtml(bName) + ' er privat — din anmodning sendes til ejeren</div>' +
     '<div style="display:flex;gap:0.5rem;justify-content:center">' +
-      '<button onclick="document.getElementById(\'request-join-tray\').remove();requestJoin(\'' + bubbleId + '\')" style="padding:0.65rem 1.5rem;border-radius:12px;background:var(--gradient-primary);border:none;color:white;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font)">Send anmodning</button>' +
-      '<button onclick="document.getElementById(\'request-join-tray\').remove()" style="padding:0.65rem 1.2rem;border-radius:12px;background:none;border:1px solid var(--glass-border);color:var(--muted);font-size:0.85rem;cursor:pointer;font-family:var(--font)">Annuller</button>' +
+      '<button class="btn-primary" onclick="document.getElementById(\'request-join-tray\').remove();requestJoin(\'' + bubbleId + '\')" style="padding:0.65rem 1.5rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:0;width:auto">Send anmodning</button>' +
+      '<button class="btn-secondary" onclick="document.getElementById(\'request-join-tray\').remove()" style="padding:0.65rem 1.2rem;font-size:0.85rem;cursor:pointer;font-family:var(--font);width:auto">Annuller</button>' +
     '</div>';
   document.body.appendChild(tray);
 }
