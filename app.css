@@ -62,7 +62,7 @@
   --radius-pill: 99px;
 }
 
-html { height:100vh; height:100dvh; overflow:hidden; overscroll-behavior:none; }
+html { height:100vh; overflow:hidden; overscroll-behavior:none; }
 
 /* ── DESKTOP PHONE FRAME ── */
 
@@ -75,7 +75,6 @@ body {
   -webkit-text-size-adjust: 100%;
   margin: 0;
   height: 100vh;
-  height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
 }
