@@ -313,6 +313,8 @@ QR'en er ikke kun til bobler. Den er en **universel introduktions-handling**:
 5. **Mockup → kode** — ingen UI bygges uden visuel review
 6. **Kirurgisk og additiv** — refactor i små batches, aldrig "store omskrivninger"
 7. **Aldrig forced membership** — saved events og bubble membership er separate states. Brugeren ejer beslutningen. Vi tvinger ikke, vi inviterer.
+8. **Aldrig halvt på fundamentet, ofte halvt på toppen** — foundation (datamodel, sikkerhed, async-flows) bygges med livrem og seler. Features (UI, copy, animationer) itereres hurtigt.
+9. **Architecture documentation is part of the product** — ingen foundational ændring er komplet før architecture-map er opdateret. Dokumentation er ikke "efter koden" — det er en del af leverancen.
 
 ### 11.1 Saved events vs bubble membership — to mentale modeller
 
@@ -332,6 +334,28 @@ bubble_members.active       ← rigtig medlem
 ```
 
 `saved_events` kan `link_til` en bubble via `linked_bubble_id`, men er ikke det samme som membership.
+
+### 11.2 Livrem og seler-domæner
+
+Der hvor vi **aldrig gætter** og **altid dokumenterer eksplicit**:
+
+- **Datamodel** — hver entity har eksplicit state-machine
+- **Security** — hver authorization-decision er dokumenteret
+- **RLS policies** — eksporteret og versioneret i repo
+- **Auth flows** — eksplicit state machine, ikke heuristik
+- **Realtime** — event-katalog er autoritativ
+- **Async flows** — race conditions er kortlagt
+- **State ownership** — hver state-variable har én ejer
+- **Write paths** — hver tabel har defineret service
+- **Migration boundaries** — clear cuts mellem PWA og native
+
+Der hvor vi **iterer hurtigt** og **gerne lærer ved at fejle**:
+
+- UI-design og polish
+- Copy og marketing-tekst
+- Animationer og overgange
+- Feature-prioritering (pilot-data informerer)
+- Visual experimenter
 
 ---
 
