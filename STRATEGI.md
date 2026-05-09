@@ -335,34 +335,39 @@ bubble_members.active       ← rigtig medlem
 
 ---
 
-## 12. Roadmap — næste 12 måneder
+## 12. Roadmap — næste 18 måneder
 
 ### Q3 2026 (pilot)
 - Lukke P0-P1 fra rapport ✅ DONE
 - Sønderborg lancering
 - Smoke-test af 4 revenue-streams *konceptuelt* (ikke implementeret)
-- Indsamle pilot-data
+- Indsamle pilot-data — **fokus: kerne-produkt-fit, ikke PWA-friktion**
 
 ### Q4 2026 (post-pilot, sprint 1)
 - **Verified Bubbles MVP** — visuelt mærke, admin-process, pricing
 - Push-arkitektur cleanup (P2)
 - GPS-filtrering på radar
 - Onboarding/consent rewrite
+- **Begynde native-readiness arkitektur-arbejde** (se §14)
 
 ### Q1 2027 (sprint 2)
 - **Billede-import** for arrangører
 - Default draft/privat for nye user-generated events
 - Saved events (deltager-use-case)
+- **Native-rewrite vertical slice begynder parallelt** (onboarding + radar + chat)
 
-### Q2 2027 (sprint 3)
+### Q2 2027 (sprint 3 + native)
 - Profile Views (counter + premium)
 - Corporate Bubbles MVP
 - Ekspansion til 2-3 nye byer
+- **Native rewrite hovedarbejde** (resterende features porteret)
 
-### H2 2027
+### H2 2027 (native release + scale)
+- **Native iOS + Android release på App Store / Play Store**
 - National udrulning (8 byer)
 - Event Bubbles premium-features (reverse QR, insights)
 - Pre-tag arv via verified orgs
+- **PWA continueres som fallback / desktop-experience**
 
 ---
 
@@ -373,6 +378,149 @@ bubble_members.active       ← rigtig medlem
 - **Billede-import** vil generere rod. Verified skal være på plads først.
 - **Hyperlokal moat** er det vigtigste at beskytte — ikke skala.
 - **Møde-graf** (hvem mødte hvem fysisk) er det skjulte data-asset — værn om datakvaliteten.
+- **Native er besluttet** — nye features bør bygges med portability i tankerne (se §14).
+
+---
+
+## 14. Native distribution — bekræftet strategisk path
+
+### 14.1 Beslutning truffet (maj 2026)
+
+Bubble flytter til native iOS + Android distribution i H2 2027. PWA fortsætter som fallback og desktop-experience, men native bliver primær mobile platform.
+
+**Beslutningsgrundlag:**
+
+1. **Word-of-mouth skalerbarhed** kræver App Store-distribution
+   Bubble's revenue forecast (90K → 5.75M DKK over 4 år) forudsætter organisk vækst. PWA's installations-friktion (~50% drop-off på "Add to Home Screen") er strukturelt inkompatibel med denne vækstmodel.
+
+2. **Tillidsbarriere ved PWA**
+   "Søg efter Bubble i App Store" er drastisk lavere friktion end "gå til bubbleme.dk og installer som PWA". Hver friktions-step koster eksponentielt i konversion.
+
+3. **Discovery-økosystem**
+   App Store giver adgang til discovery-mekanismer der **ikke eksisterer** for PWA: kategorier, anmeldelser, søgning, "også populært i Danmark", cross-installation suggestions. PWA har kun direkte URL-share + SEO + word-of-mouth.
+
+4. **Strukturelle PWA-begrænsninger**
+   - iOS push (flaky, kræver Safari-installation)
+   - Background location (praktisk talt umulig)
+   - Bluetooth/NFC for reverse-QR (ikke tilgængelig)
+   - iOS storage cleanup efter 7 dages inaktivitet
+   - Inkonsistent kameraintegration for billede-import
+
+5. **Native løser device-bugs strukturelt**
+   Eksempel: Ulefone-bruger oplevede nav-bar / chat-input off-screen pga. `100vh` browser-fortolkning. Native frameworks bruger `WindowInsets` (Android) / `SafeAreaInsets` (iOS) og spørger OS direkte. Hele kategorien af viewport-bugs forsvinder.
+
+### 14.2 Hvad native ikke løser
+
+For balance — native er ikke et silver bullet:
+
+- **Foldable phones** kræver explicit håndtering
+- **Tablet layout** kræver explicit design
+- **App Store/Play Store reviews** tager 1-7 dage per opdatering
+- **Apple's 30% provision** på in-app payments (relevant for Profile Views, Verified Bubbles)
+- **Specifikke producent-bugs** kan stadig opstå (Samsung One UI, Xiaomi MIUI)
+- **App Store discovery** kræver ASO-arbejde (egen disciplin)
+- **Hyperlokal discovery** er svag i App Store (ingen "apps for Sønderborg"-kategori)
+
+### 14.3 Tech-stack valg (foreløbig)
+
+**Anbefaling: React Native + Expo + TypeScript**
+
+**Argumenter:**
+- Én kodebase til iOS + Android + Web
+- Genbrug af Supabase-klient
+- Genbrug af forretningslogik fra prod/next
+- Stærkt ecosystem til realtime, navigation, state
+- Solo-founder venligt (ikke dobbelt vedligehold)
+- Lettere at hyre senere (større dev-pool end Swift+Kotlin)
+
+**Konsekvenser at acceptere:**
+- Real-time animation-performance kan være lavere end native-native
+- Visse libraries (Bluetooth, NFC, Camera) kan være halvfærdige
+- Cross-platform consistency kræver disciplin
+
+**Beslutning bekræftes** efter pilot-data og før Q1 2027 vertical slice.
+
+### 14.4 Pilot-data der informerer native-prioritering
+
+Vi måler **ikke** længere "om native er rigtigt" (det er besluttet). Vi måler **hvad vi skal bygge native** og **i hvilken prioritet**.
+
+**Konkrete pilot-måleparametre:**
+
+#### A. Kerne-loop adoption
+- **Bobler oprettet** per uge — vækstrate
+- **Events oprettet** per uge
+- **Bubble-medlemskaber** per bruger (gennemsnit)
+- **Active days** per bruger over 30 dage
+- **Drop-off i onboarding** — hvor mange færdiggør profil?
+
+#### B. Feature-engagement
+- **QR scans** per uge (live event check-in)
+- **DM-beskeder** sendt per uge
+- **Bubble chat-beskeder** per uge
+- **Radar-tap rate** — hvor ofte åbner brugere radar?
+- **Saved contacts** per bruger
+
+#### C. Word-of-mouth signaler
+- **Invitations sendt** per bruger
+- **Invitation conversion** — hvor mange klikker linket?
+- **Conversion fra klik → installeret PWA** — hovedfokus
+- **Signups med "indbudt af"** felt udfyldt
+- **Sønderborg-only retention vs. udefra-trafik**
+
+#### D. Friktion og fejl
+- **Crashes** per session
+- **Push notifications received vs. expected**
+- **Device-specifikke issues** (logbog over Ulefone-style bugs)
+- **Browser-specifikke issues** (Chrome vs. Safari vs. Samsung Internet)
+
+**Hvad disse data fortæller os:**
+
+- **A** → Hvilke features skal være KERNE i v1 native
+- **B** → Hvilke features kan vente til v1.1+
+- **C** → Hvor stor er PWA-friktionen reelt? Bekræfter eller udfordrer beslutningen
+- **D** → Hvilke device-edge-cases skal native specifikt håndtere
+
+**Datavalidering før native-rewrite:**
+
+Hvis pilot viser:
+- Kerne-loop fungerer (A er solid)
+- Word-of-mouth virker trods PWA-friktion (C er positiv)
+- Ingen kritiske strukturelle problemer (D er manageable)
+
+→ Native-rewrite er bekræftet path med høj sikkerhed.
+
+Hvis pilot overrasker:
+- Lavt engagement på kerne-loop (A er svag)
+- Ingen word-of-mouth selv blandt aktive (C signaler andet problem)
+- Mange producent-bugs vi ikke kan fixe i PWA (D er kritisk)
+
+→ Vi reviderer beslutning. Måske skal kerne-produkt fixes før rewrite. Måske er native-prioritet endnu højere.
+
+**Praktisk:** Pilot-målingerne implementeres via `trackEvent()` der allerede er etableret i kodebasen. Vi tilføjer manglende events der mangler tracking, men ændrer ikke produktet for målingens skyld.
+
+### 14.5 Arkitektur-principper for native-readiness
+
+Nye features bygges med native-portability i tankerne:
+
+1. **Forretningslogik må aldrig leve i UI-kode**
+   Skal kunne flyttes til React Native uden refactor.
+
+2. **Single source of truth for state**
+   appState pattern fortsætter, ikke spredte globals.
+
+3. **Dataflow: Supabase → service → state → UI**
+   UI er rendering-lag, ikke data-fetcher.
+
+4. **Realtime abstraktion**
+   Subscriptions går gennem central handler, ikke direkte i screens.
+
+5. **Skema-stabilitet**
+   Undgå breaking schema changes der gør native-migration svær.
+
+6. **Domain types eksplicit**
+   Hver entity har klar shape (User, Bubble, Event, SavedEvent, etc.).
+
+Disse principper er **også** god hygiejne for nuværende kodebase. Vi taber intet ved at følge dem nu.
 
 ---
 
