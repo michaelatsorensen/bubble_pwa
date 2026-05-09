@@ -1,16 +1,23 @@
 # Bubble — Auto-generated File Stats
 
 > **AUTO-GENERATED** · Do not edit manually.  
-> Generated: 2026-05-09 16:52:12 UTC · Commit: `3c6de14` · Branch: `main`  
+> Generated: 2026-05-09 20:59:52 UTC · Commit: `8efed76` · Branch: `main`  
 > Generator: `scripts/extract-arch-stats.sh`
 
+## 📜 Rule for this document
+
+> **This file contains only mechanically extractable facts.**  
+> **If a section requires interpretation, it belongs in `ARCHITECTURE-MAP.md` instead.**
+
 This document is mechanically extracted from the codebase on every push.
-It contains only objectively verifiable data — no interpretations.
+It contains only objectively verifiable data — no interpretations, no
+assumptions, no semantic analysis.
 
 For semantic architecture documentation, see:
 - `ARCHITECTURE-MAP.md` (foundation map, manually maintained)
 - `ARCHITECTURE-LOG.md` (architecture decisions, manually maintained)
 - `STRATEGI.md` (product strategy, manually maintained)
+- `OPEN-QUESTIONS.md` (open arch questions, manually maintained)
 
 ---
 
@@ -313,12 +320,166 @@ Tracking technical debt comments in codebase:
 
 ---
 
+## 11. RPC Calls
+
+Postgres RPC functions invoked via `sb.rpc('function_name')`:
+
+| RPC Function | Files using |
+|---|---|
+| `count_new_unique_members` | b-chat.js |
+| `count_unique_members` | b-chat.js |
+| `get_latest_bubble_msg_times` | b-home.js |
+
+---
+
+## 12. Storage Usage
+
+Supabase Storage buckets accessed via `sb.storage.from('bucket')`:
+
+### 12.1 Buckets used
+
+| Bucket | Files using |
+|---|---|
+| `bubble-files` | b-auth.js,b-bubbles.js,b-chat.js,b-messages.js,b-onboarding.js |
+
+### 12.2 Storage operations per file
+
+Only counts methods called **on storage buckets** (e.g.,
+`sb.storage.from(...).upload()`). Excludes generic `.remove()`
+on arrays/elements.
+
+| File | upload | download | createSignedUrl | getPublicUrl |
+|---|---:|---:|---:|---:|
+| `b-auth.js` | 1 | 0 | 0 | 1 |
+| `b-bubbles.js` | 1 | 0 | 0 | 1 |
+| `b-chat.js` | 1 | 0 | 0 | 1 |
+| `b-messages.js` | 1 | 0 | 0 | 1 |
+| `b-onboarding.js` | 1 | 0 | 0 | 1 |
+
+---
+
+## 13. Auth Mutations
+
+State-changing auth calls (`sb.auth.X(...)`). Read-only calls like
+`getUser()` and `getSession()` are excluded — only mutations.
+
+| Auth method | Files using |
+|---|---|
+| `signInWithPassword` | b-auth.js |
+| `signUp` | b-auth.js |
+| `signOut` | b-admin.js,b-auth.js,b-onboarding.js |
+| `signInWithOAuth` | b-auth.js |
+| `resetPasswordForEmail` | b-auth.js |
+
+### 13.1 onAuthStateChange listeners
+
+Files registering auth state change listeners:
+
+```
+b-auth.js
+```
+
+---
+
+## 14. DOM Event Contracts
+
+Inline HTML event handlers. These are implicit contracts between HTML and JS —
+if the JS function is renamed, the HTML breaks silently.
+
+For native (React Native), every inline handler must be replaced with a
+prop-based handler (`onPress={...}`).
+
+### 14.1 Inline event handlers in index.html
+
+| Event type | Count |
+|---|---:|
+| `onclick="..."` | 202 |
+| `onchange="..."` | 4 |
+| `onkeydown="..."` | 3 |
+| `oninput="..."` | 8 |
+| `onfocus="..."` | 2 |
+
+### 14.2 Inline event handlers in landing.html
+
+| Event type | Count |
+|---|---:|
+| `onclick="..."` | 8 |
+
+### 14.3 Top function names called from inline onclick
+
+(Only names with `()` immediately after — most reliable)
+
+| Function | Calls in HTML |
+|---|---:|
+| `if()` | 16 |
+| `setupGoToStep()` | 15 |
+| `closeModal()` | 9 |
+| `pickSetupLifestage()` | 8 |
+| `goTo()` | 8 |
+| `spFilter()` | 5 |
+| `filterRadarHome()` | 5 |
+| `skipSetupSheet()` | 4 |
+| `navBack()` | 4 |
+| `closeChatMenu()` | 4 |
+| `bcSwitchTab()` | 4 |
+| `bbClose()` | 4 |
+| `welcomeGo()` | 3 |
+| `psClose()` | 3 |
+| `profSwitchTab()` | 3 |
+| `hsToggle()` | 3 |
+| `closeRadarPerson()` | 3 |
+| `closeLiveCheckoutTray()` | 3 |
+| `addChipFromBtn()` | 3 |
+| `viewAvatarFull()` | 2 |
+
+---
+
+## 15. Per-Table Write Locations
+
+For each Supabase table, which files perform writes (insert/update/upsert/delete).
+
+This is the most important section for native rewrite — it shows where
+business logic for each entity lives. Tables written from many files are
+candidates for **service-layer extraction** (e.g., `ProfileService`,
+`BubbleService`).
+
+| Table | Insert | Update | Upsert | Delete | Write-spread |
+|---|---|---|---|---|---:|
+| `analytics` | b-boot.js | _—_ | _—_ | _—_ | 1 |
+| `blocked_users` | _—_ | _—_ | b-profile.js | _—_ | 1 |
+| `bubble_invitations` | b-profile.js, b-utils.js | b-utils.js | _—_ | b-bubbles.js | 3 |
+| `bubble_members` | b-bubbles.js, b-profile.js, b-utils.js | b-boot.js, b-bubbles.js, b-chat.js, b-notifications.js, b-utils.js | b-utils.js | b-boot.js, b-bubbles.js, b-chat.js, b-notifications.js, b-utils.js | 6 |
+| `bubble_message_edits` | b-chat.js | _—_ | _—_ | _—_ | 1 |
+| `bubble_message_reactions` | b-chat.js | _—_ | _—_ | b-chat.js | 1 |
+| `bubble_messages` | b-utils.js | b-chat.js | _—_ | b-bubbles.js, b-utils.js | 3 |
+| `bubble_post_reactions` | b-utils.js | _—_ | _—_ | b-utils.js | 1 |
+| `bubble_posts` | b-utils.js | _—_ | _—_ | b-utils.js | 1 |
+| `bubble_upvotes` | b-bubbles.js | _—_ | _—_ | b-bubbles.js | 1 |
+| `bubbles` | b-bubbles.js, b-profile.js, b-utils.js | b-utils.js | _—_ | b-bubbles.js | 3 |
+| `custom_tags` | b-onboarding.js | b-onboarding.js | _—_ | _—_ | 1 |
+| `error_log` | b-config.js | _—_ | _—_ | _—_ | 1 |
+| `guest_checkins` | _—_ | b-live.js | _—_ | _—_ | 1 |
+| `messages` | b-messages.js, b-utils.js | b-messages.js, b-realtime.js | _—_ | b-messages.js, b-realtime.js, b-utils.js | 3 |
+| `profile_views` | b-profile.js | _—_ | _—_ | _—_ | 1 |
+| `profiles` | _—_ | b-admin.js, b-auth.js, b-home.js, b-onboarding.js, b-profile.js, b-utils.js | b-auth.js, b-onboarding.js, b-profile.js | b-auth.js, b-onboarding.js | 6 |
+| `push_subscriptions` | _—_ | _—_ | b-notifications.js | b-auth.js, b-notifications.js | 2 |
+| `qr_scans` | b-live.js | _—_ | _—_ | _—_ | 1 |
+| `qr_tokens` | b-auth.js, b-utils.js | _—_ | _—_ | _—_ | 2 |
+| `reports` | b-auth.js, b-profile.js, b-utils.js | _—_ | _—_ | _—_ | 3 |
+| `saved_contacts` | _—_ | _—_ | b-utils.js | b-profile.js, b-utils.js | 2 |
+
+**Migration priority:** Tables with high write-spread (4+ files) are
+top candidates for service-layer extraction in native rewrite.
+
+
+---
+
 ## Generation Info
 
 - Script: `scripts/extract-arch-stats.sh`
 - Workflow: `.github/workflows/arch-stats.yml`
-- Generated: 2026-05-09 16:52:12 UTC
-- Commit: `3c6de14`
+- Generated: 2026-05-09 20:59:52 UTC
+- Commit: `8efed76`
 - Branch: `main`
 
 To regenerate locally:

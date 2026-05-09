@@ -33,13 +33,20 @@ cat > "$OUT" << EOF
 > Generated: $TIMESTAMP · Commit: \`$COMMIT\` · Branch: \`$BRANCH\`  
 > Generator: \`scripts/extract-arch-stats.sh\`
 
+## 📜 Rule for this document
+
+> **This file contains only mechanically extractable facts.**  
+> **If a section requires interpretation, it belongs in \`ARCHITECTURE-MAP.md\` instead.**
+
 This document is mechanically extracted from the codebase on every push.
-It contains only objectively verifiable data — no interpretations.
+It contains only objectively verifiable data — no interpretations, no
+assumptions, no semantic analysis.
 
 For semantic architecture documentation, see:
 - \`ARCHITECTURE-MAP.md\` (foundation map, manually maintained)
 - \`ARCHITECTURE-LOG.md\` (architecture decisions, manually maintained)
 - \`STRATEGI.md\` (product strategy, manually maintained)
+- \`OPEN-QUESTIONS.md\` (open arch questions, manually maintained)
 
 ---
 
@@ -303,6 +310,313 @@ for tag in "TODO" "FIXME" "HACK" "XXX"; do
   count=$(grep -rh "$tag" *.js 2>/dev/null | wc -l) || count=0
   echo "| $tag | $count |" >> "$OUT"
 done
+
+# ──────────────────────────────────────────────────────────────
+#  Section 11: RPC Calls
+# ──────────────────────────────────────────────────────────────
+cat >> "$OUT" << 'EOF'
+
+---
+
+## 11. RPC Calls
+
+Postgres RPC functions invoked via `sb.rpc('function_name')`:
+
+| RPC Function | Files using |
+|---|---|
+EOF
+
+# Extract unique RPC function names
+RPCS=$(grep -hoE "\.rpc\(['\"][a-zA-Z_]+['\"]" *.js 2>/dev/null | sed -E "s/\.rpc\(['\"]//; s/['\"]//" | sort -u)
+
+if [ -z "$RPCS" ]; then
+  echo "| _(none detected)_ | — |" >> "$OUT"
+else
+  while IFS= read -r rpc; do
+    [ -z "$rpc" ] && continue
+    files=$(grep -l "\.rpc(['\"]$rpc['\"]" *.js 2>/dev/null | tr '\n' ',' | sed 's/,$//; s/,/, /g')
+    [ -z "$files" ] && files="_—_"
+    echo "| \`$rpc\` | $files |" >> "$OUT"
+  done <<< "$RPCS"
+fi
+
+# ──────────────────────────────────────────────────────────────
+#  Section 12: Storage Usage
+# ──────────────────────────────────────────────────────────────
+cat >> "$OUT" << 'EOF'
+
+---
+
+## 12. Storage Usage
+
+Supabase Storage buckets accessed via `sb.storage.from('bucket')`:
+
+### 12.1 Buckets used
+
+| Bucket | Files using |
+|---|---|
+EOF
+
+BUCKETS=$(grep -hoE "\.storage\.from\(['\"][a-zA-Z_-]+['\"]" *.js 2>/dev/null | sed -E "s/\.storage\.from\(['\"]//; s/['\"]//" | sort -u)
+
+if [ -z "$BUCKETS" ]; then
+  echo "| _(none detected)_ | — |" >> "$OUT"
+else
+  for bucket in $BUCKETS; do
+    files=$(grep -l "\.storage\.from(['\"]$bucket['\"])" *.js 2>/dev/null | tr '\n' ', ' | sed 's/,$//')
+    echo "| \`$bucket\` | $files |" >> "$OUT"
+  done
+fi
+
+cat >> "$OUT" << 'EOF'
+
+### 12.2 Storage operations per file
+
+Only counts methods called **on storage buckets** (e.g.,
+`sb.storage.from(...).upload()`). Excludes generic `.remove()`
+on arrays/elements.
+
+| File | upload | download | createSignedUrl | getPublicUrl |
+|---|---:|---:|---:|---:|
+EOF
+
+for f in *.js; do
+  [ -f "$f" ] || continue
+  # Count storage operations - look for patterns near .storage.from
+  upload=$(grep -E "\.storage\.from\([^)]+\)" "$f" 2>/dev/null | grep -c "\.upload(" 2>/dev/null) || upload=0
+  # Easier: count .upload( in files that use storage (false positives possible but lower)
+  if ! grep -q "\.storage\." "$f" 2>/dev/null; then
+    upload=0
+  else
+    # Count upload near storage usage
+    upload=$(grep -A 3 "\.storage\.from" "$f" 2>/dev/null | grep -c "\.upload(") || upload=0
+    download=$(grep -A 3 "\.storage\.from" "$f" 2>/dev/null | grep -c "\.download(") || download=0
+    signed=$(grep -c "createSignedUrl" "$f" 2>/dev/null) || signed=0
+    publicUrl=$(grep -c "getPublicUrl" "$f" 2>/dev/null) || publicUrl=0
+  fi
+  
+  if grep -q "\.storage\." "$f" 2>/dev/null; then
+    download=$(grep -A 3 "\.storage\.from" "$f" 2>/dev/null | grep -c "\.download(") || download=0
+    signed=$(grep -c "createSignedUrl" "$f" 2>/dev/null) || signed=0
+    publicUrl=$(grep -c "getPublicUrl" "$f" 2>/dev/null) || publicUrl=0
+    
+    total=$((upload + download + signed + publicUrl))
+    if [ "$total" -gt 0 ]; then
+      echo "| \`$f\` | $upload | $download | $signed | $publicUrl |" >> "$OUT"
+    fi
+  fi
+done
+
+# ──────────────────────────────────────────────────────────────
+#  Section 13: Auth Mutations
+# ──────────────────────────────────────────────────────────────
+cat >> "$OUT" << 'EOF'
+
+---
+
+## 13. Auth Mutations
+
+State-changing auth calls (`sb.auth.X(...)`). Read-only calls like
+`getUser()` and `getSession()` are excluded — only mutations.
+
+| Auth method | Files using |
+|---|---|
+EOF
+
+# Mutating auth methods we care about
+AUTH_METHODS="signInWithPassword signUp signOut signInWithOAuth signInWithOtp resetPasswordForEmail updateUser refreshSession setSession verifyOtp"
+
+for method in $AUTH_METHODS; do
+  files=$(grep -l "auth\.$method(" *.js 2>/dev/null | tr '\n' ', ' | sed 's/,$//')
+  if [ -n "$files" ]; then
+    echo "| \`$method\` | $files |" >> "$OUT"
+  fi
+done
+
+cat >> "$OUT" << 'EOF'
+
+### 13.1 onAuthStateChange listeners
+
+Files registering auth state change listeners:
+
+EOF
+
+echo '```' >> "$OUT"
+grep -l "onAuthStateChange" *.js 2>/dev/null >> "$OUT" || echo "_(none)_" >> "$OUT"
+echo '```' >> "$OUT"
+
+# ──────────────────────────────────────────────────────────────
+#  Section 14: DOM Event Contracts
+# ──────────────────────────────────────────────────────────────
+cat >> "$OUT" << 'EOF'
+
+---
+
+## 14. DOM Event Contracts
+
+Inline HTML event handlers. These are implicit contracts between HTML and JS —
+if the JS function is renamed, the HTML breaks silently.
+
+For native (React Native), every inline handler must be replaced with a
+prop-based handler (`onPress={...}`).
+
+### 14.1 Inline event handlers in index.html
+
+| Event type | Count |
+|---|---:|
+EOF
+
+EVENTS="onclick onchange onsubmit onkeydown oninput onfocus onblur ondblclick onmouseover onmouseout"
+
+for event in $EVENTS; do
+  count=$(grep -c "$event=\"" index.html 2>/dev/null) || count=0
+  if [ "$count" -gt 0 ]; then
+    echo "| \`$event=\"...\"\` | $count |" >> "$OUT"
+  fi
+done
+
+cat >> "$OUT" << 'EOF'
+
+### 14.2 Inline event handlers in landing.html
+
+| Event type | Count |
+|---|---:|
+EOF
+
+for event in $EVENTS; do
+  count=$(grep -c "$event=\"" landing.html 2>/dev/null) || count=0
+  if [ "$count" -gt 0 ]; then
+    echo "| \`$event=\"...\"\` | $count |" >> "$OUT"
+  fi
+done
+
+cat >> "$OUT" << 'EOF'
+
+### 14.3 Top function names called from inline onclick
+
+(Only names with `()` immediately after — most reliable)
+
+| Function | Calls in HTML |
+|---|---:|
+EOF
+
+# Extract function names from inline onclick — pattern: onclick="funcName(
+ONCLICK_FNS=$(grep -hoE 'onclick="[a-zA-Z_]+\(' index.html landing.html 2>/dev/null | \
+  sed -E 's/onclick="//; s/\($//' | sort | uniq -c | sort -rn | head -20)
+
+if [ -z "$ONCLICK_FNS" ]; then
+  echo "| _(none detected)_ | — |" >> "$OUT"
+else
+  echo "$ONCLICK_FNS" | while read count fn; do
+    echo "| \`$fn()\` | $count |" >> "$OUT"
+  done
+fi
+
+# ──────────────────────────────────────────────────────────────
+#  Section 15: Per-Table Write Locations
+# ──────────────────────────────────────────────────────────────
+cat >> "$OUT" << 'EOF'
+
+---
+
+## 15. Per-Table Write Locations
+
+For each Supabase table, which files perform writes (insert/update/upsert/delete).
+
+This is the most important section for native rewrite — it shows where
+business logic for each entity lives. Tables written from many files are
+candidates for **service-layer extraction** (e.g., `ProfileService`,
+`BubbleService`).
+
+| Table | Insert | Update | Upsert | Delete | Write-spread |
+|---|---|---|---|---|---:|
+EOF
+
+# Get unique table names
+TABLES=$(grep -hoE "\.from\(['\"][a-z_]+['\"]\)" *.js 2>/dev/null | sed -E "s/\.from\(['\"]//; s/['\"]\)//" | sort -u)
+
+# For each table, check which files call which write operations
+for table in $TABLES; do
+  insert_files=""
+  update_files=""
+  upsert_files=""
+  delete_files=""
+  
+  for f in *.js; do
+    [ -f "$f" ] || continue
+    
+    # Check if this file uses this table
+    if grep -q "\.from(['\"]$table['\"])" "$f" 2>/dev/null; then
+      # Check what kind of writes (using awk to look for table.from + write within reasonable distance)
+      # Simpler approach: if file has both .from('table') and .insert/.update/etc, count it
+      
+      # Count writes near the table reference using awk
+      ins=$(awk -v tbl="$table" '
+        /\.from\([\x27\x22]/ { 
+          if (index($0, tbl)) in_table=1; else in_table=0
+        }
+        in_table && /\.insert\(/ { count++; in_table=0 }
+        END { print count+0 }
+      ' "$f" 2>/dev/null) || ins=0
+      
+      upd=$(awk -v tbl="$table" '
+        /\.from\([\x27\x22]/ { 
+          if (index($0, tbl)) in_table=1; else in_table=0
+        }
+        in_table && /\.update\(/ { count++; in_table=0 }
+        END { print count+0 }
+      ' "$f" 2>/dev/null) || upd=0
+      
+      ups=$(awk -v tbl="$table" '
+        /\.from\([\x27\x22]/ { 
+          if (index($0, tbl)) in_table=1; else in_table=0
+        }
+        in_table && /\.upsert\(/ { count++; in_table=0 }
+        END { print count+0 }
+      ' "$f" 2>/dev/null) || ups=0
+      
+      del=$(awk -v tbl="$table" '
+        /\.from\([\x27\x22]/ { 
+          if (index($0, tbl)) in_table=1; else in_table=0
+        }
+        in_table && /\.delete\(/ { count++; in_table=0 }
+        END { print count+0 }
+      ' "$f" 2>/dev/null) || del=0
+      
+      if [ "$ins" -gt 0 ]; then insert_files="$insert_files $f"; fi
+      if [ "$upd" -gt 0 ]; then update_files="$update_files $f"; fi
+      if [ "$ups" -gt 0 ]; then upsert_files="$upsert_files $f"; fi
+      if [ "$del" -gt 0 ]; then delete_files="$delete_files $f"; fi
+    fi
+  done
+  
+  # Format file lists (trim, uniq, comma-separate)
+  insert_files=$(echo $insert_files | tr ' ' '\n' | sort -u | tr '\n' ',' | sed 's/,$//; s/,/, /g')
+  update_files=$(echo $update_files | tr ' ' '\n' | sort -u | tr '\n' ',' | sed 's/,$//; s/,/, /g')
+  upsert_files=$(echo $upsert_files | tr ' ' '\n' | sort -u | tr '\n' ',' | sed 's/,$//; s/,/, /g')
+  delete_files=$(echo $delete_files | tr ' ' '\n' | sort -u | tr '\n' ',' | sed 's/,$//; s/,/, /g')
+  
+  # Calculate spread (how many unique files write to this table)
+  all_writers=$(echo "$insert_files $update_files $upsert_files $delete_files" | tr ' ,' '\n\n' | grep -v '^$' | sort -u | wc -l | tr -d ' ')
+  
+  # Only show tables with at least one write
+  if [ -n "$insert_files$update_files$upsert_files$delete_files" ]; then
+    # Use _(none)_ if empty
+    [ -z "$insert_files" ] && insert_files="_—_"
+    [ -z "$update_files" ] && update_files="_—_"
+    [ -z "$upsert_files" ] && upsert_files="_—_"
+    [ -z "$delete_files" ] && delete_files="_—_"
+    
+    echo "| \`$table\` | $insert_files | $update_files | $upsert_files | $delete_files | $all_writers |" >> "$OUT"
+  fi
+done
+
+cat >> "$OUT" << 'EOF'
+
+**Migration priority:** Tables with high write-spread (4+ files) are
+top candidates for service-layer extraction in native rewrite.
+
+EOF
 
 # ──────────────────────────────────────────────────────────────
 #  Footer
