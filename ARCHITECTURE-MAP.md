@@ -833,7 +833,7 @@ Plus **next/-folder** specifikke ændringer.
 
 ## 6. Session Log
 
-### Session 1 — Maj 2026 (denne session)
+### Session 1 — 9. maj 2026 (denne session)
 
 **Foundation lagt:**
 - ✅ Sektion 1: File Inventory (komplet, 25 filer, 25.468 linjer)
@@ -852,6 +852,311 @@ Plus **next/-folder** specifikke ændringer.
 **Total: 7 af 17 JS-filer kataloget med fuld funktions-tabel.**
 
 **Open questions tilføjet:** Q-001 til Q-010
+
+### Session 1.5 — 9. maj 2026 (samme dag, ekstern review integreret)
+
+**Trigger:** Michael uploadede ekstern research-rapport (`docs/external-reviews/2026-05-09-deep-research-report.md`).
+
+**Verifikation:** Sammenlignede rapport mod kodebase:
+- ✅ 17 screens — bekræftet
+- ✅ 22 Supabase tabeller — alle bekræftet
+- ✅ 12 realtime kanal-typer — alle bekræftet
+- ✅ Script load order — bekræftet 1:1
+- ✅ `tag-data.js` mangler i prod-zip — **bekræftet pakke-anomali jeg lavede**
+- ⚠️ Edge functions: rapporten lister 2, faktisk 3 (`send-push` kaldt via `sb.functions.invoke()` blev overset)
+
+**Værdifulde tilføjelser fra rapporten:**
+- localStorage/sessionStorage key-katalog
+- Write-fanout hotspot tabel
+- Realtime event-katalog
+- Boot/auth flow Mermaid-diagrammer
+- Workarounds-tabel med "drop / behold / refaktor"
+
+**Disse integreres i sektion 7-9 nedenfor** med kildekreditering.
+
+---
+
+## 7. localStorage & sessionStorage Keys
+
+*Source: Verificeret + udvidet fra ekstern research-rapport (2026-05-09).*
+
+Bubble bruger browser-storage for både funktionel state og UI-preferences. **For native skal disse splittes** i:
+- Secure storage (auth tokens — håndteres af native auth library)
+- Persisted UI preferences
+- Ephemeral navigation state
+- Backend truth (skal flyttes til Supabase)
+
+### 7.1 localStorage keys
+
+| Key | Owner | Indhold | Native-action |
+|---|---|---|---|
+| `bf_pending_contact` | b-config (flowSet) | Pending contact for post-auth | Eksplicit deep-link intent store |
+| `bf_pending_join` | b-config (flowSet) | Pending bubble join | Eksplicit deep-link intent store |
+| `bf_event_flow` | b-config (flowSet) | I gang med event-onboarding | Auth state machine field |
+| `bf_post_tags_destination` | b-config (flowSet) | Hvor at gå hen efter tag-setup | Auth state machine field |
+| `bubble_lang` | b-i18n | Sprogvalg ('da' or 'en') | Direkte port til i18n library |
+| `bubble_hs_prefs` | b-home | UI preferences (radar, saved, feedback toggles) | UI prefs store |
+| `bubble_notifs_seen` | b-navigation | Sidste tidspunkt notifications blev set | Persisted store |
+| `bubble_stars` | b-profile | Stjerne-rating per kontakt (1-3) | Backend (saved_contacts.rating field?) |
+| `bubble_welcome_card_dismissed` | b-home | Skjul welcome-card | UI prefs |
+| `bubble_welcomed` | b-onboarding | First-run flag | Backend (profiles.welcomed_at) |
+| `bubble_selected_interests` | b-onboarding | Onboarding draft | Backend (profile draft) eller secure storage |
+| `bubble_cookie_ok` | landing.html | GDPR cookie consent | App-permission flow |
+| `bubble_landing_lang` | landing.html | Sprog på landing før login | Native-irrelevant |
+
+### 7.2 sessionStorage keys
+
+| Key | Owner | Indhold | Native-action |
+|---|---|---|---|
+| `bb_route` | b-chat / b-navigation | Genskabe bubble-chat kontekst ved back | Erstat med typed navigation params |
+| `bubble_came_from_landing` | b-boot / b-auth | Undgå auth↔landing reload-loop | Drop — PWA-specifikt |
+| `event_greeting` | b-boot | Pending event greeting for guest flow | Auth state machine field |
+| `event_greeting_id` | b-boot | Bubble ID for pending event greeting | Auth state machine field |
+
+**Vigtig observation:** Funktionel state og UI-preferences er **blandet** i browser storage. Native skal disciplinere dette.
+
+---
+
+## 8. Write-Fanout Hotspots
+
+*Source: Ekstern research-rapport (2026-05-09), verificeret mod kode.*
+
+Det mest arkitektonisk vigtige er ikke bare **hvor der skrives**, men **hvor mange steder samme sandhed skrives fra**.
+
+| Ressource | # Skrive-moduler | Diagnose | Native-action |
+|---|---:|---|---|
+| `profiles` | 6 | Største write-hotspot — auth/home/onboarding/profile/admin/utils | **ProfileService** ejer alle profile-writes |
+| `bubble_members` | 5 | Medlemskab, unread, live, pending, roller, check-in spredt | **BubbleMembershipService** ejer alle |
+| `bubble-files` (storage) | 5 | Upload-mønstre gentages | **FileService / UploadService** centraliserer |
+| `bubble_invitations` | 3 | Delvist centraliseret, delvist spredt | **InvitationService** |
+| `bubble_messages` | 3 | Chat-sandhed delt mellem utils/chat/bubbles | **BubbleChatService** |
+| `bubbles` | 3 | Bubble CRUD både centralt og featurelokalt | **BubbleService** |
+| `messages` | 3 | DM via utils OG direkte fra DM/realtime keystones | **MessagingService** |
+| `reports` | 3 | Rapportering/feedback flere steder | **ReportingService** |
+| `push_subscriptions` | 2 | Logout og push-toggle krydser auth/notifications | **PushService** |
+| `qr_tokens` | 2 | Auth-flow OG utils/create QR | **QRTokenService** |
+
+**Native-implication:** Hver af disse service-grupper bør være **ét repository pr. domain entity** med klar API. Ingen feature-kode skriver direkte til database.
+
+**Status nuværende:** dbActions dækker en del af dette men ikke alt. **Vi har 117 direkte writes uden om dbActions** (memory note 14). Denne tabel hjælper prioritere migration.
+
+---
+
+## 9. Realtime Event Catalog
+
+*Source: Ekstern research-rapport (2026-05-09), verificeret mod kode.*
+
+Bubble har **tre lag realtime**:
+1. **Global app-realtime** i `b-realtime.js`
+2. **Bubble-lokal realtime** i `b-chat.js`
+3. **Broadcast workarounds** for tværbruger-events der ikke kan løses via RLS-filtrerede `postgres_changes`
+
+### 9.1 Realtime kanaler
+
+| Kanal-mønster | Type | Ressource | Formål |
+|---|---|---|---|
+| `rt-live-bubble-{bubbleId}` | INSERT/UPDATE | `bubble_members` | Live member changes i aktiv boble |
+| `rt-messages-{userId}` | INSERT/UPDATE/DELETE | `messages` | DM badges, previews, reaktionsload |
+| `rt-members-{userId}` | INSERT/UPDATE/DELETE | `bubble_members` | Medlemskabsændringer, live-kort, pending/active |
+| `rt-bubbles-deleted-{userId}` | DELETE | `bubbles` | Fjerne slettede bobler |
+| `rt-bubble-msgs-{userId}` | INSERT | `bubble_messages` | Bubble unread i nav/hjem |
+| `rt-invites-{userId}` | INSERT | `bubble_invitations` | Badge og notification refresh |
+| `rt-saved-{userId}` | INSERT | `saved_contacts` | "Saved you" notifikationer |
+| `checkin-notify-{userId}` | broadcast | — | Direkte checkin-notify til bruger |
+| `member-notify-{userId}` | broadcast | — | `approved`, `new_member`, `join_request`, `invite`, `ownership`, `admin` |
+| `dm-notify-{userId}` | broadcast | — | Conversation deleted sync |
+| `bc-{bubbleId}` | INSERT/UPDATE/DELETE | bubble chat-tabeller | Bubble chat lokal realtime runtime |
+| `dmChannelName()` (computed) | broadcast + INSERT | `messages` | Aktiv DM tråd: typing, read receipts, message inserts |
+| `admin-debug-errors` | INSERT | `error_log` | Debug overlay for admin |
+
+### 9.2 Native-implication: Event-katalog
+
+I native skal disse formuleres som **typed events** i en event-bus:
+
+```typescript
+type RealtimeEvent =
+  | { type: 'bubble.member.joined'; bubbleId: string; userId: string }
+  | { type: 'bubble.member.left'; bubbleId: string; userId: string }
+  | { type: 'bubble.message.created'; bubbleId: string; messageId: string }
+  | { type: 'dm.message.created'; conversationId: string; messageId: string }
+  | { type: 'invitation.received'; bubbleId: string; fromUserId: string }
+  | { type: 'contact.saved_by'; userId: string }
+  | { type: 'checkin.notify'; bubbleId: string }
+  | { type: 'member.approved'; bubbleId: string }
+  | { type: 'member.invite'; bubbleId: string; bubbleName: string }
+  | { type: 'member.ownership_transferred'; bubbleId: string }
+  | { type: 'conversation.deleted'; partnerId: string };
+```
+
+Dette eliminerer behov for at hver feature subscriber direkte til `postgres_changes`. Single subscription manager dispatcher events til relevante handlers.
+
+---
+
+## 10. Implicit Logik & Workarounds
+
+*Source: Ekstern research-rapport (2026-05-09), kategoriseret med native-action.*
+
+Disse er **bevidste workarounds** for browser/PWA/Supabase-begrænsninger. For native-rewrite er det vigtigt at forstå **intentionen** — ikke kopiere implementationen.
+
+| Mønster | Hvorfor det findes | Hvor det bor nu | Native-aktion |
+|---|---|---|---|
+| `bubble_came_from_landing` i `sessionStorage` | Undgå auth↔landing reload-loop | boot/auth | **Drop** — PWA-specifikt |
+| Flow flags med TTL i `localStorage` | Overleve OAuth redirect og langsomt net | config/auth/boot | **Erstat** med eksplicit deep-link intent store |
+| `ensureProfileExists()` | OAuth-brugere kan mangle profilrække | auth | **Bevar** som backend bootstrap use-case |
+| `goToThen()` med double `requestAnimationFrame` | Erstatte skrøbelige `setTimeout` navigation races | navigation | **Erstat** med native navigation callbacks |
+| `_navVersion` | Stale render-cancellation | config/navigation/home/notifications | **Bevar idéen** i async viewmodels |
+| `bb_route` i `sessionStorage` | Genskabe bubble-chat kontekst ved back | chat/navigation | **Erstat** med typed navigation params |
+| Update-før-upsert i check-in | Mere RLS-venligt end blind upsert | utils | **Bevar** som repository-policy |
+| Broadcast-kanaler som RLS-workaround | Tværbruger-notify uden direkte row access | realtime/live/bubbles/chat | **Dokumentér** og redesign som event-katalog |
+| Bubble unread via RPC | Billigere end mange lokale queries | home | **Bevar semantik**, flyt til service layer |
+| Avatar "repair" til Supabase storage | Gøre OAuth-avatarer stabile og kontrollerede | onboarding/auth | **Bevar use-case**, portér device-uafhængigt |
+| SW version handshake | Vise update-banner ved PWA mismatch | boot/sw | **Drop implementation**, behold release-aware UX i native |
+
+---
+
+## 11. Boot & Auth Flow Diagrammer
+
+*Source: Ekstern research-rapport (2026-05-09), Mermaid-diagrammer adopteret.*
+
+### 11.1 Boot flow
+
+```mermaid
+flowchart TD
+  Load["window.load"] --> Restore["restoreFlowFromUrl + cameFromLanding"]
+  Restore --> Init["initSupabase"]
+  Init --> Guest{"?event= guest flow?"}
+  Guest -- ja --> Teaser["screen-guest-checkin\nsocial proof + pending_join"]
+  Guest -- nej --> QR{"QR/deep-link anon?"}
+  QR -- ja --> Preview["screen-qr-preview / qr-teaser"]
+  QR -- nej --> Auth["checkAuth()"]
+
+  Auth --> Session{"session findes?"}
+  Session -- nej --> Landing{"må bypass landing?"}
+  Landing -- nej --> Land["redirectToLanding()"]
+  Landing -- ja --> ScreenAuth["screen-auth"]
+
+  Session -- ja --> Ensure["ensureProfileExists()"]
+  Ensure --> Essentials["loadCurrentProfile + tags + blocked"]
+  Essentials --> Onboard{"needs onboarding?"}
+  Onboard -- ja --> ScreenOnb["screen-onboarding"]
+  Onboard -- nej --> Services["preload + realtime + unread + push + live status"]
+  Services --> Route["resolvePostAuthDestination()"]
+  Route --> Result["home / welcome / deep-link modal / push target"]
+```
+
+### 11.2 Event guest flow
+
+```mermaid
+flowchart LR
+  Link["?event=<id|join_code>"] --> Teaser["screen-guest-checkin"]
+  Teaser --> Sign["login / signup / OAuth"]
+  Sign --> Onb["minimal/full onboarding"]
+  Onb --> QR["screen-event-ready\ncreate QR token"]
+  QR --> Open["eventReadyGoToEvent()"]
+  Open --> Bubble["openBubble() / bubble flow"]
+```
+
+**Native-implication:** Disse flows skal formaliseres som **eksplicit state machine** før native rewrite. Rapporten foreslår states:
+
+```
+unauthenticated → authenticating → needs_onboarding → ready
+                                ↘ pending_intent (deep-link join)
+                                ↘ in_event_flow (guest checkin)
+```
+
+---
+
+## 12. Anbefalet Native Vertical Slice (sammenligning)
+
+*Source: Ekstern research-rapport (2026-05-09) vs vores STRATEGI.md.*
+
+### 12.1 Rapportens anbefaling (aggressiv tidsplan)
+
+```mermaid
+gantt
+    dateFormat  YYYY-MM-DD
+    title Bubble native-readiness roadmap (rapport)
+
+    section Kontrakter og arkæologi
+    Schema, RLS, triggers, RPC, functions eksport    :a1, 2026-05-11, 7d
+    Arkitektur-spec: state, writes, realtime, flows  :a2, after a1, 7d
+
+    section Web-stabilisering
+    Centralisering af writes til repositories        :b1, 2026-05-25, 14d
+    Auth/deeplink state machine specifikation        :b2, 2026-05-25, 10d
+    Realtime event-katalog og cleanup-plan           :b3, 2026-05-25, 10d
+
+    section Native foundation
+    Native shell + session/profile stores            :c1, 2026-06-15, 7d
+    Auth + onboarding + home/radar/person            :c2, after c1, 14d
+    Save contact + DM chat                           :c3, after c2, 14d
+
+    section Udvidelse
+    Notifications + push                             :d1, 2026-07-20, 14d
+    Bubble chat lite                                 :d2, after d1, 14d
+    Live/scanner/check-in                            :d3, after d2, 14d
+```
+
+### 12.2 Vores STRATEGI.md plan (forsigtig tidsplan)
+
+| Periode | Aktivitet |
+|---|---|
+| Q3 2026 (jul-sep) | Sønderborg pilot |
+| Q4 2026 (okt-dec) | Verified bubbles MVP + push cleanup |
+| Q1 2027 (jan-mar) | Image-import + saved events + native vertical slice begynder |
+| Q2 2027 (apr-jun) | Native rewrite hovedarbejde |
+| H2 2027 | Native release + national udrulning |
+
+### 12.3 Forskel og diskussion
+
+**Rapportens timeline:** ~3-4 måneder fra nu til første native slice.
+**Vores plan:** ~9-12 måneder fra nu til første native slice.
+
+**Forskellen:** Rapporten antager native er **højeste prioritet straks**. Vores plan placerer pilot + verified bubbles + image-import **før** native.
+
+**Strategisk spørgsmål til Michael:**
+
+Skal vi:
+- **A)** Følge vores STRATEGI.md (pilot først, native efter feature-validering)
+- **B)** Følge rapportens accelererede plan (native foundation parallelt med pilot)
+- **C)** Hybrid (kontrakter NU, pilot fortsætter, native foundation Q4 2026)
+
+**Min anbefaling: C** — fordi:
+- Backend-kontrakt-eksport er **værdi uanset hvad** (selv hvis vi udsætter native)
+- Web-stabilisering (centralisere writes, formaliser state machines) er **nødvendigt** uanset
+- Pilot-data fra Sønderborg har stadig værdi for at validere kerne-loop
+- Q4 2026 native foundation start er kompromis mellem aggressiv og forsigtig
+
+**Q-011: Hvilken vej vælger du?**
+
+---
+
+## 13. Open Questions Specifik til Backend-Kontrakter
+
+*Source: Ekstern research-rapport identificerede backend-blind spots.*
+
+For at gå fra "infereret" til "autoritativ" backend-arkitektur, mangler vi:
+
+### 13.1 Skal eksporteres fra Supabase
+
+- [ ] **Schema dump** — komplet `pg_dump --schema-only` af public schema
+- [ ] **RLS policies** — eksport af `pg_policies` view
+- [ ] **Triggers** — alle trigger-definitioner
+- [ ] **RPC functions** — kildekode for `get_latest_bubble_msg_times`, `count_unique_members`, `count_new_unique_members`
+- [ ] **Storage policies** — `bubble-files` bucket RLS
+- [ ] **Edge function kildekode** — `checkin`, `send-push`, `cleanup-test-user` (ligger på Michaels PC, skal i repo)
+
+### 13.2 Hvorfor det betyder noget
+
+Lige nu inferrerer vi backend-adfærd fra hvordan frontend bruger den. Det er som at gætte huset's tegninger ud fra møblerne. For native-rewrite er **edge cases** (auth-fejl, race conditions, RLS-blokeringer) hvor det vil bide os.
+
+### 13.3 Q-012: Hvornår skal dette ske?
+
+**Min anbefaling:** Inden første native kode skrives. Ikke nødvendigvis denne uge, men inden Q4 2026 hvis vi følger forsigtig plan, eller juni 2026 hvis vi følger aggressiv plan.
+
+**Praktisk:** 2-4 timers arbejde på Supabase Dashboard + kopiere edge functions fra Michaels lokale `C:\Users\freef\bubble-edge\`.
+
+---
 
 ### Session 2 — næste
 
@@ -879,7 +1184,7 @@ Plus **next/-folder** specifikke ændringer.
 
 ### Session 5
 
-**Plan:** 
+**Plan:**
 - next/-folder difference-analyse
 - Cross-file system-views (alle Identity-files samlet, alle Messaging-files samlet, etc.)
 - Komplet entity-relationship diagram

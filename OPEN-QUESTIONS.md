@@ -142,6 +142,39 @@
 
 ---
 
+### Q-011: Native timeline — vælg A/B/C?
+
+**Kontekst:** Ekstern research-rapport foreslår aggressiv tidsplan (native foundation start juni 2026). Vores STRATEGI.md har forsigtig plan (native foundation Q4 2026 efter pilot + verified bubbles + image-import).
+
+**Tre muligheder:**
+- **A)** Følg STRATEGI.md (pilot først, native efter feature-validering Q1 2027+)
+- **B)** Følg rapportens accelererede plan (native foundation parallelt med pilot, juni 2026)
+- **C)** Hybrid (kontrakter NU, pilot fortsætter, native foundation Q4 2026)
+
+**Antagelse jeg fortsætter med:** C — kompromis mellem aggressivt og forsigtigt.
+
+**Påvirkning:** STRUKTURELT VIGTIGT. Ændrer hele arbejdsgangen for resten af 2026.
+
+---
+
+### Q-012: Hvornår eksporteres backend-kontrakter?
+
+**Kontekst:** Ekstern rapport identificerede at vi mangler:
+- Schema dump
+- RLS policies
+- Triggers
+- RPC-funktion-kildekode
+- Edge function-kildekode i repo (ligger på Michaels PC)
+- Storage bucket policies
+
+**Spørgsmål:** Hvornår skal dette ske?
+
+**Antagelse jeg fortsætter med:** Inden første native kode skrives. 2-4 timers arbejde for Michael.
+
+**Påvirkning:** Hvis vi springer over, vil native rewrite have **infererede** backend-kontrakter — bugs i edge cases.
+
+---
+
 *Flere spørgsmål tilføjes løbende mens analysen fortsætter.*
 
 ---
