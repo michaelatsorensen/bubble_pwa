@@ -302,6 +302,32 @@
 
 ---
 
+### 💡 LÆRING — Visual feedback for state changes (v8.17.27 / next-v8.30)
+
+**Dato tilføjet:** 9. maj 2026
+
+**Hvad:** Bruger oprettede konto, satte check mark i terms-checkbox, men "Kom i gang"-knappen ændrede ikke synligt tilstand fra disabled til enabled. Knappen VAR teknisk disabled (HTML disabled-attribut, `disabled=false` i JS), men så **visuelt identisk ud**.
+
+**Root cause:** Ingen CSS for `.btn-primary:disabled`, `.btn-secondary:disabled`, etc. Browseren's default `disabled` styling kunne ikke overskrive custom button styles.
+
+**Hvad det har lært os:**
+- **Visual state change skal være eksplicit** — `disabled` attribut alene er ikke nok hvis CSS overskriver
+- **Klassisk UX-bug pattern** — buttons skal kommunikere state både teknisk OG visuelt
+- **Brugere stoler på visuel feedback** — hvis intet ændrer sig, antager de noget er broken
+- Dette var en **silent bug** der havde levet i kodebasen siden første button styles. Ingen bruger havde rapporteret det indtil nu.
+
+**Hvor det blev fundet:** Sektion 14 i auto-generated file-stats.md viste 202 inline onclick i index.html. Mange af disse forventer disabled-state, men der var ingen styling for det.
+
+**Action for native:**
+- React Native button-komponenter skal **fra start** have eksplicit disabled-variant
+- Hver interactive komponent dokumenteres med states: idle, hover, pressed, disabled, loading
+- "Visible state machine" pattern — UI-state skal være tydelig på alle states, ikke kun success-path
+- Storybook eller lignende component-katalog ville fange dette tidligt
+
+**For PWA:** Fix pushed i v8.17.27 + next-v8.30. CSS-only change, ingen logic.
+
+---
+
 ## Sammenfatning per kategori
 
 **🟢 GENBRUGES (4 entries):** Backend-stack, dbActions pattern, i18n, match algorithm
@@ -310,7 +336,7 @@
 
 **🔴 FORKAST (3 entries):** Inline onclick, 100vh sizing, push-arkitektur
 
-**💡 LÆRING (3 entries):** Mockup-først, kirurgisk og additiv, pre-tag arv
+**💡 LÆRING (5 entries):** Mockup-først, kirurgisk og additiv, pre-tag arv, replicate-not-scale, visual feedback for states
 
 ---
 
