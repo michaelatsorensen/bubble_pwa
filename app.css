@@ -210,6 +210,30 @@ body {
   transform:none;
 }
 
+/* ── DISABLED STATE for action buttons (person-sheet, radar, deep-link modals) ── */
+.person-action-btn:disabled,
+.radar-person-action-btn:disabled,
+.person-sheet-btn:disabled {
+  opacity:0.45;
+  filter:grayscale(0.4);
+  cursor:not-allowed;
+  box-shadow:none;
+}
+
+/* ── DISABLED STATE for specific inline-styled buttons ── */
+/* These are dynamically generated or have inline styles that prevent
+   class-based selectors from catching them. Targeting by ID for safety. */
+#invite-send-btn:disabled,
+#dl-action-btn:disabled,
+#dl-event-primary:disabled,
+#dl-event-secondary:disabled,
+#dl-event-decline:disabled,
+#transfer-confirm-yes:disabled {
+  opacity:0.45;
+  filter:grayscale(0.4);
+  cursor:not-allowed;
+}
+
 /* ── INPUTS ── */
 .input-group { margin-bottom:0.75rem; }
 .input-label { font-size:0.72rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.35rem; display:block; }
