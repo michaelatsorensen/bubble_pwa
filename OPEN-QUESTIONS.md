@@ -186,3 +186,192 @@
 ---
 
 *Vokser løbende. Tjek dette dokument før du svarer — sortér efter ID-nummer.*
+
+---
+
+## Session 2 — Entity Map (9. maj 2026)
+
+### Q-013: Onboarding-status: heuristik → eksplicit enum?
+
+**Kontekst:** Onboarding-status afgøres af `hasName && hasWorkplace && hasTerms` heuristik. Memory note nævner `onboarding_status` enum overvejes (`needs_terms`/`needs_name`/`needs_workplace`/`ready`).
+
+**Spørgsmål:** Skal vi tilføje eksplicit `onboarding_status` kolonne nu, eller vente til native?
+
+**Antagelse:** Vente til native — det er allerede dokumenteret som REDESIGN i ARCHITECTURE-LOG.
+
+**Påvirkning:** Heuristik kan fejle ved race conditions (fx hvis terms_accepted_at sættes før name).
+
+---
+
+### Q-014: GDPR profile deletion — hvordan håndteres det?
+
+**Kontekst:** Profile slettes ALDRIG ifølge entity-map analysen. Kun anonymisering. Men GDPR kræver "right to be forgotten".
+
+**Spørgsmål:** Findes der en delete-flow? Eller er det ikke implementeret endnu?
+
+**Antagelse:** Ikke implementeret. Post-pilot opgave.
+
+**Påvirkning:** GDPR compliance risiko. Skal være på roadmap.
+
+---
+
+### Q-015: Bubble status enum — kun for live, eller udvid?
+
+**Kontekst:** Nuværende kode har `status` på `bubbles` table KUN for live-bubbles. Andre states (ENDED, ARCHIVED) er infereret fra `event_end_date` osv.
+
+**Spørgsmål:** Skal vi tilføje eksplicit `bubble_status` enum til alle bubbles?
+
+**Antagelse:** Ja, for native. Det vil forenkle state-check logic dramatisk.
+
+**Påvirkning:** Migration arbejde + opdatering af alle queries.
+
+---
+
+### Q-016: Live bubble expiration mekanisme?
+
+**Kontekst:** Live bubbles har `expires_at` (6 timer fra start). Hvordan håndhæves dette?
+
+**Spørgsmål:**
+- Background job/cron der sætter status='expired'?
+- DB trigger på timestamp?
+- Eller bare client-side check?
+
+**Antagelse:** Sandsynligvis client-side check. Skal verificeres ved at læse `b-live.js` grundigere i Session 3.
+
+**Påvirkning:** Hvis client-side, kan en bubble forblive "active" hvis ingen tjekker.
+
+---
+
+### Q-017: parent_bubble_id hierarki — max dybde?
+
+**Kontekst:** Bubbles kan have `parent_bubble_id` (hierarkisk). I `createBubble` arves icon fra parent eller grandparent (2 niveauer dybt).
+
+**Spørgsmål:** Er der explicit eller implicit max-dybde? Eller kan det blive 10 niveauer dybt?
+
+**Antagelse:** Ingen explicit max. Implicit 2 niveauer i icon-inheritance, men bubbles selv kan nest dybere.
+
+**Påvirkning:** Performance i discover/list views hvis hierarki bliver dybt.
+
+---
+
+### Q-018: Member admin i én bubble, member i en anden?
+
+**Kontekst:** `role` (admin/member) er per-bubble, så teoretisk ja.
+
+**Spørgsmål:** Bekræft at dette er korrekt og intentionalt.
+
+**Antagelse:** Ja, korrekt. Role er per-membership ikke per-user.
+
+**Påvirkning:** Lav — kun for dokumentations-præcision.
+
+---
+
+### Q-019: User deletion → memberships hvad?
+
+**Kontekst:** Hvis en bruger slettes (auth.users), hvad sker med deres bubble_members rows?
+
+**Spørgsmål:** CASCADE delete? Anonymize?
+
+**Antagelse:** CASCADE delete er sandsynligvis sat op via FK constraints på auth.users.
+
+**Påvirkning:** Påvirker GDPR-deletion design.
+
+---
+
+### Q-020: Inviter deletion → invitations hvad?
+
+**Kontekst:** Hvis user_a inviterer user_b, og user_a slettes — hvad sker med invitationen?
+
+**Spørgsmål:** Bevares invitation med null from_user_id? Eller CASCADE delete?
+
+**Antagelse:** Sandsynligvis CASCADE — invitations er ikke kritisk historiske.
+
+**Påvirkning:** Lav.
+
+---
+
+### Q-021: Invitation expiration?
+
+**Kontekst:** Invitations har ingen automatisk expiration. En invitation fra 2024 kan stadig være pending i 2026.
+
+**Spørgsmål:** Skal vi implementere expiration (fx 30 dage)?
+
+**Antagelse:** Bør implementeres for native. Pilot kan klare sig uden.
+
+**Påvirkning:** UI cleanup + bedre brugeroplevelse.
+
+---
+
+### Q-022: Eksplicit Conversation entity for DMs?
+
+**Kontekst:** DMs er bare messages mellem to brugere. Der er ingen "Conversation" entity. Conversations er computed fra messages.
+
+**Spørgsmål:** Skal vi tilføje eksplicit Conversation entity i native med metadata (last_message_at, total_messages, deleted_for_user_a/b, muted)?
+
+**Antagelse:** Ja, vil gøre DM-listen meget mere effektiv (én row per conversation vs aggregering på hver query).
+
+**Påvirkning:** Datamodel-ændring for native. PWA fortsætter computed approach.
+
+---
+
+### Q-023: User deletion → DMs hvad?
+
+**Kontekst:** Hvis user slettes, hvad sker med deres DMs?
+
+**Spørgsmål:** Soft-anonymize (sender_id → null, content bevares)? Eller delete?
+
+**Antagelse:** Sandsynligvis ikke implementeret endnu. GDPR-relevant.
+
+**Påvirkning:** Linker til Q-014.
+
+---
+
+### Q-024: bcReduceMsg pattern som arkitektur-invariant?
+
+**Kontekst:** `bcReduceMsg` i b-chat.js centraliserer alle bubble message inserts fra 4 forskellige paths. Det er en GOD PATTERN.
+
+**Spørgsmål:** Skal vi dokumentere det eksplicit som "single-reducer invariant" i ARCHITECTURE-LOG?
+
+**Antagelse:** Ja. Det er allerede note 5.1.5, men kan forstærkes.
+
+**Påvirkning:** Native skal bevare patternet.
+
+---
+
+### Q-025: Live bubble expiration mekanisme (detail)?
+
+**Kontekst:** Samme som Q-016 men mere specifik.
+
+**Spørgsmål:** Hvordan virker `expires_at` håndhævelsen i praksis? Skal vi læse hele b-live.js for at finde ud af det?
+
+**Antagelse:** Vil blive tydeligere i Session 5-7 når vi katalogerer b-live.js.
+
+**Påvirkning:** Defer til senere session.
+
+---
+
+### Q-026: Server-authoritative presence — bekræft som princip?
+
+**Kontekst:** Live session state har 3 sources of truth (frontend appMode, DB column, edge function logic). Native bør konsolidere til server-authoritative.
+
+**Spørgsmål:** Bekræft at server-authoritative er det rigtige princip for native?
+
+**Antagelse:** Ja. Frontend læser via realtime, skriver via edge function only.
+
+**Påvirkning:** Påvirker hele live/presence-arkitektur i native.
+
+---
+
+### Q-027: Rating storage — localStorage OR DB?
+
+**Kontekst:** Memory note siger ratings i `bubble_stars` localStorage. Schema har også `rating` kolonne på `saved_contacts`.
+
+**Spørgsmål:** Hvilken er autoritativ? Skal de synces? Eller bruges kun den ene?
+
+**Antagelse:** Sandsynligvis localStorage er reelt brugt og DB-feltet er forberedt men ikke aktiveret.
+
+**Påvirkning:** Native skal vælge én source of truth fra start. localStorage er **anti-pattern** (forsvinder ved logout, ingen sync mellem devices).
+
+---
+
+*Q-001 til Q-027 = 27 åbne spørgsmål totalt. Disse besvares parallelt mens Claude fortsætter med Session 3 (System Boundaries).*

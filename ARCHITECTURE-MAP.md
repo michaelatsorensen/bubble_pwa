@@ -1349,3 +1349,1145 @@ b-realtime.js er 1.285 linjer med 38 funktioner og ~18 globaler. Det er **densit
 Det indikerer migrationer i progress. **Skal cleanes op før native-rewrite så vi ikke porter både gamle og nye versioner.**
 
 ---
+
+## 14. Entity Map (Session 2)
+
+> **Session 2 — 9. maj 2026 — fortsætter samme dag som Session 1.**
+>
+> Mapping af de 8 vigtigste entities i Bubble's datamodel. For hver:
+> - **Identity** — hvad identificerer den
+> - **States** — hvilke states den kan være i  
+> - **Transitions** — hvordan den bevæger sig mellem states
+> - **Invariants** — regler der aldrig må brydes
+> - **Ownership** — hvem ejer state-changes
+> - **Relations** — hvilke andre entities relaterer den til
+> - **Lifecycle** — fra opståen til død
+>
+> Dette er **fundament for native datamodel**. Hver entity bliver
+> en TypeScript type + repository i native arkitektur.
+
+### 14.1 Entity overview
+
+| # | Entity | Supabase table | Write-spread | Primary owner-file (native) |
+|---|---|---|---:|---|
+| 1 | Profile | `profiles` | 6 filer | `ProfileService` |
+| 2 | Bubble | `bubbles` | 3 filer | `BubbleService` |
+| 3 | BubbleMembership | `bubble_members` | 6 filer | `MembershipService` |
+| 4 | Invitation | `bubble_invitations` | 3 filer | `InvitationService` |
+| 5 | DirectMessage | `messages` | 3 filer | `DirectMessageService` |
+| 6 | BubbleMessage | `bubble_messages` | 3 filer | `BubbleChatService` |
+| 7 | LiveSession | `bubble_members` (ephemeral state) | 2 filer | `PresenceService` |
+| 8 | SavedContact | `saved_contacts` | 2 filer | `SavedContactService` |
+
+---
+
+### 14.2 Entity 1: Profile
+
+#### Identity
+- **Primary key:** `id` (uuid, matches `auth.users.id`)
+- **Created by:** Supabase Auth (via `ensureProfileExists()` after OAuth)
+- **Foreign refs:** Mange — center af alle relationer
+
+#### Schema (inferred from code)
+```typescript
+{
+  id: uuid                        // FK to auth.users
+  name: string                    // user-provided, required (not null)
+  workplace: string | null        // user-provided in onboarding
+  title: string | null            // job title
+  bio: string | null              // free text
+  avatar_url: string | null       // Supabase storage URL
+  linkedin_url: string | null     // optional social link
+  keywords: string[]              // tag IDs from tag-data.js taxonomy
+  dynamic_keywords: string[]      // user-added custom keywords
+  lifestage: string | null        // 'student' | 'employee' | 'entrepreneur' | 'investor' | 'practical' | 'other'
+  is_anon: boolean                // guest user (event-flow only)
+  banned: boolean                 // admin moderation
+  terms_accepted_at: timestamptz  // GDPR compliance
+  welcomed_at: timestamptz | null // welcome-screen seen
+  push_enabled: boolean | null    // push notification opt-in
+  language: 'da' | 'en' | null    // locale preference
+  created_at: timestamptz         // automatic
+  updated_at: timestamptz | null  // manual or via trigger
+}
+```
+
+#### States
+
+```
+                  (no record)
+                       |
+                       v
+              [TRANSIENT / GUEST]
+                       |
+                  ensureProfileExists()
+                       |
+                       v
+              [PROVISIONAL]   ← profile exists, but onboarding incomplete
+                       |
+                  saveOnboarding() (name + workplace + terms)
+                       |
+                       v
+                  [ONBOARDED]   ← can use full app
+                       |
+                  banned by admin?
+                       |
+                       v
+                  [BANNED]      ← bypass via loadCurrentProfile check
+```
+
+**State variables checked:**
+- `currentProfile?.name` (non-empty + non-default)
+- `currentProfile?.workplace` (non-empty)
+- `currentProfile?.terms_accepted_at` (not null)
+- `currentProfile?.banned` (false)
+
+**Q-013:** Onboarding-status er heuristik (`hasName && hasWorkplace`) — bør være eksplicit `onboarding_status` enum kolonne. ARCHITECTURE-LOG har dette under REDESIGN.
+
+#### Transitions
+
+| From | To | Trigger | Owner |
+|---|---|---|---|
+| (none) | TRANSIENT | OAuth signup with `is_anon=true` | b-auth.js |
+| (none) | PROVISIONAL | `ensureProfileExists()` after first login | b-auth.js |
+| PROVISIONAL | ONBOARDED | `saveOnboarding()` sets name+workplace+terms | b-onboarding.js |
+| TRANSIENT | ONBOARDED | Guest user completes signup flow | b-onboarding.js |
+| ANY | BANNED | Admin sets `banned=true` | b-admin.js |
+| BANNED | ONBOARDED | Admin sets `banned=false` | b-admin.js |
+
+#### Invariants
+
+🔒 **Must hold at all times:**
+
+1. `id` matches `auth.users.id` — never standalone
+2. If `is_anon=true` → user is in event-flow, has limited access
+3. If `banned=true` → app must show banned screen on load (no bypass)
+4. If `terms_accepted_at IS NULL` → user must be in onboarding (cannot reach home)
+5. `keywords` array contains only valid IDs from `tag-data.js` taxonomy (validated client-side)
+6. `name` is non-empty for ONBOARDED state
+7. `lifestage` if set must be one of: student, employee, entrepreneur, investor, practical, other
+
+#### Ownership of writes
+
+**Per file:**
+- **b-auth.js** — `ensureProfileExists` (initial), avatar repair, terms_accepted_at
+- **b-onboarding.js** — name, workplace, keywords, lifestage, terms_accepted_at, welcomed_at
+- **b-profile.js** — most edit-profile writes (name, bio, title, keywords, avatar)
+- **b-home.js** — quick-setup writes (workplace, title, lifestage from cards)
+- **b-admin.js** — banned flag, admin moderation
+- **b-utils.js** — `dbActions.updateProfile()` central wrapper
+
+**Anti-pattern detected:** Same profile write goes through 6 different files. **MembershipService for native must consolidate this.**
+
+#### Relations
+
+```
+Profile (1) ──── (N) BubbleMembership
+Profile (1) ──── (N) Invitation (as from_user OR to_user)
+Profile (1) ──── (N) DirectMessage (as sender OR receiver)
+Profile (1) ──── (N) SavedContact (as owner OR target)
+Profile (1) ──── (N) Bubble (as created_by)
+```
+
+#### Lifecycle
+
+```
+BIRTH: ensureProfileExists() on first OAuth login
+       OR signup-form with name+email+password
+
+GROWTH: Onboarding completes name+workplace+terms
+        Then optional: tags, title, bio, avatar, linkedin
+
+ACTIVE: User can join bubbles, send DMs, etc.
+
+PAUSE: banned=true (admin) — user sees banned screen
+
+DEATH: Profile is NEVER deleted (anonymization only)
+       Reason: foreign key integrity for messages/bubbles
+       Future: Implement soft-delete with anonymization
+       (Q-014: how does GDPR deletion work currently?)
+```
+
+#### Native implication
+
+```typescript
+// ProfileService responsibilities:
+- ensureExists()
+- update(fields)
+- updateAvatar(file)
+- getCurrent()
+- subscribe(profileId) → realtime updates
+- markTermsAccepted()
+- ban/unban (admin only)
+```
+
+Single class. Single source of truth. 6-file write-spread eliminated.
+
+---
+
+### 14.3 Entity 2: Bubble
+
+#### Identity
+- **Primary key:** `id` (uuid, auto-generated)
+- **Created by:** `created_by` (FK to profiles.id)
+- **Foreign refs:** Self-reference via `parent_bubble_id` (hierarchical)
+
+#### Schema (inferred from code)
+```typescript
+{
+  id: uuid
+  name: string                              // required
+  type: 'network' | 'event' | 'live'        // bubble category
+  type_label: string                        // display label (e.g., "Netværk", "Event")
+  description: string | null
+  location: string | null                   // free text location
+  keywords: string[]                        // tags from taxonomy
+  visibility: 'public' | 'private' | 'hidden'
+  created_by: uuid                          // FK to profiles
+  parent_bubble_id: uuid | null             // hierarchical parent
+  icon_url: string | null                   // inherited from parent if not set
+  external_url: string | null               // event registration link
+  
+  // Event-specific fields:
+  event_date: date | null
+  event_time: time | null
+  event_time_end: time | null
+  event_end_date: date | null
+  agenda: string | null
+  checkin_mode: 'self' | 'scan'             // self = auto, scan = reverse QR
+  
+  // Live-specific:
+  status: 'active' | 'expired' | null       // for live bubbles
+  expires_at: timestamptz | null            // 6 hours from start
+  
+  // Settings:
+  chat_locked: boolean                      // disable chat
+  
+  created_at: timestamptz
+  updated_at: timestamptz
+}
+```
+
+#### States
+
+```
+                  createBubble()
+                       |
+                       v
+                  [DRAFT]          ← (not implemented yet — direct to ACTIVE)
+                       |
+                       v
+                  [ACTIVE]         ← visible per visibility setting
+                       |
+                  Different paths:
+                       |
+        ┌──────────────┼──────────────┐
+        |              |              |
+   event_end_date     status set    archive (manual)
+   in past             to expired    by owner
+        |              |              |
+        v              v              v
+   [ENDED]         [EXPIRED]      [ARCHIVED]
+   (read-only)    (live only)     (read-only)
+        |              |              |
+        └──────────────┼──────────────┘
+                       |
+                  ownership transfer
+                       |
+                       v
+                  [TRANSFERRED]   ← created_by changed
+                                    (state captured via audit)
+```
+
+**Q-015:** Eksplicit `status` kolonne på `bubbles` findes kun for `live`-type. Andre states (ENDED, ARCHIVED, DRAFT) er **infereret** fra `event_end_date` og andre felter. Bør være eksplicit `bubble_status` enum.
+
+#### Transitions
+
+| From | To | Trigger | Owner |
+|---|---|---|---|
+| (none) | ACTIVE | `createBubble()` | b-bubbles.js |
+| ACTIVE | ENDED | `event_end_date` passes (no DB change, runtime check) | client logic |
+| ACTIVE (live) | EXPIRED | Background job marks `status='expired'` | trigger? Q-016 |
+| ACTIVE | TRANSFERRED | `dbActions.transferBubble()` | b-bubbles.js |
+| ACTIVE | ARCHIVED | (not implemented) | future |
+| ACTIVE | DELETED | `deleteBubble()` | b-bubbles.js |
+
+#### Invariants
+
+🔒 **Must hold at all times:**
+
+1. `created_by` must be valid profile.id
+2. If `parent_bubble_id` set, it must be valid (no cycles)
+3. If `type='event'`, must have `event_date`
+4. If `type='live'`, must have `expires_at`
+5. `visibility` strictly one of: public, private, hidden
+6. `checkin_mode` only relevant for `type IN (event, live)`
+7. If `visibility='hidden'`, direct join from discover MUST fail (defense-in-depth in `joinBubble`)
+8. `chat_locked=true` → only owner+admins can post in bubble chat
+9. Deleting a bubble cascades: delete all `bubble_members`, `bubble_messages`, etc. (RLS-handled)
+
+#### Ownership of writes
+
+- **b-bubbles.js** — primary: createBubble, saveEditBubble, deleteBubble, transferBubble, upvote
+- **b-utils.js** — `dbActions.transferBubble` (centralized)
+- **b-admin.js** — admin moderation (delete inappropriate bubbles)
+
+**Q-017:** `parent_bubble_id` hierarki — hvor dybt går det? Skal vi begrænse til 3 niveauer? Det er infereret fra koden men ikke eksplicit dokumenteret.
+
+#### Relations
+
+```
+Bubble (1) ──── (N) BubbleMembership
+Bubble (1) ──── (N) Invitation
+Bubble (1) ──── (N) BubbleMessage
+Bubble (1) ──── (N) BubbleUpvote
+Bubble (1) ──── (1) Profile (created_by)
+Bubble (1) ──── (0..1) Bubble (parent_bubble_id, self-ref)
+Bubble (1) ──── (N) SavedEvent (linked_bubble_id) — future feature
+```
+
+#### Lifecycle
+
+```
+BIRTH: createBubble() — typically from network or event creation
+       icon_url inherited from parent if exists
+
+GROWTH: Members join, messages flow, upvotes accumulate
+
+EVENT-SPECIFIC: 
+  Pre-event: Members can RSVP, see agenda
+  During event: Live check-in via QR, presence tracking
+  Post-event: Read-only, contacts saved
+
+NETWORK-SPECIFIC:
+  Continuous: Members come and go
+  No expiration unless owner deletes
+
+DEATH: 
+  Delete: Removes bubble + all related data
+  Ownership transfer: Bubble survives, created_by changes
+```
+
+#### Native implication
+
+```typescript
+// BubbleService responsibilities:
+- create(data)
+- update(id, fields)
+- delete(id)
+- transferOwnership(id, newOwnerId)
+- getById(id)
+- listByMember(userId)
+- listDiscoverable() // public + private (not hidden)
+- subscribeToBubble(id) → realtime
+- markExpired(id) // for live bubbles
+```
+
+---
+
+### 14.4 Entity 3: BubbleMembership
+
+⭐ **Mest komplekse entity** — write-spread 6, multiple states, ephemeral state on top of persistent state.
+
+#### Identity
+- **Primary key:** Composite `(bubble_id, user_id)` via unique constraint
+- **Created by:** `joinBubble()` or `approveJoinRequest()` or auto via invitation flow
+
+#### Schema (inferred from code)
+```typescript
+{
+  bubble_id: uuid                  // FK to bubbles
+  user_id: uuid                    // FK to profiles
+  status: 'pending' | 'active'     // membership state
+  role: 'admin' | 'member'         // permission level
+  joined_at: timestamptz           // when active
+  last_read_at: timestamptz | null // for unread tracking
+  checked_in: boolean              // for live/event bubbles (ephemeral)
+  checked_in_at: timestamptz | null
+  // notification preferences:
+  notifications_enabled: boolean | null
+}
+```
+
+#### States
+
+```
+                 invitation OR direct join
+                       |
+                       v
+              [PENDING]    ← join_request awaiting approval
+                       |
+                  approve OR auto-accept-for-public
+                       |
+                       v
+              [ACTIVE]     ← normal member
+                       |
+              (additional dimensions)
+                       |
+        ┌──────────────┼──────────────┐
+        |              |              |
+   checked_in    role=admin     last_read_at
+        |              |              |
+        v              v              v
+   [CHECKED_IN]   [ADMIN]        [READ_RECENT]
+   (live/event)   (privileges)   (unread state)
+   
+   (these dimensions stack — a member can be ACTIVE+CHECKED_IN+ADMIN simultaneously)
+                       
+                  leaveBubble() OR removed by admin
+                       |
+                       v
+              (record DELETED)
+```
+
+#### Transitions
+
+| From | To | Trigger | Owner |
+|---|---|---|---|
+| (none) | PENDING | `joinBubble()` on private bubble | b-utils.js |
+| (none) | ACTIVE | `joinBubble()` on public bubble | b-utils.js |
+| (none) | ACTIVE | Invitation accepted | b-bubbles.js |
+| PENDING | ACTIVE | Admin approves join-request | b-bubbles.js |
+| PENDING | (deleted) | Admin denies + delete | b-bubbles.js |
+| ACTIVE | CHECKED_IN | QR scan in live bubble | b-live.js |
+| CHECKED_IN | (back to ACTIVE only) | Live session expires (no checkout state) | b-live.js |
+| ACTIVE.member | ACTIVE.admin | Role promotion (via transfer/admin) | b-bubbles.js |
+| ACTIVE.admin | ACTIVE.member | Role demotion | b-bubbles.js |
+| ANY | (deleted) | `leaveBubble()` | b-utils.js |
+| ANY | (deleted) | Bubble deleted (cascade) | RLS |
+
+#### Invariants
+
+🔒 **CRITICAL — must hold at all times:**
+
+1. **Unique constraint:** `(bubble_id, user_id)` — no duplicate memberships
+2. `bubble_id` must reference existing bubble
+3. `user_id` must reference existing profile
+4. `status='pending'` → user CANNOT see bubble content (RLS-enforced)
+5. `status='active'` → user CAN see bubble content
+6. `role='admin'` → user can manage members, edit bubble, delete posts
+7. If bubble.created_by = user_id, user has `role='admin'` (creator is always admin)
+8. **Last admin invariant:** A bubble must always have at least one admin. If last admin tries to leave, must transfer ownership first.
+9. `checked_in=true` → bubble must be type='live' and active
+10. `checked_in=true` implies user_id is in `appMode.checkedInIds` (cross-tab sync)
+
+#### Ownership of writes (the 6-file spread!)
+
+This is the **most fragmented** part of the codebase:
+
+- **b-bubbles.js** — approveJoinRequest, denyJoinRequest, removeMember, promoteToAdmin, demoteFromAdmin, deleteMember (admin actions)
+- **b-utils.js** — `joinBubble`, `leaveBubble` (centralized via dbActions)
+- **b-live.js** — checkin (update checked_in=true)
+- **b-home.js** — leave from list, mark-as-read (last_read_at)
+- **b-chat.js** — update last_read_at when opening bubble chat
+- **b-realtime.js** — handle realtime member changes (read-only, but observes writes)
+
+**This is the #1 candidate for service consolidation in native rewrite.**
+
+#### Q-018: Special cases
+
+- Can a banned user have active memberships? (Probably yes, but UI must filter)
+- Can a user be admin in one bubble and member in another? (Yes, role is per-bubble)
+- What happens to memberships if user is deleted? (CASCADE? Or anonymize?)
+
+#### Relations
+
+```
+BubbleMembership (N) ──── (1) Bubble
+BubbleMembership (N) ──── (1) Profile
+BubbleMembership (1) ──── (0..1) LiveSession (ephemeral when checked_in)
+```
+
+#### Lifecycle
+
+```
+BIRTH: 
+  Path A: joinBubble() on public bubble → ACTIVE immediately
+  Path B: joinBubble() on private bubble → PENDING (awaits approval)
+  Path C: Accept invitation → ACTIVE immediately
+  Path D: Create bubble → ACTIVE + role=admin (creator-implicit)
+
+GROWTH:
+  - last_read_at updates as user opens bubble chat
+  - notifications_enabled adjusts per user preference
+  - role may change (promote/demote)
+  - checked_in toggles on live events
+
+DEATH:
+  - User leaves: DELETE row
+  - Admin removes: DELETE row + notify user
+  - Bubble deleted: CASCADE delete
+  - User deleted: Currently unclear (Q-019)
+```
+
+#### Native implication — MembershipService is CRITICAL
+
+```typescript
+// MembershipService responsibilities (consolidating 6-file spread):
+- requestJoin(bubbleId, userId) → pending or active
+- approveJoin(bubbleId, userId) → active
+- denyJoin(bubbleId, userId) → delete
+- leave(bubbleId, userId)
+- removeMember(bubbleId, userId) (admin only)
+- promoteToAdmin(bubbleId, userId) (admin only)
+- demoteFromAdmin(bubbleId, userId) (admin only)
+- markAsRead(bubbleId, userId)
+- checkIn(bubbleId, userId) (live only)
+- listByBubble(bubbleId)
+- listByUser(userId)
+- subscribeToBubble(bubbleId) → realtime member changes
+```
+
+State machine should be **explicitly modeled** with TypeScript discriminated unions:
+
+```typescript
+type MembershipState = 
+  | { status: 'pending'; requested_at: Date }
+  | { status: 'active'; role: 'member' | 'admin'; joined_at: Date; checked_in: boolean }
+```
+
+---
+
+### 14.5 Entity 4: Invitation
+
+#### Identity
+- **Primary key:** `id` (uuid)
+- **Composite uniqueness:** `(bubble_id, to_user_id)` — one invitation per user per bubble
+
+#### Schema (inferred)
+```typescript
+{
+  id: uuid
+  bubble_id: uuid           // FK to bubbles
+  from_user_id: uuid        // FK to profiles (inviter)
+  to_user_id: uuid          // FK to profiles (invitee)
+  status: 'pending' | 'accepted' | 'declined'
+  message: string | null    // optional personal note
+  created_at: timestamptz
+  responded_at: timestamptz | null
+}
+```
+
+#### States
+
+```
+                  sendBubbleInvites()
+                       |
+                       v
+                  [PENDING]
+                       |
+              user responds
+                       |
+        ┌──────────────┼──────────────┐
+        |              |              |
+        v              v              v
+  [ACCEPTED]      [DECLINED]      (no action)
+        |              |              |
+  triggers           closed         remains
+  membership.        out             pending
+  active
+```
+
+#### Transitions
+
+| From | To | Trigger | Owner |
+|---|---|---|---|
+| (none) | PENDING | `sendBubbleInvites()` | b-bubbles.js |
+| PENDING | ACCEPTED | `acceptInvite()` → also creates active membership | b-bubbles.js |
+| PENDING | DECLINED | `declineInvite()` | b-bubbles.js |
+
+#### Invariants
+
+🔒 **Must hold:**
+
+1. `from_user_id != to_user_id` — can't invite self
+2. `from_user_id` must be admin/member of `bubble_id` (cannot invite to bubbles you're not in)
+3. Unique constraint on `(bubble_id, to_user_id)` — no duplicate pending invites
+4. If `status='accepted'`, corresponding `bubble_members` row must exist with status='active'
+5. Bubble deletion CASCADES delete invitations
+6. Status transitions only forward (pending → accepted/declined, never backward)
+
+#### Ownership of writes
+- **b-bubbles.js** — primary: send, accept, decline
+- **b-utils.js** — sometimes accessed via dbActions
+- **b-home.js** — invitation badge logic (read-only mostly)
+
+#### Relations
+
+```
+Invitation (N) ──── (1) Bubble
+Invitation (N) ──── (1) Profile (from_user_id)
+Invitation (N) ──── (1) Profile (to_user_id)
+Invitation (0..1) ──── (1) BubbleMembership (on accept)
+```
+
+#### Lifecycle
+
+```
+BIRTH: sendBubbleInvites() creates PENDING invitation
+       Push notification fires (trigger or frontend)
+
+ACTIVE: Awaits user response
+
+DEATH:
+  - User accepts: Status=accepted + create membership
+  - User declines: Status=declined
+  - Bubble deleted: CASCADE delete
+  - Inviter deleted: ??? (Q-020)
+  - Expiration: No automatic expiration currently (Q-021: should there be?)
+```
+
+#### Native implication
+
+```typescript
+// InvitationService:
+- send(bubbleId, toUserId, message?)
+- accept(invitationId) → membership.create
+- decline(invitationId)
+- listPending(forUserId)
+- listSent(byBubbleId)
+- subscribe(forUserId) → realtime
+```
+
+---
+
+
+### 14.6 Entity 5: DirectMessage (DM)
+
+#### Identity
+- **Primary key:** `id` (uuid)
+- **Conversation key:** Sorted pair `(sender_id, receiver_id)` defines conversation
+
+#### Schema (inferred)
+```typescript
+{
+  id: uuid
+  sender_id: uuid              // FK to profiles
+  receiver_id: uuid            // FK to profiles
+  content: string | null       // text content (null if file-only)
+  file_url: string | null      // attachment URL
+  gif_url: string | null       // tenor GIF URL
+  read_at: timestamptz | null  // when receiver opened
+  edited_at: timestamptz | null
+  deleted_at: timestamptz | null  // soft delete
+  reply_to_id: uuid | null     // FK to messages (for threading)
+  created_at: timestamptz
+}
+```
+
+#### States
+
+```
+                  sendDM()
+                       |
+                       v
+                  [SENT]
+                       |
+              ┌────────┴────────┐
+              |                 |
+              v                 v
+         delivered          (offline)
+              |                 |
+              v                 v
+        [DELIVERED]         [QUEUED]
+              |                 |
+        receiver opens     online again
+              |                 |
+              v                 v
+         [READ]            [DELIVERED]
+              |
+        sender edits
+              |
+              v
+         [EDITED]
+              |
+        sender deletes
+              |
+              v
+         [DELETED]  (soft delete, content="[Slettet]")
+```
+
+#### Transitions
+
+| From | To | Trigger | Owner |
+|---|---|---|---|
+| (none) | SENT | `sendDM()` via dbActions | b-utils.js, b-messages.js |
+| SENT | READ | Receiver opens chat → `read_at=now()` | b-realtime.js, b-chat.js |
+| SENT | EDITED | Sender edits → `edited_at=now()` | b-realtime.js (dmStartEdit) |
+| ANY (own) | DELETED | Sender deletes → `deleted_at=now()` | b-realtime.js (dmDeleteMsg) |
+
+#### Invariants
+
+🔒 **Must hold:**
+
+1. `sender_id != receiver_id` — no self-DMs
+2. `content` OR `file_url` OR `gif_url` must be non-null (at least one payload)
+3. Soft-delete preserves history (never hard delete for audit)
+4. Can only edit/delete own messages (RLS enforced)
+5. Reply chains: `reply_to_id` must reference message in same conversation
+6. `read_at` only set by receiver, never sender
+7. Conversation = sorted `(sender_id, receiver_id)` pair — both directions same conv
+
+#### Ownership of writes
+
+- **b-utils.js** — `dbActions.sendDM()` (centralized)
+- **b-messages.js** — sendMessage() wraps dbActions.sendDM
+- **b-realtime.js** — handles all incoming realtime DM events, edits, deletes
+
+**Realtime channels:**
+- `rt-messages-{userId}` — DM updates for current user
+- `dmChannelName(a, b)` — active DM conversation channel (typing, receipts)
+
+#### Q-022: Conversation entity?
+
+Currently there's no explicit "Conversation" entity — it's implicit in sender/receiver pairs. Native could benefit from explicit `Conversation` model with metadata (last_message_at, total_messages, deleted_for_user_a/b).
+
+#### Relations
+
+```
+DirectMessage (N) ──── (1) Profile (sender)
+DirectMessage (N) ──── (1) Profile (receiver)
+DirectMessage (0..N) ──── (0..1) DirectMessage (reply_to)
+```
+
+#### Lifecycle
+
+```
+BIRTH: sendDM() → INSERT + realtime broadcast
+
+GROWTH: 
+  - Receiver reads → read_at update
+  - Sender edits → edited_at update
+  - Replies create threading
+
+DEATH:
+  - Soft delete: deleted_at set, content shown as "[Slettet]"
+  - Hard delete: Only conversation-level (`convDeleteSelected`)
+  - User deletion: ??? (Q-023)
+```
+
+#### Native implication
+
+```typescript
+// DirectMessageService:
+- send(toId, content, fileUrl?, gifUrl?, replyToId?)
+- markAsRead(messageId)
+- edit(messageId, newContent)
+- softDelete(messageId)
+- listConversation(otherUserId) → Message[]
+- listConversations(userId) → ConversationSummary[]
+- subscribe(userId) → realtime
+- subscribeToConversation(otherUserId) → typing + receipts
+```
+
+---
+
+### 14.7 Entity 6: BubbleMessage
+
+#### Identity
+- **Primary key:** `id` (uuid)
+- **Composite context:** `(bubble_id, sender_id, created_at)`
+
+#### Schema (inferred)
+```typescript
+{
+  id: uuid
+  bubble_id: uuid             // FK to bubbles
+  sender_id: uuid             // FK to profiles
+  content: string | null      // text content
+  file_url: string | null     // attachment
+  gif_url: string | null      // tenor GIF
+  edited_at: timestamptz | null
+  deleted_at: timestamptz | null
+  reply_to_id: uuid | null
+  created_at: timestamptz
+}
+```
+
+#### States
+
+Similar to DirectMessage but with **bubble-level visibility**:
+
+```
+                  sendBubbleMessage()
+                       |
+                       v
+                  [POSTED]
+                       |
+              All bubble members can read
+                       |
+              ┌────────┼────────┐
+              v        v        v
+          edited   deleted   reaction
+              |        |        |
+              v        v        v
+         [EDITED] [DELETED] [REACTED]
+                                 │ (separate entity:
+                                    bubble_message_reactions)
+```
+
+#### Transitions
+
+| From | To | Trigger | Owner |
+|---|---|---|---|
+| (none) | POSTED | `sendBubbleMessage()` via dbActions | b-utils.js, b-chat.js |
+| POSTED | EDITED | Sender edits | b-chat.js |
+| ANY (own) | DELETED | Sender deletes (admin can also delete) | b-chat.js |
+| ANY | REACTED | User adds reaction (separate entity) | b-chat.js |
+
+#### Invariants
+
+🔒 **Must hold:**
+
+1. `sender_id` must be ACTIVE member of `bubble_id` (RLS-enforced)
+2. If `bubble.chat_locked=true`, only admins can send
+3. Soft-delete via `deleted_at`, content preserved for audit
+4. Can edit/delete own messages; admins can delete any message in their bubble
+5. `reply_to_id` must be in same bubble
+6. File uploads go to `bubble-files` storage bucket
+
+#### Ownership of writes
+- **b-utils.js** — `dbActions.sendBubbleMessage()` centralized
+- **b-chat.js** — bcReduceMsg handles all incoming (4 paths feed centralization)
+- **b-bubbles.js** — admin delete
+
+**Q-024:** `bcReduceMsg` reducer-pattern is excellent. Should be **explicitly documented** as architecture invariant: all bubble message inserts must go through this reducer for dedup + ordering.
+
+#### Relations
+
+```
+BubbleMessage (N) ──── (1) Bubble
+BubbleMessage (N) ──── (1) Profile (sender)
+BubbleMessage (0..N) ──── (0..1) BubbleMessage (reply_to)
+BubbleMessage (1) ──── (N) BubbleMessageReaction
+BubbleMessage (1) ──── (N) BubbleMessageEdit (history)
+```
+
+#### Lifecycle
+
+```
+BIRTH: sendBubbleMessage() via dbActions
+
+GROWTH:
+  - All ACTIVE members receive via realtime
+  - bcReduceMsg dedups across 4 insert paths
+  - Edits append to bubble_message_edits history
+
+DEATH:
+  - Soft delete: content="[Slettet]"
+  - Bubble deletion: CASCADE
+```
+
+#### Native implication
+
+```typescript
+// BubbleChatService:
+- post(bubbleId, content, fileUrl?, gifUrl?, replyToId?)
+- edit(messageId, newContent)
+- softDelete(messageId)
+- listByBubble(bubbleId, limit?, before?)
+- subscribeToBubble(bubbleId) → realtime messages + edits + deletes
+- addReaction(messageId, emoji)
+- removeReaction(messageId, emoji)
+```
+
+**Pattern to preserve:** Single reducer for all insert paths (like `bcReduceMsg`).
+
+---
+
+### 14.8 Entity 7: LiveSession
+
+⭐ **Ephemeral entity** — not a separate table, but a **state-on-top-of** BubbleMembership for live/event bubbles.
+
+#### Identity
+- **No standalone primary key**
+- **Composite context:** `(bubble_id, user_id)` matching active BubbleMembership
+
+#### Conceptual schema (live session = membership in active live bubble)
+```typescript
+{
+  bubble_id: uuid        // must be type='live' OR type='event' with active session
+  user_id: uuid
+  checked_in: boolean    // currently in session
+  checked_in_at: timestamptz
+  // (lives within bubble_members row, not separate)
+}
+```
+
+#### States
+
+```
+        Live bubble created (type='live')
+              |
+              v
+        [LIVE BUBBLE STARTED]
+              |
+        Users scan QR or auto-checkin
+              |
+        ┌─────┼─────┐
+        v     v     v
+    [user_a_in] [user_b_in] [user_c_in]
+              |
+        6 hours pass OR bubble.expires_at
+              |
+              v
+        [BUBBLE EXPIRED]
+              |
+        All checked_in users → checked_in=false (cleanup)
+              |
+              v
+        (back to plain BubbleMembership without ephemeral state)
+```
+
+#### Transitions
+
+| From | To | Trigger | Owner |
+|---|---|---|---|
+| Bubble created | LIVE STARTED | Bubble type='live' + status='active' + expires_at | b-bubbles.js |
+| (no checkin) | CHECKED_IN | QR scan accepts | b-live.js |
+| CHECKED_IN | (no checkin) | Manual checkout OR session ends | b-live.js |
+| LIVE STARTED | EXPIRED | 6 hours pass | Background process? Q-025 |
+
+#### Invariants
+
+🔒 **Must hold:**
+
+1. `checked_in=true` requires `bubble.type='live'` AND `bubble.status='active'`
+2. After `bubble.expires_at`, all `checked_in` must be cleared
+3. `appMode.checkedInIds` (client-side) must sync with DB state
+4. Only one bubble can have user `checked_in=true` at a time (single live session)
+5. Guest users (`is_anon=true`) can be in live sessions via `guest_checkins` table
+6. QR scan must be from valid `qr_tokens` row (separate entity)
+
+#### Ownership of writes
+- **b-live.js** — primary: checkin, checkout, QR scan
+- **b-utils.js** — `liveCheckin` edge function call (server-side validation)
+- **Edge function `checkin`** — actual server-side authority
+
+#### Q-026: Server-side authority
+
+`checkin` edge function does the real work. Frontend just triggers and reads result. This is GOOD — but means we have **3 sources of truth**:
+
+1. Frontend `appMode.checkedInIds` (UI state)
+2. `bubble_members.checked_in` (DB persistence)
+3. Edge function logic (validation + decisions)
+
+Native must consolidate this to: **Server is truth, client reads via realtime, no client-side authority**.
+
+#### Relations
+
+```
+LiveSession (1) ──── (1) BubbleMembership (extends)
+LiveSession (1) ──── (1) Bubble (must be live/event type)
+LiveSession (0..1) ──── (1) QRToken (for scan-based checkin)
+LiveSession (alt) ──── (1) GuestCheckin (for non-authenticated users)
+```
+
+#### Lifecycle
+
+```
+BIRTH: 
+  - User scans QR → edge function validates → checkin
+  - OR auto-checkin if bubble.checkin_mode='self'
+
+GROWTH:
+  - User stays "in" the live session
+  - Presence visible to others in same bubble
+
+DEATH:
+  - Manual checkout (not currently implemented?)
+  - Bubble expires (6h timer)
+  - All checked_in cleared at expiration
+```
+
+#### Native implication
+
+```typescript
+// PresenceService:
+- checkIn(bubbleId, qrToken?) → server-side validation
+- checkOut(bubbleId)
+- getCurrentSession() → bubble if any
+- listCheckedInMembers(bubbleId)
+- subscribeToBubble(bubbleId) → realtime presence
+```
+
+**Critical native principle:** Presence is **read from server**, never authored on client. Eliminates 3-source-of-truth problem.
+
+---
+
+### 14.9 Entity 8: SavedContact
+
+#### Identity
+- **Primary key:** `id` (uuid) or composite `(owner_id, contact_id)`
+- **Created by:** Explicit save action from user
+
+#### Schema (inferred)
+```typescript
+{
+  id: uuid
+  owner_id: uuid           // FK to profiles (who saved)
+  contact_id: uuid         // FK to profiles (who got saved)
+  source: 'qr' | 'manual' | 'bubble' | 'discover' | 'radar'
+  rating: number | null    // 1-3 stars (from bubble_stars localStorage)
+  note: string | null      // private note
+  bubble_id: uuid | null   // context bubble if from a bubble
+  saved_at: timestamptz
+}
+```
+
+#### States
+
+```
+                  saveContact()
+                       |
+                       v
+                  [SAVED]
+                       |
+              ┌────────┼────────┐
+              v        v        v
+        rate 1-3   add note   share back
+              |        |        |
+              v        v        v
+          [RATED]  [ANNOTATED] [(reciprocal save?)]
+                       |
+                  removeContact()
+                       |
+                       v
+                  (deleted)
+```
+
+#### Transitions
+
+| From | To | Trigger | Owner |
+|---|---|---|---|
+| (none) | SAVED | `saveContact()` via dbActions | b-utils.js, multiple flows |
+| SAVED | RATED | Update rating (currently localStorage, Q-027) | b-profile.js |
+| SAVED | (deleted) | `removeContact()` | b-utils.js, b-profile.js |
+
+#### Invariants
+
+🔒 **Must hold:**
+
+1. `owner_id != contact_id` — can't save self
+2. Unique constraint on `(owner_id, contact_id)` — no duplicate saves
+3. `rating` if set must be 1, 2, or 3
+4. `source` for analytics/UX context
+
+#### Q-027: Rating storage mismatch
+
+Memory note shows ratings stored in `localStorage` (`bubble_stars` key) but schema has `rating` column. Are both used? Should be **one source of truth** for native.
+
+#### Ownership of writes
+- **b-utils.js** — `dbActions.saveContact`, `dbActions.removeContact`
+- **b-profile.js** — note + rating updates
+- **b-radar.js** — save from radar tap
+- **b-home.js** — save from quick actions
+
+#### Relations
+
+```
+SavedContact (N) ──── (1) Profile (owner)
+SavedContact (N) ──── (1) Profile (contact)
+SavedContact (0..1) ──── (1) Bubble (context)
+```
+
+#### Lifecycle
+
+```
+BIRTH: saveContact() — typically after meeting at event or via QR
+
+GROWTH:
+  - User may add private notes
+  - User may rate 1-3 stars
+  - Realtime: contact gets "saved you" notification
+
+DEATH: removeContact() — explicit user action only
+```
+
+#### Native implication
+
+```typescript
+// SavedContactService:
+- save(contactId, source, bubbleId?)
+- remove(contactId)
+- updateNote(contactId, note)
+- updateRating(contactId, rating)
+- list(userId) → SavedContact[]
+- exists(ownerId, contactId) → boolean
+- listSavedBy(userId) → "people who saved me"
+- subscribe(userId) → realtime updates
+```
+
+---
+
+### 14.10 Summary: Entity-graph
+
+```mermaid
+graph TB
+    Profile[Profile]
+    Bubble[Bubble]
+    Membership[BubbleMembership]
+    Invitation[Invitation]
+    DM[DirectMessage]
+    BCMsg[BubbleMessage]
+    LiveSession[LiveSession]
+    SavedContact[SavedContact]
+    
+    Profile -->|created_by| Bubble
+    Profile -->|sender| DM
+    Profile -->|receiver| DM
+    Profile -->|sender| BCMsg
+    Profile -->|owner| SavedContact
+    Profile -->|contact| SavedContact
+    Profile -->|from| Invitation
+    Profile -->|to| Invitation
+    
+    Bubble -->|parent_bubble_id| Bubble
+    Bubble -->|contains| Membership
+    Bubble -->|contains| BCMsg
+    Bubble -->|has| Invitation
+    
+    Membership -->|extends| LiveSession
+    Invitation -.->|accept creates| Membership
+    
+    SavedContact -->|context| Bubble
+```
+
+### 14.11 Native-rewrite implication summary
+
+Hver entity bliver:
+1. **TypeScript type** med discriminated unions for states
+2. **Service class** med klar API (alle writes går igennem service)
+3. **Realtime subscription** abstraktion 
+4. **Repository pattern** der separerer persistence fra business logic
+
+Eliminerer:
+- 6-file write-spread for Profile (→ 1 service)
+- 6-file write-spread for BubbleMembership (→ 1 service)
+- 3-source-of-truth for LiveSession (→ server-authoritative)
+- Implicit state-enums (status, role) → explicit TypeScript types
+- Heuristic-based state checks → explicit state machines
+
+### 14.12 Open questions from this session
+
+| Q-# | Topic |
+|---|---|
+| Q-013 | Onboarding-status: heuristik → eksplicit enum? |
+| Q-014 | GDPR profile deletion: hvordan håndteres det? |
+| Q-015 | Bubble status enum: kun for live? Skal udvides? |
+| Q-016 | Live bubble expiration: trigger eller background job? |
+| Q-017 | parent_bubble_id hierarki: max dybde? |
+| Q-018 | Member can be admin in one bubble + member in another? Bekræft |
+| Q-019 | User deletion: hvad sker med deres memberships? |
+| Q-020 | Inviter deletion: bevarer invitations referencer? |
+| Q-021 | Invitation expiration: skal det implementeres? |
+| Q-022 | Eksplicit Conversation entity for DMs? |
+| Q-023 | User deletion: hvad sker med deres DMs? |
+| Q-024 | bcReduceMsg pattern: dokumentér som arkitektur-invariant? |
+| Q-025 | Live bubble expiration: hvilken mekanisme? |
+| Q-026 | Server-authoritative presence: bekræft som princip? |
+| Q-027 | Rating storage: localStorage OR DB? One source of truth? |
+
+15 nye åbne spørgsmål til OPEN-QUESTIONS.md.
+
+---
