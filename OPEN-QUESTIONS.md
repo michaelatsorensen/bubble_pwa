@@ -375,3 +375,138 @@
 ---
 
 *Q-001 til Q-027 = 27 åbne spørgsmål totalt. Disse besvares parallelt mens Claude fortsætter med Session 3 (System Boundaries).*
+
+---
+
+## Session 3 — System Boundaries (15. maj 2026)
+
+### Q-028: `signOut` spredt over 3 filer — konsolider?
+
+**Kontekst:** `sb.auth.signOut()` kaldes fra b-auth.js, b-admin.js, OG b-onboarding.js. Det er anti-pattern — én entity (auth state) burde kontrolleres ét sted.
+
+**Spørgsmål:** Skal vi nu (pre-native) konsolidere signOut til kun b-auth.js? Eller vente til native AuthService?
+
+**Antagelse:** Vente til native. Risikabelt at refaktorere auth nu under pilot.
+
+**Påvirkning:** Native AuthService SKAL være eneste sted der kalder signOut.
+
+---
+
+### Q-029: Identity state machine — eksplicit i native?
+
+**Kontekst:** Identity har implicit state machine: UNAUTHENTICATED → AUTHENTICATING → PROVISIONAL → ONBOARDED (eller BANNED). Det er spredt over flere booleans og heuristikker.
+
+**Spørgsmål:** I native, skal vi bruge TypeScript discriminated union til at gøre state machine eksplicit?
+
+```typescript
+type AuthState = 
+  | { status: 'unauthenticated' }
+  | { status: 'authenticating' }
+  | { status: 'provisional', userId: string }
+  | { status: 'onboarded', userId: string, profile: Profile }
+  | { status: 'banned', userId: string };
+```
+
+**Antagelse:** Ja, eksplicit state machine i native. Eliminerer race conditions.
+
+**Påvirkning:** Linker til Q-013 (onboarding_status enum).
+
+---
+
+### Q-030: `reports` table — Platform eller eget system?
+
+**Kontekst:** User reports (rapportering af upassende indhold) er pt. spredt mellem b-utils.js (dbActions.reportUser) og b-admin.js (admin håndtering). Det er en moderation-funktion.
+
+**Spørgsmål:** Hører `reports` under Platform System (som tværgående moderation) eller bør den have eget "Moderation System"?
+
+**Antagelse:** Platform System har "ModerationService" sub-domæne. Reports er for små til eget system.
+
+**Påvirkning:** Folder structure i native.
+
+---
+
+### Q-031: bubble_message_edits + bubble_post_reactions — separate entities?
+
+**Kontekst:** Disse er nævnt som relaterede entities (Entity 6: BubbleMessage). De er separate tabeller men hænger sammen med BubbleMessage.
+
+**Spørgsmål:** I native, skal de være:
+- A) Separate services (EditHistoryService, ReactionService)
+- B) Sub-features af BubbleChatService
+- C) Værdier embedded i BubbleMessage type
+
+**Antagelse:** B — BubbleChatService har metoder for begge, men de er ikke separate top-level services.
+
+**Påvirkning:** Service-design granularitet.
+
+---
+
+### Q-032: Cross-system writes via services only — invariant?
+
+**Kontekst:** I architecture map sektion 15 har jeg dokumenteret at cross-system writes skal gå gennem services (fx Messaging skriver IKKE direkte til bubble_members, men kalder MembershipService.markAsRead()).
+
+**Spørgsmål:** Bekræft dette som arkitektur-invariant for native?
+
+**Antagelse:** Ja, klart. Ellers er service-boundaries meningsløse.
+
+**Påvirkning:** Skal cementeres i ARCHITECTURE-LOG som GENBRUGES pattern (når implementeret i native).
+
+---
+
+### Q-033: Platform har INGEN dependency på domain systems — confirm?
+
+**Kontekst:** Jeg har argumenteret at Platform er foundation — alle andre systems afhænger af det, men det skal IKKE selv kende til business logic.
+
+**Spørgsmål:** Bekræft at dette er korrekt princip?
+
+**Eksempel:** Skal Platform.PushService have indbygget viden om "send push når ny bubble-besked"? Eller skal Messaging trigger PushService med en generic payload?
+
+**Antagelse:** Sidstnævnte — Platform er agnostic, domain systems triggerr.
+
+**Påvirkning:** Hele dependency-graph for native arkitektur.
+
+---
+
+### Q-034: Sub-systems within Platform — egne mapper?
+
+**Kontekst:** Platform har 7 sub-domæner (P.1 Realtime, P.2 Push, P.3 Navigation, P.4 Errors, P.5 i18n, P.6 Storage, P.7 Analytics).
+
+**Spørgsmål:** I native, hver sub-domæne som egen mappe i `src/platform/`? Eller én flad fil per service?
+
+**Antagelse:** Egen mappe per sub-domæne. Klar adskillelse.
+
+**Påvirkning:** Folder structure detail.
+
+---
+
+### Q-035: Native folder structure proposal — passer din intuition?
+
+**Kontekst:** Sektion 15.10 foreslår denne struktur:
+
+```
+src/
+├── systems/
+│   ├── identity/
+│   ├── social-graph/
+│   ├── messaging/
+│   └── presence/
+├── platform/
+│   ├── supabase/
+│   ├── push/
+│   ├── navigation/
+│   ├── i18n/
+│   ├── error-handling/
+│   ├── analytics/
+│   └── ui/
+├── screens/
+└── components/
+```
+
+**Spørgsmål:** Passer det din intuition om hvordan Bubble bør organiseres? Mangler der noget? Er noget unødigt?
+
+**Antagelse:** Det er starting point. Vi justerer baseret på pilot-data.
+
+**Påvirkning:** Hele native projekt-organisering.
+
+---
+
+*Q-001 til Q-035 = 35 åbne spørgsmål totalt.*

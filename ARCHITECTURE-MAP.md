@@ -2491,3 +2491,843 @@ Eliminerer:
 15 nye åbne spørgsmål til OPEN-QUESTIONS.md.
 
 ---
+
+## 15. System Boundaries (Session 3)
+
+> **Session 3 — 15. maj 2026.**
+>
+> Mapping af 5 logiske systemer i Bubble's arkitektur. Hvor sektion 4
+> kataloget filer og sektion 14 entities, **dette mapper hvordan de
+> klynges i logiske domæner**.
+>
+> Dette er **fundament for native rewrite-organisering**. I stedet for
+> at portere fil-for-fil porterer vi system-for-system. Hver system
+> bliver en mappe i native projektet med klar service-boundary.
+
+### 15.1 System overview
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  IDENTITY SYSTEM                                                     │
+│  Hvem er du? Hvad er din profil? Hvad har du accepteret?             │
+│  → Profile, Onboarding, Auth, Terms                                  │
+└─────────────────────────────────────────────────────────────────────┘
+                              │
+                              │ identity establishes
+                              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  SOCIAL GRAPH SYSTEM                                                 │
+│  Hvilke netværk er du del af? Hvem er forbundet til hvem?            │
+│  → Bubbles, Memberships, Invitations, SavedContacts                  │
+└─────────────────────────────────────────────────────────────────────┘
+            │                              │
+            │ enables                      │ enables
+            ▼                              ▼
+┌──────────────────────────┐    ┌────────────────────────────────────┐
+│  MESSAGING SYSTEM        │    │  PRESENCE SYSTEM                   │
+│  Kommunikation mellem    │    │  Hvem er HER lige nu?              │
+│  forbundne mennesker     │    │  Ephemeral state for live/events   │
+│  → DMs, BubbleChat,      │    │  → LiveSession, QR, Check-in       │
+│    Reactions, Unread     │    │                                    │
+└──────────────────────────┘    └────────────────────────────────────┘
+            │                              │
+            │ all use                      │ all use
+            ▼                              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  PLATFORM SYSTEM                                                     │
+│  Infrastruktur der gør alt andet muligt                              │
+│  → Push, Realtime, Navigation, Storage, Analytics, i18n              │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Dependency direction:** Identity → Social Graph → (Messaging | Presence) → Platform
+
+**Platform-system bruges af alle** — det er foundation. Identity-system kommer først fordi alt andet kræver autentificeret user.
+
+---
+
+### 15.2 IDENTITY SYSTEM
+
+#### Purpose
+Etablerer og vedligeholder **hvem brugeren er**. Fra første OAuth login gennem onboarding til daglig brug. Sikkerheds-grænsen for hele appen.
+
+#### Files (primary owners)
+
+| File | Role i system |
+|---|---|
+| `b-auth.js` | OAuth flows, login, signup, sign-out, deep-link routing |
+| `b-onboarding.js` | Initial profile setup, tag picker, mini-onboarding |
+| `b-profile.js` | Profile editing, settings, preferences |
+| `b-config.js` | Owns `currentUser`, `currentProfile`, `isAnon` globals |
+
+#### Entities owned
+
+| Entity | Role |
+|---|---|
+| **Profile** | Core entity — written by 4 of these files |
+
+#### Realtime events
+
+Identity-system har **ingen direkte realtime subscriptions** — den er reaktiv på auth-state ændringer via `sb.auth.onAuthStateChange()`.
+
+#### Writes (via dbActions or direct)
+
+- `profiles.upsert()` — `ensureProfileExists` (b-auth.js)
+- `profiles.update()` — name, workplace, keywords, lifestage (b-onboarding.js, b-profile.js)
+- `profiles.update({ avatar_url })` — avatar repair (b-auth.js, b-profile.js)
+- `profiles.update({ terms_accepted_at })` — GDPR (b-onboarding.js)
+- `profiles.update({ banned })` — admin moderation (b-admin.js)
+
+#### Storage usage
+- `bubble-files/avatars/` — profile pictures via `b-profile.js` → handleAvatarUpload
+
+#### Auth mutations
+- `signInWithPassword` — b-auth.js
+- `signUp` — b-auth.js
+- `signOut` — **spredt over 3 filer** (b-auth.js, b-admin.js, b-onboarding.js)
+- `signInWithOAuth` — b-auth.js
+- `resetPasswordForEmail` — b-auth.js
+- `onAuthStateChange` — b-auth.js (single listener)
+
+**Q-028:** `signOut` spredt over 3 filer er anti-pattern. Native AuthService skal være eneste sted der kalder signOut.
+
+#### Dependencies on other systems
+
+- **Platform** — uses storage (avatars), navigation (post-auth routing), realtime (initGlobalRealtime kaldes efter login)
+
+#### Cross-system writes
+
+Identity-system **trigger** ofte cross-system state:
+
+- Login → Platform.initGlobalRealtime() (start alle realtime subscriptions)
+- Login → SocialGraph.loadCurrentBubbles() (load user's bubbles)
+- Logout → Platform.resetAppState() (clear ALL system state)
+- Onboarding complete → Platform.navigate('home')
+
+#### State machine
+
+```
+[UNAUTHENTICATED]
+       │
+       ├─ OAuth/Email login
+       ▼
+[AUTHENTICATING]
+       │
+       ├─ session valid + profile exists?
+       │      │
+       │      ├─ NO  → ensureProfileExists() → PROVISIONAL
+       │      └─ YES → check onboarding status
+       │
+       ▼
+[PROVISIONAL] ─── saveOnboarding() ──▶ [ONBOARDED]
+                                            │
+                                            ├─ banned by admin
+                                            ▼
+                                       [BANNED] (read-only screen)
+```
+
+**Q-029:** State machine er implicit i kode. Bør være eksplicit som TypeScript discriminated union i native (linker til Q-013).
+
+#### Boundary violations (anti-patterns)
+
+🚨 **Identity bør IKKE:**
+- Skrive til andre entities end Profile
+- Direkte håndtere bubble logic
+- Eje realtime subscriptions (Platform's ansvar)
+
+🚨 **Andre systemer bør IKKE:**
+- Skrive til `profiles.banned` (kun Identity via admin role)
+- Direkte kalde `sb.auth.X()` (gå gennem AuthService)
+- Læse `currentUser` uden at vide identity er klar (race condition)
+
+#### Native implication
+
+```
+src/systems/identity/
+├── AuthService.ts          (signIn, signUp, signOut, OAuth)
+├── ProfileService.ts       (CRUD profile - consolidates 4-file spread)
+├── OnboardingService.ts    (state machine for onboarding flow)
+├── types.ts                (Profile, OnboardingStatus, AuthState)
+└── hooks/
+    ├── useCurrentUser.ts
+    ├── useCurrentProfile.ts
+    └── useAuthState.ts
+```
+
+---
+
+### 15.3 SOCIAL GRAPH SYSTEM
+
+#### Purpose
+Modellerer **forbindelser mellem mennesker** — gennem bubbles (grupper), invitations (forbindelses-tilbud), og saved contacts (privat netværk).
+
+Det er Bubble's **moat** — møde-grafen mellem mennesker.
+
+#### Files (primary owners)
+
+| File | Role i system |
+|---|---|
+| `b-bubbles.js` | Bubble CRUD, member management, hierarchy, discover, invitations |
+| `b-home.js` | Home dartboard, saved contacts list, top matches |
+| `b-radar.js` | Smart matching algorithm, radar UI, save contact from radar |
+| `b-profile.js` | Personal saved contacts management |
+
+#### Entities owned
+
+| Entity | Role |
+|---|---|
+| **Bubble** | Core network/event/live entity |
+| **BubbleMembership** | Most fragmented — write-spread 6 |
+| **Invitation** | Bridge to membership |
+| **SavedContact** | Personal network (privat) |
+
+#### Realtime events handled
+
+```
+rt-members-{userId}          → BubbleMembership changes (own user)
+rt-bubbles-deleted-{userId}  → Bubble deletions
+rt-invites-{userId}          → New invitations received
+rt-saved-{userId}            → "Someone saved you" notifications
+member-notify-{userId}       → Approve/deny/role-change broadcasts
+```
+
+#### Writes
+
+**Bubble:**
+- `bubbles.insert()` — createBubble (b-bubbles.js)
+- `bubbles.update()` — saveEditBubble (b-bubbles.js)
+- `bubbles.delete()` — deleteBubble (b-bubbles.js)
+- `bubbles.update({ created_by })` — transferBubble (b-utils.js via dbActions)
+
+**Membership** (the fragmented one):
+- `bubble_members.insert()` — joinBubble (b-utils.js)
+- `bubble_members.update({ status: 'active' })` — approve (b-bubbles.js × 2)
+- `bubble_members.update({ role })` — promote/demote (b-bubbles.js)
+- `bubble_members.update({ last_read_at })` — read tracking (b-chat.js, b-home.js)
+- `bubble_members.update({ checked_in })` — live check-in (b-live.js)
+- `bubble_members.delete()` — leaveBubble (b-utils.js), removeMember (b-bubbles.js)
+
+**Invitation:**
+- `bubble_invitations.insert()` — sendBubbleInvites (b-bubbles.js)
+- `bubble_invitations.update({ status })` — accept/decline (b-bubbles.js)
+
+**SavedContact:**
+- `saved_contacts.insert()` — saveContact (b-utils.js via dbActions)
+- `saved_contacts.delete()` — removeContact (b-utils.js)
+- `saved_contacts.update()` — note + rating (b-profile.js) [Q-027]
+
+#### Storage usage
+- `bubble-files/bubble-icons/` — bubble icons
+- `bubble-files/event-banners/` — event cover images (future)
+
+#### RPC calls used
+- `count_unique_members` — Bubble member stats (b-chat.js)
+- `count_new_unique_members` — Recent joins (b-chat.js)
+
+#### Dependencies on other systems
+
+- **Identity** — Requires authenticated user for all writes
+- **Platform** — Uses realtime, storage, navigation, push (for member-changes)
+- **Messaging** — Cross-references for chat-locked check, last_read_at
+
+#### Cross-system writes
+
+Social Graph **triggers**:
+- Bubble create → Platform.push (invite owners can notify) — actually no, members
+- Membership.status='active' → Platform.push (notify user they're approved)
+- Bubble.delete → Messaging.cleanupBubbleMessages (CASCADE via DB)
+
+#### State machines (multiple)
+
+**Bubble lifecycle:**
+```
+DRAFT (not impl) → ACTIVE → [ENDED|EXPIRED|ARCHIVED|TRANSFERRED|DELETED]
+```
+
+**Membership lifecycle:**
+```
+(none) → [PENDING|ACTIVE] → [ACTIVE w/ role: admin|member]
+                          → ACTIVE w/ checked_in (overlay state for live)
+                          → DELETED
+```
+
+**Invitation lifecycle:**
+```
+(none) → PENDING → [ACCEPTED|DECLINED]
+```
+
+#### Boundary violations (anti-patterns)
+
+🚨 **Social Graph bør IKKE:**
+- Skrive til profiles tabel (Identity's domain)
+- Direkte sende push notifications (Platform's ansvar)
+- Eje DM-state (Messaging's domain)
+
+🚨 **Andre systemer bør IKKE:**
+- Skrive til bubble_members uden at gå gennem MembershipService
+- Skrive til bubble_invitations uden at gå gennem InvitationService
+- Tjekke admin-role implicit (skal være eksplicit query)
+
+#### Native implication
+
+```
+src/systems/social-graph/
+├── BubbleService.ts            (CRUD bubble, transfer, hierarchy)
+├── MembershipService.ts        (consolidates 6-file spread)
+│   ├── States: pending|active
+│   ├── Roles: member|admin
+│   ├── Invariants: last-admin, unique constraint
+├── InvitationService.ts        (send, accept, decline)
+├── SavedContactService.ts      (save, remove, rate, note)
+├── MatchingService.ts          (TF-IDF + sigmoid algorithm)
+├── types.ts
+└── hooks/
+    ├── useBubbles.ts
+    ├── useBubbleMembers.ts
+    ├── useInvitations.ts
+    └── useSavedContacts.ts
+```
+
+#### ⭐ Most critical service to design well: MembershipService
+
+Det er **det mest fragmenterede** sted i nuværende kodebase. Hvis det her ikke konsolideres ordentligt, vil native rewrite arve det samme rod.
+
+---
+
+### 15.4 MESSAGING SYSTEM
+
+#### Purpose
+Håndterer **kommunikation** mellem forbundne mennesker — både 1-til-1 (DMs) og group (BubbleChat). Inkluderer typing indicators, read receipts, reactions, og unread state.
+
+#### Files (primary owners)
+
+| File | Role i system |
+|---|---|
+| `b-realtime.js` | DM message handling, openChat, loadMessages, dmReduceMsg |
+| `b-chat.js` | Bubble chat, GIF picker, bcReduceMsg, reactions |
+| `b-messages.js` | Unread state, DM conversation list, bulk delete |
+
+#### Entities owned
+
+| Entity | Role |
+|---|---|
+| **DirectMessage** | 1-to-1 messages |
+| **BubbleMessage** | Group messages |
+| **BubbleMessageReaction** | Reactions on bubble messages |
+| **BubbleMessageEdit** | Edit history (audit) |
+| **BubblePost** | Pinned posts in bubbles (existing) |
+| **BubblePostReaction** | Reactions on posts |
+
+#### Realtime events handled
+
+```
+rt-messages-{userId}          → New/edited/deleted DMs for current user
+rt-bubble-msgs-{userId}       → Bubble messages from bubbles I'm in
+bc-{bubbleId}                 → Active bubble chat (local subscription)
+dmChannelName(a,b)            → Active DM (typing, receipts, broadcast)
+dm-notify-{userId}            → DM-level notifications (conversation deleted)
+```
+
+#### Writes
+
+**DirectMessage:**
+- `messages.insert()` — sendDM (b-utils.js via dbActions, b-messages.js)
+- `messages.update({ content, edited_at })` — dmStartEdit (b-realtime.js)
+- `messages.update({ deleted_at })` — dmDeleteMsg (b-realtime.js)
+- `messages.update({ read_at })` — when receiver opens (b-realtime.js)
+
+**BubbleMessage:**
+- `bubble_messages.insert()` — sendBubbleMessage (b-utils.js via dbActions, b-chat.js)
+- `bubble_messages.update({ content })` — edit (b-chat.js)
+- `bubble_messages.update({ deleted_at })` — soft delete (b-chat.js)
+
+**Reactions:**
+- `bubble_message_reactions.insert/delete` — add/remove reaction (b-chat.js)
+- `bubble_post_reactions.insert/delete` — post reactions (b-chat.js)
+
+**Membership cross-write (for unread):**
+- `bubble_members.update({ last_read_at })` — when opening chat (b-chat.js, b-home.js)
+
+#### Storage usage
+- `bubble-files/dm-attachments/` — DM file uploads
+- `bubble-files/bubble-chat-attachments/` — bubble chat files
+- All uploads use `getPublicUrl()` currently (Q-027 file URL strategy)
+
+#### Centralization patterns (GOOD)
+
+- **`dmReduceMsg(msg, opts)`** — Single reducer for ALL DM inserts. 6 paths feed it.
+- **`bcReduceMsg(msg, opts)`** — Single reducer for ALL bubble chat inserts. 4 paths feed it.
+
+These are **architecture invariants** worth preserving in native (Q-024 documents this).
+
+#### Unread state — single source of truth
+
+```javascript
+unreadState = {
+  dm: 0,         // count of unread DMs
+  notif: 0,      // count of unread notifications
+  render(),       // update DOM badges
+  dmRecount(),    // refresh from DB
+  reset()         // clear on logout
+}
+```
+
+This is **good pattern**. Native should adopt similar single-source-of-truth for unread.
+
+#### Dependencies on other systems
+
+- **Identity** — Requires authenticated user
+- **Social Graph** — Bubble messages require active membership
+- **Platform** — Realtime subscriptions, push (new message notify), storage (file uploads), analytics
+
+#### Cross-system writes
+
+Messaging **triggers**:
+- New DM → Platform.push (notify recipient)
+- New bubble message → Platform.push (notify members)
+- Open chat → SocialGraph.MembershipService.markAsRead
+
+#### Boundary violations
+
+🚨 **Messaging bør IKKE:**
+- Eje membership state (skal læse fra SocialGraph)
+- Direkte kalde push API (Platform's ansvar)
+- Modificere profiles (Identity's domain)
+
+🚨 **Andre systemer bør IKKE:**
+- Skrive direkte til messages eller bubble_messages
+- Bypasse reducer-pattern (alle inserts gennem reduceMsg)
+- Tjekke unread direkte fra DB uden at gå gennem unreadState
+
+#### Native implication
+
+```
+src/systems/messaging/
+├── DirectMessageService.ts      (1-to-1 messages)
+├── BubbleChatService.ts         (group messages)
+├── ReactionService.ts           (reactions on messages + posts)
+├── UnreadService.ts             (centralized unread state)
+├── ConversationService.ts       (NEW: Conversation entity, Q-022)
+├── reducers/
+│   ├── dmReducer.ts             (port of dmReduceMsg)
+│   └── bcReducer.ts             (port of bcReduceMsg)
+├── types.ts
+└── hooks/
+    ├── useConversations.ts
+    ├── useConversation.ts       (single DM)
+    ├── useBubbleChat.ts
+    └── useUnreadCount.ts
+```
+
+---
+
+### 15.5 PRESENCE SYSTEM
+
+#### Purpose
+Håndterer **ephemeral state** — hvem er HER lige nu? Specifikt for live bubbles og events. Inkluderer QR-baseret check-in, guest flows, og time-bounded sessions.
+
+#### Files (primary owners)
+
+| File | Role i system |
+|---|---|
+| `b-live.js` | Live bubble lifecycle, QR scanner, checkin/checkout, expiry |
+| `b-realtime.js` | rtSubscribeLiveBubble (per-bubble channel) |
+
+#### Entities owned
+
+| Entity | Role |
+|---|---|
+| **LiveSession** | Ephemeral overlay on BubbleMembership |
+| **QRToken** | Single-use QR tokens for check-in |
+| **GuestCheckin** | Non-authenticated user check-ins (event-flow) |
+
+#### Realtime events handled
+
+```
+rt-live-bubble-{bubbleId}     → Per-bubble live state (members coming/going)
+checkin-notify-{userId}       → Direct check-in notifications
+```
+
+**Note:** Live subscription is **dynamic** — only created when user is in live bubble, destroyed when leaving.
+
+#### Writes
+
+**LiveSession (via BubbleMembership overlay):**
+- `bubble_members.update({ checked_in: true, checked_in_at })` — via edge function (b-live.js triggers)
+
+**QRToken:**
+- `qr_tokens.insert()` — generate token (b-bubbles.js, b-live.js)
+- `qr_tokens.delete()` or `used_at` — token consumption (edge function `checkin`)
+
+**GuestCheckin:**
+- `guest_checkins.insert()` — non-auth user check-in (edge function `checkin`)
+
+**Bubble state:**
+- `bubbles.update({ status: 'expired' })` — live bubble expires (Q-016: mechanism?)
+
+#### Edge functions
+
+⭐ **Authoritative server-side logic:**
+- `checkin` — validates QR token, creates membership + checked_in OR guest_checkin
+
+This is **the ONLY system** where server is authoritative. Frontend just triggers + reads result. **Pattern to preserve in native.**
+
+#### Storage usage
+- None directly (QR tokens are short strings)
+
+#### Dependencies on other systems
+
+- **Identity** — Requires user (auth or anon guest)
+- **Social Graph** — Updates BubbleMembership (overlap entity)
+- **Platform** — Realtime per-bubble channel, push (check-in notifications)
+
+#### State synchronization problem (Q-026)
+
+Currently **3 sources of truth:**
+1. Frontend `appMode.checkedInIds` (UI state)
+2. DB `bubble_members.checked_in`
+3. Edge function `checkin` logic
+
+**Native principle:** Edge function is truth. Frontend reads via realtime. NO client-side authority.
+
+#### Lifecycle of a live bubble
+
+```
+T=0     Bubble created (type='live', expires_at = now + 6h)
+        ┌─ status='active'
+        ├─ bubble_members.insert() for creator (admin role)
+        └─ Realtime channel rt-live-bubble-{id} subscribed
+        
+T=0..6h Users join via QR scan
+        ├─ Edge function checkin validates
+        ├─ bubble_members.update({ checked_in=true })
+        └─ Realtime broadcast to all in channel
+        
+T=6h    Bubble expires (mechanism Q-016, Q-025)
+        ├─ status='expired'
+        ├─ All checked_in cleared
+        └─ Realtime channel can be unsubscribed
+```
+
+#### Boundary violations
+
+🚨 **Presence bør IKKE:**
+- Skrive til profiles
+- Send messages (Messaging's domain)
+- Modify bubble settings outside expiration
+
+🚨 **Andre systemer bør IKKE:**
+- Skrive `checked_in` direkte (only edge function)
+- Bypass QR token validation
+- Læse `appMode.checkedInIds` som autoritativ (skal læses fra DB via realtime)
+
+#### Native implication
+
+```
+src/systems/presence/
+├── PresenceService.ts          (checkIn, checkOut via edge function)
+├── QRService.ts                (generate, scan, validate tokens)
+├── GuestSessionService.ts      (non-auth event-flow)
+├── LiveBubbleService.ts        (bubble lifecycle for type='live')
+├── types.ts
+└── hooks/
+    ├── useCurrentLiveSession.ts
+    ├── useLiveBubbleMembers.ts (realtime)
+    └── useQRScanner.ts          (camera + BarcodeDetector)
+```
+
+#### ⭐ Key native principle: Server-authoritative
+
+All presence writes go through edge function. Frontend is **purely reactive**. This eliminates the 3-source-of-truth problem.
+
+---
+
+### 15.6 PLATFORM SYSTEM
+
+#### Purpose
+**Infrastruktur** der gør alt andet muligt. Cross-cutting concerns: realtime, push, navigation, storage, analytics, i18n, error handling.
+
+Det er **foundation** — alle andre systemer afhænger af det.
+
+#### Files (primary owners)
+
+| File | Role i system |
+|---|---|
+| `b-config.js` | Supabase client, globals, error logging, app mode, flow state |
+| `b-utils.js` | UI primitives, dbActions, toast, modal/sheet system |
+| `b-i18n.js` | Translation system (1.084 keys) |
+| `b-navigation.js` | goTo, navState, screen lifecycle |
+| `b-realtime.js` | Global subscription hub, reconnect logic |
+| `b-boot.js` | App startup, screen hooks, preload coordinator |
+| `b-notifications.js` | Notifications screen, badge logic |
+| `b-admin.js` | Admin panel (cross-cutting moderation) |
+| `bubble-icons.js` | SVG icon library |
+| `tag-data.js` | Taxonomy data (196 tags) |
+| `sw.js` | Service worker (PWA caching) |
+
+**Note:** Platform is the **largest** system by file count — it's infrastructure.
+
+#### Entities owned
+
+| Entity | Role |
+|---|---|
+| **PushSubscription** | Device push tokens |
+| **AnalyticsEvent** | Tracking events |
+| **ErrorLog** | Error persistence |
+| **Notification** | In-app notifications |
+
+#### Realtime events handled (cross-system delivery)
+
+```
+ALL channels are subscribed/managed here:
+- rt-messages-{userId}
+- rt-members-{userId}
+- rt-bubbles-deleted-{userId}
+- rt-bubble-msgs-{userId}
+- rt-invites-{userId}
+- rt-saved-{userId}
+- checkin-notify-{userId}
+- member-notify-{userId}
+- dm-notify-{userId}
+- rt-live-bubble-{bubbleId} (dynamic, by Presence)
+- bc-{bubbleId} (dynamic, by Messaging)
+- admin-debug-errors (admin only)
+```
+
+Platform **owns the subscription manager**. Other systems consume events.
+
+#### Writes
+
+**PushSubscription:**
+- `push_subscriptions.insert/update` — register device (b-notifications.js, b-boot.js)
+- `push_subscriptions.delete` — on logout (b-auth.js)
+
+**Analytics:**
+- `analytics.insert()` — `trackEvent()` everywhere (b-config.js owns the API)
+
+**ErrorLog:**
+- `error_log.insert()` — `logError()` (b-config.js)
+
+**Notifications:**
+- `notifications.update({ read_at })` — mark as read (b-notifications.js)
+
+#### Edge functions
+
+- `send-push` — invoked via `sb.functions.invoke('send-push', ...)`
+- `cleanup-test-user` / `reset-test-user` — admin testing
+
+#### Storage usage
+- `bubble-files` bucket (only one) — used by Identity, Social Graph, Messaging
+- Platform owns the bucket access pattern via `dbActions`
+
+#### Subsystems (Platform is large enough to have sub-domains)
+
+**P.1 Realtime subsystem**
+- 11+ channels managed
+- Reconnect logic with backoff
+- Connection state (`_rtState`)
+- Offline modal handling
+
+**P.2 Push subsystem**
+- VAPID subscription
+- Edge function delivery
+- **4 DB triggers + 9 frontend calls** = anti-pattern (memory note)
+
+**P.3 Navigation subsystem**
+- `goTo()` with screen hooks
+- `navState` single source
+- Screen onEnter/onLeave lifecycle
+
+**P.4 Error handling**
+- `logError()` with email alerts
+- `error_log` table
+- Global `window.onerror` + `window.onunhandledrejection`
+
+**P.5 i18n**
+- `t()` translation
+- Static UI via `data-t` attributes
+- 1.084 keys, zero hardcoded Danish
+
+**P.6 Storage**
+- Single bucket `bubble-files`
+- Permanent public URLs (Q-027 strategy undecided)
+- 5 files upload, all via `getPublicUrl()`
+
+**P.7 Analytics**
+- `trackEvent()` API
+- Batched flush via `_analyticsQueue`
+- Used by all other systems
+
+#### Dependencies
+
+Platform has **NO dependencies on other systems** — it's foundation. Everything else depends on Platform.
+
+#### Boundary violations
+
+🚨 **Platform bør IKKE:**
+- Vide om Bubble's business logic (entities, states)
+- Direkte modificere domain data
+- Eje state for andre systemer
+
+🚨 **Andre systemer bør IKKE:**
+- Implement deres egen realtime subscription manager
+- Implement deres egen error logging
+- Implement deres egen i18n
+- Bypass `dbActions` for writes
+
+#### Native implication
+
+```
+src/platform/
+├── supabase/
+│   ├── client.ts                (Supabase client singleton)
+│   ├── realtime-manager.ts      (subscription lifecycle)
+│   └── storage.ts               (file upload abstraction)
+├── push/
+│   ├── PushService.ts           (registration + delivery)
+│   └── (server-authoritative: NO frontend push calls in native)
+├── navigation/
+│   ├── routes.ts                (typed route definitions)
+│   ├── NavigationService.ts     (programmatic nav)
+│   └── DeepLinkHandler.ts       (URL params → intent)
+├── i18n/
+│   ├── translations.ts          (JSON: da + en)
+│   ├── useTranslation.ts        (hook)
+│   └── LanguageService.ts
+├── error-handling/
+│   ├── logger.ts                (replace logError)
+│   ├── ErrorBoundary.tsx        (React-specific)
+│   └── crash-reporter.ts        (Sentry or similar)
+├── analytics/
+│   ├── AnalyticsService.ts      (replace trackEvent)
+│   └── events.ts                (typed event catalog)
+└── ui/
+    ├── theme.ts                 (design tokens)
+    ├── Toast.tsx                (replace showToast)
+    └── BottomSheet.tsx          (replace bbOpen/bbClose)
+```
+
+#### Key native principle for Platform
+
+**Stable API surface.** Platform-services skal være **rock-solid** og **rarely change**. Other systems depend on them — breaking changes ripple through everything.
+
+---
+
+### 15.7 Cross-System Interaction Matrix
+
+| From → To | Identity | Social Graph | Messaging | Presence | Platform |
+|---|---|---|---|---|---|
+| **Identity** | — | "user_logged_in" event | (none directly) | (none directly) | initGlobalRealtime, resetAppState |
+| **Social Graph** | (reads currentProfile) | — | markAsRead writes membership | (none) | push, storage, realtime |
+| **Messaging** | (reads currentProfile) | reads membership for chat-lock | — | (none) | push, storage, realtime |
+| **Presence** | (reads currentProfile) | writes membership.checked_in | (none) | — | push, realtime, edge function |
+| **Platform** | (none — foundation) | (none — foundation) | (none — foundation) | (none — foundation) | — |
+
+**Reading direction:** Identity at top, Platform at bottom. Higher systems consume from lower.
+
+**Forbidden directions:**
+- 🚫 Platform → any domain system (Platform must stay infrastructure-only)
+- 🚫 Presence → Messaging (different ephemeral characteristics)
+- 🚫 Messaging → Presence (different consistency requirements)
+- 🚫 Cross-write across domain systems (must go through services)
+
+---
+
+### 15.8 System ownership of write-fanout hotspots
+
+From section 8 (Write-Fanout Hotspots), here's which system owns each:
+
+| Table | System | Service in native |
+|---|---|---|
+| `profiles` | Identity | ProfileService |
+| `bubble_members` | Social Graph | MembershipService ⭐ |
+| `bubbles` | Social Graph | BubbleService |
+| `bubble_invitations` | Social Graph | InvitationService |
+| `bubble_messages` | Messaging | BubbleChatService |
+| `messages` | Messaging | DirectMessageService |
+| `reports` | Platform (moderation) | ReportingService |
+| `bubble-files` storage | Platform | StorageService |
+| `saved_contacts` | Social Graph | SavedContactService |
+| `push_subscriptions` | Platform | PushService |
+| `qr_tokens` | Presence | QRService |
+| `guest_checkins` | Presence | GuestSessionService |
+
+**This is the service-to-system mapping** that informs native folder structure.
+
+---
+
+### 15.9 System sizing (rough native estimate)
+
+| System | Current files | Current lines | Native estimate (TypeScript) |
+|---|---:|---:|---:|
+| Identity | 4 (partial) | ~3,500 | ~2,500 lines TS + tests |
+| Social Graph | 4 | ~6,950 | ~4,500 lines TS + tests |
+| Messaging | 3 | ~4,100 | ~3,000 lines TS + tests |
+| Presence | 2 (partial) | ~1,700 | ~1,200 lines TS + tests |
+| Platform | 11 | ~6,300 | ~4,500 lines TS + tests |
+| **Total** | — | ~22,550 | ~15,700 lines TS + tests |
+
+**Native estimate is ~30% less code** because:
+- TypeScript types replace defensive checks
+- Centralized services eliminate fragmentation
+- React Native handles UI patterns we built manually
+- No DOM manipulation
+- Reusable hooks/components
+
+**Add UI components: ~5,000-8,000 lines** for React Native screens.
+
+**Total native estimate: 20,000-25,000 lines** — comparable to PWA but more maintainable.
+
+---
+
+### 15.10 Native folder structure proposal
+
+```
+bubble-native/
+├── src/
+│   ├── systems/
+│   │   ├── identity/        (Identity System)
+│   │   ├── social-graph/    (Social Graph System)
+│   │   ├── messaging/       (Messaging System)
+│   │   └── presence/        (Presence System)
+│   ├── platform/
+│   │   ├── supabase/
+│   │   ├── push/
+│   │   ├── navigation/
+│   │   ├── i18n/
+│   │   ├── error-handling/
+│   │   ├── analytics/
+│   │   └── ui/
+│   ├── screens/             (React Native screen components)
+│   │   ├── auth/
+│   │   ├── onboarding/
+│   │   ├── home/
+│   │   ├── bubbles/
+│   │   ├── chat/
+│   │   ├── profile/
+│   │   └── live/
+│   ├── components/          (shared UI components)
+│   └── App.tsx
+├── app.json
+├── tsconfig.json
+└── package.json
+```
+
+---
+
+### 15.11 Open questions from this session
+
+| Q-# | Topic |
+|---|---|
+| Q-028 | signOut spredt over 3 filer — anti-pattern, konsolider i AuthService? |
+| Q-029 | Identity state machine: implicit → eksplicit TypeScript discriminated union? |
+| Q-030 | Platform reports table: hører under Platform (moderation) eller eget system? |
+| Q-031 | bubble_message_edits + bubble_post_reactions: separate entities? Hører under Messaging |
+| Q-032 | Cross-system writes via services only — bekræft som invariant? |
+| Q-033 | Platform should have NO dependency on domain systems — confirm? |
+| Q-034 | Sub-systems within Platform (P.1-P.7): hver bliver egen mappe i native? |
+| Q-035 | Native folder structure proposal (15.10) — passer det din intuition? |
+
+8 nye åbne spørgsmål (Q-028 til Q-035).
+
+---
