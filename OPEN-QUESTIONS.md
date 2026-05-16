@@ -510,3 +510,147 @@ src/
 ---
 
 *Q-001 til Q-035 = 35 åbne spørgsmål totalt.*
+
+---
+
+## Session 4 — Critical Flows (16. maj 2026)
+
+### Q-036: 6 entry points for bubble join — consolidate?
+
+**Kontekst:** Bubble Join Flow har 6 forskellige entry points (UI button, ?join=, ?event=, QR scan, invitation, deep-link unauthenticated).
+
+**Spørgsmål:** Kan vi konsolidere til 3 (direct, deep-link, QR)? Event-flow vs join-flow distinction kan være unødig kompleksitet.
+
+**Antagelse:** Pilot-data afgør. Indtil da: bevar nuværende.
+
+---
+
+### Q-037: data-action delegated pattern vs inline onclick
+
+**Kontekst:** b-chat.js linje 627 bruger `data-action="requestJoin"` delegated event handler. b-bubbles.js linje 2291 bruger inline `onclick="requestJoin(...)"`.
+
+**Spørgsmål:** Standardiser på data-action pattern for alle dynamisk-genererede buttons?
+
+**Antagelse:** Ja. Mere refactor-venligt. Native bruger React props alligevel.
+
+---
+
+### Q-038: checkQRJoin legacy code — fjern i næste prod release?
+
+**Kontekst:** Memory note: "Legacy checkQRJoin() i b-bubbles.js er deprecated siden v8.17.22".
+
+**Spørgsmål:** Kan vi fjerne det? Eller bevarer det som safety net?
+
+**Antagelse:** Fjern når vi har 2-3 ugers stabilitet uden bugs.
+
+---
+
+### Q-039: event_flow branch i checkPendingJoin
+
+**Kontekst:** checkPendingJoin har en separat event_flow branch der "peeker" på bubble før join.
+
+**Spørgsmål:** Er separation virkelig nødvendig? Kunne unified flow med discriminator-felt.
+
+**Antagelse:** Kan unified i native med eksplicit `JoinIntent.type`.
+
+---
+
+### Q-040: Push double-firing på bubble join
+
+**Kontekst:** Push fyrer fra BÅDE frontend sendPush AND DB trigger.
+
+**Spørgsmål:** Fix før native eller efter?
+
+**Antagelse:** Efter. Det er ikke broken — bare ineffektivt. Native skal være server-only.
+
+---
+
+### Q-041: sendMessage direct DB write vs dbActions.sendDM
+
+**Kontekst:** b-messages.js sendMessage() bruger DIRECT `sb.from(messages).insert()` mens sendDirectMessage() bruger dbActions.sendDM().
+
+**Spørgsmål:** Hvorfor inkonsistensen? Skal konsolideres.
+
+**Antagelse:** Historisk artefakt. dbActions.sendDM kom senere. Skal opdatere sendMessage.
+
+---
+
+### Q-042: Push double-firing på DM send
+
+**Kontekst:** Samme problem som Q-040 men for DMs.
+
+**Spørgsmål:** Fix før native?
+
+**Antagelse:** Efter. Native skal være server-only.
+
+---
+
+### Q-043: _dmLastSent dedup window — configurable?
+
+**Kontekst:** Hardcoded 3 sekunder. Native kunne have config per environment.
+
+**Spørgsmål:** Skal det være justerbart?
+
+**Antagelse:** Ja i native, men 3s er nok god default.
+
+---
+
+### Q-044: Broadcast vs CDC ordering
+
+**Kontekst:** Broadcast arriver typisk før CDC. dmReduceMsg dedup handles det.
+
+**Spørgsmål:** Skal native møde anderledes? Eller bevar dedup-pattern?
+
+**Antagelse:** Bevar dedup-pattern. Det er robust.
+
+---
+
+### Q-045: Edge function `checkin` source i repo?
+
+**Kontekst:** Source er på Michaels PC, IKKE i repo. Det er kritisk logik vi ikke kontrollerer i version control.
+
+**Spørgsmål:** Hvornår skal vi committe edge function source?
+
+**Antagelse:** Sammen med Q-012 backend-kontrakter eksport.
+
+---
+
+### Q-046: currentLiveBubble legacy compat object
+
+**Kontekst:** appMode.live er nyt single-source-of-truth, men currentLiveBubble eksisterer parallelt for legacy compat.
+
+**Spørgsmål:** Kan currentLiveBubble fjernes nu? Eller venter vi til native?
+
+**Antagelse:** Vent til native. Risikabelt at fjerne globally-used global.
+
+---
+
+### Q-047: All edge function source i version control?
+
+**Kontekst:** Generalisering af Q-045. Vi har 3 edge functions: send-push, checkin, cleanup-test-user/reset-test-user. Hvor mange er i repo?
+
+**Antagelse:** Sandsynligvis ingen. Skal alle committes.
+
+---
+
+### Q-048: Bubble expiration mechanism (revisit Q-016)
+
+**Kontekst:** Live bubbles har `expires_at` (6 timer). Edge function checkin bør validere `bubble.status=active` — men hvordan håndhæves status update?
+
+**Spørgsmål:** Background job? Pg_cron? Frontend-only?
+
+**Antagelse:** Sandsynligvis pg_cron eller frontend-check ved hver checkin. Verificer ved at læse edge function source.
+
+---
+
+### Q-049: Client-side checkin fallback — fjern i PWA cleanup?
+
+**Kontekst:** _liveCheckinFallback() er ikke atomic — 3 separate DB calls. Race conditions possible.
+
+**Spørgsmål:** Skal vi fjerne fallback nu, eller bevare til native?
+
+**Antagelse:** Bevar. Edge function har høj uptime, men fallback er safety net for udkanter af reach.
+
+---
+
+*Q-001 til Q-049 = 49 åbne spørgsmål totalt.*

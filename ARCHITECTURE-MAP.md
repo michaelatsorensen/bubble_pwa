@@ -3331,3 +3331,1025 @@ bubble-native/
 8 nye åbne spørgsmål (Q-028 til Q-035).
 
 ---
+
+## 16. Critical Flow #1: Bubble Join Flow (Session 4)
+
+> **Session 4 — 16. maj 2026.**
+>
+> Mapping af det mest komplekse async flow i Bubble. Krydser:
+> Identity + Social Graph + Messaging + Presence + Platform systems.
+>
+> **Format per flow:**
+> - Entry points (alle veje at starte flowet)
+> - Sequence diagram (mermaid)
+> - State machine for involved entities
+> - File-by-file detail (akkumuleret file-katalog som biprodukt)
+> - Side effects (DB writes, realtime, push, navigation)
+> - Race conditions identified
+> - Native service mapping
+
+### 16.1 Why this flow is critical
+
+Bubble Join Flow rammer:
+- **5 different entry points** (UI button, URL deep-link, QR scan, invitation accept, event-flow)
+- **3 visibility variants** (public/private/hidden)
+- **3 auth states** (authenticated, pending_join after OAuth, guest user)
+- **2 bubble types** (network vs event/live)
+- **2 checkin modes** (self vs scan/reverse-QR)
+
+= **~30 distinct paths** through the system depending on combination.
+
+Historically, this is where the most bugs have lived. Race conditions
+between `checkPendingJoin()`, `checkQRJoin()`, and OAuth-redirect were
+documented in memory note ("v8.17.19-20: landing redirect loop fix").
+
+---
+
+### 16.2 Entry points
+
+```
+ENTRY 1: Direct user action (authenticated)
+  User taps "Bliv medlem" button in discover/bubble-chat
+  ↓
+  Calls: joinBubble(bubbleId)  [b-bubbles.js:291]
+
+ENTRY 2: URL deep-link with ?join= (authenticated)
+  User opens https://bubbleme.dk/?join=<bubbleId>
+  ↓
+  b-boot.js detects param at load, calls flowSet('pending_join', joinId)
+  Then resolvePostAuthDestination eventually calls checkPendingJoin()
+
+ENTRY 3: URL deep-link with ?join= (NOT authenticated)
+  User clicks invite link → lands on auth screen
+  ↓
+  b-boot.js calls flowSet('pending_join', joinId) BEFORE auth
+  User signs in
+  ↓
+  b-auth.js → loadAuthenticatedUser → resolvePostAuthDestination
+  ↓
+  checkPendingJoin() consumes the flow flag
+
+ENTRY 4: QR scan (live bubble)
+  User scans bubble QR code in app
+  ↓
+  b-live.js handles QR decode
+  ↓
+  liveCheckin → joinBubble (if not member) → checkin
+
+ENTRY 5: Event deep-link with ?event=
+  Different from ?join= — uses event_flow logic
+  ↓
+  Sets BOTH pending_join AND event_flow flags
+  ↓
+  After auth, checkPendingJoin handles "event flow" branch differently
+
+ENTRY 6: Invitation accept (already member of inviter's circle)
+  User sees invitation in notifications, clicks accept
+  ↓
+  b-bubbles.js accepts invitation
+  ↓
+  bubble_members row created with status='active'
+```
+
+**Q-036:** Are all 6 entry points really necessary? Could we consolidate
+to 3 (direct, deep-link, QR)? Event-flow vs join-flow distinction may
+be unnecessary complexity. Need pilot data.
+
+---
+
+### 16.3 Sequence diagram — Most complex variant (Entry 3: Deep-link unauthenticated)
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant URL as Browser URL
+    participant Boot as b-boot.js
+    participant Auth as b-auth.js
+    participant Flow as flowState (localStorage)
+    participant DB as Supabase
+    participant Realtime as Realtime hub
+    participant Bubbles as b-bubbles.js
+    participant Home as b-home.js
+    
+    User->>URL: Opens ?join=<bubbleId>
+    URL->>Boot: window.load event
+    Boot->>Boot: parseUrlParams()
+    Boot->>Flow: flowSet('pending_join', joinId)
+    Boot->>Auth: checkAuth()
+    Auth->>DB: sb.auth.getSession()
+    DB-->>Auth: null (not authenticated)
+    Auth->>Boot: redirectToLanding() OR show auth screen
+    
+    User->>Auth: Enters credentials / OAuth
+    Auth->>DB: signInWithPassword() / OAuth
+    DB-->>Auth: session + user
+    Auth->>DB: ensureProfileExists()
+    Auth->>Auth: loadEssentials()
+    Auth->>Auth: maybeShowOnboarding()
+    
+    alt User needs onboarding
+        Auth->>User: Show onboarding screen
+        User->>Auth: Complete onboarding (saves profile)
+    end
+    
+    Auth->>Auth: initServices()
+    Auth->>Realtime: initGlobalRealtime()
+    Auth->>Auth: resolvePostAuthDestination()
+    Auth->>Bubbles: checkPendingJoin()
+    Bubbles->>Flow: flowGet('pending_join')
+    Flow-->>Bubbles: joinId
+    Bubbles->>DB: dbActions.joinBubble(joinId, 'invite_link')
+    
+    alt Public bubble
+        DB->>DB: INSERT bubble_members (status=active by default)
+        DB-->>Bubbles: { ok: true }
+        Bubbles->>Flow: consumeFlow('pending_join')
+        Bubbles->>User: showSuccessToast('Du er nu medlem')
+        Bubbles->>Bubbles: openBubble(joinId)
+        Bubbles->>Home: loadHome() (refresh state)
+        
+        Bubbles->>DB: SELECT bubbles WHERE id (get bubble.created_by)
+        Bubbles->>Realtime: Broadcast 'new_member' on member-notify-{owner}
+    else Private bubble
+        DB-->>Bubbles: { ok: false, error: 'private_bubble' }
+        Note over Bubbles: ⚠️ This case actually never reaches checkPendingJoin<br/>because dbActions blocks private joins from 'discover' source<br/>BUT 'invite_link' source bypasses this check
+        DB->>DB: INSERT bubble_members succeeds<br/>(invite_link source bypasses visibility check)
+    else Hidden bubble
+        DB-->>Bubbles: { ok: false, error: 'hidden_bubble' }
+        Bubbles->>User: showErrorToast()
+    else Already member
+        DB-->>Bubbles: { ok: true, duplicate: true }
+        Bubbles->>Bubbles: openBubble(joinId)
+    end
+```
+
+---
+
+### 16.4 Race conditions identified
+
+🚨 **Race 1: Double-join between checkPendingJoin and checkQRJoin**
+
+Memory note from v8.17.22: "Legacy checkQRJoin() in b-bubbles.js is deprecated — captured during initial auth flow instead."
+
+The fix: `?join=` is **captured before auth** (b-boot.js:860-864), so resolvePostAuthDestination is the single owner of post-auth join handling. checkQRJoin remains as legacy fallback but is bypassed.
+
+**For native:** Single intent-handler. No duplicate paths.
+
+🚨 **Race 2: Landing-page redirect loop with ?auth=1**
+
+Memory note v8.17.19-20: SessionStorage `_cameFromLanding` flag + `shouldBypassLanding` guard in `setupAuthListener`.
+
+The bug: Browser-mode users with ?auth=1 in URL kept being redirected back to landing.html because auth-state-change re-triggered the landing redirect logic.
+
+The fix: Once user actively chose "go to app" from landing, set sessionStorage flag, bypass landing redirect for rest of session.
+
+**For native:** No landing-page concept. Deep-link goes directly to onboarding or home. This entire race-class disappears.
+
+🚨 **Race 3: Concurrent join + onboarding**
+
+If a not-fully-onboarded user clicks a join link, they need onboarding BEFORE they can join. Flow:
+
+1. User clicks ?join=X link
+2. Sets pending_join flag
+3. After auth, checks: needs_onboarding?
+4. YES → show onboarding screen, pending_join survives in localStorage
+5. After onboarding, resolvePostAuthDestination calls checkPendingJoin
+6. NOW pending_join consumed + join executes
+
+**Risk:** If onboarding takes long time (>15min TTL), pending_join expires. User must click link again. Probably OK behavior.
+
+🚨 **Race 4: Bubble deleted between flag set and consume**
+
+User clicks ?join=X, but bubble X is deleted before they complete OAuth.
+- dbActions.joinBubble fails with "private_bubble" or generic error
+- User stranded on home screen, sees toast error
+- pending_join consumed → won't retry
+
+**Current behavior:** Error toast + return to home. Acceptable.
+
+🚨 **Race 5: Network race in event_flow branch**
+
+In checkPendingJoin event_flow branch (b-bubbles.js:1330-1359):
+```javascript
+var { data: peekBubble } = await sb.from('bubbles').select('id,name,type,checkin_mode')...
+// Network call 1
+var peekIsScanCheckin = peekBubble && peekBubble.checkin_mode === 'scan';
+
+if (peekIsEvent && peekIsScanCheckin) {
+  var result = await dbActions.joinBubble(joinId, 'invite_link');
+  // Network call 2
+  ...
+}
+```
+
+Between calls, bubble's `checkin_mode` could theoretically change. **Probability: very low.** Not worth fixing in PWA. Native should ideally use single atomic edge function call.
+
+---
+
+### 16.5 State changes summary
+
+**bubble_members table:**
+```
+INSERT { bubble_id, user_id }
+  ↓ trigger or RLS default
+status='active' (default for public bubble)
+OR
+status='pending' (if private bubble + requestJoin path)
+```
+
+**Implicit invariants enforced:**
+- Unique constraint on (bubble_id, user_id) → duplicate joins return `{ ok: true, duplicate: true }`
+- created_by user gets implicit admin role
+- Members of private bubbles cannot direct-join via 'discover' source
+
+**Flow state side effects:**
+- `flowSet('pending_join', id)` → persisted across OAuth redirect
+- `consumeFlow('pending_join')` → atomic read-and-clear
+- `event_flow` flag set in parallel for event-specific paths
+
+**Realtime side effects:**
+- Broadcast 'new_member' on `member-notify-{owner}` channel
+- Owner's frontend receives broadcast → shows push notification or in-app
+- Other members receive via `rt-members-{userId}` postgres_changes
+- Bubble's member count auto-updates in radar/discover via subscription
+
+**Push side effects:**
+- `sendPush(b.created_by, ...)` direct from frontend (b-bubbles.js:930)
+- Plus DB trigger fires for `bubble_members` INSERT (memory note: 4 triggers)
+- = **Double-firing potential** for join notification
+
+---
+
+### 16.6 File-by-file detail (file-catalog as byproduct)
+
+#### b-bubbles.js — Bubble feature owner
+
+**Functions involved in join flow:**
+
+| Function | Line | Role | Calls |
+|---|---|---|---|
+| `joinBubble(bubbleId)` | 291 | Public join, optimistic UI | `dbActions.joinBubble`, `_bbAfterJoin`, `openBubble`, `loadHome`, broadcast |
+| `requestJoin(bubbleId)` | 914 | Private bubble request | `dbActions.requestJoin`, broadcast, sendPush |
+| `checkQRJoin()` | 1288 | LEGACY ?join= handler | `dbActions.joinBubble`, `goTo`, `openBubble` |
+| `checkPendingJoin()` | 1323 | Primary post-auth handler | `dbActions.joinBubble`, `consumeFlow`, `showDeepLinkModal`, `goTo`, `openBubble`, `_bbAfterJoin` |
+| `_bbAfterJoin(bubbleId)` | (search needed) | Post-join state refresh | Refresh UI, update caches |
+| `openBubble(bubbleId, fromScreen)` | varies | Navigate to bubble chat | `bcLoadChatData`, `goTo('screen-bubble-chat')` |
+
+#### b-utils.js — Centralized write layer
+
+**Function involved:**
+
+| Function | Line | Role |
+|---|---|---|
+| `dbActions.joinBubble(bubbleId, source)` | 796 | THE canonical write entry. Returns `{ ok, duplicate?, error? }` |
+| `dbActions.requestJoin(bubbleId)` | (search needed) | Private bubble request → status='pending' insert |
+
+**Defense in depth:**
+- Source='discover' triggers visibility check (blocks private/hidden)
+- Source='invite_link' bypasses check (already validated by possessing link)
+- Source='qr_scan' for live bubbles
+- Source defaults to 'discover'
+
+#### b-auth.js — Auth orchestration
+
+**Functions involved:**
+
+| Function | Line | Role |
+|---|---|---|
+| `resolvePostAuthDestination()` | (search needed) | Master orchestrator of post-auth routing |
+| `checkPendingContact()` | 5 (mentioned) | Sister flow — same pattern |
+| `setupAuthListener()` | (search needed) | onAuthStateChange handler — coordinates with flow flags |
+
+#### b-boot.js — Entry-point handler
+
+**Critical logic:**
+
+| Code | Line | Role |
+|---|---|---|
+| Parse `?join=` from URL | ~860 | `flowSet('pending_join', joinId)` |
+| Parse `?event=` from URL | ~557 | `flowSet('pending_join', eventId)` + `flowSet('event_flow', ...)` |
+| Switch case for routing | 77-78 | Maps action strings to functions: `joinBubble`, `requestJoin` |
+| Capture before auth | 860-864 | CRITICAL: prevents double-join race |
+
+#### b-realtime.js — Realtime side-effects
+
+**Channels involved:**
+
+- `member-notify-{ownerId}` — broadcast 'new_member' event (owner side)
+- `rt-members-{userId}` — postgres_changes on bubble_members (both sides)
+- `rt-bubbles-deleted-{userId}` — handle bubble deletion mid-flow
+
+**Handlers:**
+
+| Function | Line | Role |
+|---|---|---|
+| `rtHandleMemberChange(payload)` | 326 | INSERT/UPDATE on bubble_members → refresh UI |
+| `rtHandleMemberDelete(payload)` | 376 | DELETE on bubble_members → cleanup |
+
+#### b-home.js — UI state refresh
+
+**Functions called after join:**
+
+| Function | Role |
+|---|---|
+| `loadHome()` | Full home refresh |
+| `_allMyBubblesCache` | Invalidate cache (membership changed) |
+| `_myBubbleMemberIds` | Updates used by realtime nav-dot logic |
+
+#### b-chat.js — UI elements
+
+**Join buttons in chat UI:**
+
+| Line | Context |
+|---|---|
+| 1524 | "Bliv medlem" button in bubble chat (non-member viewer) |
+| 2050 | Top join button in bubble info tab |
+| 627 | requestJoin button for private bubbles (delegate-pattern, NOT inline onclick) |
+
+**Q-037:** Line 627 uses `data-action="requestJoin"` delegated event handler — this is BETTER than inline onclick. Why is this pattern only in chat? Should be standardized for all dynamically-generated buttons.
+
+---
+
+### 16.7 Native service mapping
+
+Based on this flow, the native services involved are:
+
+```typescript
+// MembershipService — THE central service for bubble joining
+class MembershipService {
+  async join(bubbleId: string, source: 'discover' | 'invite' | 'qr' | 'event'): Promise<JoinResult>
+  async requestJoin(bubbleId: string): Promise<RequestResult>
+  async approveJoin(bubbleId: string, userId: string): Promise<void>
+  async denyJoin(bubbleId: string, userId: string): Promise<void>
+  async leave(bubbleId: string): Promise<void>
+  
+  // Replaces dbActions.joinBubble pattern
+  // Eliminates 6-file write-spread
+}
+
+// DeepLinkService — handles URL → intent
+class DeepLinkService {
+  parseUrl(url: string): DeepLinkIntent
+  // Returns: { type: 'join'|'event'|'qr', bubbleId: string, ... }
+}
+
+// IntentQueue — replaces flow flag state
+class IntentQueue {
+  enqueue(intent: Intent): void
+  consume(type: IntentType): Intent | null
+  // Replaces flowSet/flowGet/consumeFlow pattern
+  // Auto-expires after configurable TTL
+  // Survives app restart via secure storage
+}
+
+// PostAuthOrchestrator — replaces resolvePostAuthDestination
+class PostAuthOrchestrator {
+  async resolve(authState: AuthState, intentQueue: IntentQueue): Promise<NavigationTarget>
+  // Encapsulates the post-auth routing logic
+  // Single owner — no race conditions
+}
+```
+
+**Key improvements in native:**
+1. **Single intent-handler** — no checkPendingJoin + checkQRJoin duplication
+2. **Type-safe sources** — TypeScript enum instead of string
+3. **Atomic transactions** — edge function for join+notify combined
+4. **No push double-firing** — frontend doesn't call sendPush, server does
+5. **Native deep-linking** — uses React Navigation's linking config
+
+---
+
+### 16.8 Recommendations for PWA (before native)
+
+Some findings from this flow analysis are actionable BEFORE native:
+
+✅ **GOOD (preserve):**
+- Centralized dbActions.joinBubble write layer
+- Atomic consumeFlow pattern
+- Defense-in-depth in dbActions (source-based visibility checks)
+- Single post-auth orchestrator (resolvePostAuthDestination)
+
+🟡 **CONSIDER fixing in PWA:**
+- Double push-firing (frontend sendPush + DB trigger) — see push flow Session 7
+- checkQRJoin legacy code can be safely removed (memory note: deprecated v8.17.22)
+
+🔴 **WAIT for native:**
+- Cross-system service consolidation (MembershipService)
+- Intent queue replacement of flow flags
+- Type-safe deep-link parsing
+
+---
+
+### 16.9 Open questions from this flow
+
+| Q-# | Topic |
+|---|---|
+| Q-036 | 6 entry points — could consolidate to 3? |
+| Q-037 | data-action delegated pattern vs inline onclick — standardize? |
+| Q-038 | Should checkQRJoin (legacy) be removed in next prod release? |
+| Q-039 | event_flow branch in checkPendingJoin — is it truly different enough from regular join to warrant separate code path? |
+| Q-040 | Push double-firing on join — should we fix before native? |
+
+5 nye åbne spørgsmål.
+
+---
+
+## 17. Critical Flow #2: DM Send/Receive Flow (Session 4)
+
+> Maps the **complete DM lifecycle** — optimistic UI, DB insert, realtime
+> broadcast, recipient receive, read receipt, dedup safety nets.
+>
+> This is **Bubble's core product value** and **realtime stability** —
+> if DMs feel slow/unreliable, users churn.
+
+### 17.1 Why this flow is critical
+
+DM Send/Receive is where users **feel** the app's quality:
+- Optimistic UI must respond in <50ms
+- Message must reach recipient in <2 seconds
+- Read receipts must be reliable
+- No duplicates ever (dedup is critical)
+- No lost messages
+- Edit/delete must propagate
+
+**Centralized via `dmReduceMsg(msg, opts)` — single reducer for 6 paths.**
+
+### 17.2 Send path (optimistic)
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI as Chat UI
+    participant Send as sendMessage()
+    participant Dedup as _dmLastSent guard
+    participant Reducer as dmReduceMsg
+    participant Optimistic as Optimistic state
+    participant DB as Supabase messages
+    participant Realtime as chatSubscription
+    participant Recipient as Recipient's app
+    participant Push as Push service
+    
+    User->>UI: Types message + Enter/Send
+    UI->>Send: sendMessage()
+    Send->>Send: dmSending = true (button disabled)
+    Send->>Send: isBlocked(currentChatUser)?
+    Send->>Send: filterChatContent(input.value)
+    Send->>Dedup: Check 3s dedup window
+    
+    alt Within dedup window
+        Dedup-->>Send: Skip (silent dedup)
+        Send->>UI: Clear input, return
+    end
+    
+    Send->>Send: Generate tempId='_pending_<ts>'
+    Send->>Reducer: dmReduceMsg(tempMsg, { pending: true })
+    Reducer->>Optimistic: Render with "sending..." indicator
+    Send->>UI: input.value='', blur()
+    
+    par Send to DB
+        Send->>DB: INSERT messages
+        DB-->>Send: newMsg with real id
+    and Track event
+        Send->>+UI: trackEvent('message_sent')
+    end
+    
+    alt DB error
+        Send->>Optimistic: Remove tempId element
+        Send->>UI: errorToast('send')
+        Note over Send: dmSending reset in finally{}
+    else DB success
+        Send->>Reducer: dmReduceMsg(newMsg, { replaceTempId: tempId })
+        Reducer->>Optimistic: Replace pending with confirmed
+        
+        par Broadcast realtime
+            Send->>Realtime: chatSubscription.send('new_message', newMsg)
+            Realtime->>Recipient: Broadcast event delivers
+            Recipient->>Recipient: dmReduceMsg(payload, { markRead: false })
+            Recipient->>Recipient: Render in chat
+        and Send push
+            Send->>Push: sendPush(receiverId, 'Ny besked', preview)
+            Push->>Recipient: OS notification (if not in chat)
+        end
+    end
+    
+    Send->>Send: dmSending = false (button re-enabled)
+```
+
+### 17.3 Receive path (incoming message)
+
+```mermaid
+sequenceDiagram
+    participant Sender
+    participant Realtime as Realtime hub
+    participant DB as Supabase
+    participant RT as rt-messages-{userId}
+    participant Chat as chatSubscription (active DM)
+    participant Reducer as dmReduceMsg
+    participant UI as DM list / Chat UI
+    participant Unread as unreadState
+    
+    par Path A: Postgres CDC
+        Sender->>DB: INSERT messages
+        DB->>RT: Postgres change event
+        RT->>Reducer: dmReduceMsg(m, { markRead: ? })
+    and Path B: Broadcast
+        Sender->>Realtime: chatSubscription.send('new_message', payload)
+        Realtime->>Chat: Broadcast delivery (faster than CDC)
+        Chat->>Reducer: dmReduceMsg(payload, { markRead: true })
+    end
+    
+    Reducer->>Reducer: Check dedup (data-msg-id)
+    
+    alt Already rendered (broadcast arrived first, CDC second)
+        Reducer-->>Reducer: Skip silently
+    else Active chat is THIS conversation
+        Reducer->>UI: Render in active chat
+        Reducer->>DB: UPDATE messages SET read_at=now() (if markRead)
+        Reducer->>Unread: No count update (already in chat)
+    else Active chat is DIFFERENT or no chat
+        Reducer->>UI: Update DM list preview
+        Reducer->>Unread: unreadState.dm++
+        Reducer->>UI: Update nav badge
+    end
+```
+
+### 17.4 The 6 paths feeding dmReduceMsg
+
+| # | Path | Source file | Context |
+|---|---|---|---|
+| 1 | Optimistic insert (pending) | b-messages.js:247 | Local send, tempId |
+| 2 | Confirmed insert (replace temp) | b-messages.js:267 | After DB success |
+| 3 | Edit message | b-messages.js:346 | Edit existing message |
+| 4 | GIF send | b-chat.js:112 | GIF picker submits |
+| 5 | Realtime postgres_changes | b-realtime.js:1246 | rt-messages-{userId} INSERT |
+| 6 | Realtime broadcast | b-realtime.js:1264 | chatSubscription new_message |
+
+**All 6 paths must call dmReduceMsg() — never direct DOM insert.**
+
+This is the **architecture invariant** (Q-024 — should be formally documented in ARCHITECTURE-LOG).
+
+### 17.5 Dedup safety nets (critical for stability)
+
+**Layer 1: Client-side 3-second window**
+```javascript
+var _dedupKey = currentChatUser + '|' + content;
+if (_dmLastSent[_dedupKey] && (_now - _dmLastSent[_dedupKey]) < 3000) return;
+```
+Prevents accidental double-send on reconnect or button mash.
+
+**Layer 2: dmReduceMsg dedup via data-msg-id**
+```javascript
+if (document.querySelector('[data-msg-id="' + msg.id + '"]')) return;
+```
+Prevents broadcast arriving before CDC from rendering twice.
+
+**Layer 3: replaceTempId pattern**
+```javascript
+dmReduceMsg(newMsg, { replaceTempId: tempId });
+```
+Optimistic message swapped with confirmed — same DOM element, just data updated.
+
+**This is robust pattern** — must preserve in native.
+
+### 17.6 Race conditions identified
+
+🚨 **Race 1: Broadcast vs Postgres CDC ordering**
+
+Broadcast often arrives **before** CDC since it's faster path. dmReduceMsg dedup handles this via data-msg-id check.
+
+**For native:** Single subscription manager can suppress CDC if broadcast already handled. Or just rely on dedup like current.
+
+🚨 **Race 2: Optimistic message survives DB failure**
+
+If DB insert fails, code removes optimistic DOM element. But what if:
+- Network drops mid-insert
+- Insert actually succeeded but response lost
+- User retries → duplicate?
+
+**Mitigation:** Layer 1 dedup (3s window) catches retry attempts. If user waits >3s, they could create duplicate. Probability: low.
+
+🚨 **Race 3: Send during active edit**
+
+If user is editing message A, then quickly clicks send button instead of save, code routes through edit path:
+```javascript
+if (dmEditingId) { ... edit logic }
+else { ... new message logic }
+```
+Single boolean — atomic. No race possible.
+
+🚨 **Race 4: Push double-firing**
+
+Similar to bubble join — frontend calls `sendPush()` AND DB trigger fires on INSERT. Memory note documents this.
+
+**For native:** Move push entirely to server-side (DB trigger or edge function). Frontend never calls push directly.
+
+### 17.7 File-by-file detail
+
+#### b-messages.js — Send orchestration
+
+**Key functions:**
+
+| Function | Line | Role | Key calls |
+|---|---|---|---|
+| `sendMessage()` | 200 | Main send entry point | `dbActions` not used directly; uses raw sb.insert. Direct optimistic UI |
+| `sendDirectMessage(toId, content)` | 283 | Programmatic send | `dbActions.sendDM` |
+| `convDeleteSelected()` | 151 | Bulk delete conversations | Direct DB delete |
+| `convConfirmDelete()` | 163 | Actual delete after confirm | Direct DB delete |
+
+**Q-041:** `sendMessage()` (line 200) uses DIRECT `sb.from('messages').insert()` instead of `dbActions.sendDM()`. Why the inconsistency? `dbActions.sendDM()` exists (b-utils.js:857) and is used by `sendDirectMessage()`. Should consolidate.
+
+#### b-realtime.js — Receive orchestration
+
+**Key functions:**
+
+| Function | Line | Role | Key calls |
+|---|---|---|---|
+| `dmReduceMsg(msg, opts)` | 810 | THE central reducer (6 paths) | dedup via data-msg-id, DOM insert, mark-read |
+| `subscribeToChat()` | 1237 | Subscribe to active DM channel | sb.channel(dmChannelName).on() |
+| `loadMessages()` | 686 | Load DM list (DM screen mount) | Bulk fetch, group by conversation |
+| `openChat(userId)` | 753 | Open DM with user | Set currentChatUser, subscribe |
+
+#### b-utils.js — dbActions wrapper
+
+**Function:**
+
+| Function | Line | Role |
+|---|---|---|
+| `dbActions.sendDM(receiverId, content, opts)` | 857 | Centralized DM send | Returns `{ ok, message?, error? }` |
+
+#### b-chat.js — GIF picker integration
+
+**Send path for GIFs:**
+
+| Function | Line | Context |
+|---|---|---|
+| GIF submit handler | ~110 | Calls `dbActions.sendDM(currentChatUser, '', { gifUrl })` then `dmReduceMsg` |
+
+### 17.8 Native service mapping
+
+```typescript
+class DirectMessageService {
+  // Send with optimistic UI
+  async send(toUserId: UUID, content: string, attachments?: Attachment[]): Promise<Message>
+  
+  // Edit existing
+  async edit(messageId: UUID, newContent: string): Promise<void>
+  
+  // Soft delete
+  async delete(messageId: UUID): Promise<void>
+  
+  // Mark as read (single OR bulk)
+  async markAsRead(messageIds: UUID[]): Promise<void>
+  
+  // List conversation
+  async listConversation(otherUserId: UUID, opts?: ListOpts): Promise<Message[]>
+  
+  // List all conversations (for DM list screen)
+  async listConversations(): Promise<ConversationSummary[]>
+  
+  // Subscribe to incoming
+  subscribe(userId: UUID, callback: (msg: Message) => void): Unsubscribe
+}
+
+// All sends go through SINGLE service.
+// Optimistic UI is internal implementation detail.
+// Dedup guards built into service.
+// Push is server-side ONLY.
+```
+
+### 17.9 Open questions
+
+| Q-# | Topic |
+|---|---|
+| Q-041 | sendMessage uses direct DB write — should consolidate via dbActions.sendDM |
+| Q-042 | Push double-firing on DM — fix before native? |
+| Q-043 | Should _dmLastSent dedup window be configurable per environment? |
+| Q-044 | Should we move broadcast to edge function for consistency with CDC ordering? |
+
+4 nye åbne spørgsmål.
+
+---
+
+## 18. Critical Flow #3: Live Check-in Flow (Session 4)
+
+> **The ONLY flow with proper server-authoritative pattern.**
+>
+> Edge function `checkin` is the truth. Frontend just triggers + reads.
+> This is the **template** for what other flows should look like in native.
+
+### 18.1 Why this flow is critical
+
+Live Check-in is unique because:
+- **Time-critical** — user is physically at event, needs instant feedback
+- **Cross-cutting** — involves Identity, Social Graph, Presence systems
+- **Server-authoritative** — only flow that does this correctly
+- **Multi-modal** — self-checkin OR scan-checkin (reverse QR)
+- **Auto-checkout** — checking into B auto-checks-out of A
+
+For native, this is the **pattern to copy** for ALL critical flows.
+
+### 18.2 Entry points
+
+```
+ENTRY 1: Self-checkin via "Check-in" button
+  User taps button on live bubble
+  ↓
+  liveCheckin(bubbleId)  [b-live.js:123]
+
+ENTRY 2: QR scan (user scans bubble's QR)
+  User opens QR scanner, scans QR code
+  ↓
+  _liveQrFound = decoded value
+  ↓
+  loop detects, calls liveCheckin(bubbleId)
+
+ENTRY 3: Reverse QR (organizer scans attendee's QR)
+  Organizer opens scanner, scans attendee's personal QR
+  ↓
+  _pendingScanCheckin = { profile, bubbleId }
+  ↓
+  Organizer confirms → checkin happens for ATTENDEE
+
+ENTRY 4: Deep-link with ?event= AND scan-checkin mode
+  See Bubble Join Flow Entry 5
+  ↓
+  Auto-joins + checkin combined
+
+ENTRY 5: From home screen "Tjek ind" CTA
+  User clicks "Tjek ind" on home banner for active event
+  ↓
+  liveCheckin(bubbleId)  [b-home.js:1827]
+```
+
+### 18.3 Sequence diagram — Edge function path (primary)
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI as Live UI
+    participant Lock as _liveLock
+    participant Edge as Edge Function /checkin
+    participant DB as Supabase
+    participant Mode as appMode
+    participant Realtime as Realtime channels
+    participant Other as Other clients
+    
+    User->>UI: Tap "Tjek ind"
+    UI->>UI: liveCheckin(bubbleId)
+    UI->>Lock: _liveLock = true (block dup)
+    UI->>UI: showToast('Loading...')
+    
+    UI->>Edge: POST /functions/v1/checkin<br/>{ bubble_id, action: 'checkin' }
+    
+    Note over Edge: Server-authoritative logic:<br/>1. Validate session<br/>2. Check bubble exists + active<br/>3. Check membership / visibility<br/>4. Auto-checkout existing<br/>5. Insert/update bubble_members<br/>6. Return state snapshot
+    
+    Edge->>DB: SELECT bubbles WHERE id=bubbleId
+    Edge->>DB: Check visibility + membership
+    
+    alt visibility = 'hidden' + not member
+        Edge-->>UI: { error: 'invite_required' }
+        UI->>User: Toast: 'Du skal inviteres'
+    else visibility = 'private' + not member
+        Edge-->>UI: { error: 'approval_required' }
+        UI->>UI: requestJoin(bubbleId)
+        Note over UI: Falls back to private bubble flow
+    else Member OR public
+        Edge->>DB: UPDATE bubble_members SET checked_in=false<br/>WHERE user_id AND checked_in=true
+        Edge->>DB: UPSERT bubble_members<br/>(bubble_id, user_id, checked_in=true, checked_in_at=NOW)
+        Edge->>DB: SELECT bubble_members WHERE checked_in=true<br/>(for member_count and ids)
+        Edge-->>UI: { success: true, bubble_name, member_count, checked_in_ids[] }
+        
+        UI->>Mode: appMode.set('live', { bubbleId, name, type, count })
+        UI->>Mode: appMode.setCheckedInIds(server-provided IDs)
+        UI->>UI: _showCheckinSuccess UI
+        UI->>UI: trackEvent('live_checkin', via:'edge')
+        UI->>UI: loadLiveBubbleStatus() (refresh)
+        UI->>UI: filterRadarHome('live') (filter radar)
+        UI->>UI: loadLiveBanner() (show banner)
+        
+        par DB triggers fire
+            DB->>Realtime: Postgres CDC on bubble_members
+            Realtime->>Other: rt-live-bubble-{id} channel
+            Other->>Other: rtSubscribeLiveBubble handler
+            Other->>Other: Update member list, count
+        end
+    end
+    
+    UI->>Lock: _liveLock = false (in finally)
+```
+
+### 18.4 Fallback path (client-side checkin)
+
+If edge function is unreachable or returns error, code falls back to client-side multi-step:
+
+```mermaid
+sequenceDiagram
+    participant UI
+    participant DB
+    
+    UI->>DB: SELECT bubbles.visibility WHERE id
+    
+    alt private/hidden + not member
+        UI-->>UI: Show appropriate error toast<br/>Optionally fallback to requestJoin
+    end
+    
+    UI->>DB: dbActions.checkOutAll()<br/>UPDATE bubble_members SET checked_in=false WHERE user_id=me
+    UI->>DB: dbActions.checkIn(bubbleId)<br/>UPSERT bubble_members
+    
+    Note over UI,DB: Multiple separate transactions<br/>NOT atomic — race condition possible
+    
+    UI->>DB: SELECT bubbles.name, location
+    UI->>UI: _showCheckinSuccess UI
+    UI->>UI: trackEvent via:'fallback'
+```
+
+**🚨 Critical:** Fallback is **NOT atomic** — 3 separate DB calls. Race conditions possible between checkOutAll and checkIn. Edge function does this in single transaction.
+
+**Pattern for native:** Always edge function. No client fallback. If edge fails, retry with exponential backoff.
+
+### 18.5 State changes summary
+
+**bubble_members table changes (server-authoritative):**
+
+```sql
+-- Step 1: Auto-checkout from any current bubble
+UPDATE bubble_members 
+SET checked_in = false, checked_in_at = null
+WHERE user_id = $current_user 
+  AND checked_in = true 
+  AND bubble_id != $new_bubble_id;
+
+-- Step 2: Check in to new bubble
+INSERT INTO bubble_members (bubble_id, user_id, checked_in, checked_in_at)
+VALUES ($new_bubble_id, $current_user, true, NOW())
+ON CONFLICT (bubble_id, user_id) DO UPDATE
+SET checked_in = true, checked_in_at = NOW();
+
+-- Step 3: Return state snapshot for client
+SELECT * FROM bubble_members WHERE bubble_id = $new_bubble_id AND checked_in = true;
+```
+
+**Q-045:** Schema verification — does edge function checkin source need to be in repo? Currently in `C:\Users\freef\bubble-edge\` on Michael's PC. We have NO authoritative source for this critical logic.
+
+**Frontend state changes:**
+- `appMode.set('live', ctx)` — single source of truth for live state
+- `appMode.setCheckedInIds(ids)` — IDs from server, not client-computed
+- `currentLiveBubble = { ... }` — legacy compat object (Q-046: needed?)
+
+### 18.6 Race conditions
+
+🚨 **Race 1: Concurrent checkin to two bubbles**
+
+User taps checkin on Bubble A and Bubble B within 100ms.
+- `_liveLock` boolean prevents two checkins in same session
+- Edge function does auto-checkout from existing first
+- Result: User ends in whichever finishes last
+
+**Mitigation:** `_liveLock` + server transaction. Robust.
+
+🚨 **Race 2: Edge function timeout mid-execution**
+
+User taps checkin, edge function starts, but timeout before response.
+- Frontend falls back to client-side
+- DB might be in inconsistent state (auto-checkout happened, checkin didn't)
+
+**Mitigation:** Edge function should be **idempotent** — re-calling with same params should be safe. Should be verified.
+
+🚨 **Race 3: Stale appMode.checkedInIds**
+
+After server returns, client updates `appMode.setCheckedInIds(server-list)`.
+But another user checks in 50ms later — server doesn't broadcast to client A yet.
+Client A's list is stale until realtime catches up.
+
+**Mitigation:** Realtime channel `rt-live-bubble-{id}` updates list when others checkin/out. Best-effort.
+
+**For native:** Single source of truth in service that gets updated by realtime. UI subscribes to service.
+
+🚨 **Race 4: Bubble expires mid-session**
+
+User is checked in. Bubble expires at 6h mark.
+- `status='expired'` set by ??? (Q-016 still open)
+- User's `checked_in` should be cleared
+- Frontend should show "Session ended"
+
+**Currently unclear** how this is handled. Edge function may need to validate bubble.status='active' before allowing checkin.
+
+### 18.7 File-by-file detail
+
+#### b-live.js — Primary owner
+
+**Functions involved:**
+
+| Function | Line | Role |
+|---|---|---|
+| `liveCheckin(bubbleId)` | 123 | Main entry — edge function path |
+| `_liveCheckinFallback(bubbleId)` | 193 | Client-side fallback (not atomic!) |
+| `liveCheckout()` | 262 | Server-authoritative checkout |
+| `_showCheckinSuccess(bubbleId, name)` | 241 | UI feedback |
+| `loadLiveBubbleStatus()` | (search) | Refresh state after checkin |
+
+**State owned:**
+- `_liveLock` — prevent double-checkin
+- `_liveQrStream`, `_liveQrFound` — QR scanning state
+- `_pendingScanCheckin` — reverse-QR pending state
+- `_barcodeDetector` — native API or fallback to jsQR
+
+#### b-utils.js — dbActions
+
+**Functions:**
+
+| Function | Role |
+|---|---|
+| `dbActions.checkIn(bubbleId)` | Fallback path insert |
+| `dbActions.checkOutAll()` | Fallback path checkout |
+
+#### b-home.js — Live banner + CTA
+
+**Functions:**
+
+| Function | Line | Role |
+|---|---|---|
+| Live banner CTA | 1824 | Calls liveCheckout + liveCheckin sequence |
+| Live status check | (search) | Polls or subscribes for currentLiveBubble |
+
+#### b-chat.js — In-bubble checkin button
+
+**Functions:**
+
+| Function | Line | Role |
+|---|---|---|
+| Live checkin from chat | 2110-2112 | Delegates to liveCheckout |
+
+#### b-realtime.js — Realtime hub
+
+**Functions:**
+
+| Function | Line | Role |
+|---|---|---|
+| `rtSubscribeLiveBubble(bubbleId)` | 216 | Subscribe to per-bubble channel |
+| `rtUnsubscribeLiveBubble()` | 253 | Cleanup when leaving |
+
+#### Edge function `checkin` (NOT IN REPO!)
+
+**Source:** `C:\Users\freef\bubble-edge\supabase\functions\checkin\index.ts` on Michael's PC.
+
+**Q-047:** Edge function source MUST be in repo before native rewrite. Add to backend-contracts export (Q-012).
+
+### 18.8 Why this flow is the GOLD STANDARD
+
+This is the only flow that:
+1. ✅ Uses edge function as primary path
+2. ✅ Returns full state snapshot (no follow-up queries needed)
+3. ✅ Atomic server-side transactions
+4. ✅ Client-side state synced from server response
+5. ✅ Idempotent (re-callable safely)
+6. ✅ Error codes are semantic (`invite_required`, `approval_required`)
+7. ✅ Fallback exists but is clearly secondary
+
+**Replicate this pattern in native for:**
+- Bubble join (currently fragmented)
+- DM send (currently optimistic-only)
+- Push delivery (currently double-firing)
+- Invitation accept (currently sequential queries)
+
+### 18.9 Native service mapping
+
+```typescript
+class PresenceService {
+  // Single entry — server-authoritative
+  async checkIn(bubbleId: UUID, source: CheckinSource): Promise<CheckinResult>
+  
+  async checkOut(bubbleId?: UUID): Promise<void> // checks out current if no id
+  
+  async getCurrentSession(): Promise<LiveSession | null>
+  
+  // Subscribe to who's in this bubble
+  subscribeToBubble(bubbleId: UUID, callback: (members: Member[]) => void): Unsubscribe
+}
+
+interface CheckinResult {
+  success: boolean
+  bubble?: Bubble
+  memberCount?: number
+  checkedInMembers?: Member[]
+  error?: 'invite_required' | 'approval_required' | 'not_found' | 'expired'
+}
+
+// All checkin/checkout goes through edge function.
+// NO client-side fallback in native — retry logic instead.
+// Service emits events for UI subscribe.
+```
+
+### 18.10 Open questions
+
+| Q-# | Topic |
+|---|---|
+| Q-045 | Edge function `checkin` source must be in repo before native |
+| Q-046 | currentLiveBubble legacy compat object — still needed? |
+| Q-047 | All edge function source code in version control? |
+| Q-048 | Bubble expiration mechanism (Q-016 follow-up) — affects livecheckin validation |
+| Q-049 | Should fallback path be removed in PWA cleanup? |
+
+5 nye åbne spørgsmål.
+
+---
