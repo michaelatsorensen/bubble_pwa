@@ -328,6 +328,33 @@
 
 ---
 
+### 💡 LÆRING — "Vi opdager ikke, vi formulerer" (maj 2026)
+
+**Dato tilføjet:** 17. maj 2026
+
+**Hvad:** Gennem en serie sessioner i maj 2026 landede vi på en ny identitets-formulering: "Continuity layer for lokale møder". Den blev IKKE bygget — den blev erkendt. Alle tre tidsfaser (før/under/efter) var allerede implementeret i kodebasen før vi havde sproget for dem.
+
+**Kontekst:** Indledningsvis brugte vi formuleringer som "local LinkedIn", "memory layer", "networking app". Hver var delvist rigtig, men ingen fangede det centrale: at appens unikke værdi er sammenbindingen af tre faser, ikke nogen enkelt fase.
+
+**Root insight:** Modent founder-arbejde handler om at *erkende mønstre i produktet*, ikke at designe nye features fra scratch. Når et produkt har levet i drift i et halvt år med daglige brugere, har det allerede "sin natur". Founderens opgave er at finde sproget for den natur — ikke at omforme den til ny strategi.
+
+**Hvad det har lært os:**
+- **Strategi-skift handler ofte om sprog, ikke kode** — i dette tilfælde ændrede 0 linjer kode sig, men positioneringen blev fundamentalt anderledes
+- **Lyt til produktets adfærd, ikke kun til markedet** — vores brugere brugte allerede de tre faser sammen før vi vidste det
+- **Modstå presset for at "pivote"** — når noget kommer ud af venstre felt, spørg "har vi allerede bygget dette i en anden form?"
+- **Pitch deck som test-mekanisme** — vi opdagede formuleringen ved at *prøve at forklare* produktet visuelt. Hvis pitch-narrativet føles ærligt, er det formentlig en korrekt formulering.
+
+**Hvor det opstod:** Sessions med Claude maj 2026, kulminerede i pitch deck v8 (21 slides) og denne formaliseringssession.
+
+**Action for native:**
+- Ny architecture skal afspejle de tre faser som **navngivne moduler/screens**: `before/`, `during/`, `after/` (eller tilsvarende mental modeling)
+- Native onboarding-flow skal introducere brugeren til alle tre faser tidligt, ikke kun til den ene fase de er ankommet via
+- Match-scoring kan udnytte fase-context bedre (er vi i "før event"-fase? "under event"? "efter"?)
+
+**For PWA:** Ingen kodemæssige ændringer påkrævet. Formaliseret i STRATEGI.md §1.5 + principper 10-15 i §11.
+
+---
+
 ## Sammenfatning per kategori
 
 **🟢 GENBRUGES (4 entries):** Backend-stack, dbActions pattern, i18n, match algorithm
@@ -336,7 +363,7 @@
 
 **🔴 FORKAST (3 entries):** Inline onclick, 100vh sizing, push-arkitektur
 
-**💡 LÆRING (5 entries):** Mockup-først, kirurgisk og additiv, pre-tag arv, replicate-not-scale, visual feedback for states
+**💡 LÆRING (6 entries):** Mockup-først, kirurgisk og additiv, pre-tag arv, replicate-not-scale, visual feedback for states, formulerings-landing
 
 ---
 

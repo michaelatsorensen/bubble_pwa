@@ -1,6 +1,6 @@
 # Bubble — Strategi & Forretningsmodel
 
-> **Opdateret:** Maj 2026 (efter next-v8.27 / prod-v8.17.24)
+> **Opdateret:** Maj 2026 (efter next-v8.32 / prod-v8.17.28 — continuity layer-formulering landed)
 > **Status:** Pilot-readiness phase, Sønderborg går snart live
 > **Author note:** Dette dokument samler forretningsmodel, produkt-vision og strategiske indsigter fra ~50 udviklings-sessioner. Erstatter tidligere `bubble-forretningsmodel.md` og `Bubble_Produktdokumentation_2026.md`.
 
@@ -15,6 +15,45 @@
 - Mobile-first PWA (ingen app store-friktion)
 - Hyperlokal som design-princip (ikke globalt)
 - **Ad-free er en fast positioneringsbeslutning** — ikke til diskussion
+
+---
+
+## 1.5 Continuity layer — identitets-formulering (maj 2026)
+
+> **Bubble er et continuity layer for lokale møder.**
+> Vi binder de mennesker, du faktisk møder lokalt, sammen over tid
+> — så relationer ikke forsvinder mellem møder.
+
+**Tre tidsfaser som integreret moat:**
+
+| Fase | Vores rolle | Built features |
+|---|---|---|
+| **Før** event | Overblik | Saved events, agenda, invitationer, discover |
+| **Under** event | Præsens | QR check-in, radar, smart matching, in-bubble chat + DM |
+| **Efter** event | Kontinuitet | Saved contacts, DM-historik, profile views, match på tværs |
+
+**Det kritiske:** Hver fase styrker de to andre. Det er ikke tre features
+— det er én sammenhængende oplevelse for lokalsamfund.
+
+### Hvad vi IKKE er
+
+- **Ikke "memory layer"** — for begrænset, kun bagudrettet
+- **Ikke "local LinkedIn"** — defensiv positionering, importerer wrong frame
+- **Ikke event-app** — Eventbrite-territorium, men kun fase 1
+- **Ikke chat-app** — Slack/Discord-territorium, men kun fase 2
+- **Ikke networking-platform** — LinkedIn-territorium, men kun fase 3
+
+Vi er det der **binder de tre sammen**. Konkurrenter skal genopbygge
+tre apps og integrere dem for at konkurrere.
+
+### Vi opdager — vi designer ikke
+
+Disse tre faser var allerede *bygget* før vi havde sproget for dem.
+Sessionerne i maj 2026 var en **formulerings-landing**, ikke et
+strategi-skift. Modent founder-arbejde handler om at erkende
+mønstre i produktet, ikke at designe nye fra scratch.
+
+> "Vi opdager ikke. Vi formulerer." — Michael, maj 2026
 
 ---
 
@@ -315,6 +354,12 @@ QR'en er ikke kun til bobler. Den er en **universel introduktions-handling**:
 7. **Aldrig forced membership** — saved events og bubble membership er separate states. Brugeren ejer beslutningen. Vi tvinger ikke, vi inviterer.
 8. **Aldrig halvt på fundamentet, ofte halvt på toppen** — foundation (datamodel, sikkerhed, async-flows) bygges med livrem og seler. Features (UI, copy, animationer) itereres hurtigt.
 9. **Architecture documentation is part of the product** — ingen foundational ændring er komplet før architecture-map er opdateret. Dokumentation er ikke "efter koden" — det er en del af leverancen.
+10. **Adgang skal være let. Tillid bygges gradvist.** — Email-signup er friktionsløst. LinkedIn er optional verifier efter onboarding, ikke krav for adgang.
+11. **Tillid optjenes — ikke importeres.** — Verifikation kommer fra reel kontekst (delte bubbles, fælles events), ikke fra LinkedIn-imports eller abstrakte trust-scores.
+12. **Kontekst slår status.** — "Vi mødtes ved ECD" er stærkere signal end "CEO hos firma X". Fælles erfaring slår CV.
+13. **Tilstedeværelse betyder mere end profil-perfektion.** — At være der er nok. Du behøver ikke optimere din bio for at være værdifuld i en bubble.
+14. **Continuity layer, ikke memory layer.** — Vi binder før/under/efter sammen. Memory layer ville kun være efter. Se §1.5.
+15. **Bubble's natur: relationer forsvinder ikke mellem møder.** — Det er det fundamentale problem vi løser. Alt andet er taktik.
 
 ### 11.1 Saved events vs bubble membership — to mentale modeller
 
