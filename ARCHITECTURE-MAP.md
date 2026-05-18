@@ -4353,3 +4353,311 @@ interface CheckinResult {
 5 nye åbne spørgsmål.
 
 ---
+
+## 19. Critical Flow #4: Push Notification Flow (Session 4 batch 2)
+
+> **Mapping mode:** Memory-first with explicit verification markers.
+> Verified codepaths come from prior sessions where files were directly inspected.
+> Inferred items come from documented architectural notes (memory) but were not re-verified in this mapping session.
+> Items marked NEEDS VERIFICATION require code inspection before any structural change.
+
+### 19.1 Why this flow is critical
+
+Push notification is the **most architecturally fragile** flow in the codebase:
+
+1. **Silent failure-prone.** Wrong recipient_id, wrong format, missing endpoint — none produce user-visible errors. Pushes simply don't arrive.
+2. **Spans 6 boundaries.** PostgreSQL trigger → pg_net → edge function → web-push library → push service (Apple/Google/Mozilla) → service worker → notification API.
+3. **Hardcoded secrets** exist in 4 DB trigger functions. Supabase Vault is activated (v0.3.1) but empty. Migration is required but not yet executed.
+4. **Two parallel dispatch paths.** Triggers fire push directly via pg_net; `b-utils.js` has a `sendPush()` function used by some frontend codepaths. Unclear which is authoritative.
+5. **Critical for pilot UX.** "Did you receive a message" is the single most important reliability question for early users.
+6. **Native rewrite dependency.** Q1 2027 native build will use FCM/APNs — server-side dispatch contract must be solidified before that migration, or we'll port a broken architecture.
+
+This flow is the **most likely source of "the app feels unreliable"** complaints in the pilot.
+
+### 19.2 Verified vs Inferred — current state map
+
+#### ✅ Verified from prior architectural sessions
+
+| Element | Status | Source of truth |
+|---|---|---|
+| Edge function `send-push` exists | ✅ Verified | Local at `C:\Users\freef\bubble-edge\supabase\functions\send-push\index.ts` |
+| VAPID keys configured | ✅ Verified | Confirmed in memory; functions deploy successfully |
+| 4 DB triggers fire push via `pg_net` | ✅ Documented in memory | Names: `on_new_message_push`, `on_bubble_invite_push`, `on_new_invite_push`, `on_contact_saved_push` |
+| Service worker registers push subscription | ✅ Verified | `sw.js` has push event handler |
+| Multi-device push allowed | ✅ Verified | Constraint allows multiple subscriptions per user (memory: SQL migrations completed) |
+| Saved-contact push is DISABLED | ✅ Verified | Marked as "premium feature" in memory; trigger fires but edge function may no-op |
+| `bubble-files` bucket must be public | ✅ Verified | Public for current file URL approach (memory) |
+
+#### 🟡 Inferred from memory (likely true, not re-verified)
+
+| Element | Status | Why uncertain |
+|---|---|---|
+| 2 functions send `recipient_id`, edge function expects `user_id` | 🟡 Inferred | Documented in memory as "silent failure cause" but exact field-mapping not re-traced |
+| Double trigger on invitations | 🟡 Inferred | Memory: "double trigger on invitations" — `on_bubble_invite_push` + `on_new_invite_push` may both fire on same DB event |
+| `sendPush()` in b-utils.js is dead code | 🟡 Inferred | Memory says "likely dead code for trigger-covered types" — but possibly still used for one or two paths |
+| Push format: "Ny besked" + "Navn: preview" | 🟡 Inferred | 9 call sites mentioned in memory; format consistent across them |
+| Hardcoded secrets exist in trigger functions | 🟡 Inferred | Memory says "migrate all 4 trigger functions' hardcoded secrets to Vault" — secret count not verified |
+
+#### ⚠️ NEEDS VERIFICATION before structural change
+
+| Element | Why critical |
+|---|---|
+| **Q-050:** Which DB triggers are currently ACTIVE in Supabase production? | We documented 4 trigger names; current production state may differ |
+| **Q-051:** What payload schema does `send-push/index.ts` expect? | "Body format mismatch" mentioned — exact mismatch unknown |
+| **Q-052:** Where in the codebase does `recipient_id` vs `user_id` originate? | Could be intentional (recipient = WHO gets notified; user = whose action triggered it) or accidental |
+| **Q-053:** Is `b-utils.js sendPush()` reachable from any code path? | Determines if we can remove it safely |
+| **Q-054:** Are push deliveries logged anywhere? | If not, all observability is missing |
+| **Q-055:** Which secrets are hardcoded outside Vault? | Migration scope unknown until enumerated |
+
+### 19.3 End-to-end flow diagram — Current (broken) state
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  TRIGGER PATH (4 paths, all currently active)                       │
+└─────────────────────────────────────────────────────────────────────┘
+
+DB Event (INSERT/UPDATE on messages, bubble_members, invites, saved_contacts)
+    │
+    ▼
+PostgreSQL Trigger
+    │
+    │  Trigger function constructs payload:
+    │  ├─ Uses HARDCODED secret for authorization header  ⚠️
+    │  ├─ Sends recipient_id (in 2 functions) or user_id (in 2 functions)  ⚠️
+    │  └─ Calls pg_net.http_post() to edge function URL
+    │
+    ▼
+pg_net.http_post() (async, fire-and-forget)
+    │
+    │  No retry, no observability, no error handling
+    │  ⚠️ Failures are SILENT
+    │
+    ▼
+Supabase Edge Function: send-push
+    │
+    │  Expects: user_id, title, body
+    │  ⚠️ But 2 triggers send: recipient_id, title, body
+    │  → recipient_id is undefined for the edge function
+    │  → Push silently fails for 2 of 4 trigger paths
+    │
+    │  IF user_id resolves:
+    │    Query push_subscriptions WHERE user_id = X
+    │    For each subscription:
+    │      web-push.sendNotification(subscription, payload)
+    │
+    ▼
+Push Service (Apple Push / Google FCM / Mozilla)
+    │
+    ▼
+Service Worker (sw.js)
+    │
+    │  push event handler
+    │  → showNotification(title, options)
+    │
+    ▼
+OS displays notification
+    │
+    │  User tap →
+    │
+    ▼
+notificationclick handler
+    │
+    │  ⚠️ Routing logic — NEEDS VERIFICATION
+    │  Memory suggests: opens app, but deep-link routing not confirmed
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  PARALLEL FRONTEND PATH (b-utils.js sendPush)                       │
+│  Status: LIKELY DEAD CODE — NEEDS VERIFICATION                      │
+└─────────────────────────────────────────────────────────────────────┘
+
+Frontend action (sendDM, joinBubble, etc.)
+    │
+    ▼
+b-utils.js sendPush(recipient_id, title, body)
+    │
+    │  Calls send-push edge function directly via fetch
+    │  ⚠️ This duplicates trigger-fired pushes
+    │  ⚠️ May cause DOUBLE NOTIFICATIONS for same event
+    │
+    ▼
+[Same edge function as trigger path]
+```
+
+### 19.4 The 4 trigger paths — known issues per path
+
+| Trigger | Fires on | Payload mismatch? | Double-fire? | Notes |
+|---|---|---|---|---|
+| `on_new_message_push` | INSERT on `messages` | ⚠️ Inferred mismatch | No | Most important path — DM delivery |
+| `on_bubble_invite_push` | INSERT on `bubble_invites` (or similar) | ⚠️ Inferred mismatch | ⚠️ May double-fire with `on_new_invite_push` | Two invite-related triggers exist |
+| `on_new_invite_push` | INSERT on invites | ⚠️ Inferred mismatch | ⚠️ See above | Possibly redundant with `on_bubble_invite_push` |
+| `on_contact_saved_push` | INSERT on `saved_contacts` | ⚠️ Edge function may no-op (premium-gated) | No | Saved contact push DISABLED in edge function — premium feature gate |
+
+### 19.5 Known failure modes — mini-audit
+
+This is the architectural debt that needs payoff before pilot or native rewrite.
+
+#### Failure mode 1: recipient_id vs user_id mismatch
+
+**Symptom:** Some pushes never arrive — specifically those originating from invite triggers.
+
+**Hypothesis:** Edge function does `SELECT * FROM push_subscriptions WHERE user_id = $1`. Triggers send `recipient_id` (the person who should be notified). The function looks up `user_id` field which is undefined → empty result set → no push sent.
+
+**Status:** 🟡 Inferred from memory. Q-051 + Q-052 must verify exact field mapping.
+
+**Fix complexity:** Low if confirmed. Either rename trigger payload key or add aliasing in edge function.
+
+#### Failure mode 2: Double triggers on invitations
+
+**Symptom:** Some users may receive 2 notifications for one invite.
+
+**Hypothesis:** Two trigger functions exist for similar DB events. Both fire on the same INSERT.
+
+**Status:** 🟡 Inferred. Q-050 verification will confirm which triggers are currently active.
+
+**Fix complexity:** Low — drop one trigger after determining which is canonical.
+
+#### Failure mode 3: Hardcoded secrets in trigger functions
+
+**Symptom:** Secret rotation requires editing 4 trigger function bodies and re-deploying via SQL.
+
+**Hypothesis:** Each trigger function has the edge function authorization key hardcoded as a SQL string.
+
+**Status:** 🟡 Inferred — Vault is activated but empty. Migration to `vault.secrets` is the standard pattern.
+
+**Fix complexity:** Medium. Requires:
+1. Insert secrets into `vault.secrets`
+2. Rewrite trigger functions to use `vault.secrets` accessor
+3. Test that pg_net still authenticates
+4. Rotate old secrets
+
+#### Failure mode 4: Parallel dispatch via b-utils.js sendPush()
+
+**Symptom:** Possible double notifications for events covered by both trigger AND frontend dispatch.
+
+**Hypothesis:** Frontend `sendPush()` exists in parallel with triggers. If both fire for same event, user gets 2 pushes.
+
+**Status:** 🟡 Inferred. Q-053 must verify if `sendPush()` is still called anywhere.
+
+**Fix complexity:** Low if dead code; Medium if some paths depend on it (would need to migrate to trigger).
+
+#### Failure mode 5: Body format mismatch
+
+**Symptom:** Some pushes may arrive with malformed display.
+
+**Hypothesis:** Trigger payload structure doesn't match what edge function destructures.
+
+**Status:** 🟡 Inferred from "body format mismatch" note in memory. Q-051 verification.
+
+**Fix complexity:** Low — standardize payload contract.
+
+#### Failure mode 6: No observability / no logging
+
+**Symptom:** When push fails, nobody knows. No error log, no delivery confirmation, no retry visibility.
+
+**Hypothesis:** `pg_net.http_post()` is fire-and-forget. Edge function may log to console but no persistent log table exists.
+
+**Status:** 🟡 Inferred. Q-054 verification — is there a `push_delivery_log` table or similar?
+
+**Fix complexity:** Medium. Requires:
+1. Create `push_delivery_log` table
+2. Edge function writes log entry per attempt
+3. Optional: client-side ack via separate endpoint
+
+#### Failure mode 7: No retry / idempotency
+
+**Symptom:** Transient failures (network blip, edge function cold start timeout) drop pushes permanently.
+
+**Hypothesis:** No retry logic anywhere in the chain.
+
+**Status:** 🟡 Inferred. pg_net does not natively retry.
+
+**Fix complexity:** High if proper. Medium if "best-effort retry once".
+
+### 19.6 Architectural recommendation: One authoritative dispatch contract
+
+The current architecture has 4 dispatch sources (triggers) + 1 parallel frontend path = 5 places pushes can originate. Each has its own bugs.
+
+**Proposed redesign:**
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  TARGET ARCHITECTURE                                                │
+└─────────────────────────────────────────────────────────────────────┘
+
+DB Event (INSERT/UPDATE)
+    │
+    ▼
+PostgreSQL Trigger (thin — only constructs PushEvent record)
+    │
+    │  INSERT INTO push_events (
+    │    recipient_id, type, payload, created_at
+    │  )
+    │
+    ▼
+push_events table (audit log + dispatch queue)
+    │
+    ▼
+PushDispatcher (edge function — polled OR triggered by pg_net)
+    │
+    │  Reads pending push_events
+    │  For each:
+    │    - Look up subscriptions
+    │    - Send via web-push
+    │    - Write push_delivery_log entry
+    │    - Mark event as dispatched
+    │
+    ▼
+push_delivery_log table (observability)
+    │
+    ▼
+Service Worker → OS Notification
+
+ALL secrets via vault.secrets — no hardcoded keys anywhere.
+```
+
+**Benefits:**
+
+1. **Single contract** — one place where payload schema is defined
+2. **Observability** — every push has audit trail
+3. **Retry-ready** — failed dispatches stay in queue, retry possible
+4. **Native-compatible** — when Q1 2027 native arrives, same `push_events` table feeds FCM/APNs dispatcher instead of web-push
+5. **Vault migration** — secrets only in vault, never in trigger bodies
+6. **Frontend simplified** — `b-utils.js sendPush()` becomes either removed or thin wrapper over `INSERT INTO push_events`
+
+**Migration path:**
+
+- **Phase 1 (Vault):** Migrate hardcoded secrets to vault.secrets. Quick win. Independent of architecture change.
+- **Phase 2 (Audit):** Add push_delivery_log. Edge function writes to it. No behavior change yet — just observability.
+- **Phase 3 (Consolidate):** Refactor 4 triggers → 1 trigger that writes to push_events. New PushDispatcher reads queue.
+- **Phase 4 (Native):** When native arrives, add FCM/APNs branch in PushDispatcher.
+
+### 19.7 Native service mapping
+
+When the React Native rewrite begins (Q1 2027), this flow must map cleanly to:
+
+| Current PWA | Native equivalent |
+|---|---|
+| `web-push` library (VAPID) | Firebase Cloud Messaging (FCM) for Android, Apple Push Notification Service (APNs) for iOS |
+| `push_subscriptions` table (VAPID keys + endpoint URL) | `push_tokens` table (FCM token OR APNs device token) |
+| Service Worker push event | Native notification handler (Expo Notifications API) |
+| Service Worker notificationclick | Deep-link routing via Linking API |
+
+**Critical:** The `push_events` queue (Section 19.6) is platform-agnostic. PushDispatcher branches by recipient device type. This is why we recommend the architectural change BEFORE native rewrite.
+
+### 19.8 Open questions from this flow
+
+Detailed in `OPEN-QUESTIONS.md` as Q-050 through Q-055:
+
+| # | Question |
+|---|---|
+| Q-050 | Which DB triggers are currently active in Supabase production? |
+| Q-051 | What payload schema does send-push/index.ts expect? Where does the body format mismatch occur? |
+| Q-052 | Are recipient_id and user_id intentionally different concepts in the payload, or is the mismatch a bug? |
+| Q-053 | Is b-utils.js sendPush() still called from any code path? |
+| Q-054 | Is there any push delivery logging (table, edge function logs, etc.)? |
+| Q-055 | Which secrets remain hardcoded outside vault.secrets? Enumerate all 4 trigger functions. |
+
+6 nye åbne spørgsmål.
+
+---

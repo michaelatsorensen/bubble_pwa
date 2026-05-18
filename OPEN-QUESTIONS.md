@@ -654,3 +654,107 @@ src/
 ---
 
 *Q-001 til Q-049 = 49 åbne spørgsmål totalt.*
+
+---
+
+## Section 19: Push Notification Flow (Session 4 batch 2)
+
+### Q-050: Which DB triggers are currently active in Supabase production?
+
+**Kontekst:** Memory dokumenterer 4 trigger-navne (`on_new_message_push`, `on_bubble_invite_push`, `on_new_invite_push`, `on_contact_saved_push`), men deres faktiske status i produktion er ikke verificeret i denne mapping-session.
+
+**Spørgsmål:** Kør `SELECT tgname, tgrelid::regclass FROM pg_trigger WHERE tgname LIKE '%push%';` i Supabase SQL editor og dokumentér resultatet.
+
+**Antagelse:** Alle 4 er aktive. Hvis ikke, scope for arkitekturændring reduceres.
+
+**Blokerer:** Q-051, Q-052, Q-055. Vault migration kan ikke starte før vi ved hvilke trigger-bodies vi skal redigere.
+
+---
+
+### Q-051: What payload schema does send-push/index.ts expect?
+
+**Kontekst:** Memory dokumenterer "body format mismatch" og at 2 funktioner sender `recipient_id` mens edge function forventer `user_id`. Eksakt mismatch ikke retraceret.
+
+**Spørgsmål:** Åbn `C:\Users\freef\bubble-edge\supabase\functions\send-push\index.ts` og dokumentér:
+1. Hvilke felter destructeres fra request body
+2. Hvor `user_id` vs `recipient_id` bruges
+3. Hvilke titel/body-formater accepteres
+
+**Antagelse:** Edge function forventer `{ user_id, title, body }`. To triggers sender `{ recipient_id, title, body }` → silent failure.
+
+**Blokerer:** Q-052 og fix af failure mode #1.
+
+---
+
+### Q-052: Are recipient_id and user_id intentionally different concepts?
+
+**Kontekst:** Det er **muligt** at distinktionen var intentional på et tidspunkt:
+- `user_id` = den der **udførte** handlingen (afsender af DM, opretter af bubble)
+- `recipient_id` = den der skal **modtage** notification
+
+Hvis ja, er fix at omdøbe edge function parameter til `recipient_id` overalt.
+
+**Spørgsmål:** Gennemgå trigger-funktionernes SQL-bodies og afgør om naming reflekterer en bevidst skelnen, eller blot er drift mellem to udviklere/tidspunkter.
+
+**Antagelse:** Det er drift. Standardisér på `recipient_id` (det er det mere præcise navn — den der modtager pushen er ikke nødvendigvis identisk med `user_id` i triggerens kontekst).
+
+**Blokerer:** Beslutning om naming convention før refactor.
+
+---
+
+### Q-053: Is b-utils.js sendPush() still reachable?
+
+**Kontekst:** Memory: "sendPush() i b-utils.js eksisterer i parallel — sandsynligvis dead code for trigger-covered types". Hvis dead, kan vi fjerne den; hvis ikke, kræver migration.
+
+**Spørgsmål:** Søg i kodebasen:
+```bash
+grep -rn "sendPush" --include="*.js" --include="*.html"
+```
+Dokumentér alle call sites og afgør om hver enkelt er dækket af en trigger.
+
+**Antagelse:** Dead code. Fjernelse kan ske sammen med Vault-migration.
+
+**Blokerer:** Cleanup af parallel dispatch path (failure mode #4).
+
+---
+
+### Q-054: Are push deliveries logged anywhere?
+
+**Kontekst:** Memory: ingen specifik mention af `push_delivery_log` eller lignende tabel. pg_net.http_post er fire-and-forget. Edge function kan logge til console, men det er flygtigt.
+
+**Spørgsmål:** Tjek:
+1. Findes en tabel som `push_delivery_log`, `notification_log`, eller lignende?
+2. Logger edge function til Supabase logs (kan ses i dashboard)?
+3. Findes nogen client-side push ack-mekanisme?
+
+**Antagelse:** Ingen persistent logging. Det er en stor del af "silent failure"-problemet.
+
+**Blokerer:** Phase 2 i arkitektur-redesign (Section 19.6).
+
+---
+
+### Q-055: Which secrets remain hardcoded outside vault.secrets?
+
+**Kontekst:** Memory: "migrate all 4 trigger functions' hardcoded secrets to Vault (supabase_vault 0.3.1 activated, empty)". Enumeration ikke gjort.
+
+**Spørgsmål:** For hver af de 4 trigger-funktioner:
+1. Hvilke secrets er hardcoded i SQL-body?
+2. Typisk: Edge function authorization header (anon key eller service role key?)
+3. URL til edge function (mindre kritisk men bør være konfigurérbar)
+
+```sql
+SELECT proname, prosrc FROM pg_proc 
+WHERE proname IN (
+  'send_message_push', 'send_invite_push', 
+  'send_new_invite_push', 'send_contact_push'
+);
+```
+(Erstat med faktiske navne fra Q-050.)
+
+**Antagelse:** Service role key er hardcoded. Skal i vault.
+
+**Blokerer:** Phase 1 i arkitektur-redesign (Vault migration).
+
+---
+
+*Q-001 til Q-055 = 55 åbne spørgsmål totalt. 6 nye fra Section 19.*
