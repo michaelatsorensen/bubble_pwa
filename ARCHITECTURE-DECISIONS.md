@@ -8,6 +8,51 @@
 >
 > **Status:** Oprettet maj 2026. Migration fra OPEN-QUESTIONS.md sker gradvist.
 
+---
+
+## Architectural Tenets
+
+> Grundsætninger der gælder for ALLE ADRs i dette dokument.
+> Ikke specifikke beslutninger — præmisser som alle beslutninger skal hænge sammen med.
+>
+> **Hvornår bruges tenets?** Når en ADR foreslås, skal den kunne forklares mod mindst én tenet. Hvis ingen tenet bakker den op, kan tenet'en mangle — eller beslutningen være forkert.
+
+### Tenet 1: Native = backend normalization pressure
+
+Native rewrite må **ikke** forstås som frontend-udskiftning. Før native bygges, skal platform-contracts, event ownership, state authority og observability stabiliseres.
+
+Frontend kan skiftes. Platform-contracts skal stabiliseres **først**.
+
+**Implication:** Tech debt der skaber **contract ambiguity** er P0/P1. Tech debt der er rent kosmetisk er P3. Det er ikke "hvor grimt er det" der prioriterer — det er "skaber det uklar authority?".
+
+### Tenet 2: Discover before redesign
+
+Vi porter ikke blindt, men vi designer heller ikke greenfield.
+
+Før vi ændrer et mønster, skal vi forstå:
+- Hvorfor findes det?
+- Hvad løser det operationelt?
+- Skaber det faktisk risiko, eller bare visuel ubehag?
+
+**Implication:** Redesign-forslag (Type D i OPEN-QUESTIONS) skal kunne dokumentere **konkret eksisterende problem**, ikke bare "dette ville være pænere". Q-022 (Conversation entity) er eksempel på et redesign der manglede problem-evidens.
+
+### Tenet 3: Preserve battle-tested behavior, replace ambiguous ownership
+
+Ikke alle hacks er dårlige. Operationelt robuste mønstre — selv de "urene" — har bevist værdi.
+
+Det vi **skal** redesigne er primært mønstre med:
+- Uklar authority (hvem ejer state?)
+- Duplicate writes (samme data, multiple paths)
+- Silent failure (fejler uden synlig signal)
+- Security risk
+- Race conditions (timing-afhængig korrekthed)
+
+Alt andet kan ofte porteres som-er og revurderes efter native.
+
+**Implication:** Refactor-iver skal kanaliseres mod ovenstående 5 kategorier. Naming-cleanup og kosmetik kan vente til efter pilot/native.
+
+---
+
 ## Konventioner
 
 ### Status-værdier
@@ -37,6 +82,11 @@ Hvad vi har besluttet at gøre.
 - Positive (hvad bliver lettere)
 - Negative (trade-offs)
 - Neutral (ting der ændres uden klar plus/minus)
+
+### Tenet alignment
+Hvilke architectural tenets bakker denne ADR op?
+Hvis ingen tenet bakker den op, overvej om beslutningen er for tidlig
+eller om en tenet mangler at blive formaliseret.
 
 ### Related
 - Open questions resolved: Q-XXX
@@ -82,6 +132,10 @@ Det er distributed authority. Konflikter kan opstå (frontend tror du er checked
 **Neutral:**
 - Realtime subscriptions skal være pålidelige — er allerede bygget men ikke audited
 
+#### Tenet alignment
+
+Tenet 1 (backend normalization — server-authoritative state) + Tenet 3 (ambiguous ownership replaced with single authority)
+
 #### Related
 
 - Open questions resolved: Q-026
@@ -125,6 +179,10 @@ Eksisterende `dbActions`-pattern i `b-utils.js` er den rigtige retning — udvid
 **Neutral:**
 - Performance-impact minimal (samme DB-calls, bare wrapped)
 
+#### Tenet alignment
+
+Tenet 1 (contract stabilization before native) + Tenet 3 (duplicate writes eliminated via service layer)
+
 #### Related
 
 - Open questions resolved: Q-032
@@ -166,6 +224,10 @@ Eksempel:
 
 **Neutral:**
 - I praksis allerede sådan kodebasen er strukturet — formalisering, ikke ændring
+
+#### Tenet alignment
+
+Tenet 1 (Platform as stable contract layer, prerequisite for native)
 
 #### Related
 
@@ -219,6 +281,10 @@ Dette gælder: BC messages, DMs, bubble updates (fremtidig), presence updates (f
 
 **Neutral:**
 - Bekræftelse af eksisterende pattern, ikke nybyggeri
+
+#### Tenet alignment
+
+Tenet 1 (event ownership contract) + Tenet 3 (race conditions / duplicate writes eliminated via reducer)
 
 #### Related
 
