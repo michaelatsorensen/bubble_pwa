@@ -37,11 +37,11 @@
 **P0 — KRITISK (6 spørgsmål):** Q-014, Q-019, Q-023, Q-050, Q-051, Q-055
 *Security, GDPR compliance, data integrity. Tag stilling først.*
 
-**P1 — Native blockers (12 spørgsmål):** Q-011, Q-012, Q-020, Q-024, Q-026, Q-029, Q-032, Q-033, Q-040, Q-042, Q-045, Q-047, Q-052, Q-054
+**P1 — Native blockers (17 spørgsmål):** Q-011, Q-012, Q-020, Q-024, Q-026, Q-029, Q-032, Q-033, Q-040, Q-042, Q-045, Q-047, Q-052, Q-054, Q-057, Q-058, Q-060, Q-061
 *Skal være afklarede inden native rewrite kan starte.*
 
-**Type-fordeling:** A (47) · B (1) · C (4 → 0 efter migration) · D (5) = 55 totalt
-**Status-fordeling:** OPEN (51) · MIGRATED (4 → ADR) · andre (0)
+**Type-fordeling:** A (52) · B (1) · C (4 → 0 efter migration) · D (5) = 61 totalt
+**Status-fordeling:** OPEN (57) · MIGRATED (4 → ADR) · andre (0)
 
 > **Næste skridt:** Type C-spørgsmål (Q-024, Q-026, Q-032, Q-033) flyttes til ARCHITECTURE-DECISIONS.md når accepted. Type D-spørgsmål (Q-011, Q-013, Q-022, Q-029, Q-035) overvejes for migration til NATIVE-MIGRATION.md når moden nok.
 
@@ -919,3 +919,123 @@ WHERE proname IN (
 ---
 
 *Q-001 til Q-055 = 55 åbne spørgsmål totalt. 6 nye fra Section 19.*
+
+---
+
+## Section 20: Deep-link Auth Flow (Session 4 batch 2 part 2)
+
+### Q-056: What is the complete flow-flag inventory?
+
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+
+**Kontekst:** Memory mentions `_cameFromLanding`, `shouldBypassLanding`. Også `consumeFlow()` atomic pattern, `flowClearAll()` med 15min TTL. Men fuld liste af alle flow-flags ikke enumeret.
+
+**Spørgsmål:** Søg i kodebasen:
+```bash
+grep -rn "sessionStorage\." --include="*.js" --include="*.html" | grep -i "flow\|landing\|deep\|auth"
+```
+Dokumentér hver flow-flag: navn, hvor den sættes, hvor den læses, hvor den ryddes.
+
+**Antagelse:** ~5-8 flow-flags totalt. Hver har klart ejerskab.
+
+**Påvirkning:** Foundation for evt. redesign til explicit state machine (Section 20.6).
+
+---
+
+### Q-057: What happens if deep-link arrives mid-signup?
+
+**TYPE:** A · **PRIORITY:** P1 · **STATUS:** OPEN
+
+**Kontekst:** Scenario: bruger klikker deep-link → ikke logget ind → starter signup → email confirmation → klikker confirm-link → app åbner igen. Bevares deep-link intent gennem email confirmation?
+
+**Spørgsmål:** Test flowet manuelt:
+1. Klik en `?event=<uuid>` link uden at være logget ind
+2. Gennemfør signup → modtag confirmation email
+3. Klik confirmation link i email
+4. Verificér: åbner app'en stadig event-modalen? Eller lander brugeren på default home?
+
+**Antagelse:** sessionStorage persisterer hvis samme browser-tab. Hvis ny tab åbnes fra email-klient, mistes intent.
+
+**Påvirkning:** Hvis intent mistes → konvertering droppes på P1-niveau. Fix kræver server-side `pending_invites` table eller email-confirmation link med embedded intent.
+
+---
+
+### Q-058: How does flow handle logged-in-as-different-account?
+
+**TYPE:** A · **PRIORITY:** P1 · **STATUS:** OPEN
+
+**Kontekst:** Bruger A er logget ind. Modtager deep-link (fx i email) sendt til bruger B. Klikker linket. Hvad sker der?
+
+**Spørgsmål:** Test flowet:
+1. Log ind som bruger A
+2. Send selv et invite-link til en anden email
+3. Åbn linket i samme browser (stadig logget ind som A)
+4. Verificér: prompts app'en for konto-skift? Eller fortsætter den som A?
+
+**Antagelse:** Ingen eksplicit konto-skift prompt. Joinen sker som nuværende bruger (A) — hvilket er korrekt for "forwarded invite"-scenario men forvirrende for "wrong account"-scenario.
+
+**Påvirkning:** UX decision, ikke kun teknisk. Native rewrite skal afgøre policy: prompt vs auto-accept.
+
+---
+
+### Q-059: Is `_authLock` 30s sufficient on slow mobile networks?
+
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+
+**Kontekst:** v8.17.15 introducerede 30s timeout på `_authLock` for at undgå dead-locks. Mobile pilot-brugere kan have langsomme netværk (Sønderborg landområder).
+
+**Spørgsmål:** Tjek timeout-implementation i koden. Findes der observability for timeout-events? (fx error_log INSERT når timeout udløses?)
+
+**Antagelse:** 30s er sufficient på 4G+. Kan være tight på 3G. Logging er sandsynligvis ikke implementeret.
+
+**Påvirkning:** Hvis timeout fejler silently på slow networks → bruger sidder fast i auth-lock → P1-eskalering.
+
+---
+
+### Q-060: What is exact race condition between setupAuthListener and deep-link processor?
+
+**TYPE:** A · **PRIORITY:** P1 · **STATUS:** OPEN
+
+**Kontekst:** v8.17.19-20 fixede én variant af redirect-loop (sessionStorage persist + `shouldBypassLanding` guard). Men er andre race conditions stadig possible?
+
+Hypotetiske scenarier:
+- Auth listener fires FØR sessionStorage er læst → flag overskrives
+- Deep-link processor fires TO gange (e.g. visibility change events)
+- Multiple tabs med samme deep-link → conflict
+
+**Spørgsmål:** Manual test med Chrome DevTools throttling (Slow 3G) + verbose logging af auth listener / deep-link processor invocations. Find om der er edge cases der reproducerer redirect-loop eller modal-double-open.
+
+**Antagelse:** Nuværende implementation er stabil i 95% af tilfælde. Resterende 5% kræver explicit state machine (Section 20.6).
+
+**Påvirkning:** Foundation for redesign-beslutning.
+
+---
+
+### Q-061: Should `joinBubble()` return semantics be tightened?
+
+**TYPE:** A · **PRIORITY:** P1 · **STATUS:** OPEN
+
+**Kontekst:** Listed som pre-pilot priority i memory:
+
+> Pending fix: tighten `joinBubble()` return semantics (`joined_now`/`already_member`/`failed`) + event-flow success handling
+
+Nuværende implementation returnerer formentlig boolean eller throws — inkonsistent håndtering af "already member"-tilfælde.
+
+**Spørgsmål:** Læs `dbActions.joinBubble()` i `b-utils.js`:
+1. Hvad returnerer den nu?
+2. Hvor er den kaldt fra?
+3. Håndterer hver call site distinktionen mellem "joined_now" og "already_member"?
+
+**Antagelse:** Inkonsistent. Pre-pilot stramning skal definere kontrakt:
+```typescript
+type JoinBubbleResult = 
+  | { ok: true; status: 'joined_now'; member_id: UUID }
+  | { ok: true; status: 'already_member'; member_id: UUID }
+  | { ok: false; status: 'failed'; reason: string };
+```
+
+**Påvirkning:** Pre-pilot blocker. Event-flow success handling skal vise korrekt feedback til bruger (toast vs. silent vs. error).
+
+---
+
+*Q-001 til Q-061 = 61 åbne spørgsmål totalt. 6 nye fra Section 20.*

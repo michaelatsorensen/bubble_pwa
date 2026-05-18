@@ -4750,3 +4750,317 @@ Detailed in `OPEN-QUESTIONS.md` as Q-050 through Q-055:
 6 nye åbne spørgsmål.
 
 ---
+
+## 20. Critical Flow #5: Deep-link Auth Flow (Session 4 batch 2 part 2)
+
+> **Mapping mode:** Memory-first with explicit verification markers.
+> Recent stabilization work (v8.17.16-20) provides solid documentation foundation, but exact race-condition behavior and edge cases still inferred.
+> Items marked NEEDS VERIFICATION require code inspection.
+
+### 20.1 Why this flow is critical
+
+Deep-link auth is the **front door to acquisition** — and arguably the most UX-sensitive flow in the entire app:
+
+1. **First impression for invited users.** When someone receives a Bubble invite link, this flow IS Bubble for them. Friction here = lost conversion.
+2. **4 distinct entry paths** that must converge into one coherent experience. Asymmetry between paths is invisible to users but compounds in code complexity.
+3. **Auth state ambiguity.** Users arriving via deep-link can be: not-logged-in, logged-in-different-account, logged-in-correct-account, mid-signup, mid-onboarding. Each requires different handling.
+4. **Race conditions between auth listener and deep-link processor.** Documented history of redirect loops (v8.17.19-20 fixes) shows this is a real failure surface.
+5. **Modal copy semantics.** Same underlying flow shows different language based on event state (live/upcoming/ended/already-member). Error in state detection = wrong CTA = user confused.
+6. **Security surface.** UUID validation, SSRF protection, XSS in avatars — all live in this flow because deep-links are the primary user-controlled input vector.
+
+This flow has been **iteratively hardened** through v8.17.x — but its complexity makes future regressions likely without explicit contract documentation.
+
+### 20.2 Verified vs Inferred — current state map
+
+#### ✅ Verified from prior architectural sessions
+
+| Element | Status | Source of truth |
+|---|---|---|
+| Unified deep-link modal system exists | ✅ Verified | Commit `b61e84e` (v8.17.16) |
+| 4 entry paths converge into one modal | ✅ Verified | Memory: `?event=`, `?join=`, QR scan, guest signup |
+| Streamlined signup: name + workplace + terms only | ✅ Verified | Memory + commits; tags/title deferred post-signup |
+| Landing redirect loop fix deployed | ✅ Verified | v8.17.19-20 commits, `sessionStorage._cameFromLanding` + `shouldBypassLanding` guard |
+| UUID validation on URL parameters | ✅ Verified | v8.17.15 security patch |
+| SSRF allowlist for avatar download | ✅ Verified | v8.17.15 security patch |
+| Avatar XSS via `escHtml` | ✅ Verified | v8.17.15 security patch |
+| `_authLock` 30s timeout | ✅ Verified | v8.17.15 security patch |
+| Forgot-password preserves flow flags | ✅ Verified | v8.17.15 security patch |
+| `joinBubble` QR/invite source bypasses client privacy gate | ✅ Verified | Memory: privacy gate is server-side via `joinBubble` source param |
+| Default landing = Info-tab (except notification deep-links) | ✅ Verified | Memory + design decisions |
+| Decline = inline tray, no DB write, toast only | ✅ Verified | v8.17.16 modal design |
+
+#### 🟡 Inferred from memory (likely true, not re-verified)
+
+| Element | Status | Why uncertain |
+|---|---|---|
+| Modal state detection covers all 4 entry paths uniformly | 🟡 Inferred | Code paths exist but uniformity not re-traced |
+| `sessionStorage` flow-flags TTL = 15min | 🟡 Inferred | Memory mentions 15min TTL; not re-verified |
+| `flowClearAll()` is called consistently on all exit paths | 🟡 Inferred | Defensive function exists but call sites not enumerated |
+| Modal copy maps 1:1 with event state (live/upcoming/ended) | 🟡 Inferred | 4-state matrix in memory; not re-verified against code |
+| `consumeFlow()` atomic read+clear works correctly across all flags | 🟡 Inferred | Atomic pattern documented; race-conditions not stress-tested |
+| Forgot-password flow correctly preserves deep-link intent | 🟡 Inferred | v8.17.15 patch addressed this; edge cases unknown |
+
+#### ⚠️ NEEDS VERIFICATION before structural change
+
+| Element | Why critical |
+|---|---|
+| **Q-056:** What is the complete flow-flag inventory? | Memory mentions `_cameFromLanding`, `shouldBypassLanding`, but full enumeration unclear |
+| **Q-057:** What happens if deep-link arrives mid-signup (between email confirm and profile completion)? | Edge case not documented; potential user-stuck scenario |
+| **Q-058:** How does the flow handle logged-in-as-different-account? | Memory implies switching is needed; mechanism unclear |
+| **Q-059:** Is `_authLock` 30s sufficient on slow mobile networks? | Pilot users may experience slow networks; timeout failures = silent breakage |
+| **Q-060:** What is the exact race condition between `setupAuthListener` and deep-link processor? | v8.17.19-20 fixed one variant; are there others? |
+| **Q-061:** Should `joinBubble()` return semantics be tightened? | Listed as pre-pilot priority; impacts event-flow success handling |
+
+### 20.3 End-to-end flow diagram — Hypothesized current state
+
+> **All paths and bug-states depicted are 🟡 inferred from memory.**
+> Architecture has been iteratively hardened through v8.17.x — but specific race conditions and edge cases must be verified before any structural change.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  ENTRY PATH 1: ?event=<uuid> in URL                                 │
+└─────────────────────────────────────────────────────────────────────┘
+
+User clicks event invite link
+    │
+    ▼
+Landing page (bubbleme.dk) loads
+    │
+    │  Parse URL params:
+    │  ├─ UUID validation (security)  ✅
+    │  └─ Set sessionStorage._cameFromLanding = true
+    │
+    ▼
+Redirect to ./?auth=1 OR app entry
+    │
+    ▼
+setupAuthListener fires
+    │
+    │  Check sessionStorage:
+    │  ├─ _cameFromLanding present?
+    │  ├─ shouldBypassLanding guard?  ✅ (prevents redirect loop)
+    │  └─ Pending flow flags?
+    │
+    │  Branch:
+    │  ├─ NOT authenticated → show login/signup
+    │  └─ Authenticated → consumeFlow() → show event modal
+    │
+    ▼
+Unified deep-link modal
+    │
+    │  State detection:
+    │  ├─ Event live → "Tilmeld og gå live" CTA
+    │  ├─ Event upcoming → "Accepter invitation" CTA
+    │  ├─ Event ended (non-member) → "Se info" only
+    │  └─ Already member → banner + "Tjek ind" CTA
+    │
+    ▼
+User action:
+    ├─ Accept → joinBubble(source='event_flow') → success
+    ├─ Decline → inline confirmation tray → toast → no DB write
+    └─ Close → modal closes, default landing tab
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  ENTRY PATH 2: ?join=<bubble_uuid> in URL                           │
+└─────────────────────────────────────────────────────────────────────┘
+
+[Similar flow to event, but:]
+  ├─ Direct bubble join (not event-attached)
+  ├─ Privacy gate bypassed via joinBubble source='qr_or_invite'
+  └─ joinBubble return semantics: joined_now / already_member / failed (PENDING tighten)
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  ENTRY PATH 3: QR camera scan (in-app)                              │
+└─────────────────────────────────────────────────────────────────────┘
+
+User opens camera scanner from app
+    │
+    ▼
+Scan QR code → parse URL
+    │
+    │  Same UUID validation as URL params  ✅
+    │
+    ▼
+Programmatic call to deep-link modal (bypasses URL routing)
+    │
+    │  ⚠️ Q-056 verification: does QR path use same flow-flag system?
+    │  Or does it bypass and call modal directly?
+    │
+    ▼
+[Same modal experience as URL paths]
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  ENTRY PATH 4: Guest signup (deep-link without account)             │
+└─────────────────────────────────────────────────────────────────────┘
+
+Deep-link arrives, user not logged in
+    │
+    ▼
+Streamlined signup modal:
+    ├─ Email + password
+    ├─ Full name
+    ├─ Workplace
+    └─ Terms acceptance
+    │
+    │  ⚠️ Tags/title DEFERRED to post-signup welcome flow
+    │
+    ▼
+Email confirmation (Supabase auth)
+    │
+    │  ⚠️ Q-057: What if user clicks confirmation link from email?
+    │  Does flow-flag persist? Or is deep-link intent lost?
+    │
+    ▼
+[Return to setupAuthListener with authenticated session]
+    │
+    ▼
+[consumeFlow() → original deep-link modal]
+```
+
+### 20.4 The 4 entry paths — known issues per path
+
+| Entry path | Stable? | Known issues | Pre-pilot risk |
+|---|---|---|---|
+| `?event=` URL param | ✅ Stable (v8.17.16-20 hardened) | None known | Low |
+| `?join=` URL param | 🟡 Mostly stable | `joinBubble()` return semantics need tightening (Q-061) | Medium |
+| QR camera scan | 🟡 Inferred stable | Memory unclear if same flow-flag system | Low (manual user trigger) |
+| Guest signup | 🟡 Inferred stable | Email confirmation re-entry path not fully documented (Q-057) | Medium |
+
+### 20.5 Known failure modes — mini-audit
+
+#### Failure mode 1: Redirect loops between landing and app
+
+**Symptom:** User clicks deep-link → app loads → redirects back to landing → app reloads → loop.
+
+**Status:** ✅ **FIXED in v8.17.19-20.** `shouldBypassLanding` guard in `setupAuthListener` reads `sessionStorage._cameFromLanding`.
+
+**Residual risk:** 🟡 If sessionStorage is cleared mid-flow (browser quirks, incognito mode), loop could re-emerge.
+
+**Fix complexity:** Already deployed. Monitor.
+
+#### Failure mode 2: Auth listener race with deep-link processor
+
+**Symptom:** Modal opens before auth state is confirmed → operations fail silently OR modal opens twice.
+
+**Status:** 🟡 **Partially mitigated.** `_authLock` 30s timeout + `consumeFlow()` atomic pattern address most cases.
+
+**Hypothesis:** Edge cases exist on slow networks (Q-059) or when auth listener fires in unusual order during page load.
+
+**Fix complexity:** Medium. Requires explicit state machine for "deep-link processing state" rather than implicit flag combinations.
+
+#### Failure mode 3: Lost deep-link intent through email confirmation
+
+**Symptom:** User signs up via deep-link → confirms email → confirmation link opens app fresh → original event/bubble intent lost.
+
+**Status:** ⚠️ **NEEDS VERIFICATION.** Q-057 — exact behavior unclear from memory alone.
+
+**Hypothesis:** Either (a) sessionStorage persists through email confirmation flow (if same browser tab), or (b) intent is lost and user lands on default home screen.
+
+**Fix complexity:** If verified as bug — High (requires persistent state outside sessionStorage, likely server-side pending_invites table).
+
+#### Failure mode 4: User logged in as wrong account
+
+**Symptom:** User A is logged in, receives deep-link intended for User B → modal shows but join fails silently OR joins as User A.
+
+**Status:** ⚠️ **NEEDS VERIFICATION.** Q-058.
+
+**Hypothesis:** No explicit "account switch" prompt exists. Join would proceed as current user — which is correct behavior in some cases (forwarding invites) but confusing in others.
+
+**Fix complexity:** UX decision, not just technical fix.
+
+#### Failure mode 5: Modal state mismatch (event state changed)
+
+**Symptom:** User receives invite to live event → arrives after event ended → still sees "Tilmeld og gå live" CTA.
+
+**Status:** 🟡 **Likely correctly handled.** Memory documents 4-state matrix (live/upcoming/ended/already-member).
+
+**Residual risk:** State detection is async — small window where event ends mid-modal-render.
+
+**Fix complexity:** Low — server-side state should be re-checked at action time, not just at render time.
+
+#### Failure mode 6: Stale flow flags after abandonment
+
+**Symptom:** User opens deep-link → modal shown → user closes app without acting → returns later → modal reopens unexpectedly.
+
+**Status:** 🟡 **Partially mitigated.** 15min TTL on sessionStorage + `flowClearAll()` on logout.
+
+**Residual risk:** Flags may persist longer than intended if user keeps tab open.
+
+**Fix complexity:** Low. Tighten TTL or add explicit "abandon" handler on modal close.
+
+### 20.6 Architectural recommendation: Explicit deep-link state machine
+
+The current flow uses **implicit flag combinations** (sessionStorage keys + auth listener guards). This works but is fragile.
+
+**Proposed redesign — explicit state machine:**
+
+```typescript
+// Proposed: DeepLinkFlowState
+// Authoritative source: single sessionStorage key (versioned)
+// Replaces: scattered _cameFromLanding, shouldBypassLanding, etc.
+
+interface DeepLinkFlowState {
+  version: 1;
+  intent: {
+    type: 'event' | 'bubble_join' | 'qr_scan';
+    target_id: UUID;
+    source: 'url_param' | 'qr_scan' | 'notification';
+  };
+  state: 
+    | 'pending_auth'           // user not logged in, waiting for auth
+    | 'pending_email_confirm'  // user signed up, waiting for email confirmation
+    | 'pending_modal_show'     // auth complete, ready to show modal
+    | 'modal_shown'            // modal visible, awaiting user action
+    | 'completed'              // action taken, ready to clear
+    | 'abandoned';             // user closed without action
+  created_at: ISO8601;
+  expires_at: ISO8601;  // explicit TTL, not implicit
+}
+```
+
+**Benefits:**
+
+1. **Single source of truth** — one sessionStorage key instead of scattered flags
+2. **Explicit state transitions** — clear what's valid (no implicit combinations)
+3. **Email confirmation surviving** — `pending_email_confirm` state explicitly handles Q-057
+4. **Account-switch awareness** — can detect "different user logged in" scenario (Q-058)
+5. **Native-portable** — same state machine works in React Native AsyncStorage
+
+**Implication for Tenet 3:**
+
+This redesign addresses **ambiguous ownership** (multiple flags = unclear authority) and **race conditions** (implicit combinations = timing-dependent correctness). It is therefore **justified per Tenet 3**.
+
+It does NOT address mere "code cleanliness" — the existing scattered-flag approach is battle-tested (v8.17.16-20 work proved this). The redesign is justified because it eliminates a class of bugs, not because it's "prettier".
+
+### 20.7 Native service mapping
+
+> See ADR-001 (Server-authoritative presence) and Architectural Tenet 1.
+> Native deep-link handling will require different infrastructure but same logical contract.
+
+| Current PWA | Native equivalent |
+|---|---|
+| URL params (`?event=`, `?join=`) | Universal Links (iOS) + App Links (Android) |
+| `sessionStorage` flow flags | `AsyncStorage` with versioned state machine |
+| `setupAuthListener` | Expo Linking API + auth context provider |
+| Email confirmation redirect | Custom URL scheme handler in Expo |
+| In-app QR scanner | Expo Camera + Barcode Scanner |
+| Modal copy variations | i18n (already in place via `b-i18n.js`) |
+
+**Critical native dependency:** Universal Links require domain verification (apple-app-site-association file + assetlinks.json). This is **DNS + server config**, not native code — must be set up before Phase 1 of NATIVE-MIGRATION.md.
+
+### 20.8 Open questions from this flow
+
+Detailed in `OPEN-QUESTIONS.md` as Q-056 through Q-061:
+
+| # | Question | Priority |
+|---|---|---|
+| Q-056 | What is the complete flow-flag inventory? | P2 |
+| Q-057 | What happens if deep-link arrives mid-signup? | P1 |
+| Q-058 | How does flow handle logged-in-as-different-account? | P1 |
+| Q-059 | Is `_authLock` 30s sufficient on slow mobile networks? | P2 |
+| Q-060 | What is exact race condition between setupAuthListener and deep-link processor? | P1 |
+| Q-061 | Should `joinBubble()` return semantics be tightened? | P1 (pre-pilot) |
+
+6 nye åbne spørgsmål.
+
+---
