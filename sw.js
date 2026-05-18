@@ -2,8 +2,17 @@
 //  BUBBLE SERVICE WORKER
 // ══════════════════════════════════════
 // Version managed by CACHE_NAME below
+//
+// v8.17.31 update strategy:
+// - install does NOT call skipWaiting() — new SW waits in 'installed' state
+// - app detects waiting SW and shows "Ny version klar — genindlæs?" prompt
+// - When user accepts, app posts { type: 'SKIP_WAITING' } → SW activates
+// - This prevents mid-session SW replacement that can corrupt cache state
+//
+// Previous behavior (v8.17.30 and earlier): skipWaiting + clients.claim on install,
+// causing potentially-disruptive updates mid-write/mid-flow.
 
-const CACHE_NAME = 'bubble-v8.17.30';
+const CACHE_NAME = 'bubble-v8.17.31';
 const CACHE_URLS = [
   './', './index.html', './app.css',
   './bubble-icons.js',
@@ -19,11 +28,14 @@ const CACHE_URLS = [
 ];
 
 self.addEventListener('install', function(event) {
+  // Precache new version's files but do NOT skipWaiting.
+  // SW enters 'installed' state and waits for user-prompted activation.
   event.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(CACHE_URLS)));
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', function(event) {
+  // Activate only fires after skipWaiting() is called (via message handler).
+  // Clean up old caches and notify clients about new version.
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
@@ -35,13 +47,18 @@ self.addEventListener('activate', function(event) {
       });
     })
   );
-  self.clients.claim();
+  // NOTE: clients.claim() removed in v8.17.31. New SW only controls newly-loaded pages,
+  // not pages currently active. Prevents mid-session disruption.
 });
 
-// Send version til nye klienter når de connecter
+// Message handler — supports version queries AND user-prompted SW activation
 self.addEventListener('message', function(event) {
   if (event.data && event.data.type === 'GET_VERSION') {
     event.source.postMessage({ type: 'SW_VERSION', version: CACHE_NAME });
+  }
+  // v8.17.31: user-prompted activation. App posts this when user accepts update.
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
 });
 
@@ -100,6 +117,7 @@ self.addEventListener('push', function(event) {
 });
 
 // ── Klik på notifikation → naviger i app ──
+// v8.17.31: prefer focused tab, then visible tab, then any
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
   if (event.action === 'dismiss') return;
@@ -118,15 +136,27 @@ self.addEventListener('notificationclick', function(event) {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(list) {
-      for (var i = 0; i < list.length; i++) {
-        if ('focus' in list[i]) {
-          list[i].focus();
-          // Send besked til app om navigation
-          list[i].postMessage({ type: 'PUSH_NAVIGATE', url: url, data: d });
-          return;
-        }
+      if (list.length === 0) {
+        return clients.openWindow(url);
       }
-      return clients.openWindow(url);
+      // Prefer: focused first, then visible, then any
+      list.sort(function(a, b) {
+        if (a.focused !== b.focused) return b.focused ? 1 : -1;
+        if (a.visibilityState !== b.visibilityState) {
+          return a.visibilityState === 'visible' ? -1 : 1;
+        }
+        return 0;
+      });
+      var target = list[0];
+      // Focus, then explicitly navigate (more reliable than postMessage alone)
+      return target.focus().then(function() {
+        // Send navigation hint to app (app router handles deep-link from URL params)
+        target.postMessage({ type: 'PUSH_NAVIGATE', url: url, data: d });
+        // Also navigate explicitly so URL params are present for boot/auth flow
+        if ('navigate' in target) {
+          try { target.navigate(url); } catch(e) {}
+        }
+      });
     })
   );
 });

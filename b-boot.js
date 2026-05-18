@@ -551,6 +551,14 @@ async function checkGuestEventRoute() {
     var eventId = params.get('event');
     if (!eventId) return false;
     
+    // Validate before query — prevents string concat injection in .or() clause below.
+    // Either valid UUID or short alphanumeric join_code (4-32 chars).
+    if (!isUuid(eventId) && !/^[a-zA-Z0-9_-]{4,32}$/.test(eventId)) {
+      _renderToast('Ugyldigt event-link', 'error');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return false;
+    }
+    
     // Already logged in → join + handle check-in
     var { data: { session } } = await sb.auth.getSession();
     if (session) {
@@ -770,10 +778,59 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.ready.then(function(reg) {
     reg.update(); // Trigger SW update check
 
+    // v8.17.31: detect waiting SW at boot (in case SW_UPDATED postMessage missed)
+    if (reg.waiting && navigator.serviceWorker.controller) {
+      showUpdateBanner();
+    }
+    // Listen for new SW becoming waiting AFTER boot (deploy happens mid-session)
+    reg.addEventListener('updatefound', function() {
+      var newSW = reg.installing;
+      if (!newSW) return;
+      newSW.addEventListener('statechange', function() {
+        if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+          // New SW installed but not yet active — show banner
+          showUpdateBanner();
+        }
+      });
+    });
+
     // Spørg den aktive SW om dens version og sammenlign med BUILD_VERSION
     if (navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage({ type: 'GET_VERSION' });
     }
+  });
+}
+
+// v8.17.31: SW update orchestration
+// 1. acceptUpdate() — called when user clicks "Opdatér" in banner
+// 2. controllerchange listener — reloads after new SW takes control
+// 3. updatefound listener — detects waiting SW that wasn't yet announced
+function acceptUpdate() {
+  if (!('serviceWorker' in navigator)) {
+    window.location.reload();
+    return;
+  }
+  navigator.serviceWorker.ready.then(function(reg) {
+    // If a new SW is waiting, tell it to activate
+    if (reg.waiting) {
+      reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      // controllerchange listener (below) will reload when new SW takes control
+    } else {
+      // No waiting SW — just reload (handles edge case)
+      window.location.reload();
+    }
+  }).catch(function() {
+    window.location.reload();
+  });
+}
+
+// Reload page when new SW takes control (after SKIP_WAITING + activate)
+if ('serviceWorker' in navigator) {
+  var _swReloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function() {
+    if (_swReloaded) return; // Prevent infinite reload loop
+    _swReloaded = true;
+    window.location.reload();
   });
 }
 
@@ -794,7 +851,7 @@ function showUpdateBanner() {
     + '<span style="font-size:0.78rem;font-weight:600;color:var(--text)">Ny version klar</span>'
     + '</div>'
     + '<div style="display:flex;gap:0.4rem;flex-shrink:0">'
-    + '<button onclick="window.location.reload()" style="background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;'
+    + '<button onclick="acceptUpdate()" style="background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;'
     + 'color:#fff;padding:0.35rem 0.85rem;border-radius:99px;font-weight:700;font-size:0.72rem;'
     + 'font-family:inherit;cursor:pointer;white-space:nowrap">Opdatér</button>'
     + '<button onclick="this.closest(\'#update-banner\').remove()" style="background:none;border:1px solid var(--glass-border);'

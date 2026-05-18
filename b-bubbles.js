@@ -16,6 +16,17 @@
 var bubbleUpvotes = {}; // { bubbleId: count }
 var myUpvotes = {};     // { bubbleId: true }
 
+// v8.17.31: cleanup on logout — prevents user A's upvotes from being shown as user B's
+registerState(function() {
+  bubbleUpvotes = {};
+  myUpvotes = {};
+  if (typeof _upvoteLock !== 'undefined') _upvoteLock = {};
+  if (typeof _discoverLoaded !== 'undefined') _discoverLoaded = false;
+  if (typeof _memberSheetEl !== 'undefined') _memberSheetEl = null;
+  if (typeof _bbSubmitLock !== 'undefined') _bbSubmitLock = false;
+  if (typeof _pendingBubbleIcon !== 'undefined') _pendingBubbleIcon = null;
+});
+
 async function loadBubbleUpvotes() {
   try {
     if (!currentUser) return;
@@ -1286,11 +1297,23 @@ async function downloadQRPdf() {
 // Kept temporarily to allow runtime verification before removal.
 // Safe to delete in next major cleanup pass once smoke-tests confirm
 // no orphan callers (e.g. inline onclick handlers).
+// Mutex preventing race between checkQRJoin + checkPendingJoin
+// Both handlers can fire during boot (one from URL, one from sessionStorage)
+// Without mutex, we get double join attempts → duplicate analytics + wrong toast
+var _joinInFlight = false;
+registerState(function() { _joinInFlight = false; });
+
 async function checkQRJoin() {
+  if (_joinInFlight) {
+    console.debug('[join] checkQRJoin skipped — join already in flight');
+    return;
+  }
   try {
     const params = new URLSearchParams(window.location.search);
     const joinId = params.get('join');
     if (!joinId) return;
+
+    _joinInFlight = true;
 
     // Clean URL
     window.history.replaceState({}, '', window.location.pathname);
@@ -1318,13 +1341,21 @@ async function checkQRJoin() {
     errorToast("load", e);
     // Prevent dead end — always navigate somewhere
     if (_activeScreen === 'screen-loading' || !_activeScreen) goTo('screen-home');
+  } finally {
+    _joinInFlight = false;
   }
 }
 
 async function checkPendingJoin() {
+  if (_joinInFlight) {
+    console.debug('[join] checkPendingJoin skipped — join already in flight');
+    return;
+  }
   try {
     const joinId = flowGet('pending_join');
     if (!joinId) return;
+
+    _joinInFlight = true;
 
     var isEventFlow = flowGet('event_flow');
 
@@ -1348,6 +1379,7 @@ async function checkPendingJoin() {
           showSuccessToast(t('toast_joined'));
         }
         // event_flow stays set for showEventReadyQR in resolvePostAuthDestination
+        _joinInFlight = false;
         return;
       }
 
@@ -1356,6 +1388,7 @@ async function checkPendingJoin() {
       consumeFlow('event_flow');
       goTo('screen-home');
       setTimeout(function() { showDeepLinkModal('event', joinId); }, 400);
+      _joinInFlight = false;
       return;
     }
 
@@ -1369,6 +1402,7 @@ async function checkPendingJoin() {
     _bbAfterJoin(joinId);
     await openBubble(joinId, 'screen-home');
   } catch(e) { logError("checkPendingJoin", e); consumeFlow('event_flow'); errorToast("save", e); }
+  finally { _joinInFlight = false; }
 }
 
 

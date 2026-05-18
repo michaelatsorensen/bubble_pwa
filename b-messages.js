@@ -254,9 +254,14 @@ async function sendMessage() {
       }).select().single();
 
       if (error) {
-        // Remove optimistic message on failure
+        // Complete rollback on failure
+        // 1. Remove optimistic DOM element
         var failEl = document.getElementById('dm-msg-' + tempId);
         if (failEl) failEl.remove();
+        // 2. Clear dedup guard so user can immediately retry (not blocked for 3s)
+        if (typeof _dedupKey !== 'undefined') delete _dmLastSent[_dedupKey];
+        // 3. Restore input value so user doesn't have to retype
+        if (input && !input.value) input.value = content;
         logError('sendMessage:insert', error);
         errorToast('send', error);
         return;

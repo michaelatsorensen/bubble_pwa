@@ -159,7 +159,13 @@
 
 ### Q-008: 117 direkte writes — systematisk inventering?
 
-**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+**TYPE:** A · **PRIORITY:** P1 · **STATUS:** PARTIALLY VERIFIED
+
+> ✅ **Audit verified maj 2026.** Actual count: **212 direct writes** (not 117).
+> Verified via grep across `*.js` for `sb.from().insert|update|delete|upsert`.
+> 
+> **Priority upgraded P2 → P1** — significantly larger scope than memory suggested.
+> Native rewrite blocker until consolidated through dbActions or service layer.
 
 **Kontekst:** Memory note 14 nævner "117 resterende writes kan migreres inkrementelt til dbActions". Disse er `sb.from(...).insert/update/delete()`-kald spredt over feature-filer.
 

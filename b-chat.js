@@ -14,6 +14,23 @@
 var gifPickerMode = null; // 'bc' or 'dm'
 var _gifSearchTimer = null;
 
+// v8.17.31: register cleanup so logout/user-switch doesn't leak this module's state.
+// _profileCache is the most critical — it contains other users' profile data.
+registerState(function() {
+  gifPickerMode = null;
+  if (_gifSearchTimer) { clearTimeout(_gifSearchTimer); _gifSearchTimer = null; }
+  if (typeof _bcLivePollTimer !== 'undefined' && _bcLivePollTimer) {
+    clearInterval(_bcLivePollTimer); _bcLivePollTimer = null;
+  }
+  if (typeof _bcActiveTab !== 'undefined') _bcActiveTab = 'info';
+  if (typeof _bcPrevTab !== 'undefined') _bcPrevTab = null;
+  if (typeof _profileCache !== 'undefined') _profileCache = {};
+  if (typeof _bcLongPressTimer !== 'undefined' && _bcLongPressTimer) {
+    clearTimeout(_bcLongPressTimer); _bcLongPressTimer = null;
+  }
+  if (typeof _bcPostsCache !== 'undefined') _bcPostsCache = null;
+});
+
 function toggleGifPicker(mode) {
   var picker = document.getElementById('gif-picker');
   var overlay = document.getElementById('gif-picker-overlay');

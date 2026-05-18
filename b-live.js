@@ -16,6 +16,23 @@ const LIVE_EXPIRE_HOURS = 6;
 let currentLiveBubble = null; // { bubble_id, bubble_name, bubble_location, checked_in_at, member_count }
 var _liveLock = false; // Prevents double check-in/checkout from rapid taps
 
+// v8.17.31: cleanup on logout — release locks and tear down QR scanner state
+registerState(function() {
+  currentLiveBubble = null;
+  _liveLock = false;
+  // Tear down QR scanner if active (camera resources)
+  if (typeof _liveQrStream !== 'undefined' && _liveQrStream) {
+    try { _liveQrStream.getTracks().forEach(function(t) { t.stop(); }); } catch(e) {}
+    _liveQrStream = null;
+  }
+  if (typeof _liveQrFrame !== 'undefined' && _liveQrFrame) {
+    cancelAnimationFrame(_liveQrFrame); _liveQrFrame = null;
+  }
+  if (typeof _liveQrFound !== 'undefined') _liveQrFound = null;
+  if (typeof _liveQrPending !== 'undefined') _liveQrPending = false;
+  if (typeof _liveQrResolvedBubble !== 'undefined') _liveQrResolvedBubble = null;
+});
+
 async function loadLiveBubbleStatus() {
   try {
     if (!currentUser) return;

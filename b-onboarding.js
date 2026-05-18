@@ -11,6 +11,17 @@
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 
+// v8.17.31: GDPR-CRITICAL cleanup on logout.
+// Consent state MUST NOT leak between users on shared device — user B must not
+// inherit user A's consent decision. Same for re-running onboarding state.
+registerState(function() {
+  if (typeof _reRunningOnboarding !== 'undefined') _reRunningOnboarding = false;
+  if (typeof _miniObConsentGiven !== 'undefined') _miniObConsentGiven = false;
+  if (typeof _obConsentGiven !== 'undefined') _obConsentGiven = false;
+  if (typeof _abortConfirmed !== 'undefined') _abortConfirmed = false;
+  if (typeof epSelectedTags !== 'undefined') epSelectedTags = [];
+});
+
 // Allowlist of trusted hosts for avatar downloads (OAuth providers).
 // Prevents SSRF where an attacker could supply a URL to internal/sensitive endpoints.
 function _isAllowedAvatarHost(url) {

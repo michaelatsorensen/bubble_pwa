@@ -20,6 +20,18 @@ var _rtReconnectMax = 10;
 var _rtChannelStates = {};
 var _rtSuppressed = false;
 
+// v8.17.31: cleanup on logout — clear timers and reconnect state
+registerState(function() {
+  _rtState = 'connected';
+  if (_rtReconnectTimer) { clearTimeout(_rtReconnectTimer); _rtReconnectTimer = null; }
+  _rtReconnectAttempt = 0;
+  _rtChannelStates = {};
+  _rtSuppressed = false;
+  if (typeof _offlineTimer !== 'undefined' && _offlineTimer) {
+    clearTimeout(_offlineTimer); _offlineTimer = null;
+  }
+});
+
 function rtSetState(newState) {
   if (_rtState === newState) return;
   if (_rtSuppressed) return; // Suppress during logout
