@@ -31,13 +31,14 @@
 - **ACCEPTED** — Decision truffet, flyttes til ADR
 - **REJECTED** — Eksplicit afvist (bevares som læring)
 - **DEFERRED** — Udskudt til senere fase (typisk native rewrite)
+- **MIGRATED** — Flyttet til ADR/NATIVE-MIGRATION/TECH-DEBT, men reference beholdes her for sporbarhed
 
 ### Prioritets-oversigt (signal extraction)
 
 **P0 — KRITISK (6 spørgsmål):** Q-014, Q-019, Q-023, Q-050, Q-051, Q-055
 *Security, GDPR compliance, data integrity. Tag stilling først.*
 
-**P1 — Native blockers (17 spørgsmål):** Q-011, Q-012, Q-020, Q-024, Q-026, Q-029, Q-032, Q-033, Q-040, Q-042, Q-045, Q-047, Q-052, Q-054, Q-057, Q-058, Q-060, Q-061
+**P1 — Native blockers (18 spørgsmål):** Q-011, Q-012, Q-020, Q-024, Q-026, Q-029, Q-032, Q-033, Q-040, Q-042, Q-045, Q-047, Q-052, Q-054, Q-057, Q-058, Q-060, Q-061
 *Skal være afklarede inden native rewrite kan starte.*
 
 **Type-fordeling:** A (52) · B (1) · C (4 → 0 efter migration) · D (5) = 61 totalt

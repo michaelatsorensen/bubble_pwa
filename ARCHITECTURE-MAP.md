@@ -4,11 +4,15 @@
 >
 > **Format:** Levende dokument der vokser over flere sessions. Hver session udvider eksisterende sektioner eller tilføjer nye.
 >
-> **Status:** PHASE 1 — Foundation (inventory + module call-graph + globals + funktions-katalog)
+> **Status:** Phase A complete · Awaiting ground truth verification (Q-050 til Q-061)
 >
-> **Næste fase:** PHASE 2 — Per-fil dybde-dive
+> **Current focus:** Critical flows mapped (5 of 5) + backend contract verification. Phase B (per-fil dybde-dive) starter efter verification.
 >
-> **Søsterdokument:** `OPEN-QUESTIONS.md` — åbne spørgsmål Michael løser parallelt
+> **Søsterdokumenter:**
+> - `OPEN-QUESTIONS.md` — 61 åbne spørgsmål, tagged med TYPE/PRIORITY/STATUS
+> - `ARCHITECTURE-DECISIONS.md` — 3 tenets + 4 ADRs (PROPOSED)
+> - `TECH-DEBT.md` — skeleton, populeres efter verification
+> - `NATIVE-MIGRATION.md` — Q1 2027 roadmap
 
 ## Konventioner for dette dokument
 
@@ -41,11 +45,33 @@ Hver væsentlig påstand om arkitektur eller adfærd bør markeres med ét af f�
 
 ## Indholdsfortegnelse
 
+**Foundation (Sessions 1-3):**
 1. [File Inventory](#1-file-inventory)
 2. [Module-niveau Call Graph](#2-module-niveau-call-graph)
 3. [Globals Catalog](#3-globals-catalog)
 4. [Function Catalog per Fil](#4-function-catalog-per-fil)
 5. [Patterns & Anti-patterns observeret](#5-patterns--anti-patterns-observeret)
+6. [Session Log](#6-session-log)
+7. [localStorage & sessionStorage Keys](#7-localstorage--sessionstorage-keys)
+8. [Write-Fanout Hotspots](#8-write-fanout-hotspots)
+9. [Realtime Event Catalog](#9-realtime-event-catalog)
+10. [Implicit Logik & Workarounds](#10-implicit-logik--workarounds)
+11. [Boot & Auth Flow Diagrammer](#11-boot--auth-flow-diagrammer)
+12. [Anbefalet Native Vertical Slice](#12-anbefalet-native-vertical-slice-sammenligning)
+13. [Open Questions Specifik til Backend-Kontrakter](#13-open-questions-specifik-til-backend-kontrakter)
+
+**Entity & System Boundaries (Sessions 2-3):**
+
+14. [Entity Map](#14-entity-map-session-2)
+15. [System Boundaries](#15-system-boundaries-session-3)
+
+**Critical Flows (Session 4):**
+
+16. [Critical Flow #1: Bubble Join Flow](#16-critical-flow-1-bubble-join-flow-session-4)
+17. [Critical Flow #2: DM Send/Receive Flow](#17-critical-flow-2-dm-sendreceive-flow-session-4)
+18. [Critical Flow #3: Live Check-in Flow](#18-critical-flow-3-live-check-in-flow-session-4)
+19. [Critical Flow #4: Push Notification Flow](#19-critical-flow-4-push-notification-flow-session-4-batch-2)
+20. [Critical Flow #5: Deep-link Auth Flow](#20-critical-flow-5-deep-link-auth-flow-session-4-batch-2-part-2)
 
 ---
 
