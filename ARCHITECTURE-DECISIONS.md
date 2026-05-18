@@ -48,18 +48,183 @@ Hvad vi har besluttet at gøre.
 
 ## ADRs
 
-*Ingen ADRs registreret endnu. Første kandidater fra Section 19 (Push Flow):*
+### ADR-001: Server-authoritative presence
 
-### Candidates pending migration from OPEN-QUESTIONS
+**Status:** PROPOSED
+**Date:** 2026-05-18
+**Migrated from:** Q-026
 
-Følgende decisions er allerede dokumenteret i OPEN-QUESTIONS.md og bør migreres til ADR-format når de er formelt accepted:
+#### Context
 
-1. **Push dispatch contract** — `recipient_id` over `user_id` (fra Q-052 analyse)
-2. **Single source of dispatch** — DB triggers er authoritative, `b-utils.js sendPush()` deprecated (fra Q-053)
-3. **Vault for secrets** — alle hardcoded secrets i trigger functions migreres til vault.secrets (fra Q-055)
-4. **Push observability** — `push_delivery_log` table tilføjes som persistent audit log (fra Q-054)
+Live session state (hvem er checked in, hvem er aktiv) har i nuværende PWA-arkitektur **3 mulige sources of truth**:
 
-Disse migreres når Q-050 til Q-055 er verificeret med ground truth.
+1. **Frontend `appMode`** state — vinduets opfattelse af om brugeren er i live mode
+2. **DB-kolonne** på bubble_members — `checked_in` boolean
+3. **Edge function logic** i `checkin` function — server-side validation
+
+Det er distributed authority. Konflikter kan opstå (frontend tror du er checked in, DB siger nej).
+
+#### Decision
+
+**Server is authoritative for presence state.** Frontend læser via Realtime subscriptions, skriver kun via edge functions. Frontend cache er **derived** state, ikke source of truth.
+
+#### Consequences
+
+**Positive:**
+- Eliminér distributed state race conditions
+- Native migration er straightforward — samme princip
+- Reconnect-scenarier bliver enkle (re-fetch fra DB)
+
+**Negative:**
+- Frontend-only optimizations (instant UI feedback) bliver sværere — kræver optimistic updates med rollback
+- Edge function performance bliver hot path — skal optimeres
+
+**Neutral:**
+- Realtime subscriptions skal være pålidelige — er allerede bygget men ikke audited
+
+#### Related
+
+- Open questions resolved: Q-026
+- ARCHITECTURE-MAP.md sections: 18 (Live Check-in Flow er allerede aligned med dette princip)
+- Native impact: bliver fundament for live-feature i React Native
+
+---
+
+### ADR-002: Cross-system writes via services only
+
+**Status:** PROPOSED
+**Date:** 2026-05-18
+**Migrated from:** Q-032
+
+#### Context
+
+Nuværende kode har **direkte cross-system database writes** — fx en messages-håndterer der direkte INSERTer i `bubble_members` (cross-system write fra Messaging til Membership domain).
+
+Det skaber:
+- Implicit coupling mellem domain systems
+- Vanskelig at audit/tracking af side effects
+- Native migration vil eksplodere i kompleksitet hvis vi porter dette mønster
+
+#### Decision
+
+**Cross-system writes må kun ske gennem service-funktioner.** Hvert domain har en service-fil (`bubble-service.js`, `messaging-service.js` etc.). Ingen direkte DB-writes fra ét domain til et andets tabeller.
+
+Eksisterende `dbActions`-pattern i `b-utils.js` er den rigtige retning — udvides til komplette services pr. domain før native.
+
+#### Consequences
+
+**Positive:**
+- Eksplicit kontrakt mellem domain systems
+- Audit/tracking af side effects bliver muligt
+- Native services kan udvikles 1:1 fra disse contracts
+
+**Negative:**
+- Refactor af eksisterende writes (117 direct writes per Q-008) — non-trivial
+- Mere indirektion i koden
+
+**Neutral:**
+- Performance-impact minimal (samme DB-calls, bare wrapped)
+
+#### Related
+
+- Open questions resolved: Q-032
+- Related questions: Q-001 (dbActions migration scope), Q-008 (117 direct writes inventory)
+- Native impact: definerer service-boundaries før native build
+
+---
+
+### ADR-003: Platform has no domain dependencies
+
+**Status:** PROPOSED
+**Date:** 2026-05-18
+**Migrated from:** Q-033
+
+#### Context
+
+I system-boundaries-analysen (ARCHITECTURE-MAP.md section 11) identificerede vi 5 systems: Platform, Identity, Bubble, Messaging, Discovery.
+
+Platform er foundation-laget (auth, realtime, storage). Spørgsmålet er om Platform må importere fra domain systems (Bubble, Messaging etc.) eller om afhængigheden kun går én vej.
+
+#### Decision
+
+**Platform har INGEN dependency på domain systems.** Domain systems må importere fra Platform, men ikke omvendt.
+
+Eksempel:
+- ✅ `bubble-service.js` importerer `supabase-client.js` fra Platform
+- ❌ `supabase-client.js` må IKKE importere `bubble-service.js`
+
+#### Consequences
+
+**Positive:**
+- Platform forbliver rock-solid og rarely-changes
+- Domain systems kan refactores uden at bryde Platform
+- Native migration: Platform kan skiftes uafhængigt (fx hvis vi en dag flytter fra Supabase)
+
+**Negative:**
+- Nogle convenient shortcuts forsvinder (Platform kan ikke "vide" om bubbles)
+- Cross-cutting concerns (logging, metrics) skal designes som platform-level abstractions
+
+**Neutral:**
+- I praksis allerede sådan kodebasen er strukturet — formalisering, ikke ændring
+
+#### Related
+
+- Open questions resolved: Q-033
+- ARCHITECTURE-MAP.md sections: 11 (System Boundaries), 12 (Platform sub-systems)
+- Native impact: Platform bliver gen-brugbart lag
+
+---
+
+### ADR-004: Reducer pattern as architectural invariant for realtime messages
+
+**Status:** PROPOSED
+**Date:** 2026-05-18
+**Migrated from:** Q-024
+
+#### Context
+
+Realtime messages kan komme fra flere paths samtidigt:
+- Direct DB INSERT subscription
+- Optimistic update fra sender
+- Refresh efter reconnect
+- Pull-to-refresh
+- Bubble entry initial load
+- Edge function ack
+
+Hvert path skal updatere UI **uden** at skabe duplicates. Memory dokumenterer at `bcReduceMsg()` (BC = bubble chat) håndterer 4 paths og `dmReduceMsg()` håndterer 6 paths.
+
+Begge bruger dedup på `data-msg-id` og samme pattern.
+
+#### Decision
+
+**Reducer-pattern er arkitektur-invariant for alle realtime message streams.** Enhver UI update fra et realtime-event skal gå gennem en reducer der:
+
+1. Modtager event payload
+2. Dedupliker på unik ID
+3. Bestemmer insert position (timestamp ordering)
+4. Returnerer ny state ELLER no-op
+
+Dette gælder: BC messages, DMs, bubble updates (fremtidig), presence updates (fremtidig).
+
+#### Consequences
+
+**Positive:**
+- Single point of truth for "hvordan tilføjes en message"
+- Lokal reasoning: hvis dedup fejler, ved vi præcis hvor
+- Native React Native kan bruge samme pattern (useReducer hook)
+
+**Negative:**
+- Alle nye realtime-features skal bygges via reducer (ikke direct UI manipulation)
+- Reducer-funktioner kan blive komplekse
+
+**Neutral:**
+- Bekræftelse af eksisterende pattern, ikke nybyggeri
+
+#### Related
+
+- Open questions resolved: Q-024
+- ARCHITECTURE-MAP.md sections: 17 (DM Send/Receive med 6 paths)
+- Native impact: useReducer kan implementere samme contract
 
 ---
 

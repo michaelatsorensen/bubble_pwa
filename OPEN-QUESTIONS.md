@@ -1,10 +1,49 @@
 # Bubble — Open Questions (Architecture Mapping)
 
-> **Formål:** Bunke af spørgsmål Claude støder på under arkitektur-kortlægning. Michael løser parallelt mens Claude fortsætter analyse.
+> **Formål:** Reelle åbne spørgsmål Claude støder på under arkitektur-kortlægning. Michael løser parallelt mens Claude fortsætter analyse.
 >
-> **Format:** Hver spørgsmål får ID (Q-001, Q-002...). Ikke-blokerende — Claude fortsætter med antagelse noteret i ARCHITECTURE-MAP.
+> **Format:** Hver spørgsmål får ID (Q-001, Q-002...) + TYPE + PRIORITY + STATUS tags.
 >
-> **Status:** Spørgsmål markeres ÅBEN, BESVARET, eller IRRELEVANT efter du har set dem.
+> **Vigtigt:** Dette dokument indeholder KUN reelle spørgsmål og antagelser. Beslutninger lever i `ARCHITECTURE-DECISIONS.md`. Redesigns lever i `NATIVE-MIGRATION.md`.
+
+## Governance konventioner
+
+### TYPE — hvad er det her egentlig?
+
+- **A — Question:** Reel usikkerhed. Ved svar bliver det fjernet eller flyttet til ADR/redesign.
+- **B — Assumption:** Midlertidig arbejdshypotese. "Jeg tror det er X, men vil verificere."
+- **C — Decision:** Allerede valgt arkitektonisk retning. **Skal migreres til ARCHITECTURE-DECISIONS.md.**
+- **D — Redesign candidate:** Foreslået fremtidig ændring. **Skal migreres til NATIVE-MIGRATION.md.**
+
+> **Disciplin:** Et åbent spørgsmål må ikke være forklædt som en beslutning. Hvis svaret er "ja, det gør vi" — så er det ikke et spørgsmål længere.
+
+### PRIORITY — hvad er konsekvensen hvis vi tager fejl?
+
+- **P0 — Critical:** Security, data loss, auth, compliance, irreversible migration risk
+- **P1 — Native blocker:** Skal løses før Q1 2027 native rewrite. Backend contract eller observability.
+- **P2 — Operational:** Cleanup, maintainability, behavior clarification
+- **P3 — Nice-to-have:** Documentation quality, naming consistency, low-risk
+
+### STATUS — hvor er vi i livscyklus?
+
+- **OPEN** — Ubesvaret
+- **VERIFIED** — Svar kendt fra kode/backend (klar til migration eller fjernelse)
+- **ACCEPTED** — Decision truffet, flyttes til ADR
+- **REJECTED** — Eksplicit afvist (bevares som læring)
+- **DEFERRED** — Udskudt til senere fase (typisk native rewrite)
+
+### Prioritets-oversigt (signal extraction)
+
+**P0 — KRITISK (6 spørgsmål):** Q-014, Q-019, Q-023, Q-050, Q-051, Q-055
+*Security, GDPR compliance, data integrity. Tag stilling først.*
+
+**P1 — Native blockers (12 spørgsmål):** Q-011, Q-012, Q-020, Q-024, Q-026, Q-029, Q-032, Q-033, Q-040, Q-042, Q-045, Q-047, Q-052, Q-054
+*Skal være afklarede inden native rewrite kan starte.*
+
+**Type-fordeling:** A (47) · B (1) · C (4 → 0 efter migration) · D (5) = 55 totalt
+**Status-fordeling:** OPEN (51) · MIGRATED (4 → ADR) · andre (0)
+
+> **Næste skridt:** Type C-spørgsmål (Q-024, Q-026, Q-032, Q-033) flyttes til ARCHITECTURE-DECISIONS.md når accepted. Type D-spørgsmål (Q-011, Q-013, Q-022, Q-029, Q-035) overvejes for migration til NATIVE-MIGRATION.md når moden nok.
 
 ---
 
@@ -18,6 +57,8 @@
 
 ### Q-001: dbActions migration scope
 
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+
 **Kontekst:** dbActions write-lag bruges af 9 filer. b-admin.js, b-auth.js, b-onboarding.js, b-realtime.js, og b-messages.js bruger det IKKE.
 
 **Spørgsmål:** Er dette intentionelt (admin-only, auth-flows har egne mønstre) eller er nogle af dem migrations-kandidater?
@@ -29,6 +70,8 @@
 ---
 
 ### Q-002: b-boot.js sidst i load-order
+
+**TYPE:** A · **PRIORITY:** P3 · **STATUS:** OPEN
 
 **Kontekst:** Script-load-rækkefølge: b-boot.js indlæses som sidste (efter b-navigation.js).
 
@@ -42,6 +85,8 @@
 
 ### Q-003: `currentBubble` global — er den dead code?
 
+**TYPE:** B · **PRIORITY:** P2 · **STATUS:** OPEN
+
 **Kontekst:** `currentBubble` er deklareret i b-config.js linje 188 som `let currentBubble = null`. Jeg kan ikke umiddelbart se hvor den **sættes** (i modsætning til `currentLiveBubble` som er aktiv).
 
 **Spørgsmål:** Bruges `currentBubble` faktisk nogen steder? Eller er det legacy fra tidligere version hvor "current bubble context" var anderledes designet?
@@ -54,6 +99,8 @@
 
 ### Q-004: Lock-konvention
 
+**TYPE:** A · **PRIORITY:** P3 · **STATUS:** OPEN
+
 **Kontekst:** Mange `_xLock = true/false` pattern på tværs af kodebasen. Nogle bruger timeout (`_authLockTimer`), andre er "fire and forget".
 
 **Spørgsmål:** Er der en samlet konvention der bør følges? Eller er det grown organisk?
@@ -65,6 +112,8 @@
 ---
 
 ### Q-005: Chip-arrays naming convention
+
+**TYPE:** A · **PRIORITY:** P3 · **STATUS:** OPEN
 
 **Kontekst:** I b-config.js: `cbChips, epChips, epDynChips, ebChips, obChips, obDynChips`.
 
@@ -83,6 +132,8 @@
 
 ### Q-006: `_cameFromLanding` semantik
 
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+
 **Kontekst:** I b-boot.js linje 16: `var _cameFromLanding = false; // Set true in load handler if ?auth=1 was present`
 
 **Spørgsmål:** Hvad er den eksakte effekt af denne flag? Påvirker den auth-flow, redirect-destination, eller noget tredje?
@@ -93,6 +144,8 @@
 
 ### Q-007: Test-account special handling
 
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+
 **Kontekst:** I b-admin.js linje 373: `var TEST_ACCOUNT_EMAIL = 'test@bubbleme.dk'`
 
 **Spørgsmål:** Hvad gør test-accounts særligt? Bypass af nogle checks? Synlighed for admins?
@@ -102,6 +155,8 @@
 ---
 
 ### Q-008: 117 direkte writes — systematisk inventering?
+
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
 
 **Kontekst:** Memory note 14 nævner "117 resterende writes kan migreres inkrementelt til dbActions". Disse er `sb.from(...).insert/update/delete()`-kald spredt over feature-filer.
 
@@ -114,6 +169,8 @@
 ---
 
 ### Q-009: Forskel mellem screen exit hooks og _navGlobalCleanup?
+
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
 
 **Kontekst:** I b-navigation.js har jeg fundet:
 - `_navGlobalCleanup()` (linje 219)
@@ -132,6 +189,8 @@
 
 ### Q-010: `currentChatUser` ejerskab?
 
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+
 **Kontekst:** I b-config.js header siges "OWNS: currentChatUser, currentChatName" af **b-realtime.js**, men de er **deklareret** i b-config.js for load-order.
 
 **Spørgsmål:** Bekræft at b-realtime.js skriver disse, ikke b-chat.js. Min analyse antyder at de **læses** i flere filer men **skrives** kun i b-realtime.js (`openChat()` linje 753).
@@ -143,6 +202,8 @@
 ---
 
 ### Q-011: Native timeline — vælg A/B/C?
+
+**TYPE:** D · **PRIORITY:** P1 · **STATUS:** OPEN
 
 **Kontekst:** Ekstern research-rapport foreslår aggressiv tidsplan (native foundation start juni 2026). Vores STRATEGI.md har forsigtig plan (native foundation Q4 2026 efter pilot + verified bubbles + image-import).
 
@@ -158,6 +219,8 @@
 ---
 
 ### Q-012: Hvornår eksporteres backend-kontrakter?
+
+**TYPE:** A · **PRIORITY:** P1 · **STATUS:** OPEN
 
 **Kontekst:** Ekstern rapport identificerede at vi mangler:
 - Schema dump
@@ -193,6 +256,8 @@
 
 ### Q-013: Onboarding-status: heuristik → eksplicit enum?
 
+**TYPE:** D · **PRIORITY:** P2 · **STATUS:** OPEN
+
 **Kontekst:** Onboarding-status afgøres af `hasName && hasWorkplace && hasTerms` heuristik. Memory note nævner `onboarding_status` enum overvejes (`needs_terms`/`needs_name`/`needs_workplace`/`ready`).
 
 **Spørgsmål:** Skal vi tilføje eksplicit `onboarding_status` kolonne nu, eller vente til native?
@@ -204,6 +269,8 @@
 ---
 
 ### Q-014: GDPR profile deletion — hvordan håndteres det?
+
+**TYPE:** A · **PRIORITY:** P0 · **STATUS:** OPEN
 
 **Kontekst:** Profile slettes ALDRIG ifølge entity-map analysen. Kun anonymisering. Men GDPR kræver "right to be forgotten".
 
@@ -217,6 +284,8 @@
 
 ### Q-015: Bubble status enum — kun for live, eller udvid?
 
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+
 **Kontekst:** Nuværende kode har `status` på `bubbles` table KUN for live-bubbles. Andre states (ENDED, ARCHIVED) er infereret fra `event_end_date` osv.
 
 **Spørgsmål:** Skal vi tilføje eksplicit `bubble_status` enum til alle bubbles?
@@ -228,6 +297,8 @@
 ---
 
 ### Q-016: Live bubble expiration mekanisme?
+
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
 
 **Kontekst:** Live bubbles har `expires_at` (6 timer fra start). Hvordan håndhæves dette?
 
@@ -244,6 +315,8 @@
 
 ### Q-017: parent_bubble_id hierarki — max dybde?
 
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+
 **Kontekst:** Bubbles kan have `parent_bubble_id` (hierarkisk). I `createBubble` arves icon fra parent eller grandparent (2 niveauer dybt).
 
 **Spørgsmål:** Er der explicit eller implicit max-dybde? Eller kan det blive 10 niveauer dybt?
@@ -255,6 +328,8 @@
 ---
 
 ### Q-018: Member admin i én bubble, member i en anden?
+
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
 
 **Kontekst:** `role` (admin/member) er per-bubble, så teoretisk ja.
 
@@ -268,6 +343,8 @@
 
 ### Q-019: User deletion → memberships hvad?
 
+**TYPE:** A · **PRIORITY:** P0 · **STATUS:** OPEN
+
 **Kontekst:** Hvis en bruger slettes (auth.users), hvad sker med deres bubble_members rows?
 
 **Spørgsmål:** CASCADE delete? Anonymize?
@@ -279,6 +356,8 @@
 ---
 
 ### Q-020: Inviter deletion → invitations hvad?
+
+**TYPE:** A · **PRIORITY:** P1 · **STATUS:** OPEN
 
 **Kontekst:** Hvis user_a inviterer user_b, og user_a slettes — hvad sker med invitationen?
 
@@ -292,6 +371,8 @@
 
 ### Q-021: Invitation expiration?
 
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+
 **Kontekst:** Invitations har ingen automatisk expiration. En invitation fra 2024 kan stadig være pending i 2026.
 
 **Spørgsmål:** Skal vi implementere expiration (fx 30 dage)?
@@ -303,6 +384,8 @@
 ---
 
 ### Q-022: Eksplicit Conversation entity for DMs?
+
+**TYPE:** D · **PRIORITY:** P2 · **STATUS:** OPEN
 
 **Kontekst:** DMs er bare messages mellem to brugere. Der er ingen "Conversation" entity. Conversations er computed fra messages.
 
@@ -316,6 +399,8 @@
 
 ### Q-023: User deletion → DMs hvad?
 
+**TYPE:** A · **PRIORITY:** P0 · **STATUS:** OPEN
+
 **Kontekst:** Hvis user slettes, hvad sker med deres DMs?
 
 **Spørgsmål:** Soft-anonymize (sender_id → null, content bevares)? Eller delete?
@@ -327,6 +412,11 @@
 ---
 
 ### Q-024: bcReduceMsg pattern som arkitektur-invariant?
+
+**TYPE:** C · **PRIORITY:** P1 · **STATUS:** MIGRATED → ADR-004
+
+> 🔄 **Migrated to ARCHITECTURE-DECISIONS.md as ADR-004: Reducer pattern as architectural invariant**
+> Status there: PROPOSED. Pending Michael acceptance for final commit.
 
 **Kontekst:** `bcReduceMsg` i b-chat.js centraliserer alle bubble message inserts fra 4 forskellige paths. Det er en GOD PATTERN.
 
@@ -340,6 +430,8 @@
 
 ### Q-025: Live bubble expiration mekanisme (detail)?
 
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+
 **Kontekst:** Samme som Q-016 men mere specifik.
 
 **Spørgsmål:** Hvordan virker `expires_at` håndhævelsen i praksis? Skal vi læse hele b-live.js for at finde ud af det?
@@ -352,6 +444,11 @@
 
 ### Q-026: Server-authoritative presence — bekræft som princip?
 
+**TYPE:** C · **PRIORITY:** P1 · **STATUS:** MIGRATED → ADR-001
+
+> 🔄 **Migrated to ARCHITECTURE-DECISIONS.md as ADR-001: Server-authoritative presence**
+> Status there: PROPOSED. Pending Michael acceptance for final commit.
+
 **Kontekst:** Live session state har 3 sources of truth (frontend appMode, DB column, edge function logic). Native bør konsolidere til server-authoritative.
 
 **Spørgsmål:** Bekræft at server-authoritative er det rigtige princip for native?
@@ -363,6 +460,8 @@
 ---
 
 ### Q-027: Rating storage — localStorage OR DB?
+
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
 
 **Kontekst:** Memory note siger ratings i `bubble_stars` localStorage. Schema har også `rating` kolonne på `saved_contacts`.
 
@@ -382,6 +481,8 @@
 
 ### Q-028: `signOut` spredt over 3 filer — konsolider?
 
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+
 **Kontekst:** `sb.auth.signOut()` kaldes fra b-auth.js, b-admin.js, OG b-onboarding.js. Det er anti-pattern — én entity (auth state) burde kontrolleres ét sted.
 
 **Spørgsmål:** Skal vi nu (pre-native) konsolidere signOut til kun b-auth.js? Eller vente til native AuthService?
@@ -393,6 +494,8 @@
 ---
 
 ### Q-029: Identity state machine — eksplicit i native?
+
+**TYPE:** D · **PRIORITY:** P1 · **STATUS:** OPEN
 
 **Kontekst:** Identity har implicit state machine: UNAUTHENTICATED → AUTHENTICATING → PROVISIONAL → ONBOARDED (eller BANNED). Det er spredt over flere booleans og heuristikker.
 
@@ -415,6 +518,8 @@ type AuthState =
 
 ### Q-030: `reports` table — Platform eller eget system?
 
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+
 **Kontekst:** User reports (rapportering af upassende indhold) er pt. spredt mellem b-utils.js (dbActions.reportUser) og b-admin.js (admin håndtering). Det er en moderation-funktion.
 
 **Spørgsmål:** Hører `reports` under Platform System (som tværgående moderation) eller bør den have eget "Moderation System"?
@@ -426,6 +531,8 @@ type AuthState =
 ---
 
 ### Q-031: bubble_message_edits + bubble_post_reactions — separate entities?
+
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
 
 **Kontekst:** Disse er nævnt som relaterede entities (Entity 6: BubbleMessage). De er separate tabeller men hænger sammen med BubbleMessage.
 
@@ -442,6 +549,11 @@ type AuthState =
 
 ### Q-032: Cross-system writes via services only — invariant?
 
+**TYPE:** C · **PRIORITY:** P1 · **STATUS:** MIGRATED → ADR-002
+
+> 🔄 **Migrated to ARCHITECTURE-DECISIONS.md as ADR-002: Cross-system writes via services only**
+> Status there: PROPOSED. Pending Michael acceptance for final commit.
+
 **Kontekst:** I architecture map sektion 15 har jeg dokumenteret at cross-system writes skal gå gennem services (fx Messaging skriver IKKE direkte til bubble_members, men kalder MembershipService.markAsRead()).
 
 **Spørgsmål:** Bekræft dette som arkitektur-invariant for native?
@@ -453,6 +565,11 @@ type AuthState =
 ---
 
 ### Q-033: Platform har INGEN dependency på domain systems — confirm?
+
+**TYPE:** C · **PRIORITY:** P1 · **STATUS:** MIGRATED → ADR-003
+
+> 🔄 **Migrated to ARCHITECTURE-DECISIONS.md as ADR-003: Platform has no domain dependencies**
+> Status there: PROPOSED. Pending Michael acceptance for final commit.
 
 **Kontekst:** Jeg har argumenteret at Platform er foundation — alle andre systems afhænger af det, men det skal IKKE selv kende til business logic.
 
@@ -468,6 +585,8 @@ type AuthState =
 
 ### Q-034: Sub-systems within Platform — egne mapper?
 
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+
 **Kontekst:** Platform har 7 sub-domæner (P.1 Realtime, P.2 Push, P.3 Navigation, P.4 Errors, P.5 i18n, P.6 Storage, P.7 Analytics).
 
 **Spørgsmål:** I native, hver sub-domæne som egen mappe i `src/platform/`? Eller én flad fil per service?
@@ -479,6 +598,8 @@ type AuthState =
 ---
 
 ### Q-035: Native folder structure proposal — passer din intuition?
+
+**TYPE:** D · **PRIORITY:** P2 · **STATUS:** OPEN
 
 **Kontekst:** Sektion 15.10 foreslår denne struktur:
 
@@ -517,6 +638,8 @@ src/
 
 ### Q-036: 6 entry points for bubble join — consolidate?
 
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+
 **Kontekst:** Bubble Join Flow har 6 forskellige entry points (UI button, ?join=, ?event=, QR scan, invitation, deep-link unauthenticated).
 
 **Spørgsmål:** Kan vi konsolidere til 3 (direct, deep-link, QR)? Event-flow vs join-flow distinction kan være unødig kompleksitet.
@@ -526,6 +649,8 @@ src/
 ---
 
 ### Q-037: data-action delegated pattern vs inline onclick
+
+**TYPE:** A · **PRIORITY:** P3 · **STATUS:** OPEN
 
 **Kontekst:** b-chat.js linje 627 bruger `data-action="requestJoin"` delegated event handler. b-bubbles.js linje 2291 bruger inline `onclick="requestJoin(...)"`.
 
@@ -537,6 +662,8 @@ src/
 
 ### Q-038: checkQRJoin legacy code — fjern i næste prod release?
 
+**TYPE:** A · **PRIORITY:** P3 · **STATUS:** OPEN
+
 **Kontekst:** Memory note: "Legacy checkQRJoin() i b-bubbles.js er deprecated siden v8.17.22".
 
 **Spørgsmål:** Kan vi fjerne det? Eller bevarer det som safety net?
@@ -546,6 +673,8 @@ src/
 ---
 
 ### Q-039: event_flow branch i checkPendingJoin
+
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
 
 **Kontekst:** checkPendingJoin har en separat event_flow branch der "peeker" på bubble før join.
 
@@ -557,6 +686,8 @@ src/
 
 ### Q-040: Push double-firing på bubble join
 
+**TYPE:** A · **PRIORITY:** P1 · **STATUS:** OPEN
+
 **Kontekst:** Push fyrer fra BÅDE frontend sendPush AND DB trigger.
 
 **Spørgsmål:** Fix før native eller efter?
@@ -566,6 +697,8 @@ src/
 ---
 
 ### Q-041: sendMessage direct DB write vs dbActions.sendDM
+
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
 
 **Kontekst:** b-messages.js sendMessage() bruger DIRECT `sb.from(messages).insert()` mens sendDirectMessage() bruger dbActions.sendDM().
 
@@ -577,6 +710,8 @@ src/
 
 ### Q-042: Push double-firing på DM send
 
+**TYPE:** A · **PRIORITY:** P1 · **STATUS:** OPEN
+
 **Kontekst:** Samme problem som Q-040 men for DMs.
 
 **Spørgsmål:** Fix før native?
@@ -586,6 +721,8 @@ src/
 ---
 
 ### Q-043: _dmLastSent dedup window — configurable?
+
+**TYPE:** A · **PRIORITY:** P3 · **STATUS:** OPEN
 
 **Kontekst:** Hardcoded 3 sekunder. Native kunne have config per environment.
 
@@ -597,6 +734,8 @@ src/
 
 ### Q-044: Broadcast vs CDC ordering
 
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+
 **Kontekst:** Broadcast arriver typisk før CDC. dmReduceMsg dedup handles det.
 
 **Spørgsmål:** Skal native møde anderledes? Eller bevar dedup-pattern?
@@ -606,6 +745,8 @@ src/
 ---
 
 ### Q-045: Edge function `checkin` source i repo?
+
+**TYPE:** A · **PRIORITY:** P1 · **STATUS:** OPEN
 
 **Kontekst:** Source er på Michaels PC, IKKE i repo. Det er kritisk logik vi ikke kontrollerer i version control.
 
@@ -617,6 +758,8 @@ src/
 
 ### Q-046: currentLiveBubble legacy compat object
 
+**TYPE:** A · **PRIORITY:** P3 · **STATUS:** OPEN
+
 **Kontekst:** appMode.live er nyt single-source-of-truth, men currentLiveBubble eksisterer parallelt for legacy compat.
 
 **Spørgsmål:** Kan currentLiveBubble fjernes nu? Eller venter vi til native?
@@ -627,6 +770,8 @@ src/
 
 ### Q-047: All edge function source i version control?
 
+**TYPE:** A · **PRIORITY:** P1 · **STATUS:** OPEN
+
 **Kontekst:** Generalisering af Q-045. Vi har 3 edge functions: send-push, checkin, cleanup-test-user/reset-test-user. Hvor mange er i repo?
 
 **Antagelse:** Sandsynligvis ingen. Skal alle committes.
@@ -634,6 +779,8 @@ src/
 ---
 
 ### Q-048: Bubble expiration mechanism (revisit Q-016)
+
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
 
 **Kontekst:** Live bubbles har `expires_at` (6 timer). Edge function checkin bør validere `bubble.status=active` — men hvordan håndhæves status update?
 
@@ -644,6 +791,8 @@ src/
 ---
 
 ### Q-049: Client-side checkin fallback — fjern i PWA cleanup?
+
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
 
 **Kontekst:** _liveCheckinFallback() er ikke atomic — 3 separate DB calls. Race conditions possible.
 
@@ -661,6 +810,8 @@ src/
 
 ### Q-050: Which DB triggers are currently active in Supabase production?
 
+**TYPE:** A · **PRIORITY:** P0 · **STATUS:** OPEN
+
 **Kontekst:** Memory dokumenterer 4 trigger-navne (`on_new_message_push`, `on_bubble_invite_push`, `on_new_invite_push`, `on_contact_saved_push`), men deres faktiske status i produktion er ikke verificeret i denne mapping-session.
 
 **Spørgsmål:** Kør `SELECT tgname, tgrelid::regclass FROM pg_trigger WHERE tgname LIKE '%push%';` i Supabase SQL editor og dokumentér resultatet.
@@ -672,6 +823,8 @@ src/
 ---
 
 ### Q-051: What payload schema does send-push/index.ts expect?
+
+**TYPE:** A · **PRIORITY:** P0 · **STATUS:** OPEN
 
 **Kontekst:** Memory dokumenterer "body format mismatch" og at 2 funktioner sender `recipient_id` mens edge function forventer `user_id`. Eksakt mismatch ikke retraceret.
 
@@ -687,6 +840,8 @@ src/
 ---
 
 ### Q-052: Are recipient_id and user_id intentionally different concepts?
+
+**TYPE:** A · **PRIORITY:** P1 · **STATUS:** OPEN
 
 **Kontekst:** Det er **muligt** at distinktionen var intentional på et tidspunkt:
 - `user_id` = den der **udførte** handlingen (afsender af DM, opretter af bubble)
@@ -704,6 +859,8 @@ Hvis ja, er fix at omdøbe edge function parameter til `recipient_id` overalt.
 
 ### Q-053: Is b-utils.js sendPush() still reachable?
 
+**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+
 **Kontekst:** Memory: "sendPush() i b-utils.js eksisterer i parallel — sandsynligvis dead code for trigger-covered types". Hvis dead, kan vi fjerne den; hvis ikke, kræver migration.
 
 **Spørgsmål:** Søg i kodebasen:
@@ -720,6 +877,8 @@ Dokumentér alle call sites og afgør om hver enkelt er dækket af en trigger.
 
 ### Q-054: Are push deliveries logged anywhere?
 
+**TYPE:** A · **PRIORITY:** P1 · **STATUS:** OPEN
+
 **Kontekst:** Memory: ingen specifik mention af `push_delivery_log` eller lignende tabel. pg_net.http_post er fire-and-forget. Edge function kan logge til console, men det er flygtigt.
 
 **Spørgsmål:** Tjek:
@@ -734,6 +893,8 @@ Dokumentér alle call sites og afgør om hver enkelt er dækket af en trigger.
 ---
 
 ### Q-055: Which secrets remain hardcoded outside vault.secrets?
+
+**TYPE:** A · **PRIORITY:** P0 · **STATUS:** OPEN
 
 **Kontekst:** Memory: "migrate all 4 trigger functions' hardcoded secrets to Vault (supabase_vault 0.3.1 activated, empty)". Enumeration ikke gjort.
 
