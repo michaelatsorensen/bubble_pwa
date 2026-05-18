@@ -51,6 +51,27 @@ Alt andet kan ofte porteres som-er og revurderes efter native.
 
 **Implication:** Refactor-iver skal kanaliseres mod ovenstående 5 kategorier. Naming-cleanup og kosmetik kan vente til efter pilot/native.
 
+### Tenet 4: Grundighed over hastighed
+
+Hellere bruge mere tid og gøre arbejdet grundigt og robust end at lave quick fixes.
+
+Pre-pilot quick fixes er det modsatte af det vi prøver at opnå. Hver "lille fix" der ikke adresserer root cause skaber teknisk gæld der eskalerer i native-migrationen.
+
+**Implication:**
+
+- Når en audit afslører at problemet er større end forventet, **udvider vi scope**, vi reducerer ikke kvalitet
+- En refactor er først færdig når: contract er stabil, alle callers er konsistente, dokumentation er opdateret, og test cases er identificeret
+- "Det kan vente til efter pilot" gælder **kun** for ting der ikke skaber contract ambiguity eller silent failure
+- Hellere fixe 1 ting grundigt end 5 ting halvt
+
+**Bemærk forskellen til Tenet 3:** Tenet 3 siger "redesign kun ambiguous ownership". Tenet 4 siger "når du redesigner, gør det helt". De er komplementære, ikke modstridende.
+
+**Anti-pattern denne tenet beskytter mod:**
+- "Quick fix" der efterlader bugs i edge cases
+- Refactor af én funktion uden at opdatere callers
+- Update af kode uden at opdatere dokumentation
+- "Vi tester det senere" når det aldrig sker
+
 ---
 
 ## Konventioner
@@ -394,3 +415,106 @@ Before pilot launch, manually verify:
 - **v8.17.30:** Refined to uniform `status` always present + `reason` for specifics + `bubble_id` on blocked failures (current)
 
 ---
+
+### ADR-006: DM send consolidation + push strategy
+
+**Status:** DRAFT · BLOCKED on Q-050, Q-051, Q-054 verification
+**Date:** 2026-05-18
+**Migrated from:** Q-041 + Q-042
+
+#### Context
+
+Audit of DM send paths revealed two interconnected problems:
+
+**Problem 1: Multiple DM send paths bypass centralized service**
+
+4 different code paths write DM messages to DB:
+
+| Path | Function | Location | Side effects |
+|---|---|---|---|
+| 1 | `sendMessage()` | b-messages.js:200 | Direct DB insert, broadcast, trackEvent, push |
+| 2 | `sendDirectMessage()` | b-messages.js:283 | Direct DB insert, push (NO broadcast, NO tracking) |
+| 3 | `dmHandleFile()` | b-messages.js:303 | Direct DB insert, push (NO broadcast, NO tracking) |
+| 4 | `dbActions.sendDM()` | b-utils.js:887 | Insert via dbActions, push, trackEvent (NO broadcast) |
+
+Only `b-chat.js:110` (GIF picker) uses path 4 (the centralized service).
+
+This violates Tenet 3 (ambiguous ownership). Each path has slightly different side effects, no path is authoritative.
+
+**Problem 2: Push notification double-fire**
+
+Push notifications fire from BOTH frontend AND DB trigger for every DM:
+- 4 frontend `sendPush` call sites (one per send path above)
+- DB trigger `on_new_message_push` on every messages INSERT
+
+Result: Every DM produces 2 push notifications (assuming trigger works correctly — which is itself 🟡 inferred per Q-051).
+
+#### Decision (PENDING — currently DRAFT)
+
+**Phase 1 — DM Send Consolidation** (can proceed without ground truth):
+
+Consolidate all 4 paths to use `dbActions.sendDM()` as single source of write:
+- Extend `dbActions.sendDM()` to handle: content-only, file uploads, GIF uploads, edits
+- Refactor `sendMessage()`, `sendDirectMessage()`, `dmHandleFile()` to call `dbActions.sendDM()`
+- Keep optimistic UI in callers (sendMessage's tempMsg pattern)
+- Move broadcast + trackEvent + push into `dbActions.sendDM()`
+
+**Phase 2 — Push Strategy Decision** (BLOCKED on Q-050/Q-051/Q-054):
+
+Must decide one of three strategies:
+
+- **Option A — DB Trigger only:** Disable frontend push, rely on `on_new_message_push`. Single source of dispatch. Requires push_delivery_log for observability.
+- **Option B — Frontend only:** Disable DB trigger, rely on frontend `sendPush`. More debuggable but loses notifications if frontend crashes between insert and push.
+- **Option C — Both with deduplication:** Edge function dedupliker on `message_id + recipient_id`. Resilient but complex. Requires push_events table (per Section 19.6).
+
+**Recommendation pending verification:** Option A if Q-050 confirms trigger is active AND Q-051 confirms schema matches. Otherwise Option B as fallback.
+
+**Phase 3 — sendDM Contract Stabilization:**
+
+After consolidation + push strategy, stram `dbActions.sendDM()` to discriminated union (matching joinBubble pattern from ADR-005):
+
+```javascript
+{ ok: true,  status: 'sent',           message_id, message }
+{ ok: false, status: 'invalid_input',  reason: 'no_user' | 'no_receiver' }
+{ ok: false, status: 'blocked',        reason: 'blocked_user' | 'rate_limited' }
+{ ok: false, status: 'db_error',       reason: 'db_error', error }
+```
+
+#### Consequences
+
+**Positive (when implemented):**
+- Single source of write for DMs (Tenet 1: contract stabilization)
+- Eliminates push double-fire (Tenet 3: replace ambiguous ownership)
+- Consistent side effects across all DM paths (broadcast, tracking, push)
+- Native-ready (clear contract for React Native to consume)
+
+**Negative:**
+- Larger refactor than joinBubble (4 callers vs 8, but each has more logic)
+- Push strategy decision has architectural implications
+- Cannot proceed without ground truth verification
+
+**Neutral:**
+- Same DB writes, same UX (no user-facing changes expected)
+
+#### Tenet alignment
+
+- **Tenet 1** (Native = backend normalization pressure): contract stabilization + observability before native
+- **Tenet 3** (replace ambiguous ownership): 4 send paths → 1 authoritative path
+- **Tenet 4** (grundighed over hastighed): we're not implementing this until we have ground truth, even though it's tempting to "just fix it"
+
+#### Blockers
+
+This ADR cannot be FINALIZED until:
+
+- **Q-050:** Active DB triggers in production verified
+- **Q-051:** send-push payload schema documented
+- **Q-054:** Push delivery logging existence verified
+
+#### Related
+
+- Open questions: Q-041 (VERIFIED), Q-042 (VERIFIED), Q-050/051/054 (PENDING)
+- ARCHITECTURE-MAP.md sections: 17 (DM Send/Receive Flow), 19 (Push Notification Flow)
+- ADR-005 (joinBubble contract) — template for Phase 3 contract refinement
+
+---
+

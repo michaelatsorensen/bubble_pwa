@@ -4072,12 +4072,61 @@ class DirectMessageService {
 
 ### 17.9 Open questions
 
-| Q-# | Topic |
-|---|---|
-| Q-041 | sendMessage uses direct DB write — should consolidate via dbActions.sendDM |
-| Q-042 | Push double-firing on DM — fix before native? |
-| Q-043 | Should _dmLastSent dedup window be configurable per environment? |
-| Q-044 | Should we move broadcast to edge function for consistency with CDC ordering? |
+| Q-# | Topic | Status |
+|---|---|---|
+| Q-041 | sendMessage uses direct DB write — should consolidate via dbActions.sendDM | **VERIFIED → ADR-006** |
+| Q-042 | Push double-firing on DM — fix before native? | **VERIFIED → ADR-006** |
+| Q-043 | Should _dmLastSent dedup window be configurable per environment? | OPEN |
+| Q-044 | Should we move broadcast to edge function for consistency with CDC ordering? | OPEN |
+
+### 17.10 Audit findings (maj 2026)
+
+> **Audit performed:** maj 2026, post v8.17.30
+> **Trigger:** LÆRING entry "Kontraktproblem, ikke caller-problem" suggested similar audit on sendDM
+
+**Verified findings:**
+
+**1. DM send is NOT a centralized flow.** 4 paths write DM messages to DB:
+
+```
+sendMessage()       (b-messages.js:200)  ← chat input → direct DB insert
+sendDirectMessage() (b-messages.js:283)  ← programmatic → direct DB insert
+dmHandleFile()      (b-messages.js:303)  ← file upload → direct DB insert
+dbActions.sendDM()  (b-utils.js:887)     ← centralized → DB insert via dbActions
+```
+
+Only `b-chat.js:110` (GIF picker) uses `dbActions.sendDM`. **Hovedflowet bypasser den centraliserede service.**
+
+**2. Side effects vary across paths:**
+
+| Path | Broadcast | trackEvent | Push |
+|---|---|---|---|
+| sendMessage | ✅ | ✅ | ✅ frontend |
+| sendDirectMessage | ❌ | ❌ | ✅ frontend |
+| dmHandleFile | ❌ | ❌ | ✅ frontend |
+| dbActions.sendDM | ❌ | ✅ | ✅ frontend |
+
+Plus DB trigger `on_new_message_push` fires on every messages INSERT.
+
+**3. Push double-fire quantified:**
+
+Every DM produces 2 push notifications:
+- 1 from frontend (one of the 4 paths)
+- 1 from DB trigger
+
+Edge cases where it might fire 3-4 times exist (e.g., if sendDM is called from b-chat.js GIF path AND triggers fire = 2 frontend + 1 trigger = potentially 3 if there's a race).
+
+**Implications for refactor:**
+
+This is a contract problem at scale: the centralized `dbActions.sendDM()` exists but is not adopted. Solving it requires:
+
+1. **DM send consolidation** (Phase 1 of ADR-006) — can proceed without ground truth
+2. **Push strategy decision** (Phase 2 of ADR-006) — BLOCKED on Q-050, Q-051, Q-054
+3. **sendDM contract stabilization** (Phase 3 of ADR-006) — apply joinBubble pattern from ADR-005
+
+See ARCHITECTURE-DECISIONS.md ADR-006 for full plan.
+
+**Native impact:** This audit confirms that native rewrite cannot blindly port the current DM flow. The native version must have **one** send path, period. Phase 1 + Phase 2 of ADR-006 are native blockers.
 
 4 nye åbne spørgsmål.
 

@@ -701,19 +701,33 @@ src/
 
 ### Q-041: sendMessage direct DB write vs dbActions.sendDM
 
-**TYPE:** A · **PRIORITY:** P2 · **STATUS:** OPEN
+**TYPE:** A · **PRIORITY:** P1 · **STATUS:** VERIFIED → ADR-006 (DRAFT, BLOCKED)
 
-**Kontekst:** b-messages.js sendMessage() bruger DIRECT `sb.from(messages).insert()` mens sendDirectMessage() bruger dbActions.sendDM().
-
-**Spørgsmål:** Hvorfor inkonsistensen? Skal konsolideres.
-
-**Antagelse:** Historisk artefakt. dbActions.sendDM kom senere. Skal opdatere sendMessage.
+> ✅ **Audit verified maj 2026.** Antagelsen bekræftet: 3 DM-send paths bypasser `dbActions.sendDM`:
+> - `sendMessage()` (b-messages.js:200) — chat input, direct DB insert
+> - `sendDirectMessage()` (b-messages.js:283) — programmatic, direct DB insert
+> - `dmHandleFile()` (b-messages.js:303) — file uploads, direct DB insert
+>
+> Kun `b-chat.js:110` (GIF picker) bruger den centraliserede `dbActions.sendDM`.
+>
+> **Konsolidering blokeret** på Q-050, Q-051, Q-054 (push strategi beslutning).
+> Se ADR-006 (DRAFT) for full plan.
+>
+> **Priority opgraderet fra P2 til P1** — det er en native blocker, ikke kosmetisk cleanup.
 
 ---
 
 ### Q-042: Push double-firing på DM send
 
-**TYPE:** A · **PRIORITY:** P1 · **STATUS:** OPEN
+**TYPE:** A · **PRIORITY:** P1 · **STATUS:** VERIFIED → ADR-006 (DRAFT, BLOCKED)
+
+> ✅ **Audit verified maj 2026.** Double-fire problem kvantificeret:
+> - Frontend sendPush calls: 4 (b-messages.js:276, :291, :349 + b-utils.js:906)
+> - DB trigger: `on_new_message_push` fyrer på alle messages INSERT
+> - **Resultat:** 2 pushes for hver DM (1 frontend + 1 trigger)
+>
+> **Beslutning blokeret** på push-strategi-valg (Option A: trigger only / Option B: frontend only / Option C: both with dedup).
+> Push-strategi beslutning kræver Q-050, Q-051, Q-054 verifikation først.
 
 **Kontekst:** Samme problem som Q-040 men for DMs.
 
