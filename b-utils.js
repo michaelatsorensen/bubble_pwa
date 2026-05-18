@@ -793,13 +793,28 @@ var dbActions = {
   },
 
   // ── BUBBLE MEMBERSHIP ──
-  // joinBubble — discriminated union return contract (v8.17.29)
-  // Success:  { ok: true, status: 'joined_now' | 'already_member', bubble_id }
-  // Failure:  { ok: false, reason: 'no_user' | 'no_bubble_id' | 'private_bubble' | 'hidden_bubble' | 'db_error', error? }
-  // See ARCHITECTURE-DECISIONS.md ADR-005 (pending) + Q-061
+  // joinBubble — discriminated union contract (v8.17.30, refined per ADR-005)
+  //
+  // Success:
+  //   { ok: true,  status: 'joined_now',      bubble_id }
+  //   { ok: true,  status: 'already_member',  bubble_id }
+  // Failure:
+  //   { ok: false, status: 'blocked',         reason: 'private_bubble'|'hidden_bubble', bubble_id }
+  //   { ok: false, status: 'invalid_input',   reason: 'no_user'|'missing_bubble_id' }
+  //   { ok: false, status: 'db_error',        reason: 'db_error', error }
+  //
+  // Contract rules:
+  //   - `ok` says if operation succeeded enough for flow to continue
+  //   - `status` says what actually happened (the category)
+  //   - `reason` is only present on failure/blocking (the specific cause)
+  //   - `error` is only present on db_error (raw technical error)
+  //   - `bubble_id` is present on success AND blocked (for analytics/debugging)
+  //
+  // Callers MUST branch on `status`, never on absence of fields.
+  // See ARCHITECTURE-DECISIONS.md ADR-005.
   async joinBubble(bubbleId, source) {
-    if (!currentUser) return { ok: false, reason: 'no_user' };
-    if (!bubbleId)    return { ok: false, reason: 'no_bubble_id' };
+    if (!currentUser) return { ok: false, status: 'invalid_input', reason: 'no_user' };
+    if (!bubbleId)    return { ok: false, status: 'invalid_input', reason: 'missing_bubble_id' };
     source = source || 'discover';
     try {
       // Defense-in-depth: check visibility before join (bypass for QR/invite)
@@ -807,11 +822,11 @@ var dbActions = {
         var { data: bub } = await sb.from('bubbles').select('visibility,type').eq('id', bubbleId).maybeSingle();
         if (bub && bub.visibility === 'private' && bub.type !== 'event' && bub.type !== 'live') {
           logError('dbActions.joinBubble', new Error('Attempted direct join on private bubble'), { bubble_id: bubbleId });
-          return { ok: false, reason: 'private_bubble' };
+          return { ok: false, status: 'blocked', reason: 'private_bubble', bubble_id: bubbleId };
         }
         if (bub && bub.visibility === 'hidden') {
           logError('dbActions.joinBubble', new Error('Attempted direct join on hidden bubble'), { bubble_id: bubbleId });
-          return { ok: false, reason: 'hidden_bubble' };
+          return { ok: false, status: 'blocked', reason: 'hidden_bubble', bubble_id: bubbleId };
         }
       }
       var { error } = await sb.from('bubble_members').insert({
@@ -826,14 +841,14 @@ var dbActions = {
           return { ok: true, status: 'already_member', bubble_id: bubbleId };
         }
         errorToast('save', error);
-        return { ok: false, reason: 'db_error', error: error };
+        return { ok: false, status: 'db_error', reason: 'db_error', error: error };
       }
       trackEvent('bubble_joined', { bubble_id: bubbleId, source: source });
       return { ok: true, status: 'joined_now', bubble_id: bubbleId };
     } catch (e) {
       logError('dbActions.joinBubble', e);
       errorToast('save', e);
-      return { ok: false, reason: 'db_error', error: e };
+      return { ok: false, status: 'db_error', reason: 'db_error', error: e };
     }
   },
 

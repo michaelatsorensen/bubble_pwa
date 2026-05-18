@@ -298,7 +298,7 @@ Tenet 1 (event ownership contract) + Tenet 3 (race conditions / duplicate writes
 
 ### ADR-005: joinBubble() discriminated union return contract
 
-**Status:** ACCEPTED · Implemented in v8.17.29
+**Status:** ACCEPTED · Implemented in v8.17.30 (refined from v8.17.29)
 **Date:** 2026-05-18
 **Migrated from:** Q-061
 
@@ -317,34 +317,49 @@ This is **ambiguous ownership** of the result interpretation — exactly what Te
 
 #### Decision
 
-`joinBubble()` returns a **discriminated union**:
+`joinBubble()` returns a **discriminated union with two-level taxonomy**:
 
 ```javascript
-// Success cases — discriminated by `status`
-{ ok: true, status: 'joined_now',      bubble_id: 'xxx' }
-{ ok: true, status: 'already_member',  bubble_id: 'xxx' }
+// Success cases — `status` is the category, always present
+{ ok: true,  status: 'joined_now',      bubble_id: 'xxx' }
+{ ok: true,  status: 'already_member',  bubble_id: 'xxx' }
 
-// Failure cases — discriminated by `reason`
-{ ok: false, reason: 'no_user' }
-{ ok: false, reason: 'no_bubble_id' }
-{ ok: false, reason: 'private_bubble' }
-{ ok: false, reason: 'hidden_bubble' }
-{ ok: false, reason: 'db_error', error: <Error> }
+// Failure cases — `status` is category, `reason` is specific cause
+{ ok: false, status: 'blocked',        reason: 'private_bubble', bubble_id: 'xxx' }
+{ ok: false, status: 'blocked',        reason: 'hidden_bubble',  bubble_id: 'xxx' }
+{ ok: false, status: 'invalid_input',  reason: 'no_user' }
+{ ok: false, status: 'invalid_input',  reason: 'missing_bubble_id' }
+{ ok: false, status: 'db_error',       reason: 'db_error', error: <Error> }
 ```
 
-All 8 call sites updated to use `result.status === 'already_member'` pattern.
+**Contract rules (Callers MUST follow):**
+
+1. **Always branch on `status`** — never on absence of fields, never on `reason` directly
+2. **`ok`** says if operation succeeded enough for flow to continue
+3. **`status`** is the category of what happened — uniform across success AND failure
+4. **`reason`** is only present on failure/blocking — the specific cause
+5. **`error`** is only present on `db_error` — raw technical error for logging
+6. **`bubble_id`** is present on success AND blocked failures — for analytics/debugging
+7. **`duplicate` is REMOVED** — never re-introduce it
+
+**Why two-level taxonomy (status + reason):**
+- `status` lets callers handle broad categories ("did it block?", "was it invalid input?")
+- `reason` lets callers/logs see specific cause when needed
+- Together they prevent the original bug: callers can't accidentally treat `private_bubble` and `db_error` the same way
 
 #### Consequences
 
 **Positive:**
-- Type-safe — every scenario explicit
+- Type-safe — every scenario explicit with consistent shape
 - Native-portable — maps directly to TypeScript discriminated union for React Native
 - Toast accuracy — users now see correct "already member" vs "joined" feedback
 - Analytics integrity — `bubble_join_duplicate` vs `bubble_joined` events stay clean
+- Debugging — `bubble_id` preserved on blocked failures for log correlation
+- Forward extensible — new failure modes just add new `(status, reason)` pairs
 
 **Negative:**
+- Slightly more verbose than minimal shape (3 fields on most cases instead of 1-2)
 - Breaking change for any future external integrations (mitigated: no public API)
-- Slight increase in caller verbosity (`result.status === ...` vs `result.duplicate`)
 
 **Neutral:**
 - Same DB queries, same error handling — pure contract change
@@ -354,11 +369,28 @@ All 8 call sites updated to use `result.status === 'already_member'` pattern.
 - **Tenet 1** (Native = backend normalization pressure): contract stabilized before native rewrite, can be ported 1:1 to TypeScript
 - **Tenet 3** (replace ambiguous ownership): eliminated mixed-type errors and ambiguous `duplicate` flag — root cause of 4 caller bugs
 
+#### Test cases (manual verification required)
+
+Before pilot launch, manually verify:
+
+1. **New user joins public bubble** → `{ ok: true, status: 'joined_now', bubble_id }`
+2. **Existing member clicks join again** → `{ ok: true, status: 'already_member', bubble_id }`
+3. **Direct join on private bubble** (visibility='private', not event/live) → `{ ok: false, status: 'blocked', reason: 'private_bubble', bubble_id }`
+4. **Direct join on hidden bubble** → `{ ok: false, status: 'blocked', reason: 'hidden_bubble', bubble_id }`
+5. **Event-flow join as existing member** → modal/toast must say "already member", NOT "you have now joined"
+6. **Missing bubbleId param** → `{ ok: false, status: 'invalid_input', reason: 'missing_bubble_id' }`
+7. **Not logged in** → `{ ok: false, status: 'invalid_input', reason: 'no_user' }`
+
 #### Related
 
 - Open questions resolved: Q-061
 - Files affected: `b-utils.js` (contract), `b-bubbles.js` (4 callers), `b-home.js` (3 callers), `b-live.js` (1 caller)
 - Cross-reference: ARCHITECTURE-MAP.md Section 16 (Bubble Join Flow)
 - Pre-pilot priority — addressed before pilot launch
+
+#### Iteration history
+
+- **v8.17.29:** Initial discriminated union with asymmetric shape (`status` on success, `reason` on failure)
+- **v8.17.30:** Refined to uniform `status` always present + `reason` for specifics + `bubble_id` on blocked failures (current)
 
 ---
