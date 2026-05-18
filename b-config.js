@@ -277,6 +277,31 @@ function flowClearAll() {
 //  Usage: registerState(function() { myVar = null; myFlag = false; })
 //  resetAppState() iterates the registry automatically.
 //  This prevents "forgot to reset" bugs when adding new state.
+//
+//  ⚠️ CRITICAL RULE — what to clear (and NOT clear):
+//
+//  ✅ DO clear in registerState callbacks:
+//    - User-specific UI state (cached profiles, current views, ratings)
+//    - Timers and intervals (will fire against invalid session otherwise)
+//    - Camera/media resources (privacy — must not persist between users)
+//    - In-memory caches that contain user-specific data
+//    - Locks and pending submission flags
+//    - Consent and onboarding completion flags (GDPR)
+//
+//  ❌ DO NOT clear in registerState callbacks:
+//    - Flow-continuation state: pending_join, pending_contact, event_flow
+//      (sessionStorage keys via flowSet/flowGet)
+//    - bubble_came_from_landing flag (OAuth callback survival)
+//    - bb_route (navigation restore after deep-link auth)
+//    - event_greeting / event_greeting_id (post-checkin welcome)
+//    - _eventBubble, _qrContactProfile (deep-link captured data)
+//
+//  WHY: resetAppState() fires on stale SIGNED_OUT events at boot.
+//  Wiping flow-continuation state at that point would break OAuth callbacks,
+//  deep-link restore, and event onboarding completion. Only handleLogout()
+//  explicitly clears flow flags via flowClearAll().
+//
+//  Rule of thumb: "Reset user-specific UI/cache state — not flow-continuation state."
 // ══════════════════════════════════════════════════════════
 var _stateRegistry = [];
 function registerState(resetFn) {
