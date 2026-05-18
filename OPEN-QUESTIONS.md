@@ -42,7 +42,7 @@
 *Skal være afklarede inden native rewrite kan starte.*
 
 **Type-fordeling:** A (52) · B (1) · C (4 → 0 efter migration) · D (5) = 61 totalt
-**Status-fordeling:** OPEN (57) · MIGRATED (4 → ADR) · andre (0)
+**Status-fordeling:** OPEN (56) · MIGRATED (4 → ADR) · VERIFIED (1, Q-061) · andre (0)
 
 > **Næste skridt:** Type C-spørgsmål (Q-024, Q-026, Q-032, Q-033) flyttes til ARCHITECTURE-DECISIONS.md når accepted. Type D-spørgsmål (Q-011, Q-013, Q-022, Q-029, Q-035) overvejes for migration til NATIVE-MIGRATION.md når moden nok.
 
@@ -55,6 +55,8 @@
 ---
 
 ## 🔴 ÅBEN
+
+> **Bemærk om in-section totals:** Hver section ender med en historisk markering ("Q-001 til Q-XXX = XX totalt") fra det tidspunkt sectionen blev tilføjet. Disse er bevidst bevaret som breadcrumbs. **Aktuel total: se header øverst (currently 61 spørgsmål).**
 
 ### Q-001: dbActions migration scope
 
@@ -474,7 +476,7 @@
 
 ---
 
-*Q-001 til Q-027 = 27 åbne spørgsmål totalt. Disse besvares parallelt mens Claude fortsætter med Session 3 (System Boundaries).*
+*Q-001 til Q-027 = 27 spørgsmål efter Session 2. Section 3+ tilføjede flere — se header øverst for nuværende total.*
 
 ---
 
@@ -1014,11 +1016,13 @@ Hypotetiske scenarier:
 
 ### Q-061: Should `joinBubble()` return semantics be tightened?
 
-**TYPE:** A · **PRIORITY:** P1 · **STATUS:** VERIFIED → ADR-005
+**TYPE:** A · **PRIORITY:** P1 · **STATUS:** VERIFIED → ADR-005 (ACCEPTED)
 
-> ✅ **Resolved in v8.17.29.** Discriminated union contract enforced.
+> ✅ **Resolved in v8.17.29, refined in v8.17.30.**
+> Discriminated union contract enforced with two-level taxonomy (status + reason).
 > Audit found 4 of 8 callers handled `duplicate` flag incorrectly.
-> See ARCHITECTURE-DECISIONS.md ADR-005 for new contract spec.
+> See ARCHITECTURE-DECISIONS.md ADR-005 for final contract spec.
+> See ARCHITECTURE-LOG.md LÆRING "Kontraktproblem, ikke caller-problem" for generalized principle.
 
 **Kontekst:** Listed som pre-pilot priority i memory:
 
