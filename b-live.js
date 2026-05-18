@@ -1078,7 +1078,7 @@ async function _connectBubbleConfirm() {
   } else {
     var joinResult = await dbActions.joinBubble(bub.id);
     if (joinResult.ok) {
-      showSuccessToast(t('toast_joined'));
+      showSuccessToast(joinResult.status === 'already_member' ? t('toast_already_member') : t('toast_joined'));
     }
     requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(bub.id, 'screen-home'); }); });
   }

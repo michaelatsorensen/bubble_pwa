@@ -793,8 +793,13 @@ var dbActions = {
   },
 
   // ── BUBBLE MEMBERSHIP ──
+  // joinBubble — discriminated union return contract (v8.17.29)
+  // Success:  { ok: true, status: 'joined_now' | 'already_member', bubble_id }
+  // Failure:  { ok: false, reason: 'no_user' | 'no_bubble_id' | 'private_bubble' | 'hidden_bubble' | 'db_error', error? }
+  // See ARCHITECTURE-DECISIONS.md ADR-005 (pending) + Q-061
   async joinBubble(bubbleId, source) {
-    if (!currentUser || !bubbleId) return { ok: false };
+    if (!currentUser) return { ok: false, reason: 'no_user' };
+    if (!bubbleId)    return { ok: false, reason: 'no_bubble_id' };
     source = source || 'discover';
     try {
       // Defense-in-depth: check visibility before join (bypass for QR/invite)
@@ -802,11 +807,11 @@ var dbActions = {
         var { data: bub } = await sb.from('bubbles').select('visibility,type').eq('id', bubbleId).maybeSingle();
         if (bub && bub.visibility === 'private' && bub.type !== 'event' && bub.type !== 'live') {
           logError('dbActions.joinBubble', new Error('Attempted direct join on private bubble'), { bubble_id: bubbleId });
-          return { ok: false, error: 'private_bubble' };
+          return { ok: false, reason: 'private_bubble' };
         }
         if (bub && bub.visibility === 'hidden') {
           logError('dbActions.joinBubble', new Error('Attempted direct join on hidden bubble'), { bubble_id: bubbleId });
-          return { ok: false, error: 'hidden_bubble' };
+          return { ok: false, reason: 'hidden_bubble' };
         }
       }
       var { error } = await sb.from('bubble_members').insert({
@@ -815,16 +820,21 @@ var dbActions = {
       });
       if (error) {
         if (String(error.message || '').includes('duplicate')) {
-          // Already a member — not a fresh join. Track separately so
-          // analytics for "new joins" stay clean.
+          // Already a member — successful "no-op" join (idempotent).
+          // Analytics: track separately so "new joins" stay clean.
           trackEvent('bubble_join_duplicate', { bubble_id: bubbleId, source: source });
-          return { ok: true, duplicate: true };
+          return { ok: true, status: 'already_member', bubble_id: bubbleId };
         }
-        errorToast('save', error); return { ok: false, error: error };
+        errorToast('save', error);
+        return { ok: false, reason: 'db_error', error: error };
       }
       trackEvent('bubble_joined', { bubble_id: bubbleId, source: source });
-      return { ok: true };
-    } catch (e) { logError('dbActions.joinBubble', e); errorToast('save', e); return { ok: false, error: e }; }
+      return { ok: true, status: 'joined_now', bubble_id: bubbleId };
+    } catch (e) {
+      logError('dbActions.joinBubble', e);
+      errorToast('save', e);
+      return { ok: false, reason: 'db_error', error: e };
+    }
   },
 
   async leaveBubble(bubbleId) {

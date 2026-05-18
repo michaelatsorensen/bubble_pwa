@@ -295,3 +295,70 @@ Tenet 1 (event ownership contract) + Tenet 3 (race conditions / duplicate writes
 ---
 
 *Sidst opdateret: 18. maj 2026*
+
+### ADR-005: joinBubble() discriminated union return contract
+
+**Status:** ACCEPTED · Implemented in v8.17.29
+**Date:** 2026-05-18
+**Migrated from:** Q-061
+
+#### Context
+
+`dbActions.joinBubble()` had ambiguous return shape:
+- Success: `{ ok: true }` OR `{ ok: true, duplicate: true }`
+- Failure: `{ ok: false }` OR `{ ok: false, error: 'private_bubble' }` OR `{ ok: false, error: <Error obj> }`
+
+**Audit of 8 call sites revealed:**
+- 4 callers handled `duplicate` flag incorrectly (showed "joined" toast even when already member)
+- Mixed error types (string vs Error object) made caller code fragile
+- One caller's comment said "already member fine" but the logic was wrong (treated all `!ok` cases the same)
+
+This is **ambiguous ownership** of the result interpretation — exactly what Tenet 3 warns against.
+
+#### Decision
+
+`joinBubble()` returns a **discriminated union**:
+
+```javascript
+// Success cases — discriminated by `status`
+{ ok: true, status: 'joined_now',      bubble_id: 'xxx' }
+{ ok: true, status: 'already_member',  bubble_id: 'xxx' }
+
+// Failure cases — discriminated by `reason`
+{ ok: false, reason: 'no_user' }
+{ ok: false, reason: 'no_bubble_id' }
+{ ok: false, reason: 'private_bubble' }
+{ ok: false, reason: 'hidden_bubble' }
+{ ok: false, reason: 'db_error', error: <Error> }
+```
+
+All 8 call sites updated to use `result.status === 'already_member'` pattern.
+
+#### Consequences
+
+**Positive:**
+- Type-safe — every scenario explicit
+- Native-portable — maps directly to TypeScript discriminated union for React Native
+- Toast accuracy — users now see correct "already member" vs "joined" feedback
+- Analytics integrity — `bubble_join_duplicate` vs `bubble_joined` events stay clean
+
+**Negative:**
+- Breaking change for any future external integrations (mitigated: no public API)
+- Slight increase in caller verbosity (`result.status === ...` vs `result.duplicate`)
+
+**Neutral:**
+- Same DB queries, same error handling — pure contract change
+
+#### Tenet alignment
+
+- **Tenet 1** (Native = backend normalization pressure): contract stabilized before native rewrite, can be ported 1:1 to TypeScript
+- **Tenet 3** (replace ambiguous ownership): eliminated mixed-type errors and ambiguous `duplicate` flag — root cause of 4 caller bugs
+
+#### Related
+
+- Open questions resolved: Q-061
+- Files affected: `b-utils.js` (contract), `b-bubbles.js` (4 callers), `b-home.js` (3 callers), `b-live.js` (1 caller)
+- Cross-reference: ARCHITECTURE-MAP.md Section 16 (Bubble Join Flow)
+- Pre-pilot priority — addressed before pilot launch
+
+---

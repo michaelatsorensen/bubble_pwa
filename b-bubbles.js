@@ -292,7 +292,8 @@ async function joinBubble(bubbleId) {
   try {
     var result = await dbActions.joinBubble(bubbleId);
     if (!result.ok) return; // dbActions already showed error toast
-    showSuccessToast(t('toast_joined'));
+    // Discriminated union: status='joined_now' (fresh) vs 'already_member' (idempotent)
+    showSuccessToast(result.status === 'already_member' ? t('toast_already_member') : t('toast_joined'));
     _bbAfterJoin(bubbleId);
     await openBubble(bubbleId);
     loadHome();
@@ -1310,7 +1311,7 @@ async function checkQRJoin() {
       return;
     }
 
-    showSuccessToast(t('toast_joined'));
+    showSuccessToast(result.status === 'already_member' ? t('toast_already_member') : t('toast_joined'));
     await openBubble(joinId, 'screen-home');
   } catch(e) {
     logError("checkQRJoin", e);
@@ -1340,11 +1341,10 @@ async function checkPendingJoin() {
       // Mode B (organizer scans attendee): preserve existing behavior — join + show ready QR
       if (peekIsEvent && peekIsScanCheckin) {
         var result = await dbActions.joinBubble(joinId, 'invite_link');
-        if (!result.ok) {
-          // Already a member is fine for Mode B — fall through to QR display
-          consumeFlow('pending_join');
-        } else {
-          consumeFlow('pending_join');
+        // For Mode B: both 'joined_now' and 'already_member' are success (fall through to QR display)
+        // Real failures (private/hidden/db_error) are silent — Mode B prioritizes QR availability
+        consumeFlow('pending_join');
+        if (result.ok && result.status === 'joined_now') {
           showSuccessToast(t('toast_joined'));
         }
         // event_flow stays set for showEventReadyQR in resolvePostAuthDestination
@@ -1365,7 +1365,7 @@ async function checkPendingJoin() {
 
     consumeFlow('pending_join');
     consumeFlow('event_flow');
-    showSuccessToast(t('toast_joined'));
+    showSuccessToast(result.status === 'already_member' ? t('toast_already_member') : t('toast_joined'));
     _bbAfterJoin(joinId);
     await openBubble(joinId, 'screen-home');
   } catch(e) { logError("checkPendingJoin", e); consumeFlow('event_flow'); errorToast("save", e); }

@@ -1014,7 +1014,11 @@ Hypotetiske scenarier:
 
 ### Q-061: Should `joinBubble()` return semantics be tightened?
 
-**TYPE:** A · **PRIORITY:** P1 · **STATUS:** OPEN
+**TYPE:** A · **PRIORITY:** P1 · **STATUS:** VERIFIED → ADR-005
+
+> ✅ **Resolved in v8.17.29.** Discriminated union contract enforced.
+> Audit found 4 of 8 callers handled `duplicate` flag incorrectly.
+> See ARCHITECTURE-DECISIONS.md ADR-005 for new contract spec.
 
 **Kontekst:** Listed som pre-pilot priority i memory:
 
