@@ -10,6 +10,33 @@
 >
 > **Søsterdokument:** `OPEN-QUESTIONS.md` — åbne spørgsmål Michael løser parallelt
 
+## Konventioner for dette dokument
+
+### Evidence level (brug fremadrettet på alle større claims)
+
+Hver væsentlig påstand om arkitektur eller adfærd bør markeres med ét af følgende:
+
+- **✅ Verified in code** — direkte inspiceret i nuværende kodebase (filsti + linjenummer hvis muligt)
+- **✅ Verified in backend** — observeret i Supabase production (SQL query, edge function logs, dashboard)
+- **🟡 Inferred from memory** — dokumenteret i tidligere sessions eller memory, ikke re-verificeret
+- **🔵 Proposed redesign** — anbefaling eller hypotese, IKKE current state
+
+### Anti-patterns vi undgår
+
+- **Rewrite idealism:** ikke alt skal være "perfekt" før native; nogle hacks er battle-tested
+- **Analysis architecture:** dokumentation må ikke vokse hurtigere end verificeret systemforståelse
+- **Redesign bias:** spørg "hvilket problem løser dette?" før vi foreslår nye entiteter
+- **Decision-as-question:** beslutninger hører i ADR, ikke OPEN-QUESTIONS
+
+### Cross-references
+
+- Åbne spørgsmål med 🟡 inferred-status: se `OPEN-QUESTIONS.md`
+- Accepterede arkitekturbeslutninger: se `ARCHITECTURE-DECISIONS.md` (skeleton oprettet maj 2026)
+- Tech debt med owner/priority: se `TECH-DEBT.md` (skeleton oprettet maj 2026)
+- Native rewrite plan: se `NATIVE-MIGRATION.md` (skeleton oprettet maj 2026)
+
+---
+
 ---
 
 ## Indholdsfortegnelse
@@ -4409,7 +4436,12 @@ This flow is the **most likely source of "the app feels unreliable"** complaints
 | **Q-054:** Are push deliveries logged anywhere? | If not, all observability is missing |
 | **Q-055:** Which secrets are hardcoded outside Vault? | Migration scope unknown until enumerated |
 
-### 19.3 End-to-end flow diagram — Current (broken) state
+### 19.3 End-to-end flow diagram — Hypothesized current state
+
+> **All bugs depicted in this diagram are 🟡 inferred from memory.**
+> They have not been re-verified in this mapping session.
+> Q-050 through Q-055 must be answered before any structural change.
+> Treat this diagram as a hypothesis to verify, not a definitive audit.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -4616,6 +4648,42 @@ Service Worker → OS Notification
 ALL secrets via vault.secrets — no hardcoded keys anywhere.
 ```
 
+#### Proposed contract — PushDispatchPayload v1
+
+> **Evidence level:** Proposed redesign (no current schema enforced)
+> **Status:** Hypothesis pending Q-051 verification
+
+The current dispatch lacks a formal contract. Below is a proposed payload schema that should be enforced once Q-051 has revealed the actual current schema. This becomes the **single source of truth** for both DB triggers and frontend dispatch.
+
+```typescript
+// Authoritative source: push_events table schema (TBD)
+// Consumers: PushDispatcher edge function
+// Producers: DB triggers (NOT b-utils.js — to be deprecated, see Q-053)
+
+interface PushDispatchPayload {
+  recipient_id: UUID;        // Person who receives the notification
+  type: PushEventType;        // Discriminator for routing/data narrowing
+  title: string;              // Notification title (max ~50 chars iOS)
+  body: string;               // Notification body (max ~120 chars iOS)
+  data?: PushEventData;       // Type-narrowed by `type`
+  created_at: ISO8601;        // For idempotency / replay protection
+}
+
+type PushEventType =
+  | 'new_message'
+  | 'bubble_invite'
+  | 'contact_saved'
+  | 'new_invite';             // verify: is this distinct from bubble_invite?
+
+type PushEventData =
+  | { type: 'new_message';    bubble_id: UUID; message_id: UUID; sender_id: UUID }
+  | { type: 'bubble_invite';  bubble_id: UUID; inviter_id: UUID }
+  | { type: 'contact_saved';  from_user_id: UUID }
+  | { type: 'new_invite';     invite_id: UUID; inviter_id: UUID };
+```
+
+**Naming decision needed:** `recipient_id` vs `user_id` (see Q-052). Recommendation: `recipient_id` is more precise — the user being notified is not always the same as the `user_id` in the triggering record's context.
+
 **Benefits:**
 
 1. **Single contract** — one place where payload schema is defined
@@ -4633,6 +4701,27 @@ ALL secrets via vault.secrets — no hardcoded keys anywhere.
 - **Phase 4 (Native):** When native arrives, add FCM/APNs branch in PushDispatcher.
 
 ### 19.7 Native service mapping
+
+> ### 🏛️ Architectural principle: Native = backend normalization pressure
+>
+> When the React Native rewrite begins (Q1 2027), it will pressure the backend toward:
+> - **Stronger contracts** — typed payloads, schema validation, no implicit shapes
+> - **Central state service** — one source of truth per entity, no distributed authority
+> - **Event ownership** — one authoritative dispatcher per event type
+> - **Queue/retry systems** — no fire-and-forget operations
+> - **Observability** — delivery logs, metrics, replay capability
+>
+> These improvements **should ideally happen BEFORE native migration**, not during.
+> Otherwise we port architectural debt forward — which is exactly what kills rewrites.
+>
+> **Nuance — beware "rewrite idealism":**
+> Some current PWA patterns are battle-tested and operationally robust. Not every
+> imperfect pattern needs replacing. The discriminator: does this pattern create
+> *contract ambiguity*? If yes, fix before native. If no, port as-is and reassess.
+>
+> Native rewrite is therefore best understood as:
+> **"Stabilize platform contracts first. Then swap frontend."**
+> Not: "Rewrite frontend. Backend survives."
 
 When the React Native rewrite begins (Q1 2027), this flow must map cleanly to:
 
