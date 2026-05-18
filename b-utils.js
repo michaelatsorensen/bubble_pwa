@@ -810,8 +810,13 @@ var dbActions = {
   //   - `error` is only present on db_error (raw technical error)
   //   - `bubble_id` is present on success AND blocked (for analytics/debugging)
   //
+  // ⚠️ DO NOT re-introduce `duplicate` flag.
+  //    It was removed in v8.17.29 because 4 of 8 callers handled it incorrectly.
+  //    Use `status === 'already_member'` instead.
+  //
   // Callers MUST branch on `status`, never on absence of fields.
-  // See ARCHITECTURE-DECISIONS.md ADR-005.
+  // See ARCHITECTURE-DECISIONS.md ADR-005 + ARCHITECTURE-LOG.md
+  // ("Kontraktproblem, ikke caller-problem" LÆRING).
   async joinBubble(bubbleId, source) {
     if (!currentUser) return { ok: false, status: 'invalid_input', reason: 'no_user' };
     if (!bubbleId)    return { ok: false, status: 'invalid_input', reason: 'missing_bubble_id' };

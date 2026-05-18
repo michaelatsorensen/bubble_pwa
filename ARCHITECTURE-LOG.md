@@ -355,6 +355,62 @@
 
 ---
 
+### 💡 LÆRING — "Kontraktproblem, ikke caller-problem" (maj 2026 · v8.17.30)
+
+**Status:** Aktiv — princip cementeret efter joinBubble() refactor
+
+**Hvad vi opdagede:**
+
+Da audit af `dbActions.joinBubble()` viste at **4 af 8 callers håndterede return-værdien forkert**, var den umiddelbare reaktion at "fixe callers". Men det var den forkerte diagnose.
+
+Den **faktiske** problemkilde var **kontrakten** mellem `joinBubble()` og dens callers:
+
+- Return shape var inkonsistent (`{ ok: true }` vs `{ ok: true, duplicate: true }`)
+- Error-fields blandede typer (string vs Error object)
+- `duplicate`-flag var ambiguous — er det success eller warning?
+
+Når 4 ud af 8 implementeringer er forkerte, er det ikke 8 udviklere der har misforstået. Det er kontrakten der er **ufuldstændig som specifikation**.
+
+**Det generaliserbare princip:**
+
+> Når en majoritet af consumers af en API/contract bruger den forkert, er kontrakten næsten altid problemet — ikke consumerne.
+
+Dette gælder uanset om kontrakten er:
+- En JavaScript funktion (joinBubble case)
+- En DB trigger payload (push case fra Section 19)
+- En realtime channel event format
+- En REST endpoint response shape
+- Et state machine state-set
+
+**Hvorfor det er vigtigt før native:**
+
+Native rewrite kommer til at **eksponere** alle ufuldstændige contracts. TypeScript vil insistere på eksplicit shape. Hvis kontrakten i dag er "implicit convention" (som joinBubble var), bliver det smertefuldt at porte til en typed setting.
+
+Konsekvens: **Pre-pilot contract-stabilisering er native-arbejde forklædt som bugfix.**
+
+**Konkret retningslinje fremadrettet:**
+
+Når vi opdager bugs:
+
+1. **Tæl call sites med fejlen.** Hvis 2+ callers har samme bug → mistænk kontrakten.
+2. **Spørg "hvad er den underliggende kontrakt?"** Hvis svaret er "det afhænger" → kontrakten skal eksplicitiseres.
+3. **Foretrukket fix:** Stram kontrakten først, lad callers følge automatisk.
+4. **Anti-pattern:** Fix callers en ad gangen uden at adressere kontrakten.
+
+**Direkte alignment med Tenets:**
+- **Tenet 1** (Native = backend normalization pressure): kontrakt-stabilisering før native er ikke "bonus"-arbejde, det er **kernen** af native-forberedelse
+- **Tenet 3** (replace ambiguous ownership): "ambiguous ownership" på funktions-niveau betyder uklar kontrakt mellem caller og callee
+
+**For PWA:** Anvendt på `joinBubble()` (ADR-005, v8.17.30). Tilsvarende analyser bør køres på:
+- `dbActions.sendDM()` (er dens return-shape entydig?)
+- `dbActions.checkIn()` (samme spørgsmål)
+- Push trigger payloads (allerede identificeret som problemområde — Section 19)
+- Realtime event handlers (når Section 17/18 verifikation kører)
+
+**For native:** Denne læring **er** Phase 0 strategien fra NATIVE-MIGRATION.md. Hver verificeret/strammet kontrakt før native = én bug class elimineret.
+
+---
+
 ## Sammenfatning per kategori
 
 **🟢 GENBRUGES (4 entries):** Backend-stack, dbActions pattern, i18n, match algorithm
@@ -363,7 +419,7 @@
 
 **🔴 FORKAST (3 entries):** Inline onclick, 100vh sizing, push-arkitektur
 
-**💡 LÆRING (6 entries):** Mockup-først, kirurgisk og additiv, pre-tag arv, replicate-not-scale, visual feedback for states, formulerings-landing
+**💡 LÆRING (7 entries):** Mockup-først, kirurgisk og additiv, pre-tag arv, replicate-not-scale, visual feedback for states, formulerings-landing, kontraktproblem-ikke-caller-problem
 
 ---
 
