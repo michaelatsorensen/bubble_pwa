@@ -411,6 +411,94 @@ Når vi opdager bugs:
 
 ---
 
+### 💡 LÆRING — "Refactor skaber egne string-konstanter" (maj 2026 · v8.17.31 / next-v8.32)
+
+**Status:** Aktiv — princip cementeret efter visibility-bug diagnose
+
+**Hvad vi opdagede:**
+
+En bruger rapporterede at "Borgen Shopping" vistes som **"Privat"** i Opdag-tab, men som **"Åben"** efter join (Mine-tab). Den initielle diagnose-rejse tog ~2 timer:
+
+1. Bekræftet med 5 SQL-queries at databasen var pur (visibility = `'public'`, ingen RLS-maskering, ingen views, ingen triggers, ingen generated columns)
+2. Bekræftet at frontend brugte `b.visibility` direkte uden transformation
+3. Service worker cache-bug fundet og fixet (men ikke rod-årsag)
+4. iPhone reinstall test — ingen effekt
+5. **Først efter brugeren afslørede at hun var logget ind på NEXT-build (ikke PROD) blev bug'en lokaliseret**
+
+**Den faktiske bug i `next/b-home.js`:**
+
+```javascript
+var visClass = b.visibility === 'open' ? 'bb-pill-open'  // ← FORKERT: db har 'public'
+             : b.visibility === 'hidden' ? 'bb-pill-hidden'
+             : 'bb-pill-private';  // ← FALLBACK rammer ALLE public bubbles
+```
+
+PROD's `bubbleCard()` kaldte fælles `visIcon()`-utility som korrekt tjekkede `'private'`/`'hidden'` med fallback til "Åben". Da NEXT-build refactorede `bubbleCard()` til at have **lokal styling-logik direkte**, blev DB-konstanterne genfortolket — den **danske label "Åben" blev hentet ind som JavaScript-konstant `'open'`** i stedet for at matche DB's faktiske `'public'`.
+
+Resultat: **100% af public bubbles vistes forkert som "Privat" i NEXT-bygget.**
+
+**Det generaliserbare princip:**
+
+> Når en refactor flytter logik fra fælles utility ind i lokal kode, **gen-introducerer den enhver string-konstant** som den oprindelige utility havde abstraheret væk. Hvis konstanterne ikke er centralt defineret, gen-fortolkes de fra hukommelse/intuition — og afdrifter fra DB-værdier.
+
+**Hvorfor det skete:**
+
+1. **PROD's `visIcon()` var en sort boks** — designeren der lavede NEXT-refactor så funktionens output (badge-styling), ikke dens input-konstanter
+2. **DB-konstanter findes kun i koden** — ingen TypeScript-types, ingen shared enum, ingen central konstant-definition
+3. **Refactor-scope var "styling"** — så designeren rørte ved render-logikken uden at tjekke om string-værdier matchede
+4. **Ingen runtime-validering** — en visibility = `'public'` returnerer ikke en fejl, den falder bare gennem switch-statement
+
+**Det var heller ikke en enkeltstående hændelse:**
+
+Cross-check sweep efter fundet afslørede yderligere divergens:
+- NEXT's `joinBubble()` returnerer simpel `{ ok: true/false }` — ikke PROD's ADR-005 discriminated union (`{ ok, status: 'joined_now'/'already_member' }`)
+- 19 filer divergerer mellem PROD og NEXT, flere med 100+ linjer forskelle
+- Ingen central sporing af hvilke divergenser er **funktionelle** vs **styling**
+
+**Hvorfor det er vigtigt før native:**
+
+Native rewrite er **i sig selv** en stor refactor der vil skabe samme klasse af bugs i skala. Hver eneste string-konstant der dublikeres i ny kode er en potentiel afdriftspunkt.
+
+Specifikt for native:
+- TypeScript-types vil **delvist** beskytte mod dette — men kun hvis vi definerer enums for DB-værdier
+- React Native komponenter vil naturligt have lokal styling-logik → høj risiko for "lokal genfortolkning"
+- Observability fra dag 1 (Sentry/PostHog) vil fange forkerte fallbacks i produktion — men fanger ikke "alle public bubbles vises som private" som anomali
+
+**Konkret retningslinje fremadrettet:**
+
+**For PWA:**
+1. **Cross-check PROD og NEXT systematisk** (igangværende → PROD-NEXT-DRIFT.md)
+2. **Identificér alle DB-værdi-konstanter** der bruges i frontend
+3. **Centralisér konstanter** — ikke spredt magic strings
+4. **Refactor-PR'er bør liste hvilke konstanter de gen-introducerer**
+
+**For native:**
+1. **TypeScript enums for ALLE DB-værdi-konstanter** før første brug:
+   ```typescript
+   export enum BubbleVisibility {
+     Public = 'public',
+     Private = 'private',
+     Hidden = 'hidden'
+   }
+   ```
+2. **Exhaustive switch-checks** så TypeScript fejler ved manglende cases
+3. **Single source of truth for DB-konstanter** — gerne genereret fra Supabase schema
+4. **Aldrig magic strings i komponenter** — altid importeret konstant
+
+**Direkte alignment med Tenets:**
+- **Tenet 1** (Native = backend normalization pressure): central konstant-definition er **del af** backend-normalization — DB-værdier bør være typed, ikke implicit
+- **Tenet 5** (Distill, don't port): NEXT's bubbleCard-refactor er klassisk eksempel på "port frontend-rendering uden at porte underliggende contract" — det modsatte af destillering
+
+**Det her er heller ikke kun en NEXT-bug:**
+
+Vi har **også fundet** en stor mængde duplikerede RLS policies på `bubbles`-tabellen (12 policies, mange duplikater for SELECT/INSERT/DELETE — kun UPDATE har én clean policy). Det er separat tech debt der bør håndteres post-pilot.
+
+**Læringsmæssig meta-observation:**
+
+Diagnose-rejsen tog 2 timer fordi jeg systematisk **eksluderede** `next/`-mappen fra alle mine søgninger (`grep -v "^next/"`). Antagelsen "next/ er ikke i produktion" var forkert — du tester next/ på rigtige enheder. Det er en proces-fejl: **at antage at en kodesti er irrelevant uden at verificere det**. Næste gang: spørg "hvilket build kører på hvilken enhed?" som første diagnostik-skridt når bug rapporteres.
+
+---
+
 ## Sammenfatning per kategori
 
 **🟢 GENBRUGES (4 entries):** Backend-stack, dbActions pattern, i18n, match algorithm
@@ -419,7 +507,7 @@ Når vi opdager bugs:
 
 **🔴 FORKAST (3 entries):** Inline onclick, 100vh sizing, push-arkitektur
 
-**💡 LÆRING (7 entries):** Mockup-først, kirurgisk og additiv, pre-tag arv, replicate-not-scale, visual feedback for states, formulerings-landing, kontraktproblem-ikke-caller-problem
+**💡 LÆRING (8 entries):** Mockup-først, kirurgisk og additiv, pre-tag arv, replicate-not-scale, visual feedback for states, formulerings-landing, kontraktproblem-ikke-caller-problem, refactor-skaber-egne-string-konstanter
 
 ---
 
