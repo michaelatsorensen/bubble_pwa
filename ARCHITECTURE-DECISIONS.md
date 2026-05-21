@@ -72,6 +72,35 @@ Pre-pilot quick fixes er det modsatte af det vi prøver at opnå. Hver "lille fi
 - Update af kode uden at opdatere dokumentation
 - "Vi tester det senere" når det aldrig sker
 
+### Tenet 5: Distill, don't port
+
+Native er **ikke** en rewrite af PWA. Det er en disciplineret destillering af 3-5 kerneflows, hvor:
+
+- **Backend-kontrakter beholdes** (RLS, dbActions, data model, event model, realtime model)
+- **Frontend-orchestration genopfindes** med native lifecycle som første princip
+- **PWA bevares som testbed og fallback**, ikke erstattes
+- **Sekundære flows kan blive i web/PWA** — de fortjener ikke native-kompleksitet
+
+Det vi **slæber med**: hårdt-erhvervede backend-mønstre, data model, RLS, push erfaring, ADR-005 contract-pattern, flow-erfaring, dbActions-disciplinen.
+
+Det vi **lader være**: DOM-state, sessionStorage flow flags evolved-over-time, PWA navigation restore hacks, inline onclick handlers, parallelle join flows, screen-state-machine via classList.
+
+**Implication:**
+
+- Native v1 skal være **fokuseret**, ikke komplet — 3-5 kerneflows max
+- Lifecycle-disciplin (AppState, cold start, push routing, reconnect) er **første** ting at lære, ikke screens
+- Bubble-native-lab kører **parallelt** med PWA (ikke som erstatning) under udvikling
+- Mange founders opdager først efter pilot, hvad der faktisk betyder noget — vi tager den læring **ind i** native, ikke gætter den på forhånd
+
+**Anti-pattern denne tenet beskytter mod:**
+
+- "Feature parity"-marathon der drukner i sekundære flows
+- Enterprise rewrite-fælden (12 måneders monolit-rewrite)
+- At portere gammel kompleksitet 1:1 fordi "det virker jo i PWA"
+- At binde sig til native før PWA-pilot har afsløret hvad der reelt betyder noget
+
+**Bemærk samspil med Tenet 1:** Tenet 1 siger "stabiliser backend-kontrakter før native". Tenet 5 siger "destillér frontend, port kun det stabiliserede". De er to halvdele af samme strategi: hard backend, focused frontend.
+
 ---
 
 ## Konventioner
@@ -515,6 +544,151 @@ This ADR cannot be FINALIZED until:
 - Open questions: Q-041 (VERIFIED), Q-042 (VERIFIED), Q-050/051/054 (PENDING)
 - ARCHITECTURE-MAP.md sections: 17 (DM Send/Receive Flow), 19 (Push Notification Flow)
 - ADR-005 (joinBubble contract) — template for Phase 3 contract refinement
+
+---
+
+
+### ADR-007: Native development as parallel distillation lab
+
+**Status:** ACCEPTED
+**Date:** 2026-05-21
+**Strategic anchor:** VL Døgnet 27. maj 2027 (Alsik Hotel, Sønderborg)
+
+#### Context
+
+Bubble's PWA er ved at vokse sig kompleks (~23K LOC, 23 filer, multiple critical flows). Vi har en konkret native deadline (VL Døgnet 2027) der giver 12 måneder + 1 uge fra beslutning til launch.
+
+Den umiddelbare reaktion på "vi skal have native til VL" er at planlægge en **rewrite med feature parity**: portere alle eksisterende flows, alle skærme, al funktionalitet til React Native og lancere som komplet erstatning for PWA.
+
+**Det er forkert tankegang.** Det fører til:
+
+- Enterprise rewrite-fælden (12 måneders monolit-projekt)
+- Feature parity-marathon der drukner i sekundære flows
+- Portering af PWA's hårdt erhvervede kompleksitet 1:1 (DOM-state, flow flags evolved-over-time, navigation hacks)
+- Binding til scope **før** PWA-pilot har afsløret hvad der reelt betyder noget
+
+Ekstern arkitektur-review (maj 2026) krystalliserede den rigtige tilgang:
+
+> *"Native er ikke et rewrite. Det er en destillering."*
+
+#### Decision
+
+Native development køres som **parallelt distillation-lab**, ikke som erstatning af PWA. Konkret:
+
+**1. Repo-strategi:**
+- Separat repo: `bubble-native-lab` (ikke i bubble_pwa main)
+- Psykologisk og teknisk uafhængigt fra PWA
+- Giver plads til eksperimentering uden at true PWA-stabilitet
+
+**2. Scope-disciplin:**
+- Native v1 = **3-5 kerneflows max**, ikke feature parity
+- Konkrete kerneflows defineres separat (TBD i kommende session)
+- Sekundære flows (admin, settings detail, avancerede moderation) forbliver i PWA på sigt
+- "Det vi ikke porterer" dokumenteres eksplicit, ikke implicit
+
+**3. Hvad beholdes vs genopfindes:**
+
+**Beholdes (slæbes med):**
+- Supabase backend (data model, RLS, edge functions)
+- dbActions kontrakter (joinBubble pattern fra ADR-005 som template)
+- Realtime model
+- Auth providers (samme OAuth + email setup)
+- Push infrastructure (decision pending ADR-006)
+- Analytics/event model
+- Design language (Bubble Design v6)
+- i18n keys (1,084 keys porterbare)
+
+**Genopfindes (lader være):**
+- Frontend navigation (DOM classList → Expo Router)
+- Flow-state orchestration (sessionStorage hacks → Zustand store med eksplicit state machine)
+- Auth orchestration (spredt mellem 4 filer → centraliseret auth context)
+- Realtime lifecycle (manuelle subscribers → React Native AppState-aware)
+- Push/deeplink handling (web push → native push + Universal Links + App Links)
+- DOM-state og inline onclick handlers (→ React state + onPress)
+- Service worker (→ native caching strategy)
+
+**4. Lifecycle først, screens bagefter:**
+
+Bubble's største native-risiko er ikke "byg screens" — det er lifecycle:
+- App backgroundes → OS dræber process
+- Push åbner cold start uden state
+- Permissions ændres udenfor appen
+- Network reconnect mens app sover
+- Deeplink kommer uden context
+
+Første native-arbejde er **lifecycle-discipline**, ikke UI. Sekvens:
+
+1. Auth + session restore
+2. AppState transitions (background/foreground/inactive)
+3. Push routing fra cold start
+4. Deeplink resolution + auth orchestration
+5. Realtime reconnect efter sleep
+6. Derefter: skærme på solid lifecycle-fundament
+
+**5. Pilot-drevet roadmap:**
+
+Sønderborg-pilot (planlagt sommer 2026, ~500 brugere) er ikke "valgfri læring". Den er **forudsætning** for native scope-beslutninger:
+
+- Pilot afslører hvilke flows brugere faktisk bruger
+- Pilot afslører hvilke bugs der reelt rammer brugere
+- Pilot afslører hvor performance bottlenecks ligger
+- Pilot afslører hvilken onboarding-friktion der koster konvertering
+
+Native v1's "3-5 kerneflows" defineres **delvist baseret på pilot data**, ikke kun a priori arkitektur-analyse.
+
+**6. Stack-beslutning:**
+
+- **Framework:** React Native + Expo
+- **Routing:** Expo Router (file-based, matcher web mental model)
+- **State:** Zustand (matcher reducer-pattern fra ADR-004)
+- **Language:** TypeScript fra dag 1 (lærer fra PWA's typeløse evolution)
+- **Backend:** Supabase JS client (uændret)
+- **Build:** EAS Build (skybaseret, ingen lokal Mac nødvendig til builds)
+
+Begrundelse for React Native (ikke "fordi JS"):
+- Bubble er flow/state-tung, ikke graphics-tung — RN passer naturligt
+- Realtime + Supabase er allerede event-driven (mental model matcher)
+- Solo founder + 12 måneder = ikke tid til Swift+Kotlin dobbelt udvikling
+- Eksisterende JS-erfaring er bonus, ikke primær begrundelse
+
+#### Consequences
+
+**Positive:**
+- Reduceret risiko: native fejl kan ske uden at true PWA-pilot
+- Hurtigere learning loop: lab eksperimenter uden production-pres
+- Bedre scope-disciplin: "3-5 flows" tvinger prioritering
+- PWA forbliver fallback hvis native ikke når VL-deadline
+- Backend-investering forrentet på tværs af både PWA og native
+
+**Negative:**
+- To kodebaser at vedligeholde i overgangsperiode
+- Risk for divergens hvis ikke disciplineret om "hvad er kerneflow"
+- Solo founder skal håndtere context-switching mellem repos
+
+**Neutral:**
+- Bubble-native-lab navn signalerer eksperimenter — kan opfattes som "ikke seriøst" af nogle, men det er **strategisk fordel** internt (psykologisk lavere risiko at iterate)
+
+#### Tenet alignment
+
+- **Tenet 1** (Native = backend normalization pressure): backend forbliver stabilisering-fokus, native bygger på den
+- **Tenet 2** (Discover before redesign): pilot-drevet kerneflow-definition, ikke gætteværk
+- **Tenet 3** (Replace ambiguous ownership): native chance for at fjerne PWA's DOM-coupling og flow-state-spaghetti
+- **Tenet 4** (Grundighed over hastighed): destillering = grundighed, ikke quick rewrite
+- **Tenet 5** (Distill, don't port): direkte materialisering af denne tenet
+
+#### Related
+
+- VL Døgnet 2027 som strategic launch event
+- NATIVE-MIGRATION.md (opdateres separat fra skeleton til actionable roadmap)
+- ADR-005 (joinBubble contract) — template for native dbActions
+- ADR-006 (DM send + push strategy, DRAFT) — must finalize before native push design
+
+#### Open scope decisions (next session)
+
+- Definer konkret de 3-5 kerneflows
+- Beslut parallelt vs sekventielt arbejde mellem PWA hardening og bubble-native-lab
+- Definer pilot success criteria der låser native scope
+- Reverse-plan tidslinje fra VL Døgnet bagud
 
 ---
 
