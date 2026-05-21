@@ -2026,10 +2026,12 @@ async function loadTopMatches() {
 
 function bubbleCard(b, joined) {
   // Visibility pill (always shown — encodes synlighed)
-  var visClass = b.visibility === 'open' ? 'bb-pill-open'
+  // BUG FIX: visibility values in DB are 'public', 'private', 'hidden' (NOT 'open')
+  // Previous check for 'open' would always fall through to 'private' for public bubbles
+  var visClass = b.visibility === 'public' ? 'bb-pill-open'
                : b.visibility === 'hidden' ? 'bb-pill-hidden'
                : 'bb-pill-private';
-  var visLabel = b.visibility === 'open' ? (t('bb_open') || 'Åben')
+  var visLabel = b.visibility === 'public' ? (t('bb_open') || 'Åben')
                 : b.visibility === 'hidden' ? (t('bb_hidden') || 'Skjult')
                 : (t('bb_private') || 'Privat');
 
