@@ -548,11 +548,32 @@ This ADR cannot be FINALIZED until:
 ---
 
 
-### ADR-007: Native development as parallel distillation lab
+### ADR-007: Native development as primary strategic direction
 
 **Status:** ACCEPTED
-**Date:** 2026-05-21
+**Date:** 2026-05-21 · Reframed 2026-05-21 (v2)
 **Strategic anchor:** VL Døgnet 27. maj 2027 (Alsik Hotel, Sønderborg)
+
+> **Tagline:** *"Native bygges på PWA's læring, ikke PWA's kode."*
+
+#### Framing — language matters
+
+This ADR uses the framing **"native is now primary strategic direction"** — NOT **"point of no return"**.
+
+The distinction matters psychologically and professionally:
+
+- **"Point of no return"** removes optionality, creates emotional commitment to scope decisions made today, makes course-correction feel like failure
+- **"Primary strategic direction"** preserves optionality, allows scope adjustment without strategy collapse, enables realistic mid-flight changes
+
+**Optionality preserved:**
+
+- Native scope can be **reduced** if pilot reveals different priorities (cut features, not quality)
+- Launch strategy can be **adjusted** if timeline pressure exceeds buffer (soft launch, beta-extended, etc.)
+- PWA remains **fallback** in maintenance mode — not abandoned
+- Individual flows can be **paused** or **deferred** without restarting strategy
+- VL Døgnet is **target date**, not contract — partial native + PWA fallback is acceptable scenario
+
+The commitment is to **direction**, not to specific delivery configuration.
 
 #### Context
 
@@ -683,12 +704,59 @@ Begrundelse for React Native (ikke "fordi JS"):
 - ADR-005 (joinBubble contract) — template for native dbActions
 - ADR-006 (DM send + push strategy, DRAFT) — must finalize before native push design
 
-#### Open scope decisions (next session)
+#### Open scope decisions (active todos before code begins)
 
-- Definer konkret de 3-5 kerneflows
-- Beslut parallelt vs sekventielt arbejde mellem PWA hardening og bubble-native-lab
-- Definer pilot success criteria der låser native scope
-- Reverse-plan tidslinje fra VL Døgnet bagud
+These are **not** "we'll figure it out later" — they are **prerequisites** to native development kickoff. Each gets its own document.
+
+**1. Negative scope definition** → `NEGATIVE-SCOPE.md`
+- What is explicitly NOT in native v1
+- What features remain web-only
+- What admin/moderation tools are deferred
+- What flows are allowed to be lower-quality in v1
+
+**2. Lifecycle architecture** → `LIFECYCLE-ARCHITECTURE.md`
+- AppState model (foreground/background/inactive transitions)
+- Restore model (resumption after kill/sleep)
+- Deeplink model (Universal Links + App Links resolution)
+- Push navigation model (cold start from notification)
+- Realtime reconnect model (post-sleep behavior)
+- Offline assumptions (what works, what doesn't)
+- Auth/session orchestration (single source of truth)
+
+**3. Observability stack** → `OBSERVABILITY.md`
+- Crash reporting (Sentry vs alternatives)
+- Flow tracing (PostHog vs alternatives)
+- Error visibility (logError pattern → active monitoring)
+- Analytics events (port from PWA + native-specific)
+- **Dag 1 requirement**, not "add later"
+
+**4. Realistic timeline**
+- Baseline: **6-9 months focused fulltime** (not 5-6 — that was optimistic)
+- Realistic with solo founder split focus: **9-12 months**
+- Buffer for VL Døgnet (27. maj 2027): tight but achievable if kickoff ~august 2026
+- App Store review cycles (2x à 3-14 days) included in timeline
+
+**5. Pilot strategy refinement**
+- Native v1 launches as pilot in Sønderborg (oktober-november 2026)
+- **Optional parallel:** small PWA soft launch (20-30 testers) summer 2026 for discovery/retention signal without committing to PWA development
+- Not "either/or" — both can provide value
+
+**6. Definition of "PWA maintenance mode"**
+- Feature freeze date: **31. juli 2026** (proposed, final TBD)
+- Fallback rule: PWA never more than 2-4 weeks of critical hardening away from deployable
+- "Critical bug" criteria: blocks core auth, blocks core flow, security issue, GDPR concern
+- All other PWA issues: documented but not fixed
+
+#### Practical blockers (calendar-bound, must start this week)
+
+These have lead times independent of code:
+
+- Apple Developer Program enrollment (1-2 weeks approval)
+- DUNS Number if business registration needed (2-4 weeks via Dun & Bradstreet)
+- Google Play Console (15 min, but must be done)
+- Mac availability for iOS local testing (or EAS Build commitment for cloud)
+
+**Status of these unknown** — Michael needs to confirm before native kickoff is scheduled.
 
 ---
 
