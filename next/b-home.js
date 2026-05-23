@@ -24,6 +24,7 @@ registerState(function() {
   if (typeof _homeViewMode !== 'undefined') _homeViewMode = 'all';
   if (typeof _homeLoading !== 'undefined') _homeLoading = false;
   if (typeof _homeBooting !== 'undefined') _homeBooting = false;
+  if (typeof _radarFiltersExpanded !== 'undefined') _radarFiltersExpanded = false;
 });
 function _renderBubblesUnreadDot() {
   var dot = document.getElementById('bubbles-unread-dot');
@@ -2296,6 +2297,30 @@ function filterRadarHome(filter) {
   });
   renderHomeDartboard();
   updateFilterChipStyle();
+}
+
+// ── Toggle expandable filter chips (NEXT design: filters hidden behind + button) ──
+// The "+" button (home-filter-plus) folds the filter chips in/out. PROD shows chips
+// always; NEXT hides them behind this dynamic toggle to keep the radar card clean.
+var _radarFiltersExpanded = false;
+function toggleRadarFilters() {
+  _radarFiltersExpanded = !_radarFiltersExpanded;
+  var chips = document.getElementById('home-filter-chips');
+  var plusBtn = document.getElementById('home-filter-plus');
+  if (!chips) return;
+  if (_radarFiltersExpanded) {
+    chips.style.maxHeight = '60px';
+    chips.style.opacity = '1';
+    chips.style.paddingTop = '6px';
+    chips.style.paddingBottom = '6px';
+    if (plusBtn) plusBtn.style.transform = 'rotate(45deg)'; // + visually becomes ×
+  } else {
+    chips.style.maxHeight = '0';
+    chips.style.opacity = '0';
+    chips.style.paddingTop = '0';
+    chips.style.paddingBottom = '0';
+    if (plusBtn) plusBtn.style.transform = 'rotate(0deg)';
+  }
 }
 
 // ── Tap dartboard background → open tray ──
