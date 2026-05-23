@@ -551,6 +551,15 @@ async function checkGuestEventRoute() {
     var eventId = params.get('event');
     if (!eventId) return false;
     
+    // Validate before query — prevents string concat injection in .or() clause below.
+    // Either valid UUID or short alphanumeric join_code (4-32 chars).
+    // Ported from PROD v8.17.31 (Fix 1: UUID validation).
+    if (!isUuid(eventId) && !/^[a-zA-Z0-9_-]{4,32}$/.test(eventId)) {
+      _renderToast('Ugyldigt event-link', 'error');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return false;
+    }
+    
     // Already logged in → join + handle check-in
     var { data: { session } } = await sb.auth.getSession();
     if (session) {

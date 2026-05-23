@@ -599,7 +599,7 @@ async function showDeepLinkModal(type, targetId) {
             showErrorToast(t('err_join_failed'));
             return;
           }
-          showSuccessToast(result.duplicate ? t('toast_already_member') : t('toast_joined'));
+          showSuccessToast(result.status === 'already_member' ? t('toast_already_member') : t('toast_joined'));
           openBubbleChat(targetId, 'screen-home');
         }
       });
@@ -722,7 +722,7 @@ function _renderEventDeepLinkModal(opts) {
       var cr = await dbActions.checkIn(bubbleId);
       if (cr.ok) {
         if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus();
-        showSuccessToast(jr.duplicate ? t('toast_already_member') : t('toast_joined'));
+        showSuccessToast(jr.status === 'already_member' ? t('toast_already_member') : t('toast_joined'));
       } else {
         showWarningToast(t('err_checkin_failed'));
       }
@@ -740,7 +740,7 @@ function _renderEventDeepLinkModal(opts) {
         showErrorToast(t('err_join_failed'));
         return;
       }
-      showSuccessToast(r.duplicate ? t('toast_already_member') : t('toast_joined'));
+      showSuccessToast(r.status === 'already_member' ? t('toast_already_member') : t('toast_joined'));
       openBubbleChat(bubbleId, 'screen-home');
     };
     secondaryLabel = t('dl_see_info');

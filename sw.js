@@ -64,7 +64,12 @@ self.addEventListener('message', function(event) {
 
 self.addEventListener('fetch', function(event) {
   if (event.request.method !== 'GET') return;
+  // Don't intercept API/realtime calls — they must always be fresh.
+  // Both supabase.co default URLs AND custom domain api.bubbleme.dk.
+  // CRITICAL: Without api.bubbleme.dk here, SW would cache stale API responses
+  // (e.g. bubble visibility showing "private" even after DB was updated to "public").
   if (event.request.url.includes('supabase.co')) return;
+  if (event.request.url.includes('api.bubbleme.dk')) return;
   if (event.request.url.includes('giphy.com')) return;
 
   // Strip querystring for local assets so cache keys match precache
