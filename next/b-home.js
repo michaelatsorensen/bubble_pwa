@@ -14,6 +14,17 @@
 var _bubbleUnreadSet = {};
 var _allMyBubblesCache = [];
 var _myBubbleMemberIds = []; // Global liste af mine boble-IDs — bruges af b-realtime til unread nav-dot
+
+// Ported from PROD v8.17.31 (Fix 6: registerState cleanup).
+// Prevents user A's unread/bubble-cache from showing for user B
+registerState(function() {
+  _bubbleUnreadSet = {};
+  _allMyBubblesCache = [];
+  _myBubbleMemberIds = [];
+  if (typeof _homeViewMode !== 'undefined') _homeViewMode = 'all';
+  if (typeof _homeLoading !== 'undefined') _homeLoading = false;
+  if (typeof _homeBooting !== 'undefined') _homeBooting = false;
+});
 function _renderBubblesUnreadDot() {
   var dot = document.getElementById('bubbles-unread-dot');
   if (dot) dot.style.display = Object.keys(_bubbleUnreadSet).length > 0 ? 'block' : 'none';

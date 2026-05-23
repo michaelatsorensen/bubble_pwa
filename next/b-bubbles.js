@@ -16,6 +16,18 @@
 var bubbleUpvotes = {}; // { bubbleId: count }
 var myUpvotes = {};     // { bubbleId: true }
 
+// Ported from PROD v8.17.31 (Fix 6: registerState cleanup).
+// Prevents user A's upvotes from being shown as user B's
+registerState(function() {
+  bubbleUpvotes = {};
+  myUpvotes = {};
+  if (typeof _upvoteLock !== 'undefined') _upvoteLock = {};
+  if (typeof _discoverLoaded !== 'undefined') _discoverLoaded = false;
+  if (typeof _memberSheetEl !== 'undefined') _memberSheetEl = null;
+  if (typeof _bbSubmitLock !== 'undefined') _bbSubmitLock = false;
+  if (typeof _pendingBubbleIcon !== 'undefined') _pendingBubbleIcon = null;
+});
+
 async function loadBubbleUpvotes() {
   try {
     if (!currentUser) return;
@@ -1285,11 +1297,24 @@ async function downloadQRPdf() {
 // Kept temporarily to allow runtime verification before removal.
 // Safe to delete in next major cleanup pass once smoke-tests confirm
 // no orphan callers (e.g. inline onclick handlers).
+// Mutex preventing race between checkQRJoin + checkPendingJoin
+// Both handlers can fire during boot (one from URL, one from sessionStorage)
+// Without mutex, we get double join attempts → duplicate analytics + wrong toast
+// Ported from PROD v8.17.31 (Fix 3: _joinInFlight mutex).
+var _joinInFlight = false;
+registerState(function() { _joinInFlight = false; });
+
 async function checkQRJoin() {
+  if (_joinInFlight) {
+    console.debug('[join] checkQRJoin skipped — join already in flight');
+    return;
+  }
   try {
     const params = new URLSearchParams(window.location.search);
     const joinId = params.get('join');
     if (!joinId) return;
+
+    _joinInFlight = true;
 
     // Clean URL
     window.history.replaceState({}, '', window.location.pathname);
@@ -1310,20 +1335,28 @@ async function checkQRJoin() {
       return;
     }
 
-    showSuccessToast(t('toast_joined'));
+    showSuccessToast(result.status === 'already_member' ? t('toast_already_member') : t('toast_joined'));
     await openBubble(joinId, 'screen-home');
   } catch(e) {
     logError("checkQRJoin", e);
     errorToast("load", e);
     // Prevent dead end — always navigate somewhere
     if (_activeScreen === 'screen-loading' || !_activeScreen) goTo('screen-home');
+  } finally {
+    _joinInFlight = false;
   }
 }
 
 async function checkPendingJoin() {
+  if (_joinInFlight) {
+    console.debug('[join] checkPendingJoin skipped — join already in flight');
+    return;
+  }
   try {
     const joinId = flowGet('pending_join');
     if (!joinId) return;
+
+    _joinInFlight = true;
 
     var isEventFlow = flowGet('event_flow');
 
@@ -1340,14 +1373,14 @@ async function checkPendingJoin() {
       // Mode B (organizer scans attendee): preserve existing behavior — join + show ready QR
       if (peekIsEvent && peekIsScanCheckin) {
         var result = await dbActions.joinBubble(joinId, 'invite_link');
-        if (!result.ok) {
-          // Already a member is fine for Mode B — fall through to QR display
-          consumeFlow('pending_join');
-        } else {
-          consumeFlow('pending_join');
+        // For Mode B: both 'joined_now' and 'already_member' are success (fall through to QR display)
+        // Real failures (private/hidden/db_error) are silent — Mode B prioritizes QR availability
+        consumeFlow('pending_join');
+        if (result.ok && result.status === 'joined_now') {
           showSuccessToast(t('toast_joined'));
         }
         // event_flow stays set for showEventReadyQR in resolvePostAuthDestination
+        _joinInFlight = false;
         return;
       }
 
@@ -1356,6 +1389,7 @@ async function checkPendingJoin() {
       consumeFlow('event_flow');
       goTo('screen-home');
       setTimeout(function() { showDeepLinkModal('event', joinId); }, 400);
+      _joinInFlight = false;
       return;
     }
 
@@ -1365,10 +1399,11 @@ async function checkPendingJoin() {
 
     consumeFlow('pending_join');
     consumeFlow('event_flow');
-    showSuccessToast(t('toast_joined'));
+    showSuccessToast(result.status === 'already_member' ? t('toast_already_member') : t('toast_joined'));
     _bbAfterJoin(joinId);
     await openBubble(joinId, 'screen-home');
   } catch(e) { logError("checkPendingJoin", e); consumeFlow('event_flow'); errorToast("save", e); }
+  finally { _joinInFlight = false; }
 }
 
 

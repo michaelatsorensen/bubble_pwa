@@ -12,6 +12,17 @@
 // ══════════════════════════════════════════════════════════
 var radarCurrentView = 'map';
 
+// Ported from PROD v8.17.31 (Fix 6: registerState cleanup).
+// Prevents user A's dismiss list from leaking to user B
+registerState(function() {
+  radarCurrentView = 'map';
+  if (typeof radarDismissed !== 'undefined') radarDismissed = [];
+  if (typeof radarPendingRemove !== 'undefined') radarPendingRemove = null;
+  if (typeof rpCurrentUserId !== 'undefined') rpCurrentUserId = null;
+  if (typeof _rpSaveLock !== 'undefined') _rpSaveLock = false;
+  if (typeof matchPage !== 'undefined') matchPage = 0;
+});
+
 function radarSwitchView(view) {
   radarCurrentView = view;
   document.getElementById('radar-btn-map').classList.toggle('active', view === 'map');

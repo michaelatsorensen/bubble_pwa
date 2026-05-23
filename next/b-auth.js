@@ -71,9 +71,12 @@ async function resolvePostAuthDestination() {
   }
 
   // Step 2: Deep-link flows → show confirmation modal
-  var pendingContact = consumeFlow('pending_contact');
-  var pendingJoin = consumeFlow('pending_join');
-  var isEventFlow = consumeFlow('event_flow');
+  // Ported from PROD v8.17.31 (Fix 5): use flowGet (read-only) instead of consumeFlow.
+  // flowClearAll() below handles cleanup atomically. Previous code double-consumed
+  // which could silently skip modal on race conditions (auth listener firing twice).
+  var pendingContact = flowGet('pending_contact');
+  var pendingJoin = flowGet('pending_join');
+  var isEventFlow = flowGet('event_flow');
 
   if (pendingContact) {
     flowClearAll();
@@ -176,6 +179,7 @@ async function checkAuth() {
 function setupAuthListener() {
   sb.auth.onAuthStateChange((event, session) => {
     console.debug('[auth] state change:', event);
+
     if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
       // User signed out (possibly in another tab)
       bcUnsubscribeAll();
@@ -190,10 +194,40 @@ function setupAuthListener() {
       } else {
         redirectToLanding();
       }
-    } else if (event === 'TOKEN_REFRESHED' && session) {
+      return;
+    }
+
+    if (event === 'TOKEN_REFRESHED' && session) {
       // Token refreshed — update user reference
       currentUser = session.user;
+      return;
     }
+
+    // Ported from PROD v8.17.31 (Fix 4: auth listener handlers).
+    // Handle SIGNED_IN explicitly (multi-tab consistency).
+    // If user logs in via another tab, this fires here too — update reference.
+    // We do NOT re-run resolvePostAuth() to avoid double-navigation;
+    // checkAuth() handles initial routing.
+    if (event === 'SIGNED_IN' && session) {
+      var wasLoggedIn = !!currentUser;
+      currentUser = session.user;
+      // If we weren't logged in before but now are (e.g. another tab signed us in),
+      // refresh profile to ensure UI matches
+      if (!wasLoggedIn && typeof loadCurrentProfile === 'function') {
+        loadCurrentProfile();
+      }
+      return;
+    }
+
+    // Handle USER_UPDATED (profile/email changed in another tab)
+    if (event === 'USER_UPDATED' && session) {
+      currentUser = session.user;
+      if (typeof loadCurrentProfile === 'function') loadCurrentProfile();
+      return;
+    }
+
+    // INITIAL_SESSION fires on subscription setup — we don't act on it
+    // since checkAuth() already handled initial routing
   });
 }
 
