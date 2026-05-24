@@ -2606,8 +2606,8 @@ input[type="range"] {
 }
 /* Empty filter state */
 .dartboard-empty {
-  position: absolute; top: 55%; left: 50%; transform: translate(-50%,-50%);
-  text-align: center; width: 75%; pointer-events: auto;
+  position: absolute; left: 50%; bottom: 60%; transform: translateX(-50%);
+  text-align: center; width: 78%; pointer-events: auto;
 }
 .dartboard-empty .de-title { font-size: 0.82rem; font-weight: 600; color: var(--muted); }
 .dartboard-empty .de-sub { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.2rem; line-height: 1.4; }
@@ -3759,6 +3759,32 @@ a:not(.btn-primary):not(.btn-secondary):active {
 .bb-cta-anmod:active {
   transform: scale(0.98);
   background: rgba(101,168,50,0.22);
+}
+/* Public join CTA — ice-blue glass, mirrors bb-cta-anmod (green) for design consistency.
+   Readable blue text per DESIGN-GUIDE (was btn-primary with white text = unreadable on light bg). */
+.bb-cta-join {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  background: rgba(100,180,230,0.18);
+  color: rgb(46,110,160);
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 14px;
+  border: 1px solid rgba(100,180,230,0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: pointer;
+  font-family: 'Figtree', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.bb-cta-join:active {
+  transform: scale(0.98);
+  background: rgba(100,180,230,0.26);
 }
 .bb-cta-anmod svg {
   flex-shrink: 0;

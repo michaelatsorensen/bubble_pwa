@@ -1539,7 +1539,7 @@ async function bcLoadMembers() {
       } else if (vis === 'private') {
         joinBtn = '<button class="bb-cta-anmod" data-action="requestJoin" data-id="' + bcBubbleId + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Anmod om medlemskab</button>';
       } else {
-        joinBtn = '<button class="btn-primary" onclick="joinBubble(\'' + bcBubbleId + '\')" style="font-size:0.8rem;padding:0.5rem 1.4rem;margin-top:0.5rem">Bliv medlem</button>';
+        joinBtn = '<button class="bb-cta-join" onclick="joinBubble(\'' + bcBubbleId + '\')" style="margin-top:0.5rem;width:auto;padding:0.5rem 1.4rem">Bliv medlem</button>';
       }
       list.innerHTML = '<div style="text-align:center;padding:2.5rem 1rem">' +
         '<div style="font-size:2.2rem;font-weight:700;color:var(--text-primary);margin-bottom:0.15rem">' + activeCount + '</div>' +
@@ -2076,7 +2076,7 @@ async function bcLoadInfo() {
       } else if (b.visibility === 'private') {
         topJoinHtml = '<div style="padding:0.5rem 0 0.8rem"><button class="bb-cta-anmod" data-action="requestJoin" data-id="' + b.id + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Anmod om medlemskab</button></div>';
       } else {
-        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem"><button class="btn-primary" onclick="joinBubble(\'' + b.id + '\')" style="font-size:0.8rem;padding:0.5rem 1.4rem">Bliv medlem</button></div>';
+        topJoinHtml = '<div style="padding:0.5rem 0 0.8rem"><button class="bb-cta-join" onclick="joinBubble(\'' + b.id + '\')">Bliv medlem</button></div>';
       }
     } else if (bcBubbleData._isPending) {
       topJoinHtml = ''; // Banner at top already handles pending state
