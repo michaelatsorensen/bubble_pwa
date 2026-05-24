@@ -447,8 +447,8 @@ Before pilot launch, manually verify:
 
 ### ADR-006: DM send consolidation + push strategy
 
-**Status:** READY TO FINALIZE · blockers verified (maj 2026) · awaiting strategy decision
-**Date:** 2026-05-18 (ground truth added maj 2026)
+**Status:** ✅ ACCEPTED (Option A + 3 revisioner) · maj 2026 · klar til implementering
+**Date:** 2026-05-18 (accepted maj 2026 efter production-verifikation)
 **Migrated from:** Q-041 + Q-042
 
 #### ⚠️ GROUND TRUTH (verificeret mod production — korrigerer draft-antagelser)
@@ -496,7 +496,72 @@ Push notifications fire from BOTH frontend AND DB trigger for every DM:
 
 Result: Every DM produces 2 push notifications (assuming trigger works correctly — which is itself 🟡 inferred per Q-051).
 
-#### Decision (PENDING — currently DRAFT)
+#### Decision (ACCEPTED — Option A med revisioner, maj 2026)
+
+**Canonical push = backend domænehændelser (DB-trigger), ikke frontend-klienter.**
+Push er en domænehændelse ("ny besked sendt"), ikke en UI-hændelse. Web, native,
+workers, integrationer skal alle kunne udløse samme push uden frontend-logik.
+Native arver trigger-systemet gratis (Tenet 1) — frontend-push ville kræve parallel
+genimplementering i React Native = parallel bugs/semantik/edge cases.
+
+**Princip der styrer hele beslutningen: byg synlighed før kompleksitet.**
+Vi bygger observability der *afslører* problemer (dubletter, fejl), og venter med
+at bygge mekanik (dedup) til data viser at problemet er reelt. Generaliseret
+"measure, don't guess".
+
+**Revision 1 — Observability: minimal `push_events` (IKKE error_log, IKKE enterprise log).**
+```sql
+push_events
+- id
+- event_type            -- 'new_message' | 'bubble_invite' | 'contact_saved' | ...
+- recipient_user_id
+- source                -- 'trigger' | 'frontend' (under migration) | 'edge'
+- status                -- 'sent' | 'failed' | 'no_subscription'
+- error                 -- provider/edge fejlbesked, nullable
+- created_at
+```
+Nok til at svare: hvem skulle have push, hvorfor, fra hvilken kilde, lykkedes det?
+Afslører dubletter (samme event_type+recipient to gange) UDEN at vi bygger dedup.
+**Pilot-diagnoseværktøj, ikke permanent audit-log** — sæt retention-politik som
+bevidst senere beslutning, så tabellen ikke bliver ny teknisk gæld.
+
+**Revision 2 — Idempotens PARKERET (kendt fremtidig parameter, ikke pilot-arbejde).**
+Design med `message_id`/event_id som dedup-key i baghovedet. Byg IKKE dedup-mekanik
+før `push_events` viser reelle dubletter ved faktisk trafik. Ved pilot-skala (~500)
+er pg_net retry-dubletter sandsynligvis ikke en reel kilde. Observability afslører
+det hvis det sker.
+
+**Revision 3 — Trigger-hygiejne (undgå trigger-spaghetti fra dag 1).**
+- ÉN canonical trigger pr. event-type (ikke konkurrerende funktioner som nu)
+- ÉT edge-entrypoint (send-push — allerede sandt)
+- Dokumentér alle push-triggers ét sted (trigger-register i ARCHITECTURE-MAP §19)
+- Klare ownership-regler så push-logik ikke bliver skjult distribueret forretningslogik
+
+**Oprydning (følger af Option A):**
+- **Beskeder:** kobl `on_new_message_push` → den allerede-korrekte `notify_new_message`
+  (sender user_id). Slet brudte `trigger_push_on_message`. (Repair > rewrite — den
+  rigtige funktion findes allerede, kun wiring er forkert.)
+- **Invitationer:** behold `notify_bubble_invite` (virker). Slet døde `trigger_push_on_invite`
+  (placeholder, har aldrig virket). Fjern frontend invite-push (eliminerer dobbelt).
+- **Saved contact:** **DISABLE nu** (drop trigger). Default off indtil premium/privacy-
+  semantik er klar. Lettere at tænde en god feature senere end fjerne en creepy folk
+  har oplevet.
+- **Frontend `sendPush`:** fjern for alle trigger-dækkede typer — EFTER triggers er
+  repareret og verificeret leverende via push_events (sikker rækkefølge).
+
+**Sikker implementerings-rækkefølge (cutover uden dækningshul):**
+1. **Rotér** den eksponerede service-role JWT i Supabase (akut, uafhængig)
+2. Opret `push_events` + edge skriver til den (observability FØR dispatch-ændring)
+3. Reparér/kobl triggers korrekt → verificér levering via push_events
+4. *Derefter* fjern frontend sendPush for dækkede typer
+5. Migrér secrets til Vault (supabase_vault 0.3.1 aktiveret, tom)
+
+**Phase 1 (DM send consolidation) består uændret:** konsolidér 4 DM-skrivestier til
+`dbActions.sendDM()`. Men "flyt push ind i sendDM" bliver nu "FJERN push fra alle
+frontend-stier" (da push ejes af trigger). Phase 3 (sendDM discriminated union)
+uændret.
+
+#### Decision (HISTORIC DRAFT — bevaret for kontekst)
 
 **Phase 1 — DM Send Consolidation** (can proceed without ground truth):
 
@@ -549,13 +614,12 @@ After consolidation + push strategy, stram `dbActions.sendDM()` to discriminated
 - **Tenet 3** (replace ambiguous ownership): 4 send paths → 1 authoritative path
 - **Tenet 4** (grundighed over hastighed): we're not implementing this until we have ground truth, even though it's tempting to "just fix it"
 
-#### Blockers
+#### Blockers — ALLE LØST (maj 2026)
 
-This ADR cannot be FINALIZED until:
-
-- **Q-050:** Active DB triggers in production verified
-- **Q-051:** send-push payload schema documented
-- **Q-054:** Push delivery logging existence verified
+- **Q-050:** ✅ Verificeret — 4 triggers aktive (2 brudte recipient_id, 2 virkende user_id)
+- **Q-051:** ✅ Verificeret — edge kræver user_id, slår op i push_subscriptions
+- **Q-054:** ✅ Verificeret — ingen push-delivery-logging (→ Revision 1: push_events)
+- **Q-052, Q-053, Q-055:** ✅ Verificeret (se VERIFICATION-GUIDE.md resultater)
 
 #### Related
 
