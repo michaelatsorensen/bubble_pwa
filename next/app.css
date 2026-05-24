@@ -2606,8 +2606,8 @@ input[type="range"] {
 }
 /* Empty filter state */
 .dartboard-empty {
-  position: absolute; left: 50%; bottom: 60%; transform: translateX(-50%);
-  text-align: center; width: 78%; pointer-events: auto;
+  position: absolute; left: 50%; top: 19%; transform: translateX(-50%);
+  text-align: center; width: 80%; pointer-events: auto;
 }
 .dartboard-empty .de-title { font-size: 0.82rem; font-weight: 600; color: var(--muted); }
 .dartboard-empty .de-sub { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.2rem; line-height: 1.4; }
