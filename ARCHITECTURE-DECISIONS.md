@@ -447,9 +447,27 @@ Before pilot launch, manually verify:
 
 ### ADR-006: DM send consolidation + push strategy
 
-**Status:** DRAFT · BLOCKED on Q-050, Q-051, Q-054 verification
-**Date:** 2026-05-18
+**Status:** READY TO FINALIZE · blockers verified (maj 2026) · awaiting strategy decision
+**Date:** 2026-05-18 (ground truth added maj 2026)
 **Migrated from:** Q-041 + Q-042
+
+#### ⚠️ GROUND TRUTH (verificeret mod production — korrigerer draft-antagelser)
+
+Draft'en antog "hver DM giver 2 pushes (hvis trigger virker)". Verifikation viste
+noget andet og vigtigere:
+
+| Type | Trigger | Frontend sendPush | Faktisk net-resultat |
+|---|---|---|---|
+| Besked | trigger_push_on_message → **recipient_id → 400, FEJLER tavst** | virker (user_id) | **1 push (kun frontend, ved et tilfælde)** |
+| Invitation | notify_bubble_invite → user_id, **virker** + trigger_push_on_invite (placeholder, død) | virker (user_id) | **2 pushes (DOBBELT)** |
+| Saved contact | notify_contact_saved → user_id, **virker** | udkommenteret | **1 push (kun trigger)** |
+
+Yderligere fund:
+- **notify_new_message** sender user_id KORREKT men er **ikke koblet til nogen trigger** (død kode). Besked-fix kan være "kobl on_new_message_push til notify_new_message + slet trigger_push_on_message" frem for at reparere.
+- **Ingen push-delivery-logging** (kun push_subscriptions + generel error_log). Forklarer hvorfor trigger_push_on_message har fejlet tavst uopdaget. error_log kan genbruges.
+- **Secrets hardcodet:** sb_secret i notify_*, FULD service-role JWT i klartekst i trigger_push_on_message (→ SKAL ROTERES), placeholder i trigger_push_on_invite.
+
+Konklusion: ikke ét "double-fire"-problem, men **tre konkurrerende halvfærdige systemer** (notify_*, trigger_push_*, frontend sendPush) med inkonsistent dækning pr. type.
 
 #### Context
 
