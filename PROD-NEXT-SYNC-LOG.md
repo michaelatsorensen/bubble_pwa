@@ -168,3 +168,29 @@ See PROD-NEXT-DRIFT.md for the catalog.
 ---
 
 *Sidste opdatering: Maj 2026 (Session 1 — workstream 1 in progress)*
+
+---
+
+## Gap-jagt: mangler NEXT vigtige PROD-dele? (maj 2026) — KONKLUSION: NEJ
+
+Anledning: Før vi forlader PROD↔NEXT-sporet (NEXT er pilot-vehikel, PROD bliver obsolete),
+verificeret at NEXT ikke har tabt nogen vigtig PROD-capability undervejs.
+
+**Metode — fire vinkler:**
+1. Funktionsdefinitioner (function/arrow/var/window) i alle 13 JS-filer: PROD vs NEXT
+2. i18n-nøgler: PROD vs NEXT
+3. screen-* IDs (hele skærme): PROD vs NEXT
+4. Alle element-IDs (UI-sektioner): PROD vs NEXT
+
+**Resultat — NEXT mangler INTET vigtigt:**
+- ✓ 0 funktioner mangler i NEXT (1 hit "memberLabel" = lokal var, falsk positiv)
+- ✓ Alle 582 PROD i18n-nøgler i NEXT (+ 9 ekstra → 591)
+- ✓ Alle 17 PROD-skærme i NEXT
+- ✓ Kun 2 PROD-only element-IDs, begge BEVIDSTE NEXT-redesign (ikke regressions):
+  - auth-splash → flettet ind i hybrid auth-skærm (auth-hero)
+  - auth-interests → flyttet til post-signup onboarding (streamlined signup-beslutning)
+
+**Konklusion:** NEXT er reelt FORAN PROD, ikke bagved. Divergensen er design v6 + radar +
+fixes (NEXT færdig først), ikke tabte PROD-features. **PROD↔NEXT alignment-sporet lukkes.**
+PROD bevares som passiv fallback, vedligeholdes ikke fremad. Næste spor: native-fundament
+(backend-verifikation + push), ikke alignment.
