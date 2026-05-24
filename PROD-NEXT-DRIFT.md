@@ -231,3 +231,24 @@ NEXT design v6 (DESIGN-GUIDE.md line 46) forbyder lilac `#7C5CFC` som CTA/handli
 - `b-home.js:2015,2438,2441,2518` — lilac som én af mange tilfældige prik/avatar-farver
 
 **Anbefaling:** Gå Kategori 2 igennem sammen og afgør hver enkelt. Ikke bulk-ret — nogle er grænsetilfælde.
+
+---
+
+## Join/CTA-knap konsistens scan (maj 2026)
+
+Anledning: Medlemmer-fanens "Bliv medlem" var lille + venstrestillet (introduceret i kontrast-fix aa32857 med fejlagtig width:auto override).
+
+**Rettet:**
+- ✅ b-chat.js:1542 Medlemmer-fane "Bliv medlem" → fuld-bredde bb-cta-join (matcher bb-cta-anmod lige over). Commit pending.
+
+**Korrekte (følger mønster):**
+- b-chat.js:2079/2081 Info-fane: bb-cta-anmod (privat) / bb-cta-join (offentlig) — begge fuld bredde ✓
+- b-bubbles.js:2326 "Send anmodning" btn-primary — sidder i MØRK tray (var(--n3-card), hvid tekst) = læsbar ✓
+
+**Tilbage at vurdere (samme klasse kontrast-bug som join-knappen):**
+- b-chat.js:897 "Opret event" btn-primary i .empty-state på LYS boble-detalje (kun ejer) — hvid tekst på lys isblå = samme læsbarhedsproblem. Ikke en join-knap, men samme btn-primary-på-lys mønster.
+
+**Systemisk note (bredere, ikke bulk-ret):**
+- btn-accent (b-chat.js:645/647 kompakte "+ Join"/"Anmod" i liste) bruger brand-gradient (var(--gradient-primary)). DESIGN-GUIDE siger gradient = logo KUN. Læsbar (hvid på vibrant gradient), men teknisk afvigelse. Mange steder bruger btn-accent — kræver systematisk vurdering, ikke ad-hoc.
+
+**Rod-årsag:** Global .btn-primary (app.css:1239) sætter hvid tekst (antager mørk kontekst). Lyse kontekster bryder. bb-cta-join løser join-knapperne; resten (Opret event + evt. andre) bør håndteres i en fokuseret btn-primary-på-lys oprydning.
