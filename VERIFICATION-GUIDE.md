@@ -488,3 +488,47 @@ Min vurdering:
 ---
 
 *Genereret 18. maj 2026 til verifikation af Q-050 til Q-055 + Q-014, Q-019, Q-023.*
+
+---
+
+# ✅ VERIFIKATIONS-RESULTATER (maj 2026 — kørt mod production)
+
+## Push-arkitektur (Q-050 til Q-055) — KOMPLET
+
+**Q-050 — Aktive triggers (4):**
+| Trigger | Tabel | Kalder | Sender | Status |
+|---|---|---|---|---|
+| on_new_message_push | messages | trigger_push_on_message | recipient_id ❌ | FEJLER tavst (400) |
+| on_contact_saved_push | saved_contacts | notify_contact_saved | user_id ✅ | Virker |
+| on_bubble_invite_push | bubble_invitations | notify_bubble_invite | user_id ✅ | Virker |
+| on_new_invite_push | bubble_invitations | trigger_push_on_invite | recipient_id + placeholder-secret ❌❌ | Har aldrig virket |
+
+**Q-051 — Edge function (./index.ts i repo):** Forventer { type, user_id, title, body, data }. KRÆVER user_id (400 ellers). Slår op i push_subscriptions på user_id. Secrets via Deno.env (ikke hardcodet i funktionen).
+
+**Q-052 — recipient_id vs user_id:** Bekræftet drift, IKKE intentional. trigger_push_on_message + trigger_push_on_invite sender recipient_id → edge afviser. notify_* sender user_id → virker.
+
+**Q-053 — sendPush IKKE dead code:** 9 aktive kaldesteder i NEXT (beskeder 3×, invitation, join-anmodning, godkendt 2×, check-in). Sender user_id korrekt. Fejl kun til console (tavse for bruger). Saved-contact udkommenteret.
+
+**Q-055 — Hardcodede secrets (KRITISK):**
+- notify_* (3 funktioner): sb_secret_QJ... hardcoded
+- trigger_push_on_message: FULD service-role JWT i klartekst → SKAL ROTERES (kompromitteret)
+- trigger_push_on_invite: placeholder Bearer DIN_SERVICE_ROLE_KEY (har aldrig virket)
+- notify_new_message: korrekt (user_id) MEN ikke koblet til nogen trigger = død kode
+
+**Q-054 — Observability:** INGEN dedikeret push-delivery-logging. Tabeller: push_subscriptions (endpoints), error_log (generel). Forklarer hvorfor trigger_push_on_message har fejlet tavst uopdaget. error_log kan genbruges til push-fejl.
+
+### Faktisk produktions-adfærd NU:
+- **Beskeder:** trigger fejler (recipient_id) → kun frontend sendPush leverer = 1 push
+- **Invitationer:** notify_bubble_invite (virker) + frontend sendPush (virker) = MULIG DOBBELT push; trigger_push_on_invite fejler tavst
+- **Saved contact:** notify_contact_saved trigger ER aktiv og virker — MEN memory siger feature skulle være disabled. Bekræft mod intention.
+
+## GDPR cascade (Q-014, Q-019, Q-023) — KOMPLET
+
+**Q-019 + Q-023 (rene):** bubble_members (user_id + bubble_id) CASCADE. messages (sender + receiver) CASCADE. Blokerer ikke sletning. ✅
+
+**Q-014 (blandet — fem blokeringer):**
+- CASCADE (rent): bubble_members, messages, profile_views, saved_contacts
+- SET NULL (anonymiseres): qr_scans (scanned_by, scanned_user)
+- **NO ACTION (BLOKERER sletning):** bubble_messages, bubble_message_reactions, bubble_posts, bubbles.created_by, guest_checkins.claimed_by
+
+**Konsekvens:** En bruger der har skrevet en boble-besked / lavet reaktion / opslag / oprettet en boble / claimet guest-checkin kan IKKE slettes — DB afviser med FK-fejl. Rammer stort set alle aktive brugere. "Slet konto" vil fejle. Kræver bevidst sletteprocedure per indholdstype (anonymisér vs slet vs overdrag ejerskab for bobler).
