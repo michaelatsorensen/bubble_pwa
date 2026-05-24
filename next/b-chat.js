@@ -1771,8 +1771,10 @@ async function bcLoadInfo() {
     // Tags
     var tagsHtml = (b.keywords || []).map(function(k) {
       var col = isEvent ? 'rgba(46,207,207,0.18)' : 'rgba(100,180,230,0.18)';
-      var txt = isEvent ? '#34D399' : 'rgb(140,200,235)';
-      return '<span style="font-size:0.68rem;padding:0.2rem 0.55rem;border-radius:99px;background:' + col + ';color:' + txt + ';font-weight:600">' + escHtml(k) + '</span>';
+      // Readable text on light glass per DESIGN-GUIDE (was light blue/green = low contrast)
+      var txt = isEvent ? '#0F6E56' : 'rgb(46,110,160)';
+      var bord = isEvent ? 'rgba(46,207,207,0.35)' : 'rgba(100,180,230,0.35)';
+      return '<span style="font-size:0.68rem;padding:0.2rem 0.55rem;border-radius:99px;background:' + col + ';color:' + txt + ';border:0.5px solid ' + bord + ';font-weight:600">' + escHtml(k) + '</span>';
     }).join('');
 
     // Color theming
