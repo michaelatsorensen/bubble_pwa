@@ -269,14 +269,20 @@ function updateFilterChipStyle() {
   chips.querySelectorAll('.radar-filter-chip').forEach(function(c) {
     c.style.background = '';
     c.style.borderColor = '';
+    c.style.color = '';
   });
   chips.querySelectorAll('.radar-filter-chip.active').forEach(function(c) {
+    // NEXT design v6: ice-blue beach glass for CTA (normal), teal for live.
+    // Lilac gradient (#7C5CFC) is DEPRECATED per DESIGN-GUIDE — never use.
     if (isLive) {
-      c.style.background = 'linear-gradient(135deg,#1A9E8E,#10B981)';
+      c.style.background = 'linear-gradient(135deg,#1A9E8E,#17877A)';
+      c.style.color = 'rgba(255,255,255,0.95)';
+      c.style.borderColor = 'transparent';
     } else {
-      c.style.background = 'linear-gradient(135deg,#7C5CFC,#6366F1)';
+      c.style.background = 'rgba(100,180,230,0.18)';
+      c.style.color = 'rgb(46,110,160)';
+      c.style.borderColor = 'rgba(100,180,230,0.25)';
     }
-    c.style.borderColor = 'transparent';
   });
 }
 

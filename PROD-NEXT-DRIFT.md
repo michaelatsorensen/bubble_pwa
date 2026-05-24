@@ -209,3 +209,25 @@ For at færdiggøre denne fil (estimat: 2-3 timer):
 
 *Sidste opdatering: Maj 2026 (initial creation post visibility-bug fix)*
 *Næste planlagte review: Når PWA går i maintenance mode (juli 2026)*
+
+---
+
+## Design-konsistens oprydning — deprecated lilac CTA (maj 2026)
+
+NEXT design v6 (DESIGN-GUIDE.md line 46) forbyder lilac `#7C5CFC` som CTA/handlingsfarve — brug isblå `rgba(100,180,230,...)` eller teal `#1A9E8E`. Brand-gradienten (`#19D3C5→#6E63FF→#FF6A9A`) er KUN til logo.
+
+**Vigtig skelnen:** Lilac som én blandt mange tilfældige *avatar-farver* er OK (ikke CTA). Kun lilac som CTA/handlings-element er fejl.
+
+**Rettet:**
+- ✅ `.radar-filter-chip.active` (CSS + updateFilterChipStyle) → isblå/teal · commit pending
+
+**Tilbage at vurdere (Kategori 2 — CTA-agtige, sandsynlige fejl):**
+- `index.html:104` `.sp-filter-chip.active` — search/profil-filter chip (samme bug som radar)
+- `index.html:99` `.gs-v4-check.done` — "færdig"-tilstand indikator
+- `index.html:74` `.qr-profile-avatar` — stor profil-avatar (grænsetilfælde)
+- `b-home.js:582,890` — profil-setup ikon-baggrunde (CTA-agtige)
+
+**Behold (Kategori 1 — avatar-farve-paletter, ikke CTA):**
+- `b-home.js:2015,2438,2441,2518` — lilac som én af mange tilfældige prik/avatar-farver
+
+**Anbefaling:** Gå Kategori 2 igennem sammen og afgør hver enkelt. Ikke bulk-ret — nogle er grænsetilfælde.
