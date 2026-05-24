@@ -279,15 +279,18 @@
 
 ### Q-014: GDPR profile deletion — hvordan håndteres det?
 
-**TYPE:** A · **PRIORITY:** P0 · **STATUS:** OPEN
+**TYPE:** A · **PRIORITY:** P0 · **STATUS:** ✅ VERIFIED (maj 2026) — afslører blokering, kræver beslutning (→ Q-062)
 
 **Kontekst:** Profile slettes ALDRIG ifølge entity-map analysen. Kun anonymisering. Men GDPR kræver "right to be forgotten".
 
-**Spørgsmål:** Findes der en delete-flow? Eller er det ikke implementeret endnu?
+**SVAR (verificeret mod production — FK delete_rules):**
+- **CASCADE (rent):** bubble_members, messages (begge), profile_views (begge), saved_contacts (begge)
+- **SET NULL (anonymiseres):** qr_scans (scanned_by, scanned_user)
+- **NO ACTION (BLOKERER sletning):** bubble_messages, bubble_message_reactions, bubble_posts, bubbles.created_by, guest_checkins.claimed_by
 
-**Antagelse:** Ikke implementeret. Post-pilot opgave.
+**Kritisk konsekvens:** En bruger der har skrevet en boble-besked / lavet reaktion / opslag / oprettet en boble / claimet et guest-checkin kan **IKKE slettes** — Postgres afviser med FK-fejl. Rammer stort set alle aktive brugere. "Slet konto" vil fejle i praksis lige nu.
 
-**Påvirkning:** GDPR compliance risiko. Skal være på roadmap.
+**Påvirkning:** GDPR compliance risiko + funktionel mur. Kræver bevidst sletteprocedure per indholdstype (anonymisér vs slet vs overdrag ejerskab). **Beslutningen tracket som Q-062.**
 
 ---
 
@@ -352,15 +355,15 @@
 
 ### Q-019: User deletion → memberships hvad?
 
-**TYPE:** A · **PRIORITY:** P0 · **STATUS:** OPEN
+**TYPE:** A · **PRIORITY:** P0 · **STATUS:** ✅ VERIFIED (maj 2026)
 
 **Kontekst:** Hvis en bruger slettes (auth.users), hvad sker med deres bubble_members rows?
 
 **Spørgsmål:** CASCADE delete? Anonymize?
 
-**Antagelse:** CASCADE delete er sandsynligvis sat op via FK constraints på auth.users.
+**SVAR (verificeret mod production):** CASCADE. `bubble_members.user_id → profiles` = CASCADE, og `bubble_members.bubble_id → bubbles` = CASCADE. Medlemskaber forsvinder rent ved bruger- ELLER boble-sletning. Antagelsen var korrekt. **Blokerer ikke sletning.**
 
-**Påvirkning:** Påvirker GDPR-deletion design.
+**Påvirkning:** Ingen — rent. Del af Q-014's samlede billede.
 
 ---
 
@@ -408,15 +411,15 @@
 
 ### Q-023: User deletion → DMs hvad?
 
-**TYPE:** A · **PRIORITY:** P0 · **STATUS:** OPEN
+**TYPE:** A · **PRIORITY:** P0 · **STATUS:** ✅ VERIFIED (maj 2026)
 
 **Kontekst:** Hvis user slettes, hvad sker med deres DMs?
 
 **Spørgsmål:** Soft-anonymize (sender_id → null, content bevares)? Eller delete?
 
-**Antagelse:** Sandsynligvis ikke implementeret endnu. GDPR-relevant.
+**SVAR (verificeret mod production):** DELETE (CASCADE). Både `messages.sender_id` og `messages.receiver_id → profiles` = CASCADE. DM'er slettes helt ved bruger-sletning — IKKE anonymiseret. **Konsekvens at være opmærksom på:** hvis A sletter sin konto, forsvinder hele DM-tråden også for B (begge sider af samtalen). Det er rent GDPR-mæssigt, men B mister samtalehistorik. Bevidst at acceptere eller revurdere. **Blokerer ikke sletning.**
 
-**Påvirkning:** Linker til Q-014.
+**Påvirkning:** Linker til Q-014. Rent cascade, men UX-konsekvens for modtager.
 
 ---
 
@@ -1067,4 +1070,32 @@ type JoinBubbleResult =
 
 ---
 
-*Q-001 til Q-061 = 61 åbne spørgsmål totalt. 6 nye fra Section 20.*
+### Q-062: GDPR-sletteprocedure for NO ACTION-relationer
+
+**TYPE:** A · **PRIORITY:** P0 · **STATUS:** OPEN (følger af Q-014 verifikation)
+
+**Kontekst:** Q-014 afslørede at 5 FK-relationer har `NO ACTION` delete_rule, så bruger-sletning **fejler** i Postgres hvis brugeren har skabt indhold. Rammer stort set alle aktive brugere. "Slet konto" virker ikke i praksis lige nu.
+
+**De 5 blokerende relationer + produktspørgsmål per type:**
+| Tabel.kolonne | Indhold | Beslutning der skal træffes |
+|---|---|---|
+| `bubble_messages.user_id` | Boble-chatbeskeder | Anonymisér ("Slettet bruger") eller slet? |
+| `bubble_message_reactions.user_id` | Reaktioner | Slet (lavværdi, ingen historik-tab) |
+| `bubble_posts.author_id` | Boble-opslag | Anonymisér eller slet? |
+| `bubbles.created_by` | **Oprettede bobler** | Sværest: overdrag ejerskab, eller slet boble + alle medlemmer? |
+| `guest_checkins.claimed_by` | Claimede guest-checkins | Anonymisér (SET NULL) sandsynligvis nok |
+
+**Spørgsmål:** Hvad er den bevidste sletteprocedure per indholdstype? Det er IKKE "ret cascade på alt" — fx vil man sandsynligvis ikke slette en hel boble med medlemmer bare fordi opretteren forlader. Det er samme dilemma som ethvert socialt produkt: hvad sker der med indhold en slettet bruger har skabt?
+
+**Mulige mønstre:**
+- **Anonymisér** (behold indhold, erstat identitet med "Slettet bruger") — bevarer samtale-/boble-integritet, opfylder GDPR hvis user_id nulstilles
+- **Slet** (fjern indhold) — renere GDPR, men efterlader huller i samtaler
+- **Overdrag** (kun bobler — overfør created_by til en anden admin) — bevarer boblen
+
+**Antagelse:** Sandsynligvis blanding: reactions+checkins → slet/null, boble-beskeder+opslag → anonymisér, bobler → overdrag eller behold med system-ejerskab. Kræver bevidst beslutning + en delete-procedure (Postgres-funktion der håndterer rækkefølgen før profil-sletning).
+
+**Påvirkning:** P0 — GDPR compliance + funktionel mur (sletning fejler nu). Pre-pilot: brugere VIL anmode om sletning. Ikke native-blokerende (samme backend uanset klient), men skal løses før eller tidligt i pilot. Når besluttet → migreres til ADR.
+
+---
+
+*Q-001 til Q-062 = 62 spørgsmål totalt. Q-014/019/023 VERIFIED (maj 2026), Q-062 ny fra GDPR-verifikation.*
