@@ -627,6 +627,30 @@ After consolidation + push strategy, stram `dbActions.sendDM()` to discriminated
 - ARCHITECTURE-MAP.md sections: 17 (DM Send/Receive Flow), 19 (Push Notification Flow)
 - ADR-005 (joinBubble contract) — template for Phase 3 contract refinement
 
+#### Implementerings-sekvens — "Close ADR-006: make push backend-owned and observable"
+
+> **Dette er næste session-fokus.** Afgrænset, færdiggørbar. Lukker native gate 1.
+> PC-arbejde (SQL + edge deploy). Når trin 0-5 er gjort og verificeret, kan native vertical slice starte.
+
+**0. VERIFICÉR NUVÆRENDE STATE FØRST (ikke valgfrit).**
+Push-tilstanden har drevet over flere sessioner — antagelser er farlige (lektie maj 2026: cross-user/GIF/reconnect-bugs havde alle forkert *antaget* rod). Verificér mod virkeligheden før noget røres: aktuelle triggers + hvilke funktioner de kalder, edge function version (v1 vs v2 deployed?), om `push_events` allerede findes/fylder, og de aktuelle frontend `sendPush` call sites. Byg fix mod den verificerede tilstand, ikke mod hukommelsen.
+
+**1. Deploy observability FØRST.**
+`push_events`-migration + edge v2 (parser `source`, logger ved hver exit). Princip: synlighed før kompleksitet — vi vil kunne *se* hvad reparationen gør.
+
+**2. Reparér trigger-routing.**
+Kobl korrekt funktion på (`on_new_message_push` → `notify_new_message`), fix `recipient_id → user_id` i de to brudte, tilføj `source='trigger'`, slet døde triggers (`trigger_push_on_message`, `trigger_push_on_invite`). SQL bygges i sessionen MOD den verificerede tilstand fra trin 0.
+
+**3. Verificér faktisk delivery via push_events.**
+Ikke "ingen fejl" — synlig `status` (sent/failed), ikke tavst 400. Dette er hvor observability-først betaler sig.
+
+**4. Fjern frontend `sendPush`** for de typer triggers nu dækker.
+Dette fjerner "frontend-authoritative"-risikoen (review-fund). Native arver så et rent backend-ejet push-system.
+
+**5. Backend smoke + manuel push sanity** (+ Vault for secrets, kan udskydes).
+
+**Afgrænsning:** Playwright/chaos er IKKE denne session. Nøgle-migration er ikke gaten. GDPR (Q-062) og privacy (Q-063) er separate arbejdspakker. Native vertical slice starter FØRST efter push ownership er ryddet.
+
 ---
 
 
