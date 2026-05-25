@@ -1116,27 +1116,37 @@ type JoinBubbleResult =
 
 ---
 
-### Q-064: NEXT Pilot Smoke — app-flow/lifecycle test-lag
+### Q-064: Test-strategi — tre lag (pilot-hardening, IKKE native-gate)
 
-**TYPE:** D (redesign/tooling) · **PRIORITY:** P1 (pre-pilot) · **STATUS:** OPEN (rejst af ekstern review maj 2026)
+**TYPE:** D (tooling/strategi) · **PRIORITY:** P1 (pre-pilot) · **STATUS:** OPEN — strategi besluttet, bygges gradvist (maj 2026)
 
-**Kontekst:** Backend Contract Smoke Test (v6) dækker DB/RLS/kontrakter ved at skrive direkte til Supabase — den kan bestå selvom appens egne flows fejler (navigation, toasts, optimistic UI, reconnect, flow-flags, deeplinks, onboarding-gate).
+**Kontekst:** Backend Contract Smoke Test (v6) dækker DB/RLS/kontrakter ved at skrive direkte til Supabase. Den kan bestå selvom appens egne flows fejler (navigation, toasts, optimistic UI, reconnect, deeplinks, onboarding). Ekstern review (maj 2026) foreslog en tre-lags model med ren ansvarsfordeling.
 
-**Spørgsmål:** Hvordan bygger vi et app-flow-test-lag der dækker det backend-testen ikke kan?
+**⚠️ AFGRÆNSNING (vigtigst):** **Ingen af disse testlag er native-gates.** De er pilot-hardening og regressionsværn. Native-start gates kun af: ADR-006 push-implementering + dokumenterede kontrakter (gjort). At mangle Playwright/chaos-suite må IKKE udskyde native — det ville være målstregen i forklædning.
 
-**Kandidat-dækning (fra review):**
-- `joinBubble()` return-kontrakt (joined_now/already_member/failed) — app-niveau
-- DM/bubble send via app-helper (ikke direkte insert)
-- errorToast/logError-path
-- deeplink `?event=` / `?join=` (logget-ud + logget-ind)
-- onboarding/terms-gate
-- render-XSS (`textContent` vs `innerHTML`) — `<img onerror=>`, navn med html
-- reconnect-simulation: subscribe → send → unsubscribe → send → resubscribe → verificér readback fanger missed message
+**Tre lag — hvert svarer på ÉT spørgsmål:**
 
-**Hvorfor separat:** Kræver et browser/DOM-harness (headless eller in-app test-mode), ikke det rene SQL-harness. Må IKKE presses ind i Backend Contract-testen.
+| Lag | Værktøj | Svarer på | Status |
+|---|---|---|---|
+| 1. Backend Contract Smoke | SQL-harness (eksisterende .html) | Er backend-kontrakterne intakte? (RLS, DB, isolation, cleanup) | ✅ findes (v6) |
+| 2. NEXT Pilot Smoke | Playwright (browser/runtime) | Opfører appen sig rigtigt, ikke bare databasen? | ⏳ ikke bygget |
+| 3. Chaos Mini-tests | Playwright (scenarier) | Knækker appen under realistisk rodet adfærd? (false stability) | ⏳ ikke bygget |
 
-**Antagelse:** Bygges som separat artefakt efter ADR-006 (push delivery-test giver først mening efter trigger-only er implementeret). Ikke native-blocker, men pre-pilot for at fange app-flow-regressioner. **Vigtigt: dette må ikke blive til "fem nye test-lag før native må starte" — det er et pilot-hardening-spor, ikke en native-gate.**
+**Princip:** Backend-smoke tester sandhedslaget. Playwright tester produktadfærd. Chaos tester false stability. Bland dem ikke (det var fejlen v6 rettede — backend-test forvekslet med app-readiness).
+
+**Byg IKKE hele infrastrukturen på én gang.** Når lag 2 bygges, start med KUN tre tests mod kendte risici (ikke 10 mod tom suite):
+1. Logout/login som anden bruger lækker ikke state (cross-user push-bug — fixet maj 2026, test = regressionsværn)
+2. Send besked og reload straks (optimistic + persistence)
+3. Refresh bevarer korrekt screen/state (temporal coupling — hvor bugs bor)
+
+Disse tre rammer ting vi faktisk har rørt. Udbyg kun hvis de beviser deres værd.
+
+**Chaos-kandidater (lag 3, senere):** dobbeltklik join/send, send+reload, subscribe→unsubscribe→send→resubscribe→readback (reconnect-bug var her), offline/online, expired session, to faner samme bruger (cross-user-variant), A sender mens B reconnecter (verificeret race).
+
+**Push delivery-test:** giver først mening EFTER ADR-006 trigger-only er implementeret (ellers tester man det halvfærdige system). Hører til lag 3.
+
+**Antagelse:** Lag 2+3 bygges parallelt med eller efter native-start, ikke før. Foreslået struktur (når relevant): `/tests/{backend-contract,pilot-browser,chaos}` + `npm run test:{backend,pilot,chaos}`. Men start minimalt.
 
 ---
 
-*Q-001 til Q-064 = 64 spørgsmål totalt. Q-014/019/023 VERIFIED, Q-062 GDPR-sletning, Q-063 privacy-kontrakt (native blocker), Q-064 app-flow smoke (pre-pilot).*
+*Q-001 til Q-064 = 64 spørgsmål totalt. Q-014/019/023 VERIFIED, Q-062 GDPR-sletning, Q-063 privacy-kontrakt (native blocker), Q-064 test-strategi (pilot-hardening, ikke native-gate).*
