@@ -530,4 +530,24 @@ Det her er **det vigtigste dokument** for at gøre native-rewrite effektiv. Inve
 
 ---
 
+### 🟢 GENBRUGES — Chat message dedup + own-echo exclusion (verificeret maj 2026)
+
+**Dato tilføjet:** Maj 2026
+
+**Hvad:** Mønster der forhindrer dublet-beskeder ved optimistisk UI + realtime echo. Verificeret via statisk analyse efter ekstern review flaggede potentiel race i dmReduceMsg/bcReduceMsg.
+
+**To beskyttelseslag (begge stier):**
+1. **Egne beskeder echoes aldrig tilbage.** DM: kanalen bruger broadcast self:false + postgres-fallback filtreret til receiver_id = currentUser.id. Bubble: eksplicit "if m.user_id === currentUser.id return" i subscription. Det klassiske "optimistisk insert + eget echo kolliderer"-race kan derfor ikke ske.
+2. **Indgående dedup på msg-id.** DM på data-msg-id, bubble på data-bc-msg-id. JS single-threaded, så to næsten-samtidige events eksekverer sekventielt (første inserter, anden dedup'es). markRead fyrer kun én gang (dedup-return sker før markRead).
+
+**Reconnect-hygiejne:** loadChatMessages laver fuld innerHTML-genopbygning, ikke append, så forældet pending-række fra tabt ack ryddes ved refetch.
+
+**Hvorfor genbruges:** Native skal replikere begge lag — own-echo-exclusion + id-baseret dedup. Det er den korrekte måde at håndtere optimistisk UI mod en realtime-kilde uanset klient.
+
+**Ét residual (lav prioritet, kosmetisk):** Hvis egen insert lykkes server-side men ack tabes, hænger beskeden som "pending" indtil chat-genåbning/reconnect genopbygger listen. Ingen dublet eller datatab — selv-heler. Kan hærdes senere (fx timeout der re-fetcher), men ikke pilot-blocker.
+
+**Forbehold:** Dette er STATISK analyse — beviser at beskyttelserne findes (capability). Fuld behavioral-bekræftelse under al timing (dårligt net, hurtige sends, background/foreground) kommer fra pilot. Krydsreference: realtime-subscription-modellen er separat flagget 🟡 REDESIGN for native.
+
+---
+
 *Logbog vedligeholdt løbende. Sidste opdatering: Maj 2026.*
