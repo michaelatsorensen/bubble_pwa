@@ -78,7 +78,7 @@ function _rtEvalState() {
         if (typeof loadChatMessages === 'function') loadChatMessages(currentChatUser);
       }
       if (_activeScreen === 'screen-bubble-chat' && typeof bcBubbleId !== 'undefined' && bcBubbleId) {
-        if (typeof bcLoadChat === 'function') bcLoadChat();
+        if (typeof bcLoadMessages === 'function') bcLoadMessages();
       }
       // Refresh notifications screen if active
       if (_activeScreen === 'screen-notifications' && typeof loadNotifications === 'function') {
