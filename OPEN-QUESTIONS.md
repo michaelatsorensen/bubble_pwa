@@ -1098,4 +1098,45 @@ type JoinBubbleResult =
 
 ---
 
-*Q-001 til Q-062 = 62 spørgsmål totalt. Q-014/019/023 VERIFIED (maj 2026), Q-062 ny fra GDPR-verifikation.*
+### Q-063: Skal bubble-privacy være backend-sandhed eller UI-konvention?
+
+**TYPE:** A · **PRIORITY:** P1 (native blocker) · **STATUS:** OPEN (rejst af ekstern review maj 2026)
+
+**Kontekst:** Privacy for private/hidden bubbles håndhæves **client-side**, ikke i RLS. Backend Contract Smoke Test bekræfter: en direkte `INSERT` i `bubble_members` for en private/hidden bubble **lykkes** — RLS blokerer ikke (kun `auth.uid() = user_id`). joinBubble-source-param bypasser privacy-gaten bevidst for QR/invite.
+
+**Spørgsmål:** Skal privacy forblive en UI-konvention (client-side), eller blive en backend-sandhed (RLS/policy)?
+
+**Hvorfor native-kritisk:** En second client (native) der laver direkte insert kan **omgå privacy fuldstændigt** — privacy eksisterer kun hvis hver klient frivilligt håndhæver den. Det er præcis den "frontend-authoritative"-risiko reviews har peget på. To klienter = to steder privacy skal implementeres korrekt, ellers lækage.
+
+**Afvejning:**
+- **Client-side (nuværende):** fleksibelt — QR/invite-bypass er let. Men skrøbeligt og ikke-håndhævet på tværs af klienter.
+- **Backend (RLS/policy):** robust, én sandhed. Men QR/invite-bypass kræver så en eksplicit mekanisme (fx en SECURITY DEFINER join-funktion der validerer invite-token server-side).
+
+**Antagelse:** Sandsynligvis skal join gå gennem en server-side funktion (RPC/edge) der validerer adgang (invite-token, event-medlemskab, public-status) frem for direkte table-insert. Det ville gøre privacy til backend-sandhed OG bevare QR/invite-flow. Stor beslutning — migreres til ADR når besluttet.
+
+---
+
+### Q-064: NEXT Pilot Smoke — app-flow/lifecycle test-lag
+
+**TYPE:** D (redesign/tooling) · **PRIORITY:** P1 (pre-pilot) · **STATUS:** OPEN (rejst af ekstern review maj 2026)
+
+**Kontekst:** Backend Contract Smoke Test (v6) dækker DB/RLS/kontrakter ved at skrive direkte til Supabase — den kan bestå selvom appens egne flows fejler (navigation, toasts, optimistic UI, reconnect, flow-flags, deeplinks, onboarding-gate).
+
+**Spørgsmål:** Hvordan bygger vi et app-flow-test-lag der dækker det backend-testen ikke kan?
+
+**Kandidat-dækning (fra review):**
+- `joinBubble()` return-kontrakt (joined_now/already_member/failed) — app-niveau
+- DM/bubble send via app-helper (ikke direkte insert)
+- errorToast/logError-path
+- deeplink `?event=` / `?join=` (logget-ud + logget-ind)
+- onboarding/terms-gate
+- render-XSS (`textContent` vs `innerHTML`) — `<img onerror=>`, navn med html
+- reconnect-simulation: subscribe → send → unsubscribe → send → resubscribe → verificér readback fanger missed message
+
+**Hvorfor separat:** Kræver et browser/DOM-harness (headless eller in-app test-mode), ikke det rene SQL-harness. Må IKKE presses ind i Backend Contract-testen.
+
+**Antagelse:** Bygges som separat artefakt efter ADR-006 (push delivery-test giver først mening efter trigger-only er implementeret). Ikke native-blocker, men pre-pilot for at fange app-flow-regressioner. **Vigtigt: dette må ikke blive til "fem nye test-lag før native må starte" — det er et pilot-hardening-spor, ikke en native-gate.**
+
+---
+
+*Q-001 til Q-064 = 64 spørgsmål totalt. Q-014/019/023 VERIFIED, Q-062 GDPR-sletning, Q-063 privacy-kontrakt (native blocker), Q-064 app-flow smoke (pre-pilot).*

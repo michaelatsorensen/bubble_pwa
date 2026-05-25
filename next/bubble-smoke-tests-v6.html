@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bubble Smoke Tests v6.0</title>
+<title>Backend Contract Smoke Test v6.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -52,8 +52,8 @@
 </style>
 </head>
 <body>
-<h1>🧪 Bubble Smoke Tests v6.0</h1>
-<div class="sub">RUN_ID · ledger · egne fixtures · realtime · soft-fail · force cleanup · v8.17 schema · client-side privacy</div>
+<h1>🧪 Backend Contract Smoke Test v6.0</h1>
+<div class="sub">BACKEND/RLS/KONTRAKT-test (IKKE app-flows: navigation/toasts/optimistic UI/deeplinks testes i separat NEXT Pilot Smoke)</div>
 
 <div class="card">
   <div class="row">
@@ -452,30 +452,31 @@ async function testVisibility(){
   sec('🔐 RLS: auth.uid() = user_id (privacy er client-side)');
   if(!FIX.priv){ok('Private RLS',false,'No fixture');return}
 
-  // Direct join on private bubble — now ALLOWED (client enforces privacy)
+  // ⚠️ Direct join på private bubble LYKKES fordi privacy er client-side (QR/invite bypass).
+  // Markeret som WARNING for native: enhver klient kan omgå privacy via direct insert. Se Q-063.
   await sbB.from('bubble_members').delete().eq('bubble_id',FIX.priv).eq('user_id',userB.id);
   var {data:v1,error:e1}=await sbB.from('bubble_members').insert({bubble_id:FIX.priv,user_id:userB.id}).select('id').single();
-  ok('Private: direct join TILLADT (QR/invite bypass)',!!v1,e1?'⚠️ RLS blokerede: '+e1.message:'OK — client-side privacy');
+  soft('⚠️ Private: direct join IKKE backend-blokeret (privacy=client-side — risk for native, Q-063)',!v1,v1?'join lykkedes — RLS håndhæver ikke privacy':'RLS blokerede');
   if(v1) {await sbB.from('bubble_members').delete().eq('bubble_id',FIX.priv).eq('user_id',userB.id)}
 
-  // Pending join should also SUCCEED
+  // Pending join (request-semantik — mindre risiko end direct)
   var {data:v2,error:e2}=await sbB.from('bubble_members').insert({bubble_id:FIX.priv,user_id:userB.id,status:'pending'}).select('id,status').single();
-  ok('Private: pending join TILLADT',!!v2,v2?'status: '+v2.status:(e2?e2.message:'Fejl'));
+  ok('Private: pending join tilladt (request-flow)',!!v2,v2?'status: '+v2.status:(e2?e2.message:'Fejl'));
   if(v2) {L.memberships.push({bubbleId:FIX.priv,userId:userB.id,client:'B'})}
 
   // Clean up pending for next test
   await sbB.from('bubble_members').delete().eq('bubble_id',FIX.priv).eq('user_id',userB.id);
   L.memberships=L.memberships.filter(function(m){return!(m.bubbleId===FIX.priv&&m.userId===userB.id)});
 
-  sec('🔐 Hidden bubble — now also allowed via RLS');
+  sec('🔐 Hidden bubble — direct join (client-side privacy RISK)');
   if(!FIX.hid){ok('Hidden RLS',false,'No fixture');return}
 
-  // Direct join on hidden bubble — now ALLOWED (client-side only)
+  // ⚠️ Direct join på hidden bubble LYKKES (client-side only privacy). WARNING for native. Se Q-063.
   var {data:h1,error:he1}=await sbB.from('bubble_members').insert({bubble_id:FIX.hid,user_id:userB.id}).select('id').single();
-  ok('Hidden: direct join TILLADT (client-side privacy)',!!h1,he1?'⚠️ RLS blokerede: '+he1.message:'OK');
+  soft('⚠️ Hidden: direct join IKKE backend-blokeret (privacy=client-side — risk for native, Q-063)',!h1,h1?'join lykkedes — RLS håndhæver ikke privacy':'RLS blokerede');
   if(h1) await sbB.from('bubble_members').delete().eq('bubble_id',FIX.hid).eq('user_id',userB.id);
 
-  // Cross-user join should FAIL (cannot join as someone else)
+  // Cross-user join SKAL fejle (kan ikke joine som en anden) — ægte security boundary
   var {data:h2,error:he2}=await sbB.from('bubble_members').insert({bubble_id:FIX.hid,user_id:userA.id}).select('id').single();
   ok('Cross-user join BLOKERET',!!he2||!h2,he2?'RLS blokerede korrekt':'⚠️ B kunne joine som A');
   if(h2) await sbA.from('bubble_members').delete().eq('bubble_id',FIX.hid).eq('user_id',userA.id);
@@ -486,6 +487,20 @@ async function testVisibility(){
   var {data:ev1,error:eve1}=await sbB.from('bubble_members').insert({bubble_id:FIX.evt,user_id:userB.id}).select('id').single();
   ok('Event: direct join TILLADT',!!ev1,eve1?eve1.message:'OK');
   if(ev1) {L.memberships.push({bubbleId:FIX.evt,userId:userB.id,client:'B'})}
+
+  // ── joinBubble() KONTRAKTOMRÅDE (app-level — testes i NEXT Pilot Smoke) ──
+  sec('📋 joinBubble() kontrakt — KUN backend-substrat her');
+  // joinBubble()s return-kontrakt (joined_now/already_member/failed, ADR-005) er APP-level
+  // og kan ikke testes i dette SQL-harness. Her verificeres kun DB-substratet den bygger på.
+  // Fuld kontrakt-test hører til NEXT Pilot Smoke (app-flow lag). Se Q-064.
+  // Substrat: duplicate-membership skal være idempotent (unique constraint), ikke duplikere.
+  await sbB.from('bubble_members').delete().eq('bubble_id',FIX.pub).eq('user_id',userB.id);
+  await sbB.from('bubble_members').insert({bubble_id:FIX.pub,user_id:userB.id});
+  var {error:dupErr}=await sbB.from('bubble_members').insert({bubble_id:FIX.pub,user_id:userB.id});
+  ok('Duplicate membership afvist af DB (substrat for already_member)',!!dupErr,dupErr?'unique constraint ✓':'⚠️ duplikat tilladt — joinBubble kan ikke skelne');
+  var {data:memCount}=await sbB.from('bubble_members').select('id').eq('bubble_id',FIX.pub).eq('user_id',userB.id);
+  ok('Præcis ÉN membership-række efter dobbelt-join',memCount&&memCount.length===1,'rækker: '+(memCount?memCount.length:0));
+  L.memberships.push({bubbleId:FIX.pub,userId:userB.id,client:'B'});
 }
 
 // ══════════════════════════════════════
@@ -800,64 +815,65 @@ async function cleanupAll(){
   L.subscriptions=[];render();
   ok('Subscriptions lukket',true,'OK');
 
-  // Messages (use sender's client — RLS requires sender_id = auth.uid())
-  for(var i=0;i<L.messages.length;i++){var m=L.messages[i];var {error}=await sbFor(m.client).from('messages').delete().eq('id',m.id);if(error)errs++}
-  ok('DMs slettet ('+L.messages.length+')',errs===0,errs?errs+' fejl':'OK');
+  // ── Child-before-parent rækkefølge (matcher NO ACTION FK-relationer, jf. GDPR-audit) ──
 
-  // Bubble messages
+  // 1. Reactions (child af bubble_messages)
+  var reactErrs=0;
+  for(var i=0;i<L.reactions.length;i++){var rx=L.reactions[i];var {error}=await sbFor(rx.client).from(rx.table).delete().eq('id',rx.id);if(error)reactErrs++}
+  if(L.reactions.length) ok('Reactions slettet ('+L.reactions.length+')',reactErrs===0,reactErrs?reactErrs+' fejl':'OK');
+
+  // 2. Posts (child af bubbles)
+  var postErrs=0;
+  for(var i=0;i<L.posts.length;i++){var p=L.posts[i];var {error}=await sbFor(p.client).from('bubble_posts').delete().eq('id',p.id);if(error)postErrs++}
+  if(L.posts.length) ok('Posts slettet ('+L.posts.length+')',postErrs===0,postErrs?postErrs+' fejl':'OK');
+
+  // 3. Bubble messages (child af bubbles)
   var bmerrs=0;
   for(var i=0;i<L.bubbleMessages.length;i++){var m=L.bubbleMessages[i];var {error}=await sbFor(m.client).from('bubble_messages').delete().eq('id',m.id);if(error)bmerrs++}
   ok('Bubble msgs slettet ('+L.bubbleMessages.length+')',bmerrs===0,bmerrs?bmerrs+' fejl':'OK');
 
-  // Saved contacts
-  for(var i=0;i<L.savedContacts.length;i++){var c=L.savedContacts[i];await sbFor(c.client).from('saved_contacts').delete().eq('id',c.id)}
-  ok('Saved contacts ('+L.savedContacts.length+')',true,'OK');
+  // 4. Invitations (child af bubbles)
+  var invErrs=0;
+  for(var i=0;i<L.invitations.length;i++){var inv=L.invitations[i];var {error}=await sbFor(inv.client).from('bubble_invitations').delete().eq('id',inv.id);if(error)invErrs++}
+  if(L.invitations.length) ok('Invitations slettet ('+L.invitations.length+')',invErrs===0,invErrs?invErrs+' fejl':'OK');
 
-  // Profile views (delete from B since B has viewed_id = self)
-  for(var i=0;i<L.profileViews.length;i++){var v=L.profileViews[i];await sbFor(v.client).from('profile_views').delete().eq('id',v.id)}
-  ok('Profile views ('+L.profileViews.length+')',true,'OK');
-
-  // Memberships (before bubbles)
+  // 5. Memberships (child af bubbles)
   for(var i=0;i<L.memberships.length;i++){var mem=L.memberships[i];await sbFor(mem.client).from('bubble_members').delete().eq('bubble_id',mem.bubbleId).eq('user_id',mem.userId)}
   ok('Memberships ('+L.memberships.length+')',true,'OK');
 
-  // Fixture bubbles (clean children first)
+  // 6. Bubbles (parent) — sweep evt. utracked children først som sikkerhedsnet
   var bubErrs=0;
   for(var i=0;i<L.bubbles.length;i++){
     var b=L.bubbles[i];
-    await sbFor(b.client).from('bubble_members').delete().eq('bubble_id',b.id);
     await sbFor(b.client).from('bubble_messages').delete().eq('bubble_id',b.id);
+    await sbFor(b.client).from('bubble_posts').delete().eq('bubble_id',b.id);
+    await sbFor(b.client).from('bubble_members').delete().eq('bubble_id',b.id);
     var {error}=await sbFor(b.client).from('bubbles').delete().eq('id',b.id);
     if(error) bubErrs++;
   }
   ok('Bubbles slettet ('+L.bubbles.length+')',bubErrs===0,bubErrs?bubErrs+' fejl':'OK');
 
-  // Profile restores
+  // 7. DMs (CASCADE) + profile views + saved contacts (uafhængige af bubbles)
+  for(var i=0;i<L.messages.length;i++){var m=L.messages[i];var {error}=await sbFor(m.client).from('messages').delete().eq('id',m.id);if(error)errs++}
+  ok('DMs slettet ('+L.messages.length+')',errs===0,errs?errs+' fejl':'OK');
+
+  for(var i=0;i<L.profileViews.length;i++){var v=L.profileViews[i];await sbFor(v.client).from('profile_views').delete().eq('id',v.id)}
+  ok('Profile views ('+L.profileViews.length+')',true,'OK');
+
+  for(var i=0;i<L.savedContacts.length;i++){var c=L.savedContacts[i];await sbFor(c.client).from('saved_contacts').delete().eq('id',c.id)}
+  ok('Saved contacts ('+L.savedContacts.length+')',true,'OK');
+
+  // 8. Push subscriptions (test endpoints)
+  var psErrs=0;
+  for(var i=0;i<L.pushSubs.length;i++){var ps=L.pushSubs[i];var {error}=await sbFor(ps.client).from('push_subscriptions').delete().eq('endpoint',ps.endpoint);if(error)psErrs++}
+  if(L.pushSubs.length) ok('Push subs slettet ('+L.pushSubs.length+')',psErrs===0,psErrs?psErrs+' fejl':'OK');
+
+  // 9. Profile restores
   for(var i=0;i<L.profileRestores.length;i++){
     var r=L.profileRestores[i];
     await sbFor(r.client).from('profiles').update(r.fields).eq('id',r.userId);
   }
   ok('Profiler restored ('+L.profileRestores.length+')',true,'OK');
-
-  // Reactions
-  var reactErrs=0;
-  for(var i=0;i<L.reactions.length;i++){var rx=L.reactions[i];var {error}=await sbFor(rx.client).from(rx.table).delete().eq('id',rx.id);if(error)reactErrs++}
-  if(L.reactions.length) ok('Reactions slettet ('+L.reactions.length+')',reactErrs===0,reactErrs?reactErrs+' fejl':'OK');
-
-  // Posts
-  var postErrs=0;
-  for(var i=0;i<L.posts.length;i++){var p=L.posts[i];var {error}=await sbFor(p.client).from('bubble_posts').delete().eq('id',p.id);if(error)postErrs++}
-  if(L.posts.length) ok('Posts slettet ('+L.posts.length+')',postErrs===0,postErrs?postErrs+' fejl':'OK');
-
-  // Invitations
-  var invErrs=0;
-  for(var i=0;i<L.invitations.length;i++){var inv=L.invitations[i];var {error}=await sbFor(inv.client).from('bubble_invitations').delete().eq('id',inv.id);if(error)invErrs++}
-  if(L.invitations.length) ok('Invitations slettet ('+L.invitations.length+')',invErrs===0,invErrs?invErrs+' fejl':'OK');
-
-  // Push subscriptions (test endpoints)
-  var psErrs=0;
-  for(var i=0;i<L.pushSubs.length;i++){var ps=L.pushSubs[i];var {error}=await sbFor(ps.client).from('push_subscriptions').delete().eq('endpoint',ps.endpoint);if(error)psErrs++}
-  if(L.pushSubs.length) ok('Push subs slettet ('+L.pushSubs.length+')',psErrs===0,psErrs?psErrs+' fejl':'OK');
 
   // Error log (best effort)
   await sbA.from('error_log').delete().eq('user_id',userA.id).ilike('context','%'+RUN_ID+'%');
