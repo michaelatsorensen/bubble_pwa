@@ -583,8 +583,13 @@ function _renderDebugErrorList() {
     html += '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700">' + escHtml(e.context || '?') + '</span><span>' + time + '</span></div>';
     html += '<div style="font-size:0.6rem;margin-top:2px;opacity:0.85">' + escHtml((e.message || '').substring(0, 80)) + '</div>';
     if (cs2) {
+      var errVer = cs2.v || '?';
+      var isStale = errVer !== '?' && typeof BUILD_VERSION !== 'undefined' && errVer !== BUILD_VERSION;
+      var verLabel = isStale
+        ? '<span style="color:#E8A04A;font-weight:700">' + escHtml(errVer) + ' ⚠ gammel</span>'
+        : '<span style="color:#4FD1C5;font-weight:700">' + escHtml(errVer) + '</span>';
       html += '<div style="font-size:0.55rem;margin-top:3px;opacity:0.7">' +
-        escHtml((e.user_id || '').substring(0, 8) + '.. | ' + (cs2.ua || '?')) + '</div>';
+        verLabel + ' | ' + escHtml((e.user_id || '').substring(0, 8) + '.. | ' + (cs2.ua || '?')) + '</div>';
       if (cs2.rt) {
         var rtParts = Object.keys(cs2.rt).map(function(k) {
           var v = cs2.rt[k];
