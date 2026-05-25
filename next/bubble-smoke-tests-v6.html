@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bubble Smoke Tests v5.0</title>
+<title>Bubble Smoke Tests v6.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -52,7 +52,7 @@
 </style>
 </head>
 <body>
-<h1>🧪 Bubble Smoke Tests v5.0</h1>
+<h1>🧪 Bubble Smoke Tests v6.0</h1>
 <div class="sub">RUN_ID · ledger · egne fixtures · realtime · soft-fail · force cleanup · v8.17 schema · client-side privacy</div>
 
 <div class="card">
@@ -107,8 +107,8 @@ var res=[],total=0,done=0,pass=0,fail=0,warns=0;
 var L={
   messages:[],bubbleMessages:[],savedContacts:[],profileViews:[],
   memberships:[],bubbles:[],profileRestores:[],subscriptions:[],
-  invitations:[],posts:[],reactions:[],
-  reset:function(){this.messages=[];this.bubbleMessages=[];this.savedContacts=[];this.profileViews=[];this.memberships=[];this.bubbles=[];this.profileRestores=[];this.subscriptions=[];this.invitations=[];this.posts=[];this.reactions=[]}
+  invitations:[],posts:[],reactions:[],pushSubs:[],
+  reset:function(){this.messages=[];this.bubbleMessages=[];this.savedContacts=[];this.profileViews=[];this.memberships=[];this.bubbles=[];this.profileRestores=[];this.subscriptions=[];this.invitations=[];this.posts=[];this.reactions=[];this.pushSubs=[]}
 };
 var FIX={pub:null,priv:null,evt:null,hid:null}; // fixture bubble IDs
 
@@ -117,7 +117,7 @@ function sbFor(w){return w==='B'?sbB:sbA}
 // ══════════════════════════════════════
 //  UI HELPERS
 // ══════════════════════════════════════
-function mkClient(){_cc++;return supabase.createClient(SB_URL,SB_KEY,{auth:{storageKey:'sb-v4-'+_cc,persistSession:false}})}
+function mkClient(){_cc++;return supabase.createClient(SB_URL,SB_KEY,{auth:{storageKey:'sb-v6-'+_cc,persistSession:false}})}
 function tag(s){return'['+RUN_ID+'] '+s}
 function hasTag(s){return s&&s.indexOf(RUN_ID)>=0}
 
@@ -725,9 +725,9 @@ async function testV817Schema(){
   sec('🆕 gif_url on bubble_messages');
   // Insert message with gif_url
   var {data:gm,error:gmE}=await sbA.from('bubble_messages').insert({
-    bubble_id:FIX.pub,user_id:userA.id,content:tag('gif_test'),gif_url:'https://media.tenor.com/test.gif'
+    bubble_id:FIX.pub,user_id:userA.id,content:tag('gif_test'),gif_url:'https://media.giphy.com/test.gif'
   }).select('id,gif_url').single();
-  ok('Bubble msg med gif_url',!!gm&&gm.gif_url==='https://media.tenor.com/test.gif',gmE?gmE.message:'OK');
+  ok('Bubble msg med gif_url',!!gm&&gm.gif_url==='https://media.giphy.com/test.gif',gmE?gmE.message:'OK');
   if(gm) L.bubbleMessages.push({id:gm.id,client:'A'});
 
   sec('🆕 Bubble message reactions (profile FK)');
@@ -756,6 +756,36 @@ async function testV817Schema(){
       L.reactions=L.reactions.filter(function(r){return r.id!==rx.id});
     }
   }
+
+  // ── Maj 2026 kontrakt-tests ──
+  sec('🆕 gif_url on messages (DM) — regression maj 2026');
+  // Regression for DM GIF-bug: messages-tabellen manglede gif_url-kolonnen
+  var {data:dgm,error:dgmE}=await sbA.from('messages').insert({
+    sender_id:userA.id,receiver_id:userB.id,content:'',
+    gif_url:'https://media.giphy.com/test.gif',file_url:'https://media.giphy.com/test.gif',
+    file_name:'gif.gif',file_type:'image/gif'
+  }).select('id,gif_url').single();
+  ok('DM med gif_url (kolonne findes)',!!dgm&&dgm.gif_url==='https://media.giphy.com/test.gif',dgmE?dgmE.message:'OK');
+  if(dgm) L.messages.push({id:dgm.id,client:'A'});
+
+  sec('🆕 push_events locked down (RLS — kun service_role)');
+  // push_events skal være util for authenticated brugere (diagnose-log med modtager-info)
+  var {error:peErr}=await sbA.from('push_events').insert({event_type:tag('smoke'),recipient_user_id:userA.id,source:'frontend',status:'sent'});
+  ok('push_events insert nægtet for authenticated (forventet)',!!peErr,peErr?'blokeret ✓ ('+peErr.message.slice(0,40)+')':'UVENTET: insert tilladt');
+  var {data:peR}=await sbA.from('push_events').select('id').limit(1);
+  ok('push_events ikke læsbar for authenticated',(!peR||peR.length===0),'rows synlige: '+(peR?peR.length:0));
+
+  sec('🆕 Push endpoint eviction (ét endpoint = én bruger)');
+  // Trigger trg_evict_stale_push_endpoint: ny brugers subscription på samme endpoint fjerner gammel
+  var testEp='https://smoke.test/ep/'+RUN_ID;
+  var {error:paErr}=await sbA.from('push_subscriptions').insert({user_id:userA.id,endpoint:testEp,p256dh:'smoke',auth:'smoke'});
+  ok('A subscription oprettet',!paErr,paErr?paErr.message:'OK');
+  var {error:pbErr}=await sbB.from('push_subscriptions').insert({user_id:userB.id,endpoint:testEp,p256dh:'smoke',auth:'smoke'});
+  ok('B subscription oprettet (samme endpoint)',!pbErr,pbErr?pbErr.message:'OK');
+  if(!pbErr) L.pushSubs.push({endpoint:testEp,client:'B'});
+  // A bør nu være evicted af triggeren
+  var {data:aSubs}=await sbA.from('push_subscriptions').select('id').eq('endpoint',testEp);
+  ok('A evicted efter B login (trigger virker)',(!aSubs||aSubs.length===0),'A rækker tilbage: '+(aSubs?aSubs.length:0));
 }
 
 // ══════════════════════════════════════
@@ -823,6 +853,11 @@ async function cleanupAll(){
   var invErrs=0;
   for(var i=0;i<L.invitations.length;i++){var inv=L.invitations[i];var {error}=await sbFor(inv.client).from('bubble_invitations').delete().eq('id',inv.id);if(error)invErrs++}
   if(L.invitations.length) ok('Invitations slettet ('+L.invitations.length+')',invErrs===0,invErrs?invErrs+' fejl':'OK');
+
+  // Push subscriptions (test endpoints)
+  var psErrs=0;
+  for(var i=0;i<L.pushSubs.length;i++){var ps=L.pushSubs[i];var {error}=await sbFor(ps.client).from('push_subscriptions').delete().eq('endpoint',ps.endpoint);if(error)psErrs++}
+  if(L.pushSubs.length) ok('Push subs slettet ('+L.pushSubs.length+')',psErrs===0,psErrs?psErrs+' fejl':'OK');
 
   // Error log (best effort)
   await sbA.from('error_log').delete().eq('user_id',userA.id).ilike('context','%'+RUN_ID+'%');
