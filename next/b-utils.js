@@ -929,10 +929,7 @@ var dbActions = {
       var { data, error } = await sb.from('messages').insert(payload).select().single();
       if (error) { errorToast('send', error); return { ok: false, error: error }; }
       trackEvent('dm_sent', { receiver_id: receiverId, has_file: !!opts.fileUrl, has_gif: !!opts.gifUrl });
-      // Push notification to receiver
-      var senderName = currentProfile?.name || 'Nogen';
-      var preview = content ? content.slice(0, 60) : (opts.gifUrl ? 'Sendte en GIF' : 'Sendte en fil');
-      sendPush(receiverId, 'Ny besked', senderName + ': ' + preview, { type: 'new_message', sender_id: currentUser.id });
+      // Push håndteres nu af backend-trigger notify_new_message (ADR-006 trin 4)
       return { ok: true, message: data };
     } catch (e) { logError('dbActions.sendDM', e); errorToast('send', e); return { ok: false, error: e }; }
   },

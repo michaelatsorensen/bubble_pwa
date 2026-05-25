@@ -2184,7 +2184,7 @@ async function sendBubbleInvites() {
         try {
           sb.channel('member-notify-' + uid).send({ type: 'broadcast', event: 'invite', payload: { bubbleName: bubbleName, senderName: senderName, bubbleId: inviteBubbleId } });
         } catch(e2) {}
-        sendPush(uid, 'Invitation', senderName + ' inviterede dig til ' + bubbleName, { type: 'invitation', bubble_id: inviteBubbleId });
+        // Push håndteres nu af backend-trigger notify_bubble_invite (ADR-006 trin 4)
       });
     }
 

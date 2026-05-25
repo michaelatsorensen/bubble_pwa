@@ -285,10 +285,7 @@ async function sendMessage() {
           try { chatSubscription.send({ type: 'broadcast', event: 'new_message', payload: newMsg }); } catch(e) { logError("dm:new_message_broadcast", e); }
         }
         trackEvent('message_sent', { type: 'dm' });
-        // Push notification to recipient
-        var senderName = currentProfile?.name || 'Nogen';
-        var preview = content ? content.slice(0, 60) : '';
-        sendPush(currentChatUser, 'Ny besked', senderName + ': ' + preview, { type: 'new_message', sender_id: currentUser.id });
+        // Push håndteres nu af backend-trigger notify_new_message (ADR-006 trin 4)
       }
     }
   } catch(e) { logError("sendMessage", e); errorToast("send", e); }
@@ -302,8 +299,7 @@ async function sendDirectMessage(toId, content) {
       receiver_id: toId,
       content
     });
-    var senderName = currentProfile?.name || 'Nogen';
-    sendPush(toId, 'Ny besked', senderName + ': ' + (content ? content.slice(0, 60) : ''), { type: 'new_message', sender_id: currentUser.id });
+    // Push håndteres nu af backend-trigger notify_new_message (ADR-006 trin 4)
   } catch(e) { logError("sendDirectMessage", e); errorToast("send", e); }
 }
 
@@ -360,8 +356,7 @@ async function dmHandleFile(input) {
       const el = document.getElementById('chat-messages');
       dmReduceMsg(newMsg);
       showToast(t('toast_sent'));
-      var senderName = currentProfile?.name || 'Nogen';
-      sendPush(currentChatUser, 'Ny besked', senderName + ': Sendte en fil', { type: 'new_message', sender_id: currentUser.id });
+      // Push håndteres nu af backend-trigger notify_new_message (ADR-006 trin 4)
     }
     input.value = '';
   } catch(e) { logError("dmHandleFile", e); errorToast("upload", e); }
