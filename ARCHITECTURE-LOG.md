@@ -550,4 +550,20 @@ Det her er **det vigtigste dokument** for at gøre native-rewrite effektiv. Inve
 
 ---
 
+### 🟢 GENBRUGES — Push endpoint = én bruger (cross-user fix, maj 2026)
+
+**Dato tilføjet:** Maj 2026
+
+**Hvad:** Strukturel fix af tilbagevendende cross-user push-bug. UNIQUE(user_id, endpoint) tillod ét fysisk endpoint at tilhøre flere brugere → forrige brugers notifikationer landede hos ny bruger på samme enhed (verificeret: 4 brugere på ét iPhone-endpoint i prod).
+
+**Rod (verificeret, IKKE som først antaget):** Vi havde set en lignende bug før og antog "logout-cleanup mangler igen". Verifikation viste at logout-fixet FANDTES i NEXT — roden var login-side: constraint tillod flere ejere, og RLS (`auth.uid()=user_id` ALL) blokerede klienten fra at rydde anden brugers række. **Læring: verificér roden selv når bug'en føles bekendt — vi havde ellers fikset det forkerte sted igen.**
+
+**Fix (server-side, RLS-sikker):** BEFORE INSERT trigger `trg_evict_stale_push_endpoint` (SECURITY DEFINER) sletter andre brugeres rækker for samme endpoint ved ny subscription. Migration: `migrations/2026-05_push-endpoint-eviction.sql`.
+
+**Hvorfor trigger (vs ADR-006 minimér-triggers):** Dette er en **data-integritets-trigger** (håndhæver invariant "ét endpoint = én bruger"), ikke en side-effekt/notifikations-trigger. Kan ikke udtrykkes som simpel UNIQUE (vi vil slette gammel, ikke afvise ny) og klienten kan ikke gøre det pga RLS. Legitim trigger-brug. Registreret her så den er kendt.
+
+**Hvorfor genbruges:** Native arver samme push_subscriptions-tabel. Invarianten "seneste login ejer endpointet eksklusivt" + den robuste server-side håndhævelse (afhænger ikke af at logout kører) porteres direkte. Logout-cleanup er nu kun en optimering, ikke den eneste vagt.
+
+---
+
 *Logbog vedligeholdt løbende. Sidste opdatering: Maj 2026.*
