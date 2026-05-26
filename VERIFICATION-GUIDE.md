@@ -509,13 +509,14 @@ Min vurdering:
 
 **Q-053 — sendPush IKKE dead code:** 9 aktive kaldesteder i NEXT (beskeder 3×, invitation, join-anmodning, godkendt 2×, check-in). Sender user_id korrekt. Fejl kun til console (tavse for bruger). Saved-contact udkommenteret.
 
-**Q-055 — Hardcodede secrets (KRITISK):**
-- notify_* (3 funktioner): sb_secret_QJ... hardcoded
-- trigger_push_on_message: FULD service-role JWT i klartekst → SKAL ROTERES (kompromitteret)
-- trigger_push_on_invite: placeholder Bearer DIN_SERVICE_ROLE_KEY (har aldrig virket)
-- notify_new_message: korrekt (user_id) MEN ikke koblet til nogen trigger = død kode
+**Q-055 — Hardcodede secrets (OPDATERET maj 2026, post ADR-006 trin 2):**
+- ✅ `trigger_push_on_message`: SLETTET i trin 2 — den fulde legacy service-role JWT er dermed FJERNET fra databasen. Den reelle eksponering er lukket.
+- ✅ `trigger_push_on_invite`: SLETTET i trin 2 (placeholder, virkede aldrig).
+- ✅ `notify_new_message`: nu KOBLET til `on_new_message_push` (ikke længere død kode). DM-push virker backend, verificeret via push_events.
+- ⏳ TILBAGE: `notify_new_message` + `notify_bubble_invite` + `notify_contact_saved` har stadig `sb_secret_QJ...` hardcodet i funktionskroppen. Synlig KUN for DB-admin, IKKE i repo (verificeret: kun afkortet reference i docs). Hygiejne, ikke aktiv brand.
+- **Trin 5 (åben):** Vej A = test om edge behøver Authorization-header (--no-verify-jwt → måske ikke); hvis ikke, fjern secret helt. Vej B = Vault hvis headeren er nødvendig. Test forberedt, afventer PC.
 
-**Q-054 — Observability:** INGEN dedikeret push-delivery-logging. Tabeller: push_subscriptions (endpoints), error_log (generel). Forklarer hvorfor trigger_push_on_message har fejlet tavst uopdaget. error_log kan genbruges til push-fejl.
+**Q-054 — Observability:** ✅ LØST i trin 1. `push_events`-tabel (event_type, recipient_user_id, source, status, sent_count, error) + edge v2 logger best-effort ved hver exit. Afslørede de tavse fejl (new_invite → invalid → user_id required) og double-fire direkte. (Historisk: tidligere var der INGEN dedikeret push-delivery-logging, hvilket forklarede hvorfor trigger_push_on_message fejlede tavst uopdaget.)
 
 ### Faktisk produktions-adfærd NU:
 - **Beskeder:** trigger fejler (recipient_id) → kun frontend sendPush leverer = 1 push

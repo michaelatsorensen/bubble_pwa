@@ -629,27 +629,28 @@ After consolidation + push strategy, stram `dbActions.sendDM()` to discriminated
 
 #### Implementerings-sekvens — "Close ADR-006: make push backend-owned and observable"
 
-> **Dette er næste session-fokus.** Afgrænset, færdiggørbar. Lukker native gate 1.
-> PC-arbejde (SQL + edge deploy). Når trin 0-5 er gjort og verificeret, kan native vertical slice starte.
+> **STATUS maj 2026: trin 0-4 GJORT og verificeret. Trin 5 (Vault) åben — ikke gate.**
+> Native gate 1 er reelt lukket: push er backend-ejet, observerbart, NEXT uden dubletter.
 
-**0. VERIFICÉR NUVÆRENDE STATE FØRST (ikke valgfrit).**
-Push-tilstanden har drevet over flere sessioner — antagelser er farlige (lektie maj 2026: cross-user/GIF/reconnect-bugs havde alle forkert *antaget* rod). Verificér mod virkeligheden før noget røres: aktuelle triggers + hvilke funktioner de kalder, edge function version (v1 vs v2 deployed?), om `push_events` allerede findes/fylder, og de aktuelle frontend `sendPush` call sites. Byg fix mod den verificerede tilstand, ikke mod hukommelsen.
+**0. ✅ VERIFICÉR NUVÆRENDE STATE — GJORT.**
+Verificeret mod virkeligheden: 5 triggers fundet, funktions-kroppe inspiceret. Bekræftede at `notify_new_message` fandtes korrekt men UKOBLET, `trigger_push_on_message` brugte recipient_id + legacy-JWT, `trigger_push_on_invite` var placeholder + double-fire. `push_events` fandtes ikke endnu. (Lektie holdt: antag ikke — flere bugs i dag havde forkert antaget rod.)
 
-**1. Deploy observability FØRST.**
-`push_events`-migration + edge v2 (parser `source`, logger ved hver exit). Princip: synlighed før kompleksitet — vi vil kunne *se* hvad reparationen gør.
+**1. ✅ Deploy observability — GJORT.**
+`push_events` + edge v2 deployet. Verificeret: loggen fangede straks de tavse fejl (`new_invite → invalid → user_id required`) og double-fire. Synlighed før kompleksitet betalte sig.
 
-**2. Reparér trigger-routing.**
-Kobl korrekt funktion på (`on_new_message_push` → `notify_new_message`), fix `recipient_id → user_id` i de to brudte, tilføj `source='trigger'`, slet døde triggers (`trigger_push_on_message`, `trigger_push_on_invite`). SQL bygges i sessionen MOD den verificerede tilstand fra trin 0.
+**2. ✅ Reparér trigger-routing — GJORT.**
+`on_new_message_push` koblet til `notify_new_message`, `source='trigger'` tilføjet, `trigger_push_on_message` + `trigger_push_on_invite` slettet (legacy-JWT fjernet som sidegevinst), `on_contact_saved_push` disabled. Ren trigger-liste: 3 canonical tilbage.
 
-**3. Verificér faktisk delivery via push_events.**
-Ikke "ingen fejl" — synlig `status` (sent/failed), ikke tavst 400. Dette er hvor observability-først betaler sig.
+**3. ✅ Verificér delivery — GJORT.**
+push_events viste `new_message | source: trigger | sent | 2 enheder`. Ikke længere `invalid`. Synligt bekræftet.
 
-**4. Fjern frontend `sendPush`** for de typer triggers nu dækker.
-Dette fjerner "frontend-authoritative"-risikoen (review-fund). Native arver så et rent backend-ejet push-system.
+**4. ✅ Fjern frontend `sendPush` (v8.44) — GJORT.**
+Fjernet for new_message (4 sites) + invitation (1 site). Behold approved/checkin/join_request (ingen backend-trigger — frontend-drevne, post-pilot kandidater). Den "double-fire" på telefonen var PROD-genvejen (gammel kode) parallelt mod samme DB — NEXT var ren.
 
-**5. Backend smoke + manuel push sanity** (+ Vault for secrets, kan udskydes).
+**5. ⏳ Vault for secrets — ÅBEN (ikke gate).**
+Legacy-JWT allerede væk (slettet i trin 2). Tilbage: `sb_secret_QJ...` hardcodet i 3 funktionskroppe — admin-only synlig, ikke i repo. Vej A (test om edge behøver Authorization-header → fjern secret) forberedt; Vej B (Vault) som fallback. Afventer PC.
 
-**Afgrænsning:** Playwright/chaos er IKKE denne session. Nøgle-migration er ikke gaten. GDPR (Q-062) og privacy (Q-063) er separate arbejdspakker. Native vertical slice starter FØRST efter push ownership er ryddet.
+**Afgrænsning:** Playwright/chaos er separat (Q-064). Nøgle-migration er ikke gaten. GDPR (Q-062) og privacy (Q-063) er separate arbejdspakker.
 
 ---
 
