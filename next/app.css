@@ -793,8 +793,9 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 .thread-input { flex:1; background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.1); border-radius:var(--radius-pill); padding:0.4rem 0.75rem; font-size:0.75rem; font-family:'Figtree',sans-serif; color:rgba(255,255,255,0.9); outline:none; }
 
 /* ── BUBBLE UP ── */
-.bubble-up-btn { width:100%; padding:0.65rem 1rem; border-radius:var(--radius-sm); background:rgba(124,92,252,0.06); border:1px dashed rgba(124,92,252,0.35); color:var(--accent); font-size:0.82rem; font-family:'Figtree',sans-serif; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem; transition:all 0.2s; }
-.bubble-up-btn:hover { border-color:rgba(124,92,252,0.4); }
+/* Isblå CTA (design v6: isblå = handling/CTA, lilac udfaset). Tekst rgb(70,150,210) = guidens isblå-primær på lys. */
+.bubble-up-btn { width:100%; padding:0.65rem 1rem; border-radius:var(--radius-sm); background:rgba(100,180,230,0.12); border:1px dashed rgba(100,180,230,0.45); color:rgb(70,150,210); font-size:0.82rem; font-family:'Figtree',sans-serif; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem; transition:all 0.2s; }
+.bubble-up-btn:hover { border-color:rgba(100,180,230,0.6); }
 .bubble-up-confirm { background:var(--n3-card); border:0.5px solid var(--border-1); border-radius:var(--radius); padding:1rem; text-align:center; }
 .bubble-up-confirm-name { font-size:0.95rem; font-weight:700; margin-bottom:0.15rem; }
 .bubble-up-confirm-text { font-size:0.72rem; color:rgba(255,255,255,0.5); margin-bottom:0.75rem; }
