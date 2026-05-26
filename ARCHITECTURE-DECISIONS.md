@@ -866,3 +866,51 @@ These have lead times independent of code:
 
 ---
 
+### ADR-008: Lilac token migration — structural, role-based (PLAN)
+
+**Status:** PROPOSED (plan, ikke eksekveret) · maj 2026
+**Kontekst:** Design-konsistens, IKKE en native-gate. Eksekveres efter ADR-006.
+
+#### Problem
+
+`--accent: #7C5CFC` (lilac) og `--gradient-primary` er stadig lilla-baserede. Design v6 (DESIGN-GUIDE) udfasede lilla *som CTA* — men selve tokens er uændrede. Resultat: al kode der bruger `var(--accent)` genskaber lilla, og vi har rettet kontrast-bugs symptom-for-symptom (bubble-up v8.45, join-knap, "Opret event"...). Det er whack-a-mole, fordi roden — tokenets betydning — aldrig blev ændret.
+
+Scan (maj 2026): ~179 lilla-forekomster. Fordeling efter rolle: ~9 identitet/avatar, ~47 gradient, ~33 tekst-farve, ~62 border, ~75 bg-fill, ~12 shadow (tal overlapper).
+
+#### Beslutning
+
+**Omdefiner IKKE `--accent` globalt til isblå.** Det ville bryde kontekster hvor lilla virker (mørke skærme: onboarding #170F34) og identitets-farver (avatarer). At trække i én tråd og håbe = ny kontrast-bug et andet sted.
+
+I stedet: **semantiske tokens + migrér per ROLLE, kontrast-verificeret per visning.**
+
+- `--cta` = isblå (handling/CTA) — guidens regel. Tekst-på-lys = `rgb(70,150,210)`.
+- Lilla beholdes KUN som identitet/dekoration (avatarer, prikker), ikke som handling.
+- Gradient (logo + btn-primary/accent) = separat beslutning (gradient = logo-only er sit eget drift-item).
+
+Princippet: ændr tokenets *betydning*, og migrér brug for brug — aldrig bulk-erstat efter farve.
+
+#### Roller (fra scan)
+
+1. **Identitet/dekoration** (avatarer, prikker, fx b-boot.js:335 dotCol, notif-avatarer): BEHOLD lilla. Ikke handling, ikke kontrast-kritisk.
+2. **Gradient** (`--gradient-primary`, .btn-primary ×14, .btn-accent ×3, notif-avatarer): SEPARAT. Hvid tekst på gradient er læsbar; afvigelsen er "gradient = logo-only", ikke kontrast. Egen sub-beslutning.
+3. **Handling/CTA** (lilla tekst/border/bg på interaktive elementer): MIGRÉR til `--cta`. Her bor bugs.
+4. **Subtile dekorative tints** (border/bg rgba 0.06-0.18, mange i mørke modaler): mest BEHOLD/neutralisér — lav risiko.
+
+#### Faser (eksekvering, IKKE nu)
+
+- **Fase 0:** Definér tokens. `--cta-bg`/`--cta-border` findes allerede; tilføj `--cta-text-light: rgb(70,150,210)`. Overvej at omdøbe identitets-lilla til `--identity` så intent er eksplicit (forhindrer fremtidig CTA-misbrug).
+- **Fase 1:** Migrér bekræftede handling-på-lys: bubble-up (✅ v8.45), bubbles-toggle (b-bubbles.js:794), "Opret event" (b-chat.js:897).
+- **Fase 2:** Gennemgå de ~33 tekst-farve-brug: klassificér handling vs dekoration, migrér handling, verificér kontrast mod hver visnings baggrund (lys #F0EEF5 vs mørk chrome).
+- **Fase 3:** Gradient-beslutning (btn-primary/accent): behold for logo, beslut for knapper. Egen vurdering pga ~17+ brug.
+- **Fase 4:** Visuel QA per skærm (lys + mørk) — bekræft ingen kontrast er svækket.
+
+#### Verifikation (kravet fra Michael)
+
+Hver migration holdes op mod den faktiske visning: er baggrunden lys eller mørk? Holder kontrasten? Ingen bulk-ændring uden kontekst-tjek. Det er forskellen på at rette roden klogt vs. at bytte én bug for flere.
+
+#### Afgrænsning
+
+Design-konsistens, ikke native-blocker. Identitets-lilla og gradient-logo BEVARES. Eksekveres som fokuseret session efter ADR-006 er lukket. Whack-a-mole stopper når Fase 0-2 er gjort (tokenet bærer da korrekt betydning).
+
+---
+
