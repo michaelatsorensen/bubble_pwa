@@ -915,3 +915,62 @@ Design-konsistens, ikke native-blocker. Identitets-lilla og gradient-logo BEVARE
 
 ---
 
+### ADR-009: Pending request lifecycle — withdrawable actions between users
+
+**Status:** ACCEPTED (besluttet maj 2026) · build planlagt
+**Beslutning af:** Michael
+
+#### Princip
+
+> Enhver handling hvor én bruger pålægger en anden bruger ansvar eller adgang skal kunne være **pending** og kunne **trækkes tilbage**.
+
+Det er governance, ikke UX-detalje. To konkrete anvendelser nu; admin-roller måske senere. Vi bygger IKKE en generisk "pending actions engine" — princippet er fælles, implementeringen forbliver konkret per tilfælde (undgår præmatur abstraktion).
+
+#### Problem
+
+To steder bryder princippet i dag:
+1. **Invitationer** har pending (accept/afvis findes) men kan IKKE trækkes tilbage af afsender. Hul: afsender der inviterer forkert person kan ikke fortryde.
+2. **Ejerskabsoverdragelse er ØJEBLIKKELIG.** `transferBubble` kører `UPDATE bubbles SET created_by=X` straks ved bekræftelse. Den nye ejer accepterer ikke — de notificeres blot. Det gør overdragelse til en **énvejsdør**: i det øjeblik du overdrager, mister du ejerskabet og kan ikke trække tilbage eller vælge en anden — kun den nye ejer kan overdrage videre. Hvis modtageren ikke er klar/reagerer, sidder afsenderen fast.
+
+#### Beslutning A — Invitations-tilbagekald
+
+- UI: invite-modalens "Afventer"-række (b-bubbles.js:2131) gøres fuldt læsbar (ikke nedtonet) + tekstknap "Tilbagekald" (variant A fra mockup). Farve besluttes (blød rød vs neutral) ved build.
+- Handling: **slet** invitations-rækken (ikke ny status). Matcher "det var en fejl, lad som om det ikke skete" — modtagerens notifikation forsvinder bare.
+- RLS: afsender (`from_user_id = auth.uid()`) skal kunne DELETE sin egen pending invitation. Verificér policy findes; tilføj hvis ikke.
+- Realtime: hvis modtager har notifikationen åben, fjernes den ideelt via realtime — acceptabel kant hvis ikke.
+
+#### Beslutning B — Ejerskab bliver request-baseret
+
+**Datamodel: kolonne på `bubbles`** (ikke separat tabel — matcher "ingen generisk engine"-grænsen, én pending overdragelse per boble ad gangen er korrekt begrænsning):
+- `pending_owner_id uuid NULL` (FK profiles)
+- `pending_owner_requested_at timestamptz NULL`
+
+**KRITISK INVARIANT:** `created_by` ændres ALDRIG før accept. Mens overdragelsen pender er den oprindelige ejer **stadig fuld ejer** — det er hele pointen (ingen énvejsdør). Modellen skal garantere dette.
+
+**Livscyklus:**
+1. **Anmod** (ejer): `UPDATE bubbles SET pending_owner_id=X, pending_owner_requested_at=now() WHERE created_by=auth.uid()`. Notificér modtager (broadcast + push, genbrug invite-mønster).
+2. **Træk tilbage** (ejer, mens pending): `UPDATE bubbles SET pending_owner_id=NULL, pending_owner_requested_at=NULL WHERE created_by=auth.uid()`.
+3. **Afvis** (modtager): rydder pending-felterne. Via SECURITY DEFINER RPC `decline_ownership(bubble_id)` der tjekker `auth.uid()=pending_owner_id`.
+4. **Accept** (modtager): den privilegerede, atomiske swap. SECURITY DEFINER RPC `accept_ownership(bubble_id)`: tjekker `auth.uid()=pending_owner_id`, sætter `created_by=pending_owner_id`, rydder pending-felter — alt i én transaktion. RPC frem for løs RLS, så ingen ikke-ejer nogensinde kan sætte `created_by` direkte.
+
+**RLS:** anmod/træk-tilbage = ejer-only direkte UPDATE (`created_by=auth.uid()`, og `with_check` forhindrer at ændre `created_by` ad den vej). Accept/afvis = via RPC (SECURITY DEFINER, tjekker pending_owner_id). Aldrig løs nok til at en ikke-ejer kan røre `created_by`.
+
+**Kant-tilfælde at håndtere:**
+- Modtager forlader/fjernes fra boblen mens pending → ryd pending.
+- Boble slettes → moot (kolonner forsvinder med rækken).
+- Ejer prøver at overdrage til en der ikke er medlem → bør blokeres (kun medlemmer kan modtage, som i dag).
+- Kun én pending overdragelse ad gangen (kolonne-model håndhæver det naturligt).
+
+**Frontend-ændring:** `transferBubble` (b-utils.js:1084) deles op: `requestOwnershipTransfer` (sætter pending) erstatter den øjeblikkelige `UPDATE created_by`. Ny accept/afvis-UI hos modtager (genbrug notifikations-/invite-mønster). Ny "Afventer overdragelse — Træk tilbage"-tilstand hos afsender.
+
+#### Build-rækkefølge
+
+1. **Invitations-tilbagekald** (lille: UI + delete + RLS-tjek). Lavthængende, pending findes allerede.
+2. **Ejerskab request-flow** (større: migration for kolonner + 2 RPC'er + RLS + frontend-split + modtager-UI). Bygges på modellen ovenfor.
+
+#### Afgrænsning
+
+Ingen generisk pending-engine. Admin-rolle-tildeling kan følge samme princip senere, men er IKKE i scope nu. Dette er produkt-governance, ikke en native-gate — men det forbedrer en kontrakt native arver (ejerskab-livscyklus).
+
+---
+
