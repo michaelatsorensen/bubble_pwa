@@ -76,3 +76,20 @@ Følgende failure modes er allerede dokumenteret og bør migreres til TD-format 
 ---
 
 *Sidst opdateret: 18. maj 2026*
+
+---
+
+## Opdatering 28. maj 2026
+
+### ✅ LØST — push-gæld (ADR-006 lukket)
+Hele push-tabellen ovenfor er adresseret af ADR-006: hardcodede secrets fjernet (Vej A — header unødvendig pga --no-verify-jwt, ingen Vault), recipient_id→user_id fikset, dobbelt-triggers konsolideret (3 canonical tilbage), push_events observability bygget, frontend sendPush fjernet for trigger-dækkede typer. Push er nu backend-ejet + observerbart.
+
+### Nye poster
+
+| Post | Priority | Note |
+|---|---|---|
+| Invite-modal live-refresh | **P3** | Afsenders åbne invite-modal opdaterer ikke "Afventer" når modtager afviser et andet sted. Luk+åbn fikser det. Bevidst udskudt (ADR-009) — sjælden kant, realtime-kompleksitet dårlig bytte. Byg kun hvis pilot viser det generer. |
+| Dobbelt DELETE-policy på bubble_invitations | **P3** | "Owner can delete invitations" + "bubble_invitations_delete" overlapper (begge tillader sletning, OR-baseret = harmløs redundans). Ryd op ved generel policy-oprydning. |
+| ADR-009 punkt 2 — ejerskab request-flow | **(feature, ikke debt)** | Migration (pending_owner kolonner) + 2 RPC'er (accept/afvis) + frontend-split + modtager-UI. Besluttet, ikke bygget. |
+
+*Sidst opdateret: 28. maj 2026*
