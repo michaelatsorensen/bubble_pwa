@@ -23,11 +23,11 @@
 
 | Idé | Status | Note |
 |---|---|---|
-| **Live-first prioritering** | 💬 Diskuteret (anbefalet først) | Sortér home/bobler efter live-aktivitet, ikke statisk medlemstal. "3 live lige nu" m/ pulserende dot føles levende ved få brugere. Bruger eksisterende `checked_in_at`. Lille ændring, stor effekt. **Bør verificeres om bygget.** |
+| **Live-first prioritering** | ✅ delvist (verificeret) | Live-presence + live-banner bygget (`liveCount`, `appMode.set('live')`, home-live-banner). MEN eksplicit *sortering* af boble-listen efter live-antal er ikke bekræftet i koden — kan stadig være statisk medlemstal-sortering. Verificér/byg selve sorteringen. |
 | **Explore Bubbles (topic → bubble → people)** | 💬 Diskuteret (v2.5) | Discovery via bobler ("gå ind i et rum") frem for ren tag-søgning. Infrastruktur findes (bobler m/ tags, medlemmer, presence) — mangler discovery-overflade. |
 | **Community graph (person → boble → boble → person)** | 💬 Diskuteret (v3+) | Discovery-paths gennem netværket. Den langsigtede "community-discovery platform"-vision. |
-| **Match-forklaringer** | 💬 Diskuteret | "3 fælles interesser: cleantech, energy, bæredygtighed" under match-label. ~20 linjer kode, stort UX-løft. **Bør verificeres om bygget.** |
-| **Match scoring v3 (tier-baseret)** | 💬 Diskuteret | Erstatning for TF-IDF: sektor-overlap, livsfase, tag-cluster, shared bubbles, cross-match, completeness-bonus. **Memory siger v2 TF-IDF+sigmoid er aktiv — afklar om v3 blev implementeret.** |
+| **Match-forklaringer** | ✅ Bygget (verificeret) | `sharedTags` vises som chips under match i home (b-home.js:2024) + shared_interest i radar/profil. BEMÆRK: bruger deprecated lilla (`var(--accent)`) — hører under ADR-008. |
+| **Match scoring v3 (tier-baseret)** | ✅ Bygget (verificeret) | b-radar.js: "SMART MATCH ALGORITHM (v3 — Tier-based) — Replaces TF-IDF". 5 tiers + completeness, cap 25, common tags belønnes. **Hukommelse rettet (sagde fejlagtigt v2 TF-IDF).** |
 
 ## Engagement & onboarding
 
@@ -35,7 +35,7 @@
 |---|---|---|
 | **Profil-styrke gamification** | ✅ delvist | "Styrk din profil" m/ belønningsbeskeder ("Tilføj titel → unlock 5+ matches"). Profil-styrke meter findes. |
 | **Social proof før signup** | ⏸️/❌ | "238 professionelle bruger Bubble" + anonymiserede profil-kort før signup. `screen-social-proof` blev dead code (onboarding forenklet til hurtigst muligt ombord). Kan genovervejes. |
-| **Event-aware home banner** | 💬 Diskuteret | "Du er til TechBBQ · 12 personer her · 3 stærke matches". **Bør verificeres om bygget.** |
+| **Event-aware home banner** | 💬 Diskuteret — IKKE bygget (verificeret) | "Du er til TechBBQ · 12 personer her · 3 stærke matches". Ingen forekomst i koden. Reelt åben idé. |
 | **Event-mode radar (top 5 først)** | 💬 Diskuteret | Vis top 5 matches, resten bag "vis flere" i event-kontekst. **Bør verificeres.** |
 | **"Refresh members"-knap i live-view** | 💬 Diskuteret | Eksplicit safe fallback hvis realtime svigter. |
 
@@ -71,7 +71,7 @@
 
 - Split `openBubbleChat()` → `loadChatData()` + `subscribeChatRealtime()` (timing-risiko).
 - Badge dedup m/ `_localId` (ghost-badges). **Memory: dmReduceMsg/bcReduceMsg dedup bygget — afklar overlap.**
-- DM typing indicator + read receipts — nævnt i realtime-arkitektur, **verificér om bygget.**
+- DM typing indicator + read receipts — nævnt i realtime-arkitektur-doc, men **IKKE bygget** (verificeret: ingen typing/read_receipt/seen_at i b-chat.js/b-messages.js). Reel åben idé hvis ønsket.
 
 ---
 
