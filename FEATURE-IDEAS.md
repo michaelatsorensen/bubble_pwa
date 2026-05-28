@@ -77,3 +77,27 @@
 ---
 
 *Seedet 28. maj 2026 fra samtale-gennemgang (marts–maj). Flere "verificér om bygget"-poster bør tjekkes mod kodebasen og opdateres. Tilføj nye idéer her løbende.*
+
+---
+
+## Magnetisk dartskive — v1 spec (besluttet retning, maj 2026)
+
+Konvergeret efter prototype + to runder eksternt input. Status: retning besluttet, byg som egen fokuseret session (ikke v1 endnu).
+
+**Låst:**
+- **UI:** Tilgang B (segment-skifter "For mig | Jeg søger"), ét aktivt filter ad gangen. "+" folder filter ind/ud (eksisterende mekanik).
+- **Sortering: HÅRD.** Passer en profil ikke filteret, fises den HELT ud over kanten og væk. Vil man se vedkommende igen: tilbage til "Alle" eller vælg et filter de passer. (Besluttet for nu — revisitabel, Michael åben for andre modeller.)
+- **Feel:** Blød/glidende easing (exit ~650ms cubic-bezier(0.4,0,0.6,1), enter ~650ms cubic-bezier(0.25,0.9,0.4,1), move ~600ms cubic-bezier(0.4,0,0.2,1)).
+- **Motion-regel:** Ingen bevægelse uden betydning (guardrail mod UI-cirkus).
+- **Scope-regel:** Ét aktivt intent ad gangen. INGEN kombinationsfiltre i v1.
+- **Discovery-regel:** Chips er BREDE (sektorer), ikke præcise. Skal mappe til eksisterende scoring-taksonomi (sektorer/clusters/dynamic_keywords) — ALDRIG parallel ontologi.
+- **Intent-kilde:** Profil = baseline (`dynamic_keywords`), radar = live override.
+- **Eksplicit UDE af v1 re-score:** geo, activity, distance — kun intent driver re-scoring (undgå "AI sorting mystery machine").
+
+**Leaning (ikke låst — afklar før build):**
+- **Akse-asymmetri:** "For mig" = passivt medlemskabs-filter (ændrer hvem der vises, re-sorterer IKKE positioner). "Jeg søger" = aktiv re-scoring (reorganiserer hele relevans-rummet, intent magnetiseres mod centrum). Stærk mental model, men ikke endeligt bekræftet af Michael.
+
+**ÅBENT — vend tilbage:**
+- **Serendipitet:** Hård udrensning (valgt nu) vs tynd "halo" ved randen så radaren aldrig tømmes helt og bevarer uventede overlap. Michael usikker, holder åbent. Feel-tuning, ikke arkitektur — kan afgøres i prototype/pilot.
+
+**Teknisk forudsætning (verificeret):** `calcMatchScore(myProfile, theirProfile, sharedBubbleCount)` læser intent fra `myProfile.dynamic_keywords` (Tier 5 cross-match). Live override kræver lille udvidelse: lade funktionen tage live-intent (samme mønster som planlagt geo-`distanceKm`-argument).

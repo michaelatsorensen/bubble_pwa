@@ -1150,3 +1150,17 @@ Disse tre rammer ting vi faktisk har rørt. Udbyg kun hvis de beviser deres vær
 ---
 
 *Q-001 til Q-064 = 64 spørgsmål totalt. Q-014/019/023 VERIFIED, Q-062 GDPR-sletning, Q-063 privacy-kontrakt (native blocker), Q-064 test-strategi (pilot-hardening, ikke native-gate).*
+
+---
+
+## Q-065 — Magnetisk dartskive: serendipitet (hård udrensning vs halo)
+
+**Status:** ⏸️ ÅBENT — vend tilbage (Michael usikker, valgte hård for nu)
+
+Når et filter aktiveres på den magnetiske dartskive: skal ikke-match fises HELT ud (hård — valgt for nu), eller skal en tynd "halo" af ikke-match blive ved randen, så radaren aldrig tømmes helt og bevarer serendipitet ("hov, interessant menneske")? Eksternt input advarede mod tab af serendipitet/social støj ved for hård filtrering. Michael holder det åbent, åben for andre modeller. Feel-tuning, ikke arkitektur — kan afgøres i prototype eller pilot.
+
+## Q-066 — Magnetisk dartskive: akse-asymmetri (passiv filter vs aktiv re-score)
+
+**Status:** 💬 Leaning, ikke låst
+
+Forslag (fra eksternt input + Claude): "For mig" = passivt medlemskabs-filter (ændrer hvem, re-sorterer ikke), "Jeg søger" = aktiv re-scoring (reorganiserer relevans-rummet). Giver skarp mental model og beskytter mod "mystery machine" (kun én kraft re-scorer). Ikke endeligt bekræftet af Michael. Afklar før build.
