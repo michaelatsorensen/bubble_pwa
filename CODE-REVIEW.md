@@ -8,12 +8,12 @@
 
 ## P0 — kritiske (luk før bred launch / næste event)
 
-### P0.1 🔴 — logged-in `?event=join_code` resolver ikke → "Event ikke fundet"
+### P0.1 ✅ — logged-in `?event=join_code` resolver ikke → "Event ikke fundet"
 **Bekræftet:** b-boot.js:566. `checkGuestEventRoute()` logged-in gren gemmer RÅ `eventId` som `pending_join` uden resolution. Kun logged-out gren resolver via `.or('id.eq.X,join_code.eq.X')`. Senere slår `showDeepLinkModal('event', …)` kun op på `.eq('id', targetId)` → join_code (ikke-UUID) findes ikke.
 **Konsekvens:** Logged-in bruger åbner legitimt event-link med join_code → fejl. Rammer den primære growth-sti.
 **Fix:** Resolve join_code→bubble.id FØR `flowSet('pending_join', …)` også i logged-in grenen.
 
-### P0.2 🔴 — fejlet check-in åbner stadig eventchat (false continuity)
+### P0.2 ✅ — fejlet check-in åbner stadig eventchat (false continuity)
 **Bekræftet:** b-home.js:720 (medlem+live) og :740-748 (ikke-medlem+live). `openBubbleChat()` kører uanset `checkIn()`-resultat. Medlem+live-stien viser end ikke fejl ved mislykket check-in.
 **Konsekvens:** Bruger tror de er checket ind (chatten åbner), men backend-state siger nej.
 **Fix:** Ved fejlet check-in: vis retry/fejl, åbn IKKE chatten automatisk (eller åbn med tydelig "ikke checket ind"-tilstand).
@@ -22,7 +22,7 @@
 **Bekræftet:** b-utils.js:1087 `transferBubble` gør direkte `update({created_by})`. Envejsdør, ingen pending/accept/withdraw.
 **Status:** Adresseres af ADR-009 del 2 — backend-migration klar (adr009-ownership-migration.sql), frontend mangler.
 
-### P0.4 🔴 — realtime gen-tilslutter ikke ved app-resume (iOS PWA)
+### P0.4 ✅ — realtime gen-tilslutter ikke ved app-resume (iOS PWA)
 **Bekræftet:** b-boot.js:1018 visibilitychange→foreground opdaterer data men trigger ingen `rtReconnect()`. Reconnect sker kun på `online`/`CHANNEL_ERROR`. iOS dræber WebSockets i baggrunden uden at fyre dem. Resume-refresh dækker ikke chat-skærme.
 **Konsekvens:** Efter backgrounding midt i en chat streamer beskeder ikke ind. Rammer kerneoplevelsen ved events præcist.
 **Fix:** Foreground-gren: health-check + `rtReconnect()` hvis `_rtState !== 'connected'`; inkludér chat-skærme i resume-refresh.
@@ -31,11 +31,11 @@
 
 ## P1 — vigtige
 
-### P1.1 🔴 — contact deep-link tavs fejl
+### P1.1 ✅ — contact deep-link tavs fejl
 b-home.js:~588. Kontakt-`primaryFn`: ved `!result.ok` ingen fejl, `openPerson()` kører alligevel. Handling hedder "gem kontakt" men fejl ser ud som succes.
 **Fix:** Vis fejl, bliv i modal ved fejl.
 
-### P1.2 🔴 — OAuth-exchange-fejl uden brugerfeedback
+### P1.2 ✅ — OAuth-exchange-fejl uden brugerfeedback
 b-auth.js:~160. `exchangeCodeForSession` fanger fejl, logger kun, falder igennem til auth-skærm uden besked.
 **Fix:** Eksplicit fejl-besked ved exchange-failure.
 

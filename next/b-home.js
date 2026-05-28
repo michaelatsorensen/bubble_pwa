@@ -584,7 +584,10 @@ async function showDeepLinkModal(type, targetId) {
         primaryLabel: t('dl_save_contact') + ' →',
         primaryFn: async function() {
           var result = await dbActions.saveContact(targetId);
-          if (result.ok) showSuccessToast(t('toast_saved'));
+          // P1.1: saveContact already shows an error toast on failure. Don't proceed
+          // forward (openPerson) as if it succeeded — that's the false-continuity part.
+          if (!result.ok) return;
+          showSuccessToast(t('toast_saved'));
           openPerson(targetId, 'screen-home');
         }
       });
@@ -718,7 +721,13 @@ function _renderEventDeepLinkModal(opts) {
       primaryLabel = t('dl_check_in') + ' →';
       primaryFn = async function() {
         var r = await dbActions.checkIn(bubbleId);
-        if (r.ok) { showSuccessToast(t('toast_saved')); if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus(); }
+        if (!r.ok) {
+          // P0.2: failed check-in must NOT open the chat (false continuity).
+          showErrorToast(t('err_checkin_failed'));
+          return true; // keep modal open for retry
+        }
+        showSuccessToast(t('toast_saved'));
+        if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus();
         openBubbleChat(bubbleId, 'screen-home');
       };
       secondaryLabel = t('dl_see_info');
@@ -735,15 +744,16 @@ function _renderEventDeepLinkModal(opts) {
       var jr = await dbActions.joinBubble(bubbleId, 'invite_link');
       if (!jr.ok) {
         showErrorToast(t('err_join_failed'));
-        return;
+        return true; // keep modal open for retry
       }
       var cr = await dbActions.checkIn(bubbleId);
-      if (cr.ok) {
-        if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus();
-        showSuccessToast(jr.status === 'already_member' ? t('toast_already_member') : t('toast_joined'));
-      } else {
+      if (!cr.ok) {
+        // P0.2: joined, but check-in failed — don't open chat as if checked in.
         showWarningToast(t('err_checkin_failed'));
+        return true; // keep modal open; join is idempotent, retry only re-runs check-in
       }
+      if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus();
+      showSuccessToast(jr.status === 'already_member' ? t('toast_already_member') : t('toast_joined'));
       openBubbleChat(bubbleId, 'screen-home');
     };
     secondaryLabel = t('dl_see_info');
@@ -807,7 +817,15 @@ function _renderEventDeepLinkModal(opts) {
     btn.onclick = async function() {
       this.disabled = true;
       this.textContent = t('ui_saving');
-      try { await primaryFn(); } catch(e) { logError('deepLinkPrimary', e); errorToast('save', e); }
+      var _keepOpen = false;
+      // P0.2: primaryFn may return true to keep the modal open (e.g. failed check-in
+      // so the user can retry) instead of being dropped into the chat / left with no path.
+      try { _keepOpen = await primaryFn(); } catch(e) { logError('deepLinkPrimary', e); errorToast('save', e); }
+      if (_keepOpen) {
+        this.disabled = false;
+        this.textContent = primaryLabel;
+        return;
+      }
       if (ov.parentNode) ov.remove();
     };
   };

@@ -563,7 +563,20 @@ async function checkGuestEventRoute() {
     // Already logged in → join + handle check-in
     var { data: { session } } = await sb.auth.getSession();
     if (session) {
-      flowSet('pending_join', eventId);
+      // P0.1 fix: resolve join_code → bubble.id BEFORE storing. pending_join is
+      // consumed by showDeepLinkModal/checkPendingJoin via .eq('id', …), so a raw
+      // join_code (non-UUID) would later yield "Event ikke fundet". Mirror the
+      // logged-out resolution so the invariant holds: pending_join is always a bubble.id.
+      var _resolvedId = eventId;
+      try {
+        var { data: _lb } = await sb.from('bubbles')
+          .select('id')
+          .or('id.eq.' + eventId + ',join_code.eq.' + eventId)
+          .limit(1)
+          .maybeSingle();
+        if (_lb && _lb.id) _resolvedId = _lb.id;
+      } catch(e) { /* fall back to raw eventId (UUID links still work) */ }
+      flowSet('pending_join', _resolvedId);
       flowSet('event_flow', 'true');
       // Clean URL to prevent re-entry on refresh
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -1015,19 +1028,35 @@ async function flushAnalytics() {
 }
 
 // O2: Flush on visibility change (more reliable than beforeunload)
+var _lastBgAt = 0; // P0.4: track background duration to detect likely socket death
 document.addEventListener('visibilitychange', function() {
   if (document.hidden) {
+    _lastBgAt = Date.now();
     // App backgrounded → flush analytics
     if (_analyticsQueue.length > 0) flushAnalytics().catch(function() {});
   } else {
     // App returned to foreground → refresh stale data
     if (!currentUser) return;
+
+    // P0.4: iOS silently kills WebSockets in the background WITHOUT firing
+    // offline/CHANNEL_ERROR, so _rtState can wrongly read 'connected'. If we were
+    // backgrounded long enough that the socket likely died, force a reconnect.
+    // rtReconnect() also re-subscribes the open DM/bubble chat realtime.
+    var _bgMs = _lastBgAt ? (Date.now() - _lastBgAt) : 0;
+    if (_bgMs > 8000 && typeof rtReconnect === 'function') {
+      _rtReconnectAttempt = 0;
+      rtReconnect();
+    }
+
     _unreadRecount();
     updateTopbarNotifBadge();
-    // Refresh active screen data
+    // Refresh active screen data — now includes chat screens (P0.4): reconnect only
+    // re-subscribes; it doesn't backfill messages missed while backgrounded.
     if (_activeScreen === 'screen-messages') loadMessages();
     else if (_activeScreen === 'screen-home') { loadHome(); }
     else if (_activeScreen === 'screen-notifications') loadNotifications();
+    else if (_activeScreen === 'screen-bubble-chat' && typeof bcBubbleId !== 'undefined' && bcBubbleId && typeof bcLoadMessages === 'function') bcLoadMessages();
+    else if (_activeScreen === 'screen-chat' && typeof currentChatUser !== 'undefined' && currentChatUser && typeof loadChatMessages === 'function') loadChatMessages();
   }
 });
 

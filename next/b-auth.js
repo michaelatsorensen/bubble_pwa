@@ -143,11 +143,13 @@ async function checkAuth() {
 
     // Handle PKCE flow (LinkedIn, Apple) — code in query string
     var _pkceParams = new URLSearchParams(window.location.search);
+    var _pkceFailed = false;
     if (_pkceParams.has('code')) {
       document.getElementById('loading-msg').textContent = 'Logger ind...';
       try {
         await sb.auth.exchangeCodeForSession(window.location.href);
       } catch(e) {
+        _pkceFailed = true; // P1.2: surface failure to user instead of silent fall-through
         logError('pkce_exchange', e);
       }
       // Clean ?code= and any other OAuth params from URL
@@ -168,6 +170,11 @@ async function checkAuth() {
         return;
       }
       goTo('screen-auth');
+      // P1.2: if an OAuth code was present but produced no session, the login failed.
+      // Tell the user instead of silently showing the login screen again.
+      if (_pkceFailed) {
+        setTimeout(function() { showErrorToast(t('toast_generic_error')); }, 300);
+      }
     }
   } catch(e) {
     var el = document.getElementById('loading-msg');
