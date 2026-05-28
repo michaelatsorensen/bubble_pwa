@@ -1049,7 +1049,7 @@ function profDeclineInvite(inviteId, btn) {
   confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:10px;gap:0.5rem';
   confirm.innerHTML = `<span style="font-size:0.72rem;color:rgba(255,255,255,0.4)">Afvis invitation?</span>
     <div style="display:flex;gap:0.3rem">
-      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="confirmDeclineInvite()">Afvis</button>
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="profConfirmDeclineInvite()">Afvis</button>
       <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelDeclineInvite(this)">Annuller</button>
     </div>`;
   card.appendChild(confirm);
@@ -1062,7 +1062,7 @@ function cancelDeclineInvite(btn) {
   pendingDeclineBtn = null;
 }
 
-async function confirmDeclineInvite() {
+async function profConfirmDeclineInvite() {
   if (!pendingDeclineInviteId) return;
   const inviteId = pendingDeclineInviteId;
   pendingDeclineInviteId = null;

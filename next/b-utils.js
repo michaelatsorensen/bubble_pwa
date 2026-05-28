@@ -1146,7 +1146,8 @@ var dbActions = {
   async declineInvitation(inviteId) {
     if (!currentUser || !inviteId) return { ok: false };
     try {
-      await sb.from('bubble_invitations').update({ status: 'declined' }).eq('id', inviteId);
+      var { error } = await sb.from('bubble_invitations').update({ status: 'declined' }).eq('id', inviteId);
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
       return { ok: true };
     } catch(e) { logError('dbActions.declineInvitation', e); return { ok: false, error: e }; }
   },
