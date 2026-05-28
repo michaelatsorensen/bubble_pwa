@@ -218,7 +218,7 @@ var _activeScreen = null;
 
 // ── Centralized flow state ──
 // Primary mechanism: URL params via OAuth redirectTo (see b-auth.js getOAuthRedirectTo)
-// Fallback: localStorage with 5-min TTL (enough for OAuth + slow WiFi)
+// Fallback: localStorage with 15-min TTL (enough for email confirmation + OAuth + slow WiFi)
 // Keys: pending_contact, pending_join, event_flow, post_tags_destination
 // Single storage — sessionStorage removed (added complexity without value;
 // localStorage alone is sufficient since URL params handle cross-redirect survival)
