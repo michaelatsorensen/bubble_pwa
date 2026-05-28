@@ -451,12 +451,18 @@ function declineBubbleInvite(inviteId) {
 }
 
 async function confirmDeclineInvite(inviteId) {
-  var result = await dbActions.declineInvitation(inviteId);
-  if (result.ok) {
+  try {
+    // Ryd confirm-trayen straks (den er en sibling efter kortet — ellers hænger den som residual UI)
     var card = document.getElementById('invite-' + inviteId);
-    if (card) { card.style.transition = 'opacity 0.2s'; card.style.opacity = '0'; setTimeout(function() { card.remove(); }, 200); }
-    showToast(t('toast_deleted'));
-  }
+    if (card && card.nextElementSibling && card.nextElementSibling.classList.contains('bb-confirm')) {
+      card.nextElementSibling.remove();
+    }
+    var result = await dbActions.declineInvitation(inviteId);
+    if (result.ok) {
+      showToast(t('toast_deleted'));
+      loadNotifications();
+    }
+  } catch(e) { logError("confirmDeclineInvite", e); errorToast("save", e); }
 }
 
 
