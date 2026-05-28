@@ -28,6 +28,7 @@
 | **Community graph (person → boble → boble → person)** | 💬 Diskuteret (v3+) | Discovery-paths gennem netværket. Den langsigtede "community-discovery platform"-vision. |
 | **Match-forklaringer** | ✅ Bygget (verificeret) | `sharedTags` vises som chips under match i home (b-home.js:2024) + shared_interest i radar/profil. BEMÆRK: bruger deprecated lilla (`var(--accent)`) — hører under ADR-008. |
 | **Match scoring v3 (tier-baseret)** | ✅ Bygget (verificeret) | b-radar.js: "SMART MATCH ALGORITHM (v3 — Tier-based) — Replaces TF-IDF". 5 tiers + completeness, cap 25, common tags belønnes. **Hukommelse rettet (sagde fejlagtigt v2 TF-IDF).** |
+| **Live filtrerbar dartskive ("levende boble")** | ✅ ~60% (verificeret) — winner-kandidat | Vision: justér filter til en konference → droplets der falder fra filteret swiper UD, nye der matcher swiper IND → boblen "lever". FINDES: `filterRadarHome` + drip-in-animation på `.prox-dot` + re-render ved filterændring. MANGLER: (1) exit-animation (dots forsvinder brat i dag), (2) diff-baseret render (behold matchende dots i stedet for at re-drippe alt). Den manglende del er selve "levende"-følelsen. Egen fokuseret build, mockup-først (interaktiv prototype for at føle animationen). |
 
 ## Engagement & onboarding
 
