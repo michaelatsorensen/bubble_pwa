@@ -647,10 +647,12 @@ push_events viste `new_message | source: trigger | sent | 2 enheder`. Ikke læng
 **4. ✅ Fjern frontend `sendPush` (v8.44) — GJORT.**
 Fjernet for new_message (4 sites) + invitation (1 site). Behold approved/checkin/join_request (ingen backend-trigger — frontend-drevne, post-pilot kandidater). Den "double-fire" på telefonen var PROD-genvejen (gammel kode) parallelt mod samme DB — NEXT var ren.
 
-**5. ⏳ Vault for secrets — ÅBEN (ikke gate).**
-Legacy-JWT allerede væk (slettet i trin 2). Tilbage: `sb_secret_QJ...` hardcodet i 3 funktionskroppe — admin-only synlig, ikke i repo. Vej A (test om edge behøver Authorization-header → fjern secret) forberedt; Vej B (Vault) som fallback. Afventer PC.
+**5. ✅ Secrets fjernet via Vej A — GJORT (ADR-006 LUKKET).**
+Vej A bekræftet: edge accepterer kald UDEN Authorization-header (deployet `--no-verify-jwt`) — testet via push_events (`source: trigger_test → sent`). Så headeren var unødvendig, og den hardcodede `sb_secret` blev fjernet HELT fra alle 3 funktioner (notify_new_message, notify_bubble_invite, notify_contact_saved). Verificeret: `har_secret=false, har_header=false` for alle tre. Ingen Vault nødvendig — den simpleste løsning var også den reneste. Lektie: vi testede behovet (Vej A) før vi tilføjede kompleksitet (Vault) — Vault ville have virket men var unødvendigt arbejde.
 
-**Afgrænsning:** Playwright/chaos er separat (Q-064). Nøgle-migration er ikke gaten. GDPR (Q-062) og privacy (Q-063) er separate arbejdspakker.
+**ADR-006 status: FULDT LUKKET.** Push backend-ejet, observerbart (push_events), ingen dubletter, ingen hardcodede secrets. Native gate 1 lukket.
+
+**Afgrænsning:** Playwright/chaos er separat (Q-064). GDPR (Q-062) og privacy (Q-063) er separate arbejdspakker.
 
 ---
 

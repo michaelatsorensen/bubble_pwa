@@ -2102,8 +2102,10 @@ async function openInviteModal(bubbleId) {
     var profiles = r2.data || [];
     var r3 = await sb.from('bubble_members').select('user_id').eq('bubble_id', bubbleId);
     var memberIds = (r3.data || []).map(function(m) { return m.user_id; });
-    var r4 = await sb.from('bubble_invitations').select('to_user_id').eq('bubble_id', bubbleId).eq('status', 'pending');
+    var r4 = await sb.from('bubble_invitations').select('id,to_user_id').eq('bubble_id', bubbleId).eq('status', 'pending');
     var pendingIds = (r4.data || []).map(function(inv) { return inv.to_user_id; });
+    var pendingInviteMap = {};
+    (r4.data || []).forEach(function(inv) { pendingInviteMap[inv.to_user_id] = inv.id; });
 
     var available = profiles.filter(function(p) { return memberIds.indexOf(p.id) < 0; });
     if (available.length === 0) {
@@ -2122,13 +2124,16 @@ async function openInviteModal(bubbleId) {
       var avHtml = p.avatar_url ?
         '<div class="invite-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>' :
         '<div class="invite-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>';
-      return '<label class="invite-row' + (isPending ? ' pending' : '') + '" data-uid="' + p.id + '">' +
+      return '<label class="invite-row' + (isPending ? ' pending-active' : '') + '" data-uid="' + p.id + '">' +
         avHtml +
         '<div style="flex:1;min-width:0">' +
           '<div class="fw-600 fs-085">' + escHtml(p.name || '?') + starHtml + '</div>' +
-          '<div class="fs-072 text-muted">' + escHtml(p.title || '') + '</div>' +
+          (isPending ?
+            '<div class="fs-072" style="color:#C9A227;display:flex;align-items:center;gap:0.3rem"><span style="width:6px;height:6px;border-radius:50%;background:#C9A227;display:inline-block"></span>' + t('invite_pending_label') + '</div>' :
+            '<div class="fs-072 text-muted">' + escHtml(p.title || '') + '</div>') +
         '</div>' +
-        (isPending ? '<span class="fs-065 text-muted">Afventer</span>' :
+        (isPending ?
+          '<button type="button" class="invite-withdraw-btn" onclick="withdrawInvite(\'' + pendingInviteMap[p.id] + '\')">' + t('invite_withdraw') + '</button>' :
           '<input type="checkbox" class="invite-check" data-uid="' + p.id + '" onchange="toggleInvite(this)">') +
       '</label>';
     }).join('');
@@ -2154,6 +2159,20 @@ function toggleInvite(cb) {
   // Update subtitle
   var sub = document.getElementById('invite-subtitle');
   if (sub) sub.textContent = n > 0 ? t('bb_n_selected', { n: n }) : t('bb_select_from_contacts');
+}
+
+// ADR-009: Træk en pending invitation tilbage (afsender). Sletter rækken.
+async function withdrawInvite(inviteId) {
+  if (!currentUser || !inviteId) return;
+  try {
+    var { error } = await sb.from('bubble_invitations').delete()
+      .eq('id', inviteId)
+      .eq('from_user_id', currentUser.id);
+    if (error) { errorToast('save', error); return; }
+    showToast(t('toast_invite_withdrawn'));
+    trackEvent('bubble_invite_withdrawn', { invite_id: inviteId });
+    if (inviteBubbleId) openInviteModal(inviteBubbleId);
+  } catch(e) { logError('withdrawInvite', e); errorToast('save', e); }
 }
 
 async function sendBubbleInvites() {

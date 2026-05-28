@@ -1791,6 +1791,10 @@ a.person-action-btn { text-decoration:none; }
 .invite-row:last-child { border-bottom:none; }
 .invite-row:active { background:rgba(30,27,46,0.025); }
 .invite-row.pending { opacity:0.5; }
+/* ADR-009: pending-active = fuldt læsbar række med tilbagekald-knap (variant A) */
+.invite-row.pending-active { opacity:1; cursor:default; }
+.invite-withdraw-btn { font-size:0.68rem; font-weight:600; color:#E07A7A; background:rgba(224,122,122,0.1); border:0.5px solid rgba(224,122,122,0.25); padding:0.3rem 0.6rem; border-radius:8px; cursor:pointer; font-family:inherit; flex-shrink:0; transition:background 0.15s; }
+.invite-withdraw-btn:hover { background:rgba(224,122,122,0.18); }
 .invite-avatar { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.65rem; font-weight:700; color:white; flex-shrink:0; }
 .invite-check { -webkit-appearance:none; appearance:none; width:22px; height:22px; border-radius:50%; border:2px solid #D8D5E4; flex-shrink:0; cursor:pointer; transition:all 0.15s; background:transparent; margin:0; }
 .invite-check:checked { background:var(--accent); border-color:var(--accent); }

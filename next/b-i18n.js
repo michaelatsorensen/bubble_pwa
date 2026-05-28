@@ -343,6 +343,9 @@ da: {
   // ── Toasts ──
   toast_saved: 'Gemt!',
   toast_deleted: 'Slettet',
+  invite_pending_label: 'Afventer svar',
+  invite_withdraw: 'Tilbagekald',
+  toast_invite_withdrawn: 'Invitation trukket tilbage',
   toast_updated: 'Opdateret',
   toast_sent: 'Sendt',
   toast_copied: 'Kopieret til udklipsholder',
@@ -990,6 +993,9 @@ en: {
   // ── Toasts ──
   toast_saved: 'Saved!',
   toast_deleted: 'Deleted',
+  invite_pending_label: 'Awaiting response',
+  invite_withdraw: 'Withdraw',
+  toast_invite_withdrawn: 'Invitation withdrawn',
   toast_updated: 'Updated',
   toast_sent: 'Sent',
   toast_copied: 'Copied to clipboard',
