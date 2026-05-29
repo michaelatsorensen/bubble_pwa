@@ -1266,6 +1266,16 @@ button {
   border: 0.5px solid rgba(255,255,255,0.08);
   color: rgba(255,255,255,0.6);
 }
+/* Onboarding confirm button — clear "ready/go" state once name + workplace + consent
+   are all done. Uses the design-system positive CTA (teal #1A9E8E). ID-scoped so it wins
+   over the dark-screen .btn-primary override. Inactive state is left unchanged. */
+#mini-ob-save.is-ready {
+  background: linear-gradient(135deg, #1A9E8E, #17877A);
+  border: 1px solid rgba(26,158,142,0.55);
+  color: #fff;
+  box-shadow: 0 2px 14px rgba(26,158,142,0.35);
+  opacity: 1;
+}
 .send-btn, .chat-send-btn {
   background: rgba(100,180,230,0.18);
   border: 0.5px solid rgba(100,180,230,0.25);

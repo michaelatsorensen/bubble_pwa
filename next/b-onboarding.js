@@ -234,7 +234,8 @@ function _miniObCheck() {
   var name = nameEl ? nameEl.value.trim() : (currentProfile?.name || '');
   var wp = wpEl ? wpEl.value.trim() : (currentProfile?.workplace || '');
   var btn = document.getElementById('mini-ob-save');
-  if (btn) btn.disabled = !(name && wp && _miniObConsentGiven);
+  var ready = !!(name && wp && _miniObConsentGiven);
+  if (btn) { btn.disabled = !ready; btn.classList.toggle('is-ready', ready); }
 }
 
 async function _miniObSave() {
@@ -246,14 +247,14 @@ async function _miniObSave() {
   if (!_miniObConsentGiven) return showWarningToast(t('val_accept_terms'));
 
   var btn = document.getElementById('mini-ob-save');
-  if (btn) { btn.textContent = t('ui_saving'); btn.disabled = true; }
+  if (btn) { btn.textContent = t('ui_saving'); btn.disabled = true; btn.classList.remove('is-ready'); }
 
   try {
     var update = { terms_accepted_at: new Date().toISOString() };
     if (nameEl) update.name = name;
     if (wpEl) update.workplace = wp;
     var { error } = await sb.from('profiles').update(update).eq('id', currentUser.id);
-    if (error) { errorToast('save', error); if (btn) { btn.textContent = 'Fortsæt'; btn.disabled = false; } return; }
+    if (error) { errorToast('save', error); if (btn) { btn.textContent = 'Fortsæt'; } _miniObCheck(); return; }
     await loadCurrentProfile();
 
     // Remove overlay
@@ -266,7 +267,7 @@ async function _miniObSave() {
   } catch(e) {
     logError('miniObSave', e);
     errorToast('save', e);
-    if (btn) { btn.textContent = 'Fortsæt'; btn.disabled = false; }
+    if (btn) { btn.textContent = 'Fortsæt'; } _miniObCheck();
   }
 }
 
