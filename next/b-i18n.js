@@ -130,9 +130,9 @@ da: {
   pf_feedback_desc: 'Hjælp os med at gøre Bubble bedre',
 
   // ── Home ──
-  home_greeting_morning: 'God morgen',
-  home_greeting_afternoon: 'God eftermiddag',
-  home_greeting_evening: 'God aften',
+  home_greeting_morning: 'Godmorgen',
+  home_greeting_afternoon: 'Godeftermiddag',
+  home_greeting_evening: 'Godaften',
   home_radar: 'Radar',
   home_all: 'Alle',
   home_live: 'Live',
