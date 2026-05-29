@@ -1237,12 +1237,31 @@ button {
   font-size: 0.72rem; font-weight: 700;
 }
 
+/* CONTRAST FIX (v8.52): ice-blue CTA is the design language. Default to LIGHT-readable
+   (dark-blue text on ice-blue / dark text on light glass) because almost every screen is
+   light. The 4 DARK screens (bubble-chat, chat, onboarding, welcome) override to white
+   below. Modals/sheets/auth-card keep their own more-specific dark overrides. */
 .btn-primary {
+  background: rgba(100,180,230,0.22);
+  border: 1px solid rgba(100,180,230,0.45);
+  color: rgb(45,115,175);
+}
+.btn-secondary {
+  background: rgba(255,255,255,0.85);
+  border: 0.5px solid var(--border-on-light);
+  color: var(--text-on-light);
+}
+/* Dark screens: white text on ice-blue (legible on the dark backdrop) */
+#screen-bubble-chat .btn-primary, #screen-chat .btn-primary,
+#screen-onboarding .btn-primary, #screen-welcome .btn-primary,
+#request-join-tray .btn-primary {
   background: rgba(100,180,230,0.18);
   border: 0.5px solid rgba(100,180,230,0.25);
   color: rgba(255,255,255,0.95);
 }
-.btn-secondary {
+#screen-bubble-chat .btn-secondary, #screen-chat .btn-secondary,
+#screen-onboarding .btn-secondary, #screen-welcome .btn-secondary,
+#request-join-tray .btn-secondary {
   background: rgba(255,255,255,0.06);
   border: 0.5px solid rgba(255,255,255,0.08);
   color: rgba(255,255,255,0.6);
