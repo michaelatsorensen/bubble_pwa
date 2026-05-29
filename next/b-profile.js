@@ -825,11 +825,23 @@ async function loadSavedContacts() {
     // Fetch profiles separately — no FK dependency
     const contactIds = saved.map(s => s.contact_id);
     const { data: profiles, error: profErr } = await sb.from('profiles')
-      .select('id, name, title, keywords, workplace, avatar_url').in('id', contactIds);
+      .select('id, name, title, keywords, workplace, avatar_url, dynamic_keywords, bio, linkedin, is_anon').in('id', contactIds);
 
     if (profErr) console.error('loadSavedContacts profiles error:', profErr);
     const profileMap = {};
     (profiles || []).forEach(p => { profileMap[p.id] = p; });
+
+    // Shared-bubble counts per saved contact — same input the radar uses for calcMatchScore,
+    // so the match category shown here matches what the user saw on the dartboard.
+    var savedBmMap = {};
+    try {
+      var { data: myBubs } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+      var myBubIds = (myBubs || []).map(function(m) { return m.bubble_id; });
+      if (myBubIds.length > 0) {
+        var { data: bmRows } = await sb.from('bubble_members').select('user_id,bubble_id').in('bubble_id', myBubIds).in('user_id', contactIds);
+        (bmRows || []).forEach(function(bm) { savedBmMap[bm.user_id] = (savedBmMap[bm.user_id] || 0) + 1; });
+      }
+    } catch(e) {}
 
     // Update home screen story bar
     renderSavedStoryBar(saved, profileMap);
@@ -851,6 +863,8 @@ async function loadSavedContacts() {
       const col = colors[i % colors.length];
       const stars = starRender(s.contact_id);
       const pid = p.id || s.contact_id;
+      const _mscore = (typeof calcMatchScore === 'function' && currentProfile) ? calcMatchScore(currentProfile, p, savedBmMap[s.contact_id] || 0) : 0;
+      const _mbadge = (typeof matchBadgeHtml === 'function') ? matchBadgeHtml(_mscore) : '';
       return `<div class="card saved-card" style="padding:0.7rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="bcOpenPerson('${pid}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${col}','screen-profile')">
         <div class="flex-row-center" style="gap:0.7rem">
           <div class="saved-avatar-wrap" style="position:relative;flex-shrink:0">
@@ -860,6 +874,7 @@ async function loadSavedContacts() {
           <div style="flex:1;min-width:0">
             <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||t('misc_unknown'))}</div>
             <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml([p.title, p.workplace].filter(Boolean).join(' · '))}</div>
+            ${_mbadge ? `<div style="margin-top:0.3rem">${_mbadge}</div>` : ''}
           </div>
           <div style="display:flex;gap:0.35rem;flex-shrink:0" onclick="event.stopPropagation()">
             <button class="saved-action-btn" onclick="openChat('${pid}','screen-profile')" title="Send besked">${icon('chat')}</button>
