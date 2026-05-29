@@ -606,7 +606,7 @@ textarea.input { min-height:80px; resize:vertical; }
 .person-bubbles-more { display:block; width:100%; background:none; border:none; padding:0.4rem 0; font-size:0.72rem; font-weight:600; color:var(--isbla); cursor:pointer; font-family:inherit; text-align:left; }
 
 /* ── REDESIGN (v8.56): full profile in strandglas / bubble-info language ── */
-.pp-topbar { display:flex; justify-content:space-between; align-items:center; padding:0.7rem 1rem 0.2rem; gap:0.6rem; }
+.pp-topbar { display:flex; justify-content:space-between; align-items:center; padding:0.7rem 1rem 0.2rem; padding-top:calc(0.7rem + env(safe-area-inset-top,0px)); gap:0.6rem; }
 .pp-back { width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,0.85); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:0.5px solid var(--border-on-light); color:var(--text-on-light); font-size:1rem; font-family:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 1px 4px rgba(30,27,46,0.08); }
 .pp-match { font-size:0.68rem; font-weight:700; padding:0.34rem 0.78rem; border-radius:99px; line-height:1; white-space:nowrap; display:none; }
 .pp-hero { margin:0.5rem 1rem 0.7rem; background:rgba(255,255,255,0.72); backdrop-filter:blur(16px) saturate(140%); -webkit-backdrop-filter:blur(16px) saturate(140%); border:0.5px solid var(--border-on-light); border-radius:var(--radius); padding:1rem; }
