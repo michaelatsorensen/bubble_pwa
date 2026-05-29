@@ -791,7 +791,7 @@ async function loadSavedContacts() {
 
     if (savedErr) {
       console.error('loadSavedContacts query error:', savedErr);
-      if (savedEl) savedEl.innerHTML = '<div class="empty-state" style="padding:1rem 0"><div class="empty-text" style="font-size:0.72rem;color:rgba(255,255,255,0.55)">Kunne ikke hente kontakter</div></div>';
+      if (savedEl) savedEl.innerHTML = '<div class="empty-state" style="padding:1rem 0"><div class="empty-text" style="font-size:0.72rem;color:var(--text-on-light-muted)">Kunne ikke hente kontakter</div></div>';
       renderSavedStoryBar(null, {});
       return;
     }
@@ -827,7 +827,7 @@ async function loadSavedContacts() {
       return new Date(b.created_at) - new Date(a.created_at);
     });
 
-    if (savedEl) savedEl.innerHTML = '<div style="font-size:0.72rem;color:rgba(255,255,255,0.55);margin-bottom:0.5rem">Du har ' + saved.length + ' gemte profil' + (saved.length !== 1 ? 'er' : '') + '</div>' + saved.map((s, i) => {
+    if (savedEl) savedEl.innerHTML = '<div style="font-size:0.72rem;color:var(--text-on-light-muted);margin-bottom:0.5rem">Du har ' + saved.length + ' gemte profil' + (saved.length !== 1 ? 'er' : '') + '</div>' + saved.map((s, i) => {
       const p = profileMap[s.contact_id] || {};
       if (s.contact_id === currentUser?.id) return '';
       const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();

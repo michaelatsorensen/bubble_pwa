@@ -714,7 +714,7 @@ async function loadMessages() {
     if (_navVersion !== myNav) return;
 
     if (!convs || convs.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">'+t('dm_no_conversations')+'<br><span style="font-size:0.72rem;color:rgba(255,255,255,0.55);font-weight:400">'+t('dm_no_conversations_desc')+'</span></div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-home\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">'+t('dm_go_to_radar')+'</button></div></div>';
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">'+t('dm_no_conversations')+'<br><span style="font-size:0.72rem;color:var(--text-on-light-muted);font-weight:400">'+t('dm_no_conversations_desc')+'</span></div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-home\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">'+t('dm_go_to_radar')+'</button></div></div>';
       return;
     }
 
