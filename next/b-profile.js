@@ -135,9 +135,18 @@ function _personRenderIdentity(p) {
   } else {
     liBtn.style.display = 'none';
   }
-  // Tags section hidden — only show in edit profile
+  // Interesser — show the person's FULL interest list. This was previously hidden, which
+  // made the full profile poorer than the radar preview (which shows all tags). The match
+  // section above still highlights SHARED interests; this shows the complete set.
   var tagsSection = document.getElementById('person-tags-section');
-  if (tagsSection) tagsSection.style.display = 'none';
+  var tagsEl = document.getElementById('person-tags');
+  var kws = p.keywords || [];
+  if (tagsSection && tagsEl && kws.length) {
+    tagsEl.innerHTML = kws.map(function(k) { return '<span class="tag">' + escHtml(k) + '</span>'; }).join('');
+    tagsSection.style.display = '';
+  } else if (tagsSection) {
+    tagsSection.style.display = 'none';
+  }
 }
 
 async function _personRenderLive(p, userId) {
