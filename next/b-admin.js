@@ -628,16 +628,18 @@ function _renderDebugErrorList() {
     var extra = null;
     try { extra = typeof e.extra === 'string' ? JSON.parse(e.extra) : e.extra; } catch(x) { /* */ }
     var cs2 = extra && extra._cs ? extra._cs : null;
-    var time = e.created_at ? new Date(e.created_at).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '?';
+    var time = e.created_at ? adminTimeAgo(e.created_at) : '?';
+    var exactTime = e.created_at ? new Date(e.created_at).toLocaleString(_locale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
     var severity = (e.context || '').includes('global') || (e.context || '').includes('promise') ? 'err' : 'warn';
     var html = '<div class="debug-err-card debug-err-' + severity + '">';
-    html += '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700">' + escHtml(e.context || '?') + '</span><span>' + time + '</span></div>';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem"><span style="font-weight:700">' + escHtml(e.context || '?') + '</span><span style="white-space:nowrap;opacity:0.75">' + time + '</span></div>';
     html += '<div style="font-size:0.6rem;margin-top:2px;opacity:0.85">' + escHtml((e.message || '').substring(0, 80)) + '</div>';
+    if (exactTime) html += '<div style="font-size:0.55rem;margin-top:2px;opacity:0.55">' + escHtml(exactTime) + '</div>';
     if (cs2) {
       var errVer = cs2.v || '?';
       var isStale = errVer !== '?' && typeof BUILD_VERSION !== 'undefined' && errVer !== BUILD_VERSION;
       var verLabel = isStale
-        ? '<span style="color:#E8A04A;font-weight:700">' + escHtml(errVer) + ' ⚠ gammel</span>'
+        ? '<span style="color:#E8A04A;font-weight:700">' + escHtml(errVer) + ' ⚠ gl. version</span>'
         : '<span style="color:#4FD1C5;font-weight:700">' + escHtml(errVer) + '</span>';
       html += '<div style="font-size:0.55rem;margin-top:3px;opacity:0.7">' +
         verLabel + ' | ' + escHtml((e.user_id || '').substring(0, 8) + '.. | ' + (cs2.ua || '?')) + '</div>';
