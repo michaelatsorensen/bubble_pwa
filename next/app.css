@@ -2262,11 +2262,11 @@ a.person-action-btn { text-decoration:none; }
 
 /* ═══ PERSON SHEET: BLOCK & REPORT ═══ */
 .ps-moderation { display:flex; gap:0.5rem; padding:0.3rem 1.2rem 0.5rem; }
-.ps-mod-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:0.3rem; background:var(--glass-bg); border:1px solid rgba(216,213,228,0.5); border-radius:var(--radius-sm); padding:0.55rem 0.3rem; font-size:0.72rem; font-weight:600; font-family:'Figtree',sans-serif; color:var(--text-secondary); cursor:pointer; transition:all 0.2s; }
-.ps-mod-btn:active { background:var(--glass-bg-hover); }
+.ps-mod-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:0.3rem; background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.12); border-radius:var(--radius-sm); padding:0.55rem 0.3rem; font-size:0.72rem; font-weight:600; font-family:'Figtree',sans-serif; color:rgba(255,255,255,0.6); cursor:pointer; transition:all 0.2s; }
+.ps-mod-btn:active { background:rgba(255,255,255,0.1); }
 .ps-mod-btn .ico { width:0.85rem; height:0.85rem; flex-shrink:0; }
-.ps-mod-btn.danger { color:var(--accent2); border-color:rgba(26,122,138,0.2); }
-.ps-mod-btn.danger:active { background:rgba(26,122,138,0.1); }
+.ps-mod-btn.danger { color:#FF7A8A; background:rgba(255,90,110,0.1); border-color:rgba(255,90,110,0.28); }
+.ps-mod-btn.danger:active { background:rgba(255,90,110,0.18); }
 
 /* ═══ SHOW MORE / FEWER TAGS ═══ */
 .ob-show-more { display:block; width:100%; background:none; border:none; font-family:'Figtree',sans-serif; font-size:0.7rem; font-weight:600; cursor:pointer; padding:0.4rem 0 0.1rem; text-align:left; opacity:0.7; transition:opacity 0.2s; }
