@@ -918,6 +918,8 @@ function renderSavedStoryBar(saved, profileMap) {
 // Profile tab switching — same pattern as bcSwitchTab
 function openSettingsModal() {
   _updateLangBtns();
+  var bc = document.getElementById('blocked-count-badge');
+  if (bc) bc.textContent = (typeof _blockedUsers !== 'undefined' && _blockedUsers.length) ? String(_blockedUsers.length) : '';
   openModal('modal-settings');
 }
 
@@ -1214,21 +1216,77 @@ function isBlocked(userId) {
   return _blockedUsers.indexOf(userId) >= 0;
 }
 
-var _blockConfirm = null;
+// ── Blocked-users management UI (Settings → Privatliv) ──
+function openBlockedUsers() {
+  closeModal('modal-settings');
+  openModal('modal-blocked');
+  renderBlockedList();
+}
+
+async function renderBlockedList() {
+  var el = document.getElementById('blocked-users-list');
+  if (!el || !currentUser) return;
+  el.innerHTML = '<div style="color:rgba(255,255,255,0.4);padding:1.2rem 0;text-align:center;font-size:0.8rem">Indlæser…</div>';
+  try {
+    var { data: rows, error } = await sb.from('blocked_users').select('blocked_id, created_at').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+    if (error) throw error;
+    if (!rows || !rows.length) {
+      el.innerHTML = '<div style="color:rgba(255,255,255,0.4);padding:1.8rem 0;text-align:center;font-size:0.82rem">Du har ikke blokeret nogen</div>';
+      _blockedUsers = [];
+      return;
+    }
+    var ids = rows.map(function(r) { return r.blocked_id; });
+    var { data: profs } = await sb.from('profiles').select('id, name, title, workplace, avatar_url').in('id', ids);
+    var pmap = {}; (profs || []).forEach(function(p) { pmap[p.id] = p; });
+    el.innerHTML = rows.map(function(r) {
+      var p = pmap[r.blocked_id] || {};
+      var name = p.name || 'Bruger';
+      var ini = name.split(' ').map(function(w) { return w[0]; }).join('').slice(0,2).toUpperCase();
+      var av = p.avatar_url
+        ? '<img src="' + escHtml(p.avatar_url) + '" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">'
+        : '<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6B8BFF,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#fff;flex-shrink:0">' + escHtml(ini) + '</div>';
+      var meta = [p.title, p.workplace].filter(Boolean).join(' · ');
+      return '<div style="display:flex;align-items:center;gap:0.7rem;padding:0.6rem 0;border-bottom:0.5px solid rgba(255,255,255,0.06)">' +
+        av +
+        '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(name) + '</div>' +
+        (meta ? '<div style="font-size:0.68rem;color:rgba(255,255,255,0.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(meta) + '</div>' : '') + '</div>' +
+        '<button onclick="unblockUser(\'' + r.blocked_id + '\',this)" style="flex-shrink:0;font-size:0.72rem;font-weight:700;font-family:inherit;padding:0.4rem 0.85rem;border-radius:99px;border:0.5px solid rgba(100,180,230,0.3);background:rgba(100,180,230,0.12);color:rgb(100,180,230);cursor:pointer">Fjern</button>' +
+      '</div>';
+    }).join('');
+  } catch(e) { logError('renderBlockedList', e); el.innerHTML = '<div style="color:#FF7A8A;padding:1.2rem 0;text-align:center;font-size:0.8rem">Kunne ikke hente listen</div>'; }
+}
+
+async function unblockUser(blockedId, btn) {
+  if (!currentUser || !blockedId) return;
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    var { error } = await sb.from('blocked_users').delete().eq('user_id', currentUser.id).eq('blocked_id', blockedId);
+    if (error) { logError('unblockUser', error); errorToast('save', error); if (btn) { btn.disabled = false; btn.textContent = 'Fjern'; } return; }
+    var idx = _blockedUsers.indexOf(blockedId);
+    if (idx >= 0) _blockedUsers.splice(idx, 1);
+    showToast('Blokering fjernet');
+    renderBlockedList();
+    if (typeof loadProximityMap === 'function') loadProximityMap();
+  } catch(e) { logError('unblockUser', e); errorToast('save', e); if (btn) { btn.disabled = false; btn.textContent = 'Fjern'; } }
+}
+
 async function psBlockUser() {
   try {
   var userId = document.getElementById('person-sheet-el')?.dataset?.userId;
   var userName = document.getElementById('person-sheet-el')?.dataset?.userName || 'bruger';
   if (!userId || !currentUser) return;
   if (userId === currentUser.id) { showWarningToast('Du kan ikke blokere dig selv'); return; }
-  // Confirm
-  if (_blockConfirm !== userId) {
-    _blockConfirm = userId;
-    showWarningToast('Blokér ' + userName + '? Tryk igen for at bekræfte');
-    setTimeout(function() { _blockConfirm = null; }, 3000);
-    return;
-  }
-  _blockConfirm = null;
+  showConfirmDialog({
+    title: 'Blokér ' + userName + '?',
+    message: 'I vil ikke længere kunne se hinanden eller skrive sammen. Du kan fjerne blokeringen igen under Indstillinger → Privatliv.',
+    confirmText: 'Blokér',
+    danger: true,
+    onConfirm: function() { _doBlockUser(userId, userName); }
+  });
+  } catch(e) { logError("psBlockUser", e); }
+}
+
+async function _doBlockUser(userId, userName) {
   try {
     var { error: blockErr } = await sb.from('blocked_users').upsert({
       user_id: currentUser.id, blocked_id: userId
@@ -1243,24 +1301,25 @@ async function psBlockUser() {
     // Refresh visible lists
     if (typeof loadProximityMap === 'function') loadProximityMap();
     if (typeof loadSavedContacts === 'function') loadSavedContacts();
-  } catch(e) { logError('psBlockUser', e, { blocked: userId }); errorToast('save', e); }
-  } catch(e) { logError("psBlockUser", e); }
+  } catch(e) { logError('_doBlockUser', e, { blocked: userId }); errorToast('save', e); }
 }
 
-var _reportConfirm = null;
 async function psReportUser() {
   try {
   var userId = document.getElementById('person-sheet-el')?.dataset?.userId;
   var userName = document.getElementById('person-sheet-el')?.dataset?.userName || 'bruger';
   if (!userId || !currentUser) return;
-  // Confirm
-  if (_reportConfirm !== userId) {
-    _reportConfirm = userId;
-    showWarningToast('Rapportér ' + userName + '? Tryk igen for at bekræfte');
-    setTimeout(function() { _reportConfirm = null; }, 4000);
-    return;
-  }
-  _reportConfirm = null;
+  showConfirmDialog({
+    title: 'Rapportér ' + userName + '?',
+    message: 'Vores team kigger på det. Tak fordi du hjælper med at holde Bubble trygt.',
+    confirmText: 'Rapportér',
+    danger: true,
+    onConfirm: function() { _doReportUser(userId, userName); }
+  });
+  } catch(e) { logError("psReportUser", e); }
+}
+
+async function _doReportUser(userId, userName) {
   try {
     var { error } = await sb.from('reports').insert({
       reporter_id: currentUser.id,
@@ -1272,8 +1331,7 @@ async function psReportUser() {
     // Also send email alert
     logError('USER_REPORT', new Error('Bruger rapporteret: ' + userName), { reported_id: userId, reporter_id: currentUser.id });
     showToast('Tak — ' + userName + ' er rapporteret. Vi kigger på det.');
-  } catch(e) { logError('psReportUser', e); errorToast('send', e); }
-  } catch(e) { logError("psReportUser", e); }
+  } catch(e) { logError('_doReportUser', e); errorToast('send', e); }
 }
 
 // Report a specific message

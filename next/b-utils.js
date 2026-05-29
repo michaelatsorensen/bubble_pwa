@@ -315,6 +315,32 @@ function showErrorToast(message) {
   _renderToast(message, 'error');
 }
 
+// ── Reusable confirm dialog (dark, matches app sheets) ──
+// showConfirmDialog({ title, message, confirmText, cancelText, danger, onConfirm })
+function showConfirmDialog(opts) {
+  opts = opts || {};
+  var existing = document.getElementById('confirm-dialog-overlay');
+  if (existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.id = 'confirm-dialog-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:650;background:rgba(10,7,24,0.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.25s ease';
+  var confirmBg = opts.danger ? 'linear-gradient(135deg,#FF5A6E,#E23D52)' : 'linear-gradient(135deg,#1A9E8E,#17877A)';
+  ov.innerHTML =
+    '<div style="background:rgba(23,15,52,0.98);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:1.6rem 1.3rem 1.3rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.5)">' +
+      (opts.title ? '<div style="font-size:1.1rem;font-weight:800;color:rgba(255,255,255,0.97);margin-bottom:0.4rem">' + escHtml(opts.title) + '</div>' : '') +
+      (opts.message ? '<div style="font-size:0.85rem;color:rgba(255,255,255,0.6);line-height:1.5;margin-bottom:1.3rem">' + escHtml(opts.message) + '</div>' : '<div style="height:0.5rem"></div>') +
+      '<button id="cfd-confirm" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:' + confirmBg + ';color:#fff;font-size:0.9rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + escHtml(opts.confirmText || 'Bekræft') + '</button>' +
+      '<button id="cfd-cancel" style="width:100%;padding:0.7rem;border-radius:12px;border:0.5px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);font-size:0.82rem;font-weight:600;font-family:inherit;cursor:pointer">' + escHtml(opts.cancelText || 'Annullér') + '</button>' +
+    '</div>';
+  document.body.appendChild(ov);
+  function close() { ov.remove(); }
+  var cb = document.getElementById('cfd-confirm');
+  var xb = document.getElementById('cfd-cancel');
+  if (cb) cb.onclick = function() { close(); if (typeof opts.onConfirm === 'function') opts.onConfirm(); };
+  if (xb) xb.onclick = close;
+  ov.addEventListener('click', function(e) { if (e.target === ov) close(); });
+}
+
 // ── Push notification helper — fire-and-forget ──
 function sendPush(userId, title, body, data) {
   if (!userId || !currentUser || userId === currentUser.id) return;
