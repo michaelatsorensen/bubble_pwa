@@ -66,6 +66,57 @@ async function adminLoadBanned() {
   } catch(e) { logError("adminLoadBanned", e); }
 }
 
+var _adminNewUsersLoaded = false;
+function adminToggleNewUsers() {
+  var body = document.getElementById('admin-newusers-body');
+  var chev = document.getElementById('admin-newusers-chev');
+  if (!body) return;
+  var isOpen = body.style.display !== 'none';
+  if (isOpen) {
+    body.style.display = 'none';
+    if (chev) chev.style.transform = '';
+  } else {
+    body.style.display = 'block';
+    if (chev) chev.style.transform = 'rotate(180deg)';
+    if (!_adminNewUsersLoaded) { _adminNewUsersLoaded = true; adminLoadNewUsers(); }
+  }
+}
+
+async function adminLoadNewUsers() {
+  var el = document.getElementById('admin-newusers-list');
+  if (!el) return;
+  el.innerHTML = t('admin_loading') || 'Indlæser...';
+  try {
+    var { data, error } = await sb.from('profiles')
+      .select('id, name, workplace, title, avatar_url, keywords, created_at, banned, is_anon')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    if (!data || !data.length) { el.innerHTML = '<div style="color:rgba(255,255,255,0.4)">Ingen brugere</div>'; return; }
+    el.innerHTML = '<div style="font-size:0.58rem;color:rgba(255,255,255,0.25);margin-bottom:0.3rem">' + data.length + ' nyeste (klik for profil)</div>' + data.map(function(p) {
+      var name = p.is_anon ? 'Anonym' : (p.name || t('misc_unknown'));
+      var meta = [p.workplace, p.title].filter(Boolean).join(' · ');
+      var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var av = (p.avatar_url && !p.is_anon)
+        ? '<img src="' + escHtml(p.avatar_url) + '" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0">'
+        : '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6B8BFF,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:#fff;flex-shrink:0">' + escHtml(ini) + '</div>';
+      var tagCount = (p.keywords||[]).length;
+      return '<div onclick="openPerson(\'' + p.id + '\',\'screen-profile\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer">' +
+        av +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-weight:600;color:rgba(255,255,255,0.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(name) +
+          (p.banned ? ' <span style="font-size:0.55rem;background:rgba(232,121,168,0.2);color:var(--pink);padding:0.1rem 0.3rem;border-radius:4px">Banned</span>' : '') + '</div>' +
+          (meta ? '<div style="font-size:0.62rem;color:rgba(255,255,255,0.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(meta) + '</div>' : '') +
+        '</div>' +
+        '<div style="text-align:right;flex-shrink:0">' +
+          '<div style="font-size:0.6rem;color:rgba(255,255,255,0.3)">' + adminTimeAgo(p.created_at) + '</div>' +
+          (tagCount ? '<div style="font-size:0.58rem;color:rgba(255,255,255,0.25)">' + tagCount + ' tags</div>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) { el.innerHTML = '<div style="color:var(--pink)">Fejl: ' + escHtml(e.message) + '</div>'; logError('adminLoadNewUsers', e); }
+}
+
 async function adminLoadStats() {
   try {
   var el = document.getElementById('admin-stats');
