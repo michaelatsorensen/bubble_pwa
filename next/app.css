@@ -620,6 +620,8 @@ textarea.input { min-height:80px; resize:vertical; }
 .pp-actions { display:flex; gap:0.5rem; margin-top:0.9rem; }
 .pp-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:0.4rem; padding:0.65rem 0.3rem; border-radius:var(--radius-sm); font-size:0.8rem; font-weight:700; font-family:'Figtree',sans-serif; cursor:pointer; border:0.5px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.92); transition:all 0.18s; text-decoration:none; }
 .pp-btn.primary { background:rgba(100,180,230,0.25); border-color:rgba(100,180,230,0.4); color:rgb(150,205,240); }
+.pp-btn.linkedin { background:rgba(10,102,194,0.2); border-color:rgba(10,102,194,0.42); color:#8FC2F0; }
+.pp-btn.linkedin svg { fill:#5BA3E0; }
 .pp-btn .ico { width:16px; height:16px; }
 .pp-btn:active { transform:scale(0.97); }
 .pp-card { margin:0 1rem 0.7rem; background:rgba(255,255,255,0.72); backdrop-filter:blur(14px) saturate(140%); -webkit-backdrop-filter:blur(14px) saturate(140%); border:0.5px solid var(--border-on-light); border-radius:var(--radius); padding:0.9rem 1rem; }

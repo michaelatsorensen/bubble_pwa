@@ -132,7 +132,6 @@ function _personRenderIdentity(p) {
   var liBtn = document.getElementById('person-linkedin-btn');
   if (p.linkedin && !p.is_anon) {
     liBtn.style.display = 'flex';
-    liBtn.style.flexDirection = 'column';
     liBtn.href = p.linkedin.startsWith('http') ? p.linkedin : 'https://' + p.linkedin;
   } else {
     liBtn.style.display = 'none';
