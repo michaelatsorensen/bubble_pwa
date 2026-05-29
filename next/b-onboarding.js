@@ -973,7 +973,7 @@ function etBuild() {
     div.style.cssText = 'background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.06);border-radius:13px;margin-bottom:0.35rem' + (etOpenSec===s.id?';border-color:rgba(100,180,230,0.25);box-shadow:none':'');
     div.id = _etPrefix + 'et-acc-' + s.id;
     var n = etCountSec(s.id);
-    var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.color+'20;color:'+s.color+'">' +n+'</span>' : '';
+    var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.color+'33"><span style="color:'+s.color+';filter:brightness(1.85) saturate(1.15)">'+n+'</span></span>' : '';
     div.innerHTML =
       '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.75rem 0.85rem;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" onclick="etToggle(\''+s.id+'\')">' +
         '<div style="width:32px;height:32px;border-radius:9px;background:'+s.color+'33;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+';filter:brightness(1.6) saturate(1.1)">' + etIco(s.icon) + '</span></div>' +
@@ -1002,7 +1002,7 @@ function etRebuildSec(id){
   var el = _etEl('et-acc-'+id);
   if (!el) return;
   var n = etCountSec(id);
-  var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.color+'20;color:'+s.color+'">' +n+'</span>' : '';
+  var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.color+'33"><span style="color:'+s.color+';filter:brightness(1.85) saturate(1.15)">'+n+'</span></span>' : '';
   el.innerHTML =
     '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.75rem 0.85rem;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" onclick="etToggle(\''+s.id+'\')">' +
       '<div style="width:32px;height:32px;border-radius:9px;background:'+s.color+'18;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+'">' + etIco(s.icon) + '</span></div>' +
