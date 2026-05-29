@@ -97,6 +97,7 @@ function _personReset() {
   var tagS = document.getElementById('person-tags-section');
   if (tagS) tagS.style.display = 'none';
   document.getElementById('person-dynamic-keywords').innerHTML = '';
+  var dynC = document.getElementById('person-dynamic-card'); if (dynC) dynC.style.display = 'none';
 }
 
 function _personRenderEmpty() {
@@ -109,6 +110,7 @@ function _personRenderEmpty() {
   var tagS = document.getElementById('person-tags-section'); if (tagS) tagS.style.display = 'none';
   var bubS = document.getElementById('person-bubbles-section'); if (bubS) bubS.style.display = 'none';
   document.getElementById('person-dynamic-keywords').innerHTML = '';
+  var dynCe = document.getElementById('person-dynamic-card'); if (dynCe) dynCe.style.display = 'none';
 }
 
 function _personRenderIdentity(p) {
@@ -116,7 +118,7 @@ function _personRenderIdentity(p) {
   var initials = p.is_anon ? '?' : (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   var personAvEl = document.getElementById('person-avatar');
   if (personAvEl) {
-    if (p.avatar_url && !p.is_anon) { personAvEl.innerHTML = '<img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+    if (p.avatar_url && !p.is_anon) { personAvEl.innerHTML = '<img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:15px">'; }
     else { personAvEl.textContent = initials; personAvEl.innerHTML = initials; }
   }
   // Name + title
@@ -192,7 +194,11 @@ async function _personRenderMatch(p, userId, myNav) {
     var ml = matchLabel(score);
     var matchEl = document.getElementById('person-match-label');
     matchEl.textContent = ml.text;
-    matchEl.style.background = ml.color;
+    // Readable pill on the light profile: subtle tint bg + colored text. The pale green
+    // tier (#2ECFCF) is too light on white, so use teal-dark for it.
+    matchEl.style.background = ml.bg;
+    matchEl.style.color = (ml.color === 'var(--green)') ? 'var(--teal-dark)' : ml.color;
+    matchEl.style.border = '0.5px solid ' + (ml.text === 'I dit netværk' ? 'var(--border-on-light-strong)' : 'transparent');
     matchEl.style.display = ml.text ? '' : 'none';
 
     // Shared interests — collapsible (show 6, expand to all)
@@ -219,9 +225,11 @@ async function _personRenderMatch(p, userId, myNav) {
 
 function _personRenderDynamic(p) {
   var dynEl = document.getElementById('person-dynamic-keywords');
+  var card = document.getElementById('person-dynamic-card');
   if ((p.dynamic_keywords||[]).length) {
-    dynEl.innerHTML = '<div class="person-section-title">'+t("ps_seeking_now")+'</div>' + p.dynamic_keywords.map(k => `<span class="tag gold">${icon("fire")} ${escHtml(k)}</span>`).join('');
-  } else { dynEl.innerHTML = ''; }
+    dynEl.innerHTML = '<div class="pp-sec-label">'+t("ps_seeking_now")+'</div>' + p.dynamic_keywords.map(k => `<span class="tag gold">${icon("fire")} ${escHtml(k)}</span>`).join('');
+    if (card) card.style.display = '';
+  } else { dynEl.innerHTML = ''; if (card) card.style.display = 'none'; }
 }
 
 async function _personRenderSaved(userId) {
