@@ -438,8 +438,8 @@ async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
     closeMemberSheet();
     showSuccessToast(t('toast_ownership_transferred', {name: newOwnerName}));
     trackEvent('bubble_ownership_transferred', { bubble_id: bubbleId, new_owner: newOwnerId });
-    // Notify new owner via broadcast
-    try { sb.channel('member-notify-' + newOwnerId).send({ type: 'broadcast', event: 'ownership', payload: { bubbleName: bcBubbleData?.name || '', senderName: currentProfile?.name || '', bubbleId: bubbleId } }); } catch(e2) {}
+    // Notify new owner via broadcast (subscribe -> send -> unsubscribe so the channel is cleaned up)
+    (function(nid, bn, sn, bid) { (async function() { try { var ch = sb.channel('member-notify-' + nid); await ch.subscribe(); await ch.send({ type: 'broadcast', event: 'ownership', payload: { bubbleName: bn, senderName: sn, bubbleId: bid } }); setTimeout(function() { ch.unsubscribe(); }, 2000); } catch(e2) { console.debug('[ownership] broadcast error:', e2); } })(); })(newOwnerId, bcBubbleData?.name || '', currentProfile?.name || '', bubbleId);
     // Refresh UI — must await bcLoadBubbleInfo before bcLoadInfo (data dependency)
     if (typeof bcLoadBubbleInfo === 'function') await bcLoadBubbleInfo();
     if (typeof bcLoadInfo === 'function') bcLoadInfo();
@@ -502,8 +502,8 @@ async function _executeSetRole(bubbleId, userId, userName, role) {
     closeMemberSheet();
     if (role === 'admin') {
       showSuccessToast(userName + ' er nu admin');
-      // Notify new admin via broadcast
-      try { sb.channel('member-notify-' + userId).send({ type: 'broadcast', event: 'admin', payload: { bubbleName: bcBubbleData?.name || '', senderName: currentProfile?.name || '', bubbleId: bubbleId } }); } catch(e2) {}
+      // Notify new admin via broadcast (subscribe -> send -> unsubscribe so the channel is cleaned up)
+      (function(tid, bn, sn, bid) { (async function() { try { var ch = sb.channel('member-notify-' + tid); await ch.subscribe(); await ch.send({ type: 'broadcast', event: 'admin', payload: { bubbleName: bn, senderName: sn, bubbleId: bid } }); setTimeout(function() { ch.unsubscribe(); }, 2000); } catch(e2) { console.debug('[admin] broadcast error:', e2); } })(); })(userId, bcBubbleData?.name || '', currentProfile?.name || '', bubbleId);
     } else {
       showToast(userName + ' er ikke længere admin');
     }
@@ -2199,11 +2199,21 @@ async function sendBubbleInvites() {
       // Notify each recipient via broadcast
       var bubbleName = bcBubbleData?.name || '';
       var senderName = currentProfile?.name || '';
+      var bid = inviteBubbleId;
       newIds.forEach(function(uid) {
-        try {
-          sb.channel('member-notify-' + uid).send({ type: 'broadcast', event: 'invite', payload: { bubbleName: bubbleName, senderName: senderName, bubbleId: inviteBubbleId } });
-        } catch(e2) {}
-        // Push håndteres nu af backend-trigger notify_bubble_invite (ADR-006 trin 4)
+        // Proper subscribe -> send -> unsubscribe so the broadcast channel is cleaned up.
+        // The old fire-and-forget sb.channel(...).send() never removed the channel, so a second
+        // invite in the same session piled up channels and froze the realtime client (app hang).
+        // Fire-and-forget IIFE so it never blocks the send flow. Push stays on the backend
+        // trigger notify_bubble_invite (ADR-006 trin 4).
+        (async function() {
+          try {
+            var ch = sb.channel('member-notify-' + uid);
+            await ch.subscribe();
+            await ch.send({ type: 'broadcast', event: 'invite', payload: { bubbleName: bubbleName, senderName: senderName, bubbleId: bid } });
+            setTimeout(function() { ch.unsubscribe(); }, 2000);
+          } catch(e2) { console.debug('[invite] broadcast error:', e2); }
+        })();
       });
     }
 
