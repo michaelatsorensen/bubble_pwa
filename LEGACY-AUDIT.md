@@ -109,3 +109,31 @@ scope hvid til `.card` frem for til skærmen.
 
 > Bemærk: dette er en statisk kode-audit. Den fanger ikke noget der kun viser sig ved bestemt
 > runtime-data. Device-test på de redesignede/rettede skærme er stadig værd at gøre.
+
+---
+
+## Runde 2 — fuld sweep af modaler, sheets, DMs, settings, onboarding (v8.70)
+
+**Token-reference (roden):**
+- DARK tekst-tokens (til LYSE flader): `--text` #1E1B2E, `--text-secondary` #56536E
+- WHITE tekst-tokens (til MØRKE flader): `--text-1/2/3` rgba(255,255,255,…)
+- LYSE flader: `--surface`/`--glass-bg` #FFFFFF, `--bg`/`--page-bg` #F0EEF5
+- MØRKE flader: `--midnight` #170F34, `--n3-card` rgba(23,15,52,.85), `.modal-sheet`/`.person-sheet` rgba(23,15,52,.94)
+
+Migrerings-rest = et DARK tekst-token brugt inde i en MØRK flade (dark-on-dark), eller et
+WHITE token / `--glass-bg` brugt på en lys backdrop.
+
+**RETTET (dark-on-dark i mørke modaler/sheets):**
+- Create-post modal labels (Synligt/Titel/Indhold/Link til event) — `--text-secondary` på `.modal-sheet` → rgba(255,255,255,.55)
+- "Prioritet"-label i person-sheet (DM) — `--text-secondary` på mørkt sheet → rgba(255,255,255,.55)
+- Admin Debug-header + Opdater/Ryd-knapper — `--text` / hvide `--surface`-knapper på mørk modal → on-dark
+
+**BEKRÆFTET KORREKT (rør ikke):**
+- qr-preview / qr-teaser / social-proof / guest-checkin: `--text`/`--text-secondary` = mørk tekst på LYSE skærme ✓
+- chat-plus-menu (Billede/Giphy): mørk tekst på HVIDE knapper (lyst popup) ✓
+- Hvide confirm-modaler (checkin/showConfirmDialog): mørk tekst på hvidt kort ✓
+- mini-onboarding: `var(--bg)` = lys flade, `--text-secondary` læsbar ✓
+- Alle `color:var(--text)`-forekomster i JS sidder på lyse kort/modaler/backdrop ✓
+
+**Metode-tilføjelse:** Klassificér ALTID efter flade, ikke farve. Et dark-token er kun en bug
+hvis dets nærmeste container er en mørk flade. Tjek `background:` på den omsluttende node.
