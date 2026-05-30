@@ -1029,7 +1029,7 @@ async function loadChatMessages() {
         : partnerInit;
       el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;padding:3rem 1.5rem 1rem;text-align:center">' +
         '<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#7C5CFC);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:white;overflow:hidden">' + avHtml + '</div>' +
-        '<div style="font-size:0.92rem;font-weight:700;margin-top:0.6rem">' + escHtml(partnerName) + '</div>' +
+        '<div style="font-size:0.92rem;font-weight:700;margin-top:0.6rem;color:rgba(255,255,255,0.95)">' + escHtml(partnerName) + '</div>' +
         '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.2rem">'+t('dm_write_first')+'</div>' +
         '</div>';
       return;
