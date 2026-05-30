@@ -977,8 +977,8 @@ async function bcLoadMessages() {
       var bName = bcBubbleData?.name || 'boblen';
       el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;padding:3rem 1.5rem 1rem;text-align:center">' +
         '<div style="width:48px;height:48px;border-radius:14px;background:rgba(100,180,230,0.15);display:flex;align-items:center;justify-content:center;margin-bottom:0.6rem;color:rgb(100,180,230)">' + icon('chat') + '</div>' +
-        '<div style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95)">Start samtalen</div>' +
-        '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.2rem">Skriv den første besked i ' + escHtml(bName) + '</div>' +
+        '<div style="font-size:0.88rem;font-weight:700;color:var(--text-on-light)">Start samtalen</div>' +
+        '<div style="font-size:0.72rem;color:var(--text-on-light-muted);margin-top:0.2rem">Skriv den første besked i ' + escHtml(bName) + '</div>' +
         '</div>';
       return;
     }
