@@ -20,7 +20,7 @@
 
   /* ── Text (3 levels only) ── */
   --text-1: rgba(255,255,255,0.9);     /* headings, names */
-  --text-2: rgba(255,255,255,0.4);     /* subtitles, meta */
+  --text-2: rgba(255,255,255,0.55);     /* subtitles, meta */
   --text-3: rgba(255,255,255,0.25);    /* hints, placeholders */
 
   /* ── Borders (2 levels only) ── */
