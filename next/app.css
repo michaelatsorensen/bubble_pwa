@@ -649,24 +649,35 @@ textarea.input { min-height:80px; resize:vertical; }
 .modal-sheet .btn-secondary { background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.5); box-shadow:none; }
 .modal-sheet .modal-title, .modal-sheet h3 { color:rgba(255,255,255,0.95); }
 
-/* ── Guide-sheets ("Sådan virker [skærm]") — Niveau 2 illustrerede kort ── */
+/* ── Guide-sheets ("Sådan virker [skærm]") — accordion ── */
 .guide-head { display:flex; align-items:center; gap:0.7rem; margin-bottom:0.3rem; }
 .guide-head-ico { width:38px; height:38px; flex-shrink:0; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; background:rgba(100,180,230,0.14); border:0.5px solid rgba(100,180,230,0.18); color:rgba(255,255,255,0.9); }
 .guide-head-ico svg { width:20px; height:20px; }
 .guide-head-title { font-size:1.05rem; font-weight:800; color:rgba(255,255,255,0.95); }
-.guide-sub { font-size:0.77rem; color:rgba(255,255,255,0.55); line-height:1.45; margin:0.15rem 0 1rem; }
-.guide-card { display:flex; gap:0.9rem; align-items:center; padding:0.8rem; margin-bottom:0.55rem; border-radius:14px; background:rgba(255,255,255,0.04); border:0.5px solid rgba(255,255,255,0.07); }
-.guide-card-vis { width:56px; height:56px; flex-shrink:0; border-radius:12px; background:rgba(100,180,230,0.08); border:0.5px solid rgba(100,180,230,0.12); display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; }
-.guide-card-vis svg { display:block; }
-.guide-card-body { flex:1; min-width:0; }
-.guide-card-t { font-size:0.85rem; font-weight:700; color:rgba(255,255,255,0.92); margin-bottom:0.12rem; }
-.guide-card-d { font-size:0.76rem; color:rgba(255,255,255,0.62); line-height:1.45; }
-.guide-card-d .tealw { color:var(--teal); font-weight:700; }
-.guide-cta { width:100%; margin-top:0.9rem; padding:0.85rem; border-radius:14px; background:rgba(100,180,230,0.18); border:0.5px solid rgba(100,180,230,0.25); color:rgba(255,255,255,0.95); font-size:0.9rem; font-weight:700; font-family:inherit; cursor:pointer; }
+.guide-sub { font-size:0.78rem; color:rgba(255,255,255,0.6); line-height:1.45; margin:0.15rem 0 1rem; }
+.guide-ac { border-radius:13px; background:rgba(255,255,255,0.04); border:0.5px solid rgba(255,255,255,0.07); margin-bottom:0.5rem; overflow:hidden; -webkit-tap-highlight-color:transparent; }
+.guide-ac-head { display:flex; gap:0.75rem; align-items:center; padding:0.8rem; cursor:pointer; }
+.guide-ac-ico { width:38px; height:38px; flex-shrink:0; border-radius:10px; background:rgba(100,180,230,0.1); border:0.5px solid rgba(100,180,230,0.14); display:flex; align-items:center; justify-content:center; color:var(--isbla, rgb(100,180,230)); }
+.guide-ac-titles { flex:1; min-width:0; }
+.guide-ac-t { font-size:0.86rem; font-weight:700; color:rgba(255,255,255,0.92); }
+.guide-ac-hint { font-size:0.72rem; color:rgba(255,255,255,0.4); margin-top:1px; }
+.guide-ac-chev { width:26px; height:26px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.4); transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+.guide-ac.open .guide-ac-chev { transform:rotate(90deg); }
+.guide-ac-body { max-height:0; opacity:0; overflow:hidden; transition:max-height 0.35s cubic-bezier(0.22,1,0.36,1), opacity 0.25s ease; }
+.guide-ac.open .guide-ac-body { max-height:600px; opacity:1; }
+.guide-ac-body-inner { padding:0 0.8rem 0.85rem 3.55rem; }
+.guide-ac-d { font-size:0.78rem; color:rgba(255,255,255,0.68); line-height:1.5; }
+.guide-ac-d b { color:rgba(255,255,255,0.85); font-weight:700; }
+.guide-access { display:flex; flex-direction:column; gap:0.55rem; }
+.guide-access-row { display:flex; gap:0.55rem; align-items:flex-start; }
+.guide-access-ico { width:22px; flex-shrink:0; display:flex; justify-content:center; padding-top:1px; }
+.guide-access-t { font-size:0.78rem; font-weight:700; color:rgba(255,255,255,0.9); }
+.guide-access-d { font-size:0.72rem; color:rgba(255,255,255,0.56); line-height:1.4; }
+.guide-tip { margin-top:1rem; padding:0.8rem 0.9rem; border-radius:14px; background:rgba(100,180,230,0.1); border:0.5px solid rgba(100,180,230,0.2); display:flex; gap:0.7rem; align-items:flex-start; }
+.guide-tip-badge { font-size:0.6rem; font-weight:800; letter-spacing:0.5px; color:#cfe6f7; background:rgba(100,180,230,0.22); padding:3px 7px; border-radius:6px; flex-shrink:0; margin-top:1px; }
+.guide-tip-text { font-size:0.76rem; color:rgba(255,255,255,0.72); line-height:1.5; }
+.guide-cta { width:100%; margin-top:1rem; padding:0.85rem; border-radius:14px; background:rgba(100,180,230,0.18); border:0.5px solid rgba(100,180,230,0.25); color:rgba(255,255,255,0.95); font-size:0.9rem; font-weight:700; font-family:inherit; cursor:pointer; }
 .guide-cta:active { background:rgba(100,180,230,0.28); }
-.guide-card-vis .gv { position:relative; width:46px; height:46px; display:inline-block; }
-.guide-card-vis .gv-ring { position:absolute; border:0.5px solid rgba(100,180,230,0.3); border-radius:50%; top:50%; left:50%; transform:translate(-50%,-50%); }
-.guide-card-vis .gv-dot { position:absolute; border-radius:50%; background:var(--isbla, rgb(100,180,230)); }
 .modal-sheet select.input { background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.9); }
 .modal-sheet .chips-container { background:rgba(255,255,255,0.04); border:0.5px solid rgba(255,255,255,0.08); }
 .modal-sheet .interest-btn { background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); }

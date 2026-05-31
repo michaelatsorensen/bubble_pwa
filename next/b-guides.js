@@ -1,82 +1,90 @@
 // ============================================================
-//  b-guides.js — "Sådan virker [skærm]" guide-sheets
-//  Niveau 2: illustrerede kort. Strandglas bund-sheet.
+//  b-guides.js — "Sådan virker [skærm]" hjælp-sheets
+//  Accordion: skimbare titler, udfold for fuld forklaring.
+//  Flere kan være åbne samtidigt. Adgangsniveauer = to-tier.
 //  Global: showGuide('home'|'bobler'|'dms'|'profil')
-//  Entry-knap kobles på senere (placering endnu ikke besluttet).
 // ============================================================
 
-// Mini-visuals (custom SVG/HTML) for "scene"-agtige punkter.
-// Eksisterende app-ikoner bruges via ico() hvor de findes.
-var _GUIDE_VIS = {
-  radar: '<span class="gv"><span class="gv-ring" style="width:46px;height:46px"></span><span class="gv-ring" style="width:28px;height:28px"></span>'
-    + '<span class="gv-dot" style="width:6px;height:6px;top:14px;left:33px"></span>'
-    + '<span class="gv-dot" style="width:5px;height:5px;top:34px;left:18px;background:var(--pink)"></span>'
-    + '<span class="gv-dot" style="width:7px;height:7px;top:24px;left:24px;background:var(--teal)"></span></span>',
-  cluster: '<svg width="38" height="38" viewBox="0 0 38 38"><line x1="19" y1="12" x2="11" y2="26" stroke="rgba(255,255,255,0.22)" stroke-width="1"/><line x1="19" y1="12" x2="27" y2="26" stroke="rgba(255,255,255,0.22)" stroke-width="1"/><circle cx="19" cy="11" r="4.5" fill="rgba(100,180,230,0.95)"/><circle cx="10" cy="26" r="3.6" fill="rgba(232,121,168,0.9)"/><circle cx="28" cy="26" r="3.6" fill="rgba(26,158,142,0.9)"/></svg>',
-  tags: '<span style="display:flex;flex-direction:column;gap:4px">'
-    + '<span style="font-size:0.5rem;font-weight:600;background:rgba(100,180,230,0.25);color:#cfe6f7;padding:2px 7px;border-radius:6px">design</span>'
-    + '<span style="font-size:0.5rem;font-weight:600;background:rgba(26,158,142,0.25);color:#a8e4d9;padding:2px 7px;border-radius:6px">startup</span>'
-    + '<span style="font-size:0.5rem;font-weight:600;background:rgba(232,121,168,0.22);color:#f3c7dc;padding:2px 7px;border-radius:6px">design</span></span>',
-  live: '<span style="position:relative;width:20px;height:20px;display:inline-block"><span style="position:absolute;inset:0;border-radius:50%;background:var(--teal)"></span><span style="position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--teal);opacity:0.45"></span></span>',
-  twoBubbles: '<span style="position:relative;width:44px;height:36px;display:inline-block"><span style="position:absolute;left:0;top:5px;width:26px;height:26px;border-radius:50%;background:rgba(100,180,230,0.3);border:0.5px solid rgba(100,180,230,0.55)"></span><span style="position:absolute;right:0;top:9px;width:22px;height:22px;border-radius:50%;background:rgba(26,158,142,0.3);border:0.5px solid rgba(26,158,142,0.55)"></span></span>',
-  qr: '<span style="width:32px;height:32px;border-radius:6px;background:#fff;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:1px;padding:3px">'
-    + '<span style="background:#170F34"></span><span></span><span style="background:#170F34"></span><span style="background:#170F34"></span>'
-    + '<span></span><span style="background:#170F34"></span><span></span><span></span>'
-    + '<span style="background:#170F34"></span><span></span><span style="background:#170F34"></span><span style="background:#170F34"></span>'
-    + '<span style="background:#170F34"></span><span></span><span style="background:#170F34"></span><span></span></span>',
-  envelope: '<svg width="34" height="30" viewBox="0 0 34 30"><rect x="3" y="5" width="28" height="20" rx="3" fill="none" stroke="rgba(100,180,230,0.85)" stroke-width="1.5"/><path d="M3 7 l14 10 14-10" fill="none" stroke="rgba(100,180,230,0.85)" stroke-width="1.5"/></svg>',
-  star: '<svg width="32" height="32" viewBox="0 0 32 32"><path d="M16 4 l3.2 7.4 8 0.6-6.1 5.3 1.9 7.8L16 28l-7 4.4 1.9-7.8L4.8 19l8-0.6z" fill="rgba(100,180,230,0.75)"/></svg>',
-  dmBubbles: '<span style="display:flex;flex-direction:column;gap:4px;align-items:flex-start"><span style="background:rgba(100,180,230,0.28);border-radius:8px 8px 8px 2px;width:30px;height:11px;display:block"></span><span style="background:rgba(232,121,168,0.28);border-radius:8px 8px 2px 8px;width:24px;height:11px;align-self:flex-end;display:block"></span></span>',
-  gif: '<span style="font-size:0.56rem;font-weight:800;color:rgba(255,255,255,0.92);background:rgba(232,121,168,0.25);border:0.5px solid rgba(232,121,168,0.45);padding:5px 9px;border-radius:8px;letter-spacing:0.5px">GIF</span>',
-  groupChat: '<svg width="36" height="32" viewBox="0 0 36 32"><circle cx="12" cy="10" r="5" fill="rgba(100,180,230,0.45)"/><circle cx="24" cy="10" r="5" fill="rgba(26,158,142,0.45)"/><circle cx="18" cy="13" r="5.5" fill="rgba(232,121,168,0.45)"/><rect x="5" y="20" width="26" height="8" rx="4" fill="rgba(255,255,255,0.08)"/></svg>',
-  bookmark: '<svg width="26" height="30" viewBox="0 0 26 30"><path d="M6 3 h14 v23 l-7-4.5-7 4.5z" fill="rgba(100,180,230,0.28)" stroke="rgba(100,180,230,0.65)" stroke-width="1.2"/></svg>',
-  strengthBar: '<span style="width:44px;height:9px;border-radius:5px;background:rgba(255,255,255,0.12);overflow:hidden;display:block"><span style="height:100%;width:72%;background:linear-gradient(90deg,var(--isbla,rgb(100,180,230)),var(--teal));border-radius:5px;display:block"></span></span>',
-  tagsWrap: '<span style="display:flex;flex-wrap:wrap;gap:3px;width:50px;justify-content:center">'
-    + '<span style="font-size:0.45rem;font-weight:600;background:rgba(100,180,230,0.25);color:#cfe6f7;padding:2px 5px;border-radius:5px">tech</span>'
-    + '<span style="font-size:0.45rem;font-weight:600;background:rgba(26,158,142,0.25);color:#a8e4d9;padding:2px 5px;border-radius:5px">kunst</span>'
-    + '<span style="font-size:0.45rem;font-weight:600;background:rgba(232,121,168,0.22);color:#f3c7dc;padding:2px 5px;border-radius:5px">løb</span></span>',
-  linkedin: '<svg width="30" height="30" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>'
+// Line-ikoner til accordion-hoveder (matcher app-stil).
+var _GI = {
+  radar:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>',
+  toggle:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="7" width="20" height="10" rx="5"/><circle cx="8" cy="12" r="3" fill="currentColor"/></svg>',
+  filter:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 5h18M6 12h12M10 19h4"/></svg>',
+  person:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M5 21v-1a7 7 0 0114 0v1"/></svg>',
+  qr:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3"/></svg>',
+  explore:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M15 9l-2 5-4 1 2-5z" fill="currentColor" stroke="none"/></svg>',
+  join:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 12H3M11 8l4 4-4 4M21 4v16"/></svg>',
+  plus:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  chat:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 11.5c0 4-3.6 7-8 7a9 9 0 01-3.2-.6L4 20l1.3-3.2A7 7 0 014 11.5C4 7.4 7.6 4 12 4s8 3.4 8 7.5z"/></svg>',
+  layers:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>',
+  send:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>',
+  clip:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 11l-9 9a5 5 0 01-7-7l9-9a3.5 3.5 0 015 5l-9 9a1.5 1.5 0 01-2-2l8-8"/></svg>',
+  edit:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M11 4H4v16h16v-7"/><path d="M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4z"/></svg>',
+  inbox:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5 5h14l3 7v6a1 1 0 01-1 1H3a1 1 0 01-1-1v-6z"/></svg>',
+  strength:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 18v-3M9 18v-7M14 18v-5M19 18V8"/></svg>',
+  bookmark:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M6 4h12v17l-6-4-6 4z"/></svg>',
+  settings:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>',
+  globe:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9fe0d4" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg>',
+  lock:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#cfe6f7" stroke-width="1.6"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>',
+  eye:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#f3c7dc" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="2.5"/></svg>'
 };
 
-// Guide-definitioner. Tekster ligger i i18n (guide_*); her bindes kun struktur + visual.
+var _GUIDE_CHEV = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>';
+
+// Adgangsniveauer (udfoldes under Bobler-punkt 5).
+var _GUIDE_ACCESS = [
+  { ico: 'globe', tKey: 'guide_access_public_t',  dKey: 'guide_access_public_d' },
+  { ico: 'lock',  tKey: 'guide_access_private_t', dKey: 'guide_access_private_d' },
+  { ico: 'eye',   tKey: 'guide_access_hidden_t',  dKey: 'guide_access_hidden_d' }
+];
+
+// Guide-definitioner. Tekster ligger i i18n (guide_*).
 var _GUIDES = {
-  home: {
-    icon: 'target', titleKey: 'guide_home_title', subKey: 'guide_home_sub',
+  home: { icon: 'target', titleKey: 'guide_home_title', subKey: 'guide_home_sub', tipKey: 'guide_home_tip',
     items: [
-      { vis: 'radar',   tKey: 'guide_home_1_t', dKey: 'guide_home_1_d' },
-      { vis: 'cluster', tKey: 'guide_home_2_t', dKey: 'guide_home_2_d' },
-      { vis: 'tags',    tKey: 'guide_home_3_t', dKey: 'guide_home_3_d' },
-      { vis: 'live',    tKey: 'guide_home_4_t', dKey: 'guide_home_4_d' }
-    ]
-  },
-  bobler: {
-    icon: 'bubble', titleKey: 'guide_bobler_title', subKey: 'guide_bobler_sub',
+      { ico: 'radar',  tKey: 'guide_home_1_t', dKey: 'guide_home_1_d' },
+      { ico: 'toggle', tKey: 'guide_home_2_t', dKey: 'guide_home_2_d' },
+      { ico: 'filter', tKey: 'guide_home_3_t', dKey: 'guide_home_3_d' },
+      { ico: 'person', tKey: 'guide_home_4_t', dKey: 'guide_home_4_d' },
+      { ico: 'qr',     tKey: 'guide_home_5_t', dKey: 'guide_home_5_d' }
+    ] },
+  bobler: { icon: 'bubble', titleKey: 'guide_bobler_title', subKey: 'guide_bobler_sub', tipKey: 'guide_bobler_tip',
     items: [
-      { vis: 'twoBubbles', tKey: 'guide_bobler_1_t', dKey: 'guide_bobler_1_d' },
-      { vis: 'qr',         tKey: 'guide_bobler_2_t', dKey: 'guide_bobler_2_d' },
-      { vis: 'envelope',   tKey: 'guide_bobler_3_t', dKey: 'guide_bobler_3_d' },
-      { vis: 'star',       tKey: 'guide_bobler_4_t', dKey: 'guide_bobler_4_d' }
-    ]
-  },
-  dms: {
-    icon: 'chat', titleKey: 'guide_dms_title', subKey: 'guide_dms_sub',
+      { ico: 'explore', tKey: 'guide_bobler_1_t', dKey: 'guide_bobler_1_d' },
+      { ico: 'join',    tKey: 'guide_bobler_2_t', dKey: 'guide_bobler_2_d' },
+      { ico: 'plus',    tKey: 'guide_bobler_3_t', dKey: 'guide_bobler_3_d' },
+      { ico: 'chat',    tKey: 'guide_bobler_4_t', dKey: 'guide_bobler_4_d' },
+      { ico: 'layers',  tKey: 'guide_bobler_5_t', hintKey: 'guide_bobler_5_hint', access: true }
+    ] },
+  dms: { icon: 'chat', titleKey: 'guide_dms_title', subKey: 'guide_dms_sub', tipKey: 'guide_dms_tip',
     items: [
-      { vis: 'dmBubbles', tKey: 'guide_dms_1_t', dKey: 'guide_dms_1_d' },
-      { vis: 'gif',       tKey: 'guide_dms_2_t', dKey: 'guide_dms_2_d' },
-      { vis: 'groupChat', tKey: 'guide_dms_3_t', dKey: 'guide_dms_3_d' },
-      { vis: 'bookmark',  tKey: 'guide_dms_4_t', dKey: 'guide_dms_4_d' }
-    ]
-  },
-  profil: {
-    icon: 'user', titleKey: 'guide_profil_title', subKey: 'guide_profil_sub',
+      { ico: 'send',   tKey: 'guide_dms_1_t', dKey: 'guide_dms_1_d' },
+      { ico: 'edit',   tKey: 'guide_dms_2_t', dKey: 'guide_dms_2_d' },
+      { ico: 'person', tKey: 'guide_dms_3_t', dKey: 'guide_dms_3_d' },
+      { ico: 'inbox',  tKey: 'guide_dms_4_t', dKey: 'guide_dms_4_d' },
+      { ico: 'clip',   tKey: 'guide_dms_5_t', dKey: 'guide_dms_5_d' }
+    ] },
+  profil: { icon: 'user', titleKey: 'guide_profil_title', subKey: 'guide_profil_sub', tipKey: 'guide_profil_tip',
     items: [
-      { vis: 'strengthBar', tKey: 'guide_profil_1_t', dKey: 'guide_profil_1_d' },
-      { vis: 'tagsWrap',    tKey: 'guide_profil_2_t', dKey: 'guide_profil_2_d' },
-      { vis: 'linkedin',    tKey: 'guide_profil_3_t', dKey: 'guide_profil_3_d' },
-      { vis: 'qr',          tKey: 'guide_profil_4_t', dKey: 'guide_profil_4_d' }
-    ]
-  }
+      { ico: 'strength', tKey: 'guide_profil_1_t', dKey: 'guide_profil_1_d' },
+      { ico: 'bookmark', tKey: 'guide_profil_2_t', dKey: 'guide_profil_2_d' },
+      { ico: 'inbox',    tKey: 'guide_profil_3_t', dKey: 'guide_profil_3_d' },
+      { ico: 'qr',       tKey: 'guide_profil_4_t', dKey: 'guide_profil_4_d' },
+      { ico: 'settings', tKey: 'guide_profil_5_t', dKey: 'guide_profil_5_d' }
+    ] }
 };
+
+function _guideAccessHTML() {
+  var h = '<div class="guide-access">';
+  _GUIDE_ACCESS.forEach(function(a) {
+    h += '<div class="guide-access-row"><div class="guide-access-ico">' + (_GI[a.ico] || '') + '</div>'
+      + '<div><div class="guide-access-t">' + t(a.tKey) + '</div>'
+      + '<div class="guide-access-d">' + t(a.dKey) + '</div></div></div>';
+  });
+  return h + '</div>';
+}
+
+function _guideToggle(el) { el.classList.toggle('open'); }
 
 function _guideClose(id) {
   var ov = document.getElementById(id);
@@ -100,14 +108,17 @@ function showGuide(key) {
     + '<div class="guide-sub">' + t(g.subKey) + '</div>';
 
   g.items.forEach(function(it) {
-    html += '<div class="guide-card">'
-      + '<div class="guide-card-vis">' + (_GUIDE_VIS[it.vis] || '') + '</div>'
-      + '<div class="guide-card-body">'
-      + '<div class="guide-card-t">' + t(it.tKey) + '</div>'
-      + '<div class="guide-card-d">' + t(it.dKey) + '</div>'
-      + '</div></div>';
+    var body = it.access ? _guideAccessHTML() : '<div class="guide-ac-d">' + t(it.dKey) + '</div>';
+    html += '<div class="guide-ac" onclick="_guideToggle(this)">'
+      + '<div class="guide-ac-head"><div class="guide-ac-ico">' + (_GI[it.ico] || '') + '</div>'
+      + '<div class="guide-ac-titles"><div class="guide-ac-t">' + t(it.tKey) + '</div>'
+      + (it.hintKey ? '<div class="guide-ac-hint">' + t(it.hintKey) + '</div>' : '')
+      + '</div><div class="guide-ac-chev">' + _GUIDE_CHEV + '</div></div>'
+      + '<div class="guide-ac-body"><div class="guide-ac-body-inner">' + body + '</div></div></div>';
   });
 
+  html += '<div class="guide-tip"><span class="guide-tip-badge">' + t('guide_tip_label') + '</span>'
+    + '<div class="guide-tip-text">' + t(g.tipKey) + '</div></div>';
   html += '<button class="guide-cta" onclick="_guideClose(\'' + id + '\')">' + t('guide_understood') + '</button>'
     + '</div>';
 
@@ -117,6 +128,5 @@ function showGuide(key) {
   ov.innerHTML = html;
   ov.onclick = function(e) { if (e.target === ov) _guideClose(id); };
   document.body.appendChild(ov);
-  // Toggle .open på næste frame så slide-up-transition kører.
   requestAnimationFrame(function() { requestAnimationFrame(function() { ov.classList.add('open'); }); });
 }

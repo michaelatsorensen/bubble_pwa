@@ -101,3 +101,47 @@ Konvergeret efter prototype + to runder eksternt input. Status: retning beslutte
 - **Serendipitet:** Hård udrensning (valgt nu) vs tynd "halo" ved randen så radaren aldrig tømmes helt og bevarer uventede overlap. Michael usikker, holder åbent. Feel-tuning, ikke arkitektur — kan afgøres i prototype/pilot.
 
 **Teknisk forudsætning (verificeret):** `calcMatchScore(myProfile, theirProfile, sharedBubbleCount)` læser intent fra `myProfile.dynamic_keywords` (Tier 5 cross-match). Live override kræver lille udvidelse: lade funktionen tage live-intent (samme mønster som planlagt geo-`distanceKm`-argument).
+
+---
+
+## Gemte events ("huskeliste") — afgrænset feature, ikke bygget (maj 2026)
+
+Konvergeret efter samtale om bredere brugsscenarier. Status: idé fanget, byg som egen fokuseret session efter guide-arbejdet er landet. IKKE scope for nuværende pilot.
+
+**Indsigten:** En bruger kan have et forhold til et event uden at deltage — "det her ser spændende ud, gem til senere". Det er ikke et nyt produkt; det er en udvidelse af den eksisterende skelnen `saved_events` vs `bubble_members` (gemme er ikke det samme som at vaere medlem). Mekanikken ligger allerede i datamodel-taenkningen, men er IKKE bygget.
+
+**Verificeret maj 2026:** Ingen `saved_events`-tabel-brug eller UI findes i koden. Events haandteres i dag via `bubble_members` (deltag) + dato-sortering (kommende/forbi). Dette er altsaa en reel ny feature, ikke en faerdiggoerelse.
+
+**Afgraenset scope hvis bygget:**
+- `saved_events`-tabel + migration (Michael koerer SQL, ikke Claude). Felter ca.: user_id, bubble_id (event), saved_at. RLS som saved_contacts.
+- Gem-knap paa event-bobler (separat fra "Bliv medlem"/"Deltag" — bevarer gemme != medlemskab).
+- "Gemte events"-visning. Logisk hjem: Profil ved siden af "Gemte" kontakter (egen fane/sektion), ELLER paa Bobler. Afklar placering foer build.
+- Roerer kerne-datamodel (events) — derfor egen session, ikke en hurtig tilfoejelse.
+
+**Bevidst fravalgt (samme samtale):** Bubble som familie-/faelleskalender-app eller generel huskeliste-app for "almindelige mennesker". Begrundelse: det er et SEPARAT produkt med modsat mekanik — et lukket rum mellem mennesker der allerede kender hinanden, hvor radar-matching + QR check-in + netvaerksopdagelse er irrelevant. At forfoelge det udvander den fokuserede positionering (professionel netvaerks-PWA, ad-fri) og tvinger to historier paa en ny bruger samtidig. Den ENE genbrugelige del af ideen er "gem events" ovenfor — resten holdes ude.
+
+---
+
+## Social proof-discovery: foreslå bobler via gemte kontakters medlemskaber (maj 2026)
+
+Stærk produktindsigt fra Michael. Status: idé fanget + teknisk fundament verificeret. Egen fokuseret session efter guide-arbejdet. IKKE scope nu.
+
+**Indsigten:** Brugere vil opdage nye netværk og events gennem deres gemte kontakters bobler. "Folk jeg har gemt (= aktivt vurderet relevante) er med her" er et langt staerkere relevans-signal end ren tag-matching. Det er social proof som opdagelsesmotor — samme adfaerd der driver LinkedIn ("dine forbindelser deltager i...") og Meetup ("medlemmer du kender"). Forstaerker det eksisterende flywheel: gemte kontakter → deres bobler → nye netvaerk/events → flere relevante folk → flere gemte kontakter.
+
+**Den centrale erkendelse — det er et OMVENDT signal, ikke nyt plumbing:** I dag bruger `calcMatchScore(myProfile, theirProfile, sharedBubbleCount)` (b-radar.js:438, Tier 4 i smart match v3) shared-bubble-count til at ranke PERSONER hoejere. Denne idé vender det om: gemte kontakters bobler → foreslaa BOBLER. Samme datagrundlag (`saved_contacts` ⋈ `bubble_members`), modsat retning.
+
+**Verificeret fundament (maj 2026):**
+- `saved_contacts` findes og bruges (b-profile.js).
+- `savedBmMap` bygger allerede mapping over delte bobler pr. gemt kontakt (b-profile.js:835-841) — naesten praecis den join der skal bruges, bare aggregeret pr. boble i stedet for pr. person.
+- `bubble_members` har status/role; `bubbles` har visibility (public/private/hidden).
+- **Udforsk er i dag REN kronologisk** (`order('created_at')`, b-bubbles.js:134) — INGEN relevans-ranking. Der er et tomt felt at fylde; idéen kaemper ikke mod et eksisterende system.
+
+**Afgraenset scope hvis bygget:**
+- Query: for hver boble bruger ikke er medlem af, tael hvor mange af brugerens gemte kontakter der er aktive medlemmer.
+- Brug tallet som ranking-signal i Udforsk (erstatter/supplerer kronologi) ELLER som egen "Fordi du kender X"-sektion.
+- Roerer kerne-discovery — derfor egen session.
+
+**MAA AFKLARES FOER BUILD (privacy):**
+1. Navngivet social proof ("Anna er med her") vs aggregeret ("3 af dine kontakter er med"). Navngivet er staerkere men mere foelsomt.
+2. **Haard regel:** en gemt kontakts medlemskab af en SKJULT eller PRIVAT boble maa ALDRIG laekke den bobles eksistens til brugeren. Social-proof-signalet maa kun gaelde bobler brugeren allerede selv kan se (offentlige, eller private brugeren har adgang til). Skjulte bobler er helt ude.
+3. Skal en kontakt kunne fravaelge at optraede som social proof?
