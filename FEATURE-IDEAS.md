@@ -145,3 +145,21 @@ Stærk produktindsigt fra Michael. Status: idé fanget + teknisk fundament verif
 1. Navngivet social proof ("Anna er med her") vs aggregeret ("3 af dine kontakter er med"). Navngivet er staerkere men mere foelsomt.
 2. **Haard regel:** en gemt kontakts medlemskab af en SKJULT eller PRIVAT boble maa ALDRIG laekke den bobles eksistens til brugeren. Social-proof-signalet maa kun gaelde bobler brugeren allerede selv kan se (offentlige, eller private brugeren har adgang til). Skjulte bobler er helt ude.
 3. Skal en kontakt kunne fravaelge at optraede som social proof?
+
+---
+
+## Privat note på gemt kontakt (maj 2026)
+
+Michaels idé. Status: fanget, lille afgrænset feature — kan passes ind ved siden af hovedsporet. IKKE bygget.
+
+**Indsigten:** Lad brugeren skrive en PRIVAT note på en gemt kontakt — fx "mødte til Gate21-event, arbejder med solceller, ville intro'e mig til Lars". Kun synlig for brugeren selv, deles ALDRIG med personen. Gør netvaerket brugbart over tid (huske HVORFOR man mødte nogen) frem for bare en liste af navne. Passer praecist til Bubbles formaal.
+
+**Verificeret maj 2026:** Ingen private_note/personal_note/contact_note findes i koden. Helt ny feature.
+
+**Afgraenset scope hvis bygget:**
+- `note` tekst-kolonne paa `saved_contacts` (Michael koerer SQL). RLS: kun ejer kan laese/skrive sin egen note.
+- Tekstfelt paa person-sheet / gemte-kontakt-visning (rediger inline).
+- Write gennem dbActions (nyt: updateContactNote, eller udvid saveContact).
+- Privacy triviel: noten lever paa brugerens side af relationen, deles aldrig. Roerer IKKE kerne (radar/matching).
+
+**Mulig kobling:** Hvis social-proof-discovery (gemte kontakters bobler) bygges, kunne noten vises som kontekst dér ogsaa. Men start simpelt — bare noten paa kontakten.
