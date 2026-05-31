@@ -98,7 +98,7 @@ Konvergeret efter prototype + to runder eksternt input. Status: retning beslutte
 - **Akse-asymmetri:** "For mig" = passivt medlemskabs-filter (ændrer hvem der vises, re-sorterer IKKE positioner). "Jeg søger" = aktiv re-scoring (reorganiserer hele relevans-rummet, intent magnetiseres mod centrum). Stærk mental model, men ikke endeligt bekræftet af Michael.
 
 **ÅBENT — vend tilbage:**
-- **Serendipitet:** Hård udrensning (valgt nu) vs tynd "halo" ved randen så radaren aldrig tømmes helt og bevarer uventede overlap. Michael usikker, holder åbent. Feel-tuning, ikke arkitektur — kan afgøres i prototype/pilot.
+- **Serendipitet:** Hård udrensning (valgt nu) vs tynd "halo" ved randen så radaren aldrig tømmes helt og bevarer uventede overlap. **Opdatering maj 2026:** efter at have testet interaktiv prototype (hård vs halo side om side) hælder Michael fortsat til HÅRD udrensning. Ikke 100% endeligt laast, men staerk og gentagen praeference — default til haard medmindre pilot viser tom-radar-problem. Feel-tuning, ikke arkitektur.
 
 **Teknisk forudsætning (verificeret):** `calcMatchScore(myProfile, theirProfile, sharedBubbleCount)` læser intent fra `myProfile.dynamic_keywords` (Tier 5 cross-match). Live override kræver lille udvidelse: lade funktionen tage live-intent (samme mønster som planlagt geo-`distanceKm`-argument).
 
