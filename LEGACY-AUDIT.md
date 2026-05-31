@@ -137,3 +137,29 @@ WHITE token / `--glass-bg` brugt på en lys backdrop.
 
 **Metode-tilføjelse:** Klassificér ALTID efter flade, ikke farve. Et dark-token er kun en bug
 hvis dets nærmeste container er en mørk flade. Tjek `background:` på den omsluttende node.
+
+---
+
+## Runde 3 — to nye mønstre fundet via tester-screenshots (v8.72–v8.77)
+
+**Mønster D — "ufarvet overskrift falder tilbage til standard".** Ikke et forkert token, men
+MANGLENDE farve. Et `<div>` uden `color:` arver standard-tekstfarven; på en mørk flade bliver
+det sort-på-mørk. Fundet: tom DM-navn + "Start samtalen" i tom boble-chat (v8.72).
+TJEK: ethvert dynamisk-renderet tekst-element uden eksplicit `color:` på en ikke-standard flade.
+
+**Mønster E — samme komponent-type, FORSKELLIG flade.** Antag ALDRIG at to skærme der "ligner"
+hinanden har samme flade. Konkret afgørende fund (v8.77):
+- **DM-chat (`#screen-chat`) = MØRK** `rgba(23,15,52,0.92)` → hvid tekst korrekt
+- **Boble-chat (`#screen-bubble-chat`) = LYS** (arver `.screen`-base #F0EEF5) → mørk tekst korrekt
+Begge er "chat", men modsatte flader. En fix i v8.72 antog begge var mørke og gjorde
+boble-chat-overskriften hvid = usynlig på lys. ALTID verificér `#screen-X` baggrund + evt.
+besked-container-override FØR farve sættes.
+
+**Token-løft til AA denne runde:**
+- `--text-2` (undertitler på mørkt): 0.4 (~3.8:1) → 0.55 (~6:1)
+- person-sheet undertitel: 0.4 → 0.55 ; secondary-knapper (Gemt/Profil): 0.55 → 0.7
+- saved-card rolle (`#screen-profile .card .text-muted`): 0.55 → 0.62
+- "I dit netværk" match-badge: grå `--muted` → neutral hvid 0.6 på rgba(255,255,255,0.08)
+- IKKE rørt: `--muted` (#8885A0) globalt — det bruges på BÅDE lyse og mørke flader, så en
+  global ændring ville regressere den ene flade. Lys-flade-meta har `--text-on-light-muted`
+  (#56536E, AA) som dedikeret token; brug DET på lyse flader frem for at ændre `--muted`.
