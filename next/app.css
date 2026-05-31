@@ -641,6 +641,7 @@ textarea.input { min-height:80px; resize:vertical; }
 /* Guide-sheet: undgå iOS rubberband-flicker (backdrop-filter re-render ved overscroll).
    Egen composite-lag + låst overscroll så toppen ikke bouncer. */
 .guide-sheet { -webkit-backface-visibility:hidden; backface-visibility:hidden; will-change:transform; overscroll-behavior-y:none; }
+.guide-overlay { -webkit-backface-visibility:hidden; backface-visibility:hidden; transform:translateZ(0); will-change:opacity; }
 .modal-overlay.open .guide-sheet { transform:translateY(0) translateZ(0); }
 .modal-handle { width:36px; height:4px; border-radius:99px; background:rgba(255,255,255,0.15); margin:0 auto 0.75rem; }
 

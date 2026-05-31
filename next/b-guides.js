@@ -124,7 +124,7 @@ function showGuide(key) {
 
   var ov = document.createElement('div');
   ov.id = id;
-  ov.className = 'modal-overlay';
+  ov.className = 'modal-overlay guide-overlay';
   ov.innerHTML = html;
   ov.onclick = function(e) { if (e.target === ov) _guideClose(id); };
   document.body.appendChild(ov);
