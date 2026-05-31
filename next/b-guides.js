@@ -95,11 +95,11 @@ function showGuide(key) {
   var safeIco = (typeof ico === 'function') ? ico(g.icon) : '';
   var html = '<div class="modal-sheet guide-sheet">'
     + '<div class="modal-handle"></div>'
+    + '<div class="guide-inner">'
     + '<div class="guide-fixed-head">'
     + '<div class="guide-head"><div class="guide-head-ico">' + safeIco + '</div>'
     + '<div class="guide-head-title">' + t(g.titleKey) + '</div></div>'
     + '<button class="guide-close" onclick="closeModal(\'modal-guide\')" aria-label="Luk">✕</button>'
-    + '</div>'
     + '<div class="guide-sub">' + t(g.subKey) + '</div>'
     + '</div>'
     + '<div class="guide-scroll">';
@@ -118,7 +118,8 @@ function showGuide(key) {
     + '<div class="guide-tip-text">' + t(g.tipKey) + '</div></div>';
   html += '</div>'; // /guide-scroll
   html += '<div class="guide-footer"><button class="guide-cta" onclick="closeModal(\'modal-guide\')">' + t('guide_understood') + '</button></div>'
-    + '</div>';
+    + '</div>'  // /guide-inner
+    + '</div>'; // /guide-sheet
 
   ov.innerHTML = html;
   // Tving reflow så browseren registrerer sheetens start-position (translateY(100%))
