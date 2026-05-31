@@ -115,6 +115,10 @@ function showGuide(key) {
     + '</div>';
 
   ov.innerHTML = html;
+  // Tving reflow så browseren registrerer sheetens start-position (translateY(100%))
+  // FØR .open flytter den til translateY(0) — ellers popper den i stedet for at glide (jf. home-tray).
+  var sheet = ov.querySelector('.modal-sheet');
+  if (sheet) void sheet.offsetHeight;
   // Reuse proven static-modal open path (backdrop layer already settled → ingen flicker).
   if (typeof openModal === 'function') openModal('modal-guide');
   else ov.classList.add('open');
