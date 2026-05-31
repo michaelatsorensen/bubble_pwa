@@ -86,19 +86,11 @@ function _guideAccessHTML() {
 
 function _guideToggle(el) { el.classList.toggle('open'); }
 
-function _guideClose(id) {
-  var ov = document.getElementById(id);
-  if (!ov) return;
-  ov.classList.remove('open');
-  setTimeout(function() { if (ov && ov.parentNode) ov.remove(); }, 350);
-}
-
 function showGuide(key) {
   var g = _GUIDES[key];
   if (!g) return;
-  var id = 'guide-sheet-' + key;
-  var existing = document.getElementById(id);
-  if (existing) existing.remove();
+  var ov = document.getElementById('modal-guide');
+  if (!ov) return;
 
   var safeIco = (typeof ico === 'function') ? ico(g.icon) : '';
   var html = '<div class="modal-sheet guide-sheet">'
@@ -119,14 +111,11 @@ function showGuide(key) {
 
   html += '<div class="guide-tip"><span class="guide-tip-badge">' + t('guide_tip_label') + '</span>'
     + '<div class="guide-tip-text">' + t(g.tipKey) + '</div></div>';
-  html += '<button class="guide-cta" onclick="_guideClose(\'' + id + '\')">' + t('guide_understood') + '</button>'
+  html += '<button class="guide-cta" onclick="closeModal(\'modal-guide\')">' + t('guide_understood') + '</button>'
     + '</div>';
 
-  var ov = document.createElement('div');
-  ov.id = id;
-  ov.className = 'modal-overlay guide-overlay';
   ov.innerHTML = html;
-  ov.onclick = function(e) { if (e.target === ov) _guideClose(id); };
-  document.body.appendChild(ov);
-  requestAnimationFrame(function() { requestAnimationFrame(function() { ov.classList.add('open'); }); });
+  // Reuse proven static-modal open path (backdrop layer already settled → ingen flicker).
+  if (typeof openModal === 'function') openModal('modal-guide');
+  else ov.classList.add('open');
 }
