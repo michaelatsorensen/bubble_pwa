@@ -1092,7 +1092,12 @@ var dbActions = {
       var { data: bubble, error } = await sb.from('bubbles').insert(data).select().maybeSingle();
       if (error) { errorToast('save', error); return { ok: false, error: error }; }
       // Auto-join as member
-      await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id });
+      var { error: memberErr } = await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id });
+      if (memberErr) {
+        // Boble er oprettet, men ejer blev ikke medlem — ærlig delvis-success så caller kan håndtere det
+        logError('dbActions.createBubble.autojoin', memberErr, { bubble_id: bubble.id });
+        return { ok: true, bubble: bubble, warning: 'owner_not_member' };
+      }
       trackEvent('bubble_created', { bubble_id: bubble.id, type: data.type });
       return { ok: true, bubble: bubble };
     } catch(e) { logError('dbActions.createBubble', e); errorToast('save', e); return { ok: false, error: e }; }
@@ -1164,7 +1169,12 @@ var dbActions = {
         }
       }
       // Then mark invitation as accepted
-      await sb.from('bubble_invitations').update({ status: 'accepted' }).eq('id', inviteId);
+      var { error: statusErr } = await sb.from('bubble_invitations').update({ status: 'accepted' }).eq('id', inviteId);
+      if (statusErr) {
+        // Bruger ER joined (sikret ovenfor), men invitationen står stadig pending — ærlig delvis-success
+        logError('dbActions.acceptInvitation.status', statusErr, { invite_id: inviteId });
+        return { ok: true, warning: 'invite_still_pending' };
+      }
       return { ok: true };
     } catch(e) { logError('dbActions.acceptInvitation', e); errorToast('save', e); return { ok: false, error: e }; }
   },
