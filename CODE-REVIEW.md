@@ -135,3 +135,28 @@ Ingen frontend-katastrofe · ownership transfer = stoerste risiko (ADR-009) · p
 - **MIME kan spoofes / filindhold ikke valideret serverside** — storage-haerdning foer bred launch.
 
 *Krydstjek maj 2026. To uafhaengige reviews konvergerer paa hovedfund; dette review var grundigere paa write-path fejlhaandtering. Backend/RLS-fund kraever fortsat Supabase-verifikation.*
+
+---
+
+# v8.87 — Konsolideret prioritering (efter begge reviews + Michaels syntese, maj 2026)
+
+> Begge eksterne reviews + Claudes review konvergerer. To korrektioner fra Michaels syntese er forankret her:
+
+## Korrektion 1: GDPR-sletning er #1 (ikke ownership)
+Begrundelse: det er den eneste P0 — rammer en **funktionel mur** (sletning fejler i praksis NU pga. FK `NO ACTION`) oven i compliance-krav, og rammer stort set alle aktive brugere. Ownership er trust-risiko; GDPR-sletning er "noget der ikke virker". Sletning øverst.
+
+## Korrektion 2: Public file URLs er CONFIRMED, ikke NEEDS VERIFICATION
+At `getPublicUrl()` bruges til DM/boble-filer er **frontend-fakta** (koden gør det) → filer er link-public per design = **bekræftet privacy-model-beslutning**. Kun bucket-policy-backing er NEEDS VERIFICATION. Skal være et bevidst valg, ikke en utilsigtet default. (Claudes oprindelige NEEDS VERIFICATION var for blød kalibrering.)
+
+## Konsolideret topprioritet
+1. **GDPR-sletning** / delete-rules / anonymisering (P0 — funktionel + compliance)
+2. **Ownership request-flow** (ADR-009 — trust/governance)
+3. **RLS-verifikation** (private/hidden bobler + writes + role/admin + push subscriptions)
+4. **Public file URL / storage-beslutning** (CONFIRMED privacy-model — beslut bevidst)
+5. **Push ownership konsolidering** (hybrid → backend)
+6. **Direkte writes → dbActions** (gradvist, native blocker)
+
+## Nuance værd at huske
+"Moden frontend" må ikke blive sovepude: GDPR-sletning + de to fake-success-bugs (createBubble/acceptInvitation, lukket v8.88) er **funktionelle** fund, ikke kun governance. Tyngdepunktet ER flyttet til backend/compliance/governance — det er et modenhedstegn — men der er stadig ting der ikke virker, ikke kun ting der er uafklarede.
+
+*Forankret maj 2026 fra to uafhængige reviews + founder-syntese.*
