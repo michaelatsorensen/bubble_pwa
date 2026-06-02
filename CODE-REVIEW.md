@@ -114,3 +114,24 @@ Intern test ✅ · Kontrolleret beta ✅ · Pilot ✅ · Bred launch ⚠️ næs
 3. Ownership transfer ("hov, det var ikke det jeg mente")
 
 *Oprettet maj 2026 fra eksternt v8.87-review. Fund verificeret mod next-v8.87.*
+
+---
+
+# Bubble next-v8.87 — Andet eksternt review (krydstjek, maj 2026)
+
+> Et andet uafhaengigt security/bughunt-review af v8.87. Krydstjekket mod Claudes eget review + verificeret mod kode. **Konvergens paa alle hovedfund** (ownership, public file URLs, direkte writes, hybrid push, RLS-afhaengighed) — staerkt signal. Men dette review fandt OGSAA tre konkrete fund Claudes review MISSEDE (write-path fejlhaandtering + logging-PII). Verificeret nedenfor:
+
+## Nye CONFIRMED fund (missede i Claudes review — nu verificeret i kode)
+- 🔴 **Bug: `createBubble()` ignorerer auto-join fejl** (b-utils.js:1095). Bubble-insert er error-checket, men `bubble_members`-insert er fire-and-forget → returnerer `{ok:true}` selv hvis owner IKKE blev medlem. Fake-success. **Fix (LOW risk):** check error paa member-insert, vis warning/rollback. → bør fixes (lille, afgraenset).
+- 🟡 **Bug: `acceptInvitation()` ignorerer status-update fejl** (b-utils.js:1167). Join-insert ER checket (godt), men `bubble_invitations`-status→'accepted' er ikke → bruger joined men invitation staar pending hvis update fejler. Partial-success. **Fix (LOW risk):** check error, returnér partial. (Mindre alvorlig end ekstern framing — join'et er sikret.)
+- 🟡 **Privacy: `logError()` beriger med getClientState() → Supabase error_log + EmailJS** (b-config.js:127 + 33). Opsamler flow-flags (pending_contact/join = IDs), nav-state, chat-kontekst (bubble id/navn), live bubble id, user id. Sendt til tredjepart (EmailJS) + lagret uden dokumenteret retention. **Severity: P2** (debugging-telemetri, ikke breach — men EmailJS-benet er den foelsomme del). **Fix (SAFE):** maskér navne/kontekst foer ekstern log, saet retention paa error_log.
+
+## Konvergens (begge reviews enige — hoej tillid)
+Ingen frontend-katastrofe · ownership transfer = stoerste risiko (ADR-009) · public file URLs (P1, beslut foer launch) · direkte writes udenom dbActions (native blocker) · hybrid push (P2) · RLS skal verificeres server-side · de tre device-test-flows.
+
+## Yderligere fra dette review (vaerd at notere)
+- **P1.6 Push-click dobbelt-navigation:** SW goer baade postMessage(PUSH_NAVIGATE) OG target.navigate(url) → app-router boer dedupe. (MEDIUM, ikke verificeret endnu.)
+- **Upload blocklist → allowlist:** nuvaerende blocklist (html/svg/js/php) er god for pilot, men allowlist (images/pdf/doc/xlsx/pptx) er staerkere foer bred launch.
+- **MIME kan spoofes / filindhold ikke valideret serverside** — storage-haerdning foer bred launch.
+
+*Krydstjek maj 2026. To uafhaengige reviews konvergerer paa hovedfund; dette review var grundigere paa write-path fejlhaandtering. Backend/RLS-fund kraever fortsat Supabase-verifikation.*
