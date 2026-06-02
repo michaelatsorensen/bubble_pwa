@@ -1031,7 +1031,7 @@ function _updateProfileStrengthBar(strength) {
     if (strength >= 80) { lbl.textContent = 'Stærk profil'; lbl.style.color = '#1A9E8E'; }
     else if (strength >= 50) { lbl.textContent = 'God profil'; lbl.style.color = 'var(--accent)'; }
     else if (strength >= 25) { lbl.textContent = 'Basis profil'; lbl.style.color = 'var(--gold)'; }
-    else { lbl.textContent = 'Kom i gang'; lbl.style.color = 'var(--accent2)'; }
+    else { lbl.textContent = 'Ny profil'; lbl.style.color = 'var(--accent2)'; }
   }
 }
 
@@ -1456,7 +1456,7 @@ async function _bbLoadPendingInvites() {
       if (b.name) html += '<div style="font-size:0.62rem;color:var(--muted)">' + icon('bubble') + ' ' + escHtml(b.name) + '</div>';
       html += '</div>';
       html += '<div style="display:flex;gap:0.3rem;flex-shrink:0">';
-      html += '<button class="btn-sm" style="padding:0.3rem 0.6rem;font-size:0.65rem;font-weight:600;background:var(--gradient-primary);color:white;border:none;border-radius:var(--radius-xs);cursor:pointer;font-family:inherit" onclick="event.stopPropagation();bbAcceptInvite(\'' + inv.id + '\',\'' + inv.from_user_id + '\')">Accepter</button>';
+      html += '<button class="btn-sm" style="padding:0.3rem 0.6rem;font-size:0.65rem;font-weight:600;background:var(--cta-bg);color:var(--cta-text);border:1px solid var(--cta-border);border-radius:var(--radius-xs);cursor:pointer;font-family:inherit" onclick="event.stopPropagation();bbAcceptInvite(\'' + inv.id + '\',\'' + inv.from_user_id + '\')">Accepter</button>';
       html += '<button class="btn-sm btn-ghost" style="padding:0.3rem 0.5rem;font-size:0.65rem" onclick="event.stopPropagation();bbDeclineInvite(\'' + inv.id + '\',this)">Afvis</button>';
       html += '</div></div></div>';
     });
