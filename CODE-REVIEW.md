@@ -81,3 +81,36 @@ Service worker gør både `postMessage` og `navigate`. Test for dobbelt-routing 
 ---
 
 *Oprettet 28. maj 2026 fra to konvergerende reviews. Verificeret mod next-v8.50.*
+
+---
+
+# Bubble next-v8.87 — Eksternt review (maj 2026)
+
+> Målrettet eksternt review af v8.87 med fokus på tidligere svage områder: realtime, join/deeplink, fake-success, state, ownership, write-patterns. Alle fund nedenfor er verificeret mod koden (mål, ikke gæt). **Hovedkonklusion: v8.87 er det første build vurderet "pilot-modent" — tyngdepunktet er flyttet fra "system der skal reddes teknisk" til "produkt der skal testes med mennesker".** Det er normalt dér solo-founder-projekter falder fra hinanden, så det er et reelt fremskridt.
+
+## Lukkede siden v8.50-review (nu verificeret ✅)
+- ✅ **Realtime-resume** — `visibilitychange` + `rtReconnect()` ved `_bgMs > 8000`, eksplicit håndtering af at iOS dræber WebSockets i baggrunden + refresh af aktive chat-skærme. (Største tidligere bekymring: baggrund→død socket→falsk "chat virker".) **NB: kode-bekræftet, men skal device-verificeres på iPhone — kode-review kan ikke bevise at det virker i praksis.**
+- ✅ **Kontakt deep-link fake-success** — `if (!result.ok) return` før profil åbnes.
+- ✅ **Check-in fake-success** — fejlet check-in viser fejl-toast, åbner IKKE chat.
+- ✅ **OAuth-fejl** — `_pkceFailed` markeres eksplicit, ikke længere tavst tilbage til login.
+- ✅ **Join-races** — mutex-beskyttelse tilføjet.
+
+## Tilbageværende fund (logget i de rette docs)
+- 🔴 **P1.1 Ownership transfer er instant** — ingen accept/pending/rollback/cancel. Kaldt "største tilbageværende governance-svaghed". → logget ved ADR-009 i TECH-DEBT.md (hovedspor).
+- 🟡 **P1.2 Hybrid push** — `sendPush()` frontend-kaldt ved join_request/approved/checkin mens new_message/invitation er backend-ejede. → TECH-DEBT.md (P2, dokumentér + konsolidér før native).
+- 🟡 **P1.3 Deep-link flow spredt** — checkGuestEventRoute/checkQRJoin/checkPendingJoin/resolvePostAuthDestination. Bedre end før, men kompleksitet kan akkumulere. Ikke bug.
+- 🟡 **P2 Direkte writes udenom dbActions** — 18 profiles.update bypasses. → TECH-DEBT.md (P1 native blocker).
+- 🟡 **P2 Magic delays** — setTimeout(400) i auth/deeplink. → TECH-DEBT.md (P3).
+
+## Launch readiness (review-vurdering)
+Intern test ✅ · Kontrolleret beta ✅ · Pilot ✅ · Bred launch ⚠️ næsten.
+
+## VIGTIGT — ikke nævnt i reviewet, men stadig åbent
+- 🔴 **GDPR-sletning fejler** (OPEN-QUESTIONS Q-014/relateret): FK-relationer blokerer sletning af bruger der har skabt indhold. Pilot-brugere VIL bede om sletning. P0, ikke dækket af dette review. Et positivt review må ikke overskygge denne åbne mur.
+
+## De 3 mest risikable flows at device-teste (review-anbefaling)
+1. Event QR → signup → onboarding → event (mest komplekse flow i hele Bubble)
+2. App i baggrund → tilbage → chat (især iPhone — ny løsning ser god ud, skal verificeres)
+3. Ownership transfer ("hov, det var ikke det jeg mente")
+
+*Oprettet maj 2026 fra eksternt v8.87-review. Fund verificeret mod next-v8.87.*
