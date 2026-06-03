@@ -321,7 +321,7 @@
    END HYBRID PATTERN UTILITIES
    ═══════════════════════════════════════════════════════════════════════════ */
 
-html { height:100vh; overflow:hidden; overscroll-behavior:none; background:#170F34; }
+html { height:100vh; height:100dvh; overflow:hidden; overscroll-behavior:none; background:#170F34; }
 
 /* ── DESKTOP PHONE FRAME ── */
 
@@ -334,6 +334,7 @@ body {
   -webkit-text-size-adjust: 100%;
   margin: 0;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
 }
