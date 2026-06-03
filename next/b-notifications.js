@@ -170,21 +170,22 @@ async function _notifSavedBy() {
     var { data: savedBy } = await q;
     if (!savedBy || savedBy.length === 0) return '';
     var saverIds = savedBy.map(function(s){return s.user_id;});
-    var { data: saverProfiles } = await sb.from('profiles').select('id,name,avatar_url').in('id', saverIds);
+    // PRIVACY (free tier): hent KUN arbejdsplads — aldrig navn/avatar/titel.
+    // Den der gemmer skal være anonym for den gemte. PREMIUM: lås fuld identitet
+    // (navn+avatar+klikbar profil) op her når tier-flag findes — jf. Profile Views (free=count, paid=names).
+    var { data: saverProfiles } = await sb.from('profiles').select('id,workplace').in('id', saverIds);
     var sPMap = {};
     (saverProfiles||[]).forEach(function(p) { sPMap[p.id] = p; });
     return savedBy.map(function(s) {
       var p = sPMap[s.user_id] || {};
-      var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var time = new Date(s.created_at).toLocaleDateString(_locale(), {day:'numeric',month:'short'});
-      var avatarHtml = p.avatar_url ?
-        '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
-        '<div class="notif-avatar" style="background:linear-gradient(135deg,#1A9E8E,#10B981)">' + initials + '</div>';
-      return '<div class="notif-card" onclick="openPerson(\'' + s.user_id + '\',\'screen-notifications\')" style="cursor:pointer">' +
-        '<div class="notif-header">' + avatarHtml +
+      // Anonym teaser: arbejdsplads hvis den findes, ellers neutral fallback. IKKE klikbar (ville afsløre identitet).
+      var who = p.workplace ? t('nf_saved_you_from', { workplace: escHtml(p.workplace) }) : t('nf_saved_you_anon');
+      return '<div class="notif-card">' +
+        '<div class="notif-header"><div class="notif-avatar" style="background:rgba(26,158,142,0.18);color:#1A9E8E">' + icon('bookmark') + '</div>' +
         '<div>' +
-        '<div class="notif-title">' + icon("bookmark") + ' ' + t('nf_saved_you') + '</div>' +
-        '<div class="notif-sub">' + escHtml(p.name||t('misc_unknown')) + ' · ' + time + '</div>' +
+        '<div class="notif-title">' + t('nf_saved_you') + '</div>' +
+        '<div class="notif-sub">' + who + ' · ' + time + '</div>' +
         '</div></div></div>';
     }).join('');
   } catch(e) { logError('_notifSavedBy', e); return ''; }
