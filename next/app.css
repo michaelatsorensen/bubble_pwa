@@ -321,6 +321,11 @@
    END HYBRID PATTERN UTILITIES
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ⛔⛔⛔ RØR IKKE height HER — BRUG 100vh, ALDRIG 100dvh/svh/lvh ⛔⛔⛔
+   100dvh ER PRØVET OG REVERTET MINDST 3 GANGE (Ulefone-sagen a629cea, v8.91 dd965c4).
+   Det giver en HVID BAR i bunden (body's lyse --bg lyser igennem dvh-gap ved keyboard-interaktion)
+   + layout-skub. Tastatur-bug i chat SKAL løses via window.visualViewport, IKKE her.
+   Se TECH-DEBT.md "Tastatur skubber UI". Hvis du overvejer 100dvh: STOP. Det er en fælde. */
 html { height:100vh; overflow:hidden; overscroll-behavior:none; background:#170F34; }
 
 /* ── DESKTOP PHONE FRAME ── */

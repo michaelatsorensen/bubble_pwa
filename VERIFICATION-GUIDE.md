@@ -533,3 +533,20 @@ Min vurdering:
 - **NO ACTION (BLOKERER sletning):** bubble_messages, bubble_message_reactions, bubble_posts, bubbles.created_by, guest_checkins.claimed_by
 
 **Konsekvens:** En bruger der har skrevet en boble-besked / lavet reaktion / opslag / oprettet en boble / claimet guest-checkin kan IKKE slettes — DB afviser med FK-fejl. Rammer stort set alle aktive brugere. "Slet konto" vil fejle. Kræver bevidst sletteprocedure per indholdstype (anonymisér vs slet vs overdrag ejerskab for bobler).
+
+---
+
+## ⛔ PRE-DEPLOY GUARD: ingen dynamiske viewport-units (KRITISK)
+
+**Hvorfor:** `100dvh`/`svh`/`lvh` er genintroduceret og revertet MINDST 3 gange (Ulefone-sagen a629cea, v8.91 dd965c4). Hver gang giver det en **hvid bar i bunden** (body's lyse `--bg` lyser igennem dvh-gap ved keyboard-interaktion) + layout-skub, og koster flere builds at fjerne igen. Det *ser ud* som det rigtige mobil-fix (generisk internet-råd), derfor er reflexen til at tilføje det stærk. **I DENNE kodebase er det forbudt zone.**
+
+**KØR ALTID dette før deploy af app.css-ændringer:**
+```bash
+grep -nE "height:\s*[0-9]+(dvh|svh|lvh)" next/app.css && echo "🔴 STOP — dvh fundet, må ikke deployes" || echo "✓ rent"
+```
+Hvis det finder noget: STOP. Brug `100vh`. Tastatur-bug i chat løses via `window.visualViewport` (flyt KUN composer), ALDRIG via html/body height eller viewport-meta.
+
+**Inline-advarsel:** der står en ⛔-kommentar direkte over `html`-reglen i app.css. Den må ikke fjernes.
+
+## LÆRING — revert af commit-serie (fra v8.91-v8.94 sagaen)
+Ved revert af flere relaterede commits: revert ALLE commits i serien, ikke kun den sidste. v8.91 var TO commits (dd965c4 rørte app.css/100dvh, 8d1d079 rørte viewport-meta). Reverten ramte kun den ene → bug'en blev hængende gennem v8.92/93. **Verificér ALTID revert mod en kendt-god build** (fx `diff` mod v8.89's app.css), antag ALDRIG hvad "originalen" var. "Mål frem for gæt" gælder også revert.
