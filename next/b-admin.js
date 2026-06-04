@@ -276,12 +276,20 @@ function _dashBucketWeeks(rows, field) {
     var key = weekStart.toISOString().slice(0, 10);
     buckets[key] = (buckets[key] || 0) + 1;
   });
-  var keys = Object.keys(buckets).sort();
-  var labels = keys.map(function(k) {
-    var d = new Date(k);
-    return d.getDate() + '/' + (d.getMonth() + 1);
-  });
-  return { labels: labels, values: keys.map(function(k) { return buckets[k]; }) };
+  var dataKeys = Object.keys(buckets).sort();
+  if (dataKeys.length === 0) return { labels: [], values: [] };
+  // Byg KONTINUERLIG uge-tidslinje fra første aktivitet til nu — også uger uden aktivitet (=0),
+  // så grafen viser den reelle rytme og huller, ikke kun aktive uger.
+  function mondayOf(dt) { var w = new Date(dt); w.setHours(0,0,0,0); w.setDate(w.getDate() - w.getDay() + 1); return w; }
+  var start = mondayOf(new Date(dataKeys[0]));
+  var end = mondayOf(new Date());
+  var labels = [], values = [];
+  for (var cur = new Date(start); cur <= end; cur.setDate(cur.getDate() + 7)) {
+    var key = cur.toISOString().slice(0, 10);
+    labels.push(cur.getDate() + '/' + (cur.getMonth() + 1));
+    values.push(buckets[key] || 0);
+  }
+  return { labels: labels, values: values };
 }
 
 function _dashRenderChart(canvasId, chartId, color) {

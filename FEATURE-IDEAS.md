@@ -163,3 +163,13 @@ Michaels idé. Status: fanget, lille afgrænset feature — kan passes ind ved s
 - Privacy triviel: noten lever paa brugerens side af relationen, deles aldrig. Roerer IKKE kerne (radar/matching).
 
 **Mulig kobling:** Hvis social-proof-discovery (gemte kontakters bobler) bygges, kunne noten vises som kontekst dér ogsaa. Men start simpelt — bare noten paa kontakten.
+
+---
+
+## Profil-dashboard med tidslinjer (som admin-panel) — VENTER på data (jun 2026)
+
+Michaels idé: byg brugerens eget Dashboard (Profilvisninger/Du har gemt/Bobler/Stærke matches) med tidslinjer som admin-panelet — vis HVORNÅR aktiviteten skete, ikke kun totaler.
+
+**Bevidst udskudt (jun 2026):** En enkelt brugers egne tal er små (fx 13 profilvisninger over måneder). Uge-grafer over så små tal ser næsten tomme ud = ringere oplevelse end totalen "13". Admin-grafer virker fordi de aggregerer ALLE brugere (store tal). Beslutning: VENT til pilot-aktivitet er stor nok til at per-bruger-grafer er meningsfulde. Genovervej når brugere har nok historik.
+
+**Når det bygges:** genbrug `_dashBucketWeeks` (admin, nu kontinuerlig tidslinje med nul-uger pr. v8.97). Overvej måned- frem for uge-granularitet for per-bruger. Afklar hvilke metrics der egner sig (visninger + gemte har timestamps; bobler/matches er mere tilstand end aktivitet).
