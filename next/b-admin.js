@@ -257,8 +257,8 @@ async function dashToggle(card, chartId, trayId) {
   // Fetch data if not cached
   if (!_dashChartData[chartId]) {
     try {
-      var cutoff = new Date(Date.now() - 90 * 24 * 3600000).toISOString();
-      var q = sb.from(meta.table).select(meta.field).gte(meta.field, cutoff).order(meta.field, { ascending: true });
+      // Ingen tidsgrænse: hent al historik så man kan scrolle vandret til ældre data.
+      var q = sb.from(meta.table).select(meta.field).order(meta.field, { ascending: true });
       if (meta.filter) q = q.in('bubble_id', meta.filter);
       var { data } = await q;
       _dashChartData[chartId] = _dashBucketWeeks(data || [], meta.field);
@@ -303,8 +303,24 @@ function _dashRenderChart(canvasId, chartId, color) {
   var c = _dashColors[color] || _dashColors.accent;
   var meta = _dashMeta[chartId] || {};
   var cfg;
+  // Vandret scroll: giv canvas en bredde proportional med antal datapunkter (~30px/uge).
+  // Hvis bredere end .dash-chart-wrap (som har overflow-x:auto), scroller den vandret; ellers 100%.
+  var wrap = el.parentElement;
+  var minW = wrap ? wrap.clientWidth : 320;
+  var needW = Math.max(minW, d.labels.length * 30);
+  var scrollable = needW > minW + 4;
+  if (scrollable) {
+    el.style.width = needW + 'px';
+    el.style.minWidth = needW + 'px';
+    el.style.height = (wrap ? wrap.clientHeight : 160) + 'px';
+  } else {
+    // Faa datapunkter: lad Chart.js styre bredden responsivt (fyld containeren).
+    el.style.width = '100%';
+    el.style.minWidth = '';
+    el.style.height = '';
+  }
   var baseOpts = {
-    responsive: true, maintainAspectRatio: false, animation: { duration: 400 },
+    responsive: !scrollable, maintainAspectRatio: false, animation: { duration: 400 },
     plugins: { legend: { display: false } },
     scales: {
       x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#9996A8' } },

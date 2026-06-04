@@ -2739,8 +2739,8 @@ input[type="range"] {
 .dash-tray-inner.dtray-accent{background:rgba(100,180,230,0.06);border-color:rgba(100,180,230,0.2);box-shadow:none}
 .dash-tray-inner.dtray-teal{background:rgba(46,207,207,0.06);border-color:rgba(46,207,207,0.2);box-shadow:none}
 .dash-tray-inner.dtray-pink{background:rgba(232,121,168,0.06);border-color:rgba(232,121,168,0.2);box-shadow:none}
-.dash-chart-wrap{position:relative;height:160px}
-.dash-chart-wrap canvas{width:100%!important;height:100%!important}
+.dash-chart-wrap{position:relative;height:160px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+.dash-chart-wrap canvas{height:100%!important}
 
 /* ── Connect scanner profile sheet ── */
 @keyframes connectSheetUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
