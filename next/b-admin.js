@@ -268,25 +268,29 @@ async function dashToggle(card, chartId, trayId) {
 }
 
 function _dashBucketWeeks(rows, field) {
+  // UTC-baseret uge-mandag — BEGGE sider (bucket + tidslinje) skal bruge SAMME logik,
+  // ellers timezone-mismatch → values bliver 0 i ikke-UTC timezones (fx dansk). Lært v8.97→8.98.
+  function utcMonday(dt) {
+    var w = new Date(dt);
+    var day = w.getUTCDay();
+    w.setUTCDate(w.getUTCDate() - day + 1);
+    w.setUTCHours(0, 0, 0, 0);
+    return w;
+  }
   var buckets = {};
   rows.forEach(function(r) {
-    var d = new Date(r[field]);
-    var weekStart = new Date(d);
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
-    var key = weekStart.toISOString().slice(0, 10);
+    var key = utcMonday(new Date(r[field])).toISOString().slice(0, 10);
     buckets[key] = (buckets[key] || 0) + 1;
   });
   var dataKeys = Object.keys(buckets).sort();
   if (dataKeys.length === 0) return { labels: [], values: [] };
-  // Byg KONTINUERLIG uge-tidslinje fra første aktivitet til nu — også uger uden aktivitet (=0),
-  // så grafen viser den reelle rytme og huller, ikke kun aktive uger.
-  function mondayOf(dt) { var w = new Date(dt); w.setHours(0,0,0,0); w.setDate(w.getDate() - w.getDay() + 1); return w; }
-  var start = mondayOf(new Date(dataKeys[0]));
-  var end = mondayOf(new Date());
+  // Kontinuerlig uge-tidslinje fra første aktivitet til nu — også uger uden aktivitet (=0).
+  var start = utcMonday(new Date(dataKeys[0] + 'T00:00:00.000Z'));
+  var end = utcMonday(new Date());
   var labels = [], values = [];
-  for (var cur = new Date(start); cur <= end; cur.setDate(cur.getDate() + 7)) {
+  for (var cur = new Date(start); cur <= end; cur.setUTCDate(cur.getUTCDate() + 7)) {
     var key = cur.toISOString().slice(0, 10);
-    labels.push(cur.getDate() + '/' + (cur.getMonth() + 1));
+    labels.push(cur.getUTCDate() + '/' + (cur.getUTCMonth() + 1));
     values.push(buckets[key] || 0);
   }
   return { labels: labels, values: values };
