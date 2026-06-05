@@ -99,3 +99,15 @@ Hele push-tabellen ovenfor er adresseret af ADR-006: hardcodede secrets fjernet 
 | Magic delays i auth/deeplink | **P3** | Eksternt v8.87-review + verificeret: `setTimeout(..., 400)` wrapper deep-link-modaler i b-auth (linje 84/91/100), plus 300ms diverse steder. Ikke bugs (virker), men skrøbeligt — timing-afhængighed frem for event-drevet. Hold øje med; ryd op hvis et deeplink-flow viser race i pilot. |
 
 *Sidst opdateret: 28. maj 2026*
+
+---
+
+## Sanity-check fund (jun 2026) — P3, lad ligge, fokuseret oprydningsrunde senere
+
+Fra tværgående sanity check efter v9.01. Intet kritisk, intet i stykker — kosmetisk/konsistens, samlet til én oprydningsrunde.
+
+- **4 lilla-legacy-rester (`var(--gradient-primary)`):** overlevede design v6-migrationen. (1) b-home.js:228 radar-toggle "Alle"-fane aktiv-tilstand — MEST synlig. (2) b-bubbles.js:376 generisk confirm-dialog-knap. (3+4) b-bubbles.js:1964+1993 event-rapport header-kort + nummer-cirkler (måske bevidst, det er print/PDF-agtig rapport — afklar før fix). Skift til Isblå CTA-tokens hvor ikke bevidst.
+- **Hardcoded danske strenge i b-auth.js:** bekræftelsesmail-skærmen (linje ~509-527: "Jeg har bekræftet — log ind", "Vi har sendt en bekræftelsesmail...") + beta-beskrivelse (~721). Ikke i i18n → engelske brugere ser dansk. Flyt til t()-nøgler.
+- **P3-tællere (allerede kendt):** ~35 console.debug/log spredt (b-realtime 9, b-bubbles 7, b-live 6 størst), 43 `transition:all` i app.css. Står allerede på P3-backlog.
+
+Verificeret RENT samme check: alle 21 .js syntaks-OK, CSS brace −1, dvh-guard rent, version konsistent v9.01, i18n 679/679 balanceret, dagens ADR-009 + recovery-funktioner alle forbundet (ingen døde referencer).
