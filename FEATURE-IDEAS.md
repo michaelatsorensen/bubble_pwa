@@ -173,3 +173,29 @@ Michaels idé: byg brugerens eget Dashboard (Profilvisninger/Du har gemt/Bobler/
 **Bevidst udskudt (jun 2026):** En enkelt brugers egne tal er små (fx 13 profilvisninger over måneder). Uge-grafer over så små tal ser næsten tomme ud = ringere oplevelse end totalen "13". Admin-grafer virker fordi de aggregerer ALLE brugere (store tal). Beslutning: VENT til pilot-aktivitet er stor nok til at per-bruger-grafer er meningsfulde. Genovervej når brugere har nok historik.
 
 **Når det bygges:** genbrug `_dashBucketWeeks` (admin, nu kontinuerlig tidslinje med nul-uger pr. v8.97). Overvej måned- frem for uge-granularitet for per-bruger. Afklar hvilke metrics der egner sig (visninger + gemte har timestamps; bobler/matches er mere tilstand end aktivitet).
+
+---
+
+## VISION-SPOR: Bubble som personligt arrangeret rum (én tile-skærm) — udforsket jun 2026
+
+**Status:** UDFORSKET (4 prototyper bygget), bevidst IKKE planlagt til build. Vision-spor, ikke build-spor.
+
+**Idéen:** I stedet for fire faste skærme (Home/Bobler/Beskeder/Profil) → én skærm hvor hver funktion er en widget/tile. Bruger vælger blandt ~5 layout-skeletter (Fokus/Balance/Liste/Galleri/Kompakt) og kan selv placere widgets via træk-og-slip. Radaren som dominerende, levende hero-widget der ekspanderer til fuldskærm. Æstetik inspireret af monokromatisk moodboard ("how to look expensive — no visual noise"), men i Bubbles palet (isblå/teal/strandglas, ægte gradient-wordmark).
+
+**Prototyper (i /mnt/user-data/outputs/, ikke i repo):**
+1. `bubble-tile-home-prototype.html` — rolige ikon-tiles, åbner fuldskærm
+2. `bubble-tile-brickwork-prototype.html` — blandede størrelser (forbandt-mur), dominerende radar m. ægte preview
+3. `bubble-moodboard-style-prototype.html` — tro mod moodboard (mørke brand-tiles, foto, hex-palet, lyse kort) — bedst som LANDING PAGE-udtryk
+4. `bubble-custom-layout-prototype.html` — 5 skeletter + træk-og-slip widget-placering
+
+**Hvorfor det er værd at huske:** Nu (lille brugerskare) er radikale navigations-ændringer billige — ingen stor brugerbase låst til den nuværende form. Modenheden i forståelsen af Bubble (efter prod→next-iteration) gør idéen klar at se. Personligt layout giver ejerskab + løser at forskellige brugertyper vil have forskellige ting forrest (event-bruger=radar stor; netværker=beskeder/gemte forrest).
+
+**Hvorfor det er POST-PILOT (ikke "ikke godt nok"):**
+- Forudsætter at vi VED hvad folk gør med Bubble. Personligt layout giver kun mening hvis brugere har præferencer at arrangere efter — dem kender vi først efter pilot. Pilot kan vise: alle bruger kun radar (→ 5 skeletter er overkill) ELLER vildt forskellige mønstre (→ personligt layout er perfekt).
+- Ægte stor ny funktion: layout-skeletter + widget-placering + gemme valg + alle kombinationer × skærmstørrelser. Ikke en tilføjelse — nærmest ny app-arkitektur.
+- Ville erstatte hele den nuværende fire-skærms-navigation (navState.screen, nav-stack, back-håndtering, loadX-funktioner er alle bygget om de fire skærme).
+- Bryder no-new-features-før-pilot disciplinen hvis bygget nu.
+
+**Risiko at undgå:** at udforskning bliver til "omskriv alt før launch" → så får vi aldrig den pilot-data der skal afgøre om idéen er rigtig. Pilot er IKKE forhindring på vejen mod det egentlige produkt — pilot er det der FORTÆLLER os hvordan det egentlige produkt skal se ud.
+
+**Hvis det genoptages:** kræver standard-layout der virker uden tilpasning (valg-byrde-fælde: mange vil ikke indrette, de vil bare have noget der virker). Teknisk kerne at validere først: kan radar-hero rendere ægte realtids-radar OG ekspandere glat til fuldskærm uden gen-tegning.
