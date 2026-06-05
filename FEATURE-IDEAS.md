@@ -199,3 +199,22 @@ Michaels idé: byg brugerens eget Dashboard (Profilvisninger/Du har gemt/Bobler/
 **Risiko at undgå:** at udforskning bliver til "omskriv alt før launch" → så får vi aldrig den pilot-data der skal afgøre om idéen er rigtig. Pilot er IKKE forhindring på vejen mod det egentlige produkt — pilot er det der FORTÆLLER os hvordan det egentlige produkt skal se ud.
 
 **Hvis det genoptages:** kræver standard-layout der virker uden tilpasning (valg-byrde-fælde: mange vil ikke indrette, de vil bare have noget der virker). Teknisk kerne at validere først: kan radar-hero rendere ægte realtids-radar OG ekspandere glat til fuldskærm uden gen-tegning.
+
+---
+
+## Beriget forside (v5) — additiv, IKKE ny arkitektur — QR-quick-access mest pilot-relevant
+
+**Status:** UDFORSKET (prototype `bubble-enriched-home-prototype.html`). Adskilt fra det store vision-spor ovenfor — DETTE rører IKKE navigationen.
+
+**Idéen:** Berig den eksisterende Home-skærm med widgets oven på radaren, UDEN at røre fire-skærms-navigationen:
+- **Radar dominerer** (live-puls + ægte preview) → tap åbner fuld radar med filtre. Bevarer Bubbles sjæl: mennesker først.
+- **QR-bånd:** to separate widgets — "Scan" (isblå) + "Min QR" (teal) — lige under radaren.
+- **Stats-bånd:** "Din Bubble-uge" overblik (visninger/har gemt dig/du har gemt/profilstyrke).
+- **Quick-bånd:** Bobler + Beskeder nøgletal.
+- Bundnav + de fire skærme UÆNDRET.
+
+**Hvorfor anderledes størrelse end vision-sporet:** Additiv forbedring af Home, ikke omskrivning. Kunne bygges uden at vælte navState.screen/nav-stack/loadX-funktioner.
+
+**Mest pilot-relevante del = QR-quick-access.** Begrundelse: i fysisk event-situation (stå foran nogen, forbind NU) er scan/vis i dag gemt i lille topbar-ikon. Egen widget på forsiden = ét tryk. Løser reel friktion i præcis den situation Bubble er bygget til. Stats + quick-bånd er mere "nice to have". **Overvej QR-quick-access tæt på pilot** (lille, additiv, høj værdi i kernescenariet) — men respektér stadig no-new-features-disciplinen; beslut bevidst.
+
+**Forhold til vision-sporet:** v5 er det pragmatiske mellemtrin. Den store vision (sløjfe de fire skærme → customizable home-miljø) er destinationen; v5 er et skridt der kan tages additivt nu/snart uden at committe til hele omskrivningen.
