@@ -141,7 +141,44 @@ function render(){
     var c=r.T==='w'?(r.ok?'p':'w'):(r.ok?'p':'f');
     var i=r.T==='w'&&!r.ok?'⚠':(r.ok?'✓':'✗');
     return'<div class="r '+c+'"><div class="ri">'+i+'</div><div class="rb"><div class="rt">'+r.n+'</div>'+(r.d?'<div class="rd">'+r.d+'</div>':'')+'</div></div>';
-  }).join('')+(done>=total&&total>0?'<div class="sum" style="color:'+(fail===0?'#1A9E8E':'#D06070')+'">'+(fail===0?'🎉 Alle '+total+' tests bestod'+(warns?' ('+warns+' warnings)':'')+'!':'⚠️ '+fail+' fejlede')+'</div>':'');
+  }).join('')+(done>=total&&total>0?'<div class="sum" style="color:'+(fail===0?'#1A9E8E':'#D06070')+'">'+(fail===0?'🎉 Alle '+total+' tests bestod'+(warns?' ('+warns+' warnings)':'')+'!':'⚠️ '+fail+' fejlede')+'</div>':'')+_buildCopySummary();
+}
+
+// ── Copy-paste opsummering af KUN fejl + warnings (med sektion-kontekst) ──
+function _buildCopySummary(){
+  if(done<total||total===0) return '';
+  var lines=[], curSec='';
+  for(var i=0;i<res.length;i++){
+    var r=res[i];
+    if(r.T==='s'){ curSec=r.t; continue; }
+    var isFail = (r.T==='w' && !r.ok) || (r.T==='r' && !r.ok);
+    if(isFail){
+      var mark = (r.T==='w') ? '⚠ WARNING' : '✗ FEJL';
+      lines.push(mark+' ['+curSec+'] '+r.n+(r.d?' — '+r.d:''));
+    }
+  }
+  if(lines.length===0) return '<div class="sum" style="color:#1A9E8E">✓ Ingen fejl eller warnings at kopiere</div>';
+  var header='Bubble smoke-test · run '+(RUN_ID||'?')+' · '+pass+'✓ '+fail+'✗ '+warns+'⚠';
+  var text=header+'\n'+lines.join('\n');
+  var esc=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return '<div style="margin-top:1rem;padding:0.9rem;border:1px solid #D06070;border-radius:10px;background:#2a1518">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">'+
+      '<div style="font-weight:700;color:#ff9aa8;font-size:0.85rem">Fejl + warnings ('+lines.length+') — kopiér til Claude</div>'+
+      '<button onclick="_copySummary()" style="font-family:inherit;font-size:0.75rem;font-weight:700;padding:5px 12px;border-radius:14px;border:1px solid #D06070;background:#D06070;color:#fff;cursor:pointer">Kopiér</button>'+
+    '</div>'+
+    '<textarea id="copyBox" readonly style="width:100%;min-height:'+Math.min(lines.length*2.2+3,16)+'rem;font-family:monospace;font-size:0.72rem;line-height:1.5;background:#1a0e10;color:#ffd0d6;border:none;border-radius:6px;padding:0.6rem;resize:vertical;box-sizing:border-box">'+esc+'</textarea>'+
+  '</div>';
+}
+function _copySummary(){
+  var box=document.getElementById('copyBox');
+  if(!box) return;
+  box.select(); box.setSelectionRange(0,999999);
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(box.value); }
+    else { document.execCommand('copy'); }
+    var btn=event.target; var orig=btn.textContent; btn.textContent='Kopieret ✓';
+    setTimeout(function(){ btn.textContent=orig; },1500);
+  }catch(e){ document.execCommand('copy'); }
 }
 
 function busy(on){document.querySelectorAll('.b').forEach(function(b){b.disabled=!!on})}
