@@ -504,6 +504,86 @@ async function testVisibility(){
 }
 
 // ══════════════════════════════════════
+//  ADR-009 OWNERSHIP REQUEST-FLOW TESTS
+// ══════════════════════════════════════
+async function testOwnership(){
+  sec('👑 Ejerskab request-flow (ADR-009)');
+  // Dedikeret boble ejet af A + B som medlem
+  var {data:ob,error:obE}=await sbA.from('bubbles').insert({
+    name:tag('Ownership bubble'),type:'network',description:tag('fixture'),created_by:userA.id,visibility:'public',location:'Smoke Lab'
+  }).select().single();
+  ok('Ownership-boble oprettet',!!ob,obE?obE.message:'id: '+(ob?.id?.slice(0,8)||''));
+  if(!ob){return}
+  L.bubbles.push({id:ob.id,client:'A'});
+  var OB=ob.id;
+  // A er medlem (auto) — sikr B også er medlem
+  await sbA.from('bubble_members').delete().eq('bubble_id',OB).eq('user_id',userA.id); // ryd evt. dublet
+  await sbA.from('bubble_members').insert({bubble_id:OB,user_id:userA.id,role:'admin'});
+  L.memberships.push({bubbleId:OB,userId:userA.id,client:'A'});
+  var {data:bMem,error:bMemE}=await sbB.from('bubble_members').insert({bubble_id:OB,user_id:userB.id}).select('id').single();
+  ok('B er medlem af boblen',!!bMem,bMemE?bMemE.message:'OK');
+  if(bMem) L.memberships.push({bubbleId:OB,userId:userB.id,client:'B'});
+
+  // ── INVARIANT 1: ikke-ejer kan ikke anmode ──
+  var {data:r_notowner}=await sbB.rpc('request_ownership_transfer',{p_bubble_id:OB,p_to_user_id:userA.id});
+  ok('Ikke-ejer kan IKKE anmode',r_notowner&&r_notowner.ok===false&&r_notowner.error==='not_owner','resultat: '+JSON.stringify(r_notowner));
+
+  // ── A anmoder om overdragelse til B ──
+  var {data:r_req,error:r_reqE}=await sbA.rpc('request_ownership_transfer',{p_bubble_id:OB,p_to_user_id:userB.id});
+  ok('A anmoder om overdragelse til B',r_req&&r_req.ok===true,r_reqE?r_reqE.message:JSON.stringify(r_req));
+
+  // ── INVARIANT 2 (VIGTIGST): created_by UÆNDRET mens pending ──
+  var {data:bAfterReq}=await sbA.from('bubbles').select('created_by,pending_owner_id').eq('id',OB).single();
+  ok('created_by UÆNDRET mens pending (kerne-invariant)',bAfterReq&&bAfterReq.created_by===userA.id,'created_by: '+(bAfterReq?.created_by?.slice(0,8)||'?'));
+  ok('pending_owner_id sat til B',bAfterReq&&bAfterReq.pending_owner_id===userB.id,'pending: '+(bAfterReq?.pending_owner_id?.slice(0,8)||'null'));
+
+  // ── INVARIANT 3: kun én pending ad gangen ──
+  var {data:r_dupe}=await sbA.rpc('request_ownership_transfer',{p_bubble_id:OB,p_to_user_id:userB.id});
+  ok('Dobbelt-anmodning afvist (én pending ad gangen)',r_dupe&&r_dupe.ok===false&&r_dupe.error==='transfer_already_pending','resultat: '+JSON.stringify(r_dupe));
+
+  // ── INVARIANT 4: A (ikke-modtager) kan ikke acceptere egen anmodning ──
+  var {data:r_selfaccept}=await sbA.rpc('accept_ownership_transfer',{p_bubble_id:OB});
+  ok('Afsender kan IKKE acceptere egen anmodning',r_selfaccept&&r_selfaccept.ok===false&&r_selfaccept.error==='not_pending_recipient','resultat: '+JSON.stringify(r_selfaccept));
+
+  // ── B accepterer ──
+  var {data:r_accept,error:r_acceptE}=await sbB.rpc('accept_ownership_transfer',{p_bubble_id:OB});
+  ok('B accepterer overdragelse',r_accept&&r_accept.ok===true,r_acceptE?r_acceptE.message:JSON.stringify(r_accept));
+
+  // ── INVARIANT 5: created_by skiftet til B + pending ryddet ──
+  var {data:bAfterAcc}=await sbB.from('bubbles').select('created_by,pending_owner_id').eq('id',OB).single();
+  ok('created_by skiftet til B efter accept',bAfterAcc&&bAfterAcc.created_by===userB.id,'created_by: '+(bAfterAcc?.created_by?.slice(0,8)||'?'));
+  ok('pending_owner_id ryddet efter accept',bAfterAcc&&bAfterAcc.pending_owner_id===null,'pending: '+(bAfterAcc?.pending_owner_id||'null'));
+
+  // ── INVARIANT 6: begge er nu admin (#9 gammel→admin, #10 ny→admin) ──
+  var {data:rolesA}=await sbB.from('bubble_members').select('role').eq('bubble_id',OB).eq('user_id',userA.id).single();
+  var {data:rolesB}=await sbB.from('bubble_members').select('role').eq('bubble_id',OB).eq('user_id',userB.id).single();
+  ok('Gammel ejer (A) blev admin',rolesA&&rolesA.role==='admin','rolle: '+(rolesA?.role||'?'));
+  ok('Ny ejer (B) er admin',rolesB&&rolesB.role==='admin','rolle: '+(rolesB?.role||'?'));
+
+  // ── INVARIANT 7: dobbelt-accept er idempotent (fejler pænt) ──
+  var {data:r_reaccept}=await sbB.rpc('accept_ownership_transfer',{p_bubble_id:OB});
+  ok('Dobbelt-accept afvist (idempotent)',r_reaccept&&r_reaccept.ok===false&&r_reaccept.error==='not_pending_recipient','resultat: '+JSON.stringify(r_reaccept));
+
+  // ── Test withdraw + decline på en frisk anmodning (B er nu ejer, anmoder A) ──
+  var {data:r_req2}=await sbB.rpc('request_ownership_transfer',{p_bubble_id:OB,p_to_user_id:userA.id});
+  ok('B anmoder A (frisk anmodning)',r_req2&&r_req2.ok===true,JSON.stringify(r_req2));
+  // A afviser
+  var {data:r_decline}=await sbA.rpc('decline_ownership_transfer',{p_bubble_id:OB});
+  ok('Modtager (A) kan afvise',r_decline&&r_decline.ok===true,JSON.stringify(r_decline));
+  var {data:bAfterDec}=await sbB.from('bubbles').select('pending_owner_id').eq('id',OB).single();
+  ok('pending ryddet efter afvisning',bAfterDec&&bAfterDec.pending_owner_id===null,'pending: '+(bAfterDec?.pending_owner_id||'null'));
+  // B anmoder igen, så trækker B tilbage
+  await sbB.rpc('request_ownership_transfer',{p_bubble_id:OB,p_to_user_id:userA.id});
+  var {data:r_wd}=await sbB.rpc('withdraw_ownership_transfer',{p_bubble_id:OB});
+  ok('Afsender (B) kan trække tilbage',r_wd&&r_wd.ok===true,JSON.stringify(r_wd));
+
+  // ── OPRYDNING: transfer ejerskab TILBAGE til A så cleanup (sletter som A) virker ──
+  await sbB.rpc('request_ownership_transfer',{p_bubble_id:OB,p_to_user_id:userA.id});
+  var {data:r_back}=await sbA.rpc('accept_ownership_transfer',{p_bubble_id:OB});
+  ok('Ejerskab givet tilbage til A (for oprydning)',r_back&&r_back.ok===true,JSON.stringify(r_back));
+}
+
+// ══════════════════════════════════════
 //  INVITATION FLOW TESTS
 // ══════════════════════════════════════
 async function testInvitations(){
@@ -960,6 +1040,7 @@ async function go(mode){
     if(mode==='all'||mode==='flows') await testFlows();
     if(mode==='all'||mode==='visibility') await testVisibility();
     if(mode==='all'||mode==='visibility') await testInvitations();
+    if(mode==='all'||mode==='flows') await testOwnership();
     if(mode==='all'||mode==='stability') await testBubbleMessages();
     if(mode==='all'||mode==='stability') await testCheckinIdempotency();
     if(mode==='all'||mode==='stability') await testErrorLog();
