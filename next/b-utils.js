@@ -1112,14 +1112,46 @@ var dbActions = {
     } catch(e) { logError('dbActions.updateBubble', e); errorToast('save', e); return { ok: false, error: e }; }
   },
 
-  async transferBubble(bubbleId, newOwnerId) {
+  // ADR-009: ejerskab request-flow. created_by ændres ALDRIG før modtager accepterer (RPC håndhæver).
+  async requestOwnershipTransfer(bubbleId, newOwnerId) {
     if (!currentUser || !bubbleId || !newOwnerId) return { ok: false };
     try {
-      var { data, error } = await sb.from('bubbles').update({ created_by: newOwnerId }).eq('id', bubbleId).select();
+      var { data, error } = await sb.rpc('request_ownership_transfer', { p_bubble_id: bubbleId, p_to_user_id: newOwnerId });
       if (error) { errorToast('save', error); return { ok: false, error: error }; }
-      trackEvent('bubble_ownership_transferred', { bubble_id: bubbleId, new_owner: newOwnerId });
+      if (data && data.ok === false) return { ok: false, reason: data.error };
+      trackEvent('bubble_ownership_requested', { bubble_id: bubbleId, to_user: newOwnerId });
+      return { ok: true };
+    } catch(e) { logError('dbActions.requestOwnershipTransfer', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+  async withdrawOwnershipTransfer(bubbleId) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    try {
+      var { data, error } = await sb.rpc('withdraw_ownership_transfer', { p_bubble_id: bubbleId });
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      if (data && data.ok === false) return { ok: false, reason: data.error };
+      trackEvent('bubble_ownership_withdrawn', { bubble_id: bubbleId });
+      return { ok: true };
+    } catch(e) { logError('dbActions.withdrawOwnershipTransfer', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+  async acceptOwnershipTransfer(bubbleId) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    try {
+      var { data, error } = await sb.rpc('accept_ownership_transfer', { p_bubble_id: bubbleId });
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      if (data && data.ok === false) return { ok: false, reason: data.error };
+      trackEvent('bubble_ownership_accepted', { bubble_id: bubbleId });
       return { ok: true, data: data };
-    } catch(e) { logError('dbActions.transferBubble', e); errorToast('save', e); return { ok: false, error: e }; }
+    } catch(e) { logError('dbActions.acceptOwnershipTransfer', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+  async declineOwnershipTransfer(bubbleId) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    try {
+      var { data, error } = await sb.rpc('decline_ownership_transfer', { p_bubble_id: bubbleId });
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      if (data && data.ok === false) return { ok: false, reason: data.error };
+      trackEvent('bubble_ownership_declined', { bubble_id: bubbleId });
+      return { ok: true };
+    } catch(e) { logError('dbActions.declineOwnershipTransfer', e); errorToast('save', e); return { ok: false, error: e }; }
   },
 
   // ── Bubble message delete ──

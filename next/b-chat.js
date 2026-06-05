@@ -2084,7 +2084,33 @@ async function bcLoadInfo() {
       topJoinHtml = ''; // Banner at top already handles pending state
     }
 
+    // ── ADR-009: ejerskab request-flow banner ──
+    var ownerBanner = '';
+    if (b.pending_owner_id) {
+      var amRecipient = currentUser && b.pending_owner_id === currentUser.id;
+      var amSender = isOwner; // ejer = afsender (created_by uændret mens pending)
+      if (amRecipient) {
+        ownerBanner =
+          '<div style="background:var(--cta-bg);border:1px solid var(--cta-border);border-radius:14px;padding:0.85rem 0.9rem;margin-bottom:0.8rem">' +
+            '<div class="text-on-light" style="font-size:0.82rem;font-weight:700;margin-bottom:0.2rem">' + t('ownreq_recipient_title') + '</div>' +
+            '<div class="text-on-light-muted" style="font-size:0.72rem;margin-bottom:0.7rem">' + t('ownreq_recipient_body', {bubble: escHtml(b.name)}) + '</div>' +
+            '<div style="display:flex;gap:0.5rem">' +
+              '<button style="flex:1;padding:0.55rem;border-radius:11px;background:var(--cta-bg);color:var(--cta-text);border:1px solid var(--cta-border);font-family:inherit;font-weight:700;font-size:0.78rem;cursor:pointer" onclick="acceptOwnership(\'' + b.id + '\')">' + t('ownreq_accept') + '</button>' +
+              '<button style="flex:1;padding:0.55rem;border-radius:11px;background:none;color:var(--text-secondary);border:1px solid var(--glass-border);font-family:inherit;font-weight:600;font-size:0.78rem;cursor:pointer" onclick="declineOwnership(\'' + b.id + '\')">' + t('ownreq_decline') + '</button>' +
+            '</div>' +
+          '</div>';
+      } else if (amSender) {
+        ownerBanner =
+          '<div style="background:rgba(150,148,140,0.1);border:1px solid var(--glass-border);border-radius:14px;padding:0.85rem 0.9rem;margin-bottom:0.8rem">' +
+            '<div class="text-on-light" style="font-size:0.82rem;font-weight:700;margin-bottom:0.2rem">' + t('ownreq_sender_title') + '</div>' +
+            '<div class="text-on-light-muted" style="font-size:0.72rem;margin-bottom:0.7rem">' + t('ownreq_sender_body') + '</div>' +
+            '<button style="width:100%;padding:0.55rem;border-radius:11px;background:none;color:var(--text-secondary);border:1px solid var(--glass-border);font-family:inherit;font-weight:600;font-size:0.78rem;cursor:pointer" onclick="withdrawOwnership(\'' + b.id + '\')">' + t('ownreq_withdraw') + '</button>' +
+          '</div>';
+      }
+    }
+
     list.innerHTML =
+      ownerBanner +
       parentHtml +
       '<div style="text-align:center;padding:0.25rem 0 1rem">' +
         '<div style="width:52px;height:52px;border-radius:15px;background:' + (b.icon_url ? 'transparent' : iconBg) + ';display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;color:' + accentStroke + ';font-size:24px;position:relative"><div style="width:100%;height:100%;border-radius:15px;overflow:hidden;display:flex;align-items:center;justify-content:center">' + heroIcon + '</div>' + (bcBubbleData._isMember ? '<div style="position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#1A9E8E;display:flex;align-items:center;justify-content:center;border:2.5px solid var(--bg)"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>' : '') + '</div>' +

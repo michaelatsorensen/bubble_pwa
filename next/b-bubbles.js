@@ -407,10 +407,10 @@ async function openTransferOwnership(bubbleId) {
         list.style.display = 'none';
         tray.style.display = 'block';
         tray.innerHTML = '<div style="text-align:center;padding:1rem 0">' +
-          '<div style="font-size:0.92rem;font-weight:700;margin-bottom:0.3rem">Overdrag ejerskab til <strong>' + escHtml(uname) + '</strong>?</div>' +
-          '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem">Du mister ejer-rettigheder. Denne handling kan ikke fortrydes.</div>' +
+          '<div style="font-size:0.92rem;font-weight:700;margin-bottom:0.3rem">Anmod <strong>' + escHtml(uname) + '</strong> om at overtage ejerskab?</div>' +
+          '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem">' + escHtml(uname) + ' skal acceptere før ejerskabet overdrages. Du forbliver ejer indtil da, og kan trække anmodningen tilbage.</div>' +
           '<div style="display:flex;gap:0.5rem;justify-content:center">' +
-          '<button id="transfer-confirm-yes" style="flex:1;padding:0.65rem;border-radius:12px;background:var(--gradient-primary);color:white;border:none;font-family:inherit;font-weight:700;font-size:0.82rem;cursor:pointer">Bekræft overdragelse</button>' +
+          '<button id="transfer-confirm-yes" style="flex:1;padding:0.65rem;border-radius:12px;background:var(--cta-bg);color:var(--cta-text);border:1px solid var(--cta-border);font-family:inherit;font-weight:700;font-size:0.82rem;cursor:pointer">Send anmodning</button>' +
           '<button id="transfer-confirm-no" style="flex:1;padding:0.65rem;border-radius:12px;background:none;color:var(--text-secondary);border:1px solid var(--glass-border);font-family:inherit;font-weight:600;font-size:0.82rem;cursor:pointer">Annuller</button>' +
           '</div></div>';
         document.getElementById('transfer-confirm-yes').onclick = function() {
@@ -424,22 +424,52 @@ async function openTransferOwnership(bubbleId) {
   } catch(e) { logError('openTransferOwnership', e); errorToast('load', e); }
 }
 
+// ── ADR-009: ejerskab-banner handlers (modtager + afsender) ──
+async function acceptOwnership(bubbleId) {
+  if (!bubbleId) return;
+  var result = await dbActions.acceptOwnershipTransfer(bubbleId);
+  if (!result.ok) {
+    if (result.reason === 'recipient_no_longer_member') showWarningToast(t('ownreq_err_not_member') || 'Du er ikke længere medlem af boblen.');
+    else if (result.reason === 'not_pending_recipient') showWarningToast(t('ownreq_err_gone') || 'Anmodningen er ikke længere aktiv.');
+    return;
+  }
+  showSuccessToast(t('ownreq_accepted_toast') || 'Du er nu ejer af boblen');
+  if (typeof bcLoadBubbleInfo === 'function') await bcLoadBubbleInfo();
+  if (typeof bcLoadInfo === 'function') bcLoadInfo();
+}
+async function declineOwnership(bubbleId) {
+  if (!bubbleId) return;
+  var result = await dbActions.declineOwnershipTransfer(bubbleId);
+  if (!result.ok) { if (result.reason === 'not_pending_recipient') showWarningToast(t('ownreq_err_gone') || 'Anmodningen er ikke længere aktiv.'); return; }
+  showToast(t('ownreq_declined_toast') || 'Anmodning afvist');
+  if (typeof bcLoadBubbleInfo === 'function') await bcLoadBubbleInfo();
+  if (typeof bcLoadInfo === 'function') bcLoadInfo();
+}
+async function withdrawOwnership(bubbleId) {
+  if (!bubbleId) return;
+  var result = await dbActions.withdrawOwnershipTransfer(bubbleId);
+  if (!result.ok) return;
+  showToast(t('ownreq_withdrawn_toast') || 'Anmodning trukket tilbage');
+  if (typeof bcLoadBubbleInfo === 'function') await bcLoadBubbleInfo();
+  if (typeof bcLoadInfo === 'function') bcLoadInfo();
+}
+
 async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
   try {
     var confirmBtn = document.getElementById('transfer-confirm-yes');
-    if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Overdrager...'; }
-    var result = await dbActions.transferBubble(bubbleId, newOwnerId);
-    if (!result.ok) { if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Bekræft overdragelse'; } return; }
-    if (!result.data || result.data.length === 0) {
-      _renderToast(t('err_transfer'), 'error');
-      if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Bekræft overdragelse'; }
+    if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = t('sending') || 'Sender...'; }
+    var result = await dbActions.requestOwnershipTransfer(bubbleId, newOwnerId);
+    if (!result.ok) {
+      if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Send anmodning'; }
+      // Vis venlig årsag hvis RPC afviste (fx allerede pending / ikke medlem)
+      if (result.reason === 'transfer_already_pending') showWarningToast(t('transfer_already_pending') || 'Der er allerede en igangværende overdragelse. Træk den tilbage først.');
+      else if (result.reason === 'recipient_not_member') showWarningToast(t('transfer_not_member') || 'Personen skal være medlem af boblen.');
       return;
     }
     closeMemberSheet();
-    showSuccessToast(t('toast_ownership_transferred', {name: newOwnerName}));
-    trackEvent('bubble_ownership_transferred', { bubble_id: bubbleId, new_owner: newOwnerId });
-    // Notify new owner via broadcast (subscribe -> send -> unsubscribe so the channel is cleaned up)
-    (function(nid, bn, sn, bid) { (async function() { try { var ch = sb.channel('member-notify-' + nid); await ch.subscribe(); await ch.send({ type: 'broadcast', event: 'ownership', payload: { bubbleName: bn, senderName: sn, bubbleId: bid } }); setTimeout(function() { ch.unsubscribe(); }, 2000); } catch(e2) { console.debug('[ownership] broadcast error:', e2); } })(); })(newOwnerId, bcBubbleData?.name || '', currentProfile?.name || '', bubbleId);
+    showSuccessToast(t('toast_ownership_requested', {name: newOwnerName}) || ('Anmodning sendt til ' + newOwnerName));
+    // Notify recipient via broadcast (subscribe -> send -> unsubscribe so the channel is cleaned up)
+    (function(nid, bn, sn, bid) { (async function() { try { var ch = sb.channel('member-notify-' + nid); await ch.subscribe(); await ch.send({ type: 'broadcast', event: 'ownership_request', payload: { bubbleName: bn, senderName: sn, bubbleId: bid } }); setTimeout(function() { ch.unsubscribe(); }, 2000); } catch(e2) { console.debug('[ownership] broadcast error:', e2); } })(); })(newOwnerId, bcBubbleData?.name || '', currentProfile?.name || '', bubbleId);
     // Refresh UI — must await bcLoadBubbleInfo before bcLoadInfo (data dependency)
     if (typeof bcLoadBubbleInfo === 'function') await bcLoadBubbleInfo();
     if (typeof bcLoadInfo === 'function') bcLoadInfo();
