@@ -187,6 +187,17 @@ function setupAuthListener() {
   sb.auth.onAuthStateChange((event, session) => {
     console.debug('[auth] state change:', event);
 
+    // ── Password recovery: bruger klikkede reset-link i mail ──
+    // Supabase etablerer session + fyrer PASSWORD_RECOVERY. Vi MÅ fange den her,
+    // ellers falder den igennem til normal SIGNED_IN og lukker brugeren ind uden
+    // password-skift (bug: glemt-password-flow ændrer aldrig password).
+    if (event === 'PASSWORD_RECOVERY') {
+      currentUser = session ? session.user : currentUser;
+      _inPasswordRecovery = true;
+      showPasswordRecoveryScreen();
+      return;
+    }
+
     if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
       // User signed out (possibly in another tab)
       bcUnsubscribeAll();
@@ -216,6 +227,9 @@ function setupAuthListener() {
     // We do NOT re-run resolvePostAuth() to avoid double-navigation;
     // checkAuth() handles initial routing.
     if (event === 'SIGNED_IN' && session) {
+      // Under password-recovery: SIGNED_IN fyrer også, men vi må IKKE rute ind i appen
+      // — brugeren skal først sætte nyt password. recovery-skærmen er allerede vist.
+      if (_inPasswordRecovery) { currentUser = session.user; return; }
       var wasLoggedIn = !!currentUser;
       currentUser = session.user;
       // If we weren't logged in before but now are (e.g. another tab signed us in),
@@ -582,6 +596,70 @@ async function handleForgotPassword() {
     if (error) return errorToast('login', error);
     showToast(t('toast_sending_reset'));
   } catch(e) { logError('handleForgotPassword', e); errorToast('login', e); }
+}
+
+// ── Password recovery (efter reset-link i mail) ──
+var _inPasswordRecovery = false;
+
+function showPasswordRecoveryScreen() {
+  try {
+    goTo('screen-auth');
+    // Skjul splash-heading-toggle og vis recovery, skjul login+signup
+    var login = document.getElementById('auth-login');
+    var signup = document.getElementById('auth-signup');
+    var recovery = document.getElementById('auth-recovery');
+    if (login) login.style.display = 'none';
+    if (signup) signup.style.display = 'none';
+    if (recovery) recovery.style.display = 'block';
+    // Skjul QR-context + tertiær-heading hvis synlige
+    var qrc = document.getElementById('auth-qr-context'); if (qrc) qrc.style.display = 'none';
+    var ah = document.getElementById('auth-heading'); if (ah) ah.style.display = 'none';
+    var p1 = document.getElementById('recovery-password'); if (p1) p1.value = '';
+    var p2 = document.getElementById('recovery-password-confirm'); if (p2) p2.value = '';
+    validateRecovery();
+  } catch(e) { logError('showPasswordRecoveryScreen', e); }
+}
+
+function validateRecovery() {
+  var p1 = (document.getElementById('recovery-password') || {}).value || '';
+  var p2 = (document.getElementById('recovery-password-confirm') || {}).value || '';
+  var err = document.getElementById('recovery-error');
+  var btn = document.getElementById('recovery-save-btn');
+  var valid = p1.length >= 6 && p1 === p2;
+  if (err) {
+    if (p2 && p1 !== p2) err.textContent = t('recovery_mismatch') || 'Adgangskoderne er ikke ens';
+    else if (p1 && p1.length < 6) err.textContent = t('recovery_too_short') || 'Mindst 6 tegn';
+    else err.textContent = '';
+  }
+  if (btn) btn.disabled = !valid;
+}
+
+async function handleSetNewPassword() {
+  var p1 = (document.getElementById('recovery-password') || {}).value || '';
+  var p2 = (document.getElementById('recovery-password-confirm') || {}).value || '';
+  if (p1.length < 6 || p1 !== p2) { validateRecovery(); return; }
+  var btn = document.getElementById('recovery-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = t('recovery_saving') || 'Gemmer...'; }
+  try {
+    var { error } = await sb.auth.updateUser({ password: p1 });
+    if (error) {
+      if (btn) { btn.disabled = false; btn.textContent = t('recovery_save') || 'Gem ny adgangskode'; }
+      var err = document.getElementById('recovery-error');
+      if (err) err.textContent = (error.message || t('misc_unknown'));
+      logError('handleSetNewPassword', error);
+      return;
+    }
+    // Success: password ændret. Ryd recovery-tilstand og fortsæt ind i appen.
+    _inPasswordRecovery = false;
+    var recovery = document.getElementById('auth-recovery'); if (recovery) recovery.style.display = 'none';
+    var login = document.getElementById('auth-login'); if (login) login.style.display = 'block';
+    showSuccessToast(t('recovery_done') || 'Adgangskode opdateret');
+    if (typeof resolvePostAuth === 'function') { resolvePostAuth(); }
+    else if (typeof checkAuth === 'function') { checkAuth(); }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = t('recovery_save') || 'Gem ny adgangskode'; }
+    logError('handleSetNewPassword', e); errorToast('save', e);
+  }
 }
 
 function switchToSignup() {

@@ -13,38 +13,38 @@
 <meta name="theme-color" content="#170F34">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=81900">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81900">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81900">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81900">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81900">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81900">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81900">
+<link rel="manifest" href="manifest.json?v=81901">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81901">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81901">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81901">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81901">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81901">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81901">
 
-<link rel="stylesheet" href="app.css?v=81900">
+<link rel="stylesheet" href="app.css?v=81901">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous" defer></script>
-<script src="bubble-icons.js?v=81900" defer></script>
-<script src="tag-data.js?v=81900" defer></script>
-<script src="b-i18n.js?v=81900" defer></script>
-<script src="b-config.js?v=81900" defer></script>
-<script src="b-utils.js?v=81900" defer></script>
-<script src="b-guides.js?v=81900" defer></script>
-<script src="b-auth.js?v=81900" defer></script>
-<script src="b-home.js?v=81900" defer></script>
-<script src="b-bubbles.js?v=81900" defer></script>
-<script src="b-profile.js?v=81900" defer></script>
-<script src="b-radar.js?v=81900" defer></script>
-<script src="b-messages.js?v=81900" defer></script>
-<script src="b-realtime.js?v=81900" defer></script>
-<script src="b-onboarding.js?v=81900" defer></script>
-<script src="b-chat.js?v=81900" defer></script>
-<script src="b-notifications.js?v=81900" defer></script>
-<script src="b-live.js?v=81900" defer></script>
-<script src="b-admin.js?v=81900" defer></script>
-<script src="b-navigation.js?v=81900" defer></script>
-<script src="b-boot.js?v=81900" defer></script>
+<script src="bubble-icons.js?v=81901" defer></script>
+<script src="tag-data.js?v=81901" defer></script>
+<script src="b-i18n.js?v=81901" defer></script>
+<script src="b-config.js?v=81901" defer></script>
+<script src="b-utils.js?v=81901" defer></script>
+<script src="b-guides.js?v=81901" defer></script>
+<script src="b-auth.js?v=81901" defer></script>
+<script src="b-home.js?v=81901" defer></script>
+<script src="b-bubbles.js?v=81901" defer></script>
+<script src="b-profile.js?v=81901" defer></script>
+<script src="b-radar.js?v=81901" defer></script>
+<script src="b-messages.js?v=81901" defer></script>
+<script src="b-realtime.js?v=81901" defer></script>
+<script src="b-onboarding.js?v=81901" defer></script>
+<script src="b-chat.js?v=81901" defer></script>
+<script src="b-notifications.js?v=81901" defer></script>
+<script src="b-live.js?v=81901" defer></script>
+<script src="b-admin.js?v=81901" defer></script>
+<script src="b-navigation.js?v=81901" defer></script>
+<script src="b-boot.js?v=81901" defer></script>
   
 
 
@@ -265,6 +265,23 @@
       </div>
       <button class="btn-primary" onclick="handleSignup()" data-t="auth_signup_btn">Opret konto</button>
       <button class="btn-secondary auth-btn-tertiary" onclick="switchToLogin()" data-t="auth_has_account">Har allerede en konto</button>
+    </div>
+
+    <div id="auth-recovery" style="width:100%;display:none">
+      <div id="auth-heading-recovery" style="margin-bottom:0.85rem">
+        <div style="font-size:1.05rem;font-weight:800;color:rgba(255,255,255,0.95)" data-t="recovery_title">Vælg en ny adgangskode</div>
+        <div style="font-size:0.76rem;color:rgba(255,255,255,0.6);margin-top:0.15rem" data-t="recovery_sub">Du er logget ind via dit nulstillingslink. Vælg en ny adgangskode.</div>
+      </div>
+      <div class="input-group">
+        <div class="input-label" data-t="recovery_new_password">Ny adgangskode</div>
+        <input class="input" type="password" id="recovery-password" data-t-placeholder="auth_placeholder_password_min" placeholder="Min. 6 tegn" autocomplete="new-password" oninput="validateRecovery()">
+      </div>
+      <div class="input-group">
+        <div class="input-label" data-t="recovery_repeat_password">Gentag adgangskode</div>
+        <input class="input" type="password" id="recovery-password-confirm" data-t-placeholder="recovery_repeat_ph" placeholder="Gentag ny adgangskode" autocomplete="new-password" oninput="validateRecovery()">
+      </div>
+      <div id="recovery-error" style="font-size:0.72rem;color:#ff9aa8;min-height:1rem;margin-bottom:0.4rem"></div>
+      <button class="btn-primary" id="recovery-save-btn" onclick="handleSetNewPassword()" disabled data-t="recovery_save">Gem ny adgangskode</button>
     </div>
 
     </div><!-- /auth-card -->
