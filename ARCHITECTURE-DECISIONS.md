@@ -962,6 +962,15 @@ To steder bryder princippet i dag:
 - Boble slettes → moot (kolonner forsvinder med rækken).
 - Ejer prøver at overdrage til en der ikke er medlem → bør blokeres (kun medlemmer kan modtage, som i dag).
 - Kun én pending overdragelse ad gangen (kolonne-model håndhæver det naturligt).
+- **Gammel ejer efter accept → bliver `admin`** (LÅST jun 2026, Michael). Ikke-destruktivt: ny ejer (eller gammel selv) kan ændre derfra. Gammel ejer fjernes IKKE automatisk.
+- **Ny ejer auto-forfremmes til `admin`** ved accept hvis kun 'member' (en ejer der ikke er admin giver ikke mening). Sker i samme RPC-transaktion som `created_by`-swap.
+- **Idempotens:** accept/afvis-RPC virker KUN hvis `pending_owner_id` stadig matcher tilstanden. Dobbelt-accept eller accept-efter-fortryd fejler pænt uden bivirkning. Håndhæves i RPC, ikke frontend.
+- **Notifikation efter afgørelse:** accepteret/afvist/annulleret anmodning skal ikke længere vises som handlingsbar hos modtager.
+- **Ejer sletter konto mens pending:** annullér anmodning. NB: ejer-sletning fejler i forvejen (GDPR-bug, separat P0-spor) — løses IKKE her.
+- **Udløbet/slut boble mens pending:** anmodning forbliver gyldig (ejerskab handler om kontrol, ikke aktiv-status). Lav-risiko.
+- **Kun ejer må anmode** (ikke admins). **Kun udpeget modtager må acceptere** (ikke admins) — vigtigste RLS-invariant.
+
+> **PARKERET jun 2026:** Kant-tilfældene ovenfor er gennemgået og låst. Næste skridt når vi genoptager: Claude skriver migration (pending_owner-kolonner) + 2 RPC'er (accept/decline, SECURITY DEFINER) + RLS-udkast → Michael kører SQL + invariant-test → Claude bygger frontend-split (requestTransfer/accept/decline/withdraw + modtager-UI, broadcast via subscribe→send→unsubscribe(2s)).
 
 **Frontend-ændring:** `transferBubble` (b-utils.js:1084) deles op: `requestOwnershipTransfer` (sætter pending) erstatter den øjeblikkelige `UPDATE created_by`. Ny accept/afvis-UI hos modtager (genbrug notifikations-/invite-mønster). Ny "Afventer overdragelse — Træk tilbage"-tilstand hos afsender.
 
