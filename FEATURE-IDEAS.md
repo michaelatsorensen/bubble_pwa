@@ -218,3 +218,12 @@ Michaels idé: byg brugerens eget Dashboard (Profilvisninger/Du har gemt/Bobler/
 **Mest pilot-relevante del = QR-quick-access.** Begrundelse: i fysisk event-situation (stå foran nogen, forbind NU) er scan/vis i dag gemt i lille topbar-ikon. Egen widget på forsiden = ét tryk. Løser reel friktion i præcis den situation Bubble er bygget til. Stats + quick-bånd er mere "nice to have". **Overvej QR-quick-access tæt på pilot** (lille, additiv, høj værdi i kernescenariet) — men respektér stadig no-new-features-disciplinen; beslut bevidst.
 
 **Forhold til vision-sporet:** v5 er det pragmatiske mellemtrin. Den store vision (sløjfe de fire skærme → customizable home-miljø) er destinationen; v5 er et skridt der kan tages additivt nu/snart uden at committe til hele omskrivningen.
+
+### Reference & case study: Windows Phone / Live Tiles (tilføjet jun 2026)
+Konceptet stammer (uden at det var bevidst) fra Windows Phones Live Tiles: hjemskærm af forskellige-størrelse fliser, hver et levende vindue ind i en funktion, tap → fuld visning. Præcis "radar-widget viser faktisk situation, tap for fuldskærm".
+
+**Læring — men med VIGTIG skalering-forskel (Michaels pointe):** Windows Phone var et OPERATIVSYSTEM → bad folk genlære HELE telefonen (alle vaner, hele app-økosystemet) = enorm barriere, og det dræbte platformen trods rosende anmeldelser af selve designet. **Bubble er en APP** → beder kun om at folk lærer ÉN apps navigation, noget de gør ved enhver ny app. Risikoen er IKKE samme størrelsesorden. Man kan ikke "floppe som platform"; i værste fald en app-navigation der ikke faldt i smag — som kan rettes.
+
+**Hvad der STADIG holder (dæmpet):** De to risici (intuitivt vs. forvirrende; anderledes-for-anderledeshedens-skyld) gælder på app-niveau, men som LAV barriere (ét øjebliks orientering), ikke Windows Phones HØJE (hele din digitale hverdag). Førstegangsbruger skal stadig forstå tiles straks, ellers bounce.
+
+**Revideret indramning:** Idéen er mere rimelig end en ren Windows-Phone-sammenligning antyder. Stadig post-pilot — men fordi den fortjener at blive INFORMERET af pilot-data (hvordan bruger folk faktisk Bubble), IKKE fordi den er farlig. "Post-pilot fordi vi vil vide mere", ikke "post-pilot fordi det er risikabelt". At teste nu mens brugerskaren er lille er billigt.
