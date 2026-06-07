@@ -723,9 +723,9 @@ function showTerms() {
     '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">2. Beta-forbehold</h3>' +
     '<p>Bubble er i <strong>closed beta</strong>. Funktioner kan ændres uden varsel. Der kan forekomme fejl, nedetid og datatab. Vi giver ingen garantier for oppetid eller dataintegritet.</p>' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">3. Dine data (GDPR)</h3>' +
-    '<p>Vi indsamler kun det du selv indtaster: navn, email, titel, arbejdsplads, bio, tags og profilbillede. Vi gemmer desuden hvilke bobler du joiner og kontakter du gemmer.</p>' +
+    '<p>Vi indsamler de oplysninger du selv vælger at oprette eller dele i Bubble, herunder navn, email, titel, arbejdsplads, bio, tags, profilbillede, medlemskaber i bobler og gemte kontakter.</p>' +
     '<p style="margin-top:4px">Vi behandler dine oplysninger for at levere Bubble. I visse tilfælde sker det på baggrund af dit samtykke eller vores legitime interesse i at drive og forbedre tjenesten.</p>' +
-    '<p style="margin-top:4px">Beskeder deles ikke med tredjepart, og vi sælger <strong>aldrig</strong> dine data. Vi bestræber os på at opbevare data inden for EU/EØS; visse underleverandører kan dog behandle data uden for EU/EØS under passende garantier.</p>' +
+    '<p style="margin-top:4px">Beskeder deles ikke med tredjepart, og vi sælger <strong>aldrig</strong> dine data. Vi bruger ikke dine oplysninger til reklameformål og videregiver dem ikke til tredjepart med henblik på markedsføring. Vi bestræber os på at opbevare data inden for EU/EØS; visse underleverandører kan dog behandle data uden for EU/EØS under passende garantier.</p>' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">4. Cookies og lokal lagring</h3>' +
     '<p>Bubble bruger <strong>ingen tracking-cookies</strong> og ingen tredjeparts-analyse. Vi bruger kun nødvendig lokal lagring:</p>' +
     '<p style="margin-top:4px">• <strong>Login-token</strong> — holder dig logget ind<br>' +
