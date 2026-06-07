@@ -719,7 +719,7 @@ function showTerms() {
     '<div style="font-size:0.78rem;line-height:1.7;color:rgba(255,255,255,0.7)">' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">1. Hvad er Bubble?</h3>' +
     '<p>Bubble er en networking-platform i lukket beta udviklet i Sønderborg, Danmark. Appen forbinder mennesker baseret på professionelle interesser og nærhed.</p>' +
-    '<p style="margin-top:4px">Dataansvarlig: Bubble, Sønderborg. Kontakt: info@bubbleme.dk.</p>' +
+    '<p style="margin-top:4px">Dataansvarlig: Michael Sørensen (projektets ejer og udvikler), Sønderborg. Kontakt: info@bubbleme.dk.</p>' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">2. Beta-forbehold</h3>' +
     '<p>Bubble er i <strong>closed beta</strong>. Funktioner kan ændres uden varsel. Der kan forekomme fejl, nedetid og datatab. Vi giver ingen garantier for oppetid eller dataintegritet.</p>' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">3. Dine data (GDPR)</h3>' +
