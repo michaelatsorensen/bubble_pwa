@@ -724,13 +724,13 @@ function showTerms() {
     '<p>Bubble er i <strong>closed beta</strong>. Funktioner kan ændres uden varsel. Der kan forekomme fejl, nedetid og datatab. Vi giver ingen garantier for oppetid eller dataintegritet.</p>' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">3. Dine data (GDPR)</h3>' +
     '<p>Vi indsamler kun det du selv indtaster: navn, email, titel, arbejdsplads, bio, tags og profilbillede. Vi gemmer desuden hvilke bobler du joiner og kontakter du gemmer.</p>' +
-    '<p style="margin-top:4px">Retsgrundlag: dit samtykke og vores berettigede interesse i at levere tjenesten.</p>' +
-    '<p style="margin-top:4px">Beskeder deles ikke med tredjepart, og vi sælger <strong>aldrig</strong> dine data. Data opbevares sikkert på servere i EU.</p>' +
+    '<p style="margin-top:4px">Vi behandler dine oplysninger for at levere Bubble. I visse tilfælde sker det på baggrund af dit samtykke eller vores legitime interesse i at drive og forbedre tjenesten.</p>' +
+    '<p style="margin-top:4px">Beskeder deles ikke med tredjepart, og vi sælger <strong>aldrig</strong> dine data. Vi bestræber os på at opbevare data inden for EU/EØS; visse underleverandører kan dog behandle data uden for EU/EØS under passende garantier.</p>' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">4. Cookies og lokal lagring</h3>' +
     '<p>Bubble bruger <strong>ingen tracking-cookies</strong> og ingen tredjeparts-analyse. Vi bruger kun nødvendig lokal lagring:</p>' +
     '<p style="margin-top:4px">• <strong>Login-token</strong> — holder dig logget ind<br>' +
     '• <strong>App-præferencer</strong> — husker dine valg<br>' +
-    '• <strong>Session-data</strong> — midlertidig, slettes ved browserlukning</p>' +
+    '• <strong>Midlertidig navigationsstate</strong> — gemt lokalt i din browser, udløber automatisk efter kort tid</p>' +
     '<p style="margin-top:4px">Ingen data deles med tredjepart. Ingen reklame- eller profileringscookies.</p>' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">5. Dine rettigheder</h3>' +
     '<p>Du har ret til indsigt, berigtigelse, sletning, begrænsning, dataportabilitet og indsigelse. Du kan redigere din profil og blokere brugere i appen. Ønsker du dine data slettet, kan du kontakte os på info@bubbleme.dk.</p>' +
