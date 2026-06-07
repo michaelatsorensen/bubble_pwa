@@ -658,7 +658,7 @@ function showTerms() {
     '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">8. Kontakt & klage</h3>' +
     '<p>Kontakt os på <strong>info@bubbleme.dk</strong></p>' +
     '<p style="margin-top:4px">Klage: <a href="https://www.datatilsynet.dk" target="_blank" rel="noopener" style="color:var(--accent)">datatilsynet.dk</a></p>' +
-    '<p style="margin-top:8px;font-size:0.68rem;color:var(--muted)">Sidst opdateret: april 2026</p>' +
+    '<p style="margin-top:8px;font-size:0.68rem;color:var(--muted)">Sidst opdateret: 7. juni 2026 · Vilkår v1.1</p>' +
     '</div>' +
     '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:1.2rem;padding:0.7rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Luk</button>';
 }
