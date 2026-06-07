@@ -719,13 +719,13 @@ function showTerms() {
     '<div style="font-size:0.78rem;line-height:1.7;color:rgba(255,255,255,0.7)">' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">1. Hvad er Bubble?</h3>' +
     '<p>Bubble er en networking-platform i lukket beta udviklet i Sønderborg, Danmark. Appen forbinder mennesker baseret på professionelle interesser og nærhed.</p>' +
-    '<p style="margin-top:4px">Dataansvarlig: Bubble / Michael Brix Johansen, Sønderborg. Kontakt: info@bubbleme.dk.</p>' +
+    '<p style="margin-top:4px">Dataansvarlig: Bubble, Sønderborg. Kontakt: info@bubbleme.dk.</p>' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">2. Beta-forbehold</h3>' +
     '<p>Bubble er i <strong>closed beta</strong>. Funktioner kan ændres uden varsel. Der kan forekomme fejl, nedetid og datatab. Vi giver ingen garantier for oppetid eller dataintegritet.</p>' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">3. Dine data (GDPR)</h3>' +
     '<p>Vi indsamler kun det du selv indtaster: navn, email, titel, arbejdsplads, bio, tags og profilbillede. Vi gemmer desuden hvilke bobler du joiner og kontakter du gemmer.</p>' +
-    '<p style="margin-top:4px">Retsgrundlag: samtykke (art. 6, stk. 1, litra a) og berettiget interesse (art. 6, stk. 1, litra f).</p>' +
-    '<p style="margin-top:4px">Beskeder opbevares krypteret og læses ikke af os. Vi sælger <strong>aldrig</strong> dine data. Data opbevares i EU via Supabase (Frankfurt).</p>' +
+    '<p style="margin-top:4px">Retsgrundlag: dit samtykke og vores berettigede interesse i at levere tjenesten.</p>' +
+    '<p style="margin-top:4px">Beskeder deles ikke med tredjepart, og vi sælger <strong>aldrig</strong> dine data. Data opbevares sikkert på servere i EU.</p>' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">4. Cookies og lokal lagring</h3>' +
     '<p>Bubble bruger <strong>ingen tracking-cookies</strong> og ingen tredjeparts-analyse. Vi bruger kun nødvendig lokal lagring:</p>' +
     '<p style="margin-top:4px">• <strong>Login-token</strong> — holder dig logget ind<br>' +
@@ -733,7 +733,7 @@ function showTerms() {
     '• <strong>Session-data</strong> — midlertidig, slettes ved browserlukning</p>' +
     '<p style="margin-top:4px">Ingen data deles med tredjepart. Ingen reklame- eller profileringscookies.</p>' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">5. Dine rettigheder</h3>' +
-    '<p>Du har ret til indsigt, berigtigelse, sletning, begrænsning, dataportabilitet og indsigelse. Du kan redigere/slette din profil, blokere brugere og anmode om fuld datasletning via info@bubbleme.dk. Vi svarer inden 30 dage.</p>' +
+    '<p>Du har ret til indsigt, berigtigelse, sletning, begrænsning, dataportabilitet og indsigelse. Du kan redigere din profil og blokere brugere i appen. Ønsker du dine data slettet, kan du kontakte os på info@bubbleme.dk.</p>' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">6. Adfærd</h3>' +
     '<p>Chikane, spam, hadefuldt indhold eller upassende profilbilleder tolereres ikke og kan resultere i fjernelse fra platformen.</p>' +
     '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">7. Ansvarsfraskrivelse</h3>' +
