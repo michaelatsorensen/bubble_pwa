@@ -554,6 +554,10 @@ da: {
   // ── Misc ──
   misc_cancel: 'Annuller',
   misc_confirm: 'Bekræft',
+  misc_back: 'Tilbage',
+  sending: 'Sender...',
+  transfer_already_pending: 'Der er allerede en igangværende overdragelse. Træk den tilbage først.',
+  transfer_not_member: 'Personen skal være medlem af boblen.',
   misc_close: 'Luk',
   misc_save_changes: 'Gem ændringer',
   misc_retry: 'Prøv igen',
@@ -1286,6 +1290,10 @@ en: {
   // ── Misc ──
   misc_cancel: 'Cancel',
   misc_confirm: 'Confirm',
+  misc_back: 'Back',
+  sending: 'Sending...',
+  transfer_already_pending: 'There is already a pending transfer. Withdraw it first.',
+  transfer_not_member: 'The person must be a member of the bubble.',
   misc_close: 'Close',
   misc_save_changes: 'Save changes',
   misc_retry: 'Try again',
