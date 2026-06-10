@@ -235,9 +235,16 @@ async function openBubbleChat(bubbleId, fromScreen) {
   } else {
     _bcBackFn = function() { goTo(fromScreen || 'screen-home'); };
   }
-  // If member tapped ⓘ to view info temporarily, back returns to previous tab
-  // For non-members, info IS the landing tab — back should navigate away
+  // Back-regel (jun 2026): chat/medlemmer/opslag er "dybere" niveauer end Info.
+  // Tilbage fra en ikke-Info-fane → gå op til Info (boblens "hjem").
+  // Tilbage fra Info → forlad boblen. Bevarer "Info er default landing" + chat-fuldskærm.
   backBtn.onclick = function() {
+    if (typeof _bcActiveTab !== 'undefined' && _bcActiveTab !== 'info'
+        && document.getElementById('bc-tab-info')
+        && document.getElementById('bc-tab-info').style.display !== 'none') {
+      bcSwitchTab('info');
+      return;
+    }
     _bcBackFn();
   };
 
