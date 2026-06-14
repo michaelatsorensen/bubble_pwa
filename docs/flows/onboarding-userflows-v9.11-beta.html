@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bubble — Onboarding userflows og kendte friktionspunkter</title>
+<style>
+  body{margin:0;background:#EEECE5;}
+  .uf{max-width:720px;margin:0 auto;background:#FAF9F5;color:#2C2C2A;
+      font-family:'Figtree',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      padding:24px 20px 40px;}
+  .uf h1{font-size:23px;font-weight:700;margin:0 0 4px;}
+  .uf h2{font-size:17px;font-weight:600;margin:30px 0 6px;border-top:1px solid #E4E1D8;padding-top:22px;}
+  .uf .sub{font-size:13px;color:#5F5E5A;margin:0 0 8px;}
+  .uf .status{background:#FAEEDA;border:1px solid #BA7517;color:#854F0B;border-radius:11px;padding:11px 15px;font-size:12.5px;line-height:1.5;margin:0 0 18px;}
+  .uf p,.uf li{font-size:14px;line-height:1.6;color:#444441;}
+  .uf .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;margin:12px 0 6px;color:#444441;}
+  .uf .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .uf .sw{width:13px;height:13px;border-radius:3px;display:inline-block;}
+  .uf svg{display:block;width:100%;height:auto;margin:6px 0 2px;}
+  .uf svg text{font-family:'Figtree',-apple-system,system-ui,sans-serif;}
+  .uf .th{font-size:14px;font-weight:600;}
+  .uf .ts{font-size:12px;}
+  .uf .hd{fill:#2C2C2A;font-size:14px;font-weight:600;}
+  .uf .arr{stroke:#8A8980;stroke-width:1.5;fill:none;}
+  .uf .dash{stroke:#A32D2D;stroke-width:1.2;fill:none;stroke-dasharray:4 3;}
+  .n-teal>rect{fill:#E1F5EE;stroke:#1D9E75;} .n-teal>text{fill:#0F6E56;}
+  .n-amber>rect{fill:#FAEEDA;stroke:#BA7517;} .n-amber>text{fill:#854F0B;}
+  .n-red>rect{fill:#FCEBEB;stroke:#A32D2D;} .n-red>text{fill:#791F1F;}
+  .n-green>rect{fill:#EAF3DE;stroke:#639922;} .n-green>text{fill:#27500A;}
+  .uf .note{background:#fff;border:1px solid #E9E5DC;border-radius:11px;padding:11px 15px;margin:8px 0 0;}
+  .uf .note b{color:#791F1F;font-weight:600;}
+  .uf .foot{font-size:12px;color:#888780;margin-top:30px;}
+</style>
+</head>
+<body>
+<div class="uf">
+  <div class="status"><b>Internt flow- og risikokort for Bubble v9.11 (beta) — ikke slutbrugerdokumentation.</b> Beskriver kendte onboarding-friktionspunkter på et øjebliksbillede af v9.11. Bør opdateres efter ændringer i Supabase Auth, email confirmation, eller native/deeplink-flow.</div>
+  <h1>Bubble — onboarding userflows og kendte friktionspunkter</h1>
+  <p class="sub">Set fra brugerens perspektiv. Fire processer der deler samme hale (profil-opsætning → hvor lander jeg).</p>
+  <div class="legend">
+    <span><i class="sw" style="background:#5DCAA5"></i>Skridt brugeren tager</span>
+    <span><i class="sw" style="background:#EF9F27"></i>Beslutning / ventetid</span>
+    <span><i class="sw" style="background:#E24B4A"></i>Hvor brugeren farer vild</span>
+    <span><i class="sw" style="background:#97C459"></i>Inde i appen</span>
+  </div>
+
+  <h2>1 · Email-signup</h2>
+  <p class="sub">Confirmation-togglen i Supabase ændrer hele oplevelsen: tre skridt mod seks.</p>
+  <svg viewBox="0 0 680 585" role="img">
+    <title>Email signup: confirmation off vs on</title>
+    <defs><marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+    <text class="hd" x="180" y="34" text-anchor="middle">Confirmation OFF — pilot</text>
+    <text class="hd" x="500" y="34" text-anchor="middle">Confirmation ON — hvis aktiveret</text>
+    <g class="n-teal"><rect x="90" y="52" width="180" height="50" rx="8" stroke-width="0.5"/><text class="th" x="180" y="77" text-anchor="middle" dominant-baseline="central">Udfyld signup</text></g>
+    <line x1="180" y1="102" x2="180" y2="142" class="arr" marker-end="url(#a1)"/>
+    <g class="n-teal"><rect x="90" y="142" width="180" height="54" rx="8" stroke-width="0.5"/><text class="th" x="180" y="161" text-anchor="middle" dominant-baseline="central">Opsæt profil</text><text class="ts" x="180" y="179" text-anchor="middle" dominant-baseline="central">navn + arbejdsplads</text></g>
+    <line x1="180" y1="196" x2="180" y2="246" class="arr" marker-end="url(#a1)"/>
+    <g class="n-green"><rect x="90" y="246" width="180" height="48" rx="8" stroke-width="0.5"/><text class="th" x="180" y="270" text-anchor="middle" dominant-baseline="central">Inde i appen</text></g>
+    <g class="n-teal"><rect x="400" y="52" width="200" height="50" rx="8" stroke-width="0.5"/><text class="th" x="500" y="77" text-anchor="middle" dominant-baseline="central">Udfyld signup</text></g>
+    <line x1="500" y1="102" x2="500" y2="142" class="arr" marker-end="url(#a1)"/>
+    <g class="n-amber"><rect x="400" y="142" width="200" height="50" rx="8" stroke-width="0.5"/><text class="th" x="500" y="167" text-anchor="middle" dominant-baseline="central">Tjek din email</text></g>
+    <line x1="500" y1="192" x2="500" y2="232" class="arr" marker-end="url(#a1)"/>
+    <g class="n-red"><rect x="400" y="232" width="200" height="56" rx="8" stroke-width="0.5"/><text class="th" x="500" y="252" text-anchor="middle" dominant-baseline="central">Forlad app for at bekræfte</text><text class="ts" x="500" y="272" text-anchor="middle" dominant-baseline="central">her farer brugeren vild</text></g>
+    <line x1="500" y1="288" x2="500" y2="328" class="arr" marker-end="url(#a1)"/>
+    <g class="n-teal"><rect x="400" y="328" width="200" height="50" rx="8" stroke-width="0.5"/><text class="th" x="500" y="353" text-anchor="middle" dominant-baseline="central">Log ind manuelt igen</text></g>
+    <line x1="500" y1="378" x2="500" y2="418" class="arr" marker-end="url(#a1)"/>
+    <g class="n-teal"><rect x="400" y="418" width="200" height="54" rx="8" stroke-width="0.5"/><text class="th" x="500" y="437" text-anchor="middle" dominant-baseline="central">Opsæt profil</text><text class="ts" x="500" y="455" text-anchor="middle" dominant-baseline="central">navn + arbejdsplads</text></g>
+    <line x1="500" y1="472" x2="500" y2="512" class="arr" marker-end="url(#a1)"/>
+    <g class="n-green"><rect x="400" y="512" width="200" height="48" rx="8" stroke-width="0.5"/><text class="th" x="500" y="536" text-anchor="middle" dominant-baseline="central">Inde i appen</text></g>
+  </svg>
+  <div class="note"><b>Edge cases (ON):</b> brugeren lukker appen for at tjekke mail → kommer tilbage til login, password tabt. Mailen lander i spam → ingen "send igen". Linket åbner i Safari, ikke den installerede PWA → session i forkert kontekst. Alle tre giver "virkede det?".</div>
+
+  <h2>2 · Social login (Google / LinkedIn)</h2>
+  <p class="sub">Provideren kan udfylde navn og avatar; onboarding springes over hvis profilen allerede er komplet.</p>
+  <svg viewBox="0 0 680 580" role="img">
+    <title>OAuth signup flow</title>
+    <defs><marker id="a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+    <g class="n-teal"><rect x="250" y="40" width="200" height="50" rx="8" stroke-width="0.5"/><text class="th" x="350" y="65" text-anchor="middle" dominant-baseline="central">Tryk Google / LinkedIn</text></g>
+    <line x1="350" y1="90" x2="350" y2="130" class="arr" marker-end="url(#a2)"/>
+    <g class="n-amber"><rect x="250" y="130" width="200" height="54" rx="8" stroke-width="0.5"/><text class="th" x="350" y="149" text-anchor="middle" dominant-baseline="central">Provider-login</text><text class="ts" x="350" y="167" text-anchor="middle" dominant-baseline="central">forlader app til provider</text></g>
+    <line x1="450" y1="157" x2="470" y2="157" class="dash" marker-end="url(#a2)"/>
+    <g class="n-red"><rect x="470" y="130" width="180" height="54" rx="8" stroke-width="0.5"/><text class="th" x="560" y="149" text-anchor="middle" dominant-baseline="central">Forkert app-kontekst</text><text class="ts" x="560" y="167" text-anchor="middle" dominant-baseline="central">vender til browser</text></g>
+    <line x1="350" y1="184" x2="350" y2="224" class="arr" marker-end="url(#a2)"/>
+    <g class="n-teal"><rect x="250" y="224" width="200" height="54" rx="8" stroke-width="0.5"/><text class="th" x="350" y="243" text-anchor="middle" dominant-baseline="central">Tilbage i Bubble</text><text class="ts" x="350" y="261" text-anchor="middle" dominant-baseline="central">autofill navn + avatar</text></g>
+    <line x1="450" y1="251" x2="470" y2="251" class="dash" marker-end="url(#a2)"/>
+    <g class="n-amber"><rect x="470" y="224" width="180" height="54" rx="8" stroke-width="0.5"/><text class="th" x="560" y="243" text-anchor="middle" dominant-baseline="central">Avatar kan hænge</text><text class="ts" x="560" y="261" text-anchor="middle" dominant-baseline="central">forsinker entry</text></g>
+    <line x1="350" y1="278" x2="350" y2="318" class="arr" marker-end="url(#a2)"/>
+    <g class="n-amber"><rect x="250" y="318" width="200" height="50" rx="8" stroke-width="0.5"/><text class="th" x="350" y="343" text-anchor="middle" dominant-baseline="central">Profil komplet?</text></g>
+    <text class="ts" x="360" y="390" text-anchor="start" fill="#5F5E5A">nej</text>
+    <line x1="350" y1="368" x2="350" y2="408" class="arr" marker-end="url(#a2)"/>
+    <g class="n-teal"><rect x="250" y="408" width="200" height="50" rx="8" stroke-width="0.5"/><text class="th" x="350" y="433" text-anchor="middle" dominant-baseline="central">Opsæt profil</text></g>
+    <line x1="350" y1="458" x2="350" y2="498" class="arr" marker-end="url(#a2)"/>
+    <path d="M450 343 L560 343 L560 522 L437 522" class="arr" marker-end="url(#a2)"/>
+    <text class="ts" x="468" y="335" text-anchor="start" fill="#5F5E5A">ja → spring over</text>
+    <g class="n-green"><rect x="265" y="498" width="170" height="48" rx="8" stroke-width="0.5"/><text class="th" x="350" y="522" text-anchor="middle" dominant-baseline="central">Inde i appen</text></g>
+  </svg>
+  <div class="note"><b>Edge cases:</b> linket/redirect kan lande i browseren i stedet for den installerede app (samme rod som email-linket). Synkron avatar-download kan forsinke at onboarding vises, uden feedback. Hvis provideren ikke giver arbejdsplads, vises minimal onboarding alligevel.</div>
+
+  <h2>3 · Event-QR landing</h2>
+  <p class="sub">Vækst-stien. Brugeren scanner en QR til et event og skal ende inde i eventet — ikke på en generisk forside.</p>
+  <svg viewBox="0 0 680 580" role="img">
+    <title>Event QR landing flow</title>
+    <defs><marker id="a3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+    <g class="n-teal"><rect x="200" y="40" width="200" height="50" rx="8" stroke-width="0.5"/><text class="th" x="300" y="65" text-anchor="middle" dominant-baseline="central">Scan event-QR</text></g>
+    <line x1="300" y1="90" x2="300" y2="130" class="arr" marker-end="url(#a3)"/>
+    <g class="n-teal"><rect x="200" y="130" width="200" height="54" rx="8" stroke-width="0.5"/><text class="th" x="300" y="149" text-anchor="middle" dominant-baseline="central">Event-preview</text><text class="ts" x="300" y="167" text-anchor="middle" dominant-baseline="central">se det før du joiner</text></g>
+    <line x1="300" y1="184" x2="300" y2="224" class="arr" marker-end="url(#a3)"/>
+    <g class="n-amber"><rect x="200" y="224" width="200" height="54" rx="8" stroke-width="0.5"/><text class="th" x="300" y="243" text-anchor="middle" dominant-baseline="central">Signup eller login</text><text class="ts" x="300" y="261" text-anchor="middle" dominant-baseline="central">email eller social</text></g>
+    <line x1="300" y1="278" x2="300" y2="318" class="arr" marker-end="url(#a3)"/>
+    <g class="n-teal"><rect x="200" y="318" width="200" height="50" rx="8" stroke-width="0.5"/><text class="th" x="300" y="343" text-anchor="middle" dominant-baseline="central">Opsæt profil</text></g>
+    <line x1="300" y1="368" x2="300" y2="408" class="arr" marker-end="url(#a3)"/>
+    <g class="n-amber"><rect x="200" y="408" width="200" height="54" rx="8" stroke-width="0.5"/><text class="th" x="300" y="427" text-anchor="middle" dominant-baseline="central">Join-event modal</text><text class="ts" x="300" y="445" text-anchor="middle" dominant-baseline="central">bekræft for at deltage</text></g>
+    <line x1="400" y1="435" x2="470" y2="435" class="dash" marker-end="url(#a3)"/>
+    <g class="n-red"><rect x="470" y="408" width="180" height="54" rx="8" stroke-width="0.5"/><text class="th" x="560" y="427" text-anchor="middle" dominant-baseline="central">Hvis den fejler</text><text class="ts" x="560" y="445" text-anchor="middle" dominant-baseline="central">fallback-toast (v9.10)</text></g>
+    <line x1="300" y1="462" x2="300" y2="502" class="arr" marker-end="url(#a3)"/>
+    <g class="n-green"><rect x="215" y="502" width="170" height="48" rx="8" stroke-width="0.5"/><text class="th" x="300" y="526" text-anchor="middle" dominant-baseline="central">Event åbnet</text></g>
+  </svg>
+  <div class="note"><b>Edge case (lukket før v9.10):</b> hvis modalen fejlede — netværk, eller eventet findes ikke længere — landede brugeren tavst på Home uden at vide om QR'en virkede. Nu vises fallback-toasten "Vi kunne ikke åbne eventet automatisk. Prøv igen, eller scan QR-koden på ny." Den faste 400ms-timing før modalen er stadig en svaghed at holde øje med.</div>
+
+  <h2>4 · Den fælles hale: gem → hvor lander jeg</h2>
+  <p class="sub">Alle tre stier ender her. Resolveren afgør hvad brugeren ser efter opsætning.</p>
+  <svg viewBox="0 0 680 420" role="img">
+    <title>Onboarding save, abort and destination resolver</title>
+    <defs><marker id="a4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+    <g class="n-red"><rect x="40" y="40" width="180" height="54" rx="8" stroke-width="0.5"/><text class="th" x="130" y="59" text-anchor="middle" dominant-baseline="central">Afbryd</text><text class="ts" x="130" y="77" text-anchor="middle" dominant-baseline="central">ny→login / eksist.→profil</text></g>
+    <line x1="250" y1="67" x2="222" y2="67" class="dash" marker-end="url(#a4)"/>
+    <g class="n-teal"><rect x="250" y="40" width="200" height="54" rx="8" stroke-width="0.5"/><text class="th" x="350" y="59" text-anchor="middle" dominant-baseline="central">Opsæt profil</text><text class="ts" x="350" y="77" text-anchor="middle" dominant-baseline="central">navn, arbejdsplads, samtykke</text></g>
+    <line x1="350" y1="94" x2="350" y2="134" class="arr" marker-end="url(#a4)"/>
+    <g class="n-teal"><rect x="250" y="134" width="200" height="50" rx="8" stroke-width="0.5"/><text class="th" x="350" y="159" text-anchor="middle" dominant-baseline="central">Gem profil (upsert)</text></g>
+    <line x1="350" y1="184" x2="350" y2="224" class="arr" marker-end="url(#a4)"/>
+    <g class="n-amber"><rect x="250" y="224" width="200" height="50" rx="8" stroke-width="0.5"/><text class="th" x="350" y="249" text-anchor="middle" dominant-baseline="central">Hvor skal jeg hen?</text></g>
+    <path d="M312 274 L150 330" class="arr" marker-end="url(#a4)"/>
+    <path d="M350 274 L342 330" class="arr" marker-end="url(#a4)"/>
+    <path d="M388 274 L540 330" class="arr" marker-end="url(#a4)"/>
+    <g class="n-teal"><rect x="55" y="330" width="170" height="56" rx="8" stroke-width="0.5"/><text class="th" x="140" y="350" text-anchor="middle" dominant-baseline="central">Deep-link modal</text><text class="ts" x="140" y="368" text-anchor="middle" dominant-baseline="central">invite: kontakt/event</text></g>
+    <g class="n-teal"><rect x="255" y="330" width="170" height="56" rx="8" stroke-width="0.5"/><text class="th" x="340" y="350" text-anchor="middle" dominant-baseline="central">Welcome-skærm</text><text class="ts" x="340" y="368" text-anchor="middle" dominant-baseline="central">første gang: vælg start</text></g>
+    <g class="n-green"><rect x="455" y="330" width="170" height="56" rx="8" stroke-width="0.5"/><text class="th" x="540" y="350" text-anchor="middle" dominant-baseline="central">Home</text><text class="ts" x="540" y="368" text-anchor="middle" dominant-baseline="central">standard-landing</text></g>
+  </svg>
+  <div class="note"><b>Edge cases:</b> ny bruger der afbryder logges helt ud (returnerer til login) — eksisterende bruger ved re-run vender tilbage til profil. Welcome-flag sættes <i>før</i> brugeren interagerer (verificeret i v9.11): lukkes appen på welcome-skærmen, springes den over næste gang. terms_accepted_at sættes kun første gang, hvis den mangler (v9.11). Deep-link modal har 400ms-timing-afhængighed.</div>
+
+  <p class="foot">Bubble onboarding userflows · genereret som dokumentation · farver: teal=skridt, amber=beslutning/vent, rød=friktion, grøn=inde i appen.</p>
+</div>
+</body>
+</html>
