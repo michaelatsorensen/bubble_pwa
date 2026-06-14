@@ -250,7 +250,8 @@ async function _miniObSave() {
   if (btn) { btn.textContent = t('ui_saving'); btn.disabled = true; btn.classList.remove('is-ready'); }
 
   try {
-    var update = { id: currentUser.id, terms_accepted_at: new Date().toISOString() };
+    var update = { id: currentUser.id };
+    if (!currentProfile?.terms_accepted_at) update.terms_accepted_at = new Date().toISOString();
     if (nameEl) update.name = name;
     if (wpEl) update.workplace = wp;
     var { error } = await sb.from('profiles').upsert(update);
@@ -747,10 +748,9 @@ async function saveOnboarding() {
     var isEventFlow = !!flowGet('event_flow');
     var btn = document.getElementById('ob-save-btn');
     if (btn) { btn.textContent = t('ui_saving'); btn.disabled = true; }
-    const { error } = await sb.from('profiles').upsert({
-      id: currentUser.id, name, workplace, is_anon: false,
-      terms_accepted_at: new Date().toISOString()
-    });
+    var obUpdate = { id: currentUser.id, name, workplace, is_anon: false };
+    if (!currentProfile?.terms_accepted_at) obUpdate.terms_accepted_at = new Date().toISOString();
+    const { error } = await sb.from('profiles').upsert(obUpdate);
     if (error) {
       if (btn) { btn.textContent = isEventFlow ? t('ob_goto_event') : t('ob_get_started'); btn.disabled = false; }
       return errorToast('save', error);
