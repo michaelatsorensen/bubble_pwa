@@ -661,7 +661,7 @@ async function showDeepLinkModal(type, targetId) {
       timingIsEnded: timing.isEnded,
       isMember: isMember
     });
-  } catch(e) { logError('showDeepLinkModal', e); }
+  } catch(e) { logError('showDeepLinkModal', e); showWarningToast(t('dl_event_open_failed')); }
 }
 
 // Helper: render simple two-button modal (contact / network) — preserves prior behavior

@@ -179,9 +179,9 @@ function _showMinimalOnboarding(hasName, hasWorkplace, autoName) {
   if (existing) existing.remove();
 
   var contextLabel = '';
-  if (flowGet('event_flow')) contextLabel = 'Næsten klar — udfyld dit navn så andre kan finde dig';
-  else if (flowGet('pending_contact')) contextLabel = 'Ét felt og du kan se kontakten';
-  else if (flowGet('pending_join')) contextLabel = 'Ét felt og du er med i netværket';
+  if (flowGet('event_flow')) contextLabel = t('ob_ctx_event');
+  else if (flowGet('pending_contact')) contextLabel = t('ob_ctx_contact');
+  else if (flowGet('pending_join')) contextLabel = t('ob_ctx_join');
   else contextLabel = t('ob_almost_ready');
 
   var nameVal = autoName || currentProfile?.name || '';
@@ -195,15 +195,15 @@ function _showMinimalOnboarding(hasName, hasWorkplace, autoName) {
     '<div style="flex:1;display:flex;flex-direction:column;justify-content:center;max-width:400px;width:100%;margin:0 auto">' +
       '<div style="text-align:center;margin-bottom:0.3rem"><img src="bubble-logo-splash.png" alt="bubble" style="height:20px;width:auto"></div>' +
       '<div style="font-size:1.3rem;font-weight:800;text-align:center;margin-bottom:0.15rem">' + escHtml(contextLabel) + '</div>' +
-      '<div style="font-size:0.82rem;color:var(--text-secondary);text-align:center;margin-bottom:1.5rem">Du kan udfylde resten inde i appen</div>' +
-      (!hasName ? '<div class="input-group"><div class="input-label">Navn *</div><input class="input" id="mini-ob-name" maxlength="60" placeholder="" data-t-placeholder="ob_name_ph" value="' + escHtml(nameVal) + '" oninput="_miniObCheck()"></div>' : '') +
-      (!hasWorkplace ? '<div class="input-group"><div class="input-label">Arbejdsplads *</div><input class="input" id="mini-ob-workplace" maxlength="80" placeholder="" data-t-placeholder="ob_workplace_ph" value="' + escHtml(wpVal) + '" oninput="_miniObCheck()"></div>' : '') +
+      '<div style="font-size:0.82rem;color:var(--text-secondary);text-align:center;margin-bottom:1.5rem">' + t('ob_fill_rest') + '</div>' +
+      (!hasName ? '<div class="input-group"><div class="input-label">' + t('ob_name_label') + '</div><input class="input" id="mini-ob-name" maxlength="60" placeholder="" data-t-placeholder="ob_name_ph" value="' + escHtml(nameVal) + '" oninput="_miniObCheck()"></div>' : '') +
+      (!hasWorkplace ? '<div class="input-group"><div class="input-label">' + t('ob_workplace_label') + '</div><input class="input" id="mini-ob-workplace" maxlength="80" placeholder="" data-t-placeholder="ob_workplace_ph" value="' + escHtml(wpVal) + '" oninput="_miniObCheck()"></div>' : '') +
       '<label style="display:flex;align-items:flex-start;gap:0.5rem;margin:0.6rem 0;cursor:pointer" onclick="_miniObToggleConsent()">' +
         '<div id="mini-ob-consent" style="width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s;margin-top:1px"></div>' +
-        '<span style="font-size:0.72rem;color:var(--text-secondary);line-height:1.4">Jeg accepterer Bubble\'s <a href="#" onclick="event.stopPropagation();showTerms()">betingelser</a> og <a href="#" onclick="event.stopPropagation();showTerms()">privatlivspolitik</a></span>' +
+        '<span style="font-size:0.72rem;color:var(--text-secondary);line-height:1.4">' + t('ob_consent_full') + '</span>' +
       '</label>' +
-      '<button class="btn-primary" id="mini-ob-save" onclick="_miniObSave()" style="margin-top:0.8rem" disabled>' + (flowGet('event_flow') ? 'Gå til event →' : 'Fortsæt') + '</button>' +
-      '<div style="text-align:center;font-size:0.72rem;color:var(--muted);margin-top:0.5rem">Du kan tilføje interesser, titel og mere bagefter</div>' +
+      '<button class="btn-primary" id="mini-ob-save" onclick="_miniObSave()" style="margin-top:0.8rem" disabled>' + (flowGet('event_flow') ? t('ob_event_continue') : t('ob_continue')) + '</button>' +
+      '<div style="text-align:center;font-size:0.72rem;color:var(--muted);margin-top:0.5rem">' + t('ob_add_later') + '</div>' +
     '</div>' +
     '<div style="min-height:350px;flex-shrink:0"></div>';
 
@@ -250,11 +250,11 @@ async function _miniObSave() {
   if (btn) { btn.textContent = t('ui_saving'); btn.disabled = true; btn.classList.remove('is-ready'); }
 
   try {
-    var update = { terms_accepted_at: new Date().toISOString() };
+    var update = { id: currentUser.id, terms_accepted_at: new Date().toISOString() };
     if (nameEl) update.name = name;
     if (wpEl) update.workplace = wp;
-    var { error } = await sb.from('profiles').update(update).eq('id', currentUser.id);
-    if (error) { errorToast('save', error); if (btn) { btn.textContent = 'Fortsæt'; } _miniObCheck(); return; }
+    var { error } = await sb.from('profiles').upsert(update);
+    if (error) { errorToast('save', error); if (btn) { btn.textContent = t('ob_continue'); } _miniObCheck(); return; }
     await loadCurrentProfile();
 
     // Remove overlay
@@ -267,7 +267,7 @@ async function _miniObSave() {
   } catch(e) {
     logError('miniObSave', e);
     errorToast('save', e);
-    if (btn) { btn.textContent = 'Fortsæt'; } _miniObCheck();
+    if (btn) { btn.textContent = t('ob_continue'); } _miniObCheck();
   }
 }
 
@@ -336,17 +336,17 @@ function abortOnboarding() {
     if (_reRunningOnboarding) {
       // Existing user — just go back, no logout
       s.innerHTML =
-        '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">Afbryd opsætning?</div>' +
-        '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">Dine ændringer gemmes ikke. Du vender tilbage til din profil.</div>' +
-        '<button onclick="cancelReRunOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid rgba(124,92,252,0.2);background:rgba(124,92,252,0.08);color:var(--accent);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.4rem">Tilbage til profil</button>' +
-        '<button onclick="cancelAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Fortsæt opsætning</button>';
+        '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">' + t('ob_abort_title') + '</div>' +
+        '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">' + t('ob_abort_body_rerun') + '</div>' +
+        '<button onclick="cancelReRunOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid rgba(124,92,252,0.2);background:rgba(124,92,252,0.08);color:var(--accent);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.4rem">' + t('ob_abort_back_profile') + '</button>' +
+        '<button onclick="cancelAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">' + t('ob_abort_continue') + '</button>';
     } else {
       // First-time user — original behavior
       s.innerHTML =
-        '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">Afbryd opsætning?</div>' +
-        '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">Alt du har udfyldt nulstilles og du vender tilbage til login-skærmen.</div>' +
-        '<button onclick="confirmAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid rgba(26,122,138,0.3);background:rgba(26,122,138,0.1);color:var(--accent2);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.4rem">Ja, afbryd og nulstil</button>' +
-        '<button onclick="cancelAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Fortsæt opsætning</button>';
+        '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">' + t('ob_abort_title') + '</div>' +
+        '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">' + t('ob_abort_body_new') + '</div>' +
+        '<button onclick="confirmAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid rgba(26,122,138,0.3);background:rgba(26,122,138,0.1);color:var(--accent2);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.4rem">' + t('ob_abort_confirm') + '</button>' +
+        '<button onclick="cancelAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">' + t('ob_abort_continue') + '</button>';
     }
     return;
   }
@@ -384,7 +384,6 @@ async function confirmAbortOnboarding() {
     currentUser = null;
     currentProfile = null;
     goTo('screen-auth');
-    showWarningToast(t('toast_generic_error'));
   } catch(e) { logError('abortOnboarding', e); goTo('screen-auth'); }
   } catch(e) { logError("confirmAbortOnboarding", e); }
 }
