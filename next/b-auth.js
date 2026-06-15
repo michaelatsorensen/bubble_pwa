@@ -452,9 +452,11 @@ async function handleSignup() {
   try {
     const name  = document.getElementById('signup-name').value.trim();
     const email = document.getElementById('signup-email').value.trim();
+    const emailConfirm = document.getElementById('signup-email-confirm').value.trim();
     const pass  = document.getElementById('signup-password').value;
     const passConfirm = document.getElementById('signup-password-confirm').value;
     if (!name || !email || !pass) { _authLockClear(); return showWarningToast('Udfyld alle felter'); }
+    if (email.toLowerCase() !== emailConfirm.toLowerCase()) { _authLockClear(); return showWarningToast(t('auth_email_mismatch')); }
     if (pass.length < 6) { _authLockClear(); return showWarningToast(t('toast_password_min')); }
     if (pass !== passConfirm) { _authLockClear(); return showWarningToast('Adgangskoderne matcher ikke'); }
     showToast('Opretter konto...');

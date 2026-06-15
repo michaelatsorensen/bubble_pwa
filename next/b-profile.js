@@ -1168,6 +1168,10 @@ function _updateLangBtns() {
   var en = document.getElementById('lang-btn-en');
   if (da) { da.style.borderColor = lang === 'da' ? 'rgba(100,180,230,0.3)' : 'rgba(255,255,255,0.08)'; da.style.background = lang === 'da' ? 'rgba(100,180,230,0.1)' : 'rgba(255,255,255,0.04)'; da.style.color = lang === 'da' ? 'rgb(100,180,230)' : 'rgba(255,255,255,0.4)'; }
   if (en) { en.style.borderColor = lang === 'en' ? 'rgba(100,180,230,0.3)' : 'rgba(255,255,255,0.08)'; en.style.background = lang === 'en' ? 'rgba(100,180,230,0.1)' : 'rgba(255,255,255,0.04)'; en.style.color = lang === 'en' ? 'rgb(100,180,230)' : 'rgba(255,255,255,0.4)'; }
+  var ada = document.getElementById('auth-lang-da');
+  var aen = document.getElementById('auth-lang-en');
+  if (ada) ada.classList.toggle('active', lang === 'da');
+  if (aen) aen.classList.toggle('active', lang === 'en');
 }
 
 function switchAppLanguage(lang) {

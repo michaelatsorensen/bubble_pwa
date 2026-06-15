@@ -57,7 +57,7 @@ function initInputConfirmButtons() {
     'cb-name','cb-desc','cb-location',
     'eb-name','eb-desc','eb-location',
     'login-email','login-password',
-    'signup-name','signup-email','signup-password','signup-title'
+    'signup-name','signup-email','signup-email-confirm','signup-password','signup-password-confirm','signup-title'
   ];
   ids.forEach(function(id) {
     var input = document.getElementById(id);

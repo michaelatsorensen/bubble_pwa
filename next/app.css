@@ -980,6 +980,35 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
   text-align: center;
   background: #F0EEF5;
 }
+.auth-lang-toggle {
+  position: absolute;
+  top: max(0.7rem, calc(env(safe-area-inset-top, 0px) + 0.2rem));
+  right: 0.9rem;
+  z-index: 5;
+  display: inline-flex;
+  background: rgba(23,15,52,0.05);
+  border: 0.5px solid rgba(23,15,52,0.10);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+.auth-lang-toggle button {
+  border: 0;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 5px 13px;
+  border-radius: 999px;
+  background: transparent;
+  color: #56536E;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.auth-lang-toggle button.active {
+  background: rgb(100,180,230);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(100,180,230,0.4);
+}
 /* light bg orbs (subtle ambient) */
 #screen-auth::before {
   content:"";

@@ -29,6 +29,7 @@ function t(key, vars) {
 
 // ── Translate static HTML elements ──
 function translateStaticUI() {
+  if (document.documentElement) document.documentElement.lang = (_lang === 'en' ? 'en' : 'da');
   // data-t="key" → textContent
   document.querySelectorAll('[data-t]').forEach(function(el) {
     el.textContent = t(el.dataset.t);
@@ -45,6 +46,7 @@ function translateStaticUI() {
   document.querySelectorAll('[data-t-title]').forEach(function(el) {
     el.title = t(el.dataset.tTitle);
   });
+  if (typeof _updateLangBtns === 'function') _updateLangBtns();
 }
 
 // ── Translation dictionaries ──
@@ -445,6 +447,9 @@ da: {
   toast_already_registered: 'Denne email er allerede registreret — prøv at logge ind',
   toast_already_registered_oauth: 'Denne email er allerede tilknyttet en konto — log ind med LinkedIn, Google eller Apple',
   auth_email_exists_title: 'Email allerede i brug',
+  auth_signup_email_confirm: 'Gentag email',
+  auth_signup_password_confirm: 'Bekræft adgangskode',
+  auth_email_mismatch: 'Emailadresserne matcher ikke',
   auth_email_exists_body: 'En konto med <strong>{email}</strong> eksisterer allerede. Log ind med din adgangskode nedenfor — eller med Google/LinkedIn hvis du oprettede dig sådan.',
   auth_continue_linkedin: 'Fortsæt med LinkedIn',
   auth_continue_google: 'Fortsæt med Google',
@@ -1207,6 +1212,9 @@ en: {
   toast_already_registered: 'This email is already registered — try logging in',
   toast_already_registered_oauth: 'This email is linked to an existing account — sign in with LinkedIn, Google or Apple',
   auth_email_exists_title: 'Email already in use',
+  auth_signup_email_confirm: 'Repeat email',
+  auth_signup_password_confirm: 'Confirm password',
+  auth_email_mismatch: 'The email addresses don\'t match',
   auth_email_exists_body: 'An account with <strong>{email}</strong> already exists. Log in with your password below — or with Google/LinkedIn if that\'s how you signed up.',
   auth_continue_linkedin: 'Continue with LinkedIn',
   auth_continue_google: 'Continue with Google',
