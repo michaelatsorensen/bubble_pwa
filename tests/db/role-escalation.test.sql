@@ -12,10 +12,13 @@ INSERT INTO public.profiles(id,name) VALUES
  ('aaaaaaaa-0000-0000-0000-000000000004','Outsider');
 INSERT INTO public.bubbles(id,name,created_by) VALUES
  ('bbbbbbbb-0000-0000-0000-000000000001','TestBubble','aaaaaaaa-0000-0000-0000-000000000001');
+-- seed roles as the owner so the INSERT guard preserves the admin seeds
+UPDATE public._test_ctx SET uid = 'aaaaaaaa-0000-0000-0000-000000000001';
 INSERT INTO public.bubble_members(bubble_id,user_id,role) VALUES
  ('bbbbbbbb-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000001','admin'),
  ('bbbbbbbb-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000002','member'),
  ('bbbbbbbb-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000003','admin');
+UPDATE public._test_ctx SET uid = NULL;
 
 \echo '=== role-escalation guard scenarier ==='
 DO $$

@@ -26,7 +26,7 @@ CREATE POLICY "join_bubble_policy" ON public.bubble_members FOR INSERT TO public
 CREATE POLICY "owner_can_checkin_others" ON public.bubble_members FOR INSERT TO public
   WITH CHECK (EXISTS (SELECT 1 FROM bubbles WHERE bubbles.id = bubble_members.bubble_id AND bubbles.created_by = auth.uid()));
 
--- ── CURRENT role guard: BEFORE UPDATE only (verbatim) ──
+-- ── role guard: matches prod after 2026-06_member-role-insert-guard.sql ──
 CREATE OR REPLACE FUNCTION public.prevent_member_role_escalation()
  RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
 AS $function$
@@ -34,12 +34,16 @@ BEGIN
   IF EXISTS (SELECT 1 FROM bubbles WHERE id = NEW.bubble_id AND created_by = auth.uid()) THEN
     RETURN NEW;
   END IF;
-  IF NEW.role IS DISTINCT FROM OLD.role THEN
-    NEW.role := OLD.role;
+  IF TG_OP = 'INSERT' THEN
+    NEW.role := 'member';
+  ELSIF TG_OP = 'UPDATE' THEN
+    IF NEW.role IS DISTINCT FROM OLD.role THEN
+      NEW.role := OLD.role;
+    END IF;
   END IF;
   RETURN NEW;
 END;
 $function$;
 CREATE TRIGGER trg_member_role_guard
-  BEFORE UPDATE ON public.bubble_members
+  BEFORE INSERT OR UPDATE ON public.bubble_members
   FOR EACH ROW EXECUTE FUNCTION public.prevent_member_role_escalation();

@@ -33,10 +33,8 @@ ALTER TABLE public.guest_checkins  ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Alle kan se medlemmer" ON public.bubble_members FOR SELECT TO public USING (true);
 
 -- ── bubble_messages SELECT: all three real policies (OR-combined) ──
-CREATE POLICY "Authenticated users can view bubble messages" ON public.bubble_messages FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Medlemmer kan laese boble-beskeder" ON public.bubble_messages FOR SELECT TO public
   USING (EXISTS (SELECT 1 FROM bubble_members m WHERE m.bubble_id = bubble_messages.bubble_id AND m.user_id = auth.uid()));
-CREATE POLICY "bubble_messages_select" ON public.bubble_messages FOR SELECT TO public USING (true);
 
 -- ── bubble_posts SELECT: only the member-gated policy exists ──
 CREATE POLICY "Members can read posts" ON public.bubble_posts FOR SELECT TO public
@@ -47,5 +45,12 @@ CREATE POLICY "messages_select" ON public.messages FOR SELECT TO public USING (a
 CREATE POLICY "Users can view own messages" ON public.messages FOR SELECT TO authenticated USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
 
 -- ── guest_checkins: anon read true; authenticated ALL true ──
-CREATE POLICY "anon_read_guest" ON public.guest_checkins FOR SELECT TO anon USING (true);
-CREATE POLICY "auth_all_guest"  ON public.guest_checkins FOR ALL    TO authenticated USING (true);
+
+-- ── FIXED to match prod after 2026-06_rls-privacy-hardening.sql ──
+CREATE POLICY "bubble_messages_owner_read" ON public.bubble_messages FOR SELECT TO authenticated
+  USING (EXISTS (SELECT 1 FROM bubbles b WHERE b.id = bubble_messages.bubble_id AND b.created_by = auth.uid()));
+CREATE POLICY "guest_checkins_owner_admin" ON public.guest_checkins FOR ALL TO authenticated
+  USING      (EXISTS (SELECT 1 FROM bubbles b WHERE b.id = guest_checkins.bubble_id AND b.created_by = auth.uid())
+           OR EXISTS (SELECT 1 FROM bubble_members m WHERE m.bubble_id = guest_checkins.bubble_id AND m.user_id = auth.uid() AND m.role IN ('admin','owner')))
+  WITH CHECK (EXISTS (SELECT 1 FROM bubbles b WHERE b.id = guest_checkins.bubble_id AND b.created_by = auth.uid())
+           OR EXISTS (SELECT 1 FROM bubble_members m WHERE m.bubble_id = guest_checkins.bubble_id AND m.user_id = auth.uid() AND m.role IN ('admin','owner')));

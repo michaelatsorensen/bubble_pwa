@@ -36,17 +36,20 @@ BEGIN
   IF EXISTS (SELECT 1 FROM bubbles WHERE id = NEW.bubble_id AND created_by = auth.uid()) THEN
     RETURN NEW;
   END IF;
-  -- Non-owner: bevar original role
-  IF NEW.role IS DISTINCT FROM OLD.role THEN
-    NEW.role := OLD.role;
+  IF TG_OP = 'INSERT' THEN
+    NEW.role := 'member';
+  ELSIF TG_OP = 'UPDATE' THEN
+    -- Non-owner: bevar original role
+    IF NEW.role IS DISTINCT FROM OLD.role THEN
+      NEW.role := OLD.role;
+    END IF;
   END IF;
   RETURN NEW;
 END;
 $function$;
 
--- Firing condition CONFIRMED via pg_get_triggerdef:
---   trg_member_role_guard BEFORE UPDATE ON bubble_members FOR EACH ROW.
--- UPDATE-only (not INSERT), so joining a bubble with role='member' is unaffected.
+-- Matches prod after 2026-06_member-role-insert-guard.sql:
+--   trg_member_role_guard BEFORE INSERT OR UPDATE ON bubble_members FOR EACH ROW.
 CREATE TRIGGER trg_member_role_guard
-  BEFORE UPDATE ON public.bubble_members
+  BEFORE INSERT OR UPDATE ON public.bubble_members
   FOR EACH ROW EXECUTE FUNCTION public.prevent_member_role_escalation();
