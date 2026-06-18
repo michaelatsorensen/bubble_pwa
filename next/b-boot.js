@@ -639,38 +639,80 @@ async function loadEventSocialProof(bubbleId) {
     var { count } = await sb.from('bubble_members')
       .select('*', { count: 'exact', head: true })
       .eq('bubble_id', bubbleId);
-    
+
     var countEl = document.getElementById('event-attendee-count');
     if (countEl && count > 0) {
       countEl.textContent = count + ' deltager' + (count !== 1 ? 'e' : '') + ' er allerede her';
     } else if (countEl) {
       countEl.textContent = t('home_first_here');
     }
-    
-    // Load blurred profile cards (max 4)
+
+    var container = document.getElementById('event-blurred-profiles');
+    if (!container) return;
+
+    var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)'];
+
+    // Render one social-proof card. badge = optional label (e.g. VAERT).
+    function _spCard(p, idx, badge) {
+      var ini = (p.name || '?').split(' ').map(function(w){ return w[0]; }).join('').slice(0,2).toUpperCase();
+      var tags = (p.keywords || []).slice(0,2).map(function(k) { return '<span style="font-size:0.58rem;padding:0.1rem 0.4rem;background:rgba(124,92,252,0.06);color:var(--accent);border-radius:99px">' + escHtml(k) + '</span>'; }).join('');
+      var badgeHtml = badge ? '<span style="font-size:0.52rem;font-weight:700;letter-spacing:0.03em;color:#2c7fb8;background:rgba(100,180,230,0.15);border-radius:5px;padding:0.05rem 0.35rem;margin-left:0.35rem;vertical-align:middle">' + badge + '</span>' : '';
+      return '<div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:0.7rem 0.9rem;display:flex;align-items:center;gap:0.6rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
+        '<div style="width:36px;height:36px;border-radius:50%;background:' + avColors[idx % avColors.length] + ';display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>' +
+        '<div style="flex:1;min-width:0"><div style="font-size:0.8rem;font-weight:600;color:var(--text)">' + escHtml(p.name || 'Deltager') + badgeHtml + '</div>' +
+        '<div style="font-size:0.68rem;color:var(--text-secondary)">' + escHtml(p.title || '') + (p.workplace ? ' \u00B7 ' + escHtml(p.workplace) : '') + '</div>' +
+        (tags ? '<div style="display:flex;gap:0.2rem;margin-top:0.2rem">' + tags + '</div>' : '') +
+        '</div></div>';
+    }
+    function _spLabel(txt) {
+      return '<div style="font-size:0.6rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--muted);padding:0.5rem 0.1rem 0.3rem">' + txt + '</div>';
+    }
+
+    var html = '';
+    var shownIds = [];
+
     if (count > 0) {
+      // Real attendees
       var { data: members } = await sb.from('bubble_members')
-        .select('profiles(name, title, workplace, keywords)')
+        .select('profiles(id, name, title, workplace, keywords)')
         .eq('bubble_id', bubbleId)
         .limit(4);
-      
-      var container = document.getElementById('event-blurred-profiles');
-      if (container && members) {
-        var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)'];
-        container.innerHTML = members.map(function(m, i) {
-          var p = m.profiles || {};
-          var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-          var tags = (p.keywords || []).slice(0,2).map(function(k) { return '<span style="font-size:0.58rem;padding:0.1rem 0.4rem;background:rgba(124,92,252,0.06);color:var(--accent);border-radius:99px">' + escHtml(k) + '</span>'; }).join('');
-          return '<div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:0.7rem 0.9rem;display:flex;align-items:center;gap:0.6rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
-            '<div style="width:36px;height:36px;border-radius:50%;background:' + avColors[i] + ';display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>' +
-            '<div style="flex:1;min-width:0"><div style="font-size:0.8rem;font-weight:600;color:var(--text)">' + escHtml(p.name || 'Deltager') + '</div>' +
-            '<div style="font-size:0.68rem;color:var(--text-secondary)">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
-            (tags ? '<div style="display:flex;gap:0.2rem;margin-top:0.2rem">' + tags + '</div>' : '') +
-            '</div></div>';
-        }).join('') +
-        (count > 4 ? '<div style="text-align:center;font-size:0.72rem;color:var(--accent);font-weight:600;padding:0.4rem 0">+ ' + (count - 4) + ' flere deltagere</div>' : '');
+      (members || []).forEach(function(m) {
+        var p = m.profiles || {};
+        if (p.name) { html += _spCard(p, shownIds.length, null); shownIds.push(p.id); }
+      });
+      if (count > 4) html += '<div style="text-align:center;font-size:0.72rem;color:var(--accent);font-weight:600;padding:0.4rem 0">+ ' + (count - 4) + ' flere deltagere</div>';
+    } else {
+      // Empty event - anchor with the host/organizer (there is always a creator)
+      var { data: bub } = await sb.from('bubbles').select('created_by').eq('id', bubbleId).maybeSingle();
+      if (bub && bub.created_by) {
+        var { data: host } = await sb.from('profiles')
+          .select('id, name, title, workplace, keywords')
+          .eq('id', bub.created_by).maybeSingle();
+        if (host && host.name) { html += _spCard(host, 0, 'V\u00C6RT'); shownIds.push(host.id); }
       }
     }
+
+    // Never empty: top up with nearby professionals - honestly labelled, NOT as "deltagere"
+    if (shownIds.length < 3) {
+      var { data: recent } = await sb.from('profiles')
+        .select('id, name, title, workplace, keywords')
+        .not('name', 'is', null)
+        .not('title', 'is', null)
+        .eq('banned', false)
+        .eq('is_anon', false)
+        .order('created_at', { ascending: false })
+        .limit(6);
+      var near = (recent || []).filter(function(p) { return p.name && p.title && shownIds.indexOf(p.id) < 0; });
+      if (near.length) {
+        html += _spLabel('Fagfolk i dit omr\u00E5de');
+        near.forEach(function(p) {
+          if (shownIds.length < 4) { html += _spCard(p, shownIds.length, null); shownIds.push(p.id); }
+        });
+      }
+    }
+
+    container.innerHTML = html;
   } catch(e) { logError('loadEventSocialProof', e); }
 }
 
