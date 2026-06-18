@@ -12,7 +12,7 @@
 // Previous behavior (v8.17.30 and earlier): skipWaiting + clients.claim on install,
 // causing potentially-disruptive updates mid-write/mid-flow.
 
-const CACHE_NAME = 'bubble-next-v9.14';
+const CACHE_NAME = 'bubble-next-v9.15';
 const CACHE_URLS = [
   './', './index.html', './app.css',
   './bubble-icons.js',
@@ -24,7 +24,10 @@ const CACHE_URLS = [
   './b-notifications.js', './b-live.js', './b-admin.js',
   './b-boot.js',
   './bubble-logo-topbar-v2.png',
-  './bubble-logo-splash.png'
+  './bubble-logo-splash.png',
+  './manifest.json',
+  './bubble-icon-152.png', './bubble-icon-167.png', './bubble-icon-180.png',
+  './bubble-icon-192.png', './bubble-icon-512.png', './bubble-favicon-32.png'
 ];
 
 self.addEventListener('install', function(event) {
