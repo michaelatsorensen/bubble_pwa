@@ -184,6 +184,8 @@ da: {
   home_radar_empty_desc: 'Join et netværk eller scan en QR-kode for at se folk i nærheden',
   home_discover_networks: 'Opdag netværk',
   home_first_here: 'Du er den første her!',
+  home_pros_count: '{count} fagfolk på Bubble',
+  home_more_pros: 'Andre fagfolk på Bubble',
   home_waiting: 'Venter på deltagere...',
   home_no_strong_matches: 'Ingen stærke matches endnu',
 
@@ -949,6 +951,8 @@ en: {
   home_radar_empty_desc: 'Join a network or scan a QR code to see people nearby',
   home_discover_networks: 'Discover networks',
   home_first_here: 'You\'re the first one here!',
+  home_pros_count: '{count} professionals on Bubble',
+  home_more_pros: 'More professionals on Bubble',
   home_waiting: 'Waiting for participants...',
   home_no_strong_matches: 'No strong matches yet',
 

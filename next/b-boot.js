@@ -468,7 +468,7 @@ async function loadTeaserProfiles(bubbleId) {
     }
 
     var countEl = document.getElementById('qr-teaser-count');
-    if (countEl) countEl.textContent = profiles.length + ' professionelle i dit område';
+    if (countEl) countEl.textContent = t('home_pros_count', {count: profiles.length});
 
     el.innerHTML = profiles.map(function(p, i) {
       var ini = (p.name || '?').split(' ').map(function(w){return w[0]}).join('').slice(0,2).toUpperCase();
@@ -705,7 +705,7 @@ async function loadEventSocialProof(bubbleId) {
         .limit(6);
       var near = (recent || []).filter(function(p) { return p.name && p.title && shownIds.indexOf(p.id) < 0; });
       if (near.length) {
-        html += _spLabel('Fagfolk i dit omr\u00E5de');
+        html += _spLabel(t('home_more_pros'));
         near.forEach(function(p) {
           if (shownIds.length < 4) { html += _spCard(p, shownIds.length, null); shownIds.push(p.id); }
         });
