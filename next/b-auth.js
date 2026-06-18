@@ -86,6 +86,18 @@ async function resolvePostAuthDestination() {
   }
 
   if (pendingJoin && isEventFlow) {
+    // Scan-mode events: show the attendee's own QR for the organizer to scan them in
+    // (reverse check-in) instead of the join modal. Fail-safe: any error falls through
+    // to the standard event modal below, so the common path is never affected.
+    try {
+      var _ebRes = await sb.from('bubbles').select('id, name, type, checkin_mode').eq('id', pendingJoin).maybeSingle();
+      if (_ebRes && _ebRes.data && _ebRes.data.checkin_mode === 'scan') {
+        _eventBubble = _ebRes.data;
+        consumeFlow('event_flow'); // clear event_flow, keep pending_join for the event-ready screen
+        showEventReadyQR();
+        return;
+      }
+    } catch (e) { /* fall through to the standard event modal */ }
     flowClearAll();
     goTo('screen-home');
     setTimeout(function() { showDeepLinkModal('event', pendingJoin); }, 400);

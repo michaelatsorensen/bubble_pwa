@@ -402,9 +402,10 @@ async function loadQRProfilePreview(userId, bubbleId) {
       }
       goTo('screen-qr-preview');
     } else {
-      // Bubble join without profile - show teaser with real profiles
-      goTo('screen-qr-teaser');
-      loadTeaserProfiles(bubbleId);
+      // Bubble join — route by bubble TYPE: events get the event-landing, networks the teaser
+      var { data: _jb } = await sb.from('bubbles').select('id, name, type, location').eq('id', bubbleId).maybeSingle();
+      if (_jb) { _routeBubblePreScreen(_jb); }
+      else { goTo('screen-qr-teaser'); loadTeaserProfiles(bubbleId); }
     }
     window.history.replaceState({}, document.title, window.location.pathname);
   } catch(e) {
@@ -545,6 +546,27 @@ async function checkPendingContact() {
 // ══════════════════════════════════════════════════════════
 var _eventBubble = null;
 
+// Route a not-logged-in user to the correct pre-auth screen by bubble TYPE
+// (not by delivery method): events/live → event-landing + event_flow, networks → teaser.
+// Shared by both the ?event link path and the ?join QR path so the pre-screen is
+// consistent regardless of how the bubble was opened.
+function _routeBubblePreScreen(bubble) {
+  flowSet('pending_join', bubble.id);
+  if (bubble.type === 'event' || bubble.type === 'live') {
+    _eventBubble = bubble;
+    flowSet('event_flow', 'true');
+    var nameEl = document.getElementById('guest-event-name');
+    var metaEl = document.getElementById('guest-event-meta');
+    if (nameEl) nameEl.textContent = bubble.name;
+    if (metaEl) metaEl.textContent = (bubble.location ? bubble.location + ' · ' : '') + 'Live Event';
+    loadEventSocialProof(bubble.id);
+    goTo('screen-guest-checkin');
+  } else {
+    loadTeaserProfiles(bubble.id);
+    goTo('screen-qr-teaser');
+  }
+}
+
 async function checkGuestEventRoute() {
   try {
     var params = new URLSearchParams(window.location.search);
@@ -602,20 +624,8 @@ async function checkGuestEventRoute() {
     
     if (!bubble) { _renderToast('Event ikke fundet', 'error'); return false; }
     
-    _eventBubble = bubble;
-    flowSet('pending_join', bubble.id);
-    flowSet('event_flow', 'true');
-    
-    // Populate teaser screen
-    var nameEl = document.getElementById('guest-event-name');
-    var metaEl = document.getElementById('guest-event-meta');
-    if (nameEl) nameEl.textContent = bubble.name;
-    if (metaEl) metaEl.textContent = (bubble.location ? bubble.location + ' · ' : '') + (bubble.type === 'event' || bubble.type === 'live' ? 'Live Event' : 'Netværk');
-    
-    // Load social proof: attendee count + blurred profiles
-    loadEventSocialProof(bubble.id);
-    
-    goTo('screen-guest-checkin');
+    // Route by bubble TYPE (events/live → event-landing, networks → teaser) — same as the QR path
+    _routeBubblePreScreen(bubble);
     window.history.replaceState({}, document.title, window.location.pathname);
     return true;
   } catch(e) {
