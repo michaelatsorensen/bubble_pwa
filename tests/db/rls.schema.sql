@@ -18,7 +18,7 @@ CREATE TABLE public.bubble_members (id uuid PRIMARY KEY DEFAULT gen_random_uuid(
 CREATE TABLE public.bubble_messages(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), bubble_id uuid, user_id uuid, content text);
 CREATE TABLE public.bubble_posts   (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), bubble_id uuid, author_id uuid, content text);
 CREATE TABLE public.messages       (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), sender_id uuid, receiver_id uuid, content text);
-CREATE TABLE public.guest_checkins (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), bubble_id uuid, guest_name text, guest_email text);
+CREATE TABLE public.guest_checkins (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), bubble_id uuid, name text, title text, checked_in_at timestamptz, claimed_by uuid);
 
 -- Supabase pattern: the api roles hold table privileges; RLS is the gate.
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated, anon;
