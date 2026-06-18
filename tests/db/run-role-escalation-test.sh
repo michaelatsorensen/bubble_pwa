@@ -10,8 +10,7 @@
 # Validates the TRIGGER layer in isolation — does NOT touch any live database,
 # and does NOT model RLS (a separate layer). Run after changing the guard.
 #
-# NOTE: the trigger firing condition is assumed BEFORE UPDATE row-level — confirm
-# with pg_get_triggerdef if you change it.
+# NOTE: firing condition CONFIRMED via pg_get_triggerdef: BEFORE UPDATE row-level.
 #
 # Requires Postgres:  apt-get install -y postgresql
 # Run:                bash tests/db/run-role-escalation-test.sh

@@ -44,9 +44,9 @@ BEGIN
 END;
 $function$;
 
--- ⚠ ASSUMED firing condition — confirm against pg_get_triggerdef (query 1).
--- (Function uses OLD+NEW.role, so BEFORE UPDATE row-level is near-certain; an
---  INSERT trigger would null roles on join, which would break joining.)
-CREATE TRIGGER trg_prevent_member_role_escalation
+-- Firing condition CONFIRMED via pg_get_triggerdef:
+--   trg_member_role_guard BEFORE UPDATE ON bubble_members FOR EACH ROW.
+-- UPDATE-only (not INSERT), so joining a bubble with role='member' is unaffected.
+CREATE TRIGGER trg_member_role_guard
   BEFORE UPDATE ON public.bubble_members
   FOR EACH ROW EXECUTE FUNCTION public.prevent_member_role_escalation();
