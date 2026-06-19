@@ -111,3 +111,52 @@ Fra tværgående sanity check efter v9.01. Intet kritisk, intet i stykker — ko
 - **P3-tællere (allerede kendt):** ~35 console.debug/log spredt (b-realtime 9, b-bubbles 7, b-live 6 størst), 43 `transition:all` i app.css. Står allerede på P3-backlog.
 
 Verificeret RENT samme check: alle 21 .js syntaks-OK, CSS brace −1, dvh-guard rent, version konsistent v9.01, i18n 679/679 balanceret, dagens ADR-009 + recovery-funktioner alle forbundet (ingen døde referencer).
+
+---
+
+## Sikkerheds-audit fund (19. juni 2026) — RLS lint på live DB
+
+Tværgående RLS-audit af ALLE policies via genbrugelig lint-query (nederst). Kørt mod live `pg_policies` → 13 flag, men de fleste var **med vilje** (offentlige profiler, reaktioner, gæste-INSERT). Reelle fund: 4. **Alle 4 tunge lukket i dag** (cross-user beskedlæsning, guest_checkins PII, INSERT-rolle-eskalering — verificeret LIVE; + bubble_message_edits, se nedenfor). Tilbage = **2 ægte men lav-risiko-ved-pilotskala** (qr_tokens, hidden) + 1 P3 + 1 falsk-positiv-at-verificere.
+
+> **Vigtigt — skal adresseres senere:** qr_tokens og hidden er IKKE pilot-blokkere ved ~500 betroede brugere i Sønderborg. Men de **SKAL lukkes før betalt event-check-in / national skalering**, hvor der er motiv + penge på check-in. Designet er fanget herunder så intet går tabt — de kan bygges koldt uden at re-undersøge.
+
+### ✅ LØST i dag — bubble_message_edits (var reel beskedindhold-læk)
+Redigerings-historik holdt original beskedtekst; SELECT + INSERT begge `true` → enhver kunne læse beskedindhold i ALLE bobler (også de private vi netop medlems-gatede på bubble_messages) + forfalske historik. Lukket: medlems-gate læsning + forfatter-kun skrivning. Migration `migrations/2026-06_message-edits-hardening.sql`, verificeret LIVE (3 policies, ingen `true`) + replica-test `tests/db/run-bubble-message-edits-test.sh` (7/7, neg-kontrol rød mod gamle policies). Commit b860827.
+
+### Tilbageværende
+
+| Post | Priority | Note |
+|---|---|---|
+| **qr_tokens — verdens-læsbar token→bruger-mapping** | **P2 — før betalt check-in / skalering** | `anyone_can_read_qr_tokens` (SELECT `true`) → enhver kan dumpe HELE token→user_id-mappingen for alle aktive QR-koder. Bryder bærer-token-modellen (pointen er at SCANNE QR'en for at få den; verdens-læsbar = man kan forfalske check-ins uden at scanne). **Adgangskort (verificeret i kode jun 2026):** 3 læsninger af FREMMEDE tokens (scanner b-live.js:585, connect-scan b-live.js:947, boot-resolve fra `?qrt=` b-boot.js:225) = hullet → skal gennem RPC. 1 EGEN-læsning (b-admin.js:483, `.eq('user_id', currentUser.id)`) → dækkes af egen-læs-policy. INSERT (b-utils.js:1081 + b-auth.js:877, begge `user_id: currentUser.id`) → allerede scopet, INGEN ændring. Tokens er korte random strings (`^[a-z0-9]+$` ≤40) + expiry → brute-force mod RPC urealistisk. **FIX (DB):** `CREATE FUNCTION resolve_qr_token(p_token text) RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT user_id FROM qr_tokens WHERE token=p_token AND expires_at>now() LIMIT 1 $$;` + `REVOKE ALL FROM public` + `GRANT EXECUTE TO anon,authenticated`. Returnerer ÉN user_id for præsenteret token = ingen enumeration. Lås tabel: `DROP POLICY anyone_can_read_qr_tokens` + `CREATE POLICY qr_tokens_owner_read FOR SELECT USING (user_id=auth.uid())`. **FIX (frontend, prod+next):** de 3 fremmed-opslag → `sb.rpc('resolve_qr_token',{p_token:qrt})`. UX-konsekvens: RPC returnerer `null` for både udløbet OG ikke-fundet → den specifikke "QR udløbet"-besked smelter til generisk "ugyldig/udløbet" (eller byg status-returnerende variant hvis vigtigt). Behold b-live.js:585-fallback til `profileParam` ved null. **⚠️ KRITISK DEPLOY-RÆKKEFØLGE (ellers dør scanneren for live-brugere):** (1) Kør KUN `CREATE FUNCTION` + grants — additivt, live-frontend kører uændret. (2) Deploy frontend der bruger RPC (prod-root, det live brugere rammer). (3) Kør lås (drop true-policy + egen-læs). ALDRIG lås før frontend bruger RPC. **Estimat:** M (koordineret DB+frontend, men afgrænset). Byg replica-test: resolve gyldig→user_id, udløbet→null, enumeration blokeret efter lås. |
+| **bubbles "hidden" — ulistede bobler verdens-læsbare** | **P2 — før skalering; afklar FØRST om hidden bruges** | `bubbles` SELECT OR-DEFEAT: `true`-policies ("Alle kan se bobler", "bubbles_select") sameksisterer med den visibility-baserede → slår scopingen ud. App klient-filtrerer bevidst `hidden` væk i liste-query (b-bubbles.js:134, `.or('visibility.eq.public,visibility.eq.private,visibility.is.null')`) MEN RLS er `true` → hidden-bobler er IKKE skjult på API-niveau, kun i standard-UI. Eye-off-ikon + eksplicit filter (3 værdier private/public/hidden, b-bubbles.js:629) viser INTENTIONEN er ulistet — RLS håndhæver den ikke. **BLOKERET PÅ BESLUTNING:** Hvad lover "hidden" brugeren — hemmeligt/ulistet rum? Og skal MEDLEMMER af et hidden-rum stadig kunne se det? (Styrer subquery'en.) Afklar OGSÅ om hidden overhovedet bruges i piloten — hvis stort set ikke, intet at gøre før skalering. **FIX-FORM (når besluttet):** DROP true-policierne; `CREATE` visibility-scopet SELECT: `visibility IN ('public','private') OR created_by=auth.uid() OR EXISTS(medlem af boblen)`. `bubble_members` SELECT `true` hænger sammen — bør scopes til synlige bobler i samme ombæring, ellers kan man se hvem der er i et hidden-rum. Replica-test: hidden synlig for ejer+medlem, usynlig for udenforstående; public/private uændret. **Estimat:** M. Cross-ref OPEN-QUESTIONS (hidden-semantik). |
+| custom_tags UPDATE `true` — tag-hærværk | **P3 — post-pilot policy-oprydning** | `custom_tags_update` USING `true` → enhver kan UPDATE enhver tag (omdøbe/ændre andres). Global tag-katalog (`created_by` sat i onboarding b-onboarding.js:736). Eneste legitime UPDATE er `usage_count++` (b-onboarding.js:735) når tag genbruges → kan IKKE bare scopes til created_by (ville bryde usage_count på andres tags). Ingen læk/eskalering — kun hærværks-potentiale. **Fix:** SECURITY DEFINER `increment_tag_usage(tag_id)` (bumper kun usage_count) + lås UPDATE (eller trigger der afviser ændring af alt andet end usage_count). **Estimat:** S-M. |
+| bubbles UPDATE "owner_can_update" — verificér | **Verificér (sandsynligvis falsk positiv)** | Flagget AABEN SKRIVNING KUN fordi `WITH CHECK (true)`. For UPDATE gater `USING`-klausulen HVEM; `WITH CHECK true` = ingen begrænsning på nye værdier = normalt. Hvis `USING` er `created_by=auth.uid()` (navnet siger det), er det IKKE et hul. **Verificér:** `SELECT qual FROM pg_policies WHERE policyname='owner_can_update'`. Linten over-flagger UPDATE med `with_check=true` — kendt grænse. **Estimat:** 5 min. |
+| profiles SELECT `true` før geolocation | **Forward-looking — BLOKER geo-aktivering** | profiles SELECT `true` = offentligt katalog by design (hele appen er at finde folk) — IKKE en bug. MEN: når geolocation `last_lat/last_lng` lander fra P2-backloggen, eksponerer verdens-læsbare profiler PRÆCIS position for alle. **BLOKER geo-aktivering på at scope profiles SELECT først** (ellers lækker du position dag ét). Overvej også: skal anon (udlogget) kunne læse hele kataloget? Bevidst valg, ikke haste. Cross-ref P2 geolocation-spec. |
+
+### Genbrugelig RLS-audit lint (kør når som helst mod live `pg_policies`)
+
+Flagger hver tabel+kommando hvor en `true`-policy enten slår en stram policy ud (OR-DEFEAT) eller står alene på data der måske er privat. **Dømmer ikke** — kun du ved hvad der er privat-by-design (et `true` på en reaktion er fint; på en privat boble er det et hul). Verificeret mod plantede mønstre. Kan flyttes til VERIFICATION-GUIDE.md ved lejlighed.
+
+```sql
+WITH p AS (
+  SELECT tablename, cmd, policyname,
+         (qual       IS NOT DISTINCT FROM 'true') AS read_true,
+         (with_check IS NOT DISTINCT FROM 'true') AS write_true
+  FROM pg_policies
+  WHERE schemaname='public' AND permissive='PERMISSIVE'
+)
+SELECT tablename AS tabel, cmd AS kommando,
+       string_agg(DISTINCT policyname, ' | ') AS policies,
+       CASE
+         WHEN bool_or(read_true OR write_true) AND bool_or(NOT (read_true OR write_true))
+              THEN '1 OR-DEFEAT (true slaar stram policy ud)'
+         WHEN bool_or(read_true)  THEN '2 AABEN LAESNING (er data privat?)'
+         WHEN bool_or(write_true) THEN '3 AABEN SKRIVNING (integritet?)'
+       END AS risiko
+FROM p
+GROUP BY tablename, cmd
+HAVING bool_or(read_true) OR bool_or(write_true)
+ORDER BY risiko, tabel;
+```
+
+*Sidst opdateret: 19. juni 2026*
