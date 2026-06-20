@@ -2248,6 +2248,7 @@ var _homeDartboardProfiles = [];
 var _homeRadarFilter = 'all';
 var _dartboardDataLoaded = false;
 var _renderDartboardTimer = null;
+var _homeMagnetNext = false; // saettes af filterRadarHome -> naeste render bruger magnet, ellers dryp
 
 async function loadHomeDartboardData() {
   try {
@@ -2319,6 +2320,7 @@ function filterRadarHome(filter) {
   document.querySelectorAll('.radar-filter-chip').forEach(function(c) {
     c.classList.toggle('active', c.dataset.filter === filter);
   });
+  _homeMagnetNext = true; // dette er et filterskift -> brug magnet-bevaegelse
   renderHomeDartboard();
   updateFilterChipStyle();
 }
@@ -2488,9 +2490,36 @@ function _doRenderHomeDartboard() {
     return {x:tx,y:ty};
   }
 
-    // ── Magnetisk diff-render: ikke-match fises ud, stayers glider, nye popper ind ──
-  // Robust: nye dots skabes SYNLIGE paa deres plads (scale-pop), saa selv hvis en
-  // animation-frame fejler er prikken der. animation:none melder dem ud af dripIn.
+  // Standard-render: dryp-kaskade (som foer) ved load / skaerm-skift.
+  // Magnet-bevaegelsen bruges KUN ved filterskift (saettes af filterRadarHome).
+  var useMagnet = _homeMagnetNext;
+  _homeMagnetNext = false;
+  if (!useMagnet) {
+    var out = '';
+    for (var di = 0; di < profiles.length; di++) {
+      var dp = profiles[di];
+      var dmeta = _homeProxMetaFor(dp.id);
+      var dMatch = dp.matchScore || 0;
+      var dDist = 0.14 + (1 - dMatch/100) * (0.88 - 0.14);
+      var dR = dDist * maxR;
+      var dAng = dmeta.ang + (dMatch * 0.03);
+      var dSz = dMatch >= 70 ? 38 : dMatch >= 40 ? 34 : 30;
+      var dIx = cx + Math.cos(dAng)*dR - dSz/2, dIy = cy + Math.sin(dAng)*dR - dSz/2;
+      var dPos = findSafe(dIx, dIy, dSz);
+      placed.push({x:dPos.x,y:dPos.y,s:dSz});
+      var dCol = dp.is_anon ? 'var(--glass-border)' : colors[dmeta.col % colors.length];
+      var dIni = dp.is_anon ? '?' : (dp.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
+      var dInner = (dp.avatar_url && !dp.is_anon)
+        ? '<img src="' + escHtml(dp.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        : dIni;
+      var dDelay = (di * 40);
+      out += '<div class="prox-dot" style="width:'+dSz+'px;height:'+dSz+'px;left:'+dPos.x.toFixed(1)+'px;top:'+dPos.y.toFixed(1)+'px;background:'+dCol+';font-size:'+(dSz<34?'0.48':'0.55')+'rem;animation-delay:'+dDelay+'ms" onclick="event.stopPropagation();openRadarPerson(\''+dp.id+'\')" data-id="'+dp.id+'">'+dInner+(appMode.checkedInIds.indexOf(dp.id)>=0?'<span class="live-dot" style="position:absolute;bottom:-1px;right:-1px;width:8px;height:8px;border:2px solid var(--bg)"></span>':'')+'</div>';
+    }
+    av.innerHTML = out;
+    return;
+  }
+
+  // ── Magnet-diff (KUN ved filterskift): ikke-match fises ud, stayers glider, nye popper ind ──
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var E = reduce
     ? { exit:'linear', exitT:0, enter:'linear', enterT:0, move:'linear', moveT:0 }
@@ -2508,7 +2537,7 @@ function _doRenderHomeDartboard() {
     var matchPct = p.matchScore || 0;
     var dist = 0.14 + (1 - matchPct/100) * (0.88 - 0.14);
     var r = dist * maxR;
-    var ang = meta.ang;
+    var ang = meta.ang + (matchPct * 0.03);
     var sz = matchPct >= 70 ? 38 : matchPct >= 40 ? 34 : 30;
     var ix = cx + Math.cos(ang)*r - sz/2, iy = cy + Math.sin(ang)*r - sz/2;
     var pos = findSafe(ix, iy, sz);
