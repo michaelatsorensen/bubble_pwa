@@ -954,8 +954,8 @@ async function bcLoadEvents() {
     // Add create buttons for owners
     if (bcBubbleData?._canEdit) {
       html += '<div style="display:flex;gap:0.4rem;margin-top:0.8rem">' +
-        '<button onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('calendar') + ' Event</button>' +
-        '<button onclick="openCreateSubBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(100,180,230,0.15);border:0.5px solid rgba(100,180,230,0.25);color:rgb(100,180,230);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('bubble') + ' ' + t('bb_create_sub') + '</button>' +
+        '<button onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('calendar') + ' Event</button>' +
+        '<button onclick="openCreateSubBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(100,180,230,0.15);border:0.5px solid rgba(100,180,230,0.25);color:rgb(100,180,230);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('bubble') + ' ' + t('bb_create_sub') + '</button>' +
         '</div>';
     }
     list.innerHTML = html;

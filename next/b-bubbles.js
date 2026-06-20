@@ -255,7 +255,7 @@ async function loadDiscover() {
 
 function _renderDiscoverList(list, bubbles, label) {
   if (!bubbles.length) {
-    list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('search') + '</div><div class="empty-text">Ingen ' + label + ' at opdage endnu</div></div>';
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('search') + '</div><div class="empty-text">' + t('bb_none_to_discover', {label: label}) + '</div></div>';
     return;
   }
   list.innerHTML = bubbles.map(function(b) { return bubbleCard(b, false); }).join('');
@@ -280,7 +280,7 @@ function filterBubbles(type) {
     }) : source;
     var label = type === 'evt' ? 'events' : 'netværk';
     if (q && filtered.length === 0) {
-      list.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('search') + '</div><div class="empty-text">Ingen ' + label + ' matcher "' + escHtml(q) + '"</div></div>';
+      list.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('search') + '</div><div class="empty-text">' + t('bb_none_matches', {label: label, q: escHtml(q)}) + '</div></div>';
     } else {
       _renderDiscoverList(list, filtered, label);
     }
@@ -350,7 +350,7 @@ function _buildMemberSheet(title, subtitle, members) {
       return '<div class="member-pick-row" data-uid="' + m.user_id + '" data-name="' + escHtml(p.name||'?').replace(/"/g,'&quot;') + '" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border-radius:12px;border:1px solid var(--glass-border-subtle);margin-bottom:0.4rem;cursor:pointer;transition:all 0.15s">' +
         avHtml +
         '<div style="flex:1"><div style="font-weight:600;font-size:0.85rem;display:flex;align-items:center;gap:0.3rem">' + escHtml(p.name||t('misc_unknown')) + ' ' + adminBadge + '</div><div style="font-size:0.72rem;color:var(--text-secondary)">' + escHtml(p.title||'') + '</div></div>' +
-        '<div style="color:rgb(100,180,230);font-size:0.72rem;font-weight:600">Vælg</div>' +
+        '<div style="color:rgb(100,180,230);font-size:0.72rem;font-weight:600">' + t('bb_choose') + '</div>' +
       '</div>';
     }).join('') +
     '</div>' +
@@ -407,10 +407,10 @@ async function openTransferOwnership(bubbleId) {
         list.style.display = 'none';
         tray.style.display = 'block';
         tray.innerHTML = '<div style="text-align:center;padding:1rem 0">' +
-          '<div style="font-size:0.92rem;font-weight:700;margin-bottom:0.3rem">Anmod <strong>' + escHtml(uname) + '</strong> om at overtage ejerskab?</div>' +
-          '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem">' + escHtml(uname) + ' skal acceptere før ejerskabet overdrages. Du forbliver ejer indtil da, og kan trække anmodningen tilbage.</div>' +
+          '<div style="font-size:0.92rem;font-weight:700;margin-bottom:0.3rem">' + t('bb_request') + ' <strong>' + escHtml(uname) + '</strong> ' + t('bb_take_ownership_q') + '</div>' +
+          '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem">' + escHtml(uname) + ' ' + t('bb_ownership_warning') + '</div>' +
           '<div style="display:flex;gap:0.5rem;justify-content:center">' +
-          '<button id="transfer-confirm-yes" style="flex:1;padding:0.65rem;border-radius:12px;background:var(--cta-bg);color:var(--cta-text);border:1px solid var(--cta-border);font-family:inherit;font-weight:700;font-size:0.82rem;cursor:pointer">Send anmodning</button>' +
+          '<button id="transfer-confirm-yes" style="flex:1;padding:0.65rem;border-radius:12px;background:var(--cta-bg);color:var(--cta-text);border:1px solid var(--cta-border);font-family:inherit;font-weight:700;font-size:0.82rem;cursor:pointer">' + t('bb_send_request') + '</button>' +
           '<button id="transfer-confirm-no" style="flex:1;padding:0.65rem;border-radius:12px;background:none;color:var(--text-secondary);border:1px solid var(--glass-border);font-family:inherit;font-weight:600;font-size:0.82rem;cursor:pointer">Annuller</button>' +
           '</div></div>';
         document.getElementById('transfer-confirm-yes').onclick = function() {
@@ -460,7 +460,7 @@ async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
     if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = t('sending') || 'Sender...'; }
     var result = await dbActions.requestOwnershipTransfer(bubbleId, newOwnerId);
     if (!result.ok) {
-      if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Send anmodning'; }
+      if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = t('bb_send_request'); }
       // Vis venlig årsag hvis RPC afviste (fx allerede pending / ikke medlem)
       if (result.reason === 'transfer_already_pending') showWarningToast(t('transfer_already_pending') || 'Der er allerede en igangværende overdragelse. Træk den tilbage først.');
       else if (result.reason === 'recipient_not_member') showWarningToast(t('transfer_not_member') || 'Personen skal være medlem af boblen.');
@@ -496,8 +496,8 @@ async function openAdminDesignation(bubbleId) {
     var pm = {}; (profs || []).forEach(function(p) { pm[p.id] = p; });
     members.forEach(function(m) { m.profiles = pm[m.user_id] || { name: t('misc_unknown') }; });
     _buildMemberSheet(
-      '<span style="display:inline-flex;align-items:center;gap:0.3rem">' + ico('crown').replace('<svg ','<svg style="width:1.1rem;height:1.1rem" ') + ' Udpeg admin</span>',
-      'Admins kan redigere boblen, invitere og fjerne medlemmer.',
+      '<span style="display:inline-flex;align-items:center;gap:0.3rem">' + ico('crown').replace('<svg ','<svg style="width:1.1rem;height:1.1rem" ') + ' ' + t('bb_designate_admin') + '</span>',
+      t('bb_admin_desc'),
       members
     );
     document.querySelectorAll('#member-sheet-list .member-pick-row').forEach(function(row) {
@@ -531,11 +531,11 @@ async function _executeSetRole(bubbleId, userId, userName, role) {
     if (error) { errorToast('save', error); return; }
     closeMemberSheet();
     if (role === 'admin') {
-      showSuccessToast(userName + ' er nu admin');
+      showSuccessToast(t('bb_now_admin', {name: userName}));
       // Notify new admin via broadcast (subscribe -> send -> unsubscribe so the channel is cleaned up)
       (function(tid, bn, sn, bid) { (async function() { try { var ch = sb.channel('member-notify-' + tid); await ch.subscribe(); await ch.send({ type: 'broadcast', event: 'admin', payload: { bubbleName: bn, senderName: sn, bubbleId: bid } }); setTimeout(function() { ch.unsubscribe(); }, 2000); } catch(e2) { console.debug('[admin] broadcast error:', e2); } })(); })(userId, bcBubbleData?.name || '', currentProfile?.name || '', bubbleId);
     } else {
-      showToast(userName + ' er ikke længere admin');
+      showToast(t('bb_no_longer_admin', {name: userName}));
     }
     trackEvent('bubble_role_changed', { bubble_id: bubbleId, user_id: userId, role: role });
     await bcLoadMembers();
@@ -703,7 +703,7 @@ function openCreateEventFromBubble(parentBubbleId) {
     // Fetch parent name async
     sb.from('bubbles').select('name').eq('id', parentBubbleId).maybeSingle().then(function(r) {
       if (r.data && parentLabel) {
-        parentLabel.textContent = 'Event under: ' + r.data.name;
+        parentLabel.textContent = t('bb_event_under') + r.data.name;
       }
     }).catch(function() {});
   }, 50);
@@ -754,7 +754,7 @@ function openCreateSubBubble(parentBubbleId) {
     var cag3 = document.getElementById('cb-agenda-group'); if (cag3) cag3.style.display = 'none';
     sb.from('bubbles').select('name').eq('id', parentBubbleId).maybeSingle().then(function(r) {
       if (r.data && parentLabel) {
-        parentLabel.textContent = 'Sub-boble under: ' + r.data.name;
+        parentLabel.textContent = t('bb_subbubble_under') + r.data.name;
       }
     }).catch(function() {});
   }, 50);
@@ -969,7 +969,7 @@ async function requestJoin(bubbleId) {
         await ch.send({ type: 'broadcast', event: 'join_request', payload: { bubbleName: b.name || '', bubbleId: bubbleId, memberName: currentProfile?.name || '' } });
         setTimeout(function() { ch.unsubscribe(); }, 2000);
         // Push notification to owner
-        sendPush(b.created_by, 'Ny anmodning', (currentProfile?.name || 'Nogen') + ' vil gerne med i ' + (b.name || 'din boble'), { type: 'join_request', bubble_id: bubbleId });
+        sendPush(b.created_by, t('bb_new_request'), (currentProfile?.name || t('bb_someone')) + ' ' + t('bb_wants_join_mid') + ' ' + (b.name || t('bb_your_bubble')), { type: 'join_request', bubble_id: bubbleId });
       }
     } catch(e2) { console.debug('[requestJoin] broadcast error:', e2); }
   } catch(e) { logError("requestJoin", e); errorToast("save", e); }
@@ -1053,9 +1053,9 @@ async function handleBubbleIconUpload(input) {
   try {
     var file = input.files[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { showWarningToast('Maks 2MB'); input.value = ''; return; }
+    if (file.size > 2 * 1024 * 1024) { showWarningToast(t('bb_max_2mb')); input.value = ''; return; }
     var allowed = ['image/jpeg','image/png','image/webp'];
-    if (allowed.indexOf(file.type) < 0) { showWarningToast('Brug JPG, PNG eller WebP'); input.value = ''; return; }
+    if (allowed.indexOf(file.type) < 0) { showWarningToast(t('bb_use_jpg')); input.value = ''; return; }
     showToast('Uploader ikon...');
     var resized = typeof resizeImage === 'function' ? await resizeImage(file, 256) : file;
     var path = 'bubbles/' + currentEditBubbleId + '/icon-' + Date.now() + '.jpg';
@@ -1126,8 +1126,8 @@ async function shareBubbleLink(bubbleId) {
   var name = bcBubbleData ? bcBubbleData.name : 'Bubble';
   var isEvent = bcBubbleData && (bcBubbleData.type === 'event' || bcBubbleData.type === 'live');
   var text = isEvent
-    ? name + ' — åbn i Bubble for at tilmelde dig'
-    : name + ' — åbn i Bubble for at se netværket';
+    ? name + ' ' + t('bb_open_to_join')
+    : name + ' ' + t('bb_open_to_see');
 
   // Try native share (mobile: opens share sheet with mail, SMS, WhatsApp etc.)
   if (navigator.share) {
@@ -1298,13 +1298,13 @@ async function downloadQRPdf() {
   doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(240, 240, 248);
-  doc.text('Scan og join boblen', pageW/2, 245, { align: 'center' });
+  doc.text(t('bb_scan_join'), pageW/2, 245, { align: 'center' });
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(108, 108, 138);
-  doc.text('Åbn iPhone-kameraet og ret det mod QR-koden', pageW/2, 253, { align: 'center' });
-  doc.text('Du bliver automatisk tilføjet til boblen', pageW/2, 260, { align: 'center' });
+  doc.text(t('bb_open_camera'), pageW/2, 253, { align: 'center' });
+  doc.text(t('bb_auto_added'), pageW/2, 260, { align: 'center' });
 
   // Bottom accent
   doc.setFillColor(108, 99, 255);
@@ -1443,7 +1443,7 @@ async function checkPendingJoin() {
 // ══════════════════════════════════════════════════════════
 async function downloadMembersPdf(bubbleId) {
   try {
-    showToast('Henter deltagerliste...');
+    showToast(t('bb_loading_attendees'));
     await loadJsPdf();
     const { jsPDF } = window.jspdf;
 
@@ -1690,7 +1690,7 @@ async function downloadMembersPdf(bubbleId) {
 // ══════════════════════════════════════════════════════════
 async function generateEventReport(bubbleId) {
   try {
-    showToast('Genererer event-rapport...');
+    showToast(t('bb_generating_report'));
 
     // ── 1. Fetch all data in parallel ──
     var [bubbleRes, membersRes, messagesRes, guestsRes, invitesRes] = await Promise.all([
@@ -2076,10 +2076,10 @@ async function exportReportEmail(bubbleId) {
     if (!b || !stats) { showWarningToast(t('err_no_report')); return; }
 
     // Ask for email
-    var email = prompt('Indtast email-adresse til rapporten:');
-    if (!email || !email.includes('@')) { showWarningToast('Ugyldig email'); return; }
+    var email = prompt(t('bb_enter_email'));
+    if (!email || !email.includes('@')) { showWarningToast(t('bb_invalid_email')); return; }
 
-    showToast('Sender rapport...');
+    showToast(t('bb_sending_report'));
 
     // Use EmailJS if available, otherwise fallback to mailto
     if (_emailjsLoaded && window.emailjs) {
@@ -2093,13 +2093,13 @@ async function exportReportEmail(bubbleId) {
           'Connection rate: ' + stats.connectionRate + '%\n\n' +
           'Fuld rapport er vedhæftet som PDF — download den fra appen via Event → Info → Event-rapport → PDF.'
       });
-      showSuccessToast('Rapport sendt til ' + email);
+      showSuccessToast(t('bb_report_sent', {email: email}));
     } else {
       // Fallback: open mailto
       var subject = encodeURIComponent('Event-rapport: ' + b.name);
       var body = encodeURIComponent('Event: ' + b.name + '\nDeltagere: ' + stats.totalMembers + '\nCheck-ins: ' + stats.totalCheckedIn + '\nConnection rate: ' + stats.connectionRate + '%');
       window.location.href = 'mailto:' + email + '?subject=' + subject + '&body=' + body;
-      showToast('Mail-app åbnet');
+      showToast(t('bb_mail_opened'));
     }
   } catch(e) { logError('exportReportEmail', e); errorToast('send', e); }
 }
@@ -2117,15 +2117,15 @@ async function openInviteModal(bubbleId) {
   var list = document.getElementById('invite-list');
   if (!list) return;
   bbOpen('invite');
-  list.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">Henter gemte kontakter...</div>';
+  list.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">' + t('bb_loading_saved') + '</div>';
   var btn = document.getElementById('invite-send-btn');
-  if (btn) btn.textContent = 'Send invitationer';
+  if (btn) btn.textContent = t('bb_send_invites');
 
   try {
     var r1 = await sb.from('saved_contacts').select('contact_id').eq('user_id', currentUser.id);
     var contactIds = (r1.data || []).map(function(s) { return s.contact_id; });
     if (contactIds.length === 0) {
-      list.innerHTML = '<div style="text-align:center;padding:2rem;font-size:0.78rem;color:var(--muted)">Du har ingen gemte kontakter endnu.<br>Gem profiler fra radaren f\u00f8rst.</div>';
+      list.innerHTML = '<div style="text-align:center;padding:2rem;font-size:0.78rem;color:var(--muted)">' + t('bb_no_saved') + '</div>';
       return;
     }
     var r2 = await sb.from('profiles').select('id,name,title,keywords,avatar_url').in('id', contactIds);
@@ -2139,7 +2139,7 @@ async function openInviteModal(bubbleId) {
 
     var available = profiles.filter(function(p) { return memberIds.indexOf(p.id) < 0; });
     if (available.length === 0) {
-      list.innerHTML = '<div style="text-align:center;padding:2rem;font-size:0.78rem;color:var(--muted)">Alle dine gemte kontakter er allerede i denne boble.</div>';
+      list.innerHTML = '<div style="text-align:center;padding:2rem;font-size:0.78rem;color:var(--muted)">' + t('bb_all_saved_in') + '</div>';
       return;
     }
     // Sort by star rating
@@ -2183,7 +2183,7 @@ function toggleInvite(cb) {
   var btn = document.getElementById('invite-send-btn');
   var n = inviteSelected.length;
   if (btn) {
-    btn.textContent = n > 0 ? 'Send (' + n + ')' : 'Send invitationer';
+    btn.textContent = n > 0 ? t('bb_send_n', {n: n}) : t('bb_send_invites');
     btn.disabled = n === 0;
   }
   // Update subtitle
@@ -2250,11 +2250,11 @@ async function sendBubbleInvites() {
     closeInviteModal();
     var skipped = inviteSelected.length - newIds.length;
     if (newIds.length > 0 && skipped > 0) {
-      showToast(newIds.length + ' sendt · ' + skipped + ' allerede inviteret');
+      showToast(t('bb_sent_skipped', {sent: newIds.length, skipped: skipped}));
     } else if (newIds.length > 0) {
-      showSuccessToast(newIds.length + ' invitation' + (newIds.length > 1 ? 'er' : '') + ' sendt ✓');
+      showSuccessToast((newIds.length > 1 ? t('bb_invites_sent_many', {n: newIds.length}) : t('bb_invites_sent_one', {n: newIds.length})));
     } else {
-      showWarningToast('Alle er allerede inviteret');
+      showWarningToast(t('bb_all_invited'));
     }
     if (newIds.length > 0) trackEvent('invite_sent', { bubble_id: inviteBubbleId, count: newIds.length });
   } catch(e) {
@@ -2312,9 +2312,9 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
     if (isOwnProfile) { saveBtn.style.display = 'none'; }
     else {
       saveBtn.style.display = '';
-      saveBtn.innerHTML = icon('bookmark') + ' Gem';
+      saveBtn.innerHTML = icon('bookmark') + ' ' + t('ps_save');
       sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle().then(({data}) => {
-        if (data) saveBtn.innerHTML = icon('bookmarkFill') + ' Gemt';
+        if (data) saveBtn.innerHTML = icon('bookmarkFill') + ' ' + t('pf_saved_state');
       }).catch(function(){});
     }
   }
@@ -2364,7 +2364,7 @@ function openBubbleScannerFromInfo(bubbleId) {
   // Store which bubble we're scanning for
   _scannerBubbleId = bubbleId;
   openLiveCheckin();
-  showToast('Scanner klar — scan en deltagers QR-kode');
+  showToast(t('bb_scanner_ready'));
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2379,10 +2379,10 @@ function confirmRequestJoin(bubbleId) {
   tray.id = 'request-join-tray';
   tray.style.cssText = 'position:fixed;bottom:0;left:0;right:0;padding:1.2rem 1rem;background:var(--n3-card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:0.5px solid var(--border-1);box-shadow:0 -4px 20px rgba(0,0,0,0.15);z-index:999;text-align:center;color:rgba(255,255,255,0.95)';
   tray.innerHTML =
-    '<div style="font-size:0.9rem;font-weight:700;margin-bottom:0.2rem;color:rgba(255,255,255,0.95)">Anmod om medlemskab?</div>' +
-    '<div style="font-size:0.75rem;color:rgba(255,255,255,0.55);margin-bottom:0.8rem">' + escHtml(bName) + ' er privat — din anmodning sendes til ejeren</div>' +
+    '<div style="font-size:0.9rem;font-weight:700;margin-bottom:0.2rem;color:rgba(255,255,255,0.95)">' + t('bb_request_membership_q') + '</div>' +
+    '<div style="font-size:0.75rem;color:rgba(255,255,255,0.55);margin-bottom:0.8rem">' + escHtml(bName) + ' ' + t('bb_is_private_suffix') + '</div>' +
     '<div style="display:flex;gap:0.5rem;justify-content:center">' +
-      '<button class="btn-primary" onclick="document.getElementById(\'request-join-tray\').remove();requestJoin(\'' + bubbleId + '\')" style="padding:0.65rem 1.5rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:0;width:auto">Send anmodning</button>' +
+      '<button class="btn-primary" onclick="document.getElementById(\'request-join-tray\').remove();requestJoin(\'' + bubbleId + '\')" style="padding:0.65rem 1.5rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:0;width:auto">' + t('bb_send_request') + '</button>' +
       '<button class="btn-secondary" onclick="document.getElementById(\'request-join-tray\').remove()" style="padding:0.65rem 1.2rem;font-size:0.85rem;cursor:pointer;font-family:var(--font);width:auto">Annuller</button>' +
     '</div>';
   document.body.appendChild(tray);
@@ -2397,7 +2397,7 @@ function confirmPopBubble(bubbleId) {
   var tray = document.createElement('div');
   tray.id = 'pop-bubble-tray';
   tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.8rem;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:12px;margin-top:0.5rem;gap:0.5rem';
-  tray.innerHTML = '<div style="flex:1"><div style="font-size:0.78rem;font-weight:700;color:#EF4444">Slet denne boble?</div><div style="font-size:0.65rem;color:var(--text-secondary)">Chat, medlemmer, tilknyttede sub-bobler og events slettes permanent</div></div>' +
+  tray.innerHTML = '<div style="flex:1"><div style="font-size:0.78rem;font-weight:700;color:#EF4444">' + t('bb_delete_bubble_q') + '</div><div style="font-size:0.65rem;color:var(--text-secondary)">' + t('bb_delete_warning') + '</div></div>' +
     '<div style="display:flex;gap:0.3rem">' +
     '<button onclick="popBubble(\'' + bubbleId + '\')" style="font-size:0.72rem;padding:0.35rem 0.7rem;background:#EF4444;color:white;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700">Slet</button>' +
     '<button onclick="document.getElementById(\'pop-bubble-tray\').remove()" style="font-size:0.72rem;padding:0.35rem 0.7rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit">Annuller</button>' +
@@ -2407,7 +2407,7 @@ function confirmPopBubble(bubbleId) {
 
 async function popBubble(bubbleId) {
   try {
-    showToast('Sletter boble...');
+    showToast(t('bb_deleting'));
     // S4: Check for child bubbles and cascade-delete
     var { data: children } = await sb.from('bubbles').select('id').eq('parent_bubble_id', bubbleId);
     if (children && children.length > 0) {
