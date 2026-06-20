@@ -214,7 +214,7 @@ async function sendMessage() {
   if (sendBtn) { sendBtn.disabled = true; }
   console.debug('[dm] sendMessage');
   try {
-    if (isBlocked(currentChatUser)) { _renderToast('Denne bruger er blokeret', 'error'); return; }
+    if (isBlocked(currentChatUser)) { _renderToast(t('msg_user_blocked'), 'error'); return; }
     const input = document.getElementById('chat-input');
     const content = filterChatContent(input.value.trim());
     if (!content) return;
@@ -340,7 +340,7 @@ async function dmHandleFile(input) {
 
     // Public URL — permanent, no expiry. Requires bubble-files bucket to be public in Supabase.
     const { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
-    if (!urlData?.publicUrl) { _renderToast('Kunne ikke generere fil-link', 'error'); input.value = ''; return; }
+    if (!urlData?.publicUrl) { _renderToast(t('msg_file_link_fail'), 'error'); input.value = ''; return; }
 
     const { data: newMsg, error } = await sb.from('messages').insert({
       sender_id: currentUser.id,

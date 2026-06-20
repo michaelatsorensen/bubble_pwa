@@ -72,7 +72,7 @@ async function loadTrendingGifs() {
     renderGifs(data.data || []);
   } catch(e) {
     logError('GIF trending error', e);
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">Kunne ikke hente GIFs.<br>Tjek din internetforbindelse.</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">' + t('chat_gif_load_fail') + '</div>';
   }
   } catch(e) { logError("loadTrendingGifs", e); }
 }
@@ -89,7 +89,7 @@ async function searchGifs(query) {
     renderGifs(data.data || []);
   } catch(e) {
     logError('GIF search error', e);
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">Søgning fejlede</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">' + t('chat_search_failed') + '</div>';
   }
   } catch(e) { logError("searchGifs", e); }
 }
@@ -98,7 +98,7 @@ function renderGifs(results) {
   var grid = document.getElementById('gif-grid');
   if (!grid) return;
   if (results.length === 0) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">Ingen GIFs fundet</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">' + t('chat_no_gifs') + '</div>';
     return;
   }
   window._gifResults = [];
@@ -120,7 +120,7 @@ async function selectGif(idx) {
   if (!gifUrl) { logError('selectGif', 'No GIF URL at index ' + idx); return; }
   try {
     if (mode === 'bc') {
-      if (!bcBubbleId) { logError('selectGif', 'No bcBubbleId'); _renderToast('Fejl: ingen aktiv boble', 'error'); return; }
+      if (!bcBubbleId) { logError('selectGif', 'No bcBubbleId'); _renderToast(t('chat_no_active_bubble'), 'error'); return; }
       var result = await dbActions.sendBubbleMessage(bcBubbleId, '', { gifUrl: gifUrl });
       if (result.ok && result.message) bcReduceMsg(result.message);
     } else if (mode === 'dm') {
@@ -334,7 +334,7 @@ async function bcLoadChatData(bubbleId) {
 // Phase 1: Fetch bubble, set bcBubbleData, render topbar
 async function bcLoadBubbleCore(bubbleId) {
   var { data: b, error: bErr } = await sb.from('bubbles').select('*').eq('id', bubbleId).maybeSingle();
-  if (!b || bErr) { _renderToast('Denne boble eksisterer ikke længere', 'error'); return null; }
+  if (!b || bErr) { _renderToast(t('chat_bubble_gone'), 'error'); return null; }
   bcBubbleData = b;
 
   // Topbar
@@ -370,7 +370,7 @@ async function bcConfigureTabs(b, bubbleId) {
     var tabMembers = document.getElementById('bc-tab-members');
     var tabPosts = document.getElementById('bc-tab-posts');
 
-    if (tabMembers) tabMembers.textContent = isEvent ? 'Deltagere' : 'Medlemmer';
+    if (tabMembers) tabMembers.textContent = isEvent ? t('bc_attendees') : t('bc_members');
     if (tabPosts) tabPosts.style.display = '';
   } catch(e) { logError('bcConfigureTabs', e); }
 }
@@ -544,7 +544,7 @@ async function bcCancelPending() {
     bcBubbleData._isMember = false;
     bcRenderPendingBanner(false);
     bcRenderActions(bcBubbleData, null, false, false);
-    showToast('Anmodning annulleret');
+    showToast(t('chat_request_cancelled'));
   } catch(e) { logError('bcCancelPending', e); errorToast('delete', e); }
 }
 
@@ -623,7 +623,7 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
       if (_evEnd < new Date()) _scannerVisible = false;
     }
     actionArea.innerHTML =
-      (canEdit ? `<button class="chat-topbar-back" data-action="openEditBubble" data-id="${b.id}" title="Rediger"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg></button>` : '') +
+      (canEdit ? `<button class="chat-topbar-back" data-action="openEditBubble" data-id="${b.id}" title="${t('bb_edit')}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg></button>` : '') +
       (_scannerVisible ? `<button class="chat-topbar-back" onclick="openBubbleScannerFromInfo('${b.id}')" title="Scanner" style="color:#1A9E8E"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7V2h5M17 2h5v5M22 17v5h-5M7 22H2v-5"/><line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2 2"/></svg></button>` : '');
     actionArea.style.display = canEdit ? 'flex' : 'none';
     if (actionBar) {
@@ -647,7 +647,7 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
     if (isPending) {
       actionArea.innerHTML = '';
     } else if (b.visibility === 'hidden') {
-      actionArea.innerHTML = `<span style="font-size:0.75rem;color:var(--muted)">${icon("eye")} Kun via invitation</span>`;
+      actionArea.innerHTML = `<span style="font-size:0.75rem;color:var(--muted)">${icon("eye")} ${t('bb_invite_only')}</span>`;
     } else if (b.visibility === 'private') {
       actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="requestJoin" data-id="${b.id}">${icon("lock")} Anmod</button>`;
     } else {
@@ -824,7 +824,7 @@ async function bcLoadBubbleInfo() {
         var mm = expiry.getMinutes().toString().padStart(2,'0');
         countEl.innerHTML = statusText + ' · <span style="color:#1A9E8E">LIVE</span> <span style="opacity:0.6">udl. ' + hh + ':' + mm + '</span>';
       } else if (myMFull) {
-        countEl.textContent = statusText + ' · Medlem ✓';
+        countEl.textContent = statusText + ' · ' + t('bi_member_check');
       } else {
         countEl.textContent = statusText;
       }
@@ -899,10 +899,10 @@ async function bcLoadEvents() {
       var canEdit = bcBubbleData?._canEdit;
       list.innerHTML = '<div class="empty-state">' +
         '<div class="empty-icon">' + icon('bubble') + '</div>' +
-        '<div class="empty-text">Ingen tilknyttede endnu</div>' +
+        '<div class="empty-text">' + t('chat_none_linked') + '</div>' +
         (canEdit ? '<div class="empty-cta">' +
-          '<button class="btn-primary" onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="font-size:0.82rem;padding:0.6rem 1.2rem;margin-bottom:0.4rem">' + icon('calendar') + ' Opret event</button>' +
-          '<button class="btn-secondary" onclick="openCreateSubBubble(\'' + bcBubbleId + '\')" style="font-size:0.78rem;padding:0.5rem 1rem">' + icon('bubble') + ' Opret sub-boble</button>' +
+          '<button class="btn-primary" onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="font-size:0.82rem;padding:0.6rem 1.2rem;margin-bottom:0.4rem">' + icon('calendar') + ' ' + t('bb_create_event') + '</button>' +
+          '<button class="btn-secondary" onclick="openCreateSubBubble(\'' + bcBubbleId + '\')" style="font-size:0.78rem;padding:0.5rem 1rem">' + icon('bubble') + ' ' + t('chat_create_subbubble') + '</button>' +
           '</div>' : '') +
         '</div>';
       return;
@@ -934,7 +934,7 @@ async function bcLoadEvents() {
           '<div style="width:38px;height:38px;border-radius:10px;background:' + (isPast ? 'rgba(30,27,46,0.04)' : 'rgba(46,207,207,0.08)') + ';display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0">' + icon('calendar') + '</div>' +
           '<div style="flex:1;min-width:0">' +
           '<div style="display:flex;align-items:center;gap:0.4rem"><span class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(ch.name) + '</span>' + badge + '</div>' +
-          '<div class="fs-072 text-muted">' + dateStr + ' · ' + mc + ' deltager' + (mc !== 1 ? 'e' : '') + '</div>' +
+          '<div class="fs-072 text-muted">' + dateStr + ' · ' + mc + ' ' + (mc === 1 ? t('bc_participant_one') : t('bb_participants')) + '</div>' +
           avStack +
           '</div>' +
           '<div style="font-size:0.88rem;color:var(--muted)">›</div></div></div>';
@@ -945,7 +945,7 @@ async function bcLoadEvents() {
           '<div style="width:38px;height:38px;border-radius:10px;background:rgba(100,180,230,0.22);display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;overflow:hidden;color:rgb(100,180,230)">' + (ch.icon_url ? '<img src="' + escHtml(ch.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : bubbleEmoji(ch.type)) + '</div>' +
           '<div style="flex:1;min-width:0">' +
           '<div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(ch.name) + '</div>' +
-          '<div class="fs-072 text-muted">' + typeLabel(ch.type) + ' · ' + mc + ' medlem' + (mc !== 1 ? 'mer' : '') + '</div>' +
+          '<div class="fs-072 text-muted">' + typeLabel(ch.type) + ' · ' + mc + ' ' + (mc === 1 ? t('bb_member') : t('bc_members_lc')) + '</div>' +
           avStack +
           '</div>' +
           '<div style="font-size:0.88rem;color:var(--muted)">›</div></div></div>';
@@ -955,7 +955,7 @@ async function bcLoadEvents() {
     if (bcBubbleData?._canEdit) {
       html += '<div style="display:flex;gap:0.4rem;margin-top:0.8rem">' +
         '<button onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('calendar') + ' Event</button>' +
-        '<button onclick="openCreateSubBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(100,180,230,0.15);border:0.5px solid rgba(100,180,230,0.25);color:rgb(100,180,230);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('bubble') + ' Sub-boble</button>' +
+        '<button onclick="openCreateSubBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(100,180,230,0.15);border:0.5px solid rgba(100,180,230,0.25);color:rgb(100,180,230);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('bubble') + ' ' + t('bb_create_sub') + '</button>' +
         '</div>';
     }
     list.innerHTML = html;
@@ -981,11 +981,11 @@ async function bcLoadMessages() {
     if (msgErr) console.error('bcLoadMessages error:', msgErr);
 
     if (!msgs || msgs.length === 0) {
-      var bName = bcBubbleData?.name || 'boblen';
+      var bName = bcBubbleData?.name || t('chat_the_bubble');
       el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;padding:3rem 1.5rem 1rem;text-align:center">' +
         '<div style="width:48px;height:48px;border-radius:14px;background:rgba(100,180,230,0.15);display:flex;align-items:center;justify-content:center;margin-bottom:0.6rem;color:rgb(100,180,230)">' + icon('chat') + '</div>' +
-        '<div style="font-size:0.88rem;font-weight:700;color:var(--text-on-light)">Start samtalen</div>' +
-        '<div style="font-size:0.72rem;color:var(--text-on-light-muted);margin-top:0.2rem">Skriv den første besked i ' + escHtml(bName) + '</div>' +
+        '<div style="font-size:0.88rem;font-weight:700;color:var(--text-on-light)">' + t('chat_start_convo') + '</div>' +
+        '<div style="font-size:0.72rem;color:var(--text-on-light-muted);margin-top:0.2rem">' + t('chat_write_first', {bubble: escHtml(bName)}) + '</div>' +
         '</div>';
       return;
     }
@@ -1140,7 +1140,7 @@ async function bcToggleChatLock(bubbleId, locked) {
   if (!result.ok) {
     // Column may not exist if migration hasn't been run
     if (result.error && String(result.error.message || '').includes('chat_locked')) {
-      showWarningToast('Chat-lås kræver database-migration');
+      showWarningToast(t('chat_lock_migration'));
       return;
     }
     return;
@@ -1252,14 +1252,14 @@ async function bcHandleFile(input) {
   try {
     const file = input.files[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) { showWarningToast('Maks 10MB per fil'); return; }
+    if (file.size > 10 * 1024 * 1024) { showWarningToast(t('chat_max_file')); return; }
 
     // File type allowlist — block HTML/SVG/JS to prevent stored XSS
     var blockedTypes = ['text/html','application/xhtml+xml','image/svg+xml','application/javascript','text/javascript','application/x-httpd-php'];
     var blockedExts = ['html','htm','svg','js','php','exe','bat','cmd','sh','ps1'];
     var ext = (file.name || '').split('.').pop().toLowerCase();
     if (blockedTypes.indexOf(file.type) >= 0 || blockedExts.indexOf(ext) >= 0) {
-      showWarningToast('Filtypen er ikke tilladt');
+      showWarningToast(t('chat_filetype_blocked'));
       input.value = '';
       return;
     }
@@ -1387,7 +1387,7 @@ async function bcDeleteConfirm(msgId) {
   if (result.ok) {
     var el = document.getElementById('bc-msg-' + msgId);
     if (el) { el.style.transition = 'opacity 0.2s'; el.style.opacity = '0'; setTimeout(function(){ el.remove(); }, 200); }
-    showToast('Besked slettet');
+    showToast(t('chat_msg_deleted'));
   }
 }
 
@@ -1483,7 +1483,7 @@ async function bcDeleteMessage() {
   var result = await dbActions.deleteBubbleMessage(bcCurrentMsgId);
   if (result.ok) {
     document.getElementById('bc-msg-' + bcCurrentMsgId)?.remove();
-    showToast('Besked slettet');
+    showToast(t('chat_msg_deleted'));
   }
 }
 
@@ -1538,15 +1538,15 @@ async function bcLoadMembers() {
     if (!isMember) {
       var activeCount = members.filter(function(m) { return m.status !== 'pending'; }).length;
       var isEvent = bcBubbleData?.type === 'event' || bcBubbleData?.type === 'live';
-      var memberLabel = isEvent ? 'deltagere' : 'medlemmer';
+      var memberLabel = isEvent ? t('bb_participants') : t('bc_members_lc');
       var vis = bcBubbleData?.visibility || 'public';
       var joinBtn = '';
       if (vis === 'hidden') {
-        joinBtn = '<div style="font-size:0.78rem;color:var(--muted);margin-top:0.3rem">' + icon('eye') + ' Kun via invitation</div>';
+        joinBtn = '<div style="font-size:0.78rem;color:var(--muted);margin-top:0.3rem">' + icon('eye') + ' ' + t('bb_invite_only') + '</div>';
       } else if (vis === 'private') {
-        joinBtn = '<button class="bb-cta-anmod" data-action="requestJoin" data-id="' + bcBubbleId + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Anmod om medlemskab</button>';
+        joinBtn = '<button class="bb-cta-anmod" data-action="requestJoin" data-id="' + bcBubbleId + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' + t('chat_request_membership') + '</button>';
       } else {
-        joinBtn = '<button class="bb-cta-join" onclick="joinBubble(\'' + bcBubbleId + '\')" style="margin-top:0.5rem">Bliv medlem</button>';
+        joinBtn = '<button class="bb-cta-join" onclick="joinBubble(\'' + bcBubbleId + '\')" style="margin-top:0.5rem">' + t('chat_become_member') + '</button>';
       }
       list.innerHTML = '<div style="text-align:center;padding:2.5rem 1rem">' +
         '<div style="font-size:2.2rem;font-weight:700;color:var(--text-primary);margin-bottom:0.15rem">' + activeCount + '</div>' +
@@ -1605,13 +1605,13 @@ async function bcLoadMembers() {
           html += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;margin-bottom:0.6rem;border-radius:10px;background:rgba(46,207,207,0.08);border:1px solid rgba(46,207,207,0.2)">' +
             '<span class="live-dot"></span>' +
             '<span style="font-size:0.78rem;font-weight:700;color:var(--accent3)">Du er live</span>' +
-            '<span style="font-size:0.72rem;color:var(--muted);margin-left:auto">' + liveCount + ' til stede</span>' +
+            '<span style="font-size:0.72rem;color:var(--muted);margin-left:auto">' + liveCount + ' ' + t('chat_present') + '</span>' +
           '</div>';
         } else {
           html += '<div style="text-align:center;padding:0.5rem 0.75rem;margin-bottom:0.6rem">' +
             '<button onclick="bcManualCheckIn()" style="width:100%;padding:0.55rem;border-radius:10px;font-size:0.8rem;font-weight:700;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,var(--accent3),#22B8CF);color:white;border:none;display:flex;align-items:center;justify-content:center;gap:0.4rem">' +
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
-            'Check ind</button>' +
+            t('chat_check_in') + '</button>' +
           '</div>';
         }
       }
@@ -1619,7 +1619,7 @@ async function bcLoadMembers() {
 
     // Pending requests section (only visible to owner/admin)
     if (pendingMembers.length > 0 && (isOwner || bcBubbleData?._isAdmin)) {
-      html += '<div class="chat-section-label" style="color:#BA7517">Afventer godkendelse \u00B7 ' + pendingMembers.length + '</div>';
+      html += '<div class="chat-section-label" style="color:#BA7517">' + t('bc_pending_approval') + ' \u00B7 ' + pendingMembers.length + '</div>';
       pendingMembers.forEach(function(m) {
         var p = profileMap[m.user_id] || {};
         var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
@@ -1649,10 +1649,10 @@ async function bcLoadMembers() {
       let section = isOwnerRow ? 'owner' : (m._isLive ? 'live' : 'members');
       if (section !== prevSection) {
         if (section === 'owner') html += `<div class="chat-section-label">${isEvent ? t('misc_organizer') : t('misc_owner')}</div>`;
-        else if (section === 'live') html += `<div class="chat-section-label" style="margin-top:0.8rem">${isEvent ? 'Til stede nu' : 'Her lige nu'} · ${liveCount}</div>`;
+        else if (section === 'live') html += `<div class="chat-section-label" style="margin-top:0.8rem">${isEvent ? t('chat_present_now') : t('chat_here_now')} · ${liveCount}</div>`;
         else {
           var restCount = activeMembers.length - liveCount - (ownerId ? 1 : 0);
-          html += `<div class="chat-section-label" style="margin-top:0.8rem">${isEvent ? 'Deltagere' : 'Medlemmer'} · ${restCount}</div>`;
+          html += `<div class="chat-section-label" style="margin-top:0.8rem">${isEvent ? t('bc_attendees') : t('bc_members')} · ${restCount}</div>`;
         }
         prevSection = section;
       }
@@ -1676,7 +1676,7 @@ async function bcLoadMembers() {
       html += `<div class="chat-member-row" data-member-uid="${m.user_id}" onclick="bcOpenPerson('${m.user_id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${color}')">
         <div class="chat-member-avatar" style="background:${color};overflow:hidden">${avatarInner}${m._isLive ? '<span class="live-dot"></span>' : ''}</div>
         <div style="flex:1;min-width:0"><div class="chat-member-name">${escHtml(p.name||t('misc_unknown'))} ${liveBadge}</div><div class="chat-member-status">${statusText}</div></div>
-        ${isOwnerRow ? '<span class="chat-member-role">' + roleLabel + '</span>' : (isOwner && !isOwnerRow ? '<button class="bc-kick-btn" onclick="event.stopPropagation();bcShowKickConfirm(this,\'' + m.user_id + '\',\'' + escHtml(p.name||t('misc_unknown')).replace(/'/g,'') + '\')" title="Fjern fra boble">' + icon('x') + '</button>' : '')}
+        ${isOwnerRow ? '<span class="chat-member-role">' + roleLabel + '</span>' : (isOwner && !isOwnerRow ? '<button class="bc-kick-btn" onclick="event.stopPropagation();bcShowKickConfirm(this,\'' + m.user_id + '\',\'' + escHtml(p.name||t('misc_unknown')).replace(/'/g,'') + '\')" title="' + t('chat_remove_from_bubble') + '">' + icon('x') + '</button>' : '')}
       </div>`;
     });
     // Add search field when 5+ members
@@ -1706,7 +1706,7 @@ async function bcConfirmKick(userId, userName) {
     var { error } = await sb.from('bubble_members').delete()
       .eq('bubble_id', bcBubbleId).eq('user_id', userId);
     if (error) throw error;
-    showToast(userName + ' er fjernet fra boblen');
+    showToast(t('chat_removed_from_bubble', {name: userName}));
     bcLoadMembers();
     bcLoadBubbleInfo();
   } catch(e) { logError('bcConfirmKick', e, { bubbleId: bcBubbleId, userId: userId }); errorToast('save', e); }
@@ -1729,7 +1729,7 @@ async function bcApproveMember(userId) {
       await ch.send({ type: 'broadcast', event: 'approved', payload: { bubbleName: bubbleName, bubbleId: bcBubbleId } });
       setTimeout(function() { ch.unsubscribe(); }, 2000);
       // Push notification to approved user
-      sendPush(userId, 'Du er godkendt!', 'Du er nu medlem af ' + bubbleName, { type: 'approved', bubble_id: bcBubbleId });
+      sendPush(userId, t('chat_approved_title'), t('chat_now_member_body', {bubble: bubbleName}), { type: 'approved', bubble_id: bcBubbleId });
     } catch(e2) { console.debug('[approve] broadcast error:', e2); }
   } catch(e) { logError('bcApproveMember', e); errorToast('save', e); }
 }
@@ -1769,7 +1769,7 @@ async function bcLoadInfo() {
     const isBubbleAdmin = bcBubbleData._isAdmin || false;
     const canEdit = isOwner || isBubbleAdmin;
     const isEvent = b.type === 'event' || b.type === 'live';
-    const memberLabel = isEvent ? 'deltagere' : 'medlemmer';
+    const memberLabel = isEvent ? t('bb_participants') : t('bc_members_lc');
 
     // Member count
     var { count: mc } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', b.id).or('status.is.null,status.neq.pending');
@@ -1896,7 +1896,7 @@ async function bcLoadInfo() {
                 }
               });
               if (canEdit) {
-                childCards += '<div class="bb-tree-add" onclick="openCreateEventFromBubble(\'' + cn.id + '\')">' + _addIco + ' Opret event</div>';
+                childCards += '<div class="bb-tree-add" onclick="openCreateEventFromBubble(\'' + cn.id + '\')">' + _addIco + ' ' + t('bb_create_event') + '</div>';
               }
               childCards += '</div>';
             }
@@ -1942,14 +1942,14 @@ async function bcLoadInfo() {
             '<div class="bb-tree-trunk">' + childCards + '</div>' +
             (canEdit ? '<div style="display:flex;gap:0.4rem;margin-top:0.8rem">' +
               '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" class="bb-cta-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Event</button>' +
-              '<button onclick="openCreateSubBubble(\'' + b.id + '\')" class="bb-cta-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6"/><circle cx="16" cy="13.5" r="4.5"/></svg>Sub-boble</button></div>' : '') +
+              '<button onclick="openCreateSubBubble(\'' + b.id + '\')" class="bb-cta-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6"/><circle cx="16" cy="13.5" r="4.5"/></svg>' + t('bb_create_sub') + '</button></div>' : '') +
             '</div>';
         } else if (canEdit) {
           eventsHtml = '<div style="margin-bottom:0.9rem">' +
             '<div class="bb-section-header">' + t('bi_network_events') + '</div>' +
             '<div style="display:flex;gap:0.4rem">' +
             '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" class="bb-cta-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Event</button>' +
-            '<button onclick="openCreateSubBubble(\'' + b.id + '\')" class="bb-cta-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6"/><circle cx="16" cy="13.5" r="4.5"/></svg>Sub-boble</button></div></div>';
+            '<button onclick="openCreateSubBubble(\'' + b.id + '\')" class="bb-cta-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6"/><circle cx="16" cy="13.5" r="4.5"/></svg>' + t('bb_create_sub') + '</button></div></div>';
         }
       } catch(e) { logError('bcLoadInfo:children', e); }
     }
@@ -2081,11 +2081,11 @@ async function bcLoadInfo() {
     var topJoinHtml = '';
     if (!bcBubbleData._isMember && !bcBubbleData._isPending) {
       if (b.visibility === 'hidden') {
-        topJoinHtml = '<div class="text-on-light-muted" style="text-align:center;padding:0.5rem 0 0.8rem;font-size:0.78rem">' + icon('eye') + ' Kun via invitation</div>';
+        topJoinHtml = '<div class="text-on-light-muted" style="text-align:center;padding:0.5rem 0 0.8rem;font-size:0.78rem">' + icon('eye') + ' ' + t('bb_invite_only') + '</div>';
       } else if (b.visibility === 'private') {
-        topJoinHtml = '<div style="padding:0.5rem 0 0.8rem"><button class="bb-cta-anmod" data-action="requestJoin" data-id="' + b.id + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Anmod om medlemskab</button></div>';
+        topJoinHtml = '<div style="padding:0.5rem 0 0.8rem"><button class="bb-cta-anmod" data-action="requestJoin" data-id="' + b.id + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' + t('chat_request_membership') + '</button></div>';
       } else {
-        topJoinHtml = '<div style="padding:0.5rem 0 0.8rem"><button class="bb-cta-join" onclick="joinBubble(\'' + b.id + '\')">Bliv medlem</button></div>';
+        topJoinHtml = '<div style="padding:0.5rem 0 0.8rem"><button class="bb-cta-join" onclick="joinBubble(\'' + b.id + '\')">' + t('chat_become_member') + '</button></div>';
       }
     } else if (bcBubbleData._isPending) {
       topJoinHtml = ''; // Banner at top already handles pending state
@@ -2233,8 +2233,8 @@ async function bcLoadPosts() {
     if (_bcPostsCache.length === 0) {
       list.innerHTML = '<div class="empty-state" style="margin-top:2rem">' +
         '<div class="empty-icon">' + icon('file') + '</div>' +
-        '<div class="empty-text">Ingen opslag endnu' +
-        (canPost ? '<br><span style="font-size:0.72rem;color:rgb(100,180,230);cursor:pointer" onclick="bcOpenCreatePost()">Opret det første opslag →</span>' : '<br><span style="font-size:0.72rem">Administratorer kan dele nyheder og opdateringer her</span>') +
+        '<div class="empty-text">' + t('chat_no_posts') + ' +
+        (canPost ? '<br><span style="font-size:0.72rem;color:rgb(100,180,230);cursor:pointer" onclick="bcOpenCreatePost()">' + t('chat_create_first_post') + '</span>' : '<br><span style="font-size:0.72rem">' + t('chat_admins_share') + '</span>') +
         '</div></div>';
       return;
     }
@@ -2314,7 +2314,7 @@ function bcRenderPostCard(post, author, event) {
     '</div>' +
     '<div class="bp-title">' + escHtml(post.title) + '</div>' +
     '<div class="bp-preview">' + preview + '</div>' +
-    (hasMore ? '<div class="bp-readmore">Læs mere ›</div>' : '') +
+    (hasMore ? '<div class="bp-readmore">' + t('chat_read_more') + '</div>' : '') +
     eventChip +
     likeHtml +
     '</div>';
@@ -2339,7 +2339,7 @@ function bcExpandPost(postId) {
   if (post.event_id) {
     eventCard = '<div onclick="openBubbleChat(\'' + post.event_id + '\',\'screen-bubble-chat\')" style="padding:0.6rem 0.8rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);display:flex;align-items:center;gap:0.5rem;margin-top:1rem;cursor:pointer">' +
       '<div style="width:32px;height:32px;border-radius:10px;background:rgba(46,207,207,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green);font-size:16px">' + ico('calendar') + '</div>' +
-      '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:700;color:var(--green)" id="bp-expand-event-name">Henter event...</div></div>' +
+      '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:700;color:var(--green)" id="bp-expand-event-name">' + t('chat_loading_event') + '</div></div>' +
       '<div style="font-size:0.88rem;color:var(--green)">›</div></div>';
   }
 
@@ -2363,7 +2363,7 @@ function bcExpandPost(postId) {
     '<div class="bp-like-row" style="margin-top:1rem;padding-top:0.6rem;border-top:0.5px solid rgba(255,255,255,0.08)">' +
     '<button class="bp-like-btn' + (expandLiked ? ' liked' : '') + '" id="bp-expand-like-' + post.id + '" onclick="bcTogglePostLike(\'' + post.id + '\')">' + (expandLiked ? '❤️' : '🤍') + '</button>' +
     '<span class="bp-like-count" id="bp-expand-like-count-' + post.id + '">' + (expandLikeCount > 0 ? expandLikeCount : '') + '</span></div>' +
-    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:0.8rem;padding:0.65rem;border-radius:12px;border:0.5px solid rgba(255,255,255,0.1);background:none;color:rgba(255,255,255,0.55);font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer">Luk</button>' +
+    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:0.8rem;padding:0.65rem;border-radius:12px;border:0.5px solid rgba(255,255,255,0.1);background:none;color:rgba(255,255,255,0.55);font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer">' + t('misc_close') + '</button>' +
     deleteBtn;
 
   // Fetch event name async if linked
@@ -2383,7 +2383,7 @@ async function bcOpenCreatePost() {
 
   // Build event picker: list child events of this bubble
   var picker = document.getElementById('bp-event-picker');
-  picker.innerHTML = '<div style="font-size:0.72rem;color:var(--muted)">Henter events...</div>';
+  picker.innerHTML = '<div style="font-size:0.72rem;color:var(--muted)">' + t('chat_loading_events') + '</div>';
 
   openModal('sheet-create-post');
 
@@ -2396,7 +2396,7 @@ async function bcOpenCreatePost() {
       .limit(10);
 
     if (!events || events.length === 0) {
-      picker.innerHTML = '<div style="padding:0.5rem 0.6rem;border-radius:8px;border:1px dashed var(--glass-border);font-size:0.72rem;color:var(--muted);text-align:center">Ingen events at linke til</div>';
+      picker.innerHTML = '<div style="padding:0.5rem 0.6rem;border-radius:8px;border:1px dashed var(--glass-border);font-size:0.72rem;color:var(--muted);text-align:center">' + t('chat_no_events_link') + '</div>';
     } else {
       picker.innerHTML = events.map(function(ev) {
         return '<label style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.6rem;border-radius:10px;border:1px solid var(--glass-border-subtle);margin-bottom:0.3rem;cursor:pointer;transition:border-color 0.15s" onclick="bcSelectPostEvent(this,\'' + ev.id + '\')">' +
@@ -2408,7 +2408,7 @@ async function bcOpenCreatePost() {
       }).join('');
     }
   } catch(e) {
-    picker.innerHTML = '<div style="font-size:0.72rem;color:var(--accent2)">Kunne ikke hente events</div>';
+    picker.innerHTML = '<div style="font-size:0.72rem;color:var(--accent2)">' + t('home_load_events_fail') + '</div>';
   }
 }
 
@@ -2442,7 +2442,7 @@ async function bcSubmitPost() {
   if (_postSubmitLock) return;
   var title = document.getElementById('bp-title').value.trim();
   var content = document.getElementById('bp-content').value.trim();
-  if (!title) { showWarningToast('Titel er påkrævet'); return; }
+  if (!title) { showWarningToast(t('chat_title_required')); return; }
 
   _postSubmitLock = true;
   var picker = document.getElementById('bp-event-picker');
@@ -2452,7 +2452,7 @@ async function bcSubmitPost() {
   var result = await dbActions.createPost(bcBubbleId, title, content || null, selectedEvent);
   if (result.ok) {
     closeModal('sheet-create-post');
-    showSuccessToast('Opslag publiceret');
+    showSuccessToast(t('chat_post_published'));
     bcLoadPosts();
   } else {
     logError('bcSubmitPost', result.error);
@@ -2481,7 +2481,7 @@ async function bcConfirmDeletePost(postId) {
   if (result.ok) {
     var overlay = document.querySelector('.bb-dyn-overlay');
     if (overlay) bbDynClose(overlay);
-    showSuccessToast('Opslag slettet');
+    showSuccessToast(t('chat_post_deleted'));
     bcLoadPosts();
   }
 }
