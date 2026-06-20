@@ -431,6 +431,18 @@ async function loadProximityMap() {
 
 // ── RADAR MAP VIEW ──
 // Shows only visible (non-anon) profiles, filtered by relevance threshold
+// Stabil vinkel + farve pr. person (tildelt EN gang) — saa dots glider rent
+// ind/ud i stedet for at teleportere naar den filtrerede liste skifter index.
+var _proxMeta = {};
+var _proxCounter = 0;
+function _proxMetaFor(id) {
+  if (!_proxMeta[id]) {
+    _proxMeta[id] = { ang: _proxCounter * 2.399, col: _proxCounter % proxColors.length };
+    _proxCounter++;
+  }
+  return _proxMeta[id];
+}
+
 function renderProximityDots() {
   var map = document.getElementById('proximity-map');
   var av = document.getElementById('prox-avatars');
@@ -439,22 +451,16 @@ function renderProximityDots() {
   if (!map || !av || !canvas) return;
 
   var allFil = getFilteredProfiles();
-
-  // Smart cap: show MATCH_CAP profiles per page, paginated
   var start = matchPage * MATCH_CAP;
   var fil = allFil.slice(start, start + MATCH_CAP);
   var totalAvailable = allFil.length;
 
-  // Update counter with pagination info
   var countEl = document.getElementById('radar-count-home');
   if (countEl) countEl.textContent = ' · ' + Math.min(totalAvailable, MATCH_CAP) + ' af ' + totalAvailable;
 
-  // Show/hide "vis flere" button
   var moreBtn = document.getElementById('radar-show-more');
   if (moreBtn) moreBtn.style.display = totalAvailable > MATCH_CAP ? 'flex' : 'none';
 
-  if (fil.length === 0) { av.innerHTML = ''; drawProxRings(canvas); if (emptyEl) emptyEl.style.display = 'block'; return; }
-  if (emptyEl) emptyEl.style.display = 'none';
   drawProxRings(canvas);
 
   var ce = document.getElementById('prox-center');
@@ -466,46 +472,106 @@ function renderProximityDots() {
     }
   }
 
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // "Bloed/glidende" — den besluttede feel (exit/enter ~650ms, move ~600ms)
+  var E = reduce
+    ? { exit:'linear', exitT:0, enter:'linear', enterT:0, move:'linear', moveT:0 }
+    : { exit:'cubic-bezier(0.4,0,0.6,1)', exitT:650, enter:'cubic-bezier(0.25,0.9,0.4,1)', enterT:650, move:'cubic-bezier(0.4,0,0.2,1)', moveT:600 };
+
   var w = map.offsetWidth || 300, h = map.offsetHeight || w, cx = w/2, cy = h/2;
   var maxR = Math.min(cx, cy) - 24;
-  var out = '';
 
-  // Collision avoidance
+  if (emptyEl) emptyEl.style.display = fil.length === 0 ? 'block' : 'none';
+
+  // Hvilke dots findes allerede i DOM (= sandhed, robust mod ekstern rydning)
+  var existing = {};
+  var existingDots = av.querySelectorAll('.prox-dot');
+  for (var d = 0; d < existingDots.length; d++) existing[existingDots[d].getAttribute('data-id')] = existingDots[d];
+
+  // Kollisions-undvigelse paa MAAL-positionerne (tro mod findSafe)
   var placed = [];
   function findSafe(ix, iy, sz) {
     var hs = sz/2, tx = ix, ty = iy;
     for (var a = 0; a < 12; a++) {
       var hit = false;
       for (var j = 0; j < placed.length; j++) {
-        var dx = (tx+hs)-(placed[j].x+placed[j].s/2), dy = (ty+hs)-(placed[j].y+placed[j].s/2);
+        var dx = tx-placed[j].x, dy = ty-placed[j].y;
         if (Math.sqrt(dx*dx+dy*dy) < (hs+placed[j].s/2)+3) { hit = true; break; }
       }
-      if (!hit) return {x:tx, y:ty};
-      var na = Math.atan2(ty+hs-cy, tx+hs-cx) + a*0.5;
+      if (!hit) break;
+      var na = Math.atan2(ty-cy, tx-cx) + a*0.5;
       tx = ix + Math.cos(na)*(8+a*5); ty = iy + Math.sin(na)*(8+a*5);
     }
     return {x:tx, y:ty};
   }
 
+  var visible = {};
   for (var i = 0; i < fil.length; i++) {
     var p = fil[i];
-    var ini = (p.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
-    var col = proxColors[i % proxColors.length];
-    // Match-based positioning: profiles live OUTSIDE center (your avatar)
-    // 100% match = just outside center (r=0.12), 0% match = edge (r=0.88)
-    var matchPct = p.matchScore || Math.round(p.relevance * 100);
-    var minDist = 0.14; // Start just outside center avatar
-    var maxDist = 0.88; // Edge
-    var dist = minDist + (1 - matchPct / 100) * (maxDist - minDist);
+    visible[p.id] = true;
+    var meta = _proxMetaFor(p.id);
+    var matchPct = p.matchScore || Math.round((p.relevance || 0) * 100);
+    var dist = 0.14 + (1 - matchPct/100) * (0.88 - 0.14);
     var r = dist * maxR;
-    var ang = (i * 2.399) + (matchPct * 0.03); // Golden angle spread + slight match-based offset
-    var ix = cx + Math.cos(ang)*r - 17, iy = cy + Math.sin(ang)*r - 17;
-    var sz = matchPct >= 70 ? 38 : matchPct >= 40 ? 34 : 30; // Bigger dots for better matches
+    var ang = meta.ang;
+    var sz = matchPct >= 70 ? 38 : matchPct >= 40 ? 34 : 30;
+    var ix = cx + Math.cos(ang)*r, iy = cy + Math.sin(ang)*r;
     var pos = findSafe(ix, iy, sz);
     placed.push({x:pos.x, y:pos.y, s:sz});
-    out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+pos.x.toFixed(1)+'px;top:'+pos.y.toFixed(1)+'px;background:'+col+';font-size:'+(sz<34?'0.48':'0.55')+'rem" onclick="openRadarPerson(\''+p.id+'\')" data-id="'+p.id+'">'+escHtml(ini)+'</div>';
+    var tx = pos.x - sz/2, ty = pos.y - sz/2;
+    var ini = (p.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
+
+    var el = existing[p.id];
+    if (el) {
+      // BLIVER (eller vender tilbage fra exit): glider til ny position
+      el.removeAttribute('data-exiting');
+      el.style.transition = 'left ' + E.moveT + 'ms ' + E.move + ', top ' + E.moveT + 'ms ' + E.move + ', opacity ' + E.moveT + 'ms ease, transform ' + E.moveT + 'ms ' + E.move + ', width 0.3s, height 0.3s';
+      el.style.opacity = '1';
+      el.style.transform = 'none';
+      el.style.width = el.style.height = sz + 'px';
+      el.style.fontSize = (sz < 34 ? '0.48' : '0.55') + 'rem';
+      el.style.left = tx.toFixed(1) + 'px';
+      el.style.top = ty.toFixed(1) + 'px';
+    } else {
+      // ENTER: traekkes ind fra kanten langs sin egen vinkel
+      el = document.createElement('div');
+      el.className = 'prox-dot';
+      el.setAttribute('data-id', p.id);
+      el.setAttribute('onclick', "openRadarPerson('" + p.id + "')");
+      el.textContent = ini;
+      el.style.background = proxColors[meta.col];
+      el.style.width = el.style.height = sz + 'px';
+      el.style.fontSize = (sz < 34 ? '0.48' : '0.55') + 'rem';
+      var startR = maxR + 90;
+      el.style.left = (cx + startR*Math.cos(ang) - sz/2).toFixed(1) + 'px';
+      el.style.top = (cy + startR*Math.sin(ang) - sz/2).toFixed(1) + 'px';
+      el.style.opacity = '0';
+      el.style.transition = 'none';
+      av.appendChild(el);
+      void el.offsetWidth;
+      el.style.transition = 'left ' + E.enterT + 'ms ' + E.enter + ', top ' + E.enterT + 'ms ' + E.enter + ', opacity ' + Math.round(E.enterT*0.5) + 'ms ease, width 0.3s, height 0.3s';
+      (function(eln, lx, ly){
+        requestAnimationFrame(function(){ eln.style.left = lx + 'px'; eln.style.top = ly + 'px'; eln.style.opacity = '1'; });
+      })(el, tx.toFixed(1), ty.toFixed(1));
+    }
   }
-  av.innerHTML = out;
+
+  // EXIT: dem der ikke laengere er synlige frastodes radialt UD over kanten
+  Object.keys(existing).forEach(function(id) {
+    if (visible[id]) return;
+    var el = existing[id];
+    el.setAttribute('data-exiting', '1');
+    var ex = (parseFloat(el.style.left) || 0) + el.offsetWidth/2;
+    var ey = (parseFloat(el.style.top) || 0) + el.offsetHeight/2;
+    var ang2 = Math.atan2(ey - cy, ex - cx);
+    var flungR = maxR + 160;
+    el.style.transition = 'left ' + E.exitT + 'ms ' + E.exit + ', top ' + E.exitT + 'ms ' + E.exit + ', opacity ' + E.exitT + 'ms ease-in, transform ' + E.exitT + 'ms ' + E.exit;
+    el.style.left = (cx + flungR*Math.cos(ang2) - el.offsetWidth/2).toFixed(1) + 'px';
+    el.style.top = (cy + flungR*Math.sin(ang2) - el.offsetHeight/2).toFixed(1) + 'px';
+    el.style.opacity = '0';
+    el.style.transform = 'scale(0.5)';
+    (function(eln){ setTimeout(function(){ if (eln && eln.parentNode && eln.getAttribute('data-exiting') === '1') eln.parentNode.removeChild(eln); }, E.exitT + 60); })(el);
+  });
 }
 
 
