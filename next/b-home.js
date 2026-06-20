@@ -952,7 +952,7 @@ function showWelcomeCard() {
         '<div style="font-size:0.88rem;font-weight:800;color:rgba(255,255,255,0.95)">Velkommen til Bubble' + (currentProfile.name ? ', ' + currentProfile.name.split(' ')[0] : '') + '!</div>' +
       '</div>' +
       '<div style="font-size:0.78rem;color:rgba(255,255,255,0.7);line-height:1.55;margin-bottom:0.75rem">' +
-        'Bubble matcher dig med relevante mennesker i nærheden — baseret på hvem du er og hvad du søger. Jo mere du udfylder, jo bedre og mere præcise matches får du i radaren.' +
+        'Bubble matcher dig med relevante mennesker — baseret på hvem du er og hvad du søger. Jo mere du udfylder, jo bedre og mere præcise matches får du i radaren.' +
       '</div>' +
       '<div style="display:flex;gap:0.5rem;align-items:center">' +
         '<button onclick="dismissWelcomeCard();goTo(\'screen-profile\');setTimeout(function(){profSwitchTab(\'dashboard\')},200)" style="flex:1;padding:0.55rem;border-radius:10px;font-size:0.78rem;font-weight:700;font-family:inherit;cursor:pointer;background:rgba(100,180,230,0.18);border:0.5px solid rgba(100,180,230,0.25);color:rgba(255,255,255,0.95)">Udfyld profil →</button>' +
