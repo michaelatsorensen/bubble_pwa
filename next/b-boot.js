@@ -343,7 +343,7 @@ async function loadQRProfilePreview(userId, bubbleId) {
         // ── Network contacts (real profiles from shared bubbles) ──
         var labelEl = document.getElementById('qr-preview-context-label');
         if (labelEl && profile.name) {
-          labelEl.textContent = 'Folk i ' + profile.name.split(' ')[0] + 's netværk';
+          labelEl.textContent = t('qr_people_network', {name: profile.name.split(' ')[0]});
         }
         var listEl = document.getElementById('qr-preview-network-list');
         var moreEl = document.getElementById('qr-preview-more-label');
@@ -757,7 +757,7 @@ async function showEventReadyQR() {
     if (roleEl) roleEl.textContent = (currentProfile.title || '') + (currentProfile.workplace ? ' · ' + currentProfile.workplace : '');
     
     var metaEl = document.getElementById('event-ready-meta');
-    if (metaEl && _eventBubble) metaEl.textContent = 'Vis din QR-kode til arrangøren ved ' + _eventBubble.name;
+    if (metaEl && _eventBubble) metaEl.textContent = t('qr_show_qr_at', {event: _eventBubble.name});
     
     // Generate rotating QR token (10 min)
     var token = crypto.randomUUID ? crypto.randomUUID().split('-')[0] : Math.random().toString(36).slice(2,10);
