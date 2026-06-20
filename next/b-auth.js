@@ -420,7 +420,7 @@ async function handleLogin() {
   try {
     const email = document.getElementById('login-email').value.trim();
     const pass = document.getElementById('login-password').value;
-    if (!email || !pass) { _authLockClear(); return showWarningToast('Udfyld email og adgangskode'); }
+    if (!email || !pass) { _authLockClear(); return showWarningToast(t('auth_fill_email_pw')); }
     showToast(t('misc_loading'));
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) {
@@ -467,10 +467,10 @@ async function handleSignup() {
     const emailConfirm = document.getElementById('signup-email-confirm').value.trim();
     const pass  = document.getElementById('signup-password').value;
     const passConfirm = document.getElementById('signup-password-confirm').value;
-    if (!name || !email || !pass) { _authLockClear(); return showWarningToast('Udfyld alle felter'); }
+    if (!name || !email || !pass) { _authLockClear(); return showWarningToast(t('auth_fill_all')); }
     if (email.toLowerCase() !== emailConfirm.toLowerCase()) { _authLockClear(); return showWarningToast(t('auth_email_mismatch')); }
     if (pass.length < 6) { _authLockClear(); return showWarningToast(t('toast_password_min')); }
-    if (pass !== passConfirm) { _authLockClear(); return showWarningToast('Adgangskoderne matcher ikke'); }
+    if (pass !== passConfirm) { _authLockClear(); return showWarningToast(t('recovery_mismatch')); }
     showToast('Opretter konto...');
     const { data, error } = await sb.auth.signUp({
       email,
@@ -561,13 +561,13 @@ async function handleSignup() {
     }
 
     if (!profileCreated) {
-      showToast('Konto oprettet — udfyld profil under Rediger');
+      showToast(t('auth_account_created'));
     }
 
     await resolvePostAuth();
     // Only toast on home — new users go to onboarding where the screen is its own greeting
     if (navState.screen === 'screen-home') {
-      showSuccessToast('Velkommen til Bubble');
+      showSuccessToast(t('ob_welcome'));
     }
   } catch(e) { logError("handleSignup", e); errorToast("signup", e); }
   finally { _authLockClear(); }
@@ -705,14 +705,14 @@ function showAuthForms(qrContext) {
         }
       }
       var nameEl = document.getElementById('auth-qr-name');
-      if (nameEl) nameEl.textContent = p.name || 'Bubble-bruger';
+      if (nameEl) nameEl.textContent = p.name || t('default_username');
       ctxCard.style.display = 'block';
     }
     if (heading) {
       var titleEl = document.getElementById('auth-heading-title');
       var subEl = document.getElementById('auth-heading-sub');
-      if (titleEl) titleEl.textContent = 'Opret din profil';
-      if (subEl) subEl.textContent = 'Gem ' + (p.name ? p.name.split(' ')[0] : 'kontakten') + ' og opdag netværket';
+      if (titleEl) titleEl.textContent = t('auth_create_profile');
+      if (subEl) subEl.textContent = t('auth_save_discover', {name: (p.name ? p.name.split(' ')[0] : t('auth_the_contact'))});
       heading.style.display = 'block';
     }
   } else {
@@ -774,7 +774,7 @@ function openFeedback() {
 
 async function submitFeedback() {
   var text = document.getElementById('feedback-text')?.value?.trim();
-  if (!text) { showWarningToast('Skriv noget feedback først'); return; }
+  if (!text) { showWarningToast(t('auth_feedback_empty')); return; }
   try {
     var { error } = await sb.from('reports').insert({
       reporter_id: currentUser.id,
@@ -786,7 +786,7 @@ async function submitFeedback() {
     logError('USER_FEEDBACK', new Error('Feedback modtaget'), { text: text, user: currentUser.id, name: currentProfile?.name });
     var dyn = document.querySelector('.bb-dyn-overlay');
     if (dyn) bbDynClose(dyn);
-    showToast('Tak for din feedback! 💜');
+    showToast(t('auth_feedback_thanks'));
   } catch(e) { logError('submitFeedback', e); errorToast('send', e); }
 }
 
@@ -867,7 +867,7 @@ async function handleAppleLogin() {
 //  PERSONAL QR CODE
 // ══════════════════════════════════════════════════════════
 async function openMyQR() {
-  if (!currentUser || !currentProfile) { _renderToast('Log ind først', 'error'); return; }
+  if (!currentUser || !currentProfile) { _renderToast(t('auth_login_first'), 'error'); return; }
   
   // Generate short-lived token (10 min)
   var token = crypto.randomUUID ? crypto.randomUUID().split('-')[0] : Math.random().toString(36).slice(2,10);
