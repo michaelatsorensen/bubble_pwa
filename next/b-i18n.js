@@ -122,6 +122,16 @@ da: {
 
   // ── Onboarding ──
   ob_welcome: 'Velkommen til Bubble!',
+  ob_enter_name: 'Skriv dit navn først',
+  ob_for_you: 'For dig',
+  ob_show_fewer: '− Vis færre',
+  ob_show_all: '+ Vis alle {n} andre',
+  ob_tag_blocked: 'Det tag er ikke tilladt',
+  ob_tag_added: 'Tag tilføjet til din profil',
+  ob_add_own_tag: 'Tilføj eget tag',
+  ob_tag_placeholder: 'Skriv dit tag...',
+  ob_selected: 'valgt',
+  ob_save_close: 'Gem & luk ✓',
   ob_almost_ready: 'Næsten klar!',
   ob_ctx_event: 'Næsten klar — udfyld dit navn så andre kan finde dig',
   ob_ctx_contact: 'Ét felt og du kan se kontakten',
@@ -900,6 +910,16 @@ en: {
 
   // ── Onboarding ──
   ob_welcome: 'Welcome to Bubble!',
+  ob_enter_name: 'Enter your name first',
+  ob_for_you: 'For you',
+  ob_show_fewer: '− Show fewer',
+  ob_show_all: '+ Show all {n} others',
+  ob_tag_blocked: "That tag isn't allowed",
+  ob_tag_added: 'Tag added to your profile',
+  ob_add_own_tag: 'Add your own tag',
+  ob_tag_placeholder: 'Type your tag...',
+  ob_selected: 'selected',
+  ob_save_close: 'Save & close ✓',
   ob_almost_ready: 'Almost ready!',
   ob_ctx_event: 'Almost there — add your name so others can find you',
   ob_ctx_contact: 'One field and you can see the contact',

@@ -165,7 +165,7 @@ function reRunOnboarding() {
   if (workEl && currentProfile?.workplace) workEl.value = currentProfile.workplace;
   // Update button for re-run context
   var btn = document.getElementById('ob-save-btn');
-  if (btn) { btn.textContent = 'Gem ændringer'; btn.disabled = false; }
+  if (btn) { btn.textContent = t('misc_save_changes'); btn.disabled = false; }
   obCheckProgress();
   var obScroll = document.getElementById('ob-scroll');
   if (obScroll) obScroll.style.visibility = 'visible';
@@ -306,7 +306,7 @@ async function skipOnboarding() {
   if (!name && currentProfile?.name) name = currentProfile.name;
   if (!name && currentUser?.email) name = currentUser.email.split('@')[0];
   var workplace = (document.getElementById('ob-workplace')?.value || '').trim();
-  if (!name) { showWarningToast('Skriv dit navn først'); return; }
+  if (!name) { showWarningToast(t('ob_enter_name')); return; }
   if (!workplace) { showWarningToast(t('val_add_workplace')); return; }
 
   try {
@@ -676,7 +676,7 @@ function epRenderCategories() {
       '<span class="tag-cat-dot" style="background:' + info.color + '"></span>' +
       '<span class="tag-cat-title">' + info.label + '</span>' +
       '</div>' +
-      '<div class="ob-tag-section-label recommended">For dig</div>' +
+      '<div class="ob-tag-section-label recommended">'+t('ob_for_you')+'</div>' +
       '<div class="ob-cat-tags">' +
       recommended.map(function(t) {
         var sel = epSelectedTags.indexOf(t) >= 0;
@@ -697,7 +697,7 @@ function epRenderCategories() {
       }).join('') +
       '</div>' +
       (otherTags.length > 8 ? '<button type="button" class="ob-show-more" onclick="epToggleExpand(\'' + cat + '\')" style="color:' + info.color + '">' +
-        (expanded ? '− Vis færre' : '+ Vis alle ' + otherTags.length + ' andre') + '</button>' : '') : '') +
+        (expanded ? t('ob_show_fewer') : t('ob_show_all', {n: otherTags.length})) + '</button>' : '') : '') +
       '<div class="ob-cat-custom"><div class="ob-cat-custom-row">' +
       '<input class="ob-cat-custom-input" placeholder="" data-t-placeholder="ob_custom_tag_ph" ' +
       'onkeydown="epCustomTag(event,\'' + cat + '\',this)" data-cat="' + cat + '">' +
@@ -721,14 +721,14 @@ function epCustomTag(event, cat, input) {
   var val = input.value.trim();
   if (!val || val.length < 2 || val.length > 40) { input.value = ''; return; }
   var lower = val.toLowerCase();
-  if (OB_BLOCKED_WORDS.some(function(w) { return lower.includes(w); })) { showWarningToast('Det tag er ikke tilladt'); input.value = ''; return; }
+  if (OB_BLOCKED_WORDS.some(function(w) { return lower.includes(w); })) { showWarningToast(t('ob_tag_blocked')); input.value = ''; return; }
   var exists = ALL_TAGS.find(function(t) { return t.label.toLowerCase() === lower; });
   if (exists) { epAddTag(exists.label, exists.category); input.value = ''; epRenderCategories(); return; }
   var formatted = val.charAt(0).toUpperCase() + val.slice(1);
   epAddTag(formatted, cat);
   input.value = '';
   epRenderCategories();
-  showToast('Tag tilføjet til din profil');
+  showToast(t('ob_tag_added'));
   if (typeof sb !== 'undefined' && currentUser) {
     sb.from('custom_tags').select('id,usage_count').eq('label', formatted).maybeSingle()
       .then(function(res) {
@@ -757,7 +757,7 @@ async function saveOnboarding() {
     }
     await loadCurrentProfile();
     localStorage.setItem('bubble_welcomed', '1');
-    showSuccessToast('Velkommen til Bubble!');
+    showSuccessToast(t('ob_welcome'));
     trackEvent('onboarding_complete', { rerun: _reRunningOnboarding });
     var wasRerun = _reRunningOnboarding;
     _reRunningOnboarding = false;
@@ -945,11 +945,11 @@ function etBuildBody(s) {
     h += '</div>';
   }
   if (!etInputVis[s.id]) {
-    h += '<button style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.3rem 0.75rem;border-radius:99px;font-size:0.7rem;font-weight:600;cursor:pointer;border:1.5px dashed rgba(100,180,230,0.4);color:rgba(100,180,230,0.9);background:transparent;font-family:inherit" onclick="etShowIn(\''+s.id+'\')"><span style="font-size:0.9rem;line-height:1">+</span> Tilføj eget tag</button>';
+    h += '<button style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.3rem 0.75rem;border-radius:99px;font-size:0.7rem;font-weight:600;cursor:pointer;border:1.5px dashed rgba(100,180,230,0.4);color:rgba(100,180,230,0.9);background:transparent;font-family:inherit" onclick="etShowIn(\''+s.id+'\')"><span style="font-size:0.9rem;line-height:1">+</span> '+t('ob_add_own_tag')+'</button>';
   } else {
     h += '<div style="display:flex;gap:0.35rem;align-items:center;margin-top:0.4rem">' +
-      '<input id="etci-'+s.id+'" style="flex:1;padding:0.35rem 0.65rem;border-radius:99px;font-size:0.72rem;font-family:inherit;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);outline:none;color:rgba(255,255,255,0.9);min-width:0" placeholder="Skriv dit tag..." maxlength="40" oninput="etCiChk(\''+s.id+'\')" onkeydown="etCiKey(event,\''+s.id+'\')">' +
-      '<button id="etci-btn-'+s.id+'" disabled style="padding:0.35rem 0.75rem;border-radius:99px;font-size:0.7rem;font-weight:700;font-family:inherit;border:none;background:'+s.color+';color:white;cursor:pointer;opacity:0.35" onclick="etConfirmC(\''+s.id+'\')">Tilføj</button>' +
+      '<input id="etci-'+s.id+'" style="flex:1;padding:0.35rem 0.65rem;border-radius:99px;font-size:0.72rem;font-family:inherit;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);outline:none;color:rgba(255,255,255,0.9);min-width:0" placeholder="'+t('ob_tag_placeholder')+'" maxlength="40" oninput="etCiChk(\''+s.id+'\')" onkeydown="etCiKey(event,\''+s.id+'\')">' +
+      '<button id="etci-btn-'+s.id+'" disabled style="padding:0.35rem 0.75rem;border-radius:99px;font-size:0.7rem;font-weight:700;font-family:inherit;border:none;background:'+s.color+';color:white;cursor:pointer;opacity:0.35" onclick="etConfirmC(\''+s.id+'\')">'+t('misc_add')+'</button>' +
       '<button style="padding:0.35rem 0.6rem;border-radius:99px;font-size:0.7rem;font-weight:600;font-family:inherit;border:0.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.06);cursor:pointer;color:rgba(255,255,255,0.4)" onclick="etHideIn(\''+s.id+'\')">×</button>' +
     '</div>';
   }
@@ -958,8 +958,8 @@ function etBuildBody(s) {
   var n = etCountSec(s.id);
   var hasSelected = n > 0;
   h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0 0.8rem;margin-top:0.1rem">' +
-    '<div style="font-size:0.72rem;font-weight:600;color:'+(hasSelected?'rgb(100,180,230)':'rgba(255,255,255,0.55)')+'">'+n+' valgt</div>' +
-    '<button style="padding:0.38rem 1rem;border-radius:99px;font-size:0.72rem;font-weight:700;font-family:inherit;border:0.5px solid rgba(100,180,230,0.25);cursor:pointer;background:rgba(100,180,230,0.18);color:rgba(255,255,255,0.95)" onclick="etCloseSec(\''+s.id+'\')">Gem &amp; luk ✓</button>' +
+    '<div style="font-size:0.72rem;font-weight:600;color:'+(hasSelected?'rgb(100,180,230)':'rgba(255,255,255,0.55)')+'">'+n+' '+t('ob_selected')+'</div>' +
+    '<button style="padding:0.38rem 1rem;border-radius:99px;font-size:0.72rem;font-weight:700;font-family:inherit;border:0.5px solid rgba(100,180,230,0.25);cursor:pointer;background:rgba(100,180,230,0.18);color:rgba(255,255,255,0.95)" onclick="etCloseSec(\''+s.id+'\')">'+t('ob_save_close')+'</button>' +
   '</div>';
   return h;
 }
@@ -1116,7 +1116,7 @@ function etToggleTray(){
   if(!drawer)return;
   var open=drawer.style.display!=='none';
   drawer.style.display=open?'none':'flex';
-  if(btn)btn.textContent=open?'Se alle':'Luk';
+  if(btn)btn.textContent=open?t('ps_see_all'):t('misc_close');
   if(chev)chev.style.transform=open?'':'rotate(180deg)';
   if(!open)etUpdateUI(); // re-render drawer contents
 }
