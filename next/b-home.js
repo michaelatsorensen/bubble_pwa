@@ -260,10 +260,10 @@ function updateFilterChipStyle() {
   if (firstChip) {
     var countSpan = firstChip.querySelector('#radar-count-home') || firstChip.querySelector('span');
     if (isLive) {
-      firstChip.childNodes[0].textContent = 'Alle deltagere ';
+      firstChip.childNodes[0].textContent = t('home_all_attendees') + ' ';
       if (countSpan) countSpan.textContent = '· ' + (appMode.live.memberCount || 0);
     } else {
-      firstChip.childNodes[0].textContent = 'Alle ';
+      firstChip.childNodes[0].textContent = t('home_all') + ' ';
     }
   }
   chips.querySelectorAll('.radar-filter-chip').forEach(function(c) {
@@ -910,7 +910,7 @@ async function _showSavedContactModal(contactId) {
         (subtitle ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.3rem">' + escHtml(subtitle) + '</div>' : '') +
         '<div style="display:flex;align-items:center;justify-content:center;gap:0.4rem;margin-bottom:1.25rem">' +
           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
-          '<span style="font-size:0.78rem;font-weight:600;color:#1A9E8E">Kontakt gemt</span>' +
+          '<span style="font-size:0.78rem;font-weight:600;color:#1A9E8E">' + t('home_contact_saved') + '</span>' +
         '</div>' +
         '<button id="sc-view-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:0.5px solid rgba(100,180,230,0.25);background:rgba(100,180,230,0.18);color:rgba(255,255,255,0.95);font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">Se profil →</button>' +
         '<button id="sc-close-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_ok') + '</button>' +
@@ -949,10 +949,10 @@ function showWelcomeCard() {
       '<button onclick="dismissWelcomeCard()" style="position:absolute;top:0.6rem;right:0.7rem;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);font-size:1rem;line-height:1;padding:0.2rem;font-family:inherit" aria-label="Luk">×</button>' +
       '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">' +
         '<div style="width:28px;height:28px;color:rgb(100,180,230);flex-shrink:0">' + ico('bubble') + '</div>' +
-        '<div style="font-size:0.88rem;font-weight:800;color:rgba(255,255,255,0.95)">Velkommen til Bubble' + (currentProfile.name ? ', ' + currentProfile.name.split(' ')[0] : '') + '!</div>' +
+        '<div style="font-size:0.88rem;font-weight:800;color:rgba(255,255,255,0.95)">' + t('home_welcome') + (currentProfile.name ? ', ' + currentProfile.name.split(' ')[0] : '') + '!</div>' +
       '</div>' +
       '<div style="font-size:0.78rem;color:rgba(255,255,255,0.7);line-height:1.55;margin-bottom:0.75rem">' +
-        'Bubble matcher dig med relevante mennesker — baseret på hvem du er og hvad du søger. Jo mere du udfylder, jo bedre og mere præcise matches får du i radaren.' +
+        t('home_welcome_desc') +
       '</div>' +
       '<div style="display:flex;gap:0.5rem;align-items:center">' +
         '<button onclick="dismissWelcomeCard();goTo(\'screen-profile\');setTimeout(function(){profSwitchTab(\'dashboard\')},200)" style="flex:1;padding:0.55rem;border-radius:10px;font-size:0.78rem;font-weight:700;font-family:inherit;cursor:pointer;background:rgba(100,180,230,0.18);border:0.5px solid rgba(100,180,230,0.25);color:rgba(255,255,255,0.95)">Udfyld profil →</button>' +
@@ -1028,7 +1028,7 @@ function _updateProfileStrengthBar(strength) {
   if (bar) bar.style.width = strength + '%';
   if (pct) pct.textContent = strength + '%';
   if (lbl) {
-    if (strength >= 80) { lbl.textContent = 'Stærk profil'; lbl.style.color = '#1A9E8E'; }
+    if (strength >= 80) { lbl.textContent = t('home_strong_profile'); lbl.style.color = '#1A9E8E'; }
     else if (strength >= 50) { lbl.textContent = 'God profil'; lbl.style.color = 'var(--accent)'; }
     else if (strength >= 25) { lbl.textContent = 'Basis profil'; lbl.style.color = 'var(--gold)'; }
     else { lbl.textContent = 'Ny profil'; lbl.style.color = 'var(--accent2)'; }
@@ -1050,10 +1050,10 @@ function openNextProfileSetupSheet() {
 function openSetupWorkplaceSheet() {
   var { overlay, sheet } = bbDynOpen();
   sheet.innerHTML = '<div style="padding:1.2rem 1rem">' +
-    '<div style="font-size:1rem;font-weight:800;margin-bottom:0.3rem;color:rgba(255,255,255,0.95)">Hvor arbejder du?</div>' +
-    '<div style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin-bottom:1rem">Andre kan se din arbejdsplads på din profil</div>' +
-    '<input class="input" id="setup-workplace-input" maxlength="80" placeholder="f.eks. Danfoss, SDU, selvstændig..." value="' + escHtml(currentProfile?.workplace || '') + '">' +
-    '<button class="btn-primary" onclick="saveSetupWorkplace()" style="width:100%;margin-top:0.8rem">Gem</button>' +
+    '<div style="font-size:1rem;font-weight:800;margin-bottom:0.3rem;color:rgba(255,255,255,0.95)">' + t('home_where_work') + '</div>' +
+    '<div style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin-bottom:1rem">' + t('home_workplace_visible') + '</div>' +
+    '<input class="input" id="setup-workplace-input" maxlength="80" placeholder="' + t('home_workplace_ph') + '" value="' + escHtml(currentProfile?.workplace || '') + '">' +
+    '<button class="btn-primary" onclick="saveSetupWorkplace()" style="width:100%;margin-top:0.8rem">' + t('ps_save') + '</button>' +
     '</div>';
   setTimeout(function() { var el = document.getElementById('setup-workplace-input'); if (el) el.focus(); }, 200);
 }
@@ -1273,7 +1273,7 @@ function showDartboardEmpty(filter) {
   var div = document.createElement('div');
   div.className = 'dartboard-empty';
   div.innerHTML = '<div class="de-title">' + msg + '</div>' +
-    '<div class="de-sub">Tilføj flere tags for at finde folk der matcher dine specifikke interesser</div>' +
+    '<div class="de-sub">' + t('home_add_tags_hint') + '</div>' +
     '<div class="de-link" onclick="' + linkFn + '">' + link + '</div>';
   container.appendChild(div);
 }
@@ -1327,7 +1327,7 @@ function bbAcceptInvite(inviteId, fromUserId) {
   if (!card) return;
   bbConfirm(card, {
     label: 'Join denne boble?',
-    confirmText: 'Ja, join',
+    confirmText: t('home_yes_join'),
     confirmClass: 'bb-confirm-btn-accept',
     onConfirm: "bbConfirmAccept('" + inviteId + "','" + fromUserId + "')"
   });
@@ -1340,7 +1340,7 @@ async function bbConfirmAccept(inviteId, fromUserId) {
     if (result.ok) {
       var invCard = document.getElementById('bb-inv-' + inviteId);
       if (invCard) { invCard.style.transition = 'opacity 0.2s'; invCard.style.opacity = '0'; setTimeout(function() { invCard.remove(); }, 200); }
-      showSuccessToast('Du er nu med i boblen!');
+      showSuccessToast(t('home_joined_bubble'));
       if (inv?.bubble_id) {
         _bbAfterJoin(inv.bubble_id);
         loadMyBubbles();
@@ -1354,8 +1354,8 @@ function bbDeclineInvite(inviteId) {
   var card = document.getElementById('bb-inv-' + inviteId);
   if (!card) return;
   bbConfirm(card, {
-    label: 'Afvis invitation?',
-    confirmText: 'Ja, afvis',
+    label: t('home_decline_invite_q'),
+    confirmText: t('home_yes_decline'),
     confirmClass: 'bb-confirm-btn-danger',
     onConfirm: "bbConfirmDecline('" + inviteId + "')"
   });
@@ -1457,7 +1457,7 @@ async function _bbLoadPendingInvites() {
       html += '</div>';
       html += '<div style="display:flex;gap:0.3rem;flex-shrink:0">';
       html += '<button class="btn-sm" style="padding:0.3rem 0.6rem;font-size:0.65rem;font-weight:600;background:var(--cta-bg);color:var(--cta-text);border:1px solid var(--cta-border);border-radius:var(--radius-xs);cursor:pointer;font-family:inherit" onclick="event.stopPropagation();bbAcceptInvite(\'' + inv.id + '\',\'' + inv.from_user_id + '\')">Accepter</button>';
-      html += '<button class="btn-sm btn-ghost" style="padding:0.3rem 0.5rem;font-size:0.65rem" onclick="event.stopPropagation();bbDeclineInvite(\'' + inv.id + '\',this)">Afvis</button>';
+      html += '<button class="btn-sm btn-ghost" style="padding:0.3rem 0.5rem;font-size:0.65rem" onclick="event.stopPropagation();bbDeclineInvite(\'' + inv.id + '\',this)">' + t('bc_reject') + '</button>';
       html += '</div></div></div>';
     });
     html += '</div>';
@@ -1495,7 +1495,7 @@ async function loadMyNetworks() {
 
     // 2. Fetch my bubbles
     var { data: allMyBubbles, error: fetchErr } = await sb.from('bubbles').select('*, bubble_members(count)').in('id', myIds);
-    if (fetchErr) { logError('loadMyNetworks:fetch', fetchErr); showRetryState('bb-net-list', 'loadMyNetworks', 'Kunne ikke hente netværk'); return; }
+    if (fetchErr) { logError('loadMyNetworks:fetch', fetchErr); showRetryState('bb-net-list', 'loadMyNetworks', t('home_load_network_fail')); return; }
     if (_navVersion !== myNav) return;
     var allMy = allMyBubbles || [];
     _allMyBubblesCache = allMy;
@@ -1838,11 +1838,11 @@ async function loadMyNetworks() {
     });
 
     if (!html) {
-      html = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke med i nogen netv\u00E6rk endnu</div><div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:center"><button class="btn-primary" onclick="bbSwitchTab(\'explore\')" style="font-size:0.82rem;padding:0.6rem 1.2rem">Opdag netv\u00E6rk</button><button class="btn-secondary" onclick="bbSwitchSub(\'evt\')" style="font-size:0.82rem;padding:0.6rem 1.2rem">Se events</button></div></div>';
+      html = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">' + t('home_no_networks') + '</div><div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:center"><button class="btn-primary" onclick="bbSwitchTab(\'explore\')" style="font-size:0.82rem;padding:0.6rem 1.2rem">' + t('home_discover_networks') + '</button><button class="btn-secondary" onclick="bbSwitchSub(\'evt\')" style="font-size:0.82rem;padding:0.6rem 1.2rem">' + t('home_see_events') + '</button></div></div>';
     }
     list.innerHTML = html;
     _renderSubTabDots();
-  } catch(e) { logError("loadMyNetworks", e); showRetryState('bb-net-list', 'loadMyNetworks', 'Kunne ikke hente netv\u00E6rk'); }
+  } catch(e) { logError("loadMyNetworks", e); showRetryState('bb-net-list', 'loadMyNetworks', t('home_load_network_fail')); }
 }
 
 function bbTreeToggle(accId) {
@@ -1951,7 +1951,7 @@ async function loadMyEvents() {
       html += '</div>';
     }
     list.innerHTML = html;
-  } catch(e) { logError("loadMyEvents", e); showRetryState('bb-evt-list', 'loadMyEvents', 'Kunne ikke hente events'); }
+  } catch(e) { logError("loadMyEvents", e); showRetryState('bb-evt-list', 'loadMyEvents', t('home_load_events_fail')); }
 }
 
 function _bbEventCard(e, parentMap, gpMap, isPast) {
@@ -2123,7 +2123,7 @@ function bubbleCard(b, joined) {
   // Child counts (Opdag tab) — replace location/members with breakdown
   if (b._childNetCount > 0 || b._childEventCount > 0) {
     var childParts = [];
-    if (b._childNetCount > 0) childParts.push(b._childNetCount + ' netværk');
+    if (b._childNetCount > 0) childParts.push(b._childNetCount + ' ' + t('bb_networks_count'));
     if (b._childEventCount > 0) childParts.push(b._childEventCount + ' event' + (b._childEventCount > 1 ? 's' : ''));
     metaParts = childParts;
   }
@@ -2181,13 +2181,13 @@ function hsSavePrefs(prefs) {
 
 function hsUpdatePreview() {
   var prefs = hsGetPrefs();
-  var labels = { live: 'Live', saved: 'Gemte', bubbles: 'Bobler', notifs: 'Notif.', radar: 'Radar' };
+  var labels = { live: t('home_live'), saved: t('pf_tab_saved'), bubbles: t('nav_bubbles'), notifs: 'Notif.', radar: 'Radar' };
   var active = [];
   ['live','saved','bubbles','notifs','radar'].forEach(function(key) {
     if (prefs[key]) active.push(labels[key]);
   });
   var el = document.getElementById('hs-preview-text');
-  if (el) el.textContent = active.length > 0 ? 'Viser: ' + active.join(' \u00b7 ') : 'Alt er slået fra';
+  if (el) el.textContent = active.length > 0 ? t('home_showing') + active.join(' \u00b7 ') : t('home_all_off');
 }
 
 
@@ -2428,7 +2428,7 @@ function _doRenderHomeDartboard() {
     } else {
       var ini = (currentProfile && currentProfile.name)
         ? currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase()
-        : 'DU';
+        : t('home_you_caps');
       ce.textContent = ini;
     }
     // Re-trigger dripCenter animation ved hver render
@@ -2638,7 +2638,7 @@ function renderHomeTrayList() {
   if (subtitle) subtitle.textContent = sorted.length + ' personer';
 
   if (sorted.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:rgba(255,255,255,0.45)">Ingen matches' + (_homeRadarFilter !== 'all' ? ' i denne kategori' : '') + '</div>';
+    list.innerHTML = '<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:rgba(255,255,255,0.45)">' + t('home_no_matches') + (_homeRadarFilter !== 'all' ? ' ' + t('home_in_category') : '') + '</div>';
     return;
   }
 
