@@ -13,38 +13,38 @@
 <meta name="theme-color" content="#170F34">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=81924">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81924">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81924">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81924">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81924">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81924">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81924">
+<link rel="manifest" href="manifest.json?v=81925">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81925">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81925">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81925">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81925">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81925">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81925">
 
-<link rel="stylesheet" href="app.css?v=81924">
+<link rel="stylesheet" href="app.css?v=81925">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous" defer></script>
-<script src="bubble-icons.js?v=81924" defer></script>
-<script src="tag-data.js?v=81924" defer></script>
-<script src="b-i18n.js?v=81924" defer></script>
-<script src="b-config.js?v=81924" defer></script>
-<script src="b-utils.js?v=81924" defer></script>
-<script src="b-guides.js?v=81924" defer></script>
-<script src="b-auth.js?v=81924" defer></script>
-<script src="b-home.js?v=81924" defer></script>
-<script src="b-bubbles.js?v=81924" defer></script>
-<script src="b-profile.js?v=81924" defer></script>
-<script src="b-radar.js?v=81924" defer></script>
-<script src="b-messages.js?v=81924" defer></script>
-<script src="b-realtime.js?v=81924" defer></script>
-<script src="b-onboarding.js?v=81924" defer></script>
-<script src="b-chat.js?v=81924" defer></script>
-<script src="b-notifications.js?v=81924" defer></script>
-<script src="b-live.js?v=81924" defer></script>
-<script src="b-admin.js?v=81924" defer></script>
-<script src="b-navigation.js?v=81924" defer></script>
-<script src="b-boot.js?v=81924" defer></script>
+<script src="bubble-icons.js?v=81925" defer></script>
+<script src="tag-data.js?v=81925" defer></script>
+<script src="b-i18n.js?v=81925" defer></script>
+<script src="b-config.js?v=81925" defer></script>
+<script src="b-utils.js?v=81925" defer></script>
+<script src="b-guides.js?v=81925" defer></script>
+<script src="b-auth.js?v=81925" defer></script>
+<script src="b-home.js?v=81925" defer></script>
+<script src="b-bubbles.js?v=81925" defer></script>
+<script src="b-profile.js?v=81925" defer></script>
+<script src="b-radar.js?v=81925" defer></script>
+<script src="b-messages.js?v=81925" defer></script>
+<script src="b-realtime.js?v=81925" defer></script>
+<script src="b-onboarding.js?v=81925" defer></script>
+<script src="b-chat.js?v=81925" defer></script>
+<script src="b-notifications.js?v=81925" defer></script>
+<script src="b-live.js?v=81925" defer></script>
+<script src="b-admin.js?v=81925" defer></script>
+<script src="b-navigation.js?v=81925" defer></script>
+<script src="b-boot.js?v=81925" defer></script>
   
 
 
@@ -269,7 +269,7 @@
       </div>
       <div class="input-group">
         <div class="input-label" data-t="auth_signup_password_confirm">Bekræft adgangskode</div>
-        <input class="input" type="password" id="signup-password-confirm" placeholder="Gentag adgangskode" autocomplete="new-password" onfocus="setTimeout(function(){var el=document.getElementById('signup-password-confirm');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},400)">
+        <input class="input" type="password" id="signup-password-confirm" data-t-placeholder="auth_placeholder_password_confirm" placeholder="Gentag adgangskode" autocomplete="new-password" onfocus="setTimeout(function(){var el=document.getElementById('signup-password-confirm');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},400)">
       </div>
       <button class="btn-primary" onclick="handleSignup()" data-t="auth_signup_btn">Opret konto</button>
       <button class="btn-secondary auth-btn-tertiary" onclick="switchToLogin()" data-t="auth_has_account">Har allerede en konto</button>
@@ -316,34 +316,34 @@
       <!-- QR contact banner -->
       <div id="ob-qr-contact-banner" style="display:none;align-items:center;gap:0.5rem;padding:0.6rem 0.75rem;border-radius:12px;background:rgba(26,158,142,0.1);border:0.5px solid rgba(26,158,142,0.2);margin-bottom:0.8rem">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
-        <div style="font-size:0.78rem;color:#1A9E8E;font-weight:600"><span id="ob-qr-contact-name">Kontakt</span> gemmes automatisk</div>
+        <div style="font-size:0.78rem;color:#1A9E8E;font-weight:600"><span id="ob-qr-contact-name">Kontakt</span> <span data-t="ob_saved_auto">gemmes automatisk</span></div>
       </div>
 
       <div style="text-align:center;margin-bottom:1.2rem">
         <img src="bubble-logo-splash.png" alt="bubble" style="height:22px;width:auto;margin-bottom:1rem">
-        <div style="font-size:1.5rem;font-weight:800;margin-bottom:0.2rem;color:rgba(255,255,255,0.95)">Velkommen!</div>
-        <div style="font-size:0.85rem;color:rgba(255,255,255,0.4)">To hurtige felter og du er klar</div>
+        <div style="font-size:1.5rem;font-weight:800;margin-bottom:0.2rem;color:rgba(255,255,255,0.95)" data-t="ob_min_welcome">Velkommen!</div>
+        <div style="font-size:0.85rem;color:rgba(255,255,255,0.4)" data-t="ob_two_fields">To hurtige felter og du er klar</div>
       </div>
 
       <div class="input-group">
-        <div class="input-label" style="color:rgba(255,255,255,0.5)">Navn *</div>
+        <div class="input-label" style="color:rgba(255,255,255,0.5)" data-t="ob_name_label">Navn *</div>
         <input class="input ob-dark-input" id="ob-name" maxlength="60" placeholder="Dit fulde navn" data-t-placeholder="ob_name_ph" autocomplete="name" oninput="obCheckProgress()">
       </div>
 
       <div class="input-group">
-        <div class="input-label" style="color:rgba(255,255,255,0.5)">Arbejdsplads *</div>
+        <div class="input-label" style="color:rgba(255,255,255,0.5)" data-t="ob_workplace_label">Arbejdsplads *</div>
         <input class="input ob-dark-input" id="ob-workplace" maxlength="80" placeholder="f.eks. Danfoss, SDU, selvstændig..." data-t-placeholder="ob_workplace_ph" oninput="obCheckProgress()" onfocus="setTimeout(function(){var el=document.getElementById('ob-consent-row');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},400)">
       </div>
 
       <label class="ob-consent-row" id="ob-consent-row" onclick="obToggleConsent()" style="background:rgba(100,180,230,0.06);border:0.5px solid rgba(100,180,230,0.12)">
         <div class="ob-consent-check" id="ob-consent-check" style="border-color:rgba(100,180,230,0.5)"></div>
-        <span class="ob-consent-text" style="color:rgba(255,255,255,0.5)">Jeg accepterer Bubble's <a href="#" onclick="event.stopPropagation();showTerms()" style="color:rgba(100,180,230,0.8)">betingelser</a> og <a href="#" onclick="event.stopPropagation();showTerms()" style="color:rgba(100,180,230,0.8)">privatlivspolitik</a></span>
+        <span class="ob-consent-text" style="color:rgba(255,255,255,0.5)"><span data-t="ob_consent_pre">Jeg accepterer Bubble's</span> <a href="#" onclick="event.stopPropagation();showTerms()" style="color:rgba(100,180,230,0.8)" data-t="ob_terms_link">betingelser</a> <span data-t="ob_consent_and">og</span> <a href="#" onclick="event.stopPropagation();showTerms()" style="color:rgba(100,180,230,0.8)" data-t="ob_privacy_link">privatlivspolitik</a></span>
       </label>
 
-      <button class="btn-primary ob-dark-btn" id="ob-save-btn" onclick="saveOnboarding()" style="margin-top:0.8rem;background:rgba(100,180,230,0.18);border:0.5px solid rgba(100,180,230,0.25);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:rgba(255,255,255,0.9);box-shadow:none" disabled>Kom i gang →</button>
-      <div style="text-align:center;font-size:0.72rem;color:rgba(255,255,255,0.3);margin-top:0.5rem">Du kan tilføje interesser, titel og mere i din profil bagefter</div>
+      <button class="btn-primary ob-dark-btn" id="ob-save-btn" onclick="saveOnboarding()" style="margin-top:0.8rem;background:rgba(100,180,230,0.18);border:0.5px solid rgba(100,180,230,0.25);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:rgba(255,255,255,0.9);box-shadow:none" disabled data-t="ob_get_started">Kom i gang →</button>
+      <div style="text-align:center;font-size:0.72rem;color:rgba(255,255,255,0.3);margin-top:0.5rem" data-t="ob_add_more_later">Du kan tilføje interesser, titel og mere i din profil bagefter</div>
       <div style="margin-top:1.5rem;text-align:center">
-        <button type="button" onclick="abortOnboarding()" style="background:none;border:none;color:rgba(255,255,255,0.25);font-size:0.7rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.5rem;opacity:0.6">Afbryd og nulstil</button>
+        <button type="button" onclick="abortOnboarding()" style="background:none;border:none;color:rgba(255,255,255,0.25);font-size:0.7rem;font-family:'Figtree',sans-serif;cursor:pointer;padding:0.5rem;opacity:0.6" data-t="ob_abort_reset">Afbryd og nulstil</button>
       </div>
     </div>
 
@@ -357,7 +357,7 @@
     <div style="text-align:center;margin-bottom:2rem">
       <div style="width:56px;height:56px;margin:0 auto 0.75rem;color:rgba(100,180,230,0.8)"><svg class="ico" style="width:56px;height:56px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg></div>
       <div style="font-size:1.8rem;font-weight:900;margin-bottom:0.35rem;color:rgba(255,255,255,0.95)" data-t="ob_welcome">Velkommen til Bubble!</div>
-      <div style="font-size:0.9rem;color:rgba(255,255,255,0.4);max-width:320px;margin:0 auto">Lad os komme i gang — her er tre ting du kan gøre</div>
+      <div style="font-size:0.9rem;color:rgba(255,255,255,0.4);max-width:320px;margin:0 auto" data-t="ob_welcome_sub">Lad os komme i gang — her er tre ting du kan gøre</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:0.6rem;max-width:380px;margin:0 auto;width:100%">
       <!-- Step 1 -->
