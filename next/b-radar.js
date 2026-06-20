@@ -52,9 +52,9 @@ function renderRadarList() {
   var fil = filtered.slice(pageStart, pageStart + RADAR_PAGE_SIZE);
 
   if (fil.length === 0) {
-    el.innerHTML = '<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:var(--muted)">Ingen profiler' +
+    el.innerHTML = '<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:var(--muted)">' + t('radar_no_profiles') +
       (_radarFilter !== 'all' ? ' med dette match-niveau' : ' i n\u00e6rheden') +
-      (radarDismissed.length > 0 ? '<br><button class="btn-sm btn-ghost" onclick="radarResetDismissed()" style="margin-top:0.5rem;font-size:0.7rem">Vis alle igen</button>' : '') + '</div>';
+      (radarDismissed.length > 0 ? '<br><button class="btn-sm btn-ghost" onclick="radarResetDismissed()" style="margin-top:0.5rem;font-size:0.7rem">' + t('radar_show_all_again') + '</button>' : '') + '</div>';
     if (emptyEl) emptyEl.style.display = 'none';
     var pag = document.getElementById('radar-pagination');
     if (pag) pag.style.display = 'none';
@@ -83,7 +83,7 @@ function renderRadarList() {
           (isA ? '' : '<div class="fs-072 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml([p.title, p.workplace].filter(Boolean).join(' \u00B7 ')) + '</div>') +
         '</div>' +
         matchBadge +
-        '<button class="radar-list-remove" onclick="event.stopPropagation();radarConfirmRemove(\'' + p.id + '\',\'' + escHtml(name).replace(/'/g,'') + '\')" title="Fjern">' + icon('x') + '</button>' +
+        '<button class="radar-list-remove" onclick="event.stopPropagation();radarConfirmRemove(\'' + p.id + '\',\'' + escHtml(name).replace(/'/g,'') + '\')" title="' + t('misc_remove') + '">' + icon('x') + '</button>' +
       '</div>' +
       (bubbleInfo ? '<div style="padding-left:3.2rem;margin-top:0.15rem">' + bubbleInfo + '</div>' : '') +
     '</div>';
@@ -108,9 +108,9 @@ function radarConfirmRemove(uid, name) {
   var confirm = document.createElement('div');
   confirm.className = 'remove-confirm';
   confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:10px;gap:0.5rem';
-  confirm.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Fjern kontakt?</span>' +
+  confirm.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">' + t('radar_remove_contact_q') + '</span>' +
     '<div style="display:flex;gap:0.3rem">' +
-      '<button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="event.stopPropagation();radarDoRemove()">Fjern</button>' +
+      '<button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="event.stopPropagation();radarDoRemove()">' + t('misc_remove') + '</button>' +
       '<button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="event.stopPropagation();radarCancelRemove()">Annuller</button>' +
     '</div>';
   card.appendChild(confirm);
@@ -252,7 +252,7 @@ async function openRadarPerson(userId) {
         sb.from('bubbles').select('id, name, type').in('id', sharedIds).then(function(res) {
           var bubbles = res.data || [];
           if (bubbles.length === 0) return;
-          sharedEl.innerHTML = '<div style="font-size:0.6rem;font-weight:600;color:rgba(255,255,255,0.55);margin-bottom:3px">F\u00e6lles bobler \u00B7 ' + bubbles.length + '</div>' +
+          sharedEl.innerHTML = '<div style="font-size:0.6rem;font-weight:600;color:rgba(255,255,255,0.55);margin-bottom:3px">' + t('ps_public_bubbles') + ' \u00B7 ' + bubbles.length + '</div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:4px">' +
             bubbles.slice(0, 5).map(function(b) {
               var isEvt = b.type === 'event' || b.type === 'live';
