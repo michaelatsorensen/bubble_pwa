@@ -2383,6 +2383,18 @@ function _homeDrawProxRings(canvas) {
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx,cy,zones[0].r*maxR,0,Math.PI*2); ctx.fill();
 }
 
+// Stabil vinkel + farve pr. person (tildelt EN gang) — saa dots glider rent
+// ind/ud i stedet for at teleportere naar den filtrerede liste skifter index.
+var _homeProxMeta = {};
+var _homeProxCounter = 0;
+function _homeProxMetaFor(id) {
+  if (!_homeProxMeta[id]) {
+    _homeProxMeta[id] = { ang: _homeProxCounter * 2.399, col: _homeProxCounter };
+    _homeProxCounter++;
+  }
+  return _homeProxMeta[id];
+}
+
 function renderHomeDartboard() {
   // Debounce: koalescer alle kald inden for samme event loop tick til ét render.
   // Løser dobbelt-render race condition mellem loadLiveBanner + loadHomeDartboardData.
@@ -2476,27 +2488,91 @@ function _doRenderHomeDartboard() {
     return {x:tx,y:ty};
   }
 
-  var out = '';
+    // ── Magnetisk diff-render: ikke-match fises ud, stayers glider, nye popper ind ──
+  // Robust: nye dots skabes SYNLIGE paa deres plads (scale-pop), saa selv hvis en
+  // animation-frame fejler er prikken der. animation:none melder dem ud af dripIn.
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var E = reduce
+    ? { exit:'linear', exitT:0, enter:'linear', enterT:0, move:'linear', moveT:0 }
+    : { exit:'cubic-bezier(0.4,0,0.6,1)', exitT:650, enter:'cubic-bezier(0.25,0.9,0.4,1)', enterT:650, move:'cubic-bezier(0.4,0,0.2,1)', moveT:600 };
+
+  var existing = {};
+  var exDots = av.querySelectorAll('.prox-dot');
+  for (var ed = 0; ed < exDots.length; ed++) existing[exDots[ed].getAttribute('data-id')] = exDots[ed];
+
+  var visible = {};
   for (var i = 0; i < profiles.length; i++) {
     var p = profiles[i];
+    visible[p.id] = true;
+    var meta = _homeProxMetaFor(p.id);
     var matchPct = p.matchScore || 0;
     var dist = 0.14 + (1 - matchPct/100) * (0.88 - 0.14);
     var r = dist * maxR;
-    var ang = (i * 2.399) + (matchPct * 0.03);
+    var ang = meta.ang;
     var sz = matchPct >= 70 ? 38 : matchPct >= 40 ? 34 : 30;
     var ix = cx + Math.cos(ang)*r - sz/2, iy = cy + Math.sin(ang)*r - sz/2;
     var pos = findSafe(ix, iy, sz);
-    placed.push({x:pos.x,y:pos.y,s:sz});
-    var col = p.is_anon ? 'var(--glass-border)' : colors[i % colors.length];
+    placed.push({x:pos.x, y:pos.y, s:sz});
+    var tlx = pos.x, tly = pos.y;
+    var col = p.is_anon ? 'var(--glass-border)' : colors[meta.col % colors.length];
     var ini = p.is_anon ? '?' : (p.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
     var inner = (p.avatar_url && !p.is_anon)
       ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
       : ini;
-    var liveIds = appMode.checkedInIds;
-    var dripDelay = (i * 40);
-    out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+pos.x.toFixed(1)+'px;top:'+pos.y.toFixed(1)+'px;background:'+col+';font-size:'+(sz<34?'0.48':'0.55')+'rem;animation-delay:'+dripDelay+'ms" onclick="event.stopPropagation();openRadarPerson(\''+p.id+'\')" data-id="'+p.id+'">'+inner+(liveIds.indexOf(p.id)>=0?'<span class="live-dot" style="position:absolute;bottom:-1px;right:-1px;width:8px;height:8px;border:2px solid var(--bg)"></span>':'')+'</div>';
+    var isLive = appMode.checkedInIds.indexOf(p.id) >= 0;
+    var liveSpan = isLive ? '<span class="live-dot" style="position:absolute;bottom:-1px;right:-1px;width:8px;height:8px;border:2px solid var(--bg)"></span>' : '';
+
+    var el = existing[p.id];
+    if (el) {
+      // BLIVER (eller vender tilbage fra exit): glider til ny radius
+      el.removeAttribute('data-exiting');
+      el.style.animation = 'none';
+      el.style.transition = 'left ' + E.moveT + 'ms ' + E.move + ', top ' + E.moveT + 'ms ' + E.move + ', opacity ' + E.moveT + 'ms ease, transform ' + E.moveT + 'ms ' + E.move + ', width 0.3s, height 0.3s';
+      el.style.opacity = '1';
+      el.style.transform = 'none';
+      el.style.width = el.style.height = sz + 'px';
+      el.style.fontSize = (sz < 34 ? '0.48' : '0.55') + 'rem';
+      el.style.left = tlx.toFixed(1) + 'px';
+      el.style.top = tly.toFixed(1) + 'px';
+    } else {
+      // NY: skab SYNLIG paa maalet, scale-pop ind (robust mod frame-fejl)
+      el = document.createElement('div');
+      el.className = 'prox-dot';
+      el.setAttribute('data-id', p.id);
+      el.setAttribute('onclick', "event.stopPropagation();openRadarPerson('" + p.id + "')");
+      el.style.animation = 'none';
+      el.style.width = el.style.height = sz + 'px';
+      el.style.fontSize = (sz < 34 ? '0.48' : '0.55') + 'rem';
+      el.style.background = col;
+      el.innerHTML = inner + liveSpan;
+      el.style.left = tlx.toFixed(1) + 'px';
+      el.style.top = tly.toFixed(1) + 'px';
+      el.style.opacity = '1';
+      el.style.transform = 'scale(0.4)';
+      el.style.transition = 'none';
+      av.appendChild(el);
+      void el.offsetWidth;
+      el.style.transition = 'transform ' + E.enterT + 'ms ' + E.enter;
+      (function(eln){ requestAnimationFrame(function(){ eln.style.transform = 'none'; }); })(el);
+    }
   }
-  av.innerHTML = out;
+
+  // EXIT: ikke-match frastodes radialt UD over kanten
+  Object.keys(existing).forEach(function(id) {
+    if (visible[id]) return;
+    var el = existing[id];
+    el.setAttribute('data-exiting', '1');
+    var ex = (parseFloat(el.style.left) || 0) + el.offsetWidth/2;
+    var ey = (parseFloat(el.style.top) || 0) + el.offsetHeight/2;
+    var ang2 = Math.atan2(ey - cy, ex - cx);
+    var flungR = maxR + 160;
+    el.style.transition = 'left ' + E.exitT + 'ms ' + E.exit + ', top ' + E.exitT + 'ms ' + E.exit + ', opacity ' + E.exitT + 'ms ease-in, transform ' + E.exitT + 'ms ' + E.exit;
+    el.style.left = (cx + flungR*Math.cos(ang2) - el.offsetWidth/2).toFixed(1) + 'px';
+    el.style.top = (cy + flungR*Math.sin(ang2) - el.offsetHeight/2).toFixed(1) + 'px';
+    el.style.opacity = '0';
+    el.style.transform = 'scale(0.5)';
+    (function(eln){ setTimeout(function(){ if (eln && eln.parentNode && eln.getAttribute('data-exiting') === '1') eln.parentNode.removeChild(eln); }, E.exitT + 60); })(el);
+  });
 }
 
 // ══════════════════════════════════════════════════════════
