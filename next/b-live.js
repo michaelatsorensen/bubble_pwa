@@ -127,7 +127,7 @@ function openLiveCheckin() {
   var found = document.getElementById('live-scan-found');
   if (found) found.style.display = 'none';
   var status = document.getElementById('live-scan-status');
-  if (status) { status.textContent = 'Starter kamera...'; status.className = 'live-scan-status'; status.style.display = ''; }
+  if (status) { status.textContent = t('live_starting_camera'); status.className = 'live-scan-status'; status.style.display = ''; }
   startLiveCamera();
 }
 
@@ -343,7 +343,7 @@ async function startLiveCamera() {
   try {
     // Ensure jsQR is loaded
     if (typeof jsQR === 'undefined') {
-      if (status) status.textContent = 'Indlæser scanner...';
+      if (status) status.textContent = t('live_loading_scanner');
       await new Promise(function(resolve, reject) {
         var s = document.createElement('script');
         s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
@@ -357,12 +357,12 @@ async function startLiveCamera() {
     if (_liveQrStream && _liveQrStream.active) {
       video.srcObject = _liveQrStream;
       await video.play();
-      if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; }
+      if (status) { status.textContent = t('live_point_camera'); status.className = 'live-scan-status'; }
       liveQrPreviewLoop();
       return;
     }
 
-    if (status) status.textContent = 'Starter kamera...';
+    if (status) status.textContent = t('live_starting_camera');
     await initBarcodeDetector();
     _liveQrStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
@@ -371,11 +371,11 @@ async function startLiveCamera() {
     video.setAttribute('playsinline', '');
     video.setAttribute('autoplay', '');
     await video.play();
-    if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; }
+    if (status) { status.textContent = t('live_point_camera'); status.className = 'live-scan-status'; }
     liveQrPreviewLoop();
   } catch(e) {
     logError('Camera error', e);
-    if (status) { status.textContent = e.message || 'Kunne ikke starte kamera'; status.className = 'live-scan-status error'; }
+    if (status) { status.textContent = e.message || t('live_camera_fail'); status.className = 'live-scan-status error'; }
   }
   } catch(e) { logError("startLiveCamera", e); }
 }
@@ -484,8 +484,8 @@ async function liveScanConfirmPersonCheckin() {
     var result = await dbActions.checkInUser(p.bubbleId, p.profile.id);
     if (!result.ok) {
       _renderToast(t('toast_checkin_failed'), 'error');
-      if (status) { status.textContent = 'Check-in fejlede'; status.className = 'live-scan-status error'; status.style.display = ''; }
-      setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; } liveQrPreviewLoop(); }, 3000);
+      if (status) { status.textContent = t('live_checkin_failed'); status.className = 'live-scan-status error'; status.style.display = ''; }
+      setTimeout(function() { if (status) { status.textContent = t('live_point_camera'); status.className = 'live-scan-status'; } liveQrPreviewLoop(); }, 3000);
       return;
     }
     // Log scan
@@ -508,13 +508,13 @@ async function liveScanConfirmPersonCheckin() {
       setTimeout(function() { notifyChannel.unsubscribe(); }, 2000);
     } catch(e4) { console.debug('[scan] broadcast notify error:', e4); }
     // Send push notification to scanned user (backup for when app is closed)
-    sendPush(p.profile.id, 'Velkommen! ✓', 'Du er checket ind i ' + eventName, { type: 'checkin', bubble_id: p.bubbleId });
+    sendPush(p.profile.id, t('live_welcome'), t('live_checked_in_at', {event: eventName}), { type: 'checkin', bubble_id: p.bubbleId });
     // Show success
     var confirmed = document.getElementById('live-scan-confirmed');
     var cName = document.getElementById('live-scan-confirmed-name');
     var cMeta = document.getElementById('live-scan-confirmed-meta');
     if (status) status.style.display = 'none';
-    if (cName) cName.textContent = '✓ ' + (p.profile.name || 'Bruger') + ' checked ind!';
+    if (cName) cName.textContent = '✓ ' + (p.profile.name || t('pf_user')) + t('live_checked_in_suffix');
     if (cMeta) cMeta.textContent = (p.profile.title || '') + (p.profile.workplace ? ' · ' + p.profile.workplace : '');
     if (confirmed) confirmed.style.display = 'flex';
     showSuccessToast(t('toast_checked_in_name', {name: p.profile.name || 'User'}));
@@ -522,13 +522,13 @@ async function liveScanConfirmPersonCheckin() {
     if (bcBubbleId === p.bubbleId && typeof bcLoadMembers === 'function') bcLoadMembers();
     setTimeout(function() {
       if (confirmed) confirmed.style.display = 'none';
-      if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; }
+      if (status) { status.textContent = t('live_point_camera'); status.className = 'live-scan-status'; status.style.display = ''; }
       liveQrPreviewLoop();
     }, 3000);
   } catch(e) {
     errorToast('save', e);
-    if (status) { status.textContent = 'Fejl ved check-in'; status.className = 'live-scan-status error'; status.style.display = ''; }
-    setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
+    if (status) { status.textContent = t('live_checkin_error'); status.className = 'live-scan-status error'; status.style.display = ''; }
+    setTimeout(function() { if (status) { status.textContent = t('live_point_camera'); status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
   }
 }
 
@@ -536,7 +536,7 @@ async function liveScanAutoResolve(data) {
   try {
   _liveQrPending = true;
   var status = document.getElementById('live-scan-status');
-  if (status) { status.textContent = 'QR fundet — henter info...'; status.className = 'live-scan-status found'; }
+  if (status) { status.textContent = t('live_qr_found'); status.className = 'live-scan-status found'; }
   
   // ── Check if it's a guest QR ──
   if (data.includes('guest=')) {
@@ -557,15 +557,15 @@ async function liveScanAutoResolve(data) {
           var confirmed = document.getElementById('live-scan-confirmed');
           var cName = document.getElementById('live-scan-confirmed-name');
           var cMeta = document.getElementById('live-scan-confirmed-meta');
-          if (cName) cName.textContent = '✓ ' + (guest.name || 'Gæst') + ' checked ind!';
-          if (cMeta) cMeta.textContent = (guest.title || 'Gæst') + ' · via Guest QR';
+          if (cName) cName.textContent = '✓ ' + (guest.name || t('live_guest')) + t('live_checked_in_suffix');
+          if (cMeta) cMeta.textContent = (guest.title || t('live_guest')) + ' · via Guest QR';
           if (confirmed) confirmed.style.display = 'flex';
           showSuccessToast(t('toast_checked_in_name', {name: guest.name || 'Guest'}));
           _liveQrPending = false;
           // Resume scanning after 3s
           setTimeout(function() {
             if (confirmed) confirmed.style.display = 'none';
-            if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; }
+            if (status) { status.textContent = t('live_point_camera'); status.className = 'live-scan-status'; status.style.display = ''; }
             liveQrPreviewLoop();
           }, 3000);
           return;
@@ -591,9 +591,9 @@ async function liveScanAutoResolve(data) {
         if (tokenData && new Date(tokenData.expires_at) > new Date()) {
           userId = tokenData.user_id;
         } else if (tokenData) {
-          if (status) { status.textContent = 'QR-kode udløbet — bed personen åbne en ny'; status.className = 'live-scan-status error'; }
+          if (status) { status.textContent = t('live_qr_expired_ask'); status.className = 'live-scan-status error'; }
           _liveQrPending = false;
-          setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
+          setTimeout(function() { if (status) { status.textContent = t('live_point_camera'); status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
           return;
         } else {
           // Token not found in DB — try to extract user ID from URL as fallback
@@ -624,9 +624,9 @@ async function liveScanAutoResolve(data) {
             var fName = document.getElementById('live-scan-found-name');
             var fMeta = document.getElementById('live-scan-found-meta');
             var fBtn = document.getElementById('live-scan-confirm-btn');
-            if (fName) fName.textContent = scannedProfile.name || 'Bruger';
+            if (fName) fName.textContent = scannedProfile.name || t('pf_user');
             if (fMeta) fMeta.textContent = (scannedProfile.title || '') + (scannedProfile.workplace ? ' · ' + scannedProfile.workplace : '');
-            if (fBtn) { fBtn.textContent = 'Check ' + (scannedProfile.name || 'bruger').split(' ')[0] + ' ind'; fBtn.onclick = function() { liveScanConfirmPersonCheckin(); }; }
+            if (fBtn) { fBtn.textContent = t('live_check_prefix') + (scannedProfile.name || t('pf_user_lc')).split(' ')[0] + t('live_check_suffix'); fBtn.onclick = function() { liveScanConfirmPersonCheckin(); }; }
             if (found) found.style.display = 'block';
             _liveQrPending = false;
             return;
@@ -642,23 +642,23 @@ async function liveScanAutoResolve(data) {
           }
         } else {
           // userId found but no profile in DB
-          if (status) { status.textContent = 'Bruger ikke fundet i Bubble'; status.className = 'live-scan-status error'; }
+          if (status) { status.textContent = t('live_user_not_found'); status.className = 'live-scan-status error'; }
           _liveQrPending = false;
-          setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
+          setTimeout(function() { if (status) { status.textContent = t('live_point_camera'); status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
           return;
         }
       } else {
         // Could not resolve userId from QR
-        if (status) { status.textContent = 'QR-kode ikke genkendt — prøv igen'; status.className = 'live-scan-status error'; }
+        if (status) { status.textContent = t('live_qr_unrecognized_retry'); status.className = 'live-scan-status error'; }
         _liveQrPending = false;
-        setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
+        setTimeout(function() { if (status) { status.textContent = t('live_point_camera'); status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
         return;
       }
     } catch(e) {
       console.error('[scan] personal QR error:', e);
-      if (status) { status.textContent = 'Fejl ved scanning: ' + (e.message || 'ukendt'); status.className = 'live-scan-status error'; }
+      if (status) { status.textContent = t('live_scan_error') + (e.message || t('live_unknown')); status.className = 'live-scan-status error'; }
       _liveQrPending = false;
-      setTimeout(function() { if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
+      setTimeout(function() { if (status) { status.textContent = t('live_point_camera'); status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
       return;
     }
   }
@@ -706,12 +706,12 @@ async function liveScanAutoResolve(data) {
     } else {
       logError('liveScanAutoResolve', e);
     }
-    if (status) { status.textContent = e.message || 'QR ikke genkendt'; status.className = 'live-scan-status error'; }
+    if (status) { status.textContent = e.message || t('live_qr_unrecognized'); status.className = 'live-scan-status error'; }
     _liveQrPending = false;
     _liveQrFound = null;
     // Resume scanning after delay
     setTimeout(function() {
-      if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; }
+      if (status) { status.textContent = t('live_point_camera'); status.className = 'live-scan-status'; status.style.display = ''; }
       liveQrPreviewLoop();
     }, 2000);
   }
@@ -741,7 +741,7 @@ async function liveScanConfirmJoin() {
     var cName = document.getElementById('live-scan-confirmed-name');
     var cMeta = document.getElementById('live-scan-confirmed-meta');
     if (cName) cName.textContent = bubble.name;
-    if (cMeta) cMeta.textContent = (wasExisting ? 'Checked ind igen' : 'Joined + checked ind') + ' ✓';
+    if (cMeta) cMeta.textContent = (wasExisting ? t('live_checked_again') : t('live_joined_checked')) + ' ✓';
     if (confirmed) confirmed.style.display = 'flex';
 
     showToast(t('toast_checkedin'));
@@ -763,7 +763,7 @@ function liveScanReset() {
   _pendingScanCheckin = null;
   document.getElementById('live-scan-found').style.display = 'none';
   var status = document.getElementById('live-scan-status');
-  if (status) { status.textContent = 'Peg kameraet mod en Bubble QR-kode'; status.className = 'live-scan-status'; status.style.display = ''; }
+  if (status) { status.textContent = t('live_point_camera'); status.className = 'live-scan-status'; status.style.display = ''; }
   liveQrPreviewLoop();
 }
 
@@ -793,7 +793,7 @@ var _connectLastUrl = '';
 var _connectLastTime = 0;
 
 function openConnectScanner() {
-  if (!currentUser) { _renderToast('Log ind først', 'error'); return; }
+  if (!currentUser) { _renderToast(t('live_login_first'), 'error'); return; }
   // Create fullscreen overlay
   var ov = document.getElementById('connect-scanner-overlay');
   if (!ov) {
@@ -809,10 +809,10 @@ function openConnectScanner() {
         '</div>' +
         '<div style="position:absolute;top:calc(env(safe-area-inset-top,12px) + 12px);left:16px;right:16px;display:flex;align-items:center;justify-content:space-between">' +
           '<button onclick="closeConnectScanner()" style="width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,0.15);color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>' +
-          '<div style="font-size:0.8rem;font-weight:700;color:white">Scan en Bubble QR</div>' +
+          '<div style="font-size:0.8rem;font-weight:700;color:white">' + t('live_scan_qr') + '</div>' +
           '<div style="width:36px"></div>' +
         '</div>' +
-        '<div id="connect-scan-status" style="position:absolute;bottom:calc(env(safe-area-inset-bottom,16px) + 80px);left:0;right:0;text-align:center;font-size:0.75rem;color:white;font-weight:600">Peg kameraet mod en Bubble QR-kode</div>' +
+        '<div id="connect-scan-status" style="position:absolute;bottom:calc(env(safe-area-inset-bottom,16px) + 80px);left:0;right:0;text-align:center;font-size:0.75rem;color:white;font-weight:600">' + t('live_point_camera') + '</div>' +
         '<div id="connect-scan-result" style="position:absolute;bottom:0;left:0;right:0;display:none"></div>' +
       '</div>';
     document.body.appendChild(ov);
@@ -844,7 +844,7 @@ async function startConnectCamera() {
   if (!video) return;
   try {
     if (typeof jsQR === 'undefined') {
-      if (status) status.textContent = 'Indlæser scanner...';
+      if (status) status.textContent = t('live_loading_scanner');
       await new Promise(function(resolve, reject) {
         var s = document.createElement('script');
         s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
@@ -854,17 +854,17 @@ async function startConnectCamera() {
       });
     }
     await initBarcodeDetector();
-    if (status) status.textContent = 'Starter kamera...';
+    if (status) status.textContent = t('live_starting_camera');
     _connectStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
     });
     video.srcObject = _connectStream;
     await video.play();
-    if (status) status.textContent = 'Peg kameraet mod en Bubble QR-kode';
+    if (status) status.textContent = t('live_point_camera');
     _connectScanLoop();
   } catch(e) {
     logError('connectCamera', e);
-    if (status) status.textContent = e.message || 'Kunne ikke starte kamera';
+    if (status) status.textContent = e.message || t('live_camera_fail');
   }
 }
 
@@ -949,7 +949,7 @@ async function _connectResolve(rawUrl) {
       if (tokenData && new Date(tokenData.expires_at) > new Date()) {
         profileId = tokenData.user_id;
       } else {
-        _renderToast('QR-kode er udløbet', 'warn');
+        _renderToast(t('live_qr_expired'), 'warn');
         _connectPending = false;
         _connectScanLoop();
         return;
@@ -1028,7 +1028,7 @@ function _connectShowBubbleCard(bub, isEventFlow) {
   var isEvent = bub.type === 'event' || bub.type === 'live';
   var isPrivate = bub.visibility === 'private' || bub.visibility === 'hidden';
   var mc = bub.bubble_members?.[0]?.count || 0;
-  var memberLabel = isEvent ? (mc + ' tilmeldt') : (mc + ' medlemmer');
+  var memberLabel = isEvent ? (mc + ' ' + t('live_signed_up')) : (mc + ' ' + t('bc_members_lc'));
 
   // Date string for events
   var dateStr = '';
@@ -1048,7 +1048,7 @@ function _connectShowBubbleCard(bub, isEventFlow) {
 
   // Button
   var btnColor = isEvent ? 'linear-gradient(135deg,#1A9E8E,#17877A)' : 'linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))';
-  var btnText = isEvent ? '✓ Check ind' : (isPrivate ? '🔒 Anmod om adgang' : 'Bliv medlem');
+  var btnText = isEvent ? t('live_checkin_btn') : (isPrivate ? t('live_request_access') : t('chat_become_member'));
 
   var resultEl = document.getElementById('connect-scan-result');
   if (!resultEl) return;
@@ -1060,7 +1060,7 @@ function _connectShowBubbleCard(bub, isEventFlow) {
         '<div style="flex:1;min-width:0">' +
           '<div style="font-size:1rem;font-weight:800;color:#1E1B2E">' + escHtml(bub.name) + '</div>' +
           '<div style="font-size:0.75rem;color:#888;margin-top:2px">' +
-            (isEvent ? 'Event' : 'Netværk') + ' · ' + memberLabel +
+            (isEvent ? 'Event' : t('pf_networks_label')) + ' · ' + memberLabel +
           '</div>' +
           (dateStr ? '<div style="font-size:0.72rem;color:#0F6E56;font-weight:600;margin-top:2px">' + dateStr + '</div>' : '') +
           (bub.location ? '<div style="font-size:0.72rem;color:#888;margin-top:1px">📍 ' + escHtml(bub.location) + '</div>' : '') +
@@ -1123,7 +1123,7 @@ function _connectShowProfileSheet(p, profileId) {
       overlap.slice(0, 6).map(function(k) {
         return '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.1);color:#085041;font-weight:600">\u2713 ' + escHtml(k) + '</span>';
       }).join('') +
-      (overlap.length > 6 ? '<span style="font-size:0.55rem;color:rgba(255,255,255,0.5)">+' + (overlap.length - 6) + ' mere</span>' : '') +
+      (overlap.length > 6 ? '<span style="font-size:0.55rem;color:rgba(255,255,255,0.5)">+' + (overlap.length - 6) + ' ' + t('live_more') + '</span>' : '') +
       '</div>';
   }
 
@@ -1144,7 +1144,7 @@ function _connectShowProfileSheet(p, profileId) {
         '<div style="flex:1;min-width:0">' +
           '<div style="font-size:1rem;font-weight:800;color:white">' + escHtml(name) + '</div>' +
           (subtitle ? '<div style="font-size:0.75rem;color:rgba(255,255,255,0.6);margin-top:2px">' + escHtml(subtitle) + '</div>' : '') +
-          (overlap.length > 0 ? '<div style="font-size:0.65rem;color:rgba(46,207,207,0.9);font-weight:600;margin-top:3px">' + overlap.length + ' f\u00e6lles interesser</div>' : '') +
+          (overlap.length > 0 ? '<div style="font-size:0.65rem;color:rgba(46,207,207,0.9);font-weight:600;margin-top:3px">' + overlap.length + ' ' + t('live_shared_interests') + '</div>' : '') +
         '</div>' +
       '</div>' +
       // Bio
@@ -1153,7 +1153,7 @@ function _connectShowProfileSheet(p, profileId) {
       tagsHtml +
       // Actions
       '<div style="display:flex;gap:8px;margin-top:16px">' +
-        '<button onclick="_connectSaveContact()" style="flex:2;padding:12px;border-radius:14px;border:0.5px solid rgba(100,180,230,0.3);background:rgba(100,180,230,0.22);color:rgba(255,255,255,0.95);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">Gem kontakt</button>' +
+        '<button onclick="_connectSaveContact()" style="flex:2;padding:12px;border-radius:14px;border:0.5px solid rgba(100,180,230,0.3);background:rgba(100,180,230,0.22);color:rgba(255,255,255,0.95);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">' + t('live_save_contact') + '</button>' +
         '<button onclick="_connectDismissSheet()" style="flex:1;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.15);background:none;color:rgba(255,255,255,0.7);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">Annuller</button>' +
       '</div>' +
     '</div>';
@@ -1181,8 +1181,8 @@ async function _connectSaveContact() {
         '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 16px"></div>' +
         '<div style="text-align:center;padding:8px 0 4px">' +
           '<div style="width:48px;height:48px;border-radius:50%;background:rgba(26,158,142,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:20px;color:#1A9E8E">\u2713</div>' +
-          '<div style="font-size:1rem;font-weight:800;color:white">Kontakt gemt!</div>' +
-          '<div style="font-size:0.72rem;color:rgba(255,255,255,0.5);margin-top:4px">Du kan finde dem under Gemte kontakter</div>' +
+          '<div style="font-size:1rem;font-weight:800;color:white">' + t('live_contact_saved') + '</div>' +
+          '<div style="font-size:0.72rem;color:rgba(255,255,255,0.5);margin-top:4px">' + t('live_find_saved') + '</div>' +
         '</div>' +
         '<div style="display:flex;gap:8px;margin-top:16px">' +
           '<button onclick="closeConnectScanner();setTimeout(function(){openPerson(\'' + savedId + '\',\'screen-home\')},300)" style="flex:1;padding:12px;border-radius:14px;border:0.5px solid rgba(100,180,230,0.3);background:rgba(100,180,230,0.22);color:rgba(255,255,255,0.95);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">Se profil</button>' +
