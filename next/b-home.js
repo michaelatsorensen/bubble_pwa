@@ -2564,7 +2564,7 @@ function _doRenderHomeDartboard() {
       el.style.left = tlx.toFixed(1) + 'px';
       el.style.top = tly.toFixed(1) + 'px';
     } else {
-      // NY: skab SYNLIG paa maalet, scale-pop ind (robust mod frame-fejl)
+      // NY: tiltraekkes IND fra kanten langs sin vinkel (magnet) + sikkerhedsnet
       el = document.createElement('div');
       el.className = 'prox-dot';
       el.setAttribute('data-id', p.id);
@@ -2574,15 +2574,19 @@ function _doRenderHomeDartboard() {
       el.style.fontSize = (sz < 34 ? '0.48' : '0.55') + 'rem';
       el.style.background = col;
       el.innerHTML = inner + liveSpan;
-      el.style.left = tlx.toFixed(1) + 'px';
-      el.style.top = tly.toFixed(1) + 'px';
-      el.style.opacity = '1';
-      el.style.transform = 'scale(0.4)';
+      var startR = maxR + 90;
+      el.style.left = (cx + startR*Math.cos(ang) - sz/2).toFixed(1) + 'px';
+      el.style.top = (cy + startR*Math.sin(ang) - sz/2).toFixed(1) + 'px';
+      el.style.opacity = '0';
+      el.style.transform = 'none';
       el.style.transition = 'none';
       av.appendChild(el);
       void el.offsetWidth;
-      el.style.transition = 'transform ' + E.enterT + 'ms ' + E.enter;
-      (function(eln){ requestAnimationFrame(function(){ eln.style.transform = 'none'; }); })(el);
+      el.style.transition = 'left ' + E.enterT + 'ms ' + E.enter + ', top ' + E.enterT + 'ms ' + E.enter + ', opacity ' + Math.round(E.enterT*0.5) + 'ms ease';
+      (function(eln, lx, ly){
+        requestAnimationFrame(function(){ eln.style.left = lx + 'px'; eln.style.top = ly + 'px'; eln.style.opacity = '1'; });
+        setTimeout(function(){ if (eln && eln.parentNode && eln.getAttribute('data-exiting') !== '1') { eln.style.left = lx + 'px'; eln.style.top = ly + 'px'; eln.style.opacity = '1'; } }, E.enterT + 120);
+      })(el, tlx.toFixed(1), tly.toFixed(1));
     }
   }
 
