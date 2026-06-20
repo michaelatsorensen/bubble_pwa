@@ -22,7 +22,7 @@ async function adminLoadReports() {
       .select('id, type, reason, created_at, reporter_id, reported_id, profiles!reports_reporter_id_fkey(name), reported:profiles!reports_reported_id_fkey(name, banned)')
       .order('created_at', { ascending: false }).limit(20);
     if (!data || data.length === 0) {
-      el.innerHTML = '<div style="color:rgba(255,255,255,0.25);padding:0.3rem 0">Ingen rapporter</div>';
+      el.innerHTML = '<div style="color:rgba(255,255,255,0.25);padding:0.3rem 0">' + t('admin_no_reports') + '</div>';
       return;
     }
     el.innerHTML = data.map(function(r) {
@@ -40,7 +40,7 @@ async function adminLoadReports() {
         '<button class="btn-sm" onclick="adminUnbanUser(\'' + r.reported_id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,158,142,0.15);color:var(--green);border:1px solid rgba(26,158,142,0.3);border-radius:6px;flex-shrink:0">Unban</button>') +
         '</div></div>';
     }).join('');
-  } catch(e) { el.innerHTML = '<div style="color:var(--pink)">Fejl: ' + escHtml(e.message) + '</div>'; }
+  } catch(e) { el.innerHTML = '<div style="color:var(--pink)">' + t('admin_error') + escHtml(e.message) + '</div>'; }
   } catch(e) { logError("adminLoadReports", e); }
 }
 
@@ -52,7 +52,7 @@ async function adminLoadBanned() {
   try {
     var { data } = await sb.from('profiles').select('id, name, email, banned').eq('banned', true).order('name');
     if (!data || data.length === 0) {
-      el.innerHTML = '<div style="color:rgba(255,255,255,0.25);padding:0.3rem 0">Ingen bannede brugere</div>';
+      el.innerHTML = '<div style="color:rgba(255,255,255,0.25);padding:0.3rem 0">' + t('admin_no_banned') + '</div>';
       return;
     }
     el.innerHTML = data.map(function(p) {
@@ -62,7 +62,7 @@ async function adminLoadBanned() {
         '<button class="btn-sm" onclick="adminUnbanUser(\'' + p.id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,158,142,0.15);color:var(--green);border:1px solid rgba(26,158,142,0.3);border-radius:6px">Unban</button>' +
         '</div>';
     }).join('');
-  } catch(e) { el.innerHTML = '<div style="color:var(--pink)">Fejl: ' + escHtml(e.message) + '</div>'; }
+  } catch(e) { el.innerHTML = '<div style="color:var(--pink)">' + t('admin_error') + escHtml(e.message) + '</div>'; }
   } catch(e) { logError("adminLoadBanned", e); }
 }
 
@@ -92,7 +92,7 @@ async function adminLoadNewUsers() {
       .order('created_at', { ascending: false })
       .limit(50);
     if (error) throw error;
-    if (!data || !data.length) { el.innerHTML = '<div style="color:rgba(255,255,255,0.4)">Ingen brugere</div>'; return; }
+    if (!data || !data.length) { el.innerHTML = '<div style="color:rgba(255,255,255,0.4)">' + t('admin_no_users') + '</div>'; return; }
     el.innerHTML = '<div style="font-size:0.58rem;color:rgba(255,255,255,0.25);margin-bottom:0.3rem">' + data.length + ' nyeste (klik for profil)</div>' + data.map(function(p) {
       var name = p.is_anon ? 'Anonym' : (p.name || t('misc_unknown'));
       var meta = [p.workplace, p.title].filter(Boolean).join(' · ');
@@ -114,7 +114,7 @@ async function adminLoadNewUsers() {
         '</div>' +
       '</div>';
     }).join('');
-  } catch(e) { el.innerHTML = '<div style="color:var(--pink)">Fejl: ' + escHtml(e.message) + '</div>'; logError('adminLoadNewUsers', e); }
+  } catch(e) { el.innerHTML = '<div style="color:var(--pink)">' + t('admin_error') + escHtml(e.message) + '</div>'; logError('adminLoadNewUsers', e); }
 }
 
 async function adminLoadStats() {
@@ -177,12 +177,12 @@ async function adminLoadStats() {
       // Row 1: Brugere + Bobler
       '<div class="dash-pair"><div class="dash-row">' +
         dCard('s-users','user','rgba(100,180,230,0.1)','rgb(100,180,230)', uc, t('admin_users_label'), uNew.count, 'accent') +
-        dCard('s-bubbles','bubble','rgba(46,207,207,0.08)','var(--teal)', bc, 'Bobler', bNew.count, 'teal') +
+        dCard('s-bubbles','bubble','rgba(46,207,207,0.08)','var(--teal)', bc, t('nav_bubbles'), bNew.count, 'teal') +
       '</div>' + trayHtml('s1') + '</div>' +
       // Row 2: Medlemskaber + Boble-beskeder
       '<div class="dash-pair"><div class="dash-row">' +
         dCard('s-members','link','rgba(100,180,230,0.1)','rgb(100,180,230)', mc, 'Medlemskaber', mNew.count, 'accent') +
-        dCard('s-msgs','chat','rgba(232,121,168,0.08)','var(--pink)', fmtK(bmc), 'Boble-chat', bmNew.count, 'pink') +
+        dCard('s-msgs','chat','rgba(232,121,168,0.08)','var(--pink)', fmtK(bmc), t('admin_bubble_chat'), bmNew.count, 'pink') +
       '</div>' + trayHtml('s2') + '</div>' +
       // Row 3: Gemte kontakter + DMs
       '<div class="dash-pair"><div class="dash-row">' +
@@ -197,12 +197,12 @@ async function adminLoadStats() {
         _adminMini(ico('fire'), 'MAU', mauRes, 'var(--pink)') +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">' +
-        _adminMini(ico('pin'), 'Live nu', liveRes.count||0, 'var(--teal)') +
+        _adminMini(ico('pin'), t('bb_status_live'), liveRes.count||0, 'var(--teal)') +
         _adminMini(ico('lock'), t('admin_banned_label'), bannedRes.count||0, '#EF4444') +
         _adminMini(ico('eye'), 'Visninger /7d', viewsRes.count||0, 'rgb(100,180,230)') +
       '</div>';
 
-  } catch(e) { el.innerHTML = '<div style="color:var(--pink)">Fejl: ' + escHtml(e.message) + '</div>'; }
+  } catch(e) { el.innerHTML = '<div style="color:var(--pink)">' + t('admin_error') + escHtml(e.message) + '</div>'; }
   } catch(e) { logError("adminLoadStats", e); }
 }
 
@@ -219,12 +219,12 @@ var _dashChartData = {};
 var _dashActiveChart = {};
 
 var _dashMeta = {
-  's-users': { title: 'Nye brugere', sub: 'Tilmeldinger per uge', table: 'profiles', field: 'created_at', type: 'bar', icon: 'user' },
-  's-bubbles': { title: 'Bobler oprettet', sub: 'Netværk + events per uge', table: 'bubbles', field: 'created_at', type: 'bar', icon: 'bubble' },
-  's-members': { title: 'Medlemskaber', sub: 'Kumulativ vækst over tid', table: 'bubble_members', field: 'created_at', type: 'line', icon: 'link' },
-  's-msgs': { title: 'Boble-chat', sub: 'Beskeder per uge', table: 'bubble_messages', field: 'created_at', type: 'bar', icon: 'chat' },
-  's-saved': { title: 'Forbindelser', sub: 'Gemte kontakter per uge', table: 'saved_contacts', field: 'created_at', type: 'bar', icon: 'bookmark' },
-  's-dms': { title: 'DMs', sub: 'Direkte beskeder per uge', table: 'messages', field: 'created_at', type: 'bar', icon: 'send' }
+  's-users': { title: t('admin_new_users'), sub: 'Tilmeldinger per uge', table: 'profiles', field: 'created_at', type: 'bar', icon: 'user' },
+  's-bubbles': { title: t('admin_bubbles_created'), sub: t('admin_networks_events_week'), table: 'bubbles', field: 'created_at', type: 'bar', icon: 'bubble' },
+  's-members': { title: 'Medlemskaber', sub: t('admin_cumulative_growth'), table: 'bubble_members', field: 'created_at', type: 'line', icon: 'link' },
+  's-msgs': { title: t('admin_bubble_chat'), sub: t('admin_messages_week'), table: 'bubble_messages', field: 'created_at', type: 'bar', icon: 'chat' },
+  's-saved': { title: 'Forbindelser', sub: t('admin_saved_week'), table: 'saved_contacts', field: 'created_at', type: 'bar', icon: 'bookmark' },
+  's-dms': { title: 'DMs', sub: t('admin_dms_week'), table: 'messages', field: 'created_at', type: 'bar', icon: 'send' }
 };
 
 var _dashColors = {
@@ -353,7 +353,7 @@ async function adminBanUser(userId, userName) {
         var tray = document.createElement('div');
         tray.className = 'admin-ban-confirm';
         tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0.5rem;margin-top:0.3rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:8px;gap:0.4rem';
-        tray.innerHTML = '<span style="font-size:0.68rem;color:var(--text-secondary)">Ban ' + escHtml(userName||'bruger') + '?</span>' +
+        tray.innerHTML = '<span style="font-size:0.68rem;color:var(--text-secondary)">Ban ' + escHtml(userName||t('pf_user_lc')) + '?</span>' +
           '<div style="display:flex;gap:0.25rem">' +
           '<button style="font-size:0.65rem;padding:0.2rem 0.5rem;background:rgba(124,92,252,0.12);color:var(--pink);border:1px solid rgba(26,122,138,0.3);border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600" onclick="adminConfirmBan()">Ban</button>' +
           '<button style="font-size:0.65rem;padding:0.2rem 0.5rem;background:none;color:rgba(255,255,255,0.25);border:1px solid var(--glass-border);border-radius:6px;cursor:pointer;font-family:inherit" onclick="adminCancelBan(this)">Annuller</button>' +
@@ -376,11 +376,11 @@ async function adminConfirmBan() {
   if (!userId) return;
   try {
     await sb.from('profiles').update({ banned: true }).eq('id', userId);
-    showToast((userName||'Bruger') + ' er banned');
+    showToast((userName||t('pf_user')) + t('admin_is_banned'));
     adminLoadReports();
     adminLoadBanned();
     adminLoadStats();
-  } catch(e) { _renderToast('Fejl: ' + e.message, 'error'); }
+  } catch(e) { _renderToast(t('admin_error') + e.message, 'error'); }
 }
 
 function adminCancelBan(btn) {
@@ -393,11 +393,11 @@ function adminCancelBan(btn) {
 async function adminUnbanUser(userId) {
   try {
     await sb.from('profiles').update({ banned: false }).eq('id', userId);
-    showToast('Bruger unbanned');
+    showToast(t('admin_user_unbanned'));
     adminLoadReports();
     adminLoadBanned();
     adminLoadStats();
-  } catch(e) { _renderToast('Fejl: ' + e.message, 'error'); }
+  } catch(e) { _renderToast(t('admin_error') + e.message, 'error'); }
 }
 
 var _adminSearchTimer = null;
@@ -415,7 +415,7 @@ function adminSearchUser(query) {
         .or('name.ilike.%' + safeQ + '%,email.ilike.%' + safeQ + '%')
         .limit(5);
       if (!data || data.length === 0) {
-        el.innerHTML = '<div style="font-size:0.68rem;color:rgba(255,255,255,0.25);padding:0.3rem 0">Ingen resultater</div>';
+        el.innerHTML = '<div style="font-size:0.68rem;color:rgba(255,255,255,0.25);padding:0.3rem 0">' + t('admin_no_results') + '</div>';
         return;
       }
       el.innerHTML = data.map(function(p) {
@@ -431,7 +431,7 @@ function adminSearchUser(query) {
             '<button class="btn-sm" onclick="adminUnbanUser(\'' + p.id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,158,142,0.15);color:var(--green);border:1px solid rgba(26,158,142,0.3);border-radius:6px;flex-shrink:0">Unban</button>') +
           '</div>';
       }).join('');
-    } catch(e) { el.innerHTML = '<div style="color:var(--pink);font-size:0.68rem">Fejl: ' + escHtml(e.message) + '</div>'; }
+    } catch(e) { el.innerHTML = '<div style="color:var(--pink);font-size:0.68rem">' + t('admin_error') + escHtml(e.message) + '</div>'; }
   }, 300);
 }
 
@@ -452,8 +452,8 @@ function adminTimeAgo(dateStr) {
 var TEST_ACCOUNT_EMAIL = 'test@bubbleme.dk';
 
 async function testOnboardingReset(mode) {
-  if (!currentUser) { _renderToast('Ikke logget ind', 'error'); return; }
-  if (!isAdmin()) { showWarningToast('Kun admin kan bruge test-tools'); return; }
+  if (!currentUser) { _renderToast(t('admin_not_logged_in'), 'error'); return; }
+  if (!isAdmin()) { showWarningToast(t('admin_only_test_tools')); return; }
 
   try {
     showToast('Nulstiller testkonto...');
@@ -471,7 +471,7 @@ async function testOnboardingReset(mode) {
     });
     var result = await resp.json();
     if (!resp.ok || result.error) {
-      showToast('Reset fejl: ' + (result.error || 'ukendt'));
+      showToast(t('admin_reset_error') + (result.error || 'ukendt'));
       return;
     }
 
@@ -486,7 +486,7 @@ async function testOnboardingReset(mode) {
       if (adminToken) {
         redirectUrl = baseUrl + '?qrt=' + adminToken.token;
       } else {
-        showWarningToast('Du har ingen QR-token. Åbn "Min QR" først.');
+        showWarningToast(t('admin_no_qr_token'));
         return;
       }
     } else if (mode === 'event') {
@@ -497,7 +497,7 @@ async function testOnboardingReset(mode) {
         var picked = events[0];
         if (events.length > 1) {
           var choices = events.map(function(e, i) { return (i+1) + '. ' + e.name; }).join('\n');
-          var pick = prompt('Vælg event:\n' + choices + '\n\nIndtast nummer:');
+          var pick = prompt(t('admin_choose_event') + '\n' + choices + '\n\n' + t('admin_enter_number'));
           if (!pick) return;
           picked = events[parseInt(pick) - 1] || events[0];
         }
@@ -511,14 +511,14 @@ async function testOnboardingReset(mode) {
     // Log out admin → redirect
     await sb.auth.signOut();
     var actionLabel = mode === 'setup'
-      ? 'Profil nulstillet. Log ind som ' + TEST_ACCOUNT_EMAIL
-      : 'Testkonto slettet. Opret ny som ' + TEST_ACCOUNT_EMAIL;
+      ? t('admin_profile_reset') + TEST_ACCOUNT_EMAIL
+      : t('admin_testaccount_deleted') + TEST_ACCOUNT_EMAIL;
     showSuccessToast(actionLabel);
     setTimeout(function() { window.location.href = redirectUrl; }, 1200);
 
   } catch(e) {
     logError('testOnboardingReset', e);
-    _renderToast('Fejl: ' + (e.message || 'ukendt'), 'error');
+    _renderToast(t('admin_error') + (e.message || 'ukendt'), 'error');
   }
 }
 
@@ -618,7 +618,7 @@ function _renderDebugContent() {
     var flowKeys = Object.keys(cs.flows);
     var flowHtml = flowKeys.length > 0
       ? flowKeys.map(function(k) { return '<span class="debug-pill-err">' + k + '</span>'; }).join(' ')
-      : '<span style="color:rgba(255,255,255,0.25)">ingen</span>';
+      : '<span style="color:rgba(255,255,255,0.25)">' + t('admin_none') + '</span>';
     var stackHtml = cs.navStack.length > 0 ? cs.navStack.slice(-3).join(' → ') : '-';
     var html =
       _debugRow('Screen', _debugMono(cs.screen || '-')) +
@@ -631,7 +631,7 @@ function _renderDebugContent() {
     if (cs.chatUser || cs.bcId) {
       html += '<div style="border-top:1px solid rgba(0,0,0,0.04);margin:4px 0"></div>';
       if (cs.chatUser) html += _debugRow('DM', _debugMono(cs.chatUser.substring(0, 12)) + (cs.chatName ? ' · ' + escHtml(cs.chatName) : ''));
-      if (cs.bcId) html += _debugRow('Boble chat', _debugMono(cs.bcId.substring(0, 12)) + (cs.bcName ? ' · ' + escHtml(cs.bcName) : ''));
+      if (cs.bcId) html += _debugRow(t('admin_dbg_bubble_chat'), _debugMono(cs.bcId.substring(0, 12)) + (cs.bcName ? ' · ' + escHtml(cs.bcName) : ''));
       if (cs.personSheet) html += _debugRow('Person sheet', _debugMono(cs.personSheet.substring(0, 12)));
     }
     // Realtime
@@ -649,7 +649,7 @@ function _renderDebugErrorList() {
   var el = document.getElementById('debug-error-list');
   if (!el) return;
   if (_debugErrors.length === 0) {
-    el.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.72rem;padding:1rem 0">Ingen fejl</div>';
+    el.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.72rem;padding:1rem 0">' + t('admin_no_errors') + '</div>';
     return;
   }
   el.innerHTML = _debugErrors.slice(0, 30).map(function(e) {
@@ -758,7 +758,7 @@ function debugExportEmail() {
   if (_emailjsLoaded && window.emailjs) {
     window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       context: 'DEBUG_EXPORT',
-      message: 'Debug log eksporteret (' + _debugErrors.length + ' fejl)',
+      message: t('admin_debug_exported') + ' (' + _debugErrors.length + ' ' + t('admin_errors_word') + ')',
       stack: body,
       extra: 'Admin: ' + (currentUser?.id || '?'),
       user_id: currentUser?.id || 'unknown',
