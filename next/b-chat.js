@@ -2233,7 +2233,7 @@ async function bcLoadPosts() {
     if (_bcPostsCache.length === 0) {
       list.innerHTML = '<div class="empty-state" style="margin-top:2rem">' +
         '<div class="empty-icon">' + icon('file') + '</div>' +
-        '<div class="empty-text">' + t('chat_no_posts') + ' +
+        '<div class="empty-text">' + t('chat_no_posts') +
         (canPost ? '<br><span style="font-size:0.72rem;color:rgb(100,180,230);cursor:pointer" onclick="bcOpenCreatePost()">' + t('chat_create_first_post') + '</span>' : '<br><span style="font-size:0.72rem">' + t('chat_admins_share') + '</span>') +
         '</div></div>';
       return;
