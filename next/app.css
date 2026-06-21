@@ -648,7 +648,14 @@ textarea.input { min-height:80px; resize:vertical; }
 .pp-sheet.open { transform:translateY(0); }
 .pp-grabber { width:38px; height:4px; border-radius:99px; background:rgba(255,255,255,0.22); margin:0.55rem auto 0.1rem; flex-shrink:0; }
 .pp-sheet .pp-topbar { padding-top:0.2rem; }
-.pp-sheet-scroll { flex:1; min-width:0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0px)); }
+.pp-sheet-scroll { flex:1; min-width:0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0px)); transition:opacity 0.28s ease; }
+/* Reveal-all-at-once: skeleton layer over content while everything loads */
+.pp-skel { position:absolute; left:0; right:0; top:58px; bottom:0; overflow:hidden; opacity:0; pointer-events:none; transition:opacity 0.28s ease; z-index:3; }
+.pp-skel-chip { display:inline-block; height:24px; border-radius:99px; margin:0.15rem 0.15rem 0 0; vertical-align:middle; }
+.pp-sheet.pp-loading .pp-skel { opacity:1; }
+.pp-sheet.pp-loading .pp-sheet-scroll { opacity:0; pointer-events:none; }
+.pp-sheet .pp-match { transition:opacity 0.28s ease; }
+.pp-sheet.pp-loading .pp-match { opacity:0; }
 /* Dark-surface content overrides (scoped to sheet) */
 .pp-sheet .pp-back { background:rgba(255,255,255,0.1); border:0.5px solid rgba(255,255,255,0.12); color:#fff; }
 .pp-sheet .person-section-title { color:rgba(255,255,255,0.5); }
@@ -2654,6 +2661,8 @@ input[type="range"] {
 #home-tray-list .skel { background:linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; }
 #notif-tray-list .skel-card,
 #home-tray-list .skel-card { background:rgba(255,255,255,0.04); border:0.5px solid rgba(255,255,255,0.06); }
+/* Full-profile sheet: dark skeleton variant (v9.38) */
+.pp-sheet .skel { background:linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.05) 75%); background-size:200% 100%; }
 
 /* v7.99: screen-messages + screen-profile use the default LIGHT skeleton variant
    (same as Bubbles screen). Prior v7.98 dark variant looked off and caused visible

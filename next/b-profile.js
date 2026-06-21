@@ -34,12 +34,14 @@ async function openPerson(userId, fromScreen) {
     openPersonSheet();
     var myNav = ++_personSheetSeq;
 
-    // Reset all stateful UI from previous profile
+    // Reset all stateful UI from previous profile + show skeleton over hidden content
     _personReset();
+    var ppSheet = document.getElementById('pp-sheet');
+    if (ppSheet) ppSheet.classList.add('pp-loading');
 
     const { data: p } = await sb.from('profiles').select('*').eq('id', userId).maybeSingle();
     if (!p || _personSheetSeq !== myNav) {
-      if (!p && _personSheetSeq === myNav) _personRenderEmpty();
+      if (!p && _personSheetSeq === myNav) { _personRenderEmpty(); if (ppSheet) ppSheet.classList.remove('pp-loading'); }
       return;
     }
 
@@ -56,29 +58,31 @@ async function openPerson(userId, fromScreen) {
       trackEvent('profile_viewed', { viewed_id: userId, from: fromScreen || 'unknown' });
     }
 
-    // Render identity: avatar, name, title, live badge, bio, linkedin
-    _personRenderIdentity(p);
-    await _personRenderLive(p, userId);
-
-    // Render match: score label + shared interests
-    await _personRenderMatch(p, userId, myNav);
-
-    // Render content: dynamic keywords + public bubbles
-    _personRenderDynamic(p);
-    loadPersonBubbles(userId, myNav);
-
-    // Render bubble-up label
+    // Render synchronous parts into the (still hidden) content
+    _personRenderIdentity(p);      // avatar, name, title, bio, tags, linkedin
+    _personRenderDynamic(p);       // dynamic keywords (Soeger lige nu)
     var firstName = p.is_anon ? 'personen' : (p.name || '').split(' ')[0] || 'personen';
     var bupLabel = document.getElementById('person-bubbleup-label');
     if (bupLabel) bupLabel.textContent = t('ps_bubbleup_create', { name: firstName });
 
-    // Render saved state + stars
-    await _personRenderSaved(userId);
-  } catch(e) { logError("openPerson", e); errorToast("load", e); }
+    // Fetch + render every async section in parallel, then reveal it all at once
+    // (no chunky progressive paint — the sheet stays on the skeleton until ready)
+    await Promise.allSettled([
+      _personRenderLive(p, userId),
+      _personRenderMatch(p, userId, myNav),
+      loadPersonBubbles(userId, myNav),
+      _personRenderSaved(userId)
+    ]);
+    if (_personSheetSeq !== myNav) return;             // user navigated away during load
+    if (ppSheet) ppSheet.classList.remove('pp-loading'); // reveal complete profile together
+  } catch(e) { logError("openPerson", e); errorToast("load", e); var s = document.getElementById('pp-sheet'); if (s) s.classList.remove('pp-loading'); }
 }
 
 // ── Person sub-renderers ──
 
+function _skelChips(widths) {
+  return widths.map(function(w) { return '<span class="skel" style="display:inline-block;width:' + w + 'px;height:24px;border-radius:99px;margin:0.15rem 0.15rem 0 0;vertical-align:middle"></span>'; }).join('');
+}
 function _personReset() {
   var bupBtn = document.getElementById('person-bubbleup-btn');
   var bupConfirm = document.getElementById('person-bubbleup-confirm');
@@ -87,7 +91,7 @@ function _personReset() {
   var starSec = document.getElementById('person-star-section');
   if (starSec) starSec.style.display = 'none';
   var matchEl = document.getElementById('person-match-label');
-  if (matchEl) { matchEl.textContent = ''; matchEl.style.display = 'none'; }
+  if (matchEl) { matchEl.innerHTML = '<span class="skel" style="display:inline-block;width:64px;height:10px;border-radius:99px"></span>'; matchEl.style.display = ''; matchEl.style.background = 'transparent'; matchEl.style.border = '0.5px solid transparent'; matchEl.style.color = 'inherit'; }
   var bubSec = document.getElementById('person-bubbles-section');
   if (bubSec) bubSec.style.display = 'none';
   // Skeleton loading state
@@ -96,13 +100,13 @@ function _personReset() {
   var roleEl = document.getElementById('person-role');
   if (roleEl) roleEl.innerHTML = '<div class="skel" style="width:100px;height:12px;display:inline-block"></div>';
   var personAvEl = document.getElementById('person-avatar');
-  if (personAvEl) personAvEl.innerHTML = '<div class="skel" style="width:100%;height:100%;border-radius:50%"></div>';
+  if (personAvEl) personAvEl.innerHTML = '<div class="skel" style="width:100%;height:100%;border-radius:15px"></div>';
   var overlapEl = document.getElementById('person-overlap');
-  if (overlapEl) overlapEl.innerHTML = '';
+  if (overlapEl) overlapEl.innerHTML = '<div class="skel" style="width:96px;height:9px;border-radius:6px;margin-bottom:0.55rem"></div>' + _skelChips([80,62,92]);
   var bioS = document.getElementById('person-bio-inline');
   if (bioS) bioS.style.display = 'none';
   var tagS = document.getElementById('person-tags-section');
-  if (tagS) tagS.style.display = 'none';
+  if (tagS) { tagS.style.display = ''; var tagsEl0 = document.getElementById('person-tags'); if (tagsEl0) tagsEl0.innerHTML = _skelChips([70,90,56,78,64,84]); }
   document.getElementById('person-dynamic-keywords').innerHTML = '';
   var dynC = document.getElementById('person-dynamic-card'); if (dynC) dynC.style.display = 'none';
 }
@@ -113,6 +117,7 @@ function _personRenderEmpty() {
   document.getElementById('person-name').textContent = t('ps_profile_not_available');
   document.getElementById('person-role').textContent = t('ps_profile_not_exists');
   document.getElementById('person-overlap').innerHTML = '';
+  var matchE0 = document.getElementById('person-match-label'); if (matchE0) { matchE0.textContent = ''; matchE0.style.display = 'none'; }
   var bioS = document.getElementById('person-bio-inline'); if (bioS) bioS.style.display = 'none';
   var tagS = document.getElementById('person-tags-section'); if (tagS) tagS.style.display = 'none';
   var bubS = document.getElementById('person-bubbles-section'); if (bubS) bubS.style.display = 'none';
