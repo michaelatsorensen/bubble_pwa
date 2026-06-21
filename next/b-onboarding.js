@@ -547,7 +547,7 @@ function epTagSearch(q) {
   if (!q || q.length < 1) { el.style.display = 'none'; return; }
   var results = searchTags(q).filter(function(t) { return epSelectedTags.indexOf(t.label) < 0; });
   if (results.length === 0 && q.trim().length > 1) {
-    el.innerHTML = '<div class="tag-sug-item custom" onclick="epAddTag(\'' + escHtml(q.trim()) + '\',\'custom\')">' +
+    el.innerHTML = '<div class="tag-sug-item custom" onclick="epAddCustomFromSearch()">' +
       '<span class="tag-sug-label">+ "' + escHtml(q.trim()) + '" (nyt tag)</span></div>';
     el.style.display = 'block'; return;
   }
@@ -590,13 +590,13 @@ function epRenderSelectedTags() {
   var el = document.getElementById('ep-tag-selected');
   if (!el) return;
   if (epSelectedTags.length === 0) { el.innerHTML = ''; return; }
-  el.innerHTML = epSelectedTags.map(function(t) {
+  el.innerHTML = epSelectedTags.map(function(t, idx) {
     var cat = getTagCategory(t);
     var color = TAG_CATEGORIES[cat]?.color || 'var(--accent)';
     return '<span class="tag-chip" style="border-color:' + color + '40;background:' + color + '15">' +
       '<span class="tag-chip-dot" style="background:' + color + '"></span>' +
       escHtml(t) +
-      '<span class="tag-chip-x" onclick="epRemoveTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\')">×</span></span>';
+      '<span class="tag-chip-x" onclick="epRemoveTagIdx(' + idx + ')">×</span></span>';
   }).join('');
 }
 var _epExpandedCats = {};
@@ -980,7 +980,7 @@ function etBuildBody(s) {
     g.tags.forEach(function(tag){
       var isSel = etSelected.has(tag);
       var style = isSel ? 'background:'+s.color+';border-color:'+s.color+';color:white' : 'background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.85)';
-      h += '<span style="padding:0.27rem 0.65rem;border-radius:99px;font-size:0.7rem;font-weight:500;cursor:pointer;border:1.5px solid;transition:all .13s;'+style+'" onclick="etTgl(\''+etEsc(tag)+'\',\''+s.id+'\')">' + tag + '</span>';
+      h += '<span style="padding:0.27rem 0.65rem;border-radius:99px;font-size:0.7rem;font-weight:500;cursor:pointer;border:1.5px solid;transition:all .13s;'+style+'" onclick="etTgl(\''+etEsc(tag)+'\',\''+s.id+'\')">' + escHtml(tag) + '</span>';
     });
     h += '</div></div>';
   });
@@ -989,11 +989,11 @@ function etBuildBody(s) {
   var ct = etCustom[s.id] || [];
   if (ct.length > 0) {
     h += '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.35rem">';
-    ct.forEach(function(tag){
+    ct.forEach(function(tag, idx){
       var isSel = etSelected.has(tag);
       var bg = isSel ? s.color : s.bg; var col = isSel ? 'white' : s.color;
-      h += '<span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.25rem 0.55rem;border-radius:99px;font-size:0.68rem;font-weight:600;border:1.5px dashed '+s.color+'40;background:'+bg+';color:'+col+';cursor:pointer" onclick="etTgl(\''+etEsc(tag)+'\',\''+s.id+'\')">' +
-        tag + '<span style="opacity:0.55;font-size:0.65rem" onclick="event.stopPropagation();etRmCustom(\''+etEsc(tag)+'\',\''+s.id+'\')">×</span></span>';
+      h += '<span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.25rem 0.55rem;border-radius:99px;font-size:0.68rem;font-weight:600;border:1.5px dashed '+s.color+'40;background:'+bg+';color:'+col+';cursor:pointer" onclick="etTglIdx('+idx+',\''+s.id+'\')">' +
+        escHtml(tag) + '<span style="opacity:0.55;font-size:0.65rem" onclick="event.stopPropagation();etRmCustomIdx('+idx+',\''+s.id+'\')">×</span></span>';
     });
     h += '</div>';
   }
@@ -1190,3 +1190,11 @@ async function etRemoveTag(tag){
 
 function etGetSelectedTags(){ return Array.from(etSelected.keys()); }
 function etGetLifestage(){ return etLifestage; }
+
+// ── Safe index-based handlers for user-controlled tags (XSS-hardening v9.44) ──
+// No user-controlled string ever enters an inline onclick / HTML context: handlers
+// receive a numeric index + static section id and look up the value from module state.
+function etTglIdx(idx, secId){ var t=(etCustom[secId]||[])[idx]; if(t!=null) etTgl(t, secId); }
+function etRmCustomIdx(idx, secId){ var t=(etCustom[secId]||[])[idx]; if(t!=null) etRmCustom(t, secId); }
+function epRemoveTagIdx(idx){ var t=epSelectedTags[idx]; if(t!=null) epRemoveTag(t); }
+function epAddCustomFromSearch(){ var input=document.getElementById('ep-tag-search'); var v=input?input.value.trim():''; if(v) epAddTag(v, 'custom'); }
