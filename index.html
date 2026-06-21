@@ -3,28 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#120B29">
 <title>Bubble</title>
 <meta name="robots" content="noindex">
 <link rel="canonical" href="https://bubbleme.dk/next/">
 <script>
   (function () {
     try {
-      var dest = '/next/' + (location.search || '') + (location.hash || '');
+      var qs = location.search || '';
+      var hash = location.hash || '';
+      // Deep-links (qrt, profile, join, event, push, auth, OAuth code/token) need the app at /next/.
+      // A plain visit goes straight to the dark landing - no app loading-screen flash.
+      var dest = (qs || hash) ? ('/next/' + qs + hash) : '/next/landing.html';
       location.replace(dest);
     } catch (e) {
-      location.href = '/next/';
+      location.href = '/next/landing.html';
     }
   })();
 </script>
-<meta http-equiv="refresh" content="0; url=/next/">
+<meta http-equiv="refresh" content="0; url=/next/landing.html">
 <style>
-  html,body{height:100%}
-  body{font-family:system-ui,-apple-system,sans-serif;background:#170F34;color:rgba(255,255,255,0.7);
-    display:flex;align-items:center;justify-content:center;margin:0;text-align:center}
+  html,body{height:100%;margin:0;background:#120B29}
+  body{font-family:system-ui,-apple-system,sans-serif;color:rgba(255,255,255,0.7);
+    display:flex;align-items:center;justify-content:center;text-align:center}
   a{color:#7EC2EE;text-decoration:none}
 </style>
 </head>
 <body>
-  <p>&Aring;bner Bubble&hellip; <a href="/next/">Klik her hvis intet sker</a></p>
+  <p>&Aring;bner Bubble&hellip; <a href="/next/landing.html">Klik her hvis intet sker</a></p>
 </body>
 </html>
