@@ -1510,7 +1510,7 @@ async function downloadMembersPdf(bubbleId) {
     doc.setFontSize(8);
     doc.setTextColor(90, 90, 110);
     var today = new Date().toLocaleDateString(_locale(), { day: 'numeric', month: 'long', year: 'numeric' });
-    doc.text('Genereret ' + today, pw - mr, 16, { align: 'right' });
+    doc.text(t('rep_generated') + ' ' + today, pw - mr, 16, { align: 'right' });
 
     // Divider
     doc.setDrawColor(40, 40, 60);
@@ -1536,9 +1536,9 @@ async function downloadMembersPdf(bubbleId) {
     var boxY = 46;
     var boxH = 16;
     var boxes = [
-      { label: 'Tilmeldte', val: String(totalMembers), color: [108, 99, 255] },
+      { label: t('pdf_box_registered'), val: String(totalMembers), color: [108, 99, 255] },
       { label: 'Check-in', val: String(totalCheckedIn), color: [46, 207, 207] },
-      { label: 'Fremmøde', val: totalMembers > 0 ? Math.round(totalCheckedIn / totalMembers * 100) + '%' : '–', color: [16, 185, 129] }
+      { label: t('pdf_box_attendance'), val: totalMembers > 0 ? Math.round(totalCheckedIn / totalMembers * 100) + '%' : '–', color: [16, 185, 129] }
     ];
     var boxW = (contentW - 6) / 3;
     boxes.forEach(function(box, i) {
@@ -1568,12 +1568,12 @@ async function downloadMembersPdf(bubbleId) {
 
     // Column widths (sum = contentW = 182)
     var cols = [
-      { label: 'NAVN',         x: ml,      w: 44 },
-      { label: 'TITEL',        x: ml + 44, w: 38 },
-      { label: 'VIRKSOMHED',   x: ml + 82, w: 36 },
+      { label: t('pdf_col_name'),         x: ml,      w: 44 },
+      { label: t('pdf_col_title'),        x: ml + 44, w: 38 },
+      { label: t('pdf_col_company'),   x: ml + 82, w: 36 },
       { label: 'CHECK-IN',     x: ml + 118,w: 22 },
       { label: 'CHECK-OUT',    x: ml + 140,w: 22 },
-      { label: 'VARIGHED',     x: ml + 162,w: 20 }
+      { label: t('pdf_col_duration'),     x: ml + 162,w: 20 }
     ];
 
     cols.forEach(function(col) {
@@ -1668,8 +1668,8 @@ async function downloadMembersPdf(bubbleId) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     doc.setTextColor(70, 70, 90);
-    doc.text('Genereret af Bubble · bubble.app', ml, footerY);
-    doc.text('Side 1 af ' + doc.getNumberOfPages(), pw - mr, footerY, { align: 'right' });
+    doc.text(t('rep_gen_by'), ml, footerY);
+    doc.text(t('rep_page', { n: 1, total: doc.getNumberOfPages() }), pw - mr, footerY, { align: 'right' });
 
     // Bottom accent bar
     doc.setFillColor(108, 99, 255);
@@ -1756,7 +1756,7 @@ async function generateEventReport(bubbleId) {
       if (mins > 0 && mins < 1440) { totalMins += mins; stayCount++; }
     });
     var avgStay = stayCount > 0 ? Math.round(totalMins / stayCount) : 0;
-    var avgStayLabel = avgStay < 60 ? avgStay + ' min' : Math.floor(avgStay / 60) + 't ' + (avgStay % 60) + 'min';
+    var avgStayLabel = avgStay < 60 ? avgStay + ' min' : Math.floor(avgStay / 60) + t('rep_hour_abbr') + (avgStay % 60) + 'min';
 
     // Messages per user
     var msgPerUser = {};
@@ -1827,7 +1827,7 @@ async function generateEventReport(bubbleId) {
     }
 
     var html = '<!DOCTYPE html><html lang="da"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
-      '<title>Event Rapport — ' + (b.name || 'Bubble') + '</title>' +
+      '<title>' + t('rep_title') + ' — ' + (b.name || 'Bubble') + '</title>' +
       '<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">' +
       '<style>' +
         '*{margin:0;padding:0;box-sizing:border-box}' +
@@ -1859,19 +1859,19 @@ async function generateEventReport(bubbleId) {
       '<div class="header">' +
         '<h1>' + (b.name || 'Event') + '</h1>' +
         '<div class="meta">' + eventDate + (b.location ? ' · ' + b.location : '') + '</div>' +
-        '<div class="bubble-badge">🫧 Rapport genereret via Bubble</div>' +
+        '<div class="bubble-badge">🫧 ' + t('rep_via') + '</div>' +
       '</div>' +
 
       // Key stats
       '<div class="section">' +
-        '<div class="section-title">Overblik</div>' +
+        '<div class="section-title">' + t('rep_overview') + '</div>' +
         '<div class="stat-grid">' +
-          statBox('Deltagere', totalMembers, totalCheckedIn > 0 ? totalCheckedIn + ' checked in' : null, '#7C5CFC') +
-          statBox('Connections', connectionCount, connectionRate + '% lavede min. 1', '#1A9E8E') +
-          statBox('Profilvisninger', viewCount, '', '#E879A8') +
-          statBox('Beskeder', totalMessages, '', '#2ECFCF') +
-          (avgStay > 0 ? statBox('Gns. opholdstid', avgStayLabel, '', '#F59E0B') : '') +
-          (totalGuests > 0 ? statBox('Gæster (manuel)', totalGuests, '', '#8C8A97') : '') +
+          statBox(t('rep_attendees'), totalMembers, totalCheckedIn > 0 ? totalCheckedIn + ' checked in' : null, '#7C5CFC') +
+          statBox('Connections', connectionCount, connectionRate + t('rep_made_min1'), '#1A9E8E') +
+          statBox(t('rep_profileviews'), viewCount, '', '#E879A8') +
+          statBox(t('rep_messages'), totalMessages, '', '#2ECFCF') +
+          (avgStay > 0 ? statBox(t('rep_avgstay'), avgStayLabel, '', '#F59E0B') : '') +
+          (totalGuests > 0 ? statBox(t('rep_guests'), totalGuests, '', '#8C8A97') : '') +
         '</div>' +
       '</div>' +
 
@@ -1880,23 +1880,23 @@ async function generateEventReport(bubbleId) {
         '<div class="card highlight-card" style="text-align:center;padding:1.5rem">' +
           '<div style="font-size:2.5rem;font-weight:900;color:#7C5CFC">' + connectionRate + '%</div>' +
           '<div style="font-size:0.9rem;font-weight:600;margin-top:0.2rem">Connection rate</div>' +
-          '<div style="font-size:0.78rem;color:#8C8A97;margin-top:0.2rem">' + usersWithConnections + ' af ' + totalMembers + ' deltagere lavede mindst én ny forbindelse</div>' +
+          '<div style="font-size:0.78rem;color:#8C8A97;margin-top:0.2rem">' + t('rep_made_conn', { x: usersWithConnections, y: totalMembers }) + '</div>' +
         '</div>' +
       '</div>' +
 
       // Top connectors
       (topConnectors.length > 0 ? '<div class="section">' +
-        '<div class="section-title">Mest aktive networkere</div>' +
+        '<div class="section-title">' + t('rep_most_active') + '</div>' +
         '<div class="card">' +
           topConnectors.map(function(c, i) {
             return '<div class="connector-card">' +
               '<div class="connector-rank">' + (i + 1) + '</div>' +
               '<div style="flex:1;min-width:0">' +
-                '<div style="font-size:0.85rem;font-weight:700">Deltager #' + (i + 1) + '</div>' +
+                '<div style="font-size:0.85rem;font-weight:700">' + t('rep_attendee_hash') + (i + 1) + '</div>' +
               '</div>' +
               '<div style="text-align:right">' +
                 '<div style="font-size:0.78rem;font-weight:700;color:#1A9E8E">' + c.connections + ' connections</div>' +
-                '<div style="font-size:0.68rem;color:#8C8A97">' + c.messages + ' beskeder</div>' +
+                '<div style="font-size:0.68rem;color:#8C8A97">' + c.messages + ' ' + t('rep_messages_unit') + '</div>' +
               '</div>' +
             '</div>';
           }).join('') +
@@ -1905,7 +1905,7 @@ async function generateEventReport(bubbleId) {
 
       // Interest map
       (topKeywords.length > 0 ? '<div class="section">' +
-        '<div class="section-title">Interesser blandt deltagerne</div>' +
+        '<div class="section-title">' + t('rep_interests') + '</div>' +
         '<div class="card">' +
           barChart(topKeywords.map(function(kw) { return { label: kw[0], value: kw[1] }; })) +
         '</div>' +
@@ -1913,7 +1913,7 @@ async function generateEventReport(bubbleId) {
 
       // Join timeline
       (timelineData.length > 0 ? '<div class="section">' +
-        '<div class="section-title">Deltagertilgang over tid</div>' +
+        '<div class="section-title">' + t('rep_growth') + '</div>' +
         '<div class="card">' +
           barChart(timelineData) +
         '</div>' +
@@ -1921,18 +1921,18 @@ async function generateEventReport(bubbleId) {
 
       // Full member table
       '<div class="section">' +
-        '<div class="section-title">Alle deltagere (' + totalMembers + ')</div>' +
+        '<div class="section-title">' + t('rep_all_attendees', { n: totalMembers }) + '</div>' +
         '<div class="card" style="overflow-x:auto;padding:0.5rem">' +
           '<table><thead><tr>' +
-            '<th>Navn</th><th>Titel</th><th>Virksomhed</th>' +
+            '<th>' + t('rep_th_name') + '</th><th>' + t('rep_th_title') + '</th><th>' + t('rep_th_company') + '</th>' +
           '</tr></thead><tbody>' + memberRows + '</tbody></table>' +
         '</div>' +
       '</div>' +
 
       // Footer
       '<div class="footer">' +
-        '<div>Genereret ' + new Date().toLocaleDateString(_locale(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + '</div>' +
-        '<div style="margin-top:0.3rem">Powered by <a href="https://bubbleme.dk" target="_blank">Bubble</a> — Hyperlokal networking</div>' +
+        '<div>' + t('rep_generated') + ' ' + new Date().toLocaleDateString(_locale(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + '</div>' +
+        '<div style="margin-top:0.3rem">Powered by <a href="https://bubbleme.dk" target="_blank">Bubble</a> — ' + t('rep_tagline') + '</div>' +
         '<button class="no-print" onclick="window.print()" style="margin-top:1rem;padding:0.6rem 1.5rem;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;border:none;border-radius:10px;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Print / Gem som PDF</button>' +
       '</div>' +
 
@@ -1953,7 +1953,7 @@ async function generateEventReport(bubbleId) {
       // Close + export bar
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">' +
         '<button onclick="closeReportTray()" style="border:none;background:none;font-size:1.2rem;cursor:pointer;padding:0.3rem;color:var(--text)">←</button>' +
-        '<div style="font-size:0.82rem;font-weight:800;color:var(--text)">Event-rapport</div>' +
+        '<div style="font-size:0.82rem;font-weight:800;color:var(--text)">' + t('rep_title_bar') + '</div>' +
         '<div style="display:flex;gap:0.3rem">' +
           '<button onclick="exportReportPdf(\'' + bubbleId + '\')" style="font-size:0.65rem;padding:0.3rem 0.5rem;background:rgba(100,180,230,0.15);color:rgb(100,180,230);border:0.5px solid rgba(100,180,230,0.25);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">PDF</button>' +
           '<button onclick="exportReportEmail(\'' + bubbleId + '\')" style="font-size:0.65rem;padding:0.3rem 0.5rem;background:rgba(46,207,207,0.08);color:#085041;border:1px solid rgba(46,207,207,0.15);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Email</button>' +
@@ -1962,7 +1962,7 @@ async function generateEventReport(bubbleId) {
 
       // Header card
       '<div style="background:var(--gradient-primary);color:white;padding:1.25rem 1rem;border-radius:16px;margin-bottom:1rem">' +
-        '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;opacity:0.75">Event Rapport</div>' +
+        '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;opacity:0.75">' + t('rep_title') + '</div>' +
         '<div style="font-size:1.2rem;font-weight:900;letter-spacing:-0.02em;margin-top:0.2rem">' + escHtml(b.name) + '</div>' +
         '<div style="font-size:0.75rem;opacity:0.85;margin-top:0.15rem">' + eventDate + (b.location ? ' · ' + escHtml(b.location) : '') + '</div>' +
       '</div>' +
@@ -1976,22 +1976,22 @@ async function generateEventReport(bubbleId) {
         '<div style="font-size:0.68rem;font-weight:600;color:var(--text-secondary);margin-top:0.1rem">' + label + '</div></div>';
     }
 
-    trayHtml += miniStat('Deltagere', totalMembers, '#7C5CFC');
+    trayHtml += miniStat(t('rep_attendees'), totalMembers, '#7C5CFC');
     trayHtml += miniStat('Check-ins', totalCheckedIn, '#2ECFCF');
     trayHtml += miniStat('Connections', connectionCount, '#1A9E8E');
-    trayHtml += miniStat('Beskeder', totalMessages, '#E879A8');
-    if (avgStay > 0) trayHtml += miniStat('Gns. opholdstid', avgStayLabel, '#F59E0B');
+    trayHtml += miniStat(t('rep_messages'), totalMessages, '#E879A8');
+    if (avgStay > 0) trayHtml += miniStat(t('rep_avgstay'), avgStayLabel, '#F59E0B');
     trayHtml += miniStat('Connection rate', connectionRate + '%', '#7C5CFC');
     trayHtml += '</div>';
 
     // Top connectors
     if (topConnectors.length > 0) {
       trayHtml += '<div style="margin-bottom:1rem">' +
-        '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgb(100,180,230);margin-bottom:0.4rem">Top networkere</div>';
+        '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgb(100,180,230);margin-bottom:0.4rem">' + t('rep_top_networkers') + '</div>';
       topConnectors.forEach(function(c, i) {
         trayHtml += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid var(--glass-border-subtle)">' +
           '<div style="width:22px;height:22px;border-radius:50%;background:var(--gradient-primary);color:white;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:800;flex-shrink:0">' + (i + 1) + '</div>' +
-          '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:700">Deltager #' + (i + 1) + '</div></div>' +
+          '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:700">' + t('rep_attendee_hash') + (i + 1) + '</div></div>' +
           '<div style="font-size:0.68rem;font-weight:700;color:#1A9E8E">' + c.connections + ' conn.</div>' +
         '</div>';
       });
@@ -2001,7 +2001,7 @@ async function generateEventReport(bubbleId) {
     // Top interests
     if (topKeywords.length > 0) {
       trayHtml += '<div style="margin-bottom:1rem">' +
-        '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgb(100,180,230);margin-bottom:0.4rem">Interesser</div>' +
+        '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgb(100,180,230);margin-bottom:0.4rem">' + t('rep_interests_short') + '</div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:0.25rem">';
       topKeywords.forEach(function(kw) {
         trayHtml += '<span class="tag">' + escHtml(kw[0]) + ' <span style="color:var(--muted);font-size:0.6rem">' + kw[1] + '</span></span>';
@@ -2011,7 +2011,7 @@ async function generateEventReport(bubbleId) {
 
     // Participant list
     trayHtml += '<div style="margin-bottom:1rem">' +
-      '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgb(100,180,230);margin-bottom:0.4rem">Alle deltagere (' + totalMembers + ')</div>';
+      '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgb(100,180,230);margin-bottom:0.4rem">' + t('rep_all_attendees', { n: totalMembers }) + '</div>';
 
     members.forEach(function(m) {
       var p = profileMap[m.user_id] || {};
@@ -2028,7 +2028,7 @@ async function generateEventReport(bubbleId) {
 
     // Footer
     trayHtml += '<div style="text-align:center;padding:1rem 0;font-size:0.68rem;color:var(--muted);border-top:1px solid var(--glass-border-subtle)">' +
-      'Genereret ' + new Date().toLocaleDateString(_locale(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) +
+      t('rep_generated') + ' ' + new Date().toLocaleDateString(_locale(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) +
       '<br>Powered by Bubble · bubbleme.dk</div>';
 
     trayHtml += '</div>';
