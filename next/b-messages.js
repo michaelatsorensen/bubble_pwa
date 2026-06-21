@@ -305,7 +305,10 @@ async function sendDirectMessage(toId, content) {
 
 function startChat() {
   if (!currentPerson) return;
-  openChat(currentPerson, 'screen-person');
+  var uid = currentPerson;
+  var origin = (typeof navState !== 'undefined' && navState.screen) ? navState.screen : 'screen-home';
+  if (typeof closePersonSheet === 'function') closePersonSheet();
+  openChat(uid, origin);
 }
 
 // ══════════════════════════════════════════════════════════

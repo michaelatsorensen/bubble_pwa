@@ -9,30 +9,37 @@
 
 //  PERSON PROFILE
 // ══════════════════════════════════════════════════════════
+var _personSheetSeq = 0;
+function openPersonSheet() {
+  var ov = document.getElementById('pp-overlay');
+  var sh = document.getElementById('pp-sheet');
+  if (!ov || !sh) return;
+  var scr = sh.querySelector('.pp-sheet-scroll'); if (scr) scr.scrollTop = 0;
+  ov.classList.add('open');
+  setTimeout(function() { sh.classList.add('open'); }, 10);
+}
+function closePersonSheet() {
+  var ov = document.getElementById('pp-overlay');
+  var sh = document.getElementById('pp-sheet');
+  _personSheetSeq++;                 // invalidate any in-flight profile load
+  navState.personSheetId = null;
+  if (sh) sh.classList.remove('open');
+  setTimeout(function() { if (ov) ov.classList.remove('open'); }, 320);
+}
 async function openPerson(userId, fromScreen) {
   try {
     currentPerson = userId;
     navState.personSheetId = userId;
-    const backBtn = document.getElementById('person-back-btn');
-    // Capture bubble ID and actual origin screen before navigation clears it
-    var _backBubbleId = (fromScreen === 'screen-bubble-chat' && typeof bcBubbleId !== 'undefined') ? bcBubbleId : null;
-    var _backScreen = fromScreen || 'screen-home';
-    backBtn.onclick = function() {
-      if (_backBubbleId) {
-        openBubbleChat(_backBubbleId, _backScreen === 'screen-bubble-chat' ? 'screen-home' : _backScreen);
-      } else {
-        goTo(_backScreen);
-      }
-    };
-    goTo('screen-person');
-    var myNav = _navVersion;
+    // Open as dark sheet (consistent with rest of app). Dismiss = closePersonSheet (hardcoded in HTML).
+    openPersonSheet();
+    var myNav = ++_personSheetSeq;
 
     // Reset all stateful UI from previous profile
     _personReset();
 
     const { data: p } = await sb.from('profiles').select('*').eq('id', userId).maybeSingle();
-    if (!p || _navVersion !== myNav) {
-      if (!p && _navVersion === myNav) _personRenderEmpty();
+    if (!p || _personSheetSeq !== myNav) {
+      if (!p && _personSheetSeq === myNav) _personRenderEmpty();
       return;
     }
 
@@ -193,11 +200,10 @@ async function _personRenderMatch(p, userId, myNav) {
     var ml = matchLabel(score);
     var matchEl = document.getElementById('person-match-label');
     matchEl.textContent = ml.text;
-    // Readable pill on the light profile: subtle tint bg + colored text. The pale green
-    // tier (#2ECFCF) is too light on white, so use teal-dark for it.
+    // Dark sheet topbar: use the bright tier colors directly (tuned for dark, like the radar preview).
     matchEl.style.background = ml.bg;
-    matchEl.style.color = (ml.color === 'var(--green)') ? 'var(--teal-dark)' : ml.color;
-    matchEl.style.border = '0.5px solid ' + (ml.text === 'I dit netværk' ? 'var(--border-on-light-strong)' : 'transparent');
+    matchEl.style.color = ml.color;
+    matchEl.style.border = '0.5px solid ' + (ml.text === 'I dit netværk' ? 'rgba(255,255,255,0.18)' : 'transparent');
     matchEl.style.display = ml.text ? '' : 'none';
 
     // Shared interests — collapsible (show 6, expand to all)
@@ -1691,7 +1697,7 @@ async function loadPersonBubbles(userId, navRef) {
     if (prof && prof.show_bubbles === false) return;
 
     // Stale nav check
-    if (navRef && _navVersion !== navRef) return;
+    if (navRef && _personSheetSeq !== navRef) return;
 
     // Get user's bubble memberships
     var { data: memberships } = await sb.from('bubble_members')
@@ -1711,7 +1717,7 @@ async function loadPersonBubbles(userId, navRef) {
       .order('created_at', { ascending: false });
 
     if (!bubbles || bubbles.length === 0) return;
-    if (navRef && _navVersion !== navRef) return;
+    if (navRef && _personSheetSeq !== navRef) return;
 
     // Render
     var total = bubbles.length;

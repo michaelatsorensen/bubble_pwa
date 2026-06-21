@@ -36,6 +36,8 @@ function navBack() {
   // Priority 1: Close overlays/sheets
   var dynOverlays = document.querySelectorAll('.bb-dyn-overlay');
   if (dynOverlays.length > 0) { dynOverlays.forEach(function(el) { bbDynClose(el); }); return; }
+  var ppOverlay = document.getElementById('pp-overlay');
+  if (ppOverlay && ppOverlay.classList.contains('open')) { if (typeof closePersonSheet === 'function') closePersonSheet(); return; }
   var psOverlay = document.getElementById('ps-overlay');
   if (psOverlay && psOverlay.classList.contains('open')) { if (typeof psClose === 'function') psClose(); return; }
   var openSheet = document.querySelector('.bb-overlay.open');
@@ -82,7 +84,15 @@ window.addEventListener('popstate', function() {
     return;
   }
 
-  // Priority 2: Close person sheet
+  // Priority 2: Close full-profile sheet
+  var ppOverlay = document.getElementById('pp-overlay');
+  if (ppOverlay && ppOverlay.classList.contains('open')) {
+    if (typeof closePersonSheet === 'function') closePersonSheet();
+    history.pushState(null, '');
+    return;
+  }
+
+  // Priority 2b: Close person sheet
   var psOverlay = document.getElementById('ps-overlay');
   if (psOverlay && psOverlay.classList.contains('open')) {
     if (typeof psClose === 'function') psClose();
