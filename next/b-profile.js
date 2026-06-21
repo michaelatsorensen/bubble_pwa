@@ -208,7 +208,7 @@ async function _personRenderMatch(p, userId, myNav) {
     // Dark sheet topbar: use the bright tier colors directly (tuned for dark, like the radar preview).
     matchEl.style.background = ml.bg;
     matchEl.style.color = ml.color;
-    matchEl.style.border = '0.5px solid ' + (ml.text === 'I dit netværk' ? 'rgba(255,255,255,0.18)' : 'transparent');
+    matchEl.style.border = '0.5px solid ' + (ml.tier === 'network' ? 'rgba(255,255,255,0.18)' : 'transparent');
     matchEl.style.display = ml.text ? '' : 'none';
 
     // Shared interests — collapsible (show 6, expand to all)

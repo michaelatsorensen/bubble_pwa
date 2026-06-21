@@ -22,11 +22,11 @@ function getAppMode() {
 // ── Match label system (v3 — tier-based thresholds) ──
 // Score 0-100 from tier-based calcMatchScore
 function matchLabel(score) {
-  if (score >= 60) return { text: 'Stærkt match',       color: 'var(--green)',  bg: 'rgba(26,158,142,0.08)' };
-  if (score >= 40) return { text: 'Godt match',          color: 'var(--accent)', bg: 'rgba(124,92,252,0.08)' };
-  if (score >= 20) return { text: 'Fælles interesser',   color: '#3B82F6',       bg: 'rgba(59,130,246,0.08)' };
-  if (score >= 1)  return { text: 'I dit netværk',       color: 'rgba(255,255,255,0.6)',  bg: 'rgba(255,255,255,0.08)' };
-  return              { text: '',                        color: 'var(--muted)',  bg: 'transparent' };
+  if (score >= 60) return { tier:'strong',  text: t('ml_strong'),  color: 'var(--green)',  bg: 'rgba(26,158,142,0.08)' };
+  if (score >= 40) return { tier:'good',     text: t('ml_good'),    color: 'var(--accent)', bg: 'rgba(124,92,252,0.08)' };
+  if (score >= 20) return { tier:'shared',   text: t('ml_shared'),  color: '#3B82F6',       bg: 'rgba(59,130,246,0.08)' };
+  if (score >= 1)  return { tier:'network',  text: t('ml_network'), color: 'rgba(255,255,255,0.6)',  bg: 'rgba(255,255,255,0.08)' };
+  return              { tier:'none', text: '',              color: 'var(--muted)',  bg: 'transparent' };
 }
 
 function matchBadgeHtml(score) {

@@ -52,6 +52,11 @@ function translateStaticUI() {
 // ── Translation dictionaries ──
 var _translations = {
 da: {
+  // -- Match labels (v9.41) --
+  ml_strong: 'Stærkt match',
+  ml_good: 'Godt match',
+  ml_shared: 'Fælles interesser',
+  ml_network: 'I dit netværk',
   et_grp_01: 'Teknologi & digitalt',
   et_grp_02: 'Energi & klima',
   et_grp_03: 'Sundhed & life science',
@@ -1183,6 +1188,11 @@ da: {
 },
 
 en: {
+  // -- Match labels (v9.41) --
+  ml_strong: 'Strong match',
+  ml_good: 'Good match',
+  ml_shared: 'Shared interests',
+  ml_network: 'In your network',
   et_grp_01: 'Technology & digital',
   et_grp_02: 'Energy & climate',
   et_grp_03: 'Health & life science',
