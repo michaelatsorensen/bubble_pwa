@@ -728,36 +728,17 @@ var _selectedInterests = (function() {
 
 function showTerms() {
   var { overlay, sheet } = bbDynOpen();
+  var isEN = (typeof getLang === 'function' && getLang() === 'en');
+  var title = isEN ? 'Terms & Privacy Policy' : 'Betingelser & Privatlivspolitik';
+  var closeLabel = isEN ? 'Close' : 'Luk';
+  var body = isEN
+    ? (typeof TERMS_EN !== 'undefined' ? TERMS_EN : '')
+    : (typeof TERMS_DA !== 'undefined' ? TERMS_DA : '');
   sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
-    '<h2 style="font-size:1.2rem;font-weight:800;margin-bottom:0.8rem;color:rgba(255,255,255,0.95)">Betingelser & Privatlivspolitik</h2>' +
-    '<div style="font-size:0.78rem;line-height:1.7;color:rgba(255,255,255,0.7)">' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">1. Hvad er Bubble?</h3>' +
-    '<p>Bubble er en networking-platform i lukket beta udviklet i Sønderborg, Danmark. Appen forbinder mennesker baseret på professionelle interesser og nærhed.</p>' +
-    '<p style="margin-top:4px">Dataansvarlig: Michael Sørensen (projektets ejer og udvikler), Sønderborg. Kontakt: info@bubbleme.dk.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">2. Beta-forbehold</h3>' +
-    '<p>Bubble er i <strong>closed beta</strong>. Funktioner kan ændres uden varsel. Der kan forekomme fejl, nedetid og datatab. Vi giver ingen garantier for oppetid eller dataintegritet.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">3. Dine data (GDPR)</h3>' +
-    '<p>Vi indsamler de oplysninger du selv vælger at oprette eller dele i Bubble, herunder navn, email, titel, arbejdsplads, bio, tags, profilbillede, medlemskaber i bobler og gemte kontakter.</p>' +
-    '<p style="margin-top:4px">Vi behandler dine oplysninger for at levere Bubble. I visse tilfælde sker det på baggrund af dit samtykke eller vores legitime interesse i at drive og forbedre tjenesten.</p>' +
-    '<p style="margin-top:4px">Beskeder deles ikke med tredjepart, og vi sælger <strong>aldrig</strong> dine data. Vi bruger ikke dine oplysninger til reklameformål og videregiver dem ikke til tredjepart med henblik på markedsføring. Vi bestræber os på at opbevare data inden for EU/EØS; visse underleverandører kan dog behandle data uden for EU/EØS under passende garantier.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">4. Cookies og lokal lagring</h3>' +
-    '<p>Bubble bruger <strong>ingen tracking-cookies</strong> og ingen tredjeparts-analyse. Vi bruger kun nødvendig lokal lagring:</p>' +
-    '<p style="margin-top:4px">• <strong>Login-token</strong> — holder dig logget ind<br>' +
-    '• <strong>App-præferencer</strong> — husker dine valg<br>' +
-    '• <strong>Midlertidig navigationsstate</strong> — gemt lokalt i din browser, udløber automatisk efter kort tid</p>' +
-    '<p style="margin-top:4px">Ingen data deles med tredjepart. Ingen reklame- eller profileringscookies.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">5. Dine rettigheder</h3>' +
-    '<p>Du har ret til indsigt, berigtigelse, sletning, begrænsning, dataportabilitet og indsigelse. Du kan redigere din profil og blokere brugere i appen. Ønsker du dine data slettet, kan du kontakte os på info@bubbleme.dk.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">6. Adfærd</h3>' +
-    '<p>Chikane, spam, hadefuldt indhold eller upassende profilbilleder tolereres ikke og kan resultere i fjernelse fra platformen.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">7. Ansvarsfraskrivelse</h3>' +
-    '<p>Bubble leveres "as is" uden garanti. Vi er ikke ansvarlige for tab af data, handlinger af andre brugere eller resultat af forbindelser via platformen.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95);margin:1rem 0 0.4rem">8. Kontakt & klage</h3>' +
-    '<p>Kontakt os på <strong>info@bubbleme.dk</strong></p>' +
-    '<p style="margin-top:4px">Klage: <a href="https://www.datatilsynet.dk" target="_blank" rel="noopener" style="color:rgb(100,180,230)">datatilsynet.dk</a></p>' +
-    '<p style="margin-top:8px;font-size:0.68rem;color:rgba(255,255,255,0.45)">Sidst opdateret: 7. juni 2026 · Vilkår v1.1</p>' +
-    '</div>' +
-    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:1.2rem;padding:0.7rem;border-radius:12px;border:0.5px solid rgba(255,255,255,0.1);background:none;color:rgba(255,255,255,0.7);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Luk</button>';
+    '<h2 style="font-size:1.2rem;font-weight:800;margin-bottom:0.8rem;color:rgba(255,255,255,0.95)">' + title + '</h2>' +
+    body +
+    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:1.2rem;padding:0.7rem;border-radius:12px;border:0.5px solid rgba(255,255,255,0.1);background:none;color:rgba(255,255,255,0.7);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">' + closeLabel + '</button>';
+  if (typeof tmsFillEmail === 'function') tmsFillEmail(sheet);
 }
 
 function openFeedback() {

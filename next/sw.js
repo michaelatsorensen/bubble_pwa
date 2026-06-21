@@ -12,13 +12,13 @@
 // Previous behavior (v8.17.30 and earlier): skipWaiting + clients.claim on install,
 // causing potentially-disruptive updates mid-write/mid-flow.
 
-const CACHE_NAME = 'bubble-next-v9.42';
+const CACHE_NAME = 'bubble-next-v9.43';
 const CACHE_URLS = [
   './', './index.html', './app.css',
   './bubble-icons.js',
   './tag-data.js',
   './b-config.js', './b-i18n.js', './b-utils.js', './b-guides.js', './b-navigation.js',
-  './b-auth.js', './b-home.js', './b-bubbles.js',
+  './b-terms.js', './b-auth.js', './b-home.js', './b-bubbles.js',
   './b-profile.js', './b-radar.js', './b-messages.js',
   './b-realtime.js', './b-onboarding.js', './b-chat.js',
   './b-notifications.js', './b-live.js', './b-admin.js',
