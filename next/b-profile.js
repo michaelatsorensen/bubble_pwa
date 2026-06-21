@@ -1518,7 +1518,7 @@ function _renderDashboardTagsCard() {
     // ── Header ──
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem 0.5rem">' +
       '<div style="font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.9)">Tags &amp; interesser</div>' +
-      '<div id="dash-et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:rgb(100,180,230)">0 valgt</div>' +
+      '<div id="dash-et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:rgb(100,180,230)">0 ' + t('et_selected') + '</div>' +
     '</div>' +
 
     // ── Progress bar ──

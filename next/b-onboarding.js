@@ -976,7 +976,7 @@ function etBuild() {
     div.innerHTML =
       '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.75rem 0.85rem;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" onclick="etToggle(\''+s.id+'\')">' +
         '<div style="width:32px;height:32px;border-radius:9px;background:'+s.color+'33;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+';filter:brightness(1.6) saturate(1.1)">' + etIco(s.icon) + '</span></div>' +
-        '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700;color:rgba(255,255,255,0.95)">'+s.label+'</div><div style="font-size:0.62rem;color:rgba(255,255,255,0.55);margin-top:1px">'+s.desc+'</div></div>' +
+        '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700;color:rgba(255,255,255,0.95)">'+t('et_sec_'+s.id+'_label')+'</div><div style="font-size:0.62rem;color:rgba(255,255,255,0.55);margin-top:1px">'+t('et_sec_'+s.id+'_desc')+'</div></div>' +
         badgeHtml +
         '<div style="color:rgba(255,255,255,0.55);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===s.id?'transform:rotate(180deg)':'')+'">▼</div>' +
       '</div>' +
@@ -992,7 +992,7 @@ function etBuild() {
       : 'background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.4);font-weight:500';
     return '<span style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.7rem;border-radius:99px;font-size:0.68rem;cursor:pointer;font-family:inherit;'+style+'" onclick="etSelectLifestage(\''+ls.id+'\')">' +
       '<span style="display:flex;align-items:center;width:14px;height:14px;flex-shrink:0">' + etIco(ls.icon) + '</span>' +
-      ls.label + '</span>';
+      t('et_ls_' + ls.id) + '</span>';
   }).join('');
 }
 
@@ -1005,7 +1005,7 @@ function etRebuildSec(id){
   el.innerHTML =
     '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.75rem 0.85rem;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" onclick="etToggle(\''+s.id+'\')">' +
       '<div style="width:32px;height:32px;border-radius:9px;background:'+s.color+'18;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+'">' + etIco(s.icon) + '</span></div>' +
-      '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700;color:rgba(255,255,255,0.9)">'+s.label+'</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.35);margin-top:1px">'+s.desc+'</div></div>' +
+      '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700;color:rgba(255,255,255,0.9)">'+t('et_sec_'+s.id+'_label')+'</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.35);margin-top:1px">'+t('et_sec_'+s.id+'_desc')+'</div></div>' +
       badgeHtml +
       '<div style="color:rgba(255,255,255,0.55);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===id?'transform:rotate(180deg)':'')+'">▼</div>' +
     '</div>' +
@@ -1075,7 +1075,7 @@ function etSelectLifestage(stage){
 function etUpdateUI(){
   var n=etSelected.size;
   var bar=_etEl('et-prog-bar'); if(bar)bar.style.width=Math.min(n/10*100,100)+'%';
-  var lbl=_etEl('et-prog-lbl'); if(lbl)lbl.textContent=n+' valgt';
+  var lbl=_etEl('et-prog-lbl'); if(lbl)lbl.textContent=n+' '+t('et_selected');
 
   // ── Tray preview (first 3 + count) ──
   var preview=_etEl('et-tray-preview');
@@ -1086,7 +1086,7 @@ function etUpdateUI(){
     preview.innerHTML=shown.map(function(e){
       var v=e[1];
       return '<span style="padding:0.18rem 0.5rem;border-radius:99px;font-size:0.62rem;font-weight:600;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);border:0.5px solid rgba(255,255,255,0.12);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px">'+escHtml(e[0])+'</span>';
-    }).join('')+(rest>0?'<span style="font-size:0.62rem;font-weight:600;color:rgba(255,255,255,0.3);white-space:nowrap">+'+rest+' mere</span>':'');
+    }).join('')+(rest>0?'<span style="font-size:0.62rem;font-weight:600;color:rgba(255,255,255,0.3);white-space:nowrap">+'+rest+' '+t('et_more')+'</span>':'');
   }
 
   // ── Tray btn: hide if 0 tags ──

@@ -52,6 +52,27 @@ function translateStaticUI() {
 // ── Translation dictionaries ──
 var _translations = {
 da: {
+  // -- Erhverv & Tags display labels (v9.39) --
+  et_selected: 'valgt',
+  et_more: 'mere',
+  et_ls_student: 'Student',
+  et_ls_employee: 'Ansat',
+  et_ls_entrepreneur: 'Iværksætter',
+  et_ls_freelancer: 'Freelancer',
+  et_ls_investor: 'Investor',
+  et_ls_public: 'Offentlig',
+  et_ls_practical: 'Fagperson',
+  et_ls_other: 'Andet',
+  et_sec_branche_label: 'Branche & sektor',
+  et_sec_branche_desc: 'Hvilken industri arbejder du i',
+  et_sec_offentlig_label: 'Offentlig & erhvervsfremme',
+  et_sec_offentlig_desc: 'Myndigheder, klynger, erhvervshuse, brancheorg.',
+  et_sec_rolle_label: 'Rolle & funktion',
+  et_sec_rolle_desc: 'Din position og ansvarsområde',
+  et_sec_komp_label: 'Kompetencer',
+  et_sec_komp_desc: 'Hvad er du særligt god til',
+  et_sec_int_label: 'Faglige interesser',
+  et_sec_int_desc: 'Hvad driver dig fagligt',
   // ── Navigation ──
   nav_home: 'Hjem',
   nav_bubbles: 'Bobler',
@@ -1112,6 +1133,27 @@ da: {
 },
 
 en: {
+  // -- Erhverv & Tags display labels (v9.39) --
+  et_selected: 'selected',
+  et_more: 'more',
+  et_ls_student: 'Student',
+  et_ls_employee: 'Employee',
+  et_ls_entrepreneur: 'Entrepreneur',
+  et_ls_freelancer: 'Freelancer',
+  et_ls_investor: 'Investor',
+  et_ls_public: 'Public sector',
+  et_ls_practical: 'Professional',
+  et_ls_other: 'Other',
+  et_sec_branche_label: 'Industry & sector',
+  et_sec_branche_desc: 'Which industry do you work in',
+  et_sec_offentlig_label: 'Public & business support',
+  et_sec_offentlig_desc: 'Authorities, clusters, business hubs, trade orgs.',
+  et_sec_rolle_label: 'Role & function',
+  et_sec_rolle_desc: 'Your position and area of responsibility',
+  et_sec_komp_label: 'Skills',
+  et_sec_komp_desc: 'What are you especially good at',
+  et_sec_int_label: 'Professional interests',
+  et_sec_int_desc: 'What drives you professionally',
   // ── Navigation ──
   nav_home: 'Home',
   nav_bubbles: 'Bubbles',
