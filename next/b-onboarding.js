@@ -879,6 +879,59 @@ var ET_LS = [
   {id:'other',icon:'smile',label:'Andet'},
 ];
 
+var ET_GRP = {
+  'Teknologi & digitalt':'et_grp_01',
+  'Energi & klima':'et_grp_02',
+  'Sundhed & life science':'et_grp_03',
+  'Fødevarer & bioressourcer':'et_grp_04',
+  'Produktion & industri':'et_grp_05',
+  'Byggeri & anlæg':'et_grp_06',
+  'Finans & forsikring':'et_grp_07',
+  'Handel & service':'et_grp_08',
+  'Kreativitet & medier':'et_grp_09',
+  'Myndigheder':'et_grp_10',
+  'Erhvervsfremme':'et_grp_11',
+  'Uddannelse & forskning':'et_grp_12',
+  'Civilsamfund & NGO':'et_grp_13',
+  'Ledelse & direktion':'et_grp_14',
+  'Teknologi & produkt':'et_grp_15',
+  'Design & kreativitet':'et_grp_16',
+  'Projektledelse & drift':'et_grp_17',
+  'Salg, marketing & komm.':'et_grp_18',
+  'Økonomi, jura & HR':'et_grp_19',
+  'Rådgivning & analyse':'et_grp_20',
+  'Investering':'et_grp_21',
+  'Iværksætteri':'et_grp_22',
+  'Sundhed & omsorg':'et_grp_23',
+  'Offentlig forvaltning':'et_grp_24',
+  'Håndværk & industri':'et_grp_25',
+  'Service & detail':'et_grp_26',
+  'Frivillig & community':'et_grp_27',
+  'Teknologi & data':'et_grp_28',
+  'Marketing & vækst':'et_grp_29',
+  'Salg & forretning':'et_grp_30',
+  'Økonomi & fundraising':'et_grp_31',
+  'People & organisation':'et_grp_32',
+  'Drift & supply chain':'et_grp_33',
+  'Kommunikation & brand':'et_grp_34',
+  'Jura & compliance':'et_grp_35',
+  'Innovation & research':'et_grp_36',
+  'Bæredygtighed':'et_grp_37',
+  'Bygge & anlæg':'et_grp_38',
+  'Sundhed & klinik':'et_grp_39',
+  'Undervisning':'et_grp_40',
+  'Klima & bæredygtighed':'et_grp_41',
+  'Arbejdsliv & ledelse':'et_grp_42',
+  'Iværksætteri & investering':'et_grp_43',
+  'Community & netværk':'et_grp_44',
+  'Personlig udvikling':'et_grp_45',
+  'Metoder & frameworks':'et_grp_46',
+  'Innovation & transformation':'et_grp_47',
+  'Diversitet & inklusion':'et_grp_48',
+  'Viden & læring':'et_grp_49',
+  'Sektorspecifikt':'et_grp_50',
+};
+
 function etInit() {
   etSelected = new Map();
   etCustom = {};
@@ -923,7 +976,7 @@ function etCountSec(id){ var n=0; etSelected.forEach(function(v){ if(v.sec===id)
 function etBuildBody(s) {
   var h = '';
   s.groups.forEach(function(g){
-    h += '<div><div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.5);padding:0.25rem 0 0.1rem">' + g.label + '</div><div style="display:flex;flex-wrap:wrap;gap:0.3rem">';
+    h += '<div><div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.5);padding:0.25rem 0 0.1rem">' + (ET_GRP[g.label] ? t(ET_GRP[g.label]) : g.label) + '</div><div style="display:flex;flex-wrap:wrap;gap:0.3rem">';
     g.tags.forEach(function(tag){
       var isSel = etSelected.has(tag);
       var style = isSel ? 'background:'+s.color+';border-color:'+s.color+';color:white' : 'background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.85)';
