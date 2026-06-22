@@ -760,7 +760,7 @@ async function showEventReadyQR() {
     if (metaEl && _eventBubble) metaEl.textContent = t('qr_show_qr_at', {event: _eventBubble.name});
     
     // Generate rotating QR token (10 min)
-    var token = crypto.randomUUID ? crypto.randomUUID().split('-')[0] : Math.random().toString(36).slice(2,10);
+    var token = crypto.randomUUID ? crypto.randomUUID().replace(/-/g,'') : (crypto.getRandomValues ? Array.prototype.map.call(crypto.getRandomValues(new Uint8Array(16)), function(b){return ('0'+b.toString(16)).slice(-2);}).join('') : (Date.now().toString(36)+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)).slice(0,32));
     var expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     var qrResult = await dbActions.createQRToken(token, expiresAt);
     if (!qrResult.ok) token = null;
