@@ -602,6 +602,10 @@ async function bcRefreshMembership() {
 }
 
 // ── Render action buttons based on membership state ──
+function bcHiddenShareInfo() {
+  showWarningToast(t('bb_hidden_share_blocked'));
+}
+
 function bcRenderActions(b, myMembership, canEdit, isPending) {
   // Remove skeleton atomically as real UI appears (no-op if already removed)
   _bcHideSkeleton();
@@ -634,11 +638,19 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
     actionArea.style.display = canEdit ? 'flex' : 'none';
     if (actionBar) {
       var upvoted = myUpvotes[b.id];
+      var hiddenNonEvent = (b.visibility === 'hidden') && b.type !== 'event' && b.type !== 'live';
+      var _lockSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>';
+      var delBtn = hiddenNonEvent
+        ? `<button class="bc-bar-btn" style="opacity:0.5" onclick="bcHiddenShareInfo()">${_lockSvg} Del</button>`
+        : `<button class="bc-bar-btn" onclick="shareBubbleLink('${b.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Del</button>`;
+      var qrBtn = hiddenNonEvent
+        ? `<button class="bc-bar-btn" style="opacity:0.5" onclick="bcHiddenShareInfo()">${_lockSvg} QR</button>`
+        : `<button class="bc-bar-btn" data-action="openQRModal" data-id="${b.id}">${icon('qrcode')} QR</button>`;
       actionBar.innerHTML =
         `<button class="bc-bar-btn" onclick="openInviteModal('${b.id}')">${icon('user-plus')} Invitér</button>` +
-        `<button class="bc-bar-btn" onclick="shareBubbleLink('${b.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Del</button>` +
+        delBtn +
         `<button class="bc-bar-btn${upvoted ? ' active' : ''}" id="bc-upvote-bar-btn" onclick="toggleBubbleUpvote('${b.id}')">${upvoted ? icon('checkCircle') : icon('rocket')} ${upvoted ? 'Anbefalet' : 'Anbefal'}</button>` +
-        `<button class="bc-bar-btn" data-action="openQRModal" data-id="${b.id}">${icon('qrcode')} QR</button>`;
+        qrBtn;
       actionBar.style.display = 'flex';
     }
   } else {

@@ -877,18 +877,31 @@ var dbActions = {
     if (!bubbleId)    return { ok: false, status: 'invalid_input', reason: 'missing_bubble_id' };
     source = source || 'discover';
     try {
-      // Defense-in-depth: check visibility before join (bypass for QR/invite)
+      // Visibility-aware routing to match the RLS join gate.
+      var { data: bub } = await sb.from('bubbles').select('visibility,type').eq('id', bubbleId).maybeSingle();
+      var _isEventLike = bub && (bub.type === 'event' || bub.type === 'live');
+      var _vis = bub ? bub.visibility : null;
+      var _openJoin = !bub || _vis === 'public' || _vis == null || _isEventLike;
+
       if (source === 'discover') {
-        var { data: bub } = await sb.from('bubbles').select('visibility,type').eq('id', bubbleId).maybeSingle();
-        if (bub && bub.visibility === 'private' && bub.type !== 'event' && bub.type !== 'live') {
-          logError('dbActions.joinBubble', new Error('Attempted direct join on private bubble'), { bubble_id: bubbleId });
+        // Defense-in-depth: discover never direct-joins a non-open bubble
+        if (bub && _vis === 'private' && !_isEventLike) {
           return { ok: false, status: 'blocked', reason: 'private_bubble', bubble_id: bubbleId };
         }
-        if (bub && bub.visibility === 'hidden') {
-          logError('dbActions.joinBubble', new Error('Attempted direct join on hidden bubble'), { bubble_id: bubbleId });
+        if (bub && _vis === 'hidden' && !_isEventLike) {
           return { ok: false, status: 'blocked', reason: 'hidden_bubble', bubble_id: bubbleId };
         }
+      } else if (!_openJoin) {
+        // Link/QR on a non-open bubble: route to the correct path instead of a raw RLS error.
+        if (_vis === 'private') {
+          var _rq = await dbActions.requestJoin(bubbleId);
+          if (!_rq.ok) return _rq;
+          return { ok: true, status: 'requested', bubble_id: bubbleId };
+        }
+        // hidden non-event → invitation only
+        return { ok: false, status: 'invite_only', bubble_id: bubbleId };
       }
+
       var { error } = await sb.from('bubble_members').insert({
         bubble_id: bubbleId,
         user_id: currentUser.id

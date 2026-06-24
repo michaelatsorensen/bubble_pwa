@@ -615,9 +615,11 @@ async function showDeepLinkModal(type, targetId) {
         iconHtml: iconHtmlN, title: escHtml(b.name || '?'),
         subtitle: b.location ? escHtml(b.location) : '',
         kicker: t('dl_join_kicker'), kickerColor: '#4F9FD4',
-        primaryLabel: t('dl_join_network') + ' →',
+        primaryLabel: (b.visibility === 'private' ? t('dl_request_access') : t('dl_join_network')) + ' →',
         primaryFn: async function() {
           var result = await dbActions.joinBubble(targetId, 'invite_link');
+          if (result.status === 'invite_only') { showWarningToast(t('dl_invite_only')); return; }
+          if (result.status === 'requested')   { showSuccessToast(t('toast_request_sent')); return; }
           if (!result.ok) {
             showErrorToast(t('err_join_failed'));
             return;
