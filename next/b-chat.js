@@ -347,9 +347,15 @@ async function bcLoadBubbleCore(bubbleId) {
   }
   document.getElementById('bc-name').textContent = b.name;
 
-  // Member count + parent ref in subtitle
-  var { count: memberCount } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bubbleId).or('status.is.null,status.neq.pending');
-  memberCount = memberCount || 0;
+  // Member count + parent ref in subtitle.
+  // Use denormalized bubbles.member_count so non-members of private bubbles
+  // see the count (the member LIST stays hidden by RLS). Fallback to the RLS
+  // count query if the column is not yet present.
+  var memberCount = (b && b.member_count != null) ? b.member_count : null;
+  if (memberCount == null) {
+    var _mcRes = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bubbleId).or('status.is.null,status.neq.pending');
+    memberCount = _mcRes.count || 0;
+  }
   var subText = memberCount + (isEvent ? ' ' + t('bb_participants') : ' ' + t('bb_members'));
   // Fetch parent name for child bubbles
   if (b.parent_bubble_id) {
@@ -807,8 +813,11 @@ async function bcLoadBubbleInfo() {
     }
     document.getElementById('bc-name').textContent = b.name;
 
-    var { count: memberCount2 } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bcBubbleId).or('status.is.null,status.neq.pending');
-    memberCount2 = memberCount2 || 0;
+    var memberCount2 = (b && b.member_count != null) ? b.member_count : null;
+    if (memberCount2 == null) {
+      var _mc2Res = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bcBubbleId).or('status.is.null,status.neq.pending');
+      memberCount2 = _mc2Res.count || 0;
+    }
     var isEvent = b.type === 'event' || b.type === 'live';
     var statusText = memberCount2 + (isEvent ? ' ' + t('bb_participants') : ' ' + t('bb_members'));
 
