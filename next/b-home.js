@@ -1738,7 +1738,7 @@ async function loadMyNetworks() {
               html += '<div class="bb-tree-leaf"><div class="bb-card-list' + (isPast && !gcLive ? ' is-past' : '') + '" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')">';
               html += '<div class="bb-card-icon-sq icon-wrap is-event">' + _bIco(ev, _calIco, 6) + (evIsMember ? _memberCheck : '') + '</div>';
               html += '<div class="bb-card-text">';
-              html += '<div class="bb-card-title">' + escHtml(ev.name) + '</div>';
+              html += '<div class="bb-card-title">' + escHtml(ev.name) + _evEndedBadge(ev) + '</div>';
               html += '<div class="bb-card-meta">' + visIcon(ev.visibility) + '<span class="bb-card-meta-text">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</span></div>';
               html += '</div>';
               html += _unreadDot(ev.id) + (_goLiveBtn(ev, evIsMember) || '<div class="bb-card-chev">\u203A</div>');
@@ -1762,7 +1762,7 @@ async function loadMyNetworks() {
           html += '<div class="bb-tree-branch"><div class="bb-card-list' + (isPast && !evLive ? ' is-past' : '') + '" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')">';
           html += '<div class="bb-card-icon-sq icon-wrap is-event">' + _bIco(ev, _calIco, 6) + (evIsMember ? _memberCheck : '') + '</div>';
           html += '<div class="bb-card-text">';
-          html += '<div class="bb-card-title">' + escHtml(ev.name) + '</div>';
+          html += '<div class="bb-card-title">' + escHtml(ev.name) + _evEndedBadge(ev) + '</div>';
           html += '<div class="bb-card-meta">' + visIcon(ev.visibility) + '<span class="bb-card-meta-text">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</span></div>';
           html += '</div>';
           html += _unreadDot(ev.id) + (_goLiveBtn(ev, evIsMember) || '<div class="bb-card-chev">\u203A</div>');
@@ -1826,7 +1826,7 @@ async function loadMyNetworks() {
           html += '<div class="bb-tree-leaf"><div class="bb-card-list' + (isPast ? ' is-past' : '') + '" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')">';
           html += '<div class="bb-card-icon-sq icon-wrap is-event">' + _bIco(ev, _calIco, 6) + (evIsMember ? _memberCheck : '') + '</div>';
           html += '<div class="bb-card-text">';
-          html += '<div class="bb-card-title">' + escHtml(ev.name) + '</div>';
+          html += '<div class="bb-card-title">' + escHtml(ev.name) + _evEndedBadge(ev) + '</div>';
           html += '<div class="bb-card-meta">' + visIcon(ev.visibility) + '<span class="bb-card-meta-text">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</span></div>';
           html += '</div>';
           html += _unreadDot(ev.id) + (_goLiveBtn(ev, evIsMember) || '<div class="bb-card-chev">\u203A</div>');
@@ -2065,6 +2065,13 @@ async function loadTopMatches() {
 
     container.style.display = 'block';
   } catch(e) { logError('loadTopMatches', e); }
+}
+
+function _evEndedBadge(ev) {
+  if (!ev || !ev.event_date) return '';
+  var ended = new Date(ev.event_end_date || ev.event_date) < new Date();
+  var live = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
+  return (ended && !live) ? ' <span class="bb-pill bb-pill-past">' + (t('bb_status_past') || 'Afsluttet') + '</span>' : '';
 }
 
 function bubbleCard(b, joined) {

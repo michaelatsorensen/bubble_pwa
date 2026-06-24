@@ -3121,7 +3121,9 @@ a:not(.btn-primary):not(.btn-secondary):active {
   color: #FFFFFF;
 }
 .bb-card-list:active { transform: scale(0.98); border-color: rgba(255,255,255,0.12); }
-.bb-card-list.is-past { opacity: 0.65; }
+.bb-card-list.is-past .bb-card-icon-sq { opacity: 0.4; }
+.bb-card-list.is-past .bb-card-title { color: rgba(255,255,255,0.45); }
+.bb-card-list.is-past .bb-card-meta { opacity: 0.5; }
 
 /* Boble icon — squircle 40px with 8px radius */
 .bb-card-icon-sq {
@@ -3216,7 +3218,7 @@ a:not(.btn-primary):not(.btn-secondary):active {
 
 /* Status pills — state, not type (placed inline with title) */
 .bb-pill-pending { background: rgba(133,79,11,0.5); color: #FAC775; }
-.bb-pill-past { background: rgba(95,94,90,0.4); color: #B4B2A9; }
+.bb-pill-past { background: rgba(95,94,90,0.9); color: #F1EFE8; }
 .bb-pill-live { background: rgba(15,95,165,0.5); color: #B5D4F4; }
 .bb-pill-coming { background: rgba(35,75,135,0.6); color: #A5C5E8; }
 

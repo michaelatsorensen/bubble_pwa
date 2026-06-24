@@ -1550,7 +1550,10 @@ async function bcLoadMembers() {
       .order('joined_at', {ascending:true});
 
     if (!members || members.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('users') + '</div><div class="empty-text">'+t('bc_no_members')+'</div></div>';
+      // If the count says there ARE members but the list is empty, they're hidden by RLS
+      // (non-member of a private/hidden bubble) — say so instead of "no members".
+      var _membersHidden = bcBubbleData && (bcBubbleData.member_count || 0) > 0;
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('users') + '</div><div class="empty-text">' + (_membersHidden ? t('bc_members_hidden') : t('bc_no_members')) + '</div></div>';
       return;
     }
 
@@ -1903,7 +1906,7 @@ async function bcLoadInfo() {
                   childCards += '<div class="bb-tree-leaf"><div class="bb-card-list' + (isPast ? ' is-past' : '') + '" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubble-chat\')">';
                   childCards += '<div class="bb-card-icon-sq icon-wrap is-event">' + evIcon + '</div>';
                   childCards += '<div class="bb-card-text">';
-                  childCards += '<div class="bb-card-title">' + escHtml(ev.name) + (gcEvLive ? ' <span class="bb-pill bb-pill-live">LIVE</span>' : '') + '</div>';
+                  childCards += '<div class="bb-card-title">' + escHtml(ev.name) + (gcEvLive ? ' <span class="bb-pill bb-pill-live">LIVE</span>' : '') + _evEndedBadge(ev) + '</div>';
                   childCards += '<div class="bb-card-meta">' + visIcon(ev.visibility) + '<span class="bb-card-meta-text">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' tilmeldt' : '') + '</span></div>';
                   childCards += '</div>';
                   childCards += '<div class="bb-card-chev">\u203A</div>';
@@ -1944,7 +1947,7 @@ async function bcLoadInfo() {
             childCards += '<div class="bb-card-list' + (isPast ? ' is-past' : '') + '" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')">';
             childCards += '<div class="bb-card-icon-sq icon-wrap is-event">' + chIcon + '</div>';
             childCards += '<div class="bb-card-text">';
-            childCards += '<div class="bb-card-title">' + escHtml(ch.name) + (chEvLive ? ' <span class="bb-pill bb-pill-live">LIVE</span>' : '') + '</div>';
+            childCards += '<div class="bb-card-title">' + escHtml(ch.name) + (chEvLive ? ' <span class="bb-pill bb-pill-live">LIVE</span>' : '') + _evEndedBadge(ch) + '</div>';
             childCards += '<div class="bb-card-meta">' + visIcon(ch.visibility) + '<span class="bb-card-meta-text">' + dateStr + ' \u00B7 ' + chMc + ' tilmeldt</span></div>';
             childCards += '</div>';
             if (ch.agenda) {
