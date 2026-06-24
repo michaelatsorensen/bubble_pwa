@@ -581,6 +581,7 @@ async function showDeepLinkModal(type, targetId) {
       _renderSimpleDeepLinkModal({
         iconBg: 'linear-gradient(135deg,#7C5CFC,#6366F1)', iconSize: '64px', iconRadius: '50%',
         iconHtml: iconHtml, title: title, subtitle: subtitle,
+        kicker: t('dl_contact_kicker'), kickerColor: '#7C5CFC',
         primaryLabel: t('dl_save_contact') + ' →',
         primaryFn: async function() {
           var result = await dbActions.saveContact(targetId);
@@ -613,7 +614,8 @@ async function showDeepLinkModal(type, targetId) {
         iconBg: 'rgba(124,92,252,0.15)', iconSize: '56px', iconRadius: '14px',
         iconHtml: iconHtmlN, title: escHtml(b.name || '?'),
         subtitle: b.location ? escHtml(b.location) : '',
-        primaryLabel: t('dl_go_to_network') + ' →',
+        kicker: t('dl_join_kicker'), kickerColor: '#4F9FD4',
+        primaryLabel: t('dl_join_network') + ' →',
         primaryFn: async function() {
           var result = await dbActions.joinBubble(targetId, 'invite_link');
           if (!result.ok) {
@@ -672,9 +674,10 @@ function _renderSimpleDeepLinkModal(opts) {
   ov.innerHTML =
     '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
       '<div style="width:' + opts.iconSize + ';height:' + opts.iconSize + ';border-radius:' + opts.iconRadius + ';background:' + opts.iconBg + ';display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;overflow:hidden">' + opts.iconHtml + '</div>' +
+      (opts.kicker ? '<div style="font-size:0.7rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:' + (opts.kickerColor||'#6B6680') + ';margin-bottom:0.3rem">' + escHtml(opts.kicker) + '</div>' : '') +
       '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">' + opts.title + '</div>' +
       (opts.subtitle ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:1.25rem">' + opts.subtitle + '</div>' : '<div style="margin-bottom:1.25rem"></div>') +
-      '<button id="dl-action-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:0.5px solid rgba(100,180,230,0.25);background:rgba(100,180,230,0.18);color:rgba(255,255,255,0.95);font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + escHtml(opts.primaryLabel) + '</button>' +
+      '<button id="dl-action-btn" style="width:100%;padding:0.85rem;border-radius:12px;border:none;background:linear-gradient(180deg,#6FB8E8,#4F9FD4);color:#fff;box-shadow:0 6px 16px rgba(79,159,212,0.3);font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + escHtml(opts.primaryLabel) + '</button>' +
       '<button id="dl-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_stay_home') + '</button>' +
     '</div>';
   document.body.appendChild(ov);
@@ -704,6 +707,7 @@ function _renderEventDeepLinkModal(opts) {
   var showDecline = false;
   var memberBanner = '';
   var readonlyBanner = '';
+  var joinKicker = (!opts.isMember && !opts.timingIsEnded) ? t('dl_join_kicker') : '';
 
   // Common: "Se info" handler — joinless bubble open, lands on info tab via bcRenderActions()
   var seeInfoFn = function() { openBubbleChat(bubbleId, 'screen-home'); };
@@ -761,7 +765,7 @@ function _renderEventDeepLinkModal(opts) {
     showDecline = true;
   } else {
     // Kommende + ikke medlem (default for upcoming events)
-    primaryLabel = t('dl_accept_invitation') + ' →';
+    primaryLabel = t('dl_join_event') + ' →';
     primaryFn = async function() {
       var r = await dbActions.joinBubble(bubbleId, 'invite_link');
       if (!r.ok) {
@@ -777,7 +781,7 @@ function _renderEventDeepLinkModal(opts) {
   }
 
   // Build modal HTML
-  var primaryBtnHtml = '<button id="dl-event-primary" style="width:100%;padding:0.8rem;border-radius:12px;border:0.5px solid rgba(100,180,230,0.25);background:rgba(100,180,230,0.18);color:rgba(255,255,255,0.95);font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + primaryLabel + '</button>';
+  var primaryBtnHtml = '<button id="dl-event-primary" style="width:100%;padding:0.85rem;border-radius:12px;border:none;background:linear-gradient(180deg,#6FB8E8,#4F9FD4);color:#fff;box-shadow:0 6px 16px rgba(79,159,212,0.3);font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + primaryLabel + '</button>';
   var secondaryBtnHtml = secondaryLabel ? '<button id="dl-event-secondary" style="width:100%;padding:0.75rem;border-radius:12px;border:1px solid rgba(124,92,252,0.18);background:none;color:#534AB7;font-size:0.82rem;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:0.4rem">' + secondaryLabel + '</button>' : '';
   var declineBtnHtml = showDecline ? '<button id="dl-event-decline" style="width:100%;padding:0.6rem;border-radius:12px;border:none;background:none;color:#993556;font-size:0.75rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_decline_invitation') + '</button>' : '';
 
@@ -786,6 +790,7 @@ function _renderEventDeepLinkModal(opts) {
       '<button id="dl-event-close" style="position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;background:rgba(30,27,46,0.06);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;color:#6B6680;border:none;font-family:inherit">×</button>' +
       '<div id="dl-event-fadable">' +
         '<div style="width:56px;height:56px;border-radius:14px;background:rgba(46,207,207,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 0.85rem;overflow:hidden;opacity:' + opts.iconOpacity + '">' + opts.iconHtml + '</div>' +
+        (joinKicker ? '<div style="font-size:0.7rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#0F6E56;margin-bottom:0.3rem">' + escHtml(joinKicker) + '</div>' : '') +
         '<div style="font-size:1.05rem;font-weight:700;color:#1E1B2E;margin-bottom:0.2rem">' + opts.title + '</div>' +
         (opts.subtitle ? '<div style="font-size:0.78rem;color:#6B6680;margin-bottom:0.25rem">' + opts.subtitle + '</div>' : '') +
         (opts.timingHtml ? '<div style="font-size:0.72rem;color:' + (opts.timingIsLive ? '#0F6E56' : (opts.timingIsEnded ? '#888780' : '#6B6680')) + ';margin-bottom:1rem;font-weight:500">' + opts.timingHtml + '</div>' : '<div style="margin-bottom:1rem"></div>') +
@@ -912,7 +917,7 @@ async function _showSavedContactModal(contactId) {
           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
           '<span style="font-size:0.78rem;font-weight:600;color:#1A9E8E">' + t('home_contact_saved') + '</span>' +
         '</div>' +
-        '<button id="sc-view-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:0.5px solid rgba(100,180,230,0.25);background:rgba(100,180,230,0.18);color:rgba(255,255,255,0.95);font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">Se profil →</button>' +
+        '<button id="sc-view-btn" style="width:100%;padding:0.85rem;border-radius:12px;border:none;background:linear-gradient(180deg,#6FB8E8,#4F9FD4);color:#fff;box-shadow:0 6px 16px rgba(79,159,212,0.3);font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">Se profil →</button>' +
         '<button id="sc-close-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_ok') + '</button>' +
       '</div>';
 
