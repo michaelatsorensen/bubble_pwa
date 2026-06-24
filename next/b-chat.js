@@ -934,7 +934,7 @@ async function bcLoadEvents() {
     var memberMap = await fetchMemberAvatarsForBubbles(childIds, 4);
 
     var html = children.map(function(ch) {
-      var mc = ch.bubble_members?.[0]?.count || 0;
+      var mc = ch.member_count ?? ch.bubble_members?.[0]?.count ?? 0;
       var isEvent = ch.type === 'event' || ch.type === 'live';
       var avStack = renderAvatarStack(memberMap[ch.id] || [], mc);
 
@@ -1792,9 +1792,12 @@ async function bcLoadInfo() {
     const isEvent = b.type === 'event' || b.type === 'live';
     const memberLabel = isEvent ? t('bb_participants') : t('bc_members_lc');
 
-    // Member count
-    var { count: mc } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', b.id).or('status.is.null,status.neq.pending');
-    mc = mc || 0;
+    // Member count from denormalized bubbles.member_count (visible to non-members).
+    var mc = (b && b.member_count != null) ? b.member_count : null;
+    if (mc == null) {
+      var _mcR = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', b.id).or('status.is.null,status.neq.pending');
+      mc = _mcR.count || 0;
+    }
 
     // Tags
     var tagsHtml = (b.keywords || []).map(function(k) {
@@ -1833,7 +1836,7 @@ async function bcLoadInfo() {
     if (!isEvent) {
       try {
         var { data: childBubbles } = await sb.from('bubbles')
-          .select('id, name, type, created_at, event_date, event_end_date, visibility, icon_url, agenda, bubble_members(count)')
+          .select('id, name, type, created_at, event_date, event_end_date, visibility, icon_url, agenda, member_count, bubble_members(count)')
           .eq('parent_bubble_id', b.id)
           .order('event_date', { ascending: true, nullsFirst: false })
           .limit(20);
@@ -1852,7 +1855,7 @@ async function bcLoadInfo() {
           var childNetIds = childNets.map(function(cn) { return cn.id; });
           if (childNetIds.length > 0) {
             var { data: grandchildren } = await sb.from('bubbles')
-              .select('id, name, type, event_date, event_end_date, visibility, parent_bubble_id, icon_url, agenda, bubble_members(count)')
+              .select('id, name, type, event_date, event_end_date, visibility, parent_bubble_id, icon_url, agenda, member_count, bubble_members(count)')
               .in('parent_bubble_id', childNetIds)
               .order('event_date', { ascending: true, nullsFirst: false });
             (grandchildren || []).forEach(function(gc) {
@@ -1865,7 +1868,7 @@ async function bcLoadInfo() {
 
           // Sub-networks with fold-out (same tree structure as home screen)
           childNets.forEach(function(cn) {
-            var cnMc = cn.bubble_members?.[0]?.count || 0;
+            var cnMc = cn.member_count ?? cn.bubble_members?.[0]?.count ?? 0;
             var cnGc = gcMap[cn.id] || [];
             var cnEvents = cnGc.filter(function(g) { return g.type === 'event' || g.type === 'live'; });
             var cnNets = cnGc.filter(function(g) { return g.type !== 'event' && g.type !== 'live'; });
@@ -1891,7 +1894,7 @@ async function bcLoadInfo() {
               childCards += '<div class="bb-tree-leaves collapsed" id="trunk-' + cnAccId + '">';
               cnGc.forEach(function(ev) {
                 var isPast = ev.event_date && new Date(ev.event_end_date || ev.event_date) < now;
-                var evMc = ev.bubble_members?.[0]?.count || 0;
+                var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
                 var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
                 var isEvt = ev.type === 'event' || ev.type === 'live';
                 var evIcon = ev.icon_url ? '<img src="' + escHtml(ev.icon_url) + '">' : (isEvt ? _calIco : _netIco);
@@ -1926,7 +1929,7 @@ async function bcLoadInfo() {
 
           // Direct child events
           childEvents.forEach(function(ch) {
-            var chMc = ch.bubble_members?.[0]?.count || 0;
+            var chMc = ch.member_count ?? ch.bubble_members?.[0]?.count ?? 0;
             var isPast = ch.event_date && new Date(ch.event_end_date || ch.event_date) < now;
             var dateStr = ch.event_date
               ? new Date(ch.event_date).toLocaleDateString(_locale(), { weekday: 'short', day: 'numeric', month: 'short' }) +
