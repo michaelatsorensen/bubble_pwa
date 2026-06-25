@@ -393,6 +393,17 @@ function errorToast(context, error) {
 // ══════════════════════════════════════════════════════════
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
+// Resolve a scanned QR token to { user_id, expired } via SECURITY DEFINER RPC.
+// Returns null if the token does not exist. Replaces direct qr_tokens SELECT —
+// other users' token rows are no longer client-readable (resolve_qr_token RPC).
+async function resolveQrToken(token) {
+  if (!token) return null;
+  var { data, error } = await sb.rpc('resolve_qr_token', { p_token: token });
+  if (error) { logError('resolveQrToken', error); return null; }
+  if (Array.isArray(data)) return data.length ? data[0] : null;
+  return data || null;
+}
+
 function linkify(text) {
   if (!text) return text;
   return text.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">$1</a>');

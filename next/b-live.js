@@ -579,12 +579,8 @@ async function liveScanAutoResolve(data) {
       var userId = null;
       
       if (qrt) {
-        var { data: tokenData, error: tokenErr } = await sb.from('qr_tokens')
-          .select('user_id, expires_at')
-          .eq('token', qrt)
-          .maybeSingle();
-        if (tokenErr) console.error('[scan] qr_tokens lookup error:', tokenErr);
-        if (tokenData && new Date(tokenData.expires_at) > new Date()) {
+        var tokenData = await resolveQrToken(qrt);
+        if (tokenData && !tokenData.expired) {
           userId = tokenData.user_id;
         } else if (tokenData) {
           if (status) { status.textContent = t('live_qr_expired_ask'); status.className = 'live-scan-status error'; }
@@ -941,8 +937,8 @@ async function _connectResolve(rawUrl) {
 
     // Resolve QR token → profile ID
     if (qrToken && !profileId) {
-      var { data: tokenData } = await sb.from('qr_tokens').select('user_id, expires_at').eq('token', qrToken).maybeSingle();
-      if (tokenData && new Date(tokenData.expires_at) > new Date()) {
+      var tokenData = await resolveQrToken(qrToken);
+      if (tokenData && !tokenData.expired) {
         profileId = tokenData.user_id;
       } else {
         _renderToast(t('live_qr_expired'), 'warn');

@@ -223,12 +223,9 @@ async function checkQRAnonPreview() {
     // Resolve QR token → profile ID
     if (qrToken && !profileId) {
       try {
-        var { data: tokenData } = await sb.from('qr_tokens')
-          .select('user_id, expires_at')
-          .eq('token', qrToken)
-          .maybeSingle();
+        var tokenData = await resolveQrToken(qrToken);
         if (tokenData) {
-          if (new Date(tokenData.expires_at) > new Date()) {
+          if (!tokenData.expired) {
             profileId = tokenData.user_id;
           } else {
             // Token expired — clean URL and show toast
