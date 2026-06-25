@@ -980,7 +980,7 @@ function etBuildBody(s) {
     g.tags.forEach(function(tag){
       var isSel = etSelected.has(tag);
       var style = isSel ? 'background:'+s.color+';border-color:'+s.color+';color:white' : 'background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.85)';
-      h += '<span style="padding:0.27rem 0.65rem;border-radius:99px;font-size:0.7rem;font-weight:500;cursor:pointer;border:1.5px solid;transition:all .13s;'+style+'" onclick="etTgl(\''+etEsc(tag)+'\',\''+s.id+'\')">' + escHtml(tag) + '</span>';
+      h += '<span style="padding:0.27rem 0.65rem;border-radius:99px;font-size:0.7rem;font-weight:500;cursor:pointer;border:1.5px solid;transition:all .13s;'+style+'" data-tag="' + escHtml(tag) + '" data-sec="' + escHtml(s.id) + '" onclick="etTgl(this.dataset.tag,this.dataset.sec)">' + escHtml(tag) + '</span>';
     });
     h += '</div></div>';
   });
@@ -1153,7 +1153,7 @@ function etUpdateUI(){
       var tg=e[0],v=e[1];
       return '<span style="display:inline-flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem 0.2rem 0.55rem;border-radius:99px;font-size:0.65rem;font-weight:600;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);border:0.5px solid rgba(255,255,255,0.12)">' +
         escHtml(tg)+
-        '<span onclick="etRemoveTag(\''+etEsc(tg)+'\')" style="cursor:pointer;opacity:0.45;font-size:0.65rem;margin-left:1px;line-height:1">×</span></span>';
+        '<span data-tag="' + escHtml(tg) + '" onclick="etRemoveTag(this.dataset.tag)" style="cursor:pointer;opacity:0.45;font-size:0.65rem;margin-left:1px;line-height:1">×</span></span>';
     }).join('');
   }
 

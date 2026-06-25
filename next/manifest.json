@@ -1,7 +1,7 @@
 {
   "name": "Bubble",
   "short_name": "Bubble",
-  "description": "Network Radar for Business",
+  "description": "Network radar for real-world meetings",
   "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",

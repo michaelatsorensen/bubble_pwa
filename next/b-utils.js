@@ -1088,12 +1088,13 @@ var dbActions = {
     try {
       var now = new Date().toISOString();
       // Try UPDATE first (more RLS-friendly — user already has a row)
-      var { error } = await sb.from('bubble_members').update({
+      var { data: updated, error } = await sb.from('bubble_members').update({
         checked_in_at: now,
         checked_out_at: null
-      }).eq('bubble_id', bubbleId).eq('user_id', currentUser.id);
-      if (error) {
-        // Fallback: upsert (handles edge case where row doesn't exist)
+      }).eq('bubble_id', bubbleId).eq('user_id', currentUser.id).select('id');
+      // Fallback: upsert when the update hit no row (no membership yet) OR errored.
+      // Previously this only ran on error, so a 0-row update returned ok:true silently.
+      if (error || !updated || updated.length === 0) {
         var { error: e2 } = await sb.from('bubble_members').upsert({
           bubble_id: bubbleId,
           user_id: currentUser.id,
