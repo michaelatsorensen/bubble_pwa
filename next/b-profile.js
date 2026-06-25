@@ -707,11 +707,13 @@ async function loadProfile() {
     isAnon = currentProfile.is_anon || false;
     updateAnonToggle();
 
-    await Promise.all([loadSavedContacts(), loadProfileBubbles(), loadProfileInvitations(), loadDashboard()]);
-
-    // If returning to the profile with the Bobler sub-tab open, keep it fresh
+    // If returning with the Bobler sub-tab open, fire its loader FIRST so the skeleton
+    // shows immediately, then let the fetch run in parallel with the other panels.
+    // (Calling it after Promise.all left stale cards lingering, then a late skeleton flash.)
     var _sblRefresh = document.getElementById('saved-bubbles-list');
     if (_sblRefresh && _sblRefresh.style.display !== 'none') loadSavedBubbles();
+
+    await Promise.all([loadSavedContacts(), loadProfileBubbles(), loadProfileInvitations(), loadDashboard()]);
 
     // Quick stats (always visible above tabs)
     var qs = document.getElementById('prof-quick-stats');
