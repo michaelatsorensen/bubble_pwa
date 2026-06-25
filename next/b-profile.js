@@ -540,17 +540,6 @@ function drawProxRings(canvas) {
   ctx.fill();
 }
 
-function updateProximityRange(val) {
-  // Now driven by filter buttons, not slider
-  var el = document.getElementById('prox-range-label');
-  var filtered = getFilteredProfiles();
-  if (el) el.textContent = filtered.length + ' personer';
-  if (radarCurrentView === 'map') {
-    renderProximityDots();
-  } else {
-    renderRadarList();
-  }
-}
 
 function toggleProximityVisibility() {
   proxVisible = !proxVisible;

@@ -267,9 +267,6 @@ da: {
   home_welcome: 'Velkommen til Bubble',
   home_welcome_desc: 'Bubble matcher dig med relevante mennesker — baseret på hvem du er og hvad du søger. Jo mere du udfylder, jo bedre og mere præcise matches får du i radaren.',
   home_strong_profile: 'Stærk profil',
-  home_where_work: 'Hvor arbejder du?',
-  home_workplace_visible: 'Andre kan se din arbejdsplads på din profil',
-  home_workplace_ph: 'f.eks. Danfoss, SDU, selvstændig...',
   home_add_tags_hint: 'Tilføj flere tags for at finde folk der matcher dine specifikke interesser',
   home_yes_join: 'Ja, join',
   home_joined_bubble: 'Du er nu med i boblen!',
@@ -989,11 +986,6 @@ da: {
   // ── DM ──
   dm_write_placeholder: 'Skriv en besked...',
   // ── Proximity ──
-  prox_near: 'Nær match',
-  prox_good: 'Gode matches',
-  prox_all: 'Alle matches',
-  prox_extended: 'Udvidet',
-  prox_everyone: 'Alle',
   prox_all_discovered: 'Alle profiler er gemt! Du har opdaget alle i radaren.',
 
   // ── Guide-sheets ("Sådan virker [skærm]") ──
@@ -1277,9 +1269,6 @@ en: {
   home_welcome: 'Welcome to Bubble',
   home_welcome_desc: 'Bubble matches you with relevant people — based on who you are and what you are looking for. The more you fill in, the better and more precise your matches in the radar.',
   home_strong_profile: 'Strong profile',
-  home_where_work: 'Where do you work?',
-  home_workplace_visible: 'Others can see your workplace on your profile',
-  home_workplace_ph: 'e.g. Danfoss, SDU, self-employed...',
   home_add_tags_hint: 'Add more tags to find people who match your specific interests',
   home_yes_join: 'Yes, join',
   home_joined_bubble: "You're now in the bubble!",
@@ -1994,11 +1983,6 @@ en: {
   // ── DM ──
   dm_write_placeholder: 'Write a message...',
   // ── Proximity ──
-  prox_near: 'Near match',
-  prox_good: 'Good matches',
-  prox_all: 'All matches',
-  prox_extended: 'Extended',
-  prox_everyone: 'Everyone',
   prox_all_discovered: 'All profiles saved! You have discovered everyone in the radar.',
 
   // ── Guide-sheets ("How [screen] works") ──

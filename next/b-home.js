@@ -1050,21 +1050,6 @@ function openNextProfileSetupSheet() {
 
 // ── WORKPLACE SHEET ──
 
-async function saveSetupWorkplace() {
-  var input = document.getElementById('setup-workplace-input');
-  if (!input) return;
-  var val = input.value.trim();
-  if (!val) return showWarningToast(t('val_workplace_required'));
-  try {
-    var { error } = await sb.from('profiles').update({ workplace: val }).eq('id', currentUser.id);
-    if (error) return errorToast('save', error);
-    currentProfile.workplace = val;
-    showSuccessToast('Arbejdsplads gemt');
-    var ov = document.querySelector('.bb-dyn-overlay');
-    if (ov) bbDynClose(ov);
-    showProfileSetupCTA();
-  } catch(e) { errorToast('save', e); }
-}
 
 // ── TITLE SHEET ──
 function openSetupTitleSheet() {
