@@ -24,6 +24,7 @@ var _GI = {
   strength:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 18v-3M9 18v-7M14 18v-5M19 18V8"/></svg>',
   bookmark:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M6 4h12v17l-6-4-6 4z"/></svg>',
   settings:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>',
+  install:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M12 9v6M9 12h6" stroke-linecap="round"/></svg>',
   globe:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9fe0d4" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg>',
   lock:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#cfe6f7" stroke-width="1.6"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>',
   eye:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#f3c7dc" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="2.5"/></svg>'
@@ -46,7 +47,8 @@ var _GUIDES = {
       { ico: 'toggle', tKey: 'guide_home_2_t', dKey: 'guide_home_2_d' },
       { ico: 'filter', tKey: 'guide_home_3_t', dKey: 'guide_home_3_d' },
       { ico: 'person', tKey: 'guide_home_4_t', dKey: 'guide_home_4_d' },
-      { ico: 'qr',     tKey: 'guide_home_5_t', dKey: 'guide_home_5_d' }
+      { ico: 'qr',     tKey: 'guide_home_5_t', dKey: 'guide_home_5_d' },
+      { ico: 'install', tKey: 'guide_home_6_t', dKey: 'guide_home_6_d' }
     ] },
   bobler: { icon: 'bubble', titleKey: 'guide_bobler_title', subKey: 'guide_bobler_sub', tipKey: 'guide_bobler_tip',
     items: [
