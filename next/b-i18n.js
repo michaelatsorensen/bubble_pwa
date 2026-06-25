@@ -695,6 +695,14 @@ da: {
   pf_feedback: 'Giv feedback',
   pf_profile_strength: 'Profilstyrke',
   home_saved_contacts: 'gemte kontakter',
+  saved_add: 'Gem til senere',
+  saved_remove: 'Fjern fra gemte',
+  saved_bubble_added: 'Gemt til senere',
+  saved_bubble_removed: 'Fjernet fra gemte',
+  pf_saved_sub_contacts: 'Kontakter',
+  pf_saved_sub_bubbles: 'Bobler',
+  pf_no_saved_bubbles: 'Ingen gemte bobler endnu',
+  pf_no_saved_bubbles_desc: 'Tryk bogmærket på en boble for at gemme den her.',
 
   // ── Toasts ──
   toast_saved: 'Gemt!',
@@ -1697,6 +1705,14 @@ en: {
   pf_feedback: 'Give feedback',
   pf_profile_strength: 'Profile strength',
   home_saved_contacts: 'saved contacts',
+  saved_add: 'Save for later',
+  saved_remove: 'Remove from saved',
+  saved_bubble_added: 'Saved for later',
+  saved_bubble_removed: 'Removed from saved',
+  pf_saved_sub_contacts: 'Contacts',
+  pf_saved_sub_bubbles: 'Bubbles',
+  pf_no_saved_bubbles: 'No saved bubbles yet',
+  pf_no_saved_bubbles_desc: 'Tap the bookmark on a bubble to save it here.',
 
   // ── Toasts ──
   toast_saved: 'Saved!',

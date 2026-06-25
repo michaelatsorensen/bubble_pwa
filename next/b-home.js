@@ -2039,7 +2039,7 @@ function _evEndedBadge(ev) {
   return (ended && !live) ? ' <span class="bb-pill bb-pill-past">' + (t('bb_status_past') || 'Afsluttet') + '</span>' : '';
 }
 
-function bubbleCard(b, joined) {
+function bubbleCard(b, joined, fromScreen) {
   // Visibility pill (always shown — encodes synlighed)
   // BUG FIX: visibility values in DB are 'public', 'private', 'hidden' (NOT 'open')
   // Previous check for 'open' would always fall through to 'private' for public bubbles
@@ -2127,7 +2127,7 @@ function bubbleCard(b, joined) {
     '</div>';
   }
 
-  return '<div class="' + cardClass + '" data-action="openBubble" data-id="' + b.id + '">' +
+  return '<div class="' + cardClass + '" data-action="openBubble" data-id="' + b.id + '"' + (fromScreen ? ' data-from="' + fromScreen + '"' : '') + '>' +
     '<div class="' + iconClass + '">' + iconInner + '</div>' +
     '<div class="bb-card-text">' +
       breadcrumb +
@@ -2137,6 +2137,7 @@ function bubbleCard(b, joined) {
         (metaText ? '<span class="bb-card-meta-text">' + metaText + '</span>' : '') +
       '</div>' +
     '</div>' +
+    '<button data-action="toggleSaveBubble" data-id="' + b.id + '" data-bookmark-id="' + b.id + '" title="' + (isBubbleSaved(b.id) ? t('saved_remove') : t('saved_add')) + '" style="background:none;border:none;cursor:pointer;padding:6px;flex-shrink:0;display:flex;align-items:center;-webkit-tap-highlight-color:transparent">' + bookmarkIcon(isBubbleSaved(b.id)) + '</button>' +
     '<div class="bb-card-chev">›</div>' +
   '</div>';
 }

@@ -253,11 +253,12 @@ async function loadDiscover() {
   else loadDiscoverNetworks();
 }
 
-function _renderDiscoverList(list, bubbles, label) {
+async function _renderDiscoverList(list, bubbles, label) {
   if (!bubbles.length) {
     list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('search') + '</div><div class="empty-text">' + t('bb_none_to_discover', {label: label}) + '</div></div>';
     return;
   }
+  await getSavedBubbleIds(); // bookmark state must be known before cards render
   list.innerHTML = bubbles.map(function(b) { return bubbleCard(b, false); }).join('');
 }
 

@@ -709,6 +709,10 @@ async function loadProfile() {
 
     await Promise.all([loadSavedContacts(), loadProfileBubbles(), loadProfileInvitations(), loadDashboard()]);
 
+    // If returning to the profile with the Bobler sub-tab open, keep it fresh
+    var _sblRefresh = document.getElementById('saved-bubbles-list');
+    if (_sblRefresh && _sblRefresh.style.display !== 'none') loadSavedBubbles();
+
     // Quick stats (always visible above tabs)
     var qs = document.getElementById('prof-quick-stats');
     if (qs && currentUser) {
@@ -901,6 +905,47 @@ function profSwitchTab(tab) {
   });
   if (tab === 'dashboard') loadDashboard();
   if (tab === 'bubbles') loadProfileBubbles();
+}
+
+// Saved tab sub-toggle: Kontakter | Bobler — share one panel, choice persists via DOM
+function profSavedSub(which) {
+  var sc = document.getElementById('saved-contacts');
+  var sbl = document.getElementById('saved-bubbles-list');
+  var btnC = document.getElementById('saved-sub-contacts');
+  var btnB = document.getElementById('saved-sub-bobler');
+  if (sc) sc.style.display = which === 'contacts' ? 'block' : 'none';
+  if (sbl) sbl.style.display = which === 'bobler' ? 'block' : 'none';
+  if (btnC) btnC.classList.toggle('active', which === 'contacts');
+  if (btnB) btnB.classList.toggle('active', which === 'bobler');
+  if (which === 'bobler') loadSavedBubbles();
+}
+
+// Load saved bubbles — reuses the native Discover card (event lifecycle + Afsluttet come free)
+async function loadSavedBubbles() {
+  var el = document.getElementById('saved-bubbles-list');
+  if (!el || !currentUser) return;
+  try {
+    el.innerHTML = skelCards(3);
+    await getSavedBubbleIds(true); // refresh shared cache so bookmarks stay accurate
+    var { data: savedRows } = await sb.from('saved_bubbles')
+      .select('bubble_id, created_at')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
+    if (!savedRows || savedRows.length === 0) {
+      el.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bookmark') + '</div><div class="empty-text">' + t('pf_no_saved_bubbles') + '<br>' + t('pf_no_saved_bubbles_desc') + '</div></div>';
+      return;
+    }
+    var ids = savedRows.map(function(s) { return s.bubble_id; });
+    var { data: bubbles } = await sb.from('bubbles').select('*').in('id', ids);
+    if (!bubbles || bubbles.length === 0) {
+      el.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bookmark') + '</div><div class="empty-text">' + t('pf_no_saved_bubbles') + '<br>' + t('pf_no_saved_bubbles_desc') + '</div></div>';
+      return;
+    }
+    var byId = {};
+    bubbles.forEach(function(b) { byId[b.id] = b; });
+    var ordered = ids.map(function(id) { return byId[id]; }).filter(Boolean);
+    el.innerHTML = ordered.map(function(b) { return bubbleCard(b, false, 'screen-profile'); }).join('');
+  } catch (e) { logError('loadSavedBubbles', e); errorToast('load', e); }
 }
 
 // Load user's bubbles into profile bubbles tab

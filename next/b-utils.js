@@ -456,6 +456,57 @@ async function getSavedContactIds(forceRefresh) {
 }
 function clearSavedContactIdsCache() { _savedContactIds = null; }
 
+// ── Shared: saved BUBBLE IDs (cached per session) — mirrors saved-contact cache ──
+var _savedBubbleIds = null;
+var _savedBubbleIdsTs = 0;
+async function getSavedBubbleIds(forceRefresh) {
+  if (!forceRefresh && _savedBubbleIds && (Date.now() - _savedBubbleIdsTs < 30000)) return _savedBubbleIds;
+  if (!currentUser) { _savedBubbleIds = []; return _savedBubbleIds; }
+  var { data } = await sb.from('saved_bubbles').select('bubble_id').eq('user_id', currentUser.id);
+  _savedBubbleIds = (data || []).map(function(s) { return s.bubble_id; });
+  _savedBubbleIdsTs = Date.now();
+  return _savedBubbleIds;
+}
+function clearSavedBubbleIdsCache() { _savedBubbleIds = null; }
+function isBubbleSaved(id) { return !!(_savedBubbleIds && _savedBubbleIds.indexOf(id) >= 0); }
+
+// Bookmark SVG — outline (not saved) / teal fill (saved). Tuned for dark surfaces.
+function bookmarkIcon(saved) {
+  return saved
+    ? '<svg width="18" height="20" viewBox="0 0 24 24" fill="#1A9E8E" stroke="#1A9E8E" stroke-width="1.6"><path d="M6 3h12a1 1 0 011 1v17l-7-4-7 4V4a1 1 0 011-1z"/></svg>'
+    : '<svg width="18" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.6"><path d="M6 3h12a1 1 0 011 1v17l-7-4-7 4V4a1 1 0 011-1z"/></svg>';
+}
+// Update every bookmark element for a bubble id — Discover card + topbar share one state
+function _updateBookmarkEls(id, saved) {
+  document.querySelectorAll('[data-bookmark-id="' + id + '"]').forEach(function(el) {
+    el.innerHTML = bookmarkIcon(saved);
+    el.setAttribute('title', saved ? t('saved_remove') : t('saved_add'));
+  });
+}
+// Toggle save state — optimistic UI, shared across Discover card + bubble topbar
+async function toggleSaveBubble(id, el) {
+  if (!currentUser || !id) return;
+  var nowSaved = !isBubbleSaved(id);
+  if (!_savedBubbleIds) _savedBubbleIds = [];
+  if (nowSaved) { if (_savedBubbleIds.indexOf(id) < 0) _savedBubbleIds.push(id); }
+  else { _savedBubbleIds = _savedBubbleIds.filter(function(x) { return x !== id; }); }
+  _updateBookmarkEls(id, nowSaved);
+  var res = nowSaved ? await dbActions.saveBubble(id) : await dbActions.removeSavedBubble(id);
+  if (!res || !res.ok) {
+    // revert on failure
+    if (nowSaved) { _savedBubbleIds = _savedBubbleIds.filter(function(x) { return x !== id; }); }
+    else { if (_savedBubbleIds.indexOf(id) < 0) _savedBubbleIds.push(id); }
+    _updateBookmarkEls(id, !nowSaved);
+    return;
+  }
+  _renderToast(nowSaved ? t('saved_bubble_added') : t('saved_bubble_removed'), 'success');
+  // Keep the profile saved-bubbles list fresh if it is currently rendered
+  if (typeof loadSavedBubbles === 'function') {
+    var sbl = document.getElementById('saved-bubbles-list');
+    if (sbl && sbl.style.display !== 'none' && _activeScreen === 'screen-profile') loadSavedBubbles();
+  }
+}
+
 // ── Shared: enrich bubbles with saved contact avatars ──
 // Takes array of bubble IDs + saved contact IDs → returns { bubbleId: [{name, avatar_url}] }
 async function fetchContactAvatarsForBubbles(bubbleIds, savedIds) {
@@ -836,6 +887,30 @@ var dbActions = {
       if (error) { errorToast('save', error); return { ok: false, error: error }; }
       return { ok: true };
     } catch (e) { logError('dbActions.removeContact', e); return { ok: false, error: e }; }
+  },
+
+  // ── SAVED BUBBLES ──
+  async saveBubble(bubbleId) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    try {
+      var { error } = await sb.from('saved_bubbles').upsert({
+        user_id: currentUser.id,
+        bubble_id: bubbleId
+      }, { onConflict: 'user_id,bubble_id' });
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      trackEvent('bubble_saved', { bubble_id: bubbleId });
+      return { ok: true };
+    } catch (e) { logError('dbActions.saveBubble', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  async removeSavedBubble(bubbleId) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    try {
+      var { error } = await sb.from('saved_bubbles').delete()
+        .eq('user_id', currentUser.id).eq('bubble_id', bubbleId);
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      return { ok: true };
+    } catch (e) { logError('dbActions.removeSavedBubble', e); return { ok: false, error: e }; }
   },
 
   // ── BUBBLE MEMBERSHIP ──

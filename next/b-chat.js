@@ -346,6 +346,7 @@ async function bcLoadBubbleCore(bubbleId) {
     iconEl.innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:1.2rem;height:1.2rem;border-radius:4px;object-fit:cover">' : bubbleEmoji(b.type);
   }
   document.getElementById('bc-name').textContent = b.name;
+  if (typeof _bcUpdateSaveBtn === 'function') _bcUpdateSaveBtn(bubbleId);
 
   // Member count + parent ref in subtitle.
   // Use denormalized bubbles.member_count so non-members of private bubbles
@@ -367,6 +368,20 @@ async function bcLoadBubbleCore(bubbleId) {
   document.getElementById('bc-members-count').innerHTML = subText;
 
   return b;
+}
+
+// Topbar save-for-later bookmark — reflects shared saved_bubbles state for the open bubble
+async function _bcUpdateSaveBtn(bubbleId) {
+  var btn = document.getElementById('bc-save-btn');
+  if (!btn) return;
+  if (!currentUser || !bubbleId) { btn.style.display = 'none'; return; }
+  await getSavedBubbleIds();
+  var saved = isBubbleSaved(bubbleId);
+  btn.dataset.id = bubbleId;
+  btn.dataset.bookmarkId = bubbleId;
+  btn.title = saved ? t('saved_remove') : t('saved_add');
+  btn.innerHTML = bookmarkIcon(saved);
+  btn.style.display = 'flex';
 }
 
 // Phase 2: Show/hide tabs based on bubble type + children
@@ -1583,7 +1598,7 @@ async function bcLoadMembers() {
 
     // Hent profiler separat
     const userIds = members.map(m => m.user_id);
-    const { data: profiles } = await sb.from('profiles').select('id, name, title, workplace, avatar_url').in('id', userIds);
+    const { data: profiles } = await sb.from('profiles').select('id, name, title, workplace, avatar_url, keywords, lifestage, dynamic_keywords, bio, linkedin, is_anon').in('id', userIds);
     const profileMap = {};
     (profiles || []).forEach(p => profileMap[p.id] = p);
 
@@ -1592,6 +1607,16 @@ async function bcLoadMembers() {
     members.forEach(m => {
       m._isLive = m.checked_in_at && !m.checked_out_at &&
         new Date(m.checked_in_at).getTime() > (now - LIVE_EXPIRE_HOURS * 3600000);
+    });
+
+    // ── Relevance score vs me — pilot-scale client-side ranking.
+    //    Server-side ranking + pagination deferred until large bubbles need it.
+    var _myKwL = (currentProfile && currentProfile.keywords ? currentProfile.keywords : []).map(function(k) { return String(k).toLowerCase(); });
+    members.forEach(function(m) {
+      var pp = profileMap[m.user_id];
+      if (!pp || m.user_id === currentUser.id) { m._score = -1; m._shared = []; return; }
+      m._score = calcMatchScore(currentProfile || {}, pp, 0);
+      m._shared = (pp.keywords || []).filter(function(k) { return _myKwL.indexOf(String(k).toLowerCase()) >= 0; }).slice(0, 3);
     });
 
     const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
@@ -1608,7 +1633,7 @@ async function bcLoadMembers() {
       if (b.user_id === ownerId) return 1;
       if (a._isLive && !b._isLive) return -1;
       if (!a._isLive && b._isLive) return 1;
-      return 0;
+      return (b._score || 0) - (a._score || 0);
     });
 
     const liveCount = activeMembers.filter(m => m._isLive).length;
@@ -1697,10 +1722,25 @@ async function bcLoadMembers() {
         ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
         : initials;
 
+      // Relevance signals — dark-context colors (matchBadgeHtml is light-mode, invisible here)
+      var _isSelf = m.user_id === currentUser.id;
+      var _sharedChips = (m._shared && m._shared.length)
+        ? '<div style="display:flex;gap:0.2rem;margin-top:0.2rem;flex-wrap:wrap">' + m._shared.map(function(tg) { return '<span style="font-size:0.55rem;padding:0.1rem 0.4rem;background:rgba(124,92,252,0.16);color:#B9A6FF;border-radius:99px">' + escHtml(tg) + '</span>'; }).join('') + '</div>'
+        : '';
+      var _matchBadge = '';
+      if (!isOwnerRow && !_isSelf && (m._score || 0) >= 40) {
+        var _mCol = (m._score >= 60) ? '#34D399' : '#B9A6FF';
+        var _mBg = (m._score >= 60) ? 'rgba(26,158,142,0.18)' : 'rgba(124,92,252,0.2)';
+        _matchBadge = '<span style="font-size:0.58rem;font-weight:700;color:' + _mCol + ';background:' + _mBg + ';padding:0.18rem 0.5rem;border-radius:99px;white-space:nowrap">' + matchLabel(m._score).text + '</span>';
+      }
+      var _rightSide = isOwnerRow
+        ? '<span class="chat-member-role">' + roleLabel + '</span>'
+        : '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:auto">' + _matchBadge + ((isOwner && !isOwnerRow) ? '<button class="bc-kick-btn" onclick="event.stopPropagation();bcShowKickConfirm(this,\'' + m.user_id + '\',\'' + escHtml(p.name||t('misc_unknown')).replace(/'/g,'') + '\')" title="' + t('chat_remove_from_bubble') + '">' + icon('x') + '</button>' : '') + '</div>';
+
       html += `<div class="chat-member-row" data-member-uid="${m.user_id}" onclick="bcOpenPerson('${m.user_id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${color}')">
         <div class="chat-member-avatar" style="background:${color};overflow:hidden">${avatarInner}${m._isLive ? '<span class="live-dot"></span>' : ''}</div>
-        <div style="flex:1;min-width:0"><div class="chat-member-name">${escHtml(p.name||t('misc_unknown'))} ${liveBadge}</div><div class="chat-member-status">${statusText}</div></div>
-        ${isOwnerRow ? '<span class="chat-member-role">' + roleLabel + '</span>' : (isOwner && !isOwnerRow ? '<button class="bc-kick-btn" onclick="event.stopPropagation();bcShowKickConfirm(this,\'' + m.user_id + '\',\'' + escHtml(p.name||t('misc_unknown')).replace(/'/g,'') + '\')" title="' + t('chat_remove_from_bubble') + '">' + icon('x') + '</button>' : '')}
+        <div style="flex:1;min-width:0"><div class="chat-member-name">${escHtml(p.name||t('misc_unknown'))} ${liveBadge}</div><div class="chat-member-status">${statusText}</div>${_sharedChips}</div>
+        ${_rightSide}
       </div>`;
     });
     // Add search field when 5+ members

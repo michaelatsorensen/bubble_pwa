@@ -13,39 +13,39 @@
 <meta name="theme-color" content="#170F34">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=81956">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81956">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81956">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81956">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81956">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81956">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81956">
+<link rel="manifest" href="manifest.json?v=81958">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81958">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81958">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81958">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81958">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81958">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81958">
 
-<link rel="stylesheet" href="app.css?v=81956">
+<link rel="stylesheet" href="app.css?v=81958">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous" defer></script>
-<script src="bubble-icons.js?v=81956" defer></script>
-<script src="tag-data.js?v=81956" defer></script>
-<script src="b-i18n.js?v=81956" defer></script>
-<script src="b-config.js?v=81956" defer></script>
-<script src="b-utils.js?v=81956" defer></script>
-<script src="b-guides.js?v=81956" defer></script>
-<script src="b-terms.js?v=81956" defer></script>
-<script src="b-auth.js?v=81956" defer></script>
-<script src="b-home.js?v=81956" defer></script>
-<script src="b-bubbles.js?v=81956" defer></script>
-<script src="b-profile.js?v=81956" defer></script>
-<script src="b-radar.js?v=81956" defer></script>
-<script src="b-messages.js?v=81956" defer></script>
-<script src="b-realtime.js?v=81956" defer></script>
-<script src="b-onboarding.js?v=81956" defer></script>
-<script src="b-chat.js?v=81956" defer></script>
-<script src="b-notifications.js?v=81956" defer></script>
-<script src="b-live.js?v=81956" defer></script>
-<script src="b-admin.js?v=81956" defer></script>
-<script src="b-navigation.js?v=81956" defer></script>
-<script src="b-boot.js?v=81956" defer></script>
+<script src="bubble-icons.js?v=81958" defer></script>
+<script src="tag-data.js?v=81958" defer></script>
+<script src="b-i18n.js?v=81958" defer></script>
+<script src="b-config.js?v=81958" defer></script>
+<script src="b-utils.js?v=81958" defer></script>
+<script src="b-guides.js?v=81958" defer></script>
+<script src="b-terms.js?v=81958" defer></script>
+<script src="b-auth.js?v=81958" defer></script>
+<script src="b-home.js?v=81958" defer></script>
+<script src="b-bubbles.js?v=81958" defer></script>
+<script src="b-profile.js?v=81958" defer></script>
+<script src="b-radar.js?v=81958" defer></script>
+<script src="b-messages.js?v=81958" defer></script>
+<script src="b-realtime.js?v=81958" defer></script>
+<script src="b-onboarding.js?v=81958" defer></script>
+<script src="b-chat.js?v=81958" defer></script>
+<script src="b-notifications.js?v=81958" defer></script>
+<script src="b-live.js?v=81958" defer></script>
+<script src="b-admin.js?v=81958" defer></script>
+<script src="b-navigation.js?v=81958" defer></script>
+<script src="b-boot.js?v=81958" defer></script>
   
 
 
@@ -968,6 +968,7 @@
       </div>
       <svg class="chat-topbar-info-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><circle cx="12" cy="8" r="0.5" fill="currentColor"/></svg>
     </div>
+    <button id="bc-save-btn" data-action="toggleSaveBubble" data-id="" data-bookmark-id="" title="" style="display:none;background:none;border:none;cursor:pointer;padding:6px;flex-shrink:0;align-items:center;-webkit-tap-highlight-color:transparent"></button>
     <div id="bc-action-btns" style="display:none;gap:4px;flex-shrink:0"></div>
   </div>
 
@@ -1248,7 +1249,12 @@
 
     <!-- SAVED TAB -->
     <div id="prof-panel-saved" style="display:none;flex-direction:column;flex:1;padding:0.75rem 1.1rem 8.5rem">
+      <div class="bubble-tabs bb-sub-tabs" style="margin:0 0 0.7rem">
+        <button class="bubble-tab active" id="saved-sub-contacts" onclick="profSavedSub('contacts')" data-t="pf_saved_sub_contacts">Kontakter</button>
+        <button class="bubble-tab" id="saved-sub-bobler" onclick="profSavedSub('bobler')" data-t="pf_saved_sub_bubbles">Bobler</button>
+      </div>
       <div id="saved-contacts"></div>
+      <div id="saved-bubbles-list" style="display:none"></div>
     </div>
 
     <!-- BUBBLES TAB -->

@@ -80,6 +80,7 @@ document.addEventListener('click', (e) => {
     case 'leaveBubble': leaveBubble(id, el); break;
     case 'openEditBubble': openEditBubble(id); break;
     case 'openBubbleChat': openBubbleChat(id, from); break;
+    case 'toggleSaveBubble': toggleSaveBubble(id, el); break;
   }
 });
 
