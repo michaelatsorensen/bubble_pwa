@@ -23,16 +23,6 @@ registerState(function() {
   if (typeof matchPage !== 'undefined') matchPage = 0;
 });
 
-function radarSwitchView(view) {
-  radarCurrentView = view;
-  document.getElementById('radar-btn-map').classList.toggle('active', view === 'map');
-  document.getElementById('radar-btn-list').classList.toggle('active', view === 'list');
-  document.getElementById('radar-view-map').style.display = view === 'map' ? 'block' : 'none';
-  document.getElementById('radar-view-list').style.display = view === 'list' ? 'block' : 'none';
-  document.getElementById('radar-map-controls').style.display = 'flex';
-  // Update range label for the new view
-  updateProximityRange(proxRange);
-}
 
 // ══════════════════════════════════════════════════════════
 //  LIST VIEW — "Who is nearby?" (all profiles, proximity)

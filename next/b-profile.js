@@ -344,21 +344,6 @@ var _radarFilter = 'all';    // all | strong | good | shared
 var _radarPage = 0;
 var RADAR_PAGE_SIZE = 25;
 
-function setRadarFilter(filter, btn) {
-  _radarFilter = filter;
-  _radarPage = 0;
-  matchPage = 0;  // Reset map pagination too
-  // Update active button
-  document.querySelectorAll('.radar-filter-btn').forEach(function(b) { b.classList.remove('active'); });
-  if (btn) btn.classList.add('active');
-  // Re-render both views
-  renderProximityDots();
-  renderRadarList();
-  // Update count label
-  var filtered = getFilteredProfiles();
-  var el = document.getElementById('prox-range-label');
-  if (el) el.textContent = filtered.length + ' personer';
-}
 
 function getFilteredProfiles() {
   return proxAllProfiles.filter(function(p) {
@@ -372,13 +357,6 @@ function getFilteredProfiles() {
   });
 }
 
-function radarNextPage() {
-  _radarPage++;
-  renderRadarList();
-  // Scroll list to top
-  var listEl = document.getElementById('radar-view-list');
-  if (listEl) listEl.scrollTop = 0;
-}
 var proxColors = [
   'linear-gradient(135deg,#2ECFCF,#22B8CF)',  // cyan
   'linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))',  // indigo→purple
@@ -392,7 +370,6 @@ var proxColors = [
   'linear-gradient(135deg,#D946EF,#C026D3)',  // fuchsia
 ];
 // Radar (map): relevance labels + thresholds — "who matches me?"
-function _proxRangeLabels() { return [t('prox_near'),t('prox_good'),t('prox_all'),t('prox_extended'),t('prox_everyone')]; }
 var proxThresholds  = [0.6, 0.35, 0.15, 0.05, 0];
 // List: proximity labels — "who is nearby?" (GPS-ready, simulated for now)
 var listRangeLabels = ['50m','200m','500m','2km','10km'];
@@ -520,13 +497,6 @@ function renderProximityDots() {
 }
 
 
-function radarShowMore() {
-  var allFil = getFilteredProfiles();
-  var maxPages = Math.ceil(allFil.length / MATCH_CAP);
-  matchPage = (matchPage + 1) % maxPages;
-  renderProximityDots();
-  showToast('Side ' + (matchPage + 1) + ' af ' + maxPages);
-}
 
 function drawProxRings(canvas) {
   if (!canvas) return;

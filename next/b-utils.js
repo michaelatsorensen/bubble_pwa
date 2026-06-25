@@ -800,14 +800,6 @@ function timeAgo(dateStr) {
 // ══════════════════════════════════════════════════════════
 
 // ── Avatar helper: returns HTML for avatar circle ──
-function renderAvatar(name, color, avatarUrl, size) {
-  var sz = size || 36;
-  var ini = (name || '?').split(' ').map(function(w) { return w[0] || ''; }).join('').slice(0, 2).toUpperCase();
-  if (avatarUrl) {
-    return '<div style="width:' + sz + 'px;height:' + sz + 'px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="' + escHtml(avatarUrl) + '" style="width:100%;height:100%;object-fit:cover"></div>';
-  }
-  return '<div style="width:' + sz + 'px;height:' + sz + 'px;border-radius:50%;background:' + (color || 'var(--accent)') + ';display:flex;align-items:center;justify-content:center;color:white;font-size:' + (sz < 30 ? '0.5' : '0.65') + 'rem;font-weight:700;flex-shrink:0">' + escHtml(ini) + '</div>';
-}
 
 // ══════════════════════════════════════════════════════════
 //  DB ACTIONS — centralized write layer for Supabase

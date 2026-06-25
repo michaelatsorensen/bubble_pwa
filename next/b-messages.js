@@ -61,7 +61,6 @@ var unreadState = {
 
 // ── Compat aliases — old callers keep working ──
 var _unreadCount = 0; // Legacy read (not authoritative — use unreadState.dm)
-function _unreadRender() { unreadState.render(); }
 async function _unreadRecount() { await unreadState.dmRecount(); }
 function unreadIncrement() { unreadState.dmIncrement(); }
 function unreadDecrement(n) { unreadState.dmDecrement(n); }

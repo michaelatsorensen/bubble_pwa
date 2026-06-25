@@ -1473,11 +1473,7 @@ async function downloadMembersPdf(bubbleId) {
       if (!iso) return '–';
       return new Date(iso).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' });
     }
-    function fmtDate(iso) {
-      if (!iso) return '–';
-      return new Date(iso).toLocaleDateString(_locale(), { day: 'numeric', month: 'long', year: 'numeric' });
-    }
-    function fmtDuration(inIso, outIso) {
+        function fmtDuration(inIso, outIso) {
       if (!inIso) return '–';
       var end = outIso ? new Date(outIso) : new Date();
       var mins = Math.round((end - new Date(inIso)) / 60000);

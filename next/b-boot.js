@@ -717,19 +717,7 @@ async function loadEventSocialProof(bubbleId) {
 }
 
 // ── Event signup actions ──
-function eventSignupGoogle() {
-  flowSet('event_flow', 'true');
-  goTo('screen-auth');
-  showAuthForms();
-  setTimeout(function() { handleGoogleLogin(); }, 200);
-}
 
-function eventSignupLinkedIn() {
-  flowSet('event_flow', 'true');
-  goTo('screen-auth');
-  showAuthForms();
-  setTimeout(function() { handleLinkedInLogin(); }, 200);
-}
 
 function eventSignupEmail() {
   flowSet('event_flow', 'true');

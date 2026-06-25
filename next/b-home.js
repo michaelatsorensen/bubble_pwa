@@ -885,11 +885,6 @@ function _renderEventDeepLinkModal(opts) {
 }
 
 // Legacy aliases (safe to call from other files)
-function goToEventFromCard() {}
-function dismissEventCard() {
-  var ov = document.getElementById('checkin-confirm-overlay');
-  if (ov) ov.remove();
-}
 
 // ── Saved contact modal (shown after QR scan signup) ──
 async function _showSavedContactModal(contactId) {
@@ -1054,16 +1049,6 @@ function openNextProfileSetupSheet() {
 }
 
 // ── WORKPLACE SHEET ──
-function openSetupWorkplaceSheet() {
-  var { overlay, sheet } = bbDynOpen();
-  sheet.innerHTML = '<div style="padding:1.2rem 1rem">' +
-    '<div style="font-size:1rem;font-weight:800;margin-bottom:0.3rem;color:rgba(255,255,255,0.95)">' + t('home_where_work') + '</div>' +
-    '<div style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin-bottom:1rem">' + t('home_workplace_visible') + '</div>' +
-    '<input class="input" id="setup-workplace-input" maxlength="80" placeholder="' + t('home_workplace_ph') + '" value="' + escHtml(currentProfile?.workplace || '') + '">' +
-    '<button class="btn-primary" onclick="saveSetupWorkplace()" style="width:100%;margin-top:0.8rem">' + t('ps_save') + '</button>' +
-    '</div>';
-  setTimeout(function() { var el = document.getElementById('setup-workplace-input'); if (el) el.focus(); }, 200);
-}
 
 async function saveSetupWorkplace() {
   var input = document.getElementById('setup-workplace-input');
@@ -1100,10 +1085,6 @@ function setupTitleChanged() {
   btns.forEach(function(b) { b.classList.toggle('active', b.textContent.trim() === val); });
 }
 
-function pickSetupTitle(btn) {
-  var input = document.getElementById('setup-title-input');
-  if (input) { input.value = btn.textContent.trim(); setupTitleChanged(); }
-}
 
 async function saveSetupTitle() {
   var title = (document.getElementById('setup-title-input')?.value || '').trim();
@@ -1247,9 +1228,6 @@ function setupGoToStep(step) {
   if (target) setTimeout(target.open, 60);
 }
 
-function openProfileSetupTags() {
-  openSetupTagsSheet();
-}
 
 // Alias for onclick references in radar empty states
 function openEditTags() {
@@ -2221,13 +2199,6 @@ function hsUpdateToggleUI(key, isOn) {
   if (el) el.setAttribute('data-on', isOn ? 'true' : 'false');
 }
 
-function hsUpdateAllToggles() {
-  var prefs = hsGetPrefs();
-  ['saved','nudge','feedback','profile_cta'].forEach(function(key) {
-    hsUpdateToggleUI(key, prefs[key] !== false);
-  });
-  hsUpdatePreview();
-}
 
 function hsApplyToHome() {
   var prefs = hsGetPrefs();

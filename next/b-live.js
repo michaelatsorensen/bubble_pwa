@@ -272,10 +272,6 @@ function _showCheckinSuccess(bubbleId, bubbleName) {
 
 // liveCreateAndCheckin removed — UI element no longer exists
 
-async function liveAutoCheckout() {
-  // Delegate to dbActions.checkOutAll — consistent error handling + logging
-  await dbActions.checkOutAll();
-}
 
 async function liveCheckout() {
   if (_liveLock) return;
