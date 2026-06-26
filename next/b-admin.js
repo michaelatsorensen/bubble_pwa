@@ -332,7 +332,7 @@ function _dashRenderChart(canvasId, chartId, color) {
     responsive: !scrollable, maintainAspectRatio: false, animation: { duration: 400 },
     plugins: { legend: { display: false } },
     scales: {
-      x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#9996A8' } },
+      x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#9996A8', maxRotation: 0, minRotation: 0, autoSkip: true } },
       y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 9 }, color: '#9996A8' }, beginAtZero: true }
     }
   };
