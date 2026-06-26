@@ -312,24 +312,13 @@ function _dashRenderChart(canvasId, chartId, color) {
   var c = _dashColors[color] || _dashColors.accent;
   var meta = _dashMeta[chartId] || {};
   var cfg;
-  // Vandret scroll: giv canvas en bredde proportional med antal datapunkter (~30px/uge).
-  // Hvis bredere end .dash-chart-wrap (som har overflow-x:auto), scroller den vandret; ellers 100%.
-  var wrap = el.parentElement;
-  var minW = wrap ? wrap.clientWidth : 320;
-  var needW = Math.max(minW, d.labels.length * 30);
-  var scrollable = needW > minW + 4;
-  if (scrollable) {
-    el.style.width = needW + 'px';
-    el.style.minWidth = needW + 'px';
-    el.style.height = (wrap ? wrap.clientHeight : 160) + 'px';
-  } else {
-    // Faa datapunkter: lad Chart.js styre bredden responsivt (fyld containeren).
-    el.style.width = '100%';
-    el.style.minWidth = '';
-    el.style.height = '';
-  }
+  // Altid responsiv: Chart.js sizer canvas-bufferen til containeren (haandterer DPR), saa teksten
+  // ikke straekkes/skews. Faar pladsen ikke alle uger, springer autoSkip nogle over (vandret).
+  el.style.width = '100%';
+  el.style.minWidth = '';
+  el.style.height = '';
   var baseOpts = {
-    responsive: !scrollable, maintainAspectRatio: false, animation: { duration: 400 },
+    responsive: true, maintainAspectRatio: false, animation: { duration: 400 },
     plugins: { legend: { display: false } },
     scales: {
       x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#9996A8', maxRotation: 0, minRotation: 0, autoSkip: true } },
