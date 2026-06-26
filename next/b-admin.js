@@ -544,7 +544,7 @@ function _renderDebugFab() {
   fab.id = 'admin-debug-fab';
   fab.className = 'debug-fab';
   fab.onclick = toggleDebugOverlay;
-  fab.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m-10-10h4m12 0h4"/></svg><span class="debug-fab-badge" id="debug-fab-badge" style="display:none">0</span>';
+  fab.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#2a1c05" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2.5-7 4 14 2.5-7H22"/></svg><span class="debug-fab-badge" id="debug-fab-badge" style="display:none">0</span>';
   document.body.appendChild(fab);
 }
 
@@ -629,13 +629,13 @@ function _renderDebugContent() {
       _debugRow('Checkins', cs.checkins);
     // Chat context (only show if active)
     if (cs.chatUser || cs.bcId) {
-      html += '<div style="border-top:1px solid rgba(0,0,0,0.04);margin:4px 0"></div>';
+      html += '<div style="border-top:1px solid rgba(255,255,255,0.06);margin:4px 0"></div>';
       if (cs.chatUser) html += _debugRow('DM', _debugMono(cs.chatUser.substring(0, 12)) + (cs.chatName ? ' · ' + escHtml(cs.chatName) : ''));
       if (cs.bcId) html += _debugRow(t('admin_dbg_bubble_chat'), _debugMono(cs.bcId.substring(0, 12)) + (cs.bcName ? ' · ' + escHtml(cs.bcName) : ''));
       if (cs.personSheet) html += _debugRow('Person sheet', _debugMono(cs.personSheet.substring(0, 12)));
     }
     // Realtime
-    html += '<div style="border-top:1px solid rgba(0,0,0,0.04);margin:4px 0"></div>';
+    html += '<div style="border-top:1px solid rgba(255,255,255,0.06);margin:4px 0"></div>';
     html += _debugRow('RT kanaler', '<span class="debug-pill-' + (rtOk === rtSummary.length ? 'ok' : 'err') + '">' + rtOk + '/' + rtSummary.length + '</span>');
     if (cs.rtRetry > 0) html += _debugRow('RT retry', '<span class="debug-pill-err">' + cs.rtRetry + '</span>');
     // Flow flags
@@ -694,7 +694,7 @@ function _debugRow(label, value) {
 }
 
 function _debugMono(val) {
-  return '<code style="font-size:0.58rem;background:rgba(0,0,0,0.04);padding:1px 4px;border-radius:3px">' + escHtml(val) + '</code>';
+  return '<code style="font-size:0.58rem;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);padding:1px 4px;border-radius:3px">' + escHtml(val) + '</code>';
 }
 
 function _fmtUptime(sec) {
