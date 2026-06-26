@@ -731,19 +731,8 @@ async function loadProfile() {
       } catch(e) { qs.innerHTML = ''; }
     }
 
-    // Admin panel — only for admin role
-    var adminPanel = document.getElementById('admin-panel');
-    if (adminPanel) {
-      if (isAdmin()) {
-        adminPanel.style.display = 'block';
-        adminLoadReports();
-        adminLoadBanned();
-        adminLoadStats();
-        if (typeof initAdminDebug === 'function') initAdminDebug();
-      } else {
-        adminPanel.style.display = 'none';
-      }
-    }
+    // Admin — super admin lives behind the FAB cockpit, not in profile
+    if (isAdmin() && typeof initAdminDebug === 'function') initAdminDebug();
   } catch(e) { logError("loadProfile", e); _renderToast(t('pf_load_profile_fail'), 'error'); }
 }
 

@@ -13,39 +13,39 @@
 <meta name="theme-color" content="#170F34">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=81965">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81965">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81965">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81965">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81965">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81965">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81965">
+<link rel="manifest" href="manifest.json?v=81966">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81966">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81966">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81966">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81966">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81966">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81966">
 
-<link rel="stylesheet" href="app.css?v=81965">
+<link rel="stylesheet" href="app.css?v=81966">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous" defer></script>
-<script src="bubble-icons.js?v=81965" defer></script>
-<script src="tag-data.js?v=81965" defer></script>
-<script src="b-i18n.js?v=81965" defer></script>
-<script src="b-config.js?v=81965" defer></script>
-<script src="b-utils.js?v=81965" defer></script>
-<script src="b-guides.js?v=81965" defer></script>
-<script src="b-terms.js?v=81965" defer></script>
-<script src="b-auth.js?v=81965" defer></script>
-<script src="b-home.js?v=81965" defer></script>
-<script src="b-bubbles.js?v=81965" defer></script>
-<script src="b-profile.js?v=81965" defer></script>
-<script src="b-radar.js?v=81965" defer></script>
-<script src="b-messages.js?v=81965" defer></script>
-<script src="b-realtime.js?v=81965" defer></script>
-<script src="b-onboarding.js?v=81965" defer></script>
-<script src="b-chat.js?v=81965" defer></script>
-<script src="b-notifications.js?v=81965" defer></script>
-<script src="b-live.js?v=81965" defer></script>
-<script src="b-admin.js?v=81965" defer></script>
-<script src="b-navigation.js?v=81965" defer></script>
-<script src="b-boot.js?v=81965" defer></script>
+<script src="bubble-icons.js?v=81966" defer></script>
+<script src="tag-data.js?v=81966" defer></script>
+<script src="b-i18n.js?v=81966" defer></script>
+<script src="b-config.js?v=81966" defer></script>
+<script src="b-utils.js?v=81966" defer></script>
+<script src="b-guides.js?v=81966" defer></script>
+<script src="b-terms.js?v=81966" defer></script>
+<script src="b-auth.js?v=81966" defer></script>
+<script src="b-home.js?v=81966" defer></script>
+<script src="b-bubbles.js?v=81966" defer></script>
+<script src="b-profile.js?v=81966" defer></script>
+<script src="b-radar.js?v=81966" defer></script>
+<script src="b-messages.js?v=81966" defer></script>
+<script src="b-realtime.js?v=81966" defer></script>
+<script src="b-onboarding.js?v=81966" defer></script>
+<script src="b-chat.js?v=81966" defer></script>
+<script src="b-notifications.js?v=81966" defer></script>
+<script src="b-live.js?v=81966" defer></script>
+<script src="b-admin.js?v=81966" defer></script>
+<script src="b-navigation.js?v=81966" defer></script>
+<script src="b-boot.js?v=81966" defer></script>
   
 
 
@@ -1735,37 +1735,6 @@
     </div>
 
     <!-- ADMIN PANEL -->
-    <div id="admin-panel" style="display:none">
-      <div class="section-label" style="margin-top:1.25rem;margin-bottom:0.25rem;color:#E879A8">🔒 Admin</div>
-      <div style="background:rgba(232,121,168,0.06);border:0.5px solid rgba(232,121,168,0.15);border-radius:12px;padding:0.8rem;margin-bottom:0.5rem">
-        <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;color:rgba(255,255,255,0.95)">Rapporterede brugere<button class="btn-sm btn-ghost" onclick="adminLoadReports()" style="font-size:0.62rem" data-t="admin_refresh">Opdater</button></div>
-        <div id="admin-reports-list" style="font-size:0.72rem;color:rgba(255,255,255,0.55)" data-t="admin_loading">Indlæser...</div>
-      </div>
-      <div style="background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:12px;margin-bottom:0.5rem;overflow:hidden">
-        <div onclick="adminToggleNewUsers()" style="font-size:0.78rem;font-weight:700;padding:0.8rem;display:flex;align-items:center;justify-content:space-between;color:rgba(255,255,255,0.95);cursor:pointer;user-select:none">
-          <span>Nye brugere</span>
-          <span id="admin-newusers-chev" style="transition:transform 0.2s;color:rgba(255,255,255,0.4);font-size:0.85rem">▾</span>
-        </div>
-        <div id="admin-newusers-body" style="display:none;padding:0 0.8rem 0.8rem">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:0.3rem"><button class="btn-sm btn-ghost" onclick="event.stopPropagation();adminLoadNewUsers()" style="font-size:0.62rem" data-t="admin_refresh">Opdater</button></div>
-          <div id="admin-newusers-list" style="font-size:0.72rem;color:rgba(255,255,255,0.55)">Tryk for at indlæse…</div>
-        </div>
-      </div>
-      <div style="background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:12px;padding:0.8rem;margin-bottom:0.5rem">
-        <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem;color:rgba(255,255,255,0.95)" data-t="admin_search_user">Søg bruger</div>
-        <input class="input ob-dark-input" id="admin-user-search" placeholder="Navn eller email..." data-t-placeholder="admin_search_ph" oninput="adminSearchUser(this.value)" style="margin-bottom:0.4rem">
-        <div id="admin-search-results"></div>
-      </div>
-      <div style="background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:12px;padding:0.8rem;margin-bottom:0.5rem">
-        <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;color:rgba(255,255,255,0.95)">Bannede brugere<button class="btn-sm btn-ghost" onclick="adminLoadBanned()" style="font-size:0.62rem" data-t="admin_refresh">Opdater</button></div>
-        <div id="admin-banned-list" style="font-size:0.72rem;color:rgba(255,255,255,0.55)" data-t="admin_loading">Indlæser...</div>
-      </div>
-      <div style="background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:12px;padding:0.8rem">
-        <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem;color:rgba(255,255,255,0.95)">Platform stats</div>
-        <div id="admin-stats" style="font-size:0.72rem;color:rgba(255,255,255,0.55)" data-t="admin_loading">Indlæser...</div>
-      </div>
-    </div>
-
     </div><!-- /scroll wrapper -->
   </div>
 </div>
@@ -1903,26 +1872,74 @@
   <div class="debug-sheet">
     <div style="flex-shrink:0;padding:0.4rem 1.2rem 0;border-bottom:0.5px solid rgba(255,255,255,0.08)">
       <div class="bb-sheet-handle"></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem">
         <div style="font-size:1rem;font-weight:800;color:rgba(255,255,255,0.95)">Super admin</div>
         <button onclick="closeDebugOverlay()" style="background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.6);padding:0.3rem 0.85rem;border-radius:var(--radius-pill);font-size:0.72rem;font-weight:600;font-family:var(--font);cursor:pointer">Luk</button>
       </div>
-      <div style="display:flex;gap:0.35rem;margin-bottom:0.9rem">
-        <button onclick="debugExportEmail()" style="flex:1;padding:0.5rem;border-radius:var(--radius-sm);font-size:0.72rem;font-weight:700;font-family:var(--font);cursor:pointer;background:rgba(100,180,230,0.18);color:rgb(100,180,230);border:0.5px solid rgba(100,180,230,0.25)">Send fejlrapport</button>
-        <button onclick="_renderDebugContent()" style="flex:1;padding:0.5rem;border-radius:var(--radius-sm);font-size:0.72rem;font-weight:600;font-family:var(--font);cursor:pointer;background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.7)">Opdater</button>
-        <button onclick="clearDebugBadge()" style="padding:0.5rem 0.65rem;border-radius:var(--radius-sm);font-size:0.72rem;font-weight:600;font-family:var(--font);cursor:pointer;background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.7)">Ryd</button>
+      <div style="display:flex;gap:3px;background:rgba(255,255,255,0.05);border-radius:11px;padding:3px;margin-bottom:0.65rem">
+        <button id="dtab-stats" onclick="_debugTab('stats')" style="flex:1;position:relative;text-align:center;padding:0.42rem 0;font-size:0.71rem;font-weight:700;cursor:pointer;border-radius:8px;font-family:var(--font);background:rgba(100,180,230,0.18);border:0.5px solid rgba(100,180,230,0.25);color:rgba(255,255,255,0.95);transition:all 0.18s">Stats</button>
+        <button id="dtab-rep" onclick="_debugTab('rep')" style="flex:1;position:relative;text-align:center;padding:0.42rem 0;font-size:0.71rem;font-weight:600;cursor:pointer;border-radius:8px;font-family:var(--font);background:transparent;border:0.5px solid transparent;color:rgba(255,255,255,0.25);transition:all 0.18s">Anmeld.<span id="dtab-rep-dot" style="display:none;position:absolute;top:3px;right:6px;width:6px;height:6px;border-radius:50%;background:#E879A8"></span></button>
+        <button id="dtab-usr" onclick="_debugTab('usr')" style="flex:1;position:relative;text-align:center;padding:0.42rem 0;font-size:0.71rem;font-weight:600;cursor:pointer;border-radius:8px;font-family:var(--font);background:transparent;border:0.5px solid transparent;color:rgba(255,255,255,0.25);transition:all 0.18s">Brugere</button>
+        <button id="dtab-sys" onclick="_debugTab('sys')" style="flex:1;position:relative;text-align:center;padding:0.42rem 0;font-size:0.71rem;font-weight:600;cursor:pointer;border-radius:8px;font-family:var(--font);background:transparent;border:0.5px solid transparent;color:rgba(255,255,255,0.25);transition:all 0.18s">System<span id="dtab-sys-dot" style="display:none;position:absolute;top:3px;right:6px;width:6px;height:6px;border-radius:50%;background:#EF4444"></span></button>
       </div>
     </div>
-    <div style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:0.8rem 1.2rem calc(1rem + env(safe-area-inset-bottom, 0px))">
-      <div class="section-label" style="color:rgb(100,180,230);margin-bottom:0.3rem">Dit device</div>
-      <div id="debug-device-info" style="margin-bottom:0.6rem"></div>
-      <div class="section-label" style="color:rgb(100,180,230);margin-bottom:0.3rem">App state</div>
-      <div id="debug-state-info" style="margin-bottom:0.6rem"></div>
-      <button id="debug-errlog-toggle" onclick="_debugToggleErrlog()" style="display:flex;align-items:center;justify-content:space-between;width:100%;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);padding:0.55rem 0.7rem;cursor:pointer;font-family:var(--font);margin-bottom:0.4rem">
-        <span style="font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.85)">Fejl-log<span id="debug-errlog-count" style="margin-left:0.4rem;font-size:0.6rem;font-weight:700;color:#ff8a8a;background:rgba(239,68,68,0.14);padding:1px 7px;border-radius:99px;display:none"></span></span>
-        <svg id="debug-errlog-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.25s;flex-shrink:0"><path d="M6 9l6 6 6-6"/></svg>
-      </button>
-      <div id="debug-error-list" style="display:none;margin-bottom:0.4rem"></div>
+    <div style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:0.85rem 1.2rem calc(1rem + env(safe-area-inset-bottom, 0px))">
+
+      <div id="debug-pane-stats">
+        <div style="background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:12px;padding:0.8rem">
+          <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem;color:rgba(255,255,255,0.95)">Platform stats</div>
+          <div id="admin-stats" style="font-size:0.72rem;color:rgba(255,255,255,0.55)" data-t="admin_loading">Indlæser...</div>
+        </div>
+      </div>
+
+      <div id="debug-pane-rep" style="display:none">
+        <div style="background:rgba(232,121,168,0.06);border:0.5px solid rgba(232,121,168,0.15);border-radius:12px;padding:0.8rem">
+          <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;color:rgba(255,255,255,0.95)">Rapporterede brugere<button class="btn-sm btn-ghost" onclick="adminLoadReports()" style="font-size:0.62rem" data-t="admin_refresh">Opdater</button></div>
+          <div id="admin-reports-list" style="font-size:0.72rem;color:rgba(255,255,255,0.55)" data-t="admin_loading">Indlæser...</div>
+        </div>
+      </div>
+
+      <div id="debug-pane-usr" style="display:none">
+        <div style="background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:12px;margin-bottom:0.5rem;overflow:hidden">
+          <div onclick="adminToggleNewUsers()" style="font-size:0.78rem;font-weight:700;padding:0.8rem;display:flex;align-items:center;justify-content:space-between;color:rgba(255,255,255,0.95);cursor:pointer;user-select:none">
+            <span>Nye brugere</span>
+            <span id="admin-newusers-chev" style="transition:transform 0.2s;color:rgba(255,255,255,0.4);font-size:0.85rem">▾</span>
+          </div>
+          <div id="admin-newusers-body" style="display:none;padding:0 0.8rem 0.8rem">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:0.3rem"><button class="btn-sm btn-ghost" onclick="event.stopPropagation();adminLoadNewUsers()" style="font-size:0.62rem" data-t="admin_refresh">Opdater</button></div>
+            <div id="admin-newusers-list" style="font-size:0.72rem;color:rgba(255,255,255,0.55)">Tryk for at indlæse…</div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:12px;padding:0.8rem;margin-bottom:0.5rem">
+          <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem;color:rgba(255,255,255,0.95)" data-t="admin_search_user">Søg bruger</div>
+          <input class="input ob-dark-input" id="admin-user-search" placeholder="Navn eller email..." data-t-placeholder="admin_search_ph" oninput="adminSearchUser(this.value)" style="margin-bottom:0.4rem">
+          <div id="admin-search-results"></div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:12px;padding:0.8rem">
+          <div style="font-size:0.78rem;font-weight:700;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;color:rgba(255,255,255,0.95)">Bannede brugere<button class="btn-sm btn-ghost" onclick="adminLoadBanned()" style="font-size:0.62rem" data-t="admin_refresh">Opdater</button></div>
+          <div id="admin-banned-list" style="font-size:0.72rem;color:rgba(255,255,255,0.55)" data-t="admin_loading">Indlæser...</div>
+        </div>
+      </div>
+
+      <div id="debug-pane-sys" style="display:none">
+        <div class="section-label" style="color:rgb(100,180,230);margin-bottom:0.3rem">Dit device</div>
+        <div id="debug-device-info" style="margin-bottom:0.6rem"></div>
+        <div class="section-label" style="color:rgb(100,180,230);margin-bottom:0.3rem">App state</div>
+        <div id="debug-state-info" style="margin-bottom:0.6rem"></div>
+        <button id="debug-errlog-toggle" onclick="_debugToggleErrlog()" style="display:flex;align-items:center;justify-content:space-between;width:100%;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);padding:0.55rem 0.7rem;cursor:pointer;font-family:var(--font);margin-bottom:0.4rem">
+          <span style="font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.85)">Fejl-log<span id="debug-errlog-count" style="margin-left:0.4rem;font-size:0.6rem;font-weight:700;color:#ff8a8a;background:rgba(239,68,68,0.14);padding:1px 7px;border-radius:99px;display:none"></span></span>
+          <svg id="debug-errlog-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.25s;flex-shrink:0"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div id="debug-error-list" style="display:none;margin-bottom:0.4rem"></div>
+        <div style="height:1px;background:rgba(255,255,255,0.06);margin:0.9rem 0"></div>
+        <div class="section-label" style="color:#E0A33A;margin-bottom:0.3rem">Feedback<span id="debug-fb-count" style="margin-left:0.4rem;font-size:0.6rem;font-weight:700;color:#E0A33A;background:rgba(224,163,58,0.14);padding:1px 7px;border-radius:99px;display:none"></span></div>
+        <div id="debug-feedback-list" style="font-size:0.72rem;color:rgba(255,255,255,0.55);margin-bottom:0.7rem">Indlæser...</div>
+        <div style="display:flex;gap:0.35rem">
+          <button onclick="debugExportEmail()" style="flex:1;padding:0.5rem;border-radius:var(--radius-sm);font-size:0.72rem;font-weight:700;font-family:var(--font);cursor:pointer;background:rgba(100,180,230,0.18);color:rgb(100,180,230);border:0.5px solid rgba(100,180,230,0.25)">Send fejlrapport</button>
+          <button onclick="clearDebugBadge()" style="padding:0.5rem 0.65rem;border-radius:var(--radius-sm);font-size:0.72rem;font-weight:600;font-family:var(--font);cursor:pointer;background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.7)">Ryd fejl</button>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>

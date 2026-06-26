@@ -20,7 +20,10 @@ async function adminLoadReports() {
   try {
     var { data } = await sb.from('reports')
       .select('id, type, reason, created_at, reporter_id, reported_id, profiles!reports_reporter_id_fkey(name), reported:profiles!reports_reported_id_fkey(name, banned)')
+      .neq('type', 'feedback')
       .order('created_at', { ascending: false }).limit(20);
+    var _rd = document.getElementById('dtab-rep-dot');
+    if (_rd) _rd.style.display = (data && data.length > 0) ? 'block' : 'none';
     if (!data || data.length === 0) {
       el.innerHTML = '<div style="color:rgba(255,255,255,0.25);padding:0.3rem 0">' + t('admin_no_reports') + '</div>';
       return;
@@ -586,7 +589,8 @@ function toggleDebugOverlay() {
   if (!overlay) return;
   _debugOverlayOpen = !_debugOverlayOpen;
   if (_debugOverlayOpen) {
-    _renderDebugContent();
+    _debugTab('stats');
+    _debugUpdateTabDots();
     overlay.classList.add('open');
   } else {
     overlay.classList.remove('open');
@@ -698,6 +702,66 @@ function _debugToggleErrlog() {
   var isOpen = list.style.display !== 'none';
   list.style.display = isOpen ? 'none' : 'block';
   if (chev) chev.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+function _debugTab(which) {
+  ['stats','rep','usr','sys'].forEach(function(tb) {
+    var btn = document.getElementById('dtab-' + tb);
+    var pane = document.getElementById('debug-pane-' + tb);
+    var on = (tb === which);
+    if (pane) pane.style.display = on ? 'block' : 'none';
+    if (btn) {
+      btn.style.background = on ? 'rgba(100,180,230,0.18)' : 'transparent';
+      btn.style.border = on ? '0.5px solid rgba(100,180,230,0.25)' : '0.5px solid transparent';
+      btn.style.color = on ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.25)';
+      btn.style.fontWeight = on ? '700' : '600';
+    }
+  });
+  var shown = document.getElementById('debug-pane-' + which);
+  if (shown && shown.parentElement) shown.parentElement.scrollTop = 0;
+  if (which === 'stats') { if (typeof adminLoadStats === 'function') adminLoadStats(); }
+  else if (which === 'rep') { if (typeof adminLoadReports === 'function') adminLoadReports(); }
+  else if (which === 'usr') { if (typeof adminLoadBanned === 'function') adminLoadBanned(); }
+  else if (which === 'sys') { _renderDebugContent(); _renderDebugFeedback(); }
+}
+
+function _debugUpdateTabDots() {
+  var sd = document.getElementById('dtab-sys-dot');
+  if (sd) sd.style.display = (typeof _debugErrors !== 'undefined' && _debugErrors.length > 0) ? 'block' : 'none';
+}
+
+async function _renderDebugFeedback() {
+  var el = document.getElementById('debug-feedback-list');
+  if (!el) return;
+  try {
+    var { data } = await sb.from('reports')
+      .select('id, reason, created_at, handled_at, reporter_id, profiles!reports_reporter_id_fkey(name)')
+      .eq('type', 'feedback')
+      .order('created_at', { ascending: false }).limit(50);
+    var rows = data || [];
+    var openCount = rows.filter(function(r){ return !r.handled_at; }).length;
+    var cnt = document.getElementById('debug-fb-count');
+    if (cnt) { if (openCount > 0) { cnt.textContent = openCount + ' nye'; cnt.style.display = 'inline'; } else { cnt.style.display = 'none'; } }
+    if (rows.length === 0) { el.innerHTML = '<div style="color:rgba(255,255,255,0.3);padding:0.3rem 0">Ingen feedback endnu</div>'; return; }
+    el.innerHTML = rows.map(function(r) {
+      var handled = !!r.handled_at;
+      var who = r.profiles && r.profiles.name ? r.profiles.name : 'Anonym';
+      var when = r.created_at ? adminTimeAgo(r.created_at) : '';
+      var c = '<div style="background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.07);border-radius:12px;padding:0.6rem 0.7rem;margin-bottom:0.45rem' + (handled ? ';opacity:0.5' : '') + '">';
+      c += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem"><span style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.9)">' + escHtml(who) + '</span><span style="font-size:0.58rem;color:rgba(255,255,255,0.3)">' + when + (handled ? ' \u00b7 h\u00e5ndteret' : '') + '</span></div>';
+      c += '<div style="font-size:0.72rem;color:rgba(255,255,255,0.8);line-height:1.45">' + escHtml(r.reason || '') + '</div>';
+      if (!handled) c += '<button onclick="_debugHandleFeedback(\'' + r.id + '\')" style="margin-top:0.5rem;padding:0.35rem 0.7rem;border-radius:8px;font-size:0.66rem;font-weight:700;font-family:var(--font);cursor:pointer;background:rgba(46,207,207,0.14);border:0.5px solid rgba(46,207,207,0.3);color:#2ECFCF">Mark\u00e9r h\u00e5ndteret</button>';
+      c += '</div>';
+      return c;
+    }).join('');
+  } catch(e) { logError('renderDebugFeedback', e); el.innerHTML = '<div style="color:#ff8a8a;padding:0.3rem 0">Kunne ikke hente feedback</div>'; }
+}
+
+async function _debugHandleFeedback(id) {
+  try {
+    await sb.from('reports').update({ handled_at: new Date().toISOString(), handled_by: currentUser ? currentUser.id : null }).eq('id', id);
+    _renderDebugFeedback();
+  } catch(e) { _renderToast('Kunne ikke markere: ' + e.message, 'error'); }
 }
 
 function _debugRow(label, value) {
