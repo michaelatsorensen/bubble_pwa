@@ -43,6 +43,13 @@ function navBack() {
   var openSheet = document.querySelector('.bb-overlay.open');
   if (openSheet) { if (typeof bbCloseAll === 'function') bbCloseAll(); return; }
 
+  // Priority 1.5: Fullscreen bubble-chat -> back returns to the bubble detail (Info), not out of the bubble
+  var _bcFs = document.getElementById('screen-bubble-chat');
+  if (_bcFs && _bcFs.classList.contains('active') && _bcFs.classList.contains('bc-fullscreen-chat') && typeof bcSwitchTab === 'function') {
+    bcSwitchTab('info');
+    return;
+  }
+
   // Priority 2: Navigate back in stack
   if (_navStack.length > 1) {
     _navStack.pop();
