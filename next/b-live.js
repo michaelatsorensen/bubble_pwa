@@ -333,6 +333,7 @@ var _liveQrFound = null;
 
 async function startLiveCamera() {
   try {
+  _liveNativeAttempts = 0;
   var video = document.getElementById('live-qr-video');
   if (!video) return;
   var status = document.getElementById('live-scan-status');
@@ -398,21 +399,22 @@ var _barcodeDetector = null;
 var _useNativeDetector = false;
 
 async function initBarcodeDetector() {
-  // Skip native BarcodeDetector on iOS — unreliable across device generations
+  // Try native BarcodeDetector first on all platforms incl. iOS (system QR engine is reliable on
+  // modern iOS now); scan loops fall back to jsQR if native does not detect within ~30 frames.
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  if (!isIOS && typeof BarcodeDetector !== 'undefined') {
+  if (typeof BarcodeDetector !== 'undefined') {
     try {
       var formats = await BarcodeDetector.getSupportedFormats();
       if (formats.includes('qr_code')) {
         _barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
         _useNativeDetector = true;
-        console.debug('[QR] Using native BarcodeDetector');
+        console.debug('[QR] Using native BarcodeDetector' + (isIOS ? ' (iOS)' : ''));
         return;
       }
     } catch(e) {}
   }
   _useNativeDetector = false;
-  console.debug('[QR] Using jsQR' + (isIOS ? ' (iOS forced)' : ' fallback'));
+  console.debug('[QR] Using jsQR' + (isIOS ? ' (iOS, native unavailable)' : ' fallback'));
 }
 
 function liveQrPreviewLoop() {
@@ -423,10 +425,14 @@ function liveQrPreviewLoop() {
     return;
   }
 
-  if (_useNativeDetector && _barcodeDetector) {
+  // After ~30 failed native attempts (~3s), fall back to jsQR
+  var useNative = _useNativeDetector && _barcodeDetector && _liveNativeAttempts < 30;
+  if (useNative) {
+    _liveNativeAttempts++;
     // Native BarcodeDetector — much better recognition
     _barcodeDetector.detect(video).then(function(codes) {
       if (codes && codes.length > 0 && codes[0].rawValue && !_liveQrPending) {
+        _liveNativeAttempts = 0;
         _liveQrFound = codes[0].rawValue;
         liveScanAutoResolve(codes[0].rawValue);
         return;
@@ -464,6 +470,7 @@ function liveQrPreviewLoop() {
 }
 
 var _liveQrPending = false;
+var _liveNativeAttempts = 0;
 var _liveQrResolvedBubble = null;
 var _scannerBubbleId = null; // Set when scanning from bubble info tab
 var _pendingScanCheckin = null; // { profile, bubbleId } — awaiting confirmation
