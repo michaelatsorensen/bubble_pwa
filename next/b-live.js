@@ -1120,7 +1120,7 @@ function _connectShowProfileSheet(p, profileId) {
   if (overlap.length > 0) {
     tagsHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">' +
       overlap.slice(0, 6).map(function(k) {
-        return '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.1);color:#085041;font-weight:600">\u2713 ' + escHtml(k) + '</span>';
+        return '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.14);border:0.5px solid rgba(46,207,207,0.3);color:#2ECFCF;font-weight:600">\u2713 ' + escHtml(k) + '</span>';
       }).join('') +
       (overlap.length > 6 ? '<span style="font-size:0.55rem;color:rgba(255,255,255,0.5)">+' + (overlap.length - 6) + ' ' + t('live_more') + '</span>' : '') +
       '</div>';
