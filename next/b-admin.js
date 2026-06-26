@@ -648,6 +648,8 @@ function _renderDebugContent() {
 function _renderDebugErrorList() {
   var el = document.getElementById('debug-error-list');
   if (!el) return;
+  var _ec = document.getElementById('debug-errlog-count');
+  if (_ec) { if (_debugErrors.length > 0) { _ec.textContent = _debugErrors.length; _ec.style.display = 'inline'; } else { _ec.style.display = 'none'; } }
   if (_debugErrors.length === 0) {
     el.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.72rem;padding:1rem 0">' + t('admin_no_errors') + '</div>';
     return;
@@ -687,6 +689,15 @@ function _renderDebugErrorList() {
 function clearDebugBadge() {
   _debugErrorCount = 0;
   _updateDebugBadge();
+}
+
+function _debugToggleErrlog() {
+  var list = document.getElementById('debug-error-list');
+  var chev = document.getElementById('debug-errlog-chevron');
+  if (!list) return;
+  var isOpen = list.style.display !== 'none';
+  list.style.display = isOpen ? 'none' : 'block';
+  if (chev) chev.style.transform = isOpen ? '' : 'rotate(180deg)';
 }
 
 function _debugRow(label, value) {
