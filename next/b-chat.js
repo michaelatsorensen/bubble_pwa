@@ -901,6 +901,8 @@ function bcSwitchTab(tab) {
     }
     if (tabBtn) tabBtn.classList.toggle('active', t === tab);
   });
+  var _bcScreen = document.getElementById('screen-bubble-chat');
+  if (_bcScreen) _bcScreen.classList.toggle('bc-chat-dark', tab === 'chat');
   if (tab === 'chat') {
     const badge = document.getElementById('bc-unread-badge');
     if (badge) badge.style.display = 'none';

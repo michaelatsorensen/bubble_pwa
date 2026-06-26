@@ -3101,6 +3101,7 @@ a:not(.btn-primary):not(.btn-secondary):active {
 #screen-messages .empty-icon { color:var(--text-on-light-subtle); }
 #screen-chat { background:rgba(23,15,52,0.92); }
 #bc-panel-chat { background:rgba(23,15,52,0.92); }
+#screen-bubble-chat.bc-chat-dark { background:rgba(23,15,52,0.92); }
 
 /* ═══════════════════════════════════════════════════════════════════
    BB CARD SYSTEM — unified design tokens (next-v7.20, refined v7.21)
