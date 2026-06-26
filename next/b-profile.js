@@ -884,10 +884,22 @@ function openSettingsModal() {
   _updateLangBtns();
   var bc = document.getElementById('blocked-count-badge');
   if (bc) bc.textContent = (typeof _blockedUsers !== 'undefined' && _blockedUsers.length) ? String(_blockedUsers.length) : '';
+  _collapseDeleteAccountAccordion();
   openModal('modal-settings');
 }
 
 // ══ GDPR: slet konto (fold-ud i Indstillinger) ══
+// Sammenfold + nulstil DELETE-feltet hver gang Indstillinger aabnes (saa fold-ud aldrig huskes aaben)
+function _collapseDeleteAccountAccordion() {
+  var head = document.getElementById('del-acc-head');
+  var panel = document.getElementById('del-acc-panel');
+  var inp = document.getElementById('del-acc-input');
+  if (panel) panel.classList.remove('open');
+  if (head) head.classList.remove('open');
+  if (inp) { inp.value = ''; inp.disabled = false; }
+  _checkDeleteConfirmInput();
+}
+
 function toggleDeleteAccountAccordion() {
   var head = document.getElementById('del-acc-head');
   var panel = document.getElementById('del-acc-panel');
