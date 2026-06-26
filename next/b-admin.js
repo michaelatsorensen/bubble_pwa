@@ -544,7 +544,7 @@ function _renderDebugFab() {
   fab.id = 'admin-debug-fab';
   fab.className = 'debug-fab';
   fab.onclick = toggleDebugOverlay;
-  fab.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#2a1c05" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2.5-7 4 14 2.5-7H22"/></svg><span class="debug-fab-badge" id="debug-fab-badge" style="display:none">0</span>';
+  fab.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#E0A33A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2.5-7 4 14 2.5-7H22"/></svg><span class="debug-fab-badge" id="debug-fab-badge" style="display:none">0</span>';
   document.body.appendChild(fab);
 }
 
