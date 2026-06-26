@@ -437,21 +437,21 @@ function liveQrPreviewLoop() {
       setTimeout(function() { _liveQrFrame = requestAnimationFrame(liveQrPreviewLoop); }, 200);
     });
   } else {
-    // jsQR fallback — crop center 60% + scale for speed
+    // jsQR fallback — crop center 80% (keeps quiet zone) + high resolution for dense QRs
     var canvas = document.getElementById('live-qr-canvas');
     if (!canvas) return;
     var ctx = canvas.getContext('2d', { willReadFrequently: true });
     var vw = video.videoWidth, vh = video.videoHeight;
-    var cropW = Math.round(vw * 0.6), cropH = Math.round(vh * 0.6);
+    var cropW = Math.round(vw * 0.8), cropH = Math.round(vh * 0.8);
     var cropX = Math.round((vw - cropW) / 2), cropY = Math.round((vh - cropH) / 2);
-    var scale = Math.min(1, 400 / cropW);
+    var scale = Math.min(1, 700 / cropW);
     var outW = Math.round(cropW * scale), outH = Math.round(cropH * scale);
     canvas.width = outW;
     canvas.height = outH;
     ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, outW, outH);
     if (typeof jsQR !== 'undefined') {
       var imgData = ctx.getImageData(0, 0, outW, outH);
-      var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'dontInvert' });
+      var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
       if (code && code.data && !_liveQrPending) {
         _liveQrFound = code.data;
         liveScanAutoResolve(code.data);
@@ -887,18 +887,18 @@ function _connectScanLoop() {
     var canvas = document.getElementById('connect-qr-canvas');
     if (!canvas) return;
     var ctx = canvas.getContext('2d', { willReadFrequently: true });
-    // Crop to center 60% of video (where scan box is) + scale down for speed
+    // Crop to center 80% (keeps QR quiet zone) + keep resolution high for dense screen QRs
     var vw = video.videoWidth, vh = video.videoHeight;
-    var cropW = Math.round(vw * 0.6), cropH = Math.round(vh * 0.6);
+    var cropW = Math.round(vw * 0.8), cropH = Math.round(vh * 0.8);
     var cropX = Math.round((vw - cropW) / 2), cropY = Math.round((vh - cropH) / 2);
-    var scale = Math.min(1, 400 / cropW);
+    var scale = Math.min(1, 700 / cropW);
     var outW = Math.round(cropW * scale), outH = Math.round(cropH * scale);
     canvas.width = outW;
     canvas.height = outH;
     ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, outW, outH);
     if (typeof jsQR !== 'undefined') {
       var imgData = ctx.getImageData(0, 0, outW, outH);
-      var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'dontInvert' });
+      var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
       if (code && code.data && !_connectPending) {
         _connectNativeAttempts = 0;
         _connectResolve(code.data);
