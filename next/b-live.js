@@ -362,7 +362,7 @@ async function startLiveCamera() {
     if (status) status.textContent = t('live_starting_camera');
     await initBarcodeDetector();
     _liveQrStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
+      video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
     });
     video.srcObject = _liveQrStream;
     video.setAttribute('playsinline', '');
@@ -450,7 +450,7 @@ function liveQrPreviewLoop() {
     var vw = video.videoWidth, vh = video.videoHeight;
     var cropW = Math.round(vw * 0.8), cropH = Math.round(vh * 0.8);
     var cropX = Math.round((vw - cropW) / 2), cropY = Math.round((vh - cropH) / 2);
-    var scale = Math.min(1, 700 / cropW);
+    var scale = Math.min(1, 1600 / cropW);
     var outW = Math.round(cropW * scale), outH = Math.round(cropH * scale);
     canvas.width = outW;
     canvas.height = outH;
@@ -855,7 +855,7 @@ async function startConnectCamera() {
     await initBarcodeDetector();
     if (status) status.textContent = t('live_starting_camera');
     _connectStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
+      video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
     });
     video.srcObject = _connectStream;
     await video.play();
@@ -898,7 +898,7 @@ function _connectScanLoop() {
     var vw = video.videoWidth, vh = video.videoHeight;
     var cropW = Math.round(vw * 0.8), cropH = Math.round(vh * 0.8);
     var cropX = Math.round((vw - cropW) / 2), cropY = Math.round((vh - cropH) / 2);
-    var scale = Math.min(1, 700 / cropW);
+    var scale = Math.min(1, 1600 / cropW);
     var outW = Math.round(cropW * scale), outH = Math.round(cropH * scale);
     canvas.width = outW;
     canvas.height = outH;

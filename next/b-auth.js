@@ -878,7 +878,7 @@ async function openMyQR() {
   sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
     '<div style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem;color:rgba(255,255,255,0.95)">Min QR-kode</div>' +
     '<div style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin-bottom:1rem">Gyldig i 10 minutter · opdateres automatisk</div>' +
-    '<div id="my-qr-container" style="display:flex;justify-content:center;margin-bottom:1rem"></div>' +
+    '<div style="display:flex;justify-content:center;margin-bottom:1rem"><div id="my-qr-container" style="background:#fff;padding:16px;border-radius:14px;line-height:0"></div></div>' +
     '<div style="font-size:0.65rem;color:rgba(255,255,255,0.55);margin-bottom:0.8rem">' + escHtml(currentProfile.name) + ' · ' + escHtml(currentProfile.title || '') + '</div>' +
     '<button onclick="navigator.clipboard.writeText(\'' + shareUrl + '\');this.textContent=\'Kopieret! ✓\';setTimeout(()=>this.textContent=\'Del profil\',2000)" style="width:100%;padding:0.7rem;border-radius:12px;border:0.5px solid rgba(100,180,230,0.25);background:rgba(100,180,230,0.18);color:rgba(255,255,255,0.95);font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer">Del profil</button>';
   
