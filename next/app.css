@@ -4188,3 +4188,21 @@ a:not(.btn-primary):not(.btn-secondary):active {
   margin-bottom: 8px !important;
 }
 
+
+/* ── GDPR: Slet konto (fold-ud i Indstillinger) ── */
+.del-acc-head { width:100%; padding:0.7rem 0.85rem; background:transparent; border:0.5px solid rgba(239,68,68,0.18); border-radius:12px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; font-family:inherit; transition:background 0.15s; }
+.del-acc-head.open { border-bottom-left-radius:0; border-bottom-right-radius:0; border-bottom-color:transparent; background:rgba(239,68,68,0.05); }
+.del-acc-lbl { display:flex; align-items:center; gap:0.5rem; font-size:0.82rem; font-weight:700; color:rgba(255,92,92,0.85); }
+.del-acc-chev { transition:transform 0.25s ease; color:rgba(255,92,92,0.7); flex-shrink:0; }
+.del-acc-head.open .del-acc-chev { transform:rotate(180deg); }
+.del-acc-panel { max-height:0; overflow:hidden; transition:max-height 0.32s ease; border:0.5px solid rgba(239,68,68,0.18); border-top:none; border-radius:0 0 12px 12px; background:rgba(239,68,68,0.05); }
+.del-acc-panel.open { max-height:480px; }
+.del-acc-inner { padding:13px 14px 15px; }
+.del-acc-warn { font-size:0.74rem; color:rgba(255,255,255,0.55); line-height:1.55; margin-bottom:13px; }
+.del-acc-prompt { font-size:0.72rem; color:rgba(255,255,255,0.72); margin-bottom:7px; }
+.del-acc-prompt b { color:#FF5C5C; font-weight:800; letter-spacing:0.08em; }
+.del-acc-input { width:100%; padding:0.62rem 0.75rem; border-radius:10px; background:rgba(255,255,255,0.05); border:0.5px solid rgba(255,255,255,0.14); color:rgba(255,255,255,0.95); font-family:inherit; font-size:0.85rem; letter-spacing:0.12em; margin-bottom:11px; outline:none; transition:border-color 0.15s; }
+.del-acc-input:focus { border-color:rgba(239,68,68,0.5); }
+.del-acc-input.ok { border-color:rgba(26,158,142,0.6); }
+.del-acc-btn { width:100%; padding:0.7rem; border-radius:11px; font-size:0.8rem; font-family:inherit; font-weight:700; display:flex; align-items:center; justify-content:center; gap:0.45rem; transition:all 0.2s; background:rgba(255,255,255,0.05); border:0.5px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.3); cursor:not-allowed; }
+.del-acc-btn.armed { background:#EF4444; border:1px solid #EF4444; color:#fff; cursor:pointer; box-shadow:0 4px 14px rgba(239,68,68,0.3); }

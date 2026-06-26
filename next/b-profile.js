@@ -887,6 +887,87 @@ function openSettingsModal() {
   openModal('modal-settings');
 }
 
+// ══ GDPR: slet konto (fold-ud i Indstillinger) ══
+function toggleDeleteAccountAccordion() {
+  var head = document.getElementById('del-acc-head');
+  var panel = document.getElementById('del-acc-panel');
+  if (!head || !panel) return;
+  var open = panel.classList.toggle('open');
+  head.classList.toggle('open', open);
+  if (!open) {
+    var inp = document.getElementById('del-acc-input');
+    if (inp) inp.value = '';
+    _checkDeleteConfirmInput();
+  } else {
+    setTimeout(function() { panel.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 140);
+  }
+}
+
+function _checkDeleteConfirmInput() {
+  var inp = document.getElementById('del-acc-input');
+  var btn = document.getElementById('del-acc-btn');
+  if (!inp || !btn) return;
+  var ok = (inp.value.trim() === 'DELETE'); // case-sensitive, eksakt; samme ord paa DA+EN
+  btn.classList.toggle('armed', ok);
+  btn.disabled = !ok;
+  inp.classList.toggle('ok', ok);
+}
+
+// Best-effort: slet personlige filer via Storage-API (SQL-RPC kan ikke slette fra storage.objects).
+async function _deleteOwnStorageFiles(uid) {
+  var prefixes = ['avatars/' + uid, 'dm/' + uid];
+  for (var i = 0; i < prefixes.length; i++) {
+    try {
+      var res = await sb.storage.from('bubble-files').list(prefixes[i], { limit: 100 });
+      var files = res && res.data;
+      if (files && files.length) {
+        var paths = files.filter(function(f) { return f.id; }).map(function(f) { return prefixes[i] + '/' + f.name; });
+        if (paths.length) await sb.storage.from('bubble-files').remove(paths);
+      }
+    } catch (e) { console.debug('[gdpr] storage cleanup ' + prefixes[i] + ':', e); }
+  }
+}
+
+async function confirmDeleteAccount() {
+  var btn = document.getElementById('del-acc-btn');
+  if (!btn || !btn.classList.contains('armed')) return;
+  if (!currentUser) return;
+  var uid = currentUser.id;
+  var inp = document.getElementById('del-acc-input');
+  // Laas mod dobbelt-tryk
+  btn.classList.remove('armed');
+  btn.disabled = true;
+  if (inp) inp.disabled = true;
+  try {
+    // 1. Personlige filer (best-effort — maa ikke blokere selve sletningen)
+    await _deleteOwnStorageFiles(uid);
+    // 2. Anonymisering + permanent sletning af konto
+    var resp = await sb.rpc('gdpr_delete_user', { p_user_id: uid });
+    if (resp.error || !resp.data || resp.data.ok !== true) {
+      logError('gdpr_delete_user', resp.error || resp.data);
+      showErrorToast(t('del_acc_error'));
+      btn.disabled = false;
+      if (inp) inp.disabled = false;
+      _checkDeleteConfirmInput();
+      return;
+    }
+    // 3. Teardown + log ud + tilbage til landing
+    try { bcUnsubscribeAll(); rtUnsubscribeAll(); sb.removeAllChannels(); } catch (e) {}
+    await sb.auth.signOut();
+    flowClearAll();
+    resetAppState();
+    try { sessionStorage.removeItem('bubble_came_from_landing'); } catch (e) {}
+    redirectToLanding();
+    showSuccessToast(t('del_acc_success'));
+  } catch (e) {
+    logError('confirmDeleteAccount', e);
+    showErrorToast(t('del_acc_error'));
+    btn.disabled = false;
+    if (inp) inp.disabled = false;
+    _checkDeleteConfirmInput();
+  }
+}
+
 function profSwitchTab(tab) {
   ['dashboard','saved','bubbles','invites'].forEach(function(t) {
     var panel = document.getElementById('prof-panel-' + t);
