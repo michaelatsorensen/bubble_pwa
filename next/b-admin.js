@@ -16,7 +16,7 @@ async function adminLoadReports() {
   try {
   var el = document.getElementById('admin-reports-list');
   if (!el) return;
-  el.innerHTML = '<div class="spinner"></div>';
+  el.innerHTML = skelCards(3);
   try {
     var { data } = await sb.from('reports')
       .select('id, type, reason, created_at, reporter_id, reported_id, profiles!reports_reporter_id_fkey(name), reported:profiles!reports_reported_id_fkey(name, banned)')
@@ -51,7 +51,7 @@ async function adminLoadBanned() {
   try {
   var el = document.getElementById('admin-banned-list');
   if (!el) return;
-  el.innerHTML = '<div class="spinner"></div>';
+  el.innerHTML = skelCards(2);
   try {
     var { data } = await sb.from('profiles').select('id, name, email, banned').eq('banned', true).order('name');
     if (!data || data.length === 0) {
@@ -88,7 +88,7 @@ function adminToggleNewUsers() {
 async function adminLoadNewUsers() {
   var el = document.getElementById('admin-newusers-list');
   if (!el) return;
-  el.innerHTML = t('admin_loading') || 'Indlæser...';
+  el.innerHTML = skelCards(2);
   try {
     var { data, error } = await sb.from('profiles')
       .select('id, name, workplace, title, avatar_url, keywords, created_at, banned, is_anon')
@@ -120,11 +120,17 @@ async function adminLoadNewUsers() {
   } catch(e) { el.innerHTML = '<div style="color:var(--pink)">' + t('admin_error') + escHtml(e.message) + '</div>'; logError('adminLoadNewUsers', e); }
 }
 
+function _skelStatGrid() {
+  var s = '';
+  for (var i = 0; i < 6; i++) s += '<div style="background:rgba(255,255,255,0.03);border:0.5px solid rgba(255,255,255,0.06);border-radius:12px;padding:0.7rem 0.6rem"><div class="skel" style="width:55%;height:18px;margin-bottom:6px"></div><div class="skel" style="width:75%;height:9px"></div></div>';
+  return '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px">' + s + '</div>';
+}
+
 async function adminLoadStats() {
   try {
   var el = document.getElementById('admin-stats');
   if (!el) return;
-  el.innerHTML = '<div class="spinner"></div>';
+  el.innerHTML = _skelStatGrid();
   try {
     // Parallel count queries
     var d30 = new Date(Date.now() - 30*24*3600000).toISOString();
@@ -733,6 +739,7 @@ function _debugUpdateTabDots() {
 async function _renderDebugFeedback() {
   var el = document.getElementById('debug-feedback-list');
   if (!el) return;
+  el.innerHTML = skelCards(2);
   try {
     var { data } = await sb.from('reports')
       .select('id, reason, created_at, handled_at, reporter_id, profiles!reports_reporter_id_fkey(name)')
