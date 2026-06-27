@@ -615,17 +615,37 @@ async function handleLogout() {
   } catch(e) { logError("handleLogout", e); errorToast("load", e); }
 }
 
-async function handleForgotPassword() {
-  var email = document.getElementById('login-email').value.trim();
-  if (!email) return showWarningToast(t('toast_enter_email'));
+function handleForgotPassword() {
+  // Open the forgot-password overlay instead of sending immediately.
+  // Pre-fill from the login email field if the user already typed it.
+  var loginEmail = ((document.getElementById('login-email') || {}).value || '').trim();
+  var fe = document.getElementById('forgot-email');
+  if (fe) fe.value = loginEmail;
+  var inp = document.getElementById('fp-input'); if (inp) inp.style.display = 'block';
+  var sent = document.getElementById('fp-sent'); if (sent) sent.style.display = 'none';
+  var ov = document.getElementById('forgot-overlay'); if (ov) ov.classList.add('open');
+  if (fe) setTimeout(function(){ try { fe.focus(); } catch(e){} }, 120);
+}
+
+function closeForgotPassword() {
+  var ov = document.getElementById('forgot-overlay'); if (ov) ov.classList.remove('open');
+}
+
+async function submitForgotPassword() {
+  var fe = document.getElementById('forgot-email');
+  var email = fe ? fe.value.trim() : '';
+  if (!email || email.indexOf('@') === -1) return showWarningToast(t('toast_enter_email'));
+  var btn = document.getElementById('forgot-send-btn');
+  if (btn) btn.disabled = true;
   try {
-    showToast(t('toast_sending_reset'));
-    var { error } = await sb.auth.resetPasswordForEmail(email, {
-      redirectTo: getOAuthRedirectTo()
-    });
-    if (error) return errorToast('login', error);
-    showToast(t('toast_sending_reset'));
-  } catch(e) { logError('handleForgotPassword', e); errorToast('login', e); }
+    var { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: getOAuthRedirectTo() });
+    if (error) { if (btn) btn.disabled = false; return errorToast('login', error); }
+    // Switch to the sent-confirmation state
+    var se = document.getElementById('fp-sent-email'); if (se) se.textContent = email;
+    var inp = document.getElementById('fp-input'); if (inp) inp.style.display = 'none';
+    var sent = document.getElementById('fp-sent'); if (sent) sent.style.display = 'block';
+    if (btn) btn.disabled = false;
+  } catch(e) { if (btn) btn.disabled = false; logError('submitForgotPassword', e); errorToast('login', e); }
 }
 
 // ── Password recovery (efter reset-link i mail) ──

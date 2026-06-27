@@ -13,39 +13,39 @@
 <meta name="theme-color" content="#170F34">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=81984">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81984">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81984">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81984">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81984">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81984">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81984">
+<link rel="manifest" href="manifest.json?v=81985">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=81985">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=81985">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=81985">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=81985">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=81985">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=81985">
 
-<link rel="stylesheet" href="app.css?v=81984">
+<link rel="stylesheet" href="app.css?v=81985">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous" defer></script>
-<script src="bubble-icons.js?v=81984" defer></script>
-<script src="tag-data.js?v=81984" defer></script>
-<script src="b-i18n.js?v=81984" defer></script>
-<script src="b-config.js?v=81984" defer></script>
-<script src="b-utils.js?v=81984" defer></script>
-<script src="b-guides.js?v=81984" defer></script>
-<script src="b-terms.js?v=81984" defer></script>
-<script src="b-auth.js?v=81984" defer></script>
-<script src="b-home.js?v=81984" defer></script>
-<script src="b-bubbles.js?v=81984" defer></script>
-<script src="b-profile.js?v=81984" defer></script>
-<script src="b-radar.js?v=81984" defer></script>
-<script src="b-messages.js?v=81984" defer></script>
-<script src="b-realtime.js?v=81984" defer></script>
-<script src="b-onboarding.js?v=81984" defer></script>
-<script src="b-chat.js?v=81984" defer></script>
-<script src="b-notifications.js?v=81984" defer></script>
-<script src="b-live.js?v=81984" defer></script>
-<script src="b-admin.js?v=81984" defer></script>
-<script src="b-navigation.js?v=81984" defer></script>
-<script src="b-boot.js?v=81984" defer></script>
+<script src="bubble-icons.js?v=81985" defer></script>
+<script src="tag-data.js?v=81985" defer></script>
+<script src="b-i18n.js?v=81985" defer></script>
+<script src="b-config.js?v=81985" defer></script>
+<script src="b-utils.js?v=81985" defer></script>
+<script src="b-guides.js?v=81985" defer></script>
+<script src="b-terms.js?v=81985" defer></script>
+<script src="b-auth.js?v=81985" defer></script>
+<script src="b-home.js?v=81985" defer></script>
+<script src="b-bubbles.js?v=81985" defer></script>
+<script src="b-profile.js?v=81985" defer></script>
+<script src="b-radar.js?v=81985" defer></script>
+<script src="b-messages.js?v=81985" defer></script>
+<script src="b-realtime.js?v=81985" defer></script>
+<script src="b-onboarding.js?v=81985" defer></script>
+<script src="b-chat.js?v=81985" defer></script>
+<script src="b-notifications.js?v=81985" defer></script>
+<script src="b-live.js?v=81985" defer></script>
+<script src="b-admin.js?v=81985" defer></script>
+<script src="b-navigation.js?v=81985" defer></script>
+<script src="b-boot.js?v=81985" defer></script>
   
 
 
@@ -1657,6 +1657,38 @@
       <div style="font-size:0.72rem;color:rgba(255,255,255,0.45);margin-bottom:0.5rem;line-height:1.5">Blokerede brugere kan ikke se dig eller skrive til dig. Fjern blokeringen for at gøre det muligt igen.</div>
       <div id="blocked-users-list"></div>
     </div>
+  </div>
+</div>
+
+<div id="forgot-overlay" onclick="if(event.target===this||event.target.classList.contains('fp-scrim'))closeForgotPassword()">
+  <div class="fp-scrim"></div>
+  <div class="fp-card">
+    <button class="fp-x" onclick="closeForgotPassword()" aria-label="Luk">✕</button>
+
+    <!-- State 1: input -->
+    <div id="fp-input">
+      <div class="fp-title" data-t="forgot_title">Glemt adgangskode?</div>
+      <div class="fp-intro" data-t="forgot_intro">Indtast din email, så sender vi dig et link til at nulstille din adgangskode.</div>
+      <div class="input-group">
+        <div class="input-label" data-t="auth_email">Email</div>
+        <input class="input" type="email" id="forgot-email" data-t-placeholder="auth_placeholder_email" placeholder="din@email.dk" autocomplete="email">
+      </div>
+      <button class="btn-primary" id="forgot-send-btn" onclick="submitForgotPassword()" data-t="forgot_send">Send nulstillingslink</button>
+    </div>
+
+    <!-- State 2: sent confirmation -->
+    <div id="fp-sent" style="display:none">
+      <div class="fp-conf">
+        <div class="fp-ico">✓</div>
+        <div class="fp-ct" data-t="forgot_sent_title">Tjek din indbakke</div>
+        <div class="fp-cb" data-t="forgot_sent_body1">Vi har sendt et nulstillingslink til:</div>
+        <div class="fp-cb" id="fp-sent-email" style="font-weight:700;color:rgba(255,255,255,0.92);margin-bottom:8px"></div>
+        <div class="fp-cb" data-t="forgot_sent_body2">Klik linket i mailen for at vælge en ny adgangskode.</div>
+        <div class="fp-spam" data-t="forgot_sent_spam">Kan ikke se mailen? Tjek din spam-mappe.</div>
+        <button class="btn-primary" onclick="closeForgotPassword()" data-t="forgot_back_login">Tilbage til login</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
