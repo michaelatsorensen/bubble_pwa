@@ -56,14 +56,15 @@
 <div class="sub">BACKEND/RLS/KONTRAKT-test (IKKE app-flows: navigation/toasts/optimistic UI/deeplinks testes i separat NEXT Pilot Smoke)</div>
 
 <div class="card">
+  <div class="sub" style="margin-bottom:0.6rem">Lad felterne stå tomme → suiten opretter selv to scopede test-brugere og sletter dem igen til sidst (kræver at <b>Confirm email er slået FRA</b> i Supabase Auth). Udfyld alle fire felter for at køre med dine egne konti i stedet.</div>
   <div class="row">
-    <div><div class="card-title">Test-bruger A</div>
-      <div class="field"><label>Email</label><input id="ea" value="test@bubbleme.dk"/></div>
-      <div class="field"><label>Password</label><input id="pa" type="password"/></div>
+    <div><div class="card-title">Test-bruger A (valgfri)</div>
+      <div class="field"><label>Email</label><input id="ea" placeholder="auto-oprettes"/></div>
+      <div class="field"><label>Password</label><input id="pa" type="password" placeholder="auto"/></div>
     </div>
-    <div><div class="card-title">Test-bruger B</div>
-      <div class="field"><label>Email</label><input id="eb"/></div>
-      <div class="field"><label>Password</label><input id="pb" type="password"/></div>
+    <div><div class="card-title">Test-bruger B (valgfri)</div>
+      <div class="field"><label>Email</label><input id="eb" placeholder="auto-oprettes"/></div>
+      <div class="field"><label>Password</label><input id="pb" type="password" placeholder="auto"/></div>
     </div>
   </div>
 </div>
@@ -97,7 +98,7 @@ var SB_KEY='sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A';
 // ══════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════
-var RUN_ID,sbA,sbB,userA,userB,profA,profB;
+var RUN_ID,sbA,sbB,userA,userB,profA,profB,_autoUsers;
 var _cc=0,_t0=0;
 var res=[],total=0,done=0,pass=0,fail=0,warns=0;
 
@@ -188,10 +189,34 @@ function busy(on){document.querySelectorAll('.b').forEach(function(b){b.disabled
 // ══════════════════════════════════════
 async function auth(){
   sec('🔑 Auth');_cc=0;sbA=mkClient();sbB=mkClient();
-  var {data:dA,error:eA}=await sbA.auth.signInWithPassword({email:document.getElementById('ea').value.trim(),password:document.getElementById('pa').value});
-  userA=dA?.user;ok('Login A',!!userA,eA?eA.message:'uid: '+userA?.id?.slice(0,8));
-  var {data:dB,error:eB}=await sbB.auth.signInWithPassword({email:document.getElementById('eb').value.trim(),password:document.getElementById('pb').value});
-  userB=dB?.user;ok('Login B',!!userB,eB?eB.message:'uid: '+userB?.id?.slice(0,8));
+  var eaV=document.getElementById('ea').value.trim(), paV=document.getElementById('pa').value;
+  var ebV=document.getElementById('eb').value.trim(), pbV=document.getElementById('pb').value;
+  if(eaV&&paV&&ebV&&pbV){
+    // Manuel tilstand — log ind med egne konti
+    _autoUsers=false;
+    var {data:dA,error:eA}=await sbA.auth.signInWithPassword({email:eaV,password:paV});
+    userA=dA?.user;ok('Login A (manuel)',!!userA,eA?eA.message:'uid: '+userA?.id?.slice(0,8));
+    var {data:dB,error:eB}=await sbB.auth.signInWithPassword({email:ebV,password:pbV});
+    userB=dB?.user;ok('Login B (manuel)',!!userB,eB?eB.message:'uid: '+userB?.id?.slice(0,8));
+  }else{
+    // Auto-tilstand — opret to scopede engangsbrugere
+    _autoUsers=true;
+    var pw='Smoke-Test-9k2!';
+    var emA='smoke-'+RUN_ID+'-a@bubbleme.dk', emB='smoke-'+RUN_ID+'-b@bubbleme.dk';
+    var {data:dA,error:eA}=await sbA.auth.signUp({email:emA,password:pw,options:{data:{name:'Smoke Test A'}}});
+    var {data:dB,error:eB}=await sbB.auth.signUp({email:emB,password:pw,options:{data:{name:'Smoke Test B'}}});
+    if(eA||eB){ok('Auto-oprettelse',false,(eA&&eA.message)||(eB&&eB.message)||'signup-fejl');_autoUsers=false;return false}
+    if((dA&&!dA.session)||(dB&&!dB.session)){
+      ok('Auto-oprettelse',false,'Confirm email er slået TIL i Supabase, så der kom ingen session. Slå den fra under Auth, eller udfyld alle fire felter.');
+      _autoUsers=false;return false;
+    }
+    userA=dA?.user;ok('Auto-bruger A oprettet',!!userA,'uid: '+userA?.id?.slice(0,8));
+    userB=dB?.user;ok('Auto-bruger B oprettet',!!userB,'uid: '+userB?.id?.slice(0,8));
+    if(!userA||!userB){ok('STOP',false,'Begge brugere kræves');return false}
+    // Opret profiler (appen gør dette via ensureProfileExists ved første login)
+    await sbA.from('profiles').upsert({id:userA.id,name:'Smoke Test A',title:'',keywords:[],dynamic_keywords:[],bio:'',is_anon:false});
+    await sbB.from('profiles').upsert({id:userB.id,name:'Smoke Test B',title:'',keywords:[],dynamic_keywords:[],bio:'',is_anon:false});
+  }
   if(!userA||!userB){ok('STOP',false,'Begge brugere kræves');return false}
   var {data:pA}=await sbA.from('profiles').select('*').eq('id',userA.id).single();
   var {data:pB}=await sbB.from('profiles').select('*').eq('id',userB.id).single();
@@ -1027,6 +1052,20 @@ async function verifyCleanup(){
 }
 
 // ══════════════════════════════════════
+//  DELETE AUTO-PROVISIONED USERS
+// ══════════════════════════════════════
+async function deleteTestUsers(){
+  if(!_autoUsers){ok('Auto-brugere',true,'Manuel tilstand — intet at slette');return}
+  sec('🗑️ Slet auto-brugere');
+  var a=true;
+  if(userA){try{var {error:eA}=await sbA.rpc('gdpr_delete_user',{p_user_id:userA.id});if(eA)a=false}catch(e){a=false}}
+  ok('Auto-bruger A slettet',a,a?'OK — gdpr_delete_user':'fejl');
+  var b=true;
+  if(userB){try{var {error:eB}=await sbB.rpc('gdpr_delete_user',{p_user_id:userB.id});if(eB)b=false}catch(e){b=false}}
+  ok('Auto-bruger B slettet',b,b?'OK — gdpr_delete_user':'fejl');
+}
+
+// ══════════════════════════════════════
 //  FORCE CLEANUP
 // ══════════════════════════════════════
 function forceCleanup(){
@@ -1089,6 +1128,7 @@ async function go(mode){
   }finally{
     await cleanupAll();
     await verifyCleanup();
+    await deleteTestUsers();
     total=done;render();busy(false);
   }
 }
