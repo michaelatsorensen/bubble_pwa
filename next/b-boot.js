@@ -273,10 +273,8 @@ async function loadQRProfilePreview(userId, bubbleId) {
     if (!sb) initSupabase();
     
     if (userId) {
-      var { data: profile } = await sb.from('profiles')
-        .select('id,name,title,keywords,avatar_url,workplace')
-        .eq('id', userId)
-        .maybeSingle();
+      var _pv = ((await sb.rpc('get_profile_preview', { p_user_id: userId, p_bubble_id: bubbleId || null })).data) || {};
+      var profile = _pv.profile;
       
       if (profile) {
         // Store for contextual auth
@@ -308,15 +306,9 @@ async function loadQRProfilePreview(userId, bubbleId) {
           }
         }
         
-        // ── Stats: network count + bubble count (parallel) ──
-        var [netRes, membRes] = await Promise.all([
-          sb.from('saved_contacts').select('*', { count: 'exact', head: true })
-            .or('user_id.eq.' + userId + ',contact_id.eq.' + userId),
-          sb.from('bubble_members').select('bubble_id, bubbles(id,name,type)')
-            .eq('user_id', userId).limit(8)
-        ]);
-        var netCount = netRes.count || 0;
-        var memberships = membRes.data || [];
+        // ── Stats: network count + bubbles (from preview RPC) ──
+        var netCount = _pv.contact_count || 0;
+        var memberships = (_pv.bubbles || []).map(function(b) { return { bubbles: b, bubble_id: b.id }; });
         
         var netEl = document.getElementById('qr-preview-network-count');
         if (netEl) netEl.textContent = netCount;
@@ -346,26 +338,8 @@ async function loadQRProfilePreview(userId, bubbleId) {
         var listEl = document.getElementById('qr-preview-network-list');
         var moreEl = document.getElementById('qr-preview-more-label');
         if (listEl) {
-          // Get contacts of this user
-          var { data: contacts } = await sb.from('saved_contacts')
-            .select('contact_id, profiles:contact_id(id,name,title,keywords,avatar_url)')
-            .eq('user_id', userId).limit(5);
-          // Fallback: bubble co-members
-          if (!contacts || contacts.length === 0) {
-            var bubbleIds = memberships.map(function(m) { return m.bubble_id; });
-            if (bubbleIds.length > 0) {
-              var { data: coMembers } = await sb.from('bubble_members')
-                .select('user_id, profiles:user_id(id,name,title,keywords,avatar_url)')
-                .in('bubble_id', bubbleIds).neq('user_id', userId).limit(8);
-              // Deduplicate
-              var seen = {};
-              contacts = (coMembers || []).filter(function(m) {
-                if (!m.profiles || seen[m.user_id]) return false;
-                seen[m.user_id] = true;
-                return true;
-              }).slice(0, 5).map(function(m) { return { profiles: m.profiles }; });
-            }
-          }
+          // Network from preview RPC (contacts, safe fields only)
+          var contacts = (_pv.network || []).slice(0, 5).map(function(p) { return { profiles: p }; });
           
           var colors = [
             'linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#8B5CF6,#A855F7)',
@@ -434,26 +408,14 @@ async function loadTeaserProfiles(bubbleId) {
       'linear-gradient(135deg,#6366F1,#7C5CFC)'
     ];
 
-    // Try bubble members first
-    if (bubbleId) {
-      var { data: members } = await sb.from('bubble_members')
-        .select('user_id, profiles:user_id(id,name,title,workplace,avatar_url)')
-        .eq('bubble_id', bubbleId).limit(5);
-      profiles = (members || []).map(function(m) { return m.profiles; }).filter(Boolean);
-    }
+    var _tz = ((await sb.rpc('get_bubble_teaser', { p_bubble_id: bubbleId || null })).data) || {};
+    // Bubble members first
+    profiles = (_tz.members || []).filter(Boolean);
 
-    // Fallback: recent active profiles with title
+    // Fallback: recent active profiles
     if (profiles.length < 3) {
-      var { data: recent } = await sb.from('profiles')
-        .select('id,name,title,workplace,avatar_url')
-        .not('name', 'is', null)
-        .not('title', 'is', null)
-        .eq('banned', false)
-        .eq('is_anon', false)
-        .order('created_at', { ascending: false })
-        .limit(6);
       var existingIds = profiles.map(function(p) { return p.id; });
-      (recent || []).forEach(function(p) {
+      (_tz.recent || []).forEach(function(p) {
         if (profiles.length < 5 && existingIds.indexOf(p.id) < 0 && p.name && p.title) {
           profiles.push(p);
         }
@@ -492,9 +454,7 @@ async function loadTeaserProfiles(bubbleId) {
 async function loadSocialProofScreen() {
   try {
     if (!sb) initSupabase();
-    var { count } = await sb.from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .neq('banned', true);
+    var count = (((await sb.rpc('get_teaser_stats')).data) || {}).profile_count || 0;
     var el = document.getElementById('sp-total-count');
     if (el) el.textContent = count || 0;
     
@@ -634,9 +594,8 @@ async function checkGuestEventRoute() {
 
 async function loadEventSocialProof(bubbleId) {
   try {
-    var { count } = await sb.from('bubble_members')
-      .select('*', { count: 'exact', head: true })
-      .eq('bubble_id', bubbleId);
+    var _tz = ((await sb.rpc('get_bubble_teaser', { p_bubble_id: bubbleId })).data) || {};
+    var count = _tz.member_count || 0;
 
     var countEl = document.getElementById('event-attendee-count');
     if (countEl && count > 0) {
@@ -671,10 +630,7 @@ async function loadEventSocialProof(bubbleId) {
 
     if (count > 0) {
       // Real attendees
-      var { data: members } = await sb.from('bubble_members')
-        .select('profiles(id, name, title, workplace, keywords)')
-        .eq('bubble_id', bubbleId)
-        .limit(4);
+      var members = (_tz.members || []).slice(0, 4).map(function(m) { return { profiles: m }; });
       (members || []).forEach(function(m) {
         var p = m.profiles || {};
         if (p.name) { html += _spCard(p, shownIds.length, null); shownIds.push(p.id); }
@@ -682,25 +638,13 @@ async function loadEventSocialProof(bubbleId) {
       if (count > 4) html += '<div style="text-align:center;font-size:0.72rem;color:var(--accent);font-weight:600;padding:0.4rem 0">+ ' + (count - 4) + ' flere deltagere</div>';
     } else {
       // Empty event - anchor with the host/organizer (there is always a creator)
-      var { data: bub } = await sb.from('bubbles').select('created_by').eq('id', bubbleId).maybeSingle();
-      if (bub && bub.created_by) {
-        var { data: host } = await sb.from('profiles')
-          .select('id, name, title, workplace, keywords')
-          .eq('id', bub.created_by).maybeSingle();
-        if (host && host.name) { html += _spCard(host, 0, 'V\u00C6RT'); shownIds.push(host.id); }
-      }
+      var host = _tz.host;
+      if (host && host.name) { html += _spCard(host, 0, 'V\u00C6RT'); shownIds.push(host.id); }
     }
 
     // Never empty: top up with nearby professionals - honestly labelled, NOT as "deltagere"
     if (shownIds.length < 3) {
-      var { data: recent } = await sb.from('profiles')
-        .select('id, name, title, workplace, keywords')
-        .not('name', 'is', null)
-        .not('title', 'is', null)
-        .eq('banned', false)
-        .eq('is_anon', false)
-        .order('created_at', { ascending: false })
-        .limit(6);
+      var recent = _tz.recent || [];
       var near = (recent || []).filter(function(p) { return p.name && p.title && shownIds.indexOf(p.id) < 0; });
       if (near.length) {
         html += _spLabel(t('home_more_pros'));
