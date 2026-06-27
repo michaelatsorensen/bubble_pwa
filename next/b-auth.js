@@ -146,6 +146,19 @@ async function checkAuth() {
   if (!initSupabase()) return;
   setupAuthListener();
   try {
+    // Password recovery link (reset email): the hash carries type=recovery.
+    // MUST be caught BEFORE the access_token handler below — otherwise the recovery
+    // link is treated as an OAuth login and resolvePostAuth() routes into the app,
+    // racing past (and overriding) the PASSWORD_RECOVERY recovery screen.
+    if (window.location.hash && window.location.hash.indexOf('type=recovery') !== -1) {
+      _inPasswordRecovery = true;
+      showPasswordRecoveryScreen();
+      // Let Supabase process the recovery token (establishes session + fires
+      // PASSWORD_RECOVERY) before stripping it from the URL. Do NOT route into the app.
+      setTimeout(function(){ try { window.history.replaceState({}, document.title, window.location.pathname); } catch(e){} }, 1000);
+      return;
+    }
+
     // Handle implicit flow (Google) — access_token in hash
     if (window.location.hash && window.location.hash.includes('access_token')) {
       document.getElementById('loading-msg').textContent = 'Login...';
@@ -173,6 +186,9 @@ async function checkAuth() {
     var { data: { session } } = await sb.auth.getSession();
     if (session) {
       currentUser = session.user;
+      // If the recovery link fired PASSWORD_RECOVERY while we were resolving the
+      // session, do NOT route into the app — the user must set a new password first.
+      if (_inPasswordRecovery) { return; }
       await ensureProfileExists(session);
       await resolvePostAuth();
     } else {
