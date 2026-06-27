@@ -76,6 +76,7 @@
   <button class="b b2" onclick="go('flows')">Bubble flows</button>
   <button class="b b2" onclick="go('visibility')">Visibility</button>
   <button class="b b3" onclick="go('realtime')">Realtime</button>
+  <button class="b b2" onclick="go('redteam')">🎯 Red-team</button>
   <button class="b b4" onclick="forceCleanup()">Opryd run-id</button>
 </div>
 
@@ -418,11 +419,11 @@ async function testFlows(){
   var {data:gone}=await sbB.from('bubble_members').select('id').eq('bubble_id',FIX.pub).eq('user_id',userB.id).maybeSingle();
   ok('Leave virker',!gone,'Slettet');
 
-  // Private bubble — RLS now allows direct join (privacy is client-side)
+  // Privat boble UDEN invitation — direkte aktivt join skal BLOKERES af RLS (server-side privacy)
   if(FIX.priv){
     await sbB.from('bubble_members').delete().eq('bubble_id',FIX.priv).eq('user_id',userB.id);
     var {data:pjDirect,error:peDirect}=await sbB.from('bubble_members').insert({bubble_id:FIX.priv,user_id:userB.id}).select('id,status').single();
-    ok('Private direct join TILLADT (client-side privacy)',!!pjDirect,peDirect?'⚠️ '+peDirect.message:'OK');
+    ok('Privat: direkte join UDEN invitation blokeret',!pjDirect,pjDirect?'⚠️ join lykkedes uden invitation — privacy ikke håndhævet!':'Blokeret korrekt');
     if(pjDirect) {L.memberships.push({bubbleId:FIX.priv,userId:userB.id,client:'B'})}
   }
 
@@ -521,9 +522,10 @@ async function testVisibility(){
   soft('⚠️ Private: direct join IKKE backend-blokeret (privacy=client-side — risk for native, Q-063)',!v1,v1?'join lykkedes — RLS håndhæver ikke privacy':'RLS blokerede');
   if(v1) {await sbB.from('bubble_members').delete().eq('bubble_id',FIX.priv).eq('user_id',userB.id)}
 
-  // Pending join (request-semantik — mindre risiko end direct)
+  // Request-flow: requestJoin() goer praecis dette insert (status pending, UDEN invitation).
+  // Hvis RLS blokerer her, kan rigtige brugere ikke anmode om at deltage i private bobler.
   var {data:v2,error:e2}=await sbB.from('bubble_members').insert({bubble_id:FIX.priv,user_id:userB.id,status:'pending'}).select('id,status').single();
-  ok('Private: pending join tilladt (request-flow)',!!v2,v2?'status: '+v2.status:(e2?e2.message:'Fejl'));
+  ok('Request-flow: egen pending-anmodning tilladt (requestJoin)',!!v2,v2?'status: '+v2.status:(e2?'BLOKERET — requestJoin virker ikke! '+e2.message:'Fejl'));
   if(v2) {L.memberships.push({bubbleId:FIX.priv,userId:userB.id,client:'B'})}
 
   // Clean up pending for next test
@@ -665,11 +667,12 @@ async function testInvitations(){
     ok('B kan se invitation',!!bInv&&bInv.status==='pending','status: '+(bInv?.status||'not found'));
   }
 
-  // B accepts — join works directly now (RLS simplified to auth.uid() = user_id)
+  // Accept-flow: acceptInvitation() joiner MENS invitationen stadig er pending (RLS skal tillade pga. pending invitation).
+  // Hvis BLOKERET her, kan inviterede brugere ikke joine private bobler — kerne-flow braekket.
   if(inv){
     await sbB.from('bubble_members').delete().eq('bubble_id',FIX.priv).eq('user_id',userB.id);
     var {data:invJoin,error:invJoinE}=await sbB.from('bubble_members').insert({bubble_id:FIX.priv,user_id:userB.id}).select('id').single();
-    ok('Join private bubble TILLADT (simpel RLS)',!!invJoin,invJoinE?invJoinE.message:'OK');
+    ok('Accept-flow: join med pending invitation tilladt',!!invJoin,invJoinE?'BLOKERET — inviterede kan ikke joine privat boble! '+invJoinE.message:'OK');
     if(invJoin) L.memberships.push({bubbleId:FIX.priv,userId:userB.id,client:'B'});
     // Then mark invitation as accepted
     await sbB.from('bubble_invitations').update({status:'accepted'}).eq('id',inv.id);
@@ -948,6 +951,56 @@ async function testV817Schema(){
 // ══════════════════════════════════════
 //  CLEANUP + VERIFICATION
 // ══════════════════════════════════════
+async function testRedTeam(){
+  // ── Anon-adgang: hvad en angriber har direkte fra DevTools (publishable key, INTET login) ──
+  sec('🎯 Red-team: anon-adgang (publishable key, intet login)');
+  var anon=mkClient(); // ingen signin = anon-rolle
+  var {data:rp}=await anon.from('profiles').select('id,name').limit(2);
+  soft('Anon kan IKKE dumpe profiler (PII)',!rp||rp.length===0,rp&&rp.length?'⚠️ '+rp.length+' profil(er) læsbar uden login':'Blokeret');
+  var {data:rdm}=await anon.from('messages').select('id,content').limit(1);
+  ok('Anon kan IKKE læse DMs',!rdm||rdm.length===0,rdm&&rdm.length?'⚠️ DMs læsbare uden login!':'Blokeret');
+  var {data:rbm}=await anon.from('bubble_messages').select('id,content').limit(1);
+  ok('Anon kan IKKE læse bubble-beskeder',!rbm||rbm.length===0,rbm&&rbm.length?'⚠️ bubble-beskeder læsbare uden login!':'Blokeret');
+  var {data:rmem}=await anon.from('bubble_members').select('user_id,bubble_id').limit(1);
+  soft('Anon kan IKKE dumpe medlemskaber',!rmem||rmem.length===0,rmem&&rmem.length?'⚠️ medlemskaber enumererbare uden login':'Blokeret');
+  var {data:rpv}=await anon.from('profile_views').select('viewer_id,viewed_id').limit(1);
+  ok('Anon kan IKKE læse profil-visninger',!rpv||rpv.length===0,rpv&&rpv.length?'⚠️ profil-visninger læsbare uden login!':'Blokeret');
+
+  // ── Cross-user forfalskning (mass-assignment): kan B skrive rækker der ser ud til at tilhøre A? ──
+  sec('🎯 Red-team: cross-user forfalskning');
+  var {data:fs}=await sbB.from('messages').insert({sender_id:userA.id,receiver_id:userA.id,content:tag('forged_sender')}).select('id').single();
+  ok('Kan IKKE forfalske sender_id (sende DM som anden)',!fs,fs?'⚠️ B sendte DM SOM A!':'Blokeret');
+  if(fs){await sbA.from('messages').delete().eq('id',fs.id);await sbB.from('messages').delete().eq('id',fs.id)}
+  var {data:fi}=await sbB.from('bubble_invitations').insert({bubble_id:FIX.pub,from_user_id:userA.id,to_user_id:userB.id,status:'pending'}).select('id').single();
+  ok('Kan IKKE forfalske invitation-afsender (from_user_id)',!fi,fi?'⚠️ B lavede invitation SOM A!':'Blokeret');
+  if(fi){await sbA.from('bubble_invitations').delete().eq('id',fi.id);await sbB.from('bubble_invitations').delete().eq('id',fi.id)}
+  var {data:fb}=await sbB.from('bubbles').insert({name:tag('forged_owner'),type:'network',created_by:userA.id,visibility:'public',location:'RT'}).select('id').single();
+  ok('Kan IKKE forfalske bubble-ejer (created_by)',!fb,fb?'⚠️ B lavede boble ejet af A!':'Blokeret');
+  if(fb){await sbA.from('bubbles').delete().eq('id',fb.id);await sbB.from('bubbles').delete().eq('id',fb.id)}
+  var {data:fv}=await sbB.from('profile_views').insert({viewer_id:userA.id,viewed_id:userB.id}).select('id').single();
+  ok('Kan IKKE forfalske profile_view (viewer_id)',!fv,fv?'⚠️ B forfalskede visning SOM A!':'Blokeret');
+  if(fv){await sbA.from('profile_views').delete().eq('id',fv.id);await sbB.from('profile_views').delete().eq('id',fv.id)}
+
+  // ── Profil-visninger paywall (B2C-laget): gratis = kun antal, betalt = navne. Kan en fremmed læse HVEM? ──
+  sec('🎯 Red-team: paywall + broadcast-aflytning');
+  var {data:rtv}=await sbA.from('profile_views').insert({viewer_id:userA.id,viewed_id:userB.id}).select('id').single();
+  if(rtv) L.profileViews.push({id:rtv.id,client:'A'});
+  var {data:pvWho}=await sbB.from('profile_views').select('viewer_id').eq('viewed_id',userA.id).limit(1);
+  soft('Paywall: kan IKKE læse hvem der så ANDRE',!pvWho||pvWho.length===0,pvWho&&pvWho.length?'⚠️ B kan læse hvem der så A (paywall/privacy-bypass?)':'Blokeret/ingen');
+
+  // ── Broadcast-aflytning: kan en fremmed abonnere på A-notify-kanal og opsnappe notifikationer? ──
+  var got=false;
+  var spy=sbB.channel('member-notify-'+userA.id);
+  spy.on('broadcast',{event:'*'},function(){got=true});
+  await new Promise(function(r){var done=false;spy.subscribe(function(st){if(!done&&(st==='SUBSCRIBED'||st==='CHANNEL_ERROR'||st==='TIMED_OUT')){done=true;r(st)}});setTimeout(function(){if(!done){done=true;r('TO')}},2500)});
+  var snd=sbA.channel('member-notify-'+userA.id);
+  await new Promise(function(r){var done=false;snd.subscribe(function(st){if(!done&&st==='SUBSCRIBED'){done=true;r(st)}});setTimeout(function(){if(!done){done=true;r('TO')}},2500)});
+  await snd.send({type:'broadcast',event:'new_member',payload:{probe:RUN_ID}});
+  await new Promise(function(r){setTimeout(r,1500)});
+  soft('Broadcast: fremmed kan IKKE aflytte notify-kanal',!got,got?'⚠️ opsnappede A-notifikation (kanal-auth mangler — se realtime authz)':'Ingen aflytning / kanal-auth aktiv');
+  try{spy.unsubscribe();snd.unsubscribe()}catch(e){}
+}
+
 async function cleanupAll(){
   sec('🧹 Cleanup');
   var errs=0;
@@ -1122,6 +1175,7 @@ async function go(mode){
     if(mode==='all'||mode==='stability') await testErrorLog();
     if(mode==='all'||mode==='stability') await testBubblePosts();
     if(mode==='all'||mode==='stability') await testV817Schema();
+    if(mode==='all'||mode==='redteam') await testRedTeam();
     if(mode==='all'||mode==='realtime') await testRealtime();
   }catch(e){
     ok('Fatal fejl',false,e.message);
