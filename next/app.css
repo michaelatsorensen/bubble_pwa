@@ -1592,7 +1592,7 @@ a.person-action-btn { text-decoration:none; }
 .msg-timestamp { font-size:0.48rem; color:rgba(255,255,255,0.45); margin-top:0.1rem; }
 .msg-row.me .msg-timestamp { text-align:right; }
 /* Sender name in group/bubble chat */
-.msg-sender-name { font-size:0.58rem; font-weight:600; color:var(--accent); margin-bottom:0.1rem; }
+.msg-sender-name { font-size:0.58rem; font-weight:600; color:var(--isbla); margin-bottom:0.1rem; }
 /* Emoji-only messages — no bubble, larger font */
 .msg-emoji { font-size:2rem; line-height:1.2; padding:0.1rem 0; }
 /* Send animation */
