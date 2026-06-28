@@ -584,22 +584,24 @@ async function liveScanAutoResolve(data) {
       var qrt = url2.searchParams.get('qrt');
       var profileParam = url2.searchParams.get('profile');
       var userId = null;
+      var userIdFromToken = false;  // S: kun token-verificeret identitet maa udloese check-in
       
       if (qrt) {
         var tokenData = await resolveQrToken(qrt);
         if (tokenData && !tokenData.expired) {
           userId = tokenData.user_id;
-        } else if (tokenData) {
+          userIdFromToken = true;
+        } else {
+          // Token var med men ugyldigt (udloebet ELLER ikke i DB) = tamper/expiry-signal.
+          // Afbryd — fald IKKE igennem til profile= (det ville omgaa token-systemet).
           if (status) { status.textContent = t('live_qr_expired_ask'); status.className = 'live-scan-status error'; }
           _liveQrPending = false;
           setTimeout(function() { if (status) { status.textContent = t('live_point_camera'); status.className = 'live-scan-status'; status.style.display = ''; } liveQrPreviewLoop(); }, 3000);
           return;
-        } else {
-          // Token not found in DB — try to extract user ID from URL as fallback
-          console.warn('[scan] QR token not found in DB:', qrt);
         }
       }
       
+      // profile= (token-loest) tillades KUN som lav-risiko vis/gem-kontakt — aldrig check-in.
       if (!userId && profileParam) {
         userId = profileParam;
       }
@@ -615,8 +617,9 @@ async function liveScanAutoResolve(data) {
         if (scannedProfile) {
           if (status) status.style.display = 'none';
 
-          // If scanning from a specific bubble → show confirmation first
-          if (_scannerBubbleId) {
+          // If scanning from a specific bubble AND identity is token-verified → check-in flow.
+          // profile=-only (token-loest) maa ALDRIG udloese check-in — nedgrader til gem-kontakt.
+          if (_scannerBubbleId && userIdFromToken) {
             // Store pending data for confirm button
             _pendingScanCheckin = { profile: scannedProfile, bubbleId: _scannerBubbleId };
             var found = document.getElementById('live-scan-found');
