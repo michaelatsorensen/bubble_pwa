@@ -554,7 +554,7 @@ function epTagSearch(q) {
   if (results.length === 0) { el.style.display = 'none'; return; }
   el.innerHTML = results.map(function(t) {
     var catInfo = TAG_CATEGORIES[t.category] || {};
-    return '<div class="tag-sug-item" onclick="epAddTag(\'' + escHtml(t.label).replace(/'/g,"\\'") + '\',\'' + t.category + '\')">' +
+    return '<div class="tag-sug-item" data-label="' + escHtml(t.label) + '" data-cat="' + escHtml(t.category) + '" onclick="epAddTag(this.dataset.label,this.dataset.cat)">' +
       '<span class="tag-sug-dot" style="background:' + (catInfo.color || 'var(--accent)') + '"></span>' +
       '<span class="tag-sug-label">' + escHtml(t.label) + '</span>' +
       '<span class="tag-sug-cat">' + (catInfo.label || t.category) + '</span></div>';
