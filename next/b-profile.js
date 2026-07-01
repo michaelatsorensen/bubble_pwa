@@ -1099,7 +1099,7 @@ async function loadProfileBubbles() {
         starHtml = '<div style="display:flex;gap:1px;flex-shrink:0;color:#F5C518;font-size:0.72rem">' + '\u2605'.repeat(stars) + '</div>';
       }
       var h = '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem"><div style="display:flex;align-items:center;gap:0.6rem">';
-      h += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(100,180,230,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgb(100,180,230);filter:brightness(1.6) saturate(1.1);overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;filter:none">' : ico('bubble')) + '</div>';
+      h += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(100,180,230,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgb(100,180,230);overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;filter:none">' : ico('bubble')) + '</div>';
       h += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
       h += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.45)">' + visIcon(b.visibility) + mc + ' ' + t('ps_members') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div>' + starHtml + '</div></div>';
       return h;
@@ -1107,7 +1107,7 @@ async function loadProfileBubbles() {
     function eventCard(b, past) {
       var dateStr = (past ? (b.event_end_date || b.event_date) : b.event_date) ? new Date(past ? (b.event_end_date || b.event_date) : b.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
       var h = '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.3rem;' + (past ? 'opacity:0.55' : '') + '"><div style="display:flex;align-items:center;gap:0.6rem">';
-      h += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,' + (past ? '0.14' : '0.22') + ');display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E;filter:brightness(1.6) saturate(1.1);overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;filter:none">' : ico('calendar')) + '</div>';
+      h += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,' + (past ? '0.14' : '0.22') + ');display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E;overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;filter:none">' : ico('calendar')) + '</div>';
       h += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
       h += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.45)">' + visIcon(b.visibility) + dateStr + '</div></div></div></div>';
       return h;
@@ -1769,8 +1769,9 @@ function bubbleSetStar(bubbleId, rating) {
     }).join('');
   }
   var badge = document.getElementById('bubble-info-star-badge');
-  if (badge) badge.innerHTML = bubbleStarRender(bubbleId);
+  if (badge) badge.innerHTML = (newRating > 0) ? bubbleStarRender(bubbleId) : '';
   if (typeof loadProfileBubbles === 'function') loadProfileBubbles();
+  if (typeof loadMyBubbles === 'function' && _activeScreen === 'screen-bubbles') loadMyBubbles();
 }
 
 

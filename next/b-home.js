@@ -1615,6 +1615,12 @@ async function loadMyNetworks() {
       return _bbAccordionOpen[accId] ? ' open' : '';
     }
 
+    parentNets.sort(function(a, b) {
+      var ra = (typeof bubbleStarGet === 'function') ? bubbleStarGet(a.id) : 0;
+      var rb = (typeof bubbleStarGet === 'function') ? bubbleStarGet(b.id) : 0;
+      return rb - ra;
+    });
+
     parentNets.forEach(function(net) {
       var kids = childrenMap[net.id] || [];
       var isOwner = net.created_by === currentUser.id;
@@ -1637,7 +1643,7 @@ async function loadMyNetworks() {
       // Root card
       html += '<div class="bb-accordion">';
       html += '<div class="bb-tree-root">';
-      html += '<div class="bb-tree-root-ico">' + _bIco(net, _netIco, 9) + '</div>';
+      html += '<div style="position:relative;flex-shrink:0"><div class="bb-tree-root-ico">' + _bIco(net, _netIco, 9) + '</div>' + ((typeof bubbleStarRender === 'function') ? bubbleStarRender(net.id) : '') + '</div>';
       html += '<div class="bb-tree-body" onclick="openBubbleChat(\'' + net.id + '\',\'screen-bubbles\')">';
       html += '<div style="font-size:0.8rem;font-weight:700">' + escHtml(net.name) + (pendingSet[net.id] ? ' <span class="pending-badge">Afventer</span>' : '') + '</div>';
       html += '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px;flex-wrap:wrap">' + visIcon(net.visibility) + mc + ' ' + t('bb_members') + (badgeText ? ' \u00B7 ' + badgeText : '') + '</div>';
