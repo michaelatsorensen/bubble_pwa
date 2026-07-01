@@ -2008,10 +2008,10 @@ async function bcLoadInfo() {
             else { childCards += _card; }
           });
           if (_pastEventCount > 0) {
-            childCards += '<div class="bb-tree-branch"><div id="bc-evhist-toggle" onclick="bcToggleEventHistory()" style="display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.7rem;background:rgba(255,255,255,0.03);border-radius:12px;cursor:pointer;user-select:none">' +
-              '<span style="display:flex;align-items:center;color:rgba(255,255,255,0.5)">' + ico('history') + '</span>' +
-              '<span style="flex:1;font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.04em">' + t('pf_past_events') + ' (' + _pastEventCount + ')</span>' +
-              '<span id="bc-evhist-chevron" style="display:flex;align-items:center;color:rgba(255,255,255,0.4);transition:transform 0.2s">' + ico('chevron-down') + '</span></div>' +
+            childCards += '<div class="bb-tree-branch"><div id="bc-evhist-toggle" onclick="bcToggleEventHistory()" style="display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.7rem;background:rgba(23,15,52,0.04);border-radius:12px;cursor:pointer;user-select:none">' +
+              '<span style="display:flex;align-items:center;color:var(--text-on-light-muted)">' + ico('history') + '</span>' +
+              '<span style="flex:1;font-size:0.68rem;font-weight:700;color:var(--text-on-light-muted);text-transform:uppercase;letter-spacing:0.04em">' + t('pf_past_events') + ' (' + _pastEventCount + ')</span>' +
+              '<span id="bc-evhist-chevron" style="display:flex;align-items:center;color:var(--text-on-light-subtle);transition:transform 0.2s">' + ico('chevron-down') + '</span></div>' +
               '<div id="bc-evhist-body" style="display:none;margin-top:0.35rem">' + _pastEventCards + '</div></div>';
           }
 
