@@ -2189,9 +2189,19 @@ async function bcLoadInfo() {
       ownerBanner +
       parentHtml +
       '<div style="text-align:center;padding:0.25rem 0 1rem">' +
-        '<div style="width:52px;height:52px;border-radius:15px;background:' + (b.icon_url ? 'transparent' : iconBg) + ';display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;color:' + accentStroke + ';font-size:24px;position:relative"><div style="width:100%;height:100%;border-radius:15px;overflow:hidden;display:flex;align-items:center;justify-content:center">' + heroIcon + '</div>' + (bcBubbleData._isMember ? '<div style="position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#1A9E8E;display:flex;align-items:center;justify-content:center;border:2.5px solid var(--bg)"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>' : '') + '</div>' +
+        '<div style="width:52px;height:52px;border-radius:15px;background:' + (b.icon_url ? 'transparent' : iconBg) + ';display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;color:' + accentStroke + ';font-size:24px;position:relative"><div style="width:100%;height:100%;border-radius:15px;overflow:hidden;display:flex;align-items:center;justify-content:center">' + heroIcon + '</div>' + (bcBubbleData._isMember ? '<div style="position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#1A9E8E;display:flex;align-items:center;justify-content:center;border:2.5px solid var(--bg)"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>' : '') + '<span id="bubble-info-star-badge">' + (!isEvent ? bubbleStarRender(b.id) : '') + '</span></div>' +
         '<div class="text-on-light" style="font-size:1rem;font-weight:800">' + escHtml(b.name) + '</div>' +
         '<div class="text-on-light-muted" style="font-size:0.75rem;margin-top:0.15rem">' + typeLabel(b.type) + (b.location ? ' · ' + escHtml(b.location) : '') + ' · ' + mc + ' ' + memberLabel + (bcBubbleData._isMember ? ' · <span style="color:#1A9E8E;font-weight:600"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="3" stroke-linecap="round" style="vertical-align:-1px"><polyline points="20 6 9 17 4 12"/></svg> ' + (isEvent ? t('dl_attending') : t('dl_member')) + '</span>' : '') + '</div>' +
+        (!isEvent && bcBubbleData._isMember ? (function() {
+          var r = bubbleStarGet(b.id);
+          var starsInner = [1,2,3].map(function(n) {
+            return '<div class="ps-star ' + (n <= r ? 'filled' : 'empty') + '" onclick="bubbleSetStar(\'' + b.id + '\',' + n + ')">\u2605</div>';
+          }).join('');
+          return '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:0.35rem;margin-top:0.7rem;padding:0.6rem 1rem;background:rgba(23,15,52,0.04);border-radius:12px">' +
+            '<div class="text-on-light-muted" style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em">' + t('pf_your_rating') + '</div>' +
+            '<div id="bubble-star-rating" class="ps-stars">' + starsInner + '</div>' +
+          '</div>';
+        })() : '') +
         (isEvent && b.event_date ? (function() {
           var evD = new Date(b.event_date);
           var evPast = new Date(b.event_end_date || b.event_date) < new Date();

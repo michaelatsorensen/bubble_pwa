@@ -9,6 +9,8 @@ const _s = 'xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox=
 
 const ICONS = {
   bubble: `<svg ${_s}><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg>`,
+  history: `<svg ${_s}><path d="M3 12a9 9 0 109-9 9 9 0 00-7.5 4"/><path d="M4 3v4h4"/><path d="M12 8v4l3 2"/></svg>`,
+  'chevron-down': `<svg ${_s}><path d="M6 9l6 6 6-6"/></svg>`,
   home: `<svg ${_s}><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg>`,
   search: `<svg ${_s}><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg>`,
   chat: `<svg ${_s}><path d="M21 12c0 4.4-4 8-9 8a10.2 10.2 0 01-3.8-.7L3 21l1.9-3.7A7.8 7.8 0 013 12c0-4.4 4-8 9-8s9 3.6 9 8z"/><circle cx="9" cy="12" r=".75" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r=".75" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".75" fill="currentColor" stroke="none"/></svg>`,

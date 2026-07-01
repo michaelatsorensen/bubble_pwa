@@ -758,6 +758,23 @@ function starRender(contactId) {
   return '<span class="star-badge">' + '\u2605'.repeat(r) + '</span>';
 }
 
+function bubbleStarGetAll() {
+  try { var s = localStorage.getItem('bubble_bubblestars'); return s ? JSON.parse(s) : {}; } catch(e) { return {}; }
+}
+function bubbleStarGet(bubbleId) {
+  return bubbleStarGetAll()[bubbleId] || 0;
+}
+function bubbleStarSet(bubbleId, rating) {
+  var all = bubbleStarGetAll();
+  if (rating <= 0) { delete all[bubbleId]; } else { all[bubbleId] = Math.min(rating, 3); }
+  try { localStorage.setItem('bubble_bubblestars', JSON.stringify(all)); } catch(e) {}
+}
+function bubbleStarRender(bubbleId) {
+  var r = bubbleStarGet(bubbleId);
+  if (r === 0) return '';
+  return '<span class="star-badge">' + '\u2605'.repeat(r) + '</span>';
+}
+
 async function loadSavedContacts() {
   try {
     if (!currentUser) return;
@@ -1054,30 +1071,91 @@ async function loadProfileBubbles() {
     }
     var networks = bubbles.filter(function(b) { return b.type !== 'event' && b.type !== 'live'; });
     var events = bubbles.filter(function(b) { return b.type === 'event' || b.type === 'live'; });
+
+    // Networks sorted by user star rating (highest first), then chronological
+    networks.sort(function(a, b) {
+      var ra = bubbleStarGet(a.id), rb = bubbleStarGet(b.id);
+      if (rb !== ra) return rb - ra;
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    // Split events by whether they have ended (event_end_date, else event_date)
+    var now = new Date();
+    function eventEnded(b) {
+      var end = b.event_end_date || b.event_date;
+      return end && new Date(end) < now;
+    }
+    var activeEvents = events.filter(function(b) { return !eventEnded(b); });
+    var pastEvents = events.filter(eventEnded);
+    // Active: soonest first. History: most recently ended first.
+    activeEvents.sort(function(a, b) { return new Date(a.event_date || 0) - new Date(b.event_date || 0); });
+    pastEvents.sort(function(a, b) { return new Date(b.event_end_date || b.event_date || 0) - new Date(a.event_end_date || a.event_date || 0); });
+
+    function networkCard(b) {
+      var mc = b.member_count ?? b.bubble_members?.[0]?.count ?? 0;
+      var stars = bubbleStarGet(b.id);
+      var starHtml = '';
+      if (stars > 0) {
+        starHtml = '<div style="display:flex;gap:1px;flex-shrink:0;color:#F5C518;font-size:0.72rem">' + '\u2605'.repeat(stars) + '</div>';
+      }
+      var h = '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem"><div style="display:flex;align-items:center;gap:0.6rem">';
+      h += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(100,180,230,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgb(100,180,230);filter:brightness(1.6) saturate(1.1);overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;filter:none">' : ico('bubble')) + '</div>';
+      h += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
+      h += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.45)">' + visIcon(b.visibility) + mc + ' ' + t('ps_members') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div>' + starHtml + '</div></div>';
+      return h;
+    }
+    function eventCard(b, past) {
+      var dateStr = (past ? (b.event_end_date || b.event_date) : b.event_date) ? new Date(past ? (b.event_end_date || b.event_date) : b.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
+      var h = '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.3rem;' + (past ? 'opacity:0.55' : '') + '"><div style="display:flex;align-items:center;gap:0.6rem">';
+      h += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,' + (past ? '0.14' : '0.22') + ');display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E;filter:brightness(1.6) saturate(1.1);overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;filter:none">' : ico('calendar')) + '</div>';
+      h += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
+      h += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.45)">' + visIcon(b.visibility) + dateStr + '</div></div></div></div>';
+      return h;
+    }
+
     var html = '';
     if (networks.length > 0) {
       html += '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">' + t('pf_networks_label') + ' (' + networks.length + ')</div>';
-      networks.forEach(function(b) {
-        var mc = b.member_count ?? b.bubble_members?.[0]?.count ?? 0;
-        html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem"><div style="display:flex;align-items:center;gap:0.6rem">';
-        html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(100,180,230,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgb(100,180,230);filter:brightness(1.6) saturate(1.1);overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;filter:none">' : ico('bubble')) + '</div>';
-        html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
-        html += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.45)">' + visIcon(b.visibility) + mc + ' ' + t('ps_members') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div></div></div>';
-      });
+      networks.forEach(function(b) { html += networkCard(b); });
     }
-    if (events.length > 0) {
-      html += '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.04em;margin:0.6rem 0 0.4rem">Events (' + events.length + ')</div>';
-      events.forEach(function(b) {
-        var dateStr = b.event_date ? new Date(b.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
-        var isPast = b.event_date && new Date(b.event_date) < new Date();
-        html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5' : '') + '"><div style="display:flex;align-items:center;gap:0.6rem">';
-        html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E;filter:brightness(1.6) saturate(1.1);overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;filter:none">' : ico('calendar')) + '</div>';
-        html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
-        html += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.45)">' + visIcon(b.visibility) + dateStr + '</div></div></div></div>';
-      });
+    if (activeEvents.length > 0) {
+      html += '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.04em;margin:0.6rem 0 0.4rem">Events (' + activeEvents.length + ')</div>';
+      activeEvents.forEach(function(b) { html += eventCard(b, false); });
+    }
+    if (pastEvents.length > 0) {
+      var HIST_SHOWN = 5;
+      html += '<div id="pf-hist-toggle" onclick="pfToggleHistory()" style="margin-top:0.7rem;display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.7rem;background:rgba(255,255,255,0.03);border-radius:12px;cursor:pointer;user-select:none">';
+      html += '<span style="display:flex;align-items:center;color:rgba(255,255,255,0.5)">' + ico('history') + '</span>';
+      html += '<span style="flex:1;font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.04em">' + t('pf_past_events') + ' (' + pastEvents.length + ')</span>';
+      html += '<span id="pf-hist-chevron" style="display:flex;align-items:center;color:rgba(255,255,255,0.4);transition:transform 0.2s">' + ico('chevron-down') + '</span></div>';
+      html += '<div id="pf-hist-body" style="display:none;margin-top:0.35rem">';
+      pastEvents.slice(0, HIST_SHOWN).forEach(function(b) { html += eventCard(b, true); });
+      if (pastEvents.length > HIST_SHOWN) {
+        var rest = '';
+        pastEvents.slice(HIST_SHOWN).forEach(function(b) { rest += eventCard(b, true); });
+        html += '<div id="pf-hist-rest" style="display:none">' + rest + '</div>';
+        html += '<div id="pf-hist-more" onclick="pfShowMoreHistory()" style="text-align:center;font-size:0.68rem;color:rgb(120,190,235);padding:0.5rem 0;cursor:pointer">' + t('pf_show_more').replace('{n}', pastEvents.length - HIST_SHOWN) + '</div>';
+      }
+      html += '</div>';
     }
     el.innerHTML = html;
   } catch(e) { logError('loadProfileBubbles', e); el.innerHTML = '<div class="empty-state" style="padding:1rem"><div class="empty-text">' + t('pf_load_bubbles_fail') + '</div></div>'; }
+}
+
+function pfToggleHistory() {
+  var body = document.getElementById('pf-hist-body');
+  var chev = document.getElementById('pf-hist-chevron');
+  if (!body) return;
+  var open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chev) chev.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+
+function pfShowMoreHistory() {
+  var rest = document.getElementById('pf-hist-rest');
+  var more = document.getElementById('pf-hist-more');
+  if (rest) rest.style.display = 'block';
+  if (more) more.style.display = 'none';
 }
 
 // Load invitations into profile invitations tab
@@ -1678,6 +1756,21 @@ function personSetStar(userId, rating) {
     }).join('');
   }
   loadSavedContacts();
+}
+
+function bubbleSetStar(bubbleId, rating) {
+  var current = bubbleStarGet(bubbleId);
+  var newRating = (current === rating) ? 0 : rating;
+  bubbleStarSet(bubbleId, newRating);
+  var el = document.getElementById('bubble-star-rating');
+  if (el) {
+    el.innerHTML = [1,2,3].map(function(n) {
+      return '<div class="ps-star ' + (n <= newRating ? 'filled' : 'empty') + '" onclick="bubbleSetStar(\'' + bubbleId + '\',' + n + ')">\u2605</div>';
+    }).join('');
+  }
+  var badge = document.getElementById('bubble-info-star-badge');
+  if (badge) badge.innerHTML = bubbleStarRender(bubbleId);
+  if (typeof loadProfileBubbles === 'function') loadProfileBubbles();
 }
 
 
