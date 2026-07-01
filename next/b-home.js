@@ -1823,6 +1823,15 @@ async function loadMyNetworks() {
   } catch(e) { logError("loadMyNetworks", e); showRetryState('bb-net-list', 'loadMyNetworks', t('home_load_network_fail')); }
 }
 
+function bcToggleEventHistory() {
+  var body = document.getElementById('bc-evhist-body');
+  var chev = document.getElementById('bc-evhist-chevron');
+  if (!body) return;
+  var open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chev) chev.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+
 function bbTreeToggle(accId) {
   var trunk = document.getElementById('trunk-' + accId);
   var tog = document.getElementById('tog-' + accId);

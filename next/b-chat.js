@@ -1972,7 +1972,9 @@ async function bcLoadInfo() {
             childCards += '</div>';
           });
 
-          // Direct child events
+          // Direct child events — split active vs past (history accordion)
+          var _pastEventCards = '';
+          var _pastEventCount = 0;
           childEvents.forEach(function(ch) {
             var chMc = ch.member_count ?? ch.bubble_members?.[0]?.count ?? 0;
             var isPast = ch.event_date && new Date(ch.event_end_date || ch.event_date) < now;
@@ -1985,24 +1987,33 @@ async function bcLoadInfo() {
             var chEvLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ch.id);
             var _agId = 'bc-agenda-' + ch.id;
             var chIcon = ch.icon_url ? '<img src="' + escHtml(ch.icon_url) + '">' : _calIco;
-            childCards += '<div class="bb-tree-branch">';
-            childCards += '<div class="bb-card-list' + (isPast ? ' is-past' : '') + '" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')">';
-            childCards += '<div class="bb-card-icon-sq icon-wrap is-event">' + chIcon + '</div>';
-            childCards += '<div class="bb-card-text">';
-            childCards += '<div class="bb-card-title">' + escHtml(ch.name) + (chEvLive ? ' <span class="bb-pill bb-pill-live">LIVE</span>' : '') + _evEndedBadge(ch) + '</div>';
-            childCards += '<div class="bb-card-meta">' + visIcon(ch.visibility) + '<span class="bb-card-meta-text">' + dateStr + ' \u00B7 ' + chMc + ' tilmeldt</span></div>';
-            childCards += '</div>';
+            var _card = '<div class="bb-tree-branch">';
+            _card += '<div class="bb-card-list' + (isPast ? ' is-past' : '') + '" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')">';
+            _card += '<div class="bb-card-icon-sq icon-wrap is-event">' + chIcon + '</div>';
+            _card += '<div class="bb-card-text">';
+            _card += '<div class="bb-card-title">' + escHtml(ch.name) + (chEvLive ? ' <span class="bb-pill bb-pill-live">LIVE</span>' : '') + _evEndedBadge(ch) + '</div>';
+            _card += '<div class="bb-card-meta">' + visIcon(ch.visibility) + '<span class="bb-card-meta-text">' + dateStr + ' \u00B7 ' + chMc + ' tilmeldt</span></div>';
+            _card += '</div>';
             if (ch.agenda) {
-              childCards += '<div onclick="event.stopPropagation();var p=document.getElementById(\'' + _agId + '\');var v=p.style.display===\'none\';p.style.display=v?\'block\':\'none\';this.style.transform=v?\'rotate(90deg)\':\'rotate(0)\'" class="bb-card-chev" style="cursor:pointer;transition:transform 0.2s">' + _chevSm + '</div>';
+              _card += '<div onclick="event.stopPropagation();var p=document.getElementById(\'' + _agId + '\');var v=p.style.display===\'none\';p.style.display=v?\'block\':\'none\';this.style.transform=v?\'rotate(90deg)\':\'rotate(0)\'" class="bb-card-chev" style="cursor:pointer;transition:transform 0.2s">' + _chevSm + '</div>';
             } else {
-              childCards += '<div class="bb-card-chev">\u203A</div>';
+              _card += '<div class="bb-card-chev">\u203A</div>';
             }
-            childCards += '</div>';
+            _card += '</div>';
             if (ch.agenda) {
-              childCards += '<div id="' + _agId + '" class="glass-dark" style="display:none;padding:0.4rem 0.6rem 0.5rem 2.2rem;font-size:0.7rem;line-height:1.5;white-space:pre-line;border-top:0;border-radius:0 0 12px 12px;margin-top:-4px">' + escHtml(ch.agenda) + '</div>';
+              _card += '<div id="' + _agId + '" class="glass-dark" style="display:none;padding:0.4rem 0.6rem 0.5rem 2.2rem;font-size:0.7rem;line-height:1.5;white-space:pre-line;border-top:0;border-radius:0 0 12px 12px;margin-top:-4px">' + escHtml(ch.agenda) + '</div>';
             }
-            childCards += '</div>';
+            _card += '</div>';
+            if (isPast) { _pastEventCards += _card; _pastEventCount++; }
+            else { childCards += _card; }
           });
+          if (_pastEventCount > 0) {
+            childCards += '<div class="bb-tree-branch"><div id="bc-evhist-toggle" onclick="bcToggleEventHistory()" style="display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.7rem;background:rgba(255,255,255,0.03);border-radius:12px;cursor:pointer;user-select:none">' +
+              '<span style="display:flex;align-items:center;color:rgba(255,255,255,0.5)">' + ico('history') + '</span>' +
+              '<span style="flex:1;font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.04em">' + t('pf_past_events') + ' (' + _pastEventCount + ')</span>' +
+              '<span id="bc-evhist-chevron" style="display:flex;align-items:center;color:rgba(255,255,255,0.4);transition:transform 0.2s">' + ico('chevron-down') + '</span></div>' +
+              '<div id="bc-evhist-body" style="display:none;margin-top:0.35rem">' + _pastEventCards + '</div></div>';
+          }
 
           eventsHtml = '<div style="margin-bottom:0.9rem">' +
             '<div class="bb-section-header" style="display:flex;align-items:center;justify-content:space-between">' +
