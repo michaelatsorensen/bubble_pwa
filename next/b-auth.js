@@ -13,14 +13,24 @@
 
 // Step 1: Ensure profile row exists (OAuth users may not have one)
 async function ensureProfileExists(session) {
-  var { data: existing } = await sb.from('profiles').select('id').eq('id', session.user.id).maybeSingle();
-  if (!existing) {
-    var meta = session.user.user_metadata || {};
-    await sb.from('profiles').upsert({
-      id: session.user.id,
-      name: meta.full_name || meta.name || session.user.email,
-      title: '', keywords: [], dynamic_keywords: [], bio: '', is_anon: false
-    });
+  try {
+    var { data: existing, error: selErr } = await sb.from('profiles').select('id').eq('id', session.user.id).maybeSingle();
+    // If the lookup itself failed, we cannot safely decide whether to create.
+    // Returning false lets the caller stop rather than proceed on unknown state.
+    if (selErr) { logError('ensureProfileExists:select', selErr); return false; }
+    if (!existing) {
+      var meta = session.user.user_metadata || {};
+      var { error: upErr } = await sb.from('profiles').upsert({
+        id: session.user.id,
+        name: meta.full_name || meta.name || session.user.email,
+        title: '', keywords: [], dynamic_keywords: [], bio: '', is_anon: false
+      });
+      if (upErr) { logError('ensureProfileExists:upsert', upErr); return false; }
+    }
+    return true;
+  } catch (e) {
+    logError('ensureProfileExists', e);
+    return false;
   }
 }
 
@@ -131,7 +141,16 @@ async function resolvePostAuthDestination() {
 async function resolvePostAuth() {
   // Ensure profile exists (covers guest flows where checkAuth was skipped)
   var { data: { session: _epSession } } = await sb.auth.getSession();
-  if (_epSession) await ensureProfileExists(_epSession);
+  if (_epSession) {
+    var _profileOk = await ensureProfileExists(_epSession);
+    if (!_profileOk) {
+      // Profile row could not be confirmed/created — do NOT proceed into a
+      // profileless session. Surface the error and return to auth for a retry.
+      showErrorToast(t('toast_generic_error'));
+      goTo('screen-auth');
+      return;
+    }
+  }
   await loadEssentials(); // Step 1: banned check inside loadCurrentProfile
   var needsOnboarding = await maybeShowOnboarding();
   if (needsOnboarding) return; // Step 2: onboarding calls resolvePostAuthDestination when done
@@ -189,7 +208,12 @@ async function checkAuth() {
       // If the recovery link fired PASSWORD_RECOVERY while we were resolving the
       // session, do NOT route into the app — the user must set a new password first.
       if (_inPasswordRecovery) { return; }
-      await ensureProfileExists(session);
+      var _authProfileOk = await ensureProfileExists(session);
+      if (!_authProfileOk) {
+        showErrorToast(t('toast_generic_error'));
+        goTo('screen-auth');
+        return;
+      }
       await resolvePostAuth();
     } else {
       // No session — redirect to landing (unless user came from landing via ?auth=1 or deep link)
