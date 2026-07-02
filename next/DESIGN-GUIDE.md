@@ -396,6 +396,14 @@ Gaelder: `.modal-sheet`, `.person-sheet`, `.bb-sheet`, `.bb-dyn-sheet` og alle f
 
 Nye undtagelser kraever eksplicit beslutning og skal tilfoejes her.
 
+## FARVE-UNDTAGELSER (besluttet 2. juli 2026)
+
+Lilac er deprecated i UI-chrome — MED foelgende besluttede undtagelser:
+- **Match-tier "Godt match"**: `#A78BFA` paa `rgba(124,92,252,0.18)` (b-home + b-radar).
+  Skalaen groen -> lilla -> blaa skelner bedre end alternativerne (cyan kolliderer med
+  live/teal-semantik, isblaa kolliderer med tier 3-blaa). Bevidst beholdt.
+- Avatar-identitetspaletter og radar-baggrundsringe er IKKE UI-chrome — lilla er ok der.
+
 ## SCROLL-STANDARD (besluttet 2. juli 2026)
 
 Alle vertikale scroll-containere har ALLE tre egenskaber:
