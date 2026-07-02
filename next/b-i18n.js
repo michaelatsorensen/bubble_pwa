@@ -847,6 +847,7 @@ da: {
   // Validation
   val_accept_terms: 'Du skal acceptere betingelserne',
   val_name_required: 'Navn er påkrævet',
+  val_too_long: 'Teksten er for lang (maks {max} tegn)',
   val_workplace_required: 'Virksomhed er påkrævet',
   val_add_workplace: 'Tilføj arbejdsplads — det er alt der mangler',
   // UI states
@@ -1870,6 +1871,7 @@ en: {
   err_push_activate: 'Could not activate notifications',
   val_accept_terms: 'You must accept the terms',
   val_name_required: 'Name is required',
+  val_too_long: 'Text is too long (max {max} characters)',
   val_workplace_required: 'Workplace is required',
   val_add_workplace: 'Add workplace — that\'s all that\'s missing',
   ui_sending: 'Sending...',

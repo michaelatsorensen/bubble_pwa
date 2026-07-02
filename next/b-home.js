@@ -1130,6 +1130,7 @@ function openSetupBioSheet() {
 
 async function saveSetupBio() {
   var bio = (document.getElementById('setup-bio-input')?.value || '').trim();
+  if (tooLong(bio, 'bio')) return;
   try {
     var { error } = await sb.from('profiles').update({ bio: bio }).eq('id', currentUser.id);
     if (error) { logError('saveSetupBio', error); errorToast('save', error); return; }

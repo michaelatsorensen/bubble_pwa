@@ -1238,6 +1238,7 @@ async function bcSendMessage() {
     const inp = document.getElementById('bc-input');
     const text = filterChatContent(inp.value.trim());
     if (!text) { bcSending = false; if (sendBtn) { sendBtn.disabled = false; } return; }
+    if (tooLong(text, 'message')) { bcSending = false; if (sendBtn) { sendBtn.disabled = false; } return; }
 
     if (bcEditingId) {
       // Save edit to history first (log on failure but don't block edit)

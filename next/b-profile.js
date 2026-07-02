@@ -1326,6 +1326,7 @@ async function saveProfile() {
     const linkedin  = (document.getElementById('ep-linkedin')?.value || '').trim();
     const workplace = (document.getElementById('ep-workplace')?.value || '').trim();
     if (!name) return showWarningToast(t('val_name_required'));
+    if (tooLong(name, 'name') || tooLong(title, 'title') || tooLong(workplace, 'workplace') || tooLong(bio, 'bio') || tooLong(linkedin, 'url')) return;
     const { error } = await sb.from('profiles').upsert({
       id: currentUser.id, name, title, bio, linkedin, workplace,
       dynamic_keywords: epDynChips, is_anon: isAnon

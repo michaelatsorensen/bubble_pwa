@@ -217,6 +217,7 @@ async function sendMessage() {
     const input = document.getElementById('chat-input');
     const content = filterChatContent(input.value.trim());
     if (!content) return;
+    if (tooLong(content, 'message')) return; // dmSending + button reset by finally block
 
     // Dedup guard: prevent identical message to same receiver within 3s (reconnect safety)
     if (!dmEditingId) {

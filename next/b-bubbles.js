@@ -887,6 +887,7 @@ async function createBubble() {
     const desc = document.getElementById('cb-desc').value.trim();
     const location = document.getElementById('cb-location').value.trim();
     if (!name) return showWarningToast(t('cb_name_required'));
+    if (tooLong(name, 'name') || tooLong(desc, 'description') || tooLong(location, 'name')) return;
     const visibility = document.getElementById('cb-visibility')?.value || 'private';
     // Pick up parent bubble id if set (from openCreateEventFromBubble)
     var modal = document.getElementById('bb-sheet-create-bubble');
@@ -918,6 +919,7 @@ async function createBubble() {
       var checkinMode = document.getElementById('cb-checkin-mode')?.value || 'self';
       insertData.checkin_mode = checkinMode;
       var agendaVal = (document.getElementById('cb-agenda')?.value || '').trim();
+      if (tooLong(agendaVal, 'agenda')) return;
       if (agendaVal) insertData.agenda = agendaVal;
       // Event date/time
       var dateVal = document.getElementById('cb-event-date')?.value;
@@ -1083,6 +1085,7 @@ async function saveEditBubble() {
     const desc       = document.getElementById('eb-desc').value.trim();
     const location   = document.getElementById('eb-location').value.trim();
     if (!name) return showWarningToast(t('cb_name_required'));
+    if (tooLong(name, 'name') || tooLong(desc, 'description') || tooLong(location, 'name')) return;
     var updateObj = {
       name, type, type_label: typeLabel(type),
       visibility, description: desc, location, keywords: ebChips
@@ -1103,6 +1106,7 @@ async function saveEditBubble() {
         updateObj.event_end_date = timeEndVal ? new Date(dateVal + 'T' + timeEndVal).toISOString() : null;
       }
       var agendaVal = (document.getElementById('eb-agenda')?.value || '').trim();
+      if (tooLong(agendaVal, 'agenda')) return;
       updateObj.agenda = agendaVal || null;
     }
     var editResult = await dbActions.updateBubble(currentEditBubbleId, updateObj);
