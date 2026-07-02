@@ -1115,19 +1115,19 @@ async function loadProfileBubbles() {
 
     var html = '';
     if (networks.length > 0) {
-      html += '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">' + t('pf_networks_label') + ' (' + networks.length + ')</div>';
+      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-on-light-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">' + t('pf_networks_label') + ' (' + networks.length + ')</div>';
       networks.forEach(function(b) { html += networkCard(b); });
     }
     if (activeEvents.length > 0) {
-      html += '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.04em;margin:0.6rem 0 0.4rem">Events (' + activeEvents.length + ')</div>';
+      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-on-light-muted);text-transform:uppercase;letter-spacing:0.04em;margin:0.6rem 0 0.4rem">Events (' + activeEvents.length + ')</div>';
       activeEvents.forEach(function(b) { html += eventCard(b, false); });
     }
     if (pastEvents.length > 0) {
       var HIST_SHOWN = 5;
-      html += '<div id="pf-hist-toggle" onclick="pfToggleHistory()" style="margin-top:0.7rem;display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.7rem;background:rgba(255,255,255,0.03);border-radius:12px;cursor:pointer;user-select:none">';
-      html += '<span style="display:flex;align-items:center;color:rgba(255,255,255,0.5)">' + ico('history') + '</span>';
-      html += '<span style="flex:1;font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.04em">' + t('pf_past_events') + ' (' + pastEvents.length + ')</span>';
-      html += '<span id="pf-hist-chevron" style="display:flex;align-items:center;color:rgba(255,255,255,0.4);transition:transform 0.2s">' + ico('chevron-down') + '</span></div>';
+      html += '<div id="pf-hist-toggle" onclick="pfToggleHistory()" style="margin-top:0.7rem;display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.7rem;background:rgba(23,15,52,0.04);border-radius:12px;cursor:pointer;user-select:none">';
+      html += '<span style="display:flex;align-items:center;color:var(--text-on-light-muted)">' + ico('history') + '</span>';
+      html += '<span style="flex:1;font-size:0.68rem;font-weight:700;color:var(--text-on-light-muted);text-transform:uppercase;letter-spacing:0.04em">' + t('pf_past_events') + ' (' + pastEvents.length + ')</span>';
+      html += '<span id="pf-hist-chevron" style="display:flex;align-items:center;color:var(--text-on-light-subtle);transition:transform 0.2s">' + ico('chevron-down') + '</span></div>';
       html += '<div id="pf-hist-body" style="display:none;margin-top:0.35rem">';
       pastEvents.slice(0, HIST_SHOWN).forEach(function(b) { html += eventCard(b, true); });
       if (pastEvents.length > HIST_SHOWN) {
