@@ -704,14 +704,18 @@ function bcSubscribeRealtime() {
         if (m.user_id === currentUser.id) return;
         m.profiles = await getCachedProfile(m.user_id);
         const panel = document.getElementById('bc-panel-chat');
-        if (panel.style.display !== 'none') {
+        // Panel/badge may be absent if the user navigated away between the
+        // event firing and this async handler running — guard both.
+        if (panel && panel.style.display !== 'none') {
           bcReduceMsg(m);
         } else {
-          // Chat tab not visible — increment unread badge
+          // Chat tab not visible (or panel gone) — increment unread badge if present
           if (!document.querySelector('[data-bc-msg-id="' + m.id + '"]')) {
             const badge = document.getElementById('bc-unread-badge');
-            badge.textContent = parseInt(badge.textContent||0) + 1;
-            badge.style.display = 'inline-flex';
+            if (badge) {
+              badge.textContent = parseInt(badge.textContent||0) + 1;
+              badge.style.display = 'inline-flex';
+            }
           }
         }
       })
@@ -1016,7 +1020,13 @@ async function bcLoadMessages() {
       .order('created_at', {ascending:true})
       .limit(50);
 
-    if (msgErr) console.error('bcLoadMessages error:', msgErr);
+    if (msgErr) {
+      logError('bcLoadMessages', msgErr);
+      // Distinguish load failure from a genuinely empty chat — showing
+      // "start the conversation" on a fetch error makes an active chat look wiped.
+      showRetryState('bc-messages', 'bcLoadMessages', t('chat_load_fail'));
+      return;
+    }
 
     if (!msgs || msgs.length === 0) {
       var bName = bcBubbleData?.name || t('chat_the_bubble');

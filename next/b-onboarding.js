@@ -128,20 +128,18 @@ async function maybeShowOnboarding() {
       } catch(e) {}
     }
 
-    // Auto-fill from OAuth if user is missing name/workplace
+    // Auto-fill from OAuth if user is missing name/workplace.
+    // Only mirror to local state + mark satisfied if the write actually succeeded,
+    // otherwise onboarding still asks for the field (no state/DB divergence).
     if (!hasName && autoName) {
-      try {
-        await sb.from('profiles').update({ name: autoName }).eq('id', currentUser.id);
-        if (currentProfile) currentProfile.name = autoName;
-        hasName = true;
-      } catch(e) {}
+      var { error: nameErr } = await sb.from('profiles').update({ name: autoName }).eq('id', currentUser.id);
+      if (nameErr) { logError('onboarding:autofill-name', nameErr); }
+      else { if (currentProfile) currentProfile.name = autoName; hasName = true; }
     }
     if (!hasWorkplace && autoWorkplace) {
-      try {
-        await sb.from('profiles').update({ workplace: autoWorkplace }).eq('id', currentUser.id);
-        if (currentProfile) currentProfile.workplace = autoWorkplace;
-        hasWorkplace = true;
-      } catch(e) {}
+      var { error: wpErr } = await sb.from('profiles').update({ workplace: autoWorkplace }).eq('id', currentUser.id);
+      if (wpErr) { logError('onboarding:autofill-workplace', wpErr); }
+      else { if (currentProfile) currentProfile.workplace = autoWorkplace; hasWorkplace = true; }
     }
 
     if (hasName && hasWorkplace) return false; // OAuth provided enough
