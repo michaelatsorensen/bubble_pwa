@@ -377,6 +377,37 @@ N1: Sheets/modals (blur, 0.94)
 
 ---
 
+## SHEET-STANDARD (besluttet 2. juli 2026)
+
+Alle bund-sheets deler samme fysik og form. Implementeret som CSS-variabler i `:root`
+(app.css) — klasser SKAL referere variablerne, aldrig gentage vaerdier:
+
+| Egenskab | Variabel | Vaerdi |
+|---|---|---|
+| Max-hoejde | `--sheet-max-h` | 85vh |
+| Hjoerneradius | `--sheet-radius` | 24px |
+| Varighed | `--sheet-dur` | 0.35s |
+| Kurve | `--sheet-ease` | `cubic-bezier(0.22,1,0.36,1)` — flad landing, INGEN spring |
+
+Gaelder: `.modal-sheet`, `.person-sheet`, `.bb-sheet`, `.bb-dyn-sheet` og alle fremtidige sheets.
+
+**Dokumenterede undtagelser:**
+- `.person-sheet` max-height: 88vh (person-indhold er hoejt — bevidst)
+
+Nye undtagelser kraever eksplicit beslutning og skal tilfoejes her.
+
+## SCROLL-STANDARD (besluttet 2. juli 2026)
+
+Alle vertikale scroll-containere har ALLE tre egenskaber:
+`overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;`
+
+`contain` er den kritiske: uden den scroller baggrunden med naar listen rammer top/bund.
+Lister der lever under navbaren bruger `.scroll-area` (indeholder 6.5rem bundpadding
+til navbar-clearance). Inline-styles maa ALDRIG overskrive scroll-area's padding —
+lav en modifier-klasse hvis en variant er noedvendig.
+
+---
+
 ## SCREENS STATUS
 
 | Skærm | Konverteret | Glass-niveau |
