@@ -848,6 +848,7 @@ da: {
   val_accept_terms: 'Du skal acceptere betingelserne',
   val_name_required: 'Navn er påkrævet',
   val_too_long: 'Teksten er for lang (maks {max} tegn)',
+  bb_created_join_retry: 'Boblen blev oprettet, men vi kunne ikke tilføje dig som medlem. Prøv at åbne den igen.',
   val_workplace_required: 'Virksomhed er påkrævet',
   val_add_workplace: 'Tilføj arbejdsplads — det er alt der mangler',
   // UI states
@@ -1872,6 +1873,7 @@ en: {
   val_accept_terms: 'You must accept the terms',
   val_name_required: 'Name is required',
   val_too_long: 'Text is too long (max {max} characters)',
+  bb_created_join_retry: 'The bubble was created, but we could not add you as a member. Try opening it again.',
   val_workplace_required: 'Workplace is required',
   val_add_workplace: 'Add workplace — that\'s all that\'s missing',
   ui_sending: 'Sending...',

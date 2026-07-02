@@ -935,8 +935,24 @@ async function createBubble() {
     }
     const { data: bubble, error } = await sb.from('bubbles').insert(insertData).select().single();
     if (error) return errorToast('save', error);
-    // Auto-join
-    await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id });
+    // Auto-join — the bubble exists now, so a failed membership insert must not
+    // be silently ignored (would leave the creator in a bubble they can't act in).
+    var { error: joinErr } = await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id });
+    if (joinErr) {
+      // Retry once — most failures here are transient (network/timing).
+      var { error: joinErr2 } = await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id });
+      if (joinErr2) {
+        logError('createBubble:autojoin', joinErr2);
+        // Bubble was created (real work preserved); membership could not be added.
+        // Tell the user honestly rather than showing "created!" and dropping them
+        // into a bubble they aren't a member of. Rejoin is available by opening it.
+        bbClose('create-bubble');
+        showWarningToast(t('bb_created_join_retry'));
+        loadHome();
+        loadDiscover();
+        return;
+      }
+    }
     bbClose('create-bubble');
     showToast(`"${name}" oprettet! 🫧`);
     trackEvent('bubble_created', { bubble_id: bubble.id, type: type, has_parent: !!parentBubbleId });
