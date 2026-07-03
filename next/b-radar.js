@@ -291,9 +291,21 @@ async function openRadarPerson(userId) {
     var saveBtn = document.getElementById('rp-save-btn');
     saveBtn.textContent = savedCheck ? t('ps_saved') + ' \u2713' : t('ps_save');
     saveBtn.dataset.saved = savedCheck ? '1' : '0';
-    // Single reveal: everything above filled into hidden content — one paint
+    // Single reveal with FLIP height glide: lock current (skeleton) height,
+    // swap to content, measure real height, transition smoothly — so the panel
+    // never jumps regardless of whether content is taller or shorter than skeleton.
     var _rpAv2 = document.getElementById('rp-avatar'); if (_rpAv2) _rpAv2.classList.remove('rp-skel-pulse');
-    if (_rpSheet) _rpSheet.classList.remove('rp-loading');
+    if (_rpSheet) {
+      var _h0 = _rpSheet.offsetHeight;
+      _rpSheet.style.height = _h0 + 'px';
+      _rpSheet.classList.add('rp-hswap');
+      _rpSheet.classList.remove('rp-loading');
+      requestAnimationFrame(function() {
+        var _h1 = _rpSheet.scrollHeight;
+        _rpSheet.style.height = _h1 + 'px';
+        setTimeout(function() { _rpSheet.style.height = ''; _rpSheet.classList.remove('rp-hswap'); }, 240);
+      });
+    }
   } catch(e) {
     var _rpSheetE = document.getElementById('radar-person-sheet'); if (_rpSheetE) _rpSheetE.classList.remove('rp-loading');
     var _rpAvE = document.getElementById('rp-avatar'); if (_rpAvE) _rpAvE.classList.remove('rp-skel-pulse');
