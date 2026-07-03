@@ -227,3 +227,25 @@ Konceptet stammer (uden at det var bevidst) fra Windows Phones Live Tiles: hjems
 **Hvad der STADIG holder (dæmpet):** De to risici (intuitivt vs. forvirrende; anderledes-for-anderledeshedens-skyld) gælder på app-niveau, men som LAV barriere (ét øjebliks orientering), ikke Windows Phones HØJE (hele din digitale hverdag). Førstegangsbruger skal stadig forstå tiles straks, ellers bounce.
 
 **Revideret indramning:** Idéen er mere rimelig end en ren Windows-Phone-sammenligning antyder. Stadig post-pilot — men fordi den fortjener at blive INFORMERET af pilot-data (hvordan bruger folk faktisk Bubble), IKKE fordi den er farlig. "Post-pilot fordi vi vil vide mere", ikke "post-pilot fordi det er risikabelt". At teste nu mens brugerskaren er lille er billigt.
+
+---
+
+## Guest check-in / gaest-registrering (halvbygget infrastruktur — IKKE del af loesningen nu)
+
+**Besluttet 3. juli 2026:** Ikke en del af Bubble pt. Anon-INSERT-policyen paa guest_checkins
+droppes (ubrugt aaben doer — ingen oprettelses-flow findes).
+
+**Use case (hvis den genoptages):** Event-deltagere UDEN Bubble-konto taelles med i eventets
+fremmoede og deltager-rapport. Passer i Event Bubbles B2B-laget (attendee insights daekker
+hele salen, ikke kun app-brugere).
+
+**Status i kodebasen:** HALVBYGGET.
+- FINDES: scanner-flow (b-live: `?guest=<id>` QR -> opslag -> saet checked_in_at -> "checket ind via Guest QR")
+- FINDES: rapport-integration (b-bubbles download medlemmerliste henter ogsaa guest_checkins)
+- MANGLER: oprettelse (ingen formular/side/kode skaber gaest-raekker med navn + QR)
+- RLS: owner_admin (ALL for boble-ejer/admin) staar og daekker scan+rapport. Anon-INSERT droppet.
+
+**Hvis featuren bygges faerdig:** Gaest-oprettelse boer ske af VAERTEN (authenticated admin —
+allerede daekket af owner_admin) ELLER via maalrettet ny policy med `checked_in_at IS NULL`
+i WITH CHECK (registrering maa aldrig kunne forud-checke sig selv — check-in-tal er pilot/
+event-metrik og skal kun saettes af vaertens scan).
