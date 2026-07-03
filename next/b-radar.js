@@ -155,21 +155,41 @@ async function openRadarPerson(userId) {
       var sv = document.getElementById('rp-save-btn'); if (sv) { sv.textContent = t('ps_save'); sv.dataset.saved = '0'; }
     };
     _rpReset();
+    var _rpSheet = document.getElementById('radar-person-sheet');
+    if (_rpSheet) _rpSheet.classList.add('rp-loading');
     document.getElementById('radar-person-overlay').classList.add('open');
     setTimeout(function(){ document.getElementById('radar-person-sheet').classList.add('open'); }, 10);
 
     // Fetch profile + saved-state in parallel (live check needs only userId too,
     // but keeps its own conditional block below for clarity)
-    var _rpResults = await Promise.all([
+    var _rpExpireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 3600000).toISOString();
+    var _rpSharedFn = async function() {
+      var r = await Promise.all([
+        sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id),
+        sb.from('bubble_members').select('bubble_id').eq('user_id', userId)
+      ]);
+      var myB = (r[0].data || []).map(function(m){ return m.bubble_id; });
+      var thB = (r[1].data || []).map(function(m){ return m.bubble_id; });
+      var shared = myB.filter(function(id){ return thB.indexOf(id) >= 0; });
+      if (shared.length === 0) return [];
+      var res = await sb.from('bubbles').select('id, name, type').in('id', shared);
+      return res.data || [];
+    };
+    var _rpResults = await Promise.allSettled([
       sb.from('profiles').select('*').eq('id', userId).maybeSingle(),
-      sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle()
+      sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle(),
+      sb.from('bubble_members').select('checked_in_at, bubbles(name)').eq('user_id', userId)
+        .not('checked_in_at', 'is', null).is('checked_out_at', null)
+        .gte('checked_in_at', _rpExpireCutoff).order('checked_in_at', { ascending: false }).limit(1).maybeSingle(),
+      _rpSharedFn()
     ]);
-    var p = _rpResults[0].data;
-    var savedCheck = _rpResults[1].data;
-    var _rpAv = document.getElementById('rp-avatar'); if (_rpAv) _rpAv.classList.remove('rp-skel-pulse');
+    var p = _rpResults[0].status === 'fulfilled' ? _rpResults[0].value.data : null;
+    var savedCheck = _rpResults[1].status === 'fulfilled' ? _rpResults[1].value.data : null;
+    var _rpLive = _rpResults[2].status === 'fulfilled' ? _rpResults[2].value.data : null;
+    var _rpShared = _rpResults[3].status === 'fulfilled' ? _rpResults[3].value : [];
     // Stale guard: user tapped another person while this was loading
     if (rpCurrentUserId !== userId) return;
-    if (!p) { closeRadarPerson(); return; }
+    if (!p) { closeRadarPerson(); if (_rpSheet) _rpSheet.classList.remove('rp-loading'); return; }
     var isA = p.is_anon;
     var name = isA ? t('ps_anonymous') : (p.name || '?');
     var ini = isA ? '?' : name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
@@ -185,16 +205,7 @@ async function openRadarPerson(userId) {
     // Live presence
     var rpLiveEl = document.getElementById('rp-live-badge');
     if (rpLiveEl) {
-      var expireCutoff = new Date(Date.now() - LIVE_EXPIRE_HOURS * 3600000).toISOString();
-      var { data: liveCheck } = await sb.from('bubble_members')
-        .select('checked_in_at, bubbles(name)')
-        .eq('user_id', userId)
-        .not('checked_in_at', 'is', null)
-        .is('checked_out_at', null)
-        .gte('checked_in_at', expireCutoff)
-        .order('checked_in_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      var liveCheck = _rpLive; // fetched in parallel batch above
       if (liveCheck) {
         rpLiveEl.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#1A9E8E;display:inline-block;animation:livePulse 1.5s infinite"></span> LIVE i ' + escHtml(liveCheck.bubbles?.name || '');
         rpLiveEl.style.display = 'inline-flex';
@@ -257,28 +268,20 @@ async function openRadarPerson(userId) {
     if (sharedEl) {
       sharedEl.style.display = 'none';
       sharedEl.innerHTML = '';
-      Promise.all([
-        sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id),
-        sb.from('bubble_members').select('bubble_id').eq('user_id', userId)
-      ]).then(function(results) {
-        var myBids = (results[0].data || []).map(function(m) { return m.bubble_id; });
-        var theirBids = (results[1].data || []).map(function(m) { return m.bubble_id; });
-        var sharedIds = myBids.filter(function(id) { return theirBids.indexOf(id) >= 0; });
-        if (sharedIds.length === 0) return;
-        sb.from('bubbles').select('id, name, type').in('id', sharedIds).then(function(res) {
-          var bubbles = res.data || [];
-          if (bubbles.length === 0) return;
-          sharedEl.innerHTML = '<div style="font-size:0.6rem;font-weight:600;color:rgba(255,255,255,0.55);margin-bottom:3px">' + t('ps_public_bubbles') + ' \u00B7 ' + bubbles.length + '</div>' +
-            '<div style="display:flex;flex-wrap:wrap;gap:4px">' +
-            bubbles.slice(0, 5).map(function(b) {
-              var isEvt = b.type === 'event' || b.type === 'live';
-              return '<span style="font-size:0.58rem;padding:2px 8px;border-radius:6px;font-weight:600;background:' + (isEvt ? 'rgba(46,207,207,0.15);color:#34D399;border:0.5px solid rgba(46,207,207,0.25)' : 'rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);border:0.5px solid rgba(255,255,255,0.12)') + '">' + (isEvt ? '\uD83D\uDCC5 ' : '\uD83D\uDD17 ') + escHtml(b.name) + '</span>';
-            }).join('') +
-            (bubbles.length > 5 ? '<span style="font-size:0.55rem;color:rgba(255,255,255,0.45)">+' + (bubbles.length - 5) + ' mere</span>' : '') +
-            '</div>';
-          sharedEl.style.display = 'block';
-        }).catch(function(){});
-      }).catch(function(){});
+      // Rendered synchronously from the parallel batch (was a late fire-and-forget
+      // chain that popped in as a separate chunk after everything else)
+      var bubbles = _rpShared;
+      if (bubbles.length > 0) {
+        sharedEl.innerHTML = '<div style="font-size:0.6rem;font-weight:600;color:rgba(255,255,255,0.55);margin-bottom:3px">' + t('ps_public_bubbles') + ' \u00B7 ' + bubbles.length + '</div>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:4px">' +
+          bubbles.slice(0, 5).map(function(b) {
+            var isEvt = b.type === 'event' || b.type === 'live';
+            return '<span style="font-size:0.58rem;padding:2px 8px;border-radius:6px;font-weight:600;background:' + (isEvt ? 'rgba(46,207,207,0.15);color:#34D399;border:0.5px solid rgba(46,207,207,0.25)' : 'rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);border:0.5px solid rgba(255,255,255,0.12)') + '">' + (isEvt ? '\uD83D\uDCC5 ' : '\uD83D\uDD17 ') + escHtml(b.name) + '</span>';
+          }).join('') +
+          (bubbles.length > 5 ? '<span style="font-size:0.55rem;color:rgba(255,255,255,0.45)">+' + (bubbles.length - 5) + ' mere</span>' : '') +
+          '</div>';
+        sharedEl.style.display = 'block';
+      }
     }
     // LinkedIn
     var liBtn = document.getElementById('rp-linkedin-btn');
@@ -288,7 +291,14 @@ async function openRadarPerson(userId) {
     var saveBtn = document.getElementById('rp-save-btn');
     saveBtn.textContent = savedCheck ? t('ps_saved') + ' \u2713' : t('ps_save');
     saveBtn.dataset.saved = savedCheck ? '1' : '0';
-  } catch(e) { logError("openRadarPerson", e); errorToast("load", e); }
+    // Single reveal: everything above filled into hidden content — one paint
+    var _rpAv2 = document.getElementById('rp-avatar'); if (_rpAv2) _rpAv2.classList.remove('rp-skel-pulse');
+    if (_rpSheet) _rpSheet.classList.remove('rp-loading');
+  } catch(e) {
+    var _rpSheetE = document.getElementById('radar-person-sheet'); if (_rpSheetE) _rpSheetE.classList.remove('rp-loading');
+    var _rpAvE = document.getElementById('rp-avatar'); if (_rpAvE) _rpAvE.classList.remove('rp-skel-pulse');
+    logError("openRadarPerson", e); errorToast("load", e);
+  }
 }
 
 function closeRadarPerson() {
