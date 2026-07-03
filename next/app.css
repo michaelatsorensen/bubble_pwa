@@ -4235,12 +4235,3 @@ a:not(.btn-primary):not(.btn-secondary):active {
 /* Radar person preview: avatar skeleton pulse while data loads (instant-open pattern) */
 .rp-skel-pulse { animation: rpSkelPulse 1.1s ease-in-out infinite; }
 @keyframes rpSkelPulse { 0%,100% { opacity: 0.35; } 50% { opacity: 0.7; } }
-/* Radar preview single-reveal: header (avatar skeleton) visible instantly, body hidden until ALL data filled — no chunky progressive paint */
-.radar-person-sheet.rp-loading .radar-person-inner > *:not(.radar-person-header):not(.rp-skeleton) { opacity: 0; }
-.radar-person-sheet .radar-person-inner > * { transition: opacity 0.15s ease; }
-/* Skeleton blocks: reserve realistic content height during load so the reveal does not resize the panel */
-.rp-skeleton { display: none; }
-.radar-person-sheet.rp-loading .rp-skeleton { display: flex; flex-direction: column; gap: 0.55rem; padding: 0.6rem 0 0.4rem; opacity: 1; }
-.rp-skel-bar { height: 13px; border-radius: 7px; background: rgba(255,255,255,0.07); animation: rpSkelPulse 1.1s ease-in-out infinite; }
-/* Radar preview height glide during skeleton->content swap (FLIP) */
-.radar-person-sheet.rp-hswap { transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), height 0.22s ease; overflow: hidden; }

@@ -156,9 +156,10 @@ async function openRadarPerson(userId) {
     };
     _rpReset();
     var _rpSheet = document.getElementById('radar-person-sheet');
-    if (_rpSheet) _rpSheet.classList.add('rp-loading');
+    // Show overlay now (backdrop), but keep the sheet BELOW the screen (translateY
+    // via .open withheld) until content is filled. The sheet is in the DOM and
+    // laid out, so it can be measured, but the user sees nothing slide yet.
     document.getElementById('radar-person-overlay').classList.add('open');
-    setTimeout(function(){ document.getElementById('radar-person-sheet').classList.add('open'); }, 10);
 
     // Fetch profile + saved-state in parallel (live check needs only userId too,
     // but keeps its own conditional block below for clarity)
@@ -189,7 +190,7 @@ async function openRadarPerson(userId) {
     var _rpShared = _rpResults[3].status === 'fulfilled' ? _rpResults[3].value : [];
     // Stale guard: user tapped another person while this was loading
     if (rpCurrentUserId !== userId) return;
-    if (!p) { closeRadarPerson(); if (_rpSheet) _rpSheet.classList.remove('rp-loading'); return; }
+    if (!p) { closeRadarPerson(); return; }
     var isA = p.is_anon;
     var name = isA ? t('ps_anonymous') : (p.name || '?');
     var ini = isA ? '?' : name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
@@ -292,22 +293,15 @@ async function openRadarPerson(userId) {
     saveBtn.textContent = savedCheck ? t('ps_saved') + ' \u2713' : t('ps_save');
     saveBtn.dataset.saved = savedCheck ? '1' : '0';
     // Single reveal with FLIP height glide: lock current (skeleton) height,
-    // swap to content, measure real height, transition smoothly — so the panel
-    // never jumps regardless of whether content is taller or shorter than skeleton.
+    // Content is now fully populated in the hidden sheet. Slide it up in its
+    // correct final height — nothing resizes after it becomes visible, so no twitch.
     var _rpAv2 = document.getElementById('rp-avatar'); if (_rpAv2) _rpAv2.classList.remove('rp-skel-pulse');
     if (_rpSheet) {
-      var _h0 = _rpSheet.offsetHeight;
-      _rpSheet.style.height = _h0 + 'px';
-      _rpSheet.classList.add('rp-hswap');
-      _rpSheet.classList.remove('rp-loading');
-      requestAnimationFrame(function() {
-        var _h1 = _rpSheet.scrollHeight;
-        _rpSheet.style.height = _h1 + 'px';
-        setTimeout(function() { _rpSheet.style.height = ''; _rpSheet.classList.remove('rp-hswap'); }, 240);
-      });
+      requestAnimationFrame(function() { _rpSheet.classList.add('open'); });
     }
   } catch(e) {
-    var _rpSheetE = document.getElementById('radar-person-sheet'); if (_rpSheetE) _rpSheetE.classList.remove('rp-loading');
+    var _rpSheetE = document.getElementById('radar-person-sheet'); if (_rpSheetE) { _rpSheetE.classList.remove('open'); }
+    document.getElementById('radar-person-overlay').classList.remove('open');
     var _rpAvE = document.getElementById('rp-avatar'); if (_rpAvE) _rpAvE.classList.remove('rp-skel-pulse');
     logError("openRadarPerson", e); errorToast("load", e);
   }
