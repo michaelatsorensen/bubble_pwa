@@ -142,8 +142,34 @@ var rpCurrentUserId = null;
 async function openRadarPerson(userId) {
   rpCurrentUserId = userId;
   try {
-    var { data: p } = await sb.from('profiles').select('*').eq('id', userId).maybeSingle();
-    if (!p) return;
+    // INSTANT OPEN (pattern from openPerson): show sheet immediately with reset/skeleton
+    // state, fetch everything in parallel after. Previously three SEQUENTIAL awaits ran
+    // before the sheet opened -> visible tap delay, worst on conference WiFi.
+    var _rpReset = function() {
+      var ids = { 'rp-name': '', 'rp-sub': '' };
+      Object.keys(ids).forEach(function(k) { var el = document.getElementById(k); if (el) el.textContent = ids[k]; });
+      var av = document.getElementById('rp-avatar'); if (av) { av.innerHTML = ''; av.textContent = ''; av.classList.add('rp-skel-pulse'); }
+      ['rp-live-badge','rp-bio','rp-tags','rp-overlap','rp-shared-bubbles'].forEach(function(k) { var el = document.getElementById(k); if (el) el.style.display = 'none'; });
+      var m = document.getElementById('rp-match'); if (m) { m.textContent = ''; m.style.color = 'transparent'; m.style.background = 'transparent'; }
+      var li = document.getElementById('rp-linkedin-btn'); if (li) li.style.display = 'none';
+      var sv = document.getElementById('rp-save-btn'); if (sv) { sv.textContent = t('ps_save'); sv.dataset.saved = '0'; }
+    };
+    _rpReset();
+    document.getElementById('radar-person-overlay').classList.add('open');
+    setTimeout(function(){ document.getElementById('radar-person-sheet').classList.add('open'); }, 10);
+
+    // Fetch profile + saved-state in parallel (live check needs only userId too,
+    // but keeps its own conditional block below for clarity)
+    var _rpResults = await Promise.all([
+      sb.from('profiles').select('*').eq('id', userId).maybeSingle(),
+      sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle()
+    ]);
+    var p = _rpResults[0].data;
+    var savedCheck = _rpResults[1].data;
+    var _rpAv = document.getElementById('rp-avatar'); if (_rpAv) _rpAv.classList.remove('rp-skel-pulse');
+    // Stale guard: user tapped another person while this was loading
+    if (rpCurrentUserId !== userId) return;
+    if (!p) { closeRadarPerson(); return; }
     var isA = p.is_anon;
     var name = isA ? t('ps_anonymous') : (p.name || '?');
     var ini = isA ? '?' : name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
@@ -258,14 +284,10 @@ async function openRadarPerson(userId) {
     var liBtn = document.getElementById('rp-linkedin-btn');
     if (p.linkedin && !isA) { liBtn.style.display = 'inline-flex'; liBtn.href = p.linkedin.startsWith('http') ? p.linkedin : 'https://' + p.linkedin; }
     else { liBtn.style.display = 'none'; }
-    // Save state
+    // Save state (fetched in parallel above)
     var saveBtn = document.getElementById('rp-save-btn');
-    var { data: savedCheck } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
     saveBtn.textContent = savedCheck ? t('ps_saved') + ' \u2713' : t('ps_save');
     saveBtn.dataset.saved = savedCheck ? '1' : '0';
-    // Open sheet
-    document.getElementById('radar-person-overlay').classList.add('open');
-    setTimeout(function(){ document.getElementById('radar-person-sheet').classList.add('open'); }, 10);
   } catch(e) { logError("openRadarPerson", e); errorToast("load", e); }
 }
 
