@@ -593,4 +593,122 @@ Disse principper er **også** god hygiejne for nuværende kodebase. Vi taber int
 
 ---
 
+## 16. Brugerværdi, interaktionsdata & push-strategi
+
+*Besluttet i brugerværdi-dialog (3. juli 2026). Samler tænkning fra to samtaler.*
+*NB: §15 (drift-modenhed) mangler stadig at blive committet fra separat tråd.*
+
+### 16.1 Princip: data → mening, ikke rå tal
+
+Interaktionsdata bliver kun værdi når det besvarer et spørgsmål modtageren HAR.
+"47 visninger" er et tal; "din profil bliver set — folk er nysgerrige" er mening.
+Samme rådata betyder tre forskellige ting for de tre publikummer.
+
+### 16.2 Datagrundlag (verificeret — findes allerede)
+
+- `analytics`-tabel: 34+ event-typer logget (app_open, profile_viewed, live_checkin,
+  bubble_link_shared, bubble_joined, message_sent, event_qr_shown, m.fl.)
+- Tidsstemplede tabeller: profile_views, saved_contacts, bubble_members, bubble_messages,
+  messages (alle created_at) → periode-queries mulige
+- Konklusion: ikke et logging-problem, men et VISNINGS-problem. Data findes, vises ikke.
+
+### 16.3 Den menige bruger — "bliver jeg set, og virker det?"
+
+Behov: validering + fremdrift (netværk føles som at råbe i tomrum).
+- Profilvisninger → "folk lægger mærke til dig" (passiv bekræftelse, stærkest)
+- Gemt af → "nogen vil huske dig" (aktivt signal)
+- Nye forbindelser (uge/måned) → kerneværdien som ét personligt tal (mest motiverende)
+- Bobler/matches → kontekst, ikke drivkraft
+ADVARSEL: ikke granulær data om HVEM gjorde HVAD (preview vs fuld, hvor længe) —
+tipper fra validering til overvågning, gnaver tillid.
+
+### 16.4 Bobleejeren — "lever mit fællesskab, vokser det?"
+
+Behov: retfærdiggøre indsats, se om boblen er levende/døende.
+- Medlemsvækst over tid (bubble_members.created_at) → vigtigste sundhedstegn
+- Join-funnel (bubble_link_shared → bubble_joined) → handlingsanvisende: "dit link gav 12"
+- Aktivitet (beskeder/uge, aktive medlemmer) → liv vs spøgelsesboble
+- Nye medlemmer der matcher → værdiforslag
+ADVARSEL: altid AGGREGERET, aldrig individ-sporing. Stjerne-ratings holdes PRIVATE
+(designet som personlige noter i localStorage — aggregering ændrer social kontrakt).
+
+### 16.5 Event-ejeren — B2B-guldet, beregneligt i dag
+
+Behov: bevise ROI (de betaler — Event Bubbles-laget).
+- Check-in-kurve + fremmøde (live_checkin timestamps)
+- QR vist → check-in-rate (event_qr_shown findes)
+- No-show-rate (tilmeldte vs checkede ind)
+- **"Forbindelser skabt til dit event"** = salgsargumentet destilleret: saved_contacts +
+  beskeder mellem deltagere begge checket ind, i/efter event-vindue. "Dit event skabte 47
+  nye forbindelser og 23 opfølgende samtaler." Ingen konkurrent (Brella/deltagerlister)
+  kan give dette. Beregneligt af eksisterende data, ingen ny logging.
+
+### 16.6 Widget (Home) — besluttet design
+
+Kombi 1: kompakt række, pill-celler, semantiske farver på TALLENE (isblå/pink/teal/guld),
+neutrale piller. Tap → profil → udvidet dashboard. Placering: hs-slot under live-banner.
+Tilstands-skift: normal hjemme; når checket ind live → event-kontekst
+(Til stede · Nye kontakter · Visninger i dag · Beskeder).
+Åbne valg til v1: fire normal-tal (Visninger·Gemt af·Bobler·Matches ELLER swap Matches →
+Nye forbindelser/uge) + om live-tilstand bygges i v1 eller som næste iteration.
+
+### 16.7 Hverdagsværdi — uden for events (tomt-rum-problemet)
+
+Kalibrering: Bubble skal måske ikke være DAGLIG. Netværkspleje har UGENTLIG rytme;
+"ugentligt nyttig" er ærligere + matcher tillids-positionering. Jag ikke daglig
+engagement → ender i feed-mekanik der forråder produktet.
+
+Prioriteret:
+1. **Opfølgnings-motor** (DEN unikke — pkt hvis kun én): "Du mødte Lisa til HoS for 2 uger
+   siden, I har ikke skrevet endnu." Bygget på data ingen konkurrent har (hvem/hvor/hvornår
+   du mødte). Virker med LAV tæthed (kun egne kontakter). Forstærker kernen.
+2. Event-radar med socialt bevis: "2 events i dine netværk næste uge, Lisa deltager også"
+3. Ny-relevans: "3 nye medlemmer i [netværk] matcher din profil"
+4. (post-pilot) Geolokation-serendipitet — allerede i P2-backlog, privacy-tung, parkeret
+5. (parkeret) "åben for kaffe"-toggle, varme intros via fælles kontakter
+ALDRIG: indholds-feed. Konkurrerer med LinkedIn på deres bane, udvander privacy-position,
+drukner differentiator. Corporate-broadcast er den afgrænsede indholds-version (B2B-kanal).
+
+### 16.8 Push-trappe — de tre foreslåede triggers
+
+Skelnen: eksisterende triggers (new_message, invitation, saved_contact) er PERSONLIGT
+rettede. De tre nye er BROADCAST/interesse-baserede — anden kategori, andet støjbudget.
+
+- **Nyt event i netværk du er medlem af** → STÆRK, byg. Ægte opt-in (du meldte dig ind),
+  lav frekvens, handlebar, driver event-deltagelse. Kanonisk trigger #4 (DB-trigger,
+  backend-ejet, logget i push_events).
+- **Netværks-opdatering** → JA men kun scopet til ADMIN-OPSLAG (aldrig chat = støjkatastrofe).
+  Dobbelt mening: er leveringen af det Corporate Bubbles-kunder betaler for. Højere frekvens
+  → må ikke skibes før mute-kontrol findes.
+- **Nyt relevant netværk** → FRARÅDES som push (algoritmisk gæt = marketing-territorium,
+  ét fejlgæt koster tillid). Hører i ugentlig digest eller in-app.
+
+Princip: instant push = personligt+handlebart · boble-broadcast = kræver per-boble-mute ·
+opdagelse = digest/in-app, aldrig instant.
+
+FORUDSÆTNING (blocker for alle tre): **per-boble notifikations-toggle skal bygges først** —
+uden mute er brugerens eneste værn at slukke ALT, hvilket dræber de gode personlige triggers.
+
+### 16.9 Ny logging der reelt kræves (kun to)
+
+1. `profile_views.source`-kolonne — data er i analytics-JSON, men kolonne gør den queryable.
+   Giver funnel: radar-tap → sheet → besked. LOG NU, VIS IKKE (dybde-granularitet hører i
+   betalt Profile Views-lag; gratis = antal, betalt = navne+kontekst).
+2. Match-impressions — hvem blev VIST på radar (ikke kun tappet). Sidste funnel-hul
+   (vist → tappet → gemt → besked). Volumen-forsigtig: log øverste håndfuld/load, ikke alle 25.
+
+### 16.10 Prioriteret rækkefølge
+
+1. Widget (Kombi 1) + udvidet dashboard oven på eksisterende data (~90% dækket)
+2. "Forbindelser skabt"-metrik til event-ejere (ren beregning, stærkeste B2B-kort)
+3. source-kolonne + match-impressions (eneste nye logning før HoS)
+4. (post-HoS) Opfølgnings-motor + event-radar med socialt bevis
+5. (post-HoS) Per-boble mute → så push-trigger #1 (nyt event) → #2 (broadcast)
+6. (parkeret) Stjerne-aggregering, opslags-reach, geolokation, kaffe-toggle — dilemmaer noteret
+
+PRIVATLIVSLINJE (fast hele vejen): ejer-data altid aggregeret, aldrig "Michael kiggede på
+Lisa". Ikke kun etik — positionering mod amerikanske alternativer.
+
+---
+
 *Dokument vedligeholdt som levende reference. Opdateres når strategiske beslutninger ændres.*
