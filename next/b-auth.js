@@ -139,6 +139,10 @@ async function resolvePostAuthDestination() {
 // Full orchestrator: single entry point after any successful auth
 // Steps 1-2 handled here, steps 3-6 delegated to resolvePostAuthDestination
 async function resolvePostAuth() {
+  // Password recovery in progress: the user MUST set a new password before any
+  // routing into the app. This guard closes ALL call paths (four callers), making
+  // the recovery flow race-independent of Supabase's auto code-exchange timing.
+  if (typeof _inPasswordRecovery !== 'undefined' && _inPasswordRecovery) return;
   // Ensure profile exists (covers guest flows where checkAuth was skipped)
   var { data: { session: _epSession } } = await sb.auth.getSession();
   if (_epSession) {
@@ -184,10 +188,15 @@ async function checkAuth() {
     // the reset email's redirect with ?_recovery=1 and detect it here, BEFORE the
     // PKCE exchange, so recovery links always land on the set-password screen.
     var _recParams = new URLSearchParams(window.location.search);
-    if (_recParams.has('_recovery') && _recParams.has('code')) {
+    if (_recParams.has('_recovery')) {
       _inPasswordRecovery = true;
       showPasswordRecoveryScreen();
-      try { await sb.auth.exchangeCodeForSession(window.location.href); } catch(e) { logError('recovery_pkce', e); }
+      // supabase-js v2 has detectSessionInUrl:true by default, so the client may
+      // already have auto-exchanged ?code= at init (and stripped it). Only exchange
+      // ourselves if the code is still present; otherwise the session already exists.
+      if (_recParams.has('code')) {
+        try { await sb.auth.exchangeCodeForSession(window.location.href); } catch(e) { logError('recovery_pkce', e); }
+      }
       try { window.history.replaceState({}, document.title, window.location.pathname); } catch(e) {}
       return;
     }
@@ -260,6 +269,11 @@ function setupAuthListener() {
     if (event === 'PASSWORD_RECOVERY') {
       currentUser = session ? session.user : currentUser;
       _inPasswordRecovery = true;
+      // If boot navigation already won the race and routed into the app,
+      // reclaim the screen -- the user must set a new password first.
+      if (typeof navState !== 'undefined' && navState.screen && navState.screen !== 'screen-auth') {
+        goTo('screen-auth');
+      }
       showPasswordRecoveryScreen();
       return;
     }
