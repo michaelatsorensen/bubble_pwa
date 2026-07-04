@@ -295,10 +295,10 @@ function removeSavedContact(savedId, btn) {
   confirm.className = 'remove-confirm';
   confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:10px;gap:0.5rem';
   confirm.onclick = function(e) { e.stopPropagation(); };
-  confirm.innerHTML = `<span style="font-size:0.72rem;color:rgba(255,255,255,0.4)">Fjern kontakt?</span>
+  confirm.innerHTML = `<span style="font-size:0.72rem;color:rgba(255,255,255,0.4)">${t('sc_remove_confirm')}</span>
     <div style="display:flex;gap:0.3rem">
-      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="event.stopPropagation();confirmRemoveSaved()">Fjern</button>
-      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelRemoveSaved(this)">Annuller</button>
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="event.stopPropagation();confirmRemoveSaved()">${t('misc_remove')}</button>
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelRemoveSaved(this)">${t('misc_cancel')}</button>
     </div>`;
   card.appendChild(confirm);
 }
@@ -1221,8 +1221,8 @@ async function loadProfileInvitations() {
           </div>
         </div>
         <div style="display:flex;gap:0.4rem;margin-top:0.5rem">
-          <button class="btn-sm" style="flex:1;padding:0.4rem;font-size:0.72rem;font-weight:600;background:var(--cta-bg);border:1px solid var(--cta-border);color:var(--cta-text);border-radius:var(--radius-xs);cursor:pointer;font-family:inherit" onclick="profAcceptInvite('${inv.id}','${inv.from_user_id}')">Accepter</button>
-          <button class="btn-sm btn-ghost" style="flex:1;padding:0.4rem;font-size:0.72rem" onclick="profDeclineInvite('${inv.id}',this)">Afvis</button>
+          <button class="btn-sm" style="flex:1;padding:0.4rem;font-size:0.72rem;font-weight:600;background:var(--cta-bg);border:1px solid var(--cta-border);color:var(--cta-text);border-radius:var(--radius-xs);cursor:pointer;font-family:inherit" onclick="profAcceptInvite('${inv.id}','${inv.from_user_id}')">${t('inv_accept')}</button>
+          <button class="btn-sm btn-ghost" style="flex:1;padding:0.4rem;font-size:0.72rem" onclick="profDeclineInvite('${inv.id}',this)">${t('inv_decline')}</button>
         </div>
       </div>`;
     }).join('');
@@ -1257,10 +1257,10 @@ function profDeclineInvite(inviteId, btn) {
   const confirm = document.createElement('div');
   confirm.className = 'remove-confirm';
   confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:10px;gap:0.5rem';
-  confirm.innerHTML = `<span style="font-size:0.72rem;color:rgba(255,255,255,0.4)">Afvis invitation?</span>
+  confirm.innerHTML = `<span style="font-size:0.72rem;color:rgba(255,255,255,0.4)">${t('inv_decline_confirm')}</span>
     <div style="display:flex;gap:0.3rem">
-      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="profConfirmDeclineInvite()">Afvis</button>
-      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelDeclineInvite(this)">Annuller</button>
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="profConfirmDeclineInvite()">${t('inv_decline')}</button>
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelDeclineInvite(this)">${t('misc_cancel')}</button>
     </div>`;
   card.appendChild(confirm);
 }
