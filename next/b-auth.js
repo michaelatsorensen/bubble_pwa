@@ -178,6 +178,20 @@ async function checkAuth() {
       return;
     }
 
+    // Newer Supabase recovery links use PKCE (?code=) with NO type=recovery in the
+    // hash, so the hash check above misses them -- the ?code= would then be exchanged
+    // as a normal login and route into the app, flashing the recovery modal. We tag
+    // the reset email's redirect with ?_recovery=1 and detect it here, BEFORE the
+    // PKCE exchange, so recovery links always land on the set-password screen.
+    var _recParams = new URLSearchParams(window.location.search);
+    if (_recParams.has('_recovery') && _recParams.has('code')) {
+      _inPasswordRecovery = true;
+      showPasswordRecoveryScreen();
+      try { await sb.auth.exchangeCodeForSession(window.location.href); } catch(e) { logError('recovery_pkce', e); }
+      try { window.history.replaceState({}, document.title, window.location.pathname); } catch(e) {}
+      return;
+    }
+
     // Handle implicit flow (Google) — access_token in hash
     if (window.location.hash && window.location.hash.includes('access_token')) {
       document.getElementById('loading-msg').textContent = 'Login...';
@@ -666,7 +680,7 @@ async function submitForgotPassword() {
   var btn = document.getElementById('forgot-send-btn');
   if (btn) btn.disabled = true;
   try {
-    var { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: getOAuthRedirectTo() });
+    var { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: getOAuthRedirectTo() + (getOAuthRedirectTo().indexOf('?') !== -1 ? '&' : '?') + '_recovery=1' });
     if (error) { if (btn) btn.disabled = false; return errorToast('login', error); }
     // Switch to the sent-confirmation state
     var se = document.getElementById('fp-sent-email'); if (se) se.textContent = email;
