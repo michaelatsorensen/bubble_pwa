@@ -895,6 +895,13 @@ var dbActions = {
       });
       if (error) { errorToast('save', error); return { ok: false, error: error }; }
       trackEvent('contact_saved', { contact_id: contactId });
+      // Refresh the Home saved-count widget live if the user is on Home — every
+      // save path (QR scan, connect-scanner, deeplink, radar sheet) routes through
+      // here, so centralizing the refresh avoids a stale count after any of them.
+      try {
+        clearSavedContactIdsCache();
+        if (_activeScreen === 'screen-home' && typeof loadHome === 'function') loadHome();
+      } catch(e) {}
       var senderName = currentProfile?.name || 'Nogen';
       // Push disabled for free tier — reactivate for Profile Views premium
       // sendPush(contactId, 'Ny kontakt', senderName + ' har gemt din profil', { type: 'saved_contact', sender_id: currentUser.id });
