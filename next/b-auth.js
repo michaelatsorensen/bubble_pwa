@@ -694,7 +694,11 @@ async function submitForgotPassword() {
   var btn = document.getElementById('forgot-send-btn');
   if (btn) btn.disabled = true;
   try {
-    var { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: getOAuthRedirectTo() + (getOAuthRedirectTo().indexOf('?') !== -1 ? '&' : '?') + '_recovery=1' });
+    // NB: redirectTo must match Supabase's redirect allowlist — the ?_recovery=1
+    // marker (v10.12) broke sending because the modified URL was rejected. The
+    // race-independent recovery fix (resolvePostAuth guard + PASSWORD_RECOVERY
+    // screen reclaim) does not need a marker, so plain redirect is correct.
+    var { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: getOAuthRedirectTo() });
     if (error) { if (btn) btn.disabled = false; return errorToast('login', error); }
     // Switch to the sent-confirmation state
     var se = document.getElementById('fp-sent-email'); if (se) se.textContent = email;
