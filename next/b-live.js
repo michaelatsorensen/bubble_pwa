@@ -820,6 +820,10 @@ function openConnectScanner() {
     document.body.appendChild(ov);
   }
   ov.style.display = 'flex';
+  // Clear any leftover result modal (e.g. a previous "contact saved" card) so it
+  // does not persist at the bottom when the scanner is reopened.
+  var _resultEl = document.getElementById('connect-scan-result');
+  if (_resultEl) { _resultEl.innerHTML = ''; _resultEl.style.display = 'none'; }
   _connectPending = false;
   _connectNativeAttempts = 0;
   _connectLastUrl = '';
@@ -837,6 +841,8 @@ function closeConnectScanner() {
   if (ov) ov.style.display = 'none';
   var video = document.getElementById('connect-qr-video');
   if (video) video.srcObject = null;
+  var _resEl = document.getElementById('connect-scan-result');
+  if (_resEl) { _resEl.innerHTML = ''; _resEl.style.display = 'none'; }
   _connectPending = false;
 }
 
