@@ -711,6 +711,12 @@ async function submitForgotPassword() {
 // ── Password recovery (efter reset-link i mail) ──
 var _inPasswordRecovery = false;
 
+function _recoveryContinue() {
+  _inPasswordRecovery = false;
+  if (typeof resolvePostAuth === 'function') { resolvePostAuth(); }
+  else if (typeof checkAuth === 'function') { checkAuth(); }
+}
+
 function showPasswordRecoveryScreen() {
   try {
     goTo('screen-auth');
@@ -759,13 +765,20 @@ async function handleSetNewPassword() {
       logError('handleSetNewPassword', error);
       return;
     }
-    // Success: password ændret. Ryd recovery-tilstand og fortsæt ind i appen.
-    _inPasswordRecovery = false;
-    var recovery = document.getElementById('auth-recovery'); if (recovery) recovery.style.display = 'none';
-    var login = document.getElementById('auth-login'); if (login) login.style.display = 'block';
-    showSuccessToast(t('recovery_done') || 'Adgangskode opdateret');
-    if (typeof resolvePostAuth === 'function') { resolvePostAuth(); }
-    else if (typeof checkAuth === 'function') { checkAuth(); }
+    // Success: show a closing confirmation with an explicit continue button instead
+    // of toast+auto-continue -- a password reset is a stress moment and deserves a
+    // moment of closure. The recovery flag stays ACTIVE until the user presses
+    // continue, so nothing can race into the app (leverages the resolvePostAuth guard).
+    var recovery = document.getElementById('auth-recovery');
+    if (recovery) {
+      recovery.innerHTML =
+        '<div style="text-align:center;padding:1.2rem 0.5rem">' +
+          '<div style="width:52px;height:52px;border-radius:50%;background:rgba(26,158,142,0.18);display:flex;align-items:center;justify-content:center;margin:0 auto 0.9rem"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>' +
+          '<div style="font-size:1.05rem;font-weight:800;color:rgba(255,255,255,0.95);margin-bottom:0.4rem">' + t('recovery_done') + '</div>' +
+          '<div style="font-size:0.82rem;color:rgba(255,255,255,0.65);line-height:1.55;margin-bottom:1.3rem">' + t('recovery_done_body') + '</div>' +
+          '<button class="btn-primary" onclick="_recoveryContinue()" style="width:100%">' + t('recovery_continue') + '</button>' +
+        '</div>';
+    }
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = t('recovery_save') || 'Gem ny adgangskode'; }
     logError('handleSetNewPassword', e); errorToast('save', e);
