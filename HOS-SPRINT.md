@@ -123,4 +123,71 @@ Data-oprydning (fra eksternt review):
 3. "Forbindelser skabt"-metrik (event-ejer B2B) — ren beregning
 4. STRATEGI 15 (drift-modenhed) — tekst mangler fra anden traad
 
+---
+
+## 7. EKSTERNT REVIEW #2 — verifikation (3. juli 2026)
+
+Review rejste 3 store hypoteser om tilbagevendende-bruger-flows. Alle verificeret mod kode
+(ikke antaget). Resultat:
+
+- **URL-inkonsistens ?event= vs ?join=**: DELVIST reel. To former findes, MEN begge
+  brancher paa b.type (ikke parameter) i baade intern scanner (b-live:1030) og boot
+  (b-boot:508 "not by delivery method"). Ikke troværdighedstruende bug. -> beslutning nedenfor.
+- **Reverse QR ufaerdig for eksisterende brugere (P0)**: AFKRAEFTET. checkPendingJoin
+  (b-bubbles:1401ff) haandterer eksplicit Mode B: joiner, behandler joined_now OG
+  already_member som succes, holder event_flow -> showEventReadyQR. Kommentar siger ordret
+  "join + show ready QR". Reviewet fejllaeste flow-flag-delegeringen.
+- **DM-delete falsk succes (P0)**: REEL — RETTET v10.09. Begge delete-stier ignorerede
+  Supabase { error } og opdaterede UI uanset (samme klasse som F6/F10/QR-token). dmDeleteMsg
+  + convConfirmDelete tjekker nu error foer DOM-aendring; hel-samtale kraever BEGGE retninger ok.
+
+Laering: statiske reviews af flow-flag-arkitektur giver plausible HYPOTESER, ikke fund —
+1 af 3 P0'er var reel, 1 delvist, 1 forkert. Verificér foer fix. (Reviewet roste ogsaa
+typing-indikator som styrke — den findes IKKE i koden; reviewet over- og undervurderer.)
+
+## 8. URL-FORM BESLUTNING (3. juli 2026)
+
+To former lever: `?join=<uuid>` (QR-modal + primaer boot-haandtering, 36 forekomster) og
+`?event=<uuid>` (delt link shareBubbleLink, 5 forekomster). BEGGE virker, begge sender UUID.
+
+- **Besluttet: behold begge som de er. INGEN konsolidering nu.** "Gaa med hvad der virker" —
+  roer ikke fungerende kode uden reel grund. Laengde er ligegyldig (links deles digitalt/QR,
+  ingen taster UUID manuelt).
+- join_code-kolonnen (korte koder) findes i DB men SAETTES ALDRIG af kode — inaktiv feature
+  (som guest check-in). Derfor INGEN kollisionsrisiko trods `.limit(1).maybeSingle()`-resolve.
+- HVIS korte koder nogensinde bygges: skal vaere AUTO-genereret + UNIQUE constraint, ALDRIG
+  fri navngivning (ellers kollisioner: to "havnefest"-bobler -> forkert match via limit(1)).
+
+## 9. HOS PRE-FLIGHT — P0/P1/P2 (struktur fra eksternt review)
+
+### P0 — manuelle test-gates, SKAL vaere groenne (verificerbare tilstande)
+- [ ] Gyldig QR scanner korrekt
+- [ ] Udloebet QR afvises korrekt
+- [ ] profile= kan IKKE checke ind
+- [ ] qrt= kan checke ind
+- [ ] Reverse QR viser ready-QR for eksisterende bruger
+- [ ] Reverse QR virker for ny bruger efter onboarding
+- [ ] DM-delete sletter IKKE visuelt hvis DB afviser (throttle netvaerk for at teste)
+- [ ] Slettet DM bliver IKKE genskabt ved reload
+- [ ] Hidden bubble kan IKKE aabnes af uvedkommende
+- [ ] Inviteret bruger KAN aabne hidden bubble
+
+### P1 — bør testes/fixes foer HoS
+- [ ] DM-delete regression: enkeltbesked + hel samtale, normal + daarlig forbindelse + reload
+- [ ] QR-state machine matrix: samme event via delt link / intern scanner / QR-modal ×
+      logged-in / logged-out / allerede medlem / ikke-medlem
+- [ ] Kurateret testdata: ingen asdf/test-bobler, 1 HoS-boble, 1 feedback-boble, friske
+      posts, realistiske profiler
+- [ ] Device-test: iPhone + Android + desktop
+
+### P2 — accepteret til HoS, staar i backlog
+- Konsolidér ?event=/?join= (besluttet: ikke noedvendigt, se 8)
+- Chat/DM pagination (DM >100, BC >50)
+- Typing-indikator findes IKKE — maa ikke loves
+- Public file URLs for DM/chatfiler -> private bucket + signed URLs
+- select('*') teknisk gaeld
+- CSP/inline handlers
+- Search i DM/bobler
+- Tilbagevendende-bruger shortcuts: seneste boble/event/kontakter
+
 *Vedligeholdt som sprint-reference frem mod HoS. Opdateres naar punkter lukkes.*
