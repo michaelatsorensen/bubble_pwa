@@ -459,6 +459,7 @@ async function handleLogin() {
   _authLockSet();
   try {
     const email = document.getElementById('login-email').value.trim();
+    _authLastEmail = email; // preserve across a possible login-failed restore
     const pass = document.getElementById('login-password').value;
     if (!email || !pass) { _authLockClear(); return showWarningToast(t('auth_fill_email_pw')); }
     showToast(t('misc_loading'));
@@ -752,11 +753,20 @@ function switchToLogin() {
 // #auth-forms innerHTML. Their "back" buttons called goTo('screen-auth') which no-ops
 // (user is already on screen-auth) -> dead end. Save the pristine form once, restore on back.
 var _authFormsPristine = null;
+var _authLastEmail = null;
 function restoreAuthForms() {
   var formArea = document.getElementById('auth-forms');
   if (formArea && _authFormsPristine !== null) {
     formArea.innerHTML = _authFormsPristine;
     if (typeof translateStaticUI === 'function') { try { translateStaticUI(); } catch(e) {} }
+    // Restore the email they already typed — the password was wrong, not the email,
+    // so re-typing it is needless friction. Focus password for immediate retry.
+    if (_authLastEmail) {
+      var emEl = document.getElementById('login-email');
+      if (emEl) emEl.value = _authLastEmail;
+      var pwEl = document.getElementById('login-password');
+      if (pwEl) { try { pwEl.focus(); } catch(e) {} }
+    }
     // Login form buttons use inline onclick (handleLogin etc.) so they survive the
     // innerHTML restore automatically — no re-wiring needed.
   }
