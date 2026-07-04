@@ -4,6 +4,13 @@ Formaal: Onboarding/indgang er poleret intensivt. Dette dokument daekker DEN AND
 den erfarne, tilbagevendende brugers kerneloop — som afgoer om HoS-deltagere stadig er der
 ugen efter. Alt herunder er VERIFICERET I KODEN (fil:linje), ikke antaget.
 
+**STATUS (3. juli 2026):** Bubble er teknisk klar til kontrolleret HoS-pilot paa kode-/RLS-
+niveau. Der er ikke kendte kode-blockers tilbage PAA STATISK REVIEW-/VERIFIKATIONSNIVEAU.
+Endeligt go afhaenger af device-test af QR, reverse QR og DM-delete regression — kode kan
+vaere logisk rigtig men stadig foele forkert paa en telefon (toast, reload, scanner-genstart,
+tilbage-navigation, PWA-state). Pilotkandidat-build: **v10.09** (frys medmindre device-test
+finder noget reelt).
+
 ---
 
 ## 1. Den tilbagevendende brugers kerneloop (kortet)
@@ -147,16 +154,22 @@ typing-indikator som styrke — den findes IKKE i koden; reviewet over- og under
 
 ## 8. URL-FORM BESLUTNING (3. juli 2026)
 
-To former lever: `?join=<uuid>` (QR-modal + primaer boot-haandtering, 36 forekomster) og
-`?event=<uuid>` (delt link shareBubbleLink, 5 forekomster). BEGGE virker, begge sender UUID.
+Bubble understoetter p.t. BEGGE `?join=<bubbleId>` (QR-modal + primaer boot-haandtering, 36
+forekomster) og `?event=<bubbleId>` (delt link shareBubbleLink, 5 forekomster). Begge former
+anvender i praksis UUID'er og routes videre efter BOBLETYPEN, ikke efter parameter-navnet.
 
-- **Besluttet: behold begge som de er. INGEN konsolidering nu.** "Gaa med hvad der virker" —
-  roer ikke fungerende kode uden reel grund. Laengde er ligegyldig (links deles digitalt/QR,
-  ingen taster UUID manuelt).
+- **Besluttet: bevidst accepteret parallelitet. Konsolideres IKKE foer HoS.** Fungerende link-/
+  QR-flow prioriteres over kosmetisk URL-oprydning — at rydde op nu kan introducere regression
+  i et flow der virker. Laengde er ligegyldig (links deles digitalt/QR, ingen taster UUID).
+- **REGEL: Der maa IKKE tilfoejes en tredje URL-form foer de eksisterende to er konsolideret.**
+  De to nuvaerende former er ikke farlige — men parallelitet BLIVER farlig naar en tredje
+  variant kommer til. En tredje form uden forudgaaende konsolidering er forbudt.
 - join_code-kolonnen (korte koder) findes i DB men SAETTES ALDRIG af kode — inaktiv feature
   (som guest check-in). Derfor INGEN kollisionsrisiko trods `.limit(1).maybeSingle()`-resolve.
-- HVIS korte koder nogensinde bygges: skal vaere AUTO-genereret + UNIQUE constraint, ALDRIG
-  fri navngivning (ellers kollisioner: to "havnefest"-bobler -> forkert match via limit(1)).
+- **Fremtidig designregel** (hvis korte koder nogensinde bygges): skal vaere AUTO-genererede,
+  unikke og databasebeskyttede med UNIQUE constraint. ALDRIG frit valgte navne som "havnefest"
+  (kollisionsrisiko: to "havnefest"-bobler -> forkert match). Resolver maa IKKE bruge limit(1)
+  som kollisionshaandtering — databasen skal garantere unikhed.
 
 ## 9. HOS PRE-FLIGHT — P0/P1/P2 (struktur fra eksternt review)
 
@@ -178,7 +191,10 @@ To former lever: `?join=<uuid>` (QR-modal + primaer boot-haandtering, 36 forekom
       logged-in / logged-out / allerede medlem / ikke-medlem
 - [ ] Kurateret testdata: ingen asdf/test-bobler, 1 HoS-boble, 1 feedback-boble, friske
       posts, realistiske profiler
-- [ ] Device-test: iPhone + Android + desktop
+- [ ] Device-test: iPhone Safari/PWA + Android Chrome/PWA + desktop Chrome (QR, reverse QR,
+      link join, DM-delete, reload)
+- [ ] Pilot-script: skriv PRAECIS hvad testerne skal goere de foerste 10 min (ellers tester
+      de tilfaeldigt og de rigtige flows bliver ikke ramt)
 
 ### P2 — accepteret til HoS, staar i backlog
 - Konsolidér ?event=/?join= (besluttet: ikke noedvendigt, se 8)
