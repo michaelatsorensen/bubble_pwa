@@ -1168,8 +1168,11 @@ async function _connectShowProfileSheet(p, profileId) {
       tagsHtml +
       // Actions — already-saved shows view/message; new contact shows save/cancel
       (_alreadySaved
-        ? '<div style="font-size:0.7rem;color:rgba(46,207,207,0.9);font-weight:600;text-align:center;margin-top:14px">\u2713 ' + t('sc_already_saved') + '</div>' +
-          '<div style="display:flex;gap:8px;margin-top:10px">' +
+        ? '<div style="text-align:center;margin-top:8px;margin-bottom:2px">' +
+            '<div style="width:44px;height:44px;border-radius:50%;background:rgba(46,207,207,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:20px;color:#2ECFCF">\u2713</div>' +
+            '<div style="font-size:0.92rem;font-weight:700;color:white;line-height:1.4;padding:0 8px">' + t('sc_already_saved') + '</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:8px;margin-top:16px">' +
             '<button onclick="closeConnectScanner();setTimeout(function(){openPerson(\'' + profileId + '\',\'screen-home\')},300)" style="flex:1;padding:12px;border-radius:14px;border:0.5px solid rgba(100,180,230,0.3);background:rgba(100,180,230,0.22);color:rgba(255,255,255,0.95);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">' + t('ps_view_profile') + '</button>' +
             '<button onclick="closeConnectScanner();setTimeout(function(){openChat(\'' + profileId + '\',\'screen-home\')},300)" style="flex:1;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.15);background:none;color:rgba(255,255,255,0.7);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">' + t('pf_send_message') + '</button>' +
           '</div>'
