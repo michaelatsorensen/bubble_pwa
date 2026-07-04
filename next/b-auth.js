@@ -469,6 +469,7 @@ async function handleLogin() {
       var errMsg = error.message || '';
       if (errMsg.includes('Invalid login') || errMsg.includes('invalid_credentials')) {
         var formArea = document.getElementById('auth-forms');
+        _snapshotAuthForms();
         if (formArea) {
           formArea.innerHTML =
             '<div style="text-align:center;padding:2rem 1rem">' +
@@ -483,7 +484,7 @@ async function handleLogin() {
                 '<svg style="width:1rem;height:1rem;vertical-align:middle;margin-right:0.4rem" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>' +
                 t('auth_continue_google') +
               '</button>' +
-              '<button class="btn-secondary" onclick="goTo(\'screen-auth\')" style="width:100%">' + t('misc_back') + '</button>' +
+              '<button class="btn-secondary" onclick="restoreAuthForms()" style="width:100%">' + t('misc_back') + '</button>' +
             '</div>';
           document.getElementById('login-linkedin-btn').onclick = function() { handleLinkedInLogin(); };
           document.getElementById('login-google-btn').onclick = function() { handleGoogleLogin(); };
@@ -527,6 +528,7 @@ async function handleSignup() {
       // Email already exists — likely registered via OAuth (LinkedIn/Google/Apple).
       // Vis vejledende besked i stedet for generisk toast.
       var formArea = document.getElementById('auth-forms');
+      _snapshotAuthForms();
       if (formArea) {
         formArea.innerHTML =
           '<div style="text-align:center;padding:2rem 1rem">' +
@@ -535,7 +537,7 @@ async function handleSignup() {
             '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem">' +
               t('auth_email_exists_body', { email: escHtml(email) }) +
             '</div>' +
-            '<button class="btn-primary" onclick="goTo(\'screen-auth\')" style="width:100%;margin-bottom:0.6rem">' + t('auth_go_to_login') + '</button>' +
+            '<button class="btn-primary" onclick="restoreAuthForms()" style="width:100%;margin-bottom:0.6rem">' + t('auth_go_to_login') + '</button>' +
             '<button class="btn-secondary" id="existing-linkedin-btn" style="width:100%;margin-bottom:0.6rem">' +
               '<svg style="width:1rem;height:1rem;vertical-align:middle;margin-right:0.4rem" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14m-.5 15.5v-5.3a3.26 3.26 0 00-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 011.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 001.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 00-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>' +
               t('auth_continue_linkedin') +
@@ -556,13 +558,14 @@ async function handleSignup() {
     if (data.user && !data.session) {
       // Email confirmation required — show friendly message
       var formArea = document.getElementById('auth-forms');
+      _snapshotAuthForms();
       if (formArea) {
         formArea.innerHTML = '<div style="text-align:center;padding:2rem 1rem">' +
           '<div style="font-size:2rem;margin-bottom:0.8rem">📧</div>' +
           '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">' + t('auth_check_email_title') + '</div>' +
           '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem">' + t('auth_check_email_body', { email: escHtml(email) }) + '</div>' +
           '<button class="btn-primary" id="confirm-retry-btn" style="width:100%;margin-bottom:0.5rem">' + t('auth_confirmed_login') + '</button>' +
-          '<button class="btn-secondary" onclick="goTo(\'screen-auth\')" style="width:100%">' + t('auth_back_to_login') + '</button>' +
+          '<button class="btn-secondary" onclick="restoreAuthForms()" style="width:100%">' + t('auth_back_to_login') + '</button>' +
           '</div>';
         document.getElementById('confirm-retry-btn').onclick = async function() {
           this.textContent = t('auth_logging_in');
@@ -743,6 +746,24 @@ function switchToSignup() {
 function switchToLogin() {
   document.getElementById('auth-signup').style.display = 'none';
   document.getElementById('auth-login').style.display = 'block';
+}
+
+// Auth-forms restore: the login-failed / email-exists / confirm-email views overwrite
+// #auth-forms innerHTML. Their "back" buttons called goTo('screen-auth') which no-ops
+// (user is already on screen-auth) -> dead end. Save the pristine form once, restore on back.
+var _authFormsPristine = null;
+function restoreAuthForms() {
+  var formArea = document.getElementById('auth-forms');
+  if (formArea && _authFormsPristine !== null) {
+    formArea.innerHTML = _authFormsPristine;
+    if (typeof translateStaticUI === 'function') { try { translateStaticUI(); } catch(e) {} }
+    // Login form buttons use inline onclick (handleLogin etc.) so they survive the
+    // innerHTML restore automatically — no re-wiring needed.
+  }
+}
+function _snapshotAuthForms() {
+  var formArea = document.getElementById('auth-forms');
+  if (formArea && _authFormsPristine === null) _authFormsPristine = formArea.innerHTML;
 }
 
 function showAuthForms(qrContext) {
