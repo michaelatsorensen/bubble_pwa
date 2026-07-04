@@ -1113,8 +1113,15 @@ async function _connectBubbleConfirm() {
 // ── Profile sheet inside scanner overlay ──
 var _connectProfileId = null;
 
-function _connectShowProfileSheet(p, profileId) {
+async function _connectShowProfileSheet(p, profileId) {
   _connectProfileId = profileId;
+  // Detect whether this contact is already saved so we show the right actions
+  // instead of offering "save" on someone already in the user's contacts.
+  var _alreadySaved = false;
+  try {
+    var _savedIds = await getSavedContactIds();
+    _alreadySaved = (_savedIds || []).indexOf(profileId) >= 0;
+  } catch(e) {}
   var isAnon = p.is_anon;
   var name = isAnon ? t('ps_anonymous') : (p.name || t('misc_unknown'));
   var initials = isAnon ? '?' : name.split(' ').map(function(w){return w[0]}).join('').slice(0,2).toUpperCase();
@@ -1159,11 +1166,17 @@ function _connectShowProfileSheet(p, profileId) {
       (bio ? '<div style="font-size:0.75rem;color:rgba(255,255,255,0.7);line-height:1.45;margin-bottom:10px">' + escHtml(bio.length > 120 ? bio.slice(0,120) + '...' : bio) + '</div>' : '') +
       // Shared tags
       tagsHtml +
-      // Actions
-      '<div style="display:flex;gap:8px;margin-top:16px">' +
-        '<button onclick="_connectSaveContact()" style="flex:2;padding:12px;border-radius:14px;border:0.5px solid rgba(100,180,230,0.3);background:rgba(100,180,230,0.22);color:rgba(255,255,255,0.95);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">' + t('live_save_contact') + '</button>' +
-        '<button onclick="_connectDismissSheet()" style="flex:1;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.15);background:none;color:rgba(255,255,255,0.7);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">Annuller</button>' +
-      '</div>' +
+      // Actions — already-saved shows view/message; new contact shows save/cancel
+      (_alreadySaved
+        ? '<div style="font-size:0.7rem;color:rgba(46,207,207,0.9);font-weight:600;text-align:center;margin-top:14px">\\u2713 ' + t('sc_already_saved') + '</div>' +
+          '<div style="display:flex;gap:8px;margin-top:10px">' +
+            '<button onclick="closeConnectScanner();setTimeout(function(){openPerson(\\'' + profileId + '\\',\\'screen-home\\')},300)" style="flex:1;padding:12px;border-radius:14px;border:0.5px solid rgba(100,180,230,0.3);background:rgba(100,180,230,0.22);color:rgba(255,255,255,0.95);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">' + t('ps_view_profile') + '</button>' +
+            '<button onclick="closeConnectScanner();setTimeout(function(){openChat(\\'' + profileId + '\\',\\'screen-home\\')},300)" style="flex:1;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.15);background:none;color:rgba(255,255,255,0.7);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">' + t('pf_send_message') + '</button>' +
+          '</div>'
+        : '<div style="display:flex;gap:8px;margin-top:16px">' +
+            '<button onclick="_connectSaveContact()" style="flex:2;padding:12px;border-radius:14px;border:0.5px solid rgba(100,180,230,0.3);background:rgba(100,180,230,0.22);color:rgba(255,255,255,0.95);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">' + t('live_save_contact') + '</button>' +
+            '<button onclick="_connectDismissSheet()" style="flex:1;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.15);background:none;color:rgba(255,255,255,0.7);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">' + t('misc_cancel') + '</button>' +
+          '</div>') +
     '</div>';
   resultEl.style.display = 'block';
 
@@ -1175,7 +1188,7 @@ function _connectShowProfileSheet(p, profileId) {
 async function _connectSaveContact() {
   if (!_connectProfileId || !currentUser) return;
   var btn = document.querySelector('#connect-scan-result button');
-  if (btn) { btn.textContent = 'Gemmer...'; btn.disabled = true; }
+  if (btn) { btn.textContent = t('ui_saving'); btn.disabled = true; }
   try {
     await dbActions.saveContact(_connectProfileId);
     clearSavedContactIdsCache();
