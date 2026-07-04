@@ -1177,7 +1177,11 @@ function dmStartEdit(msgId) {
 
 async function dmDeleteMsg(msgId) {
   try {
-    await sb.from('messages').delete().eq('id', msgId);
+    // supabase-js returns { error } rather than throwing on DB/RLS failure, so a
+    // raw await would remove the message from the DOM even when the delete was
+    // rejected -- it would reappear on next load. Check error before touching UI.
+    var { error } = await sb.from('messages').delete().eq('id', msgId);
+    if (error) { logError('dmDeleteMsg', error); errorToast('delete', error); return; }
     var el = document.getElementById('dm-msg-' + msgId);
     if (el) { el.style.transition = 'opacity 0.2s'; el.style.opacity = '0'; setTimeout(function() { el.remove(); }, 200); }
     showToast('Besked slettet');

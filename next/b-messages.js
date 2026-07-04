@@ -172,15 +172,22 @@ async function convDeleteSelected() {
 async function convConfirmDelete() {
   try {
     var ids = convSelectedIds.slice();
+    var succeeded = [];
+    var anyFailed = false;
     for (var i = 0; i < ids.length; i++) {
       var partnerId = ids[i];
-      // Delete both directions
-      await sb.from('messages').delete()
+      // Delete both directions. supabase-js returns { error } instead of throwing
+      // on DB/RLS failure, so an unchecked await would drop the conversation from
+      // the list even when a direction was rejected (half the thread would survive
+      // and reappear). Only treat a conversation as deleted if BOTH directions ok.
+      var { error: e1 } = await sb.from('messages').delete()
         .eq('sender_id', currentUser.id)
         .eq('receiver_id', partnerId);
-      await sb.from('messages').delete()
+      var { error: e2 } = await sb.from('messages').delete()
         .eq('sender_id', partnerId)
         .eq('receiver_id', currentUser.id);
+      if (e1 || e2) { logError('convConfirmDelete', e1 || e2); anyFailed = true; continue; }
+      succeeded.push(partnerId);
       // Notify receiver so their conversation list updates too
       try {
         await sb.channel('dm-notify-' + partnerId).send({
@@ -190,11 +197,14 @@ async function convConfirmDelete() {
       } catch(e) { /* silent — notification is best-effort */ }
     }
     var list = document.getElementById('conversations-list');
-    ids.forEach(function(id) {
+    succeeded.forEach(function(id) {
       var card = list ? list.querySelector('[data-conv-id="' + id + '"]') : null;
       if (card) { card.style.transition = 'opacity 0.2s'; card.style.opacity = '0'; setTimeout(function() { card.remove(); }, 200); }
     });
-    showToast(ids.length > 1 ? t('dm_conv_deleted_many', { n: ids.length }) : t('dm_conv_deleted_one', { n: ids.length }));
+    if (succeeded.length > 0) {
+      showToast(succeeded.length > 1 ? t('dm_conv_deleted_many', { n: succeeded.length }) : t('dm_conv_deleted_one', { n: succeeded.length }));
+    }
+    if (anyFailed) errorToast('delete', new Error('partial'));
     convToggleSelectMode();
     renderUnreadBadge();
   } catch(e) { logError('convConfirmDelete', e); errorToast('delete', e); }
