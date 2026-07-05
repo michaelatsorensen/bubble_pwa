@@ -606,7 +606,7 @@ function openCreateEventModal() {
   var _cbAg = document.getElementById('cb-agenda'); if (_cbAg) _cbAg.value = '';
   var _cbTm = document.getElementById('cb-event-time'); if (_cbTm) _cbTm.value = '';
   var _cbTe = document.getElementById('cb-event-time-end'); if (_cbTe) _cbTe.value = '';
-  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = 'self';
+  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = '';
   renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
   var modal = document.getElementById('bb-sheet-create-bubble');
   if (modal) delete modal.dataset.parentBubbleId;
@@ -662,7 +662,7 @@ function openCreateEventFromBubble(parentBubbleId) {
   var _cbAg = document.getElementById('cb-agenda'); if (_cbAg) _cbAg.value = '';
   var _cbTm = document.getElementById('cb-event-time'); if (_cbTm) _cbTm.value = '';
   var _cbTe = document.getElementById('cb-event-time-end'); if (_cbTe) _cbTe.value = '';
-  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = 'self';
+  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = '';
   renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
   // Store parent bubble id on the modal for use in createBubble()
   var modal = document.getElementById('bb-sheet-create-bubble');
@@ -720,7 +720,7 @@ function openCreateSubBubble(parentBubbleId) {
   var _cbAg = document.getElementById('cb-agenda'); if (_cbAg) _cbAg.value = '';
   var _cbTm = document.getElementById('cb-event-time'); if (_cbTm) _cbTm.value = '';
   var _cbTe = document.getElementById('cb-event-time-end'); if (_cbTe) _cbTe.value = '';
-  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = 'self';
+  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = '';
   renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
   var modal = document.getElementById('bb-sheet-create-bubble');
   if (modal) modal.dataset.parentBubbleId = parentBubbleId;
@@ -770,7 +770,7 @@ function openCreateNetworkModal() {
   var _cbAg = document.getElementById('cb-agenda'); if (_cbAg) _cbAg.value = '';
   var _cbTm = document.getElementById('cb-event-time'); if (_cbTm) _cbTm.value = '';
   var _cbTe = document.getElementById('cb-event-time-end'); if (_cbTe) _cbTe.value = '';
-  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = 'self';
+  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = '';
   renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
   // Clear any lingering parent bubble state
   var modal = document.getElementById('bb-sheet-create-bubble');
@@ -916,7 +916,10 @@ async function createBubble() {
     }
     // Event check-in mode (self = auto check-in, scan = reverse QR)
     if (type === 'event' || type === 'live') {
-      var checkinMode = document.getElementById('cb-checkin-mode')?.value || 'self';
+      var checkinMode = document.getElementById('cb-checkin-mode')?.value || '';
+      // Require an active choice — the dropdown defaults to an empty placeholder,
+      // so the organizer must consciously pick self-service or reverse QR.
+      if (!checkinMode) return showWarningToast(t('cb_checkin_required'));
       insertData.checkin_mode = checkinMode;
       var agendaVal = (document.getElementById('cb-agenda')?.value || '').trim();
       if (tooLong(agendaVal, 'agenda')) return;
@@ -954,7 +957,6 @@ async function createBubble() {
       }
     }
     bbClose('create-bubble');
-    showToast(`"${name}" oprettet! 🫧`);
     trackEvent('bubble_created', { bubble_id: bubble.id, type: type, has_parent: !!parentBubbleId });
     // If created as child event, refresh parent bubble's info tab
     if (parentBubbleId && typeof bcLoadInfo === 'function' && bcBubbleId === parentBubbleId) {
@@ -962,10 +964,39 @@ async function createBubble() {
     }
     loadHome();
     loadDiscover();
-    // Open the new bubble
-    requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(bubble.id, 'screen-bubbles'); }); });
+    // Confirmation modal with an explicit "See bubble" button instead of silently
+    // auto-opening — gives the creator a moment of closure and control.
+    _showBubbleCreatedModal(bubble.id, name, type);
   } catch(e) { logError("createBubble", e); errorToast("save", e); }
   finally { _bbSubmitLock = false; }
+}
+
+// Confirmation modal shown after a bubble/event is created. Explicit "See bubble"
+// button gives closure and control instead of silently auto-opening the bubble.
+function _showBubbleCreatedModal(bubbleId, name, type) {
+  var isEvent = (type === 'event' || type === 'live');
+  var existing = document.getElementById('bubble-created-overlay');
+  if (existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.id = 'bubble-created-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:620;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+  var iconColor = isEvent ? '#2ECFCF' : '#1A9E8E';
+  var iconBg = isEvent ? 'rgba(46,207,207,0.15)' : 'rgba(26,158,142,0.15)';
+  ov.innerHTML =
+    '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+      '<div style="width:56px;height:56px;border-radius:50%;background:' + iconBg + ';display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;color:' + iconColor + ';font-size:26px">\\u2713</div>' +
+      '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.35rem">' + t(isEvent ? 'cb_created_title_event' : 'cb_created_title') + '</div>' +
+      '<div style="font-size:0.88rem;font-weight:600;color:var(--text);margin-bottom:0.15rem">' + escHtml(name) + '</div>' +
+      '<div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:1.4rem">' + t('cb_created_body') + '</div>' +
+      '<button id="bc-created-see" style="width:100%;padding:0.85rem;border-radius:12px;border:none;background:var(--cta-bg-solid, ' + iconColor + ');color:#fff;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + t('cb_see_bubble') + '</button>' +
+      '<button id="bc-created-close" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_stay_home') + '</button>' +
+    '</div>';
+  document.body.appendChild(ov);
+  document.getElementById('bc-created-see').onclick = function() {
+    ov.remove();
+    openBubbleChat(bubbleId, 'screen-bubbles');
+  };
+  document.getElementById('bc-created-close').onclick = function() { ov.remove(); };
 }
 
 

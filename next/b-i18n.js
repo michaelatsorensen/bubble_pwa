@@ -619,6 +619,11 @@ da: {
   cb_checkin_mode: 'Check-in metode',
   cb_icon: 'Boble-ikon',
   cb_name_required: 'Navn er påkrævet',
+  cb_checkin_required: 'Vaelg en check-in-metode',
+  cb_created_title: 'Boble oprettet!',
+  cb_created_title_event: 'Dit event er oprettet!',
+  cb_created_body: 'Du er nu klar. Del boblen eller gaa i gang.',
+  cb_see_bubble: 'Se boble',
 
   // ── Bubble chat ──
   bc_chat: 'Chat',
@@ -1657,6 +1662,11 @@ en: {
   cb_checkin_mode: 'Check-in method',
   cb_icon: 'Bubble icon',
   cb_name_required: 'Name is required',
+  cb_checkin_required: 'Choose a check-in method',
+  cb_created_title: 'Bubble created!',
+  cb_created_title_event: 'Your event is created!',
+  cb_created_body: 'You are all set. Share the bubble or get started.',
+  cb_see_bubble: 'See bubble',
 
   // ── Bubble chat ──
   bc_chat: 'Chat',
