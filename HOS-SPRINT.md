@@ -207,3 +207,32 @@ anvender i praksis UUID'er og routes videre efter BOBLETYPEN, ikke efter paramet
 - Tilbagevendende-bruger shortcuts: seneste boble/event/kontakter
 
 *Vedligeholdt som sprint-reference frem mod HoS. Opdateres naar punkter lukkes.*
+
+---
+
+## 10. EVENT JOIN+CHECKIN FLOW (besluttet 5. juli 2026, device-test)
+
+**Beslutning: gaester joiner + checker ind i ÉT trin for events. INGEN anmodning foerst.**
+
+Spoergsmaal der opstod: skal en gaest til et PRIVAT event foerst anmode om medlemskab,
+saa checke ind? Svar: NEJ.
+
+**Hvorfor:** Til et fysisk event maa der ikke vaere godkendelses-ventetid ved doeren. Koden
+loeser det allerede: joinBubble har `_openJoin = ... || _isEventLike` (b-utils.js) — event-typen
+omgaar anmodnings-kravet, saa selv et PRIVAT event joiner direkte. Kun private NETVAERK
+(ikke-events) kraever anmodning (requestJoin).
+
+**Betydning af synlighed FOR EVENTS:**
+- Privat event = vises ikke offentligt i Discover, men gaester med link/QR joiner direkte
+  (IKKE "kraever godkendelse" som for netvaerk).
+- Offentlig event = synlig i Discover + direkte join.
+- Skjult event = kun via invitation.
+
+**Deltager-flow (self-checkin event):** gaest moeder event via QR/link -> _renderEventDeepLink-
+Modal -> "Join and go live" (ikke-medlem) joiner + checker ind samlet, ELLER "Check ind"
+(allerede medlem). Fejl haandteres korrekt (fejlet checkin aabner IKKE chat som checket ind —
+P0.2). Ingen to-trins-friktion.
+
+**NB efterladt uklarhed (ikke blocker):** en arrangoer der vaelger "Privat" til et event
+forventer maaske at godkende folk — men for events betyder privat kun "skjult fra Discover".
+Overvej post-pilot om synligheds-labels boer vaere event-specifikke for at undgaa forvirring.
