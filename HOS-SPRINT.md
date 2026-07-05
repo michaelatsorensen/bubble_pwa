@@ -261,3 +261,33 @@ kontekstuelt rigtigere (events/live).
 **Metode naar udfoert:** gennemgaa hver forekomst efter ROLLE (ikke farve), foreslaa
 isblaa/teal/moerk-nuance per kontekst, mockup de tvivlsomme foer deploy (MOCKUP-FIRST),
 ret samlet i eet bump. Est. ~1 time veludfoert. IKKE midt i device-test.
+
+---
+
+## 12. BOBLE-BESKED PUSH (åben — model ikke afklaret, 5. juli 2026)
+
+**Observation (device-test):** medlemmer får INGEN notifikation ved nye boble-beskeder.
+
+**Teknisk diagnose (høj sikkerhed, mangler DB-verifikation):**
+- DM'er = `messages`-tabel (sender_id/receiver_id, ÉN modtager).
+- Boble-beskeder = `bubble_messages`-tabel (user_id/bubble_id, MANGE modtagere).
+- ADR-006 koblede `on_new_message_push` -> `notify_new_message`, men den funktion er
+  bygget til ÉN-til-ÉN DM (receiver_id). Boble-push kræver en ANDEN funktion der looper
+  over boble-medlemmer og sender til hver undtagen afsender. Derfor virker det ikke —
+  det blev aldrig bygget (ADR-006 fokuserede på DM).
+- IKKE en quick fix: kan ikke bare koble samme trigger på bubble_messages (ingen
+  receiver_id). Kræver ny SECURITY DEFINER-funktion + trigger på bubble_messages.
+
+**UAFKLARET: hvilken notifikations-MODEL?** (afgør kompleksiteten — afklar før byg)
+Store platforme:
+- Facebook/WhatsApp: push ved HVER besked + mute-muligheder (opt-out af støj).
+- Slack: push kun ved @mentions/DM som standard (opt-in til støj).
+STRATEGI 16.8 siger netvaerks-CHAT-push = "stoejkatastrofe". Sandsynlig skelnen:
+- Live event (fysisk til stede, kort): maaske INGEN besked-push — presence/radar er den
+  vigtige realtidsting, folk har appen aaben.
+- Netvaerk (vedvarende, spredt): Slack-model (kun @mentions/admin-opslag) frem for hver
+  besked.
+
+**Beslutning: afklar model foerst, byg ikke endnu.** Arbejd videre paa andet; vend
+tilbage naar modellen er moden. Naar bygget: ny per-medlem push-funktion + mute-kontrol
+sandsynligt noedvendig. Ogsaa uafklaret: virker DM-push overhovedet? (test naar naturligt).
