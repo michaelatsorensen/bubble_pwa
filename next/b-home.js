@@ -362,6 +362,20 @@ async function _populateLivePreviewSocial() {
       savedEl.querySelector('[data-val]').textContent = savedHere;
       savedEl.style.display = savedHere > 0 ? 'flex' : 'none';
     }
+    // Profile views: total count of people who viewed my profile. Count (not
+    // names) is free; names live behind Profile Views (freemium). RLS allows
+    // reading profile_views where viewed_id = me (same as the profile tab).
+    var viewsEl = document.getElementById('live-preview-views');
+    if (viewsEl) {
+      try {
+        var { count } = await sb.from('profile_views')
+          .select('*', { count: 'exact', head: true })
+          .eq('viewed_id', currentUser.id);
+        var vCount = count || 0;
+        viewsEl.querySelector('[data-val]').textContent = vCount;
+        viewsEl.style.display = vCount > 0 ? 'flex' : 'none';
+      } catch(e) { viewsEl.style.display = 'none'; }
+    }
   } catch(e) { console.debug('[live-preview social]', e); }
 }
 function closeLiveCheckoutTray() {
