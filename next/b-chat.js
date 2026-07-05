@@ -698,6 +698,16 @@ function bcSubscribeRealtime() {
   if (!currentUser || !bcBubbleId) { console.warn('bcSubscribeRealtime: missing user or bubbleId'); return; }
   if (bcSubscription) bcSubscription.unsubscribe();
   bcSubscription = sb.channel('bc-' + bcBubbleId)
+    .on('broadcast', { event: 'checkin' }, function() {
+      // Someone checked in/out. postgres_changes on bubble_members can be blocked
+      // by RLS for other members, so their check-in is invisible without this
+      // Broadcast (which bypasses RLS). Refresh the member list, counts, and the
+      // live status/radar so every device reflects the change immediately.
+      if (typeof bcLoadMembers === 'function') bcLoadMembers();
+      if (typeof bcLoadBubbleInfo === 'function') bcLoadBubbleInfo();
+      if (typeof _bcActiveTab !== 'undefined' && _bcActiveTab === 'info' && typeof bcLoadInfo === 'function') bcLoadInfo();
+      if (typeof loadLiveBubbleStatus === 'function') loadLiveBubbleStatus();
+    })
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_messages', filter:`bubble_id=eq.${bcBubbleId}`},
       async (payload) => {
         const m = payload.new;

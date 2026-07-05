@@ -1133,6 +1133,20 @@ var dbActions = {
         }, { onConflict: 'bubble_id,user_id' });
         if (e2) { errorToast('save', e2); return { ok: false, error: e2 }; }
       }
+      // Broadcast to everyone in the bubble so their view updates live. Fire-and-
+      // forget (subscribe → send → unsubscribe) — Broadcast bypasses RLS, so other
+      // members receive it even though postgres_changes on the row would not reach
+      // them. Wrapped so a broadcast failure never blocks the check-in result.
+      (function(bid) {
+        (async function() {
+          try {
+            var ch = sb.channel('bc-' + bid);
+            await ch.subscribe();
+            await ch.send({ type: 'broadcast', event: 'checkin', payload: { by: currentUser.id, at: now } });
+            setTimeout(function() { try { ch.unsubscribe(); } catch(e) {} }, 2000);
+          } catch(e) { console.debug('[checkin] broadcast error:', e); }
+        })();
+      })(bubbleId);
       return { ok: true };
     } catch(e) { logError('dbActions.checkIn', e); errorToast('save', e); return { ok: false, error: e }; }
   },
@@ -1162,6 +1176,18 @@ var dbActions = {
       }).eq('bubble_id', bubbleId).eq('user_id', currentUser.id);
       if (error) { errorToast('save', error); return { ok: false, error: error }; }
       trackEvent('live_checkout', { bubble_id: bubbleId });
+      // Broadcast so other members see the departure live (same rationale as
+      // check-in: postgres_changes on the row may be RLS-blocked for others).
+      (function(bid) {
+        (async function() {
+          try {
+            var ch = sb.channel('bc-' + bid);
+            await ch.subscribe();
+            await ch.send({ type: 'broadcast', event: 'checkin', payload: { by: currentUser.id, out: true } });
+            setTimeout(function() { try { ch.unsubscribe(); } catch(e) {} }, 2000);
+          } catch(e) { console.debug('[checkout] broadcast error:', e); }
+        })();
+      })(bubbleId);
       return { ok: true };
     } catch(e) { logError('dbActions.checkOut', e); errorToast('save', e); return { ok: false, error: e }; }
   },
