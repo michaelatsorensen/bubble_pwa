@@ -13,39 +13,39 @@
 <meta name="theme-color" content="#170F34">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=82024">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=82024">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=82024">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=82024">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=82024">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=82024">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=82024">
+<link rel="manifest" href="manifest.json?v=82025">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=82025">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=82025">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=82025">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=82025">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=82025">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=82025">
 
-<link rel="stylesheet" href="app.css?v=82024">
+<link rel="stylesheet" href="app.css?v=82025">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous" defer></script>
-<script src="bubble-icons.js?v=82024" defer></script>
-<script src="tag-data.js?v=82024" defer></script>
-<script src="b-i18n.js?v=82024" defer></script>
-<script src="b-config.js?v=82024" defer></script>
-<script src="b-utils.js?v=82024" defer></script>
-<script src="b-guides.js?v=82024" defer></script>
-<script src="b-terms.js?v=82024" defer></script>
-<script src="b-auth.js?v=82024" defer></script>
-<script src="b-home.js?v=82024" defer></script>
-<script src="b-bubbles.js?v=82024" defer></script>
-<script src="b-profile.js?v=82024" defer></script>
-<script src="b-radar.js?v=82024" defer></script>
-<script src="b-messages.js?v=82024" defer></script>
-<script src="b-realtime.js?v=82024" defer></script>
-<script src="b-onboarding.js?v=82024" defer></script>
-<script src="b-chat.js?v=82024" defer></script>
-<script src="b-notifications.js?v=82024" defer></script>
-<script src="b-live.js?v=82024" defer></script>
-<script src="b-admin.js?v=82024" defer></script>
-<script src="b-navigation.js?v=82024" defer></script>
-<script src="b-boot.js?v=82024" defer></script>
+<script src="bubble-icons.js?v=82025" defer></script>
+<script src="tag-data.js?v=82025" defer></script>
+<script src="b-i18n.js?v=82025" defer></script>
+<script src="b-config.js?v=82025" defer></script>
+<script src="b-utils.js?v=82025" defer></script>
+<script src="b-guides.js?v=82025" defer></script>
+<script src="b-terms.js?v=82025" defer></script>
+<script src="b-auth.js?v=82025" defer></script>
+<script src="b-home.js?v=82025" defer></script>
+<script src="b-bubbles.js?v=82025" defer></script>
+<script src="b-profile.js?v=82025" defer></script>
+<script src="b-radar.js?v=82025" defer></script>
+<script src="b-messages.js?v=82025" defer></script>
+<script src="b-realtime.js?v=82025" defer></script>
+<script src="b-onboarding.js?v=82025" defer></script>
+<script src="b-chat.js?v=82025" defer></script>
+<script src="b-notifications.js?v=82025" defer></script>
+<script src="b-live.js?v=82025" defer></script>
+<script src="b-admin.js?v=82025" defer></script>
+<script src="b-navigation.js?v=82025" defer></script>
+<script src="b-boot.js?v=82025" defer></script>
   
 
 
@@ -1529,25 +1529,44 @@
         <option value="hidden">👁️ Skjult — kun via invitation</option>
       </select>
     </div>
-    <div class="input-group" id="cb-event-date-group" style="display:none">
-      <div class="input-label" data-t="cb_date">Dato</div>
-      <div style="display:flex"><input class="input" type="date" id="cb-event-date" style="flex:1;min-width:0"></div>
-    </div>
-    <div class="input-group" style="display:none" id="cb-event-time-row">
-      <div class="input-label" data-t="cb_time_start">Starttidspunkt</div>
-      <div style="display:flex"><input class="input" type="time" id="cb-event-time" style="flex:1;min-width:0"></div>
-    </div>
-    <div class="input-group" style="display:none" id="cb-event-time-end-group">
-      <div class="input-label" data-t="cb_time_end">Sluttidspunkt</div>
-      <div style="display:flex"><input class="input" type="time" id="cb-event-time-end" style="flex:1;min-width:0"></div>
-    </div>
-    <div class="input-group" id="cb-checkin-mode-group" style="display:none">
-      <div class="input-label" data-t="cb_checkin_mode">Check-in metode</div>
-      <select class="input" id="cb-checkin-mode">
-        <option value="" disabled selected>—</option>
-        <option value="self">Selvbetjening (deltagere checker sig selv ind)</option>
-        <option value="scan">Reverse QR (arrangør scanner deltagere)</option>
-      </select>
+    <div class="cb-event-accordion" id="cb-event-accordion" style="display:none;border:1px solid rgba(255,255,255,0.12);border-radius:14px;margin-bottom:1rem;overflow:hidden;background:rgba(255,255,255,0.03)">
+      <div class="cb-acc-head" onclick="cbToggleEventAccordion()" style="display:flex;align-items:center;justify-content:space-between;padding:0.85rem 1rem;cursor:pointer;user-select:none">
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:30px;height:30px;border-radius:9px;background:rgba(46,207,207,0.15);display:flex;align-items:center;justify-content:center;color:#2ECFCF;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+          <div>
+            <div style="font-size:0.85rem;font-weight:700" data-t="cb_event_details">Event-detaljer</div>
+            <div id="cb-acc-summary" style="font-size:0.68rem;color:rgba(255,255,255,0.45);margin-top:1px" data-t="cb_event_details_sub">Dato, tidspunkt & check-in</div>
+          </div>
+        </div>
+        <svg id="cb-acc-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2" style="transition:transform 0.25s"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div id="cb-acc-body" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease">
+        <div style="padding:0.3rem 1rem 1rem;border-top:0.5px solid rgba(255,255,255,0.08)">
+          <div class="input-group" id="cb-event-date-group" style="margin-top:0.8rem">
+            <div class="input-label" data-t="cb_date">Dato</div>
+            <div style="display:flex"><input class="input" type="date" id="cb-event-date" style="flex:1;min-width:0"></div>
+          </div>
+          <div style="display:flex;gap:0.6rem">
+            <div class="input-group" id="cb-event-time-row" style="flex:1">
+              <div class="input-label" data-t="cb_time_start">Starttidspunkt</div>
+              <div style="display:flex"><input class="input" type="time" id="cb-event-time" style="flex:1;min-width:0"></div>
+            </div>
+            <div class="input-group" id="cb-event-time-end-group" style="flex:1">
+              <div class="input-label" data-t="cb_time_end">Sluttidspunkt</div>
+              <div style="display:flex"><input class="input" type="time" id="cb-event-time-end" style="flex:1;min-width:0"></div>
+            </div>
+          </div>
+          <div class="input-group" id="cb-checkin-mode-group" style="margin-bottom:0.2rem">
+            <div class="input-label" data-t="cb_checkin_mode">Check-in metode</div>
+            <select class="input" id="cb-checkin-mode">
+              <option value="" disabled selected>—</option>
+              <option value="self">Selvbetjening (deltagere checker sig selv ind)</option>
+              <option value="scan">Reverse QR (arrangør scanner deltagere)</option>
+            </select>
+            <div id="cb-checkin-help" style="font-size:0.68rem;color:rgba(255,255,255,0.5);line-height:1.5;margin-top:0.5rem;display:none"></div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="input-group" id="cb-agenda-group" style="display:none">
       <div class="input-label" data-t="cb_agenda">Program / Agenda</div>

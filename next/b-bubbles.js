@@ -632,14 +632,14 @@ function openCreateEventModal() {
       { value: 'hidden',  icon: 'eye',   label: t('bb_visibility_hidden') }
     ]);
     // Show event fields
-    var cmg = document.getElementById('cb-checkin-mode-group');
-    var edg = document.getElementById('cb-event-date-group');
-    var etg = document.getElementById('cb-event-time-row');
-    var etge = document.getElementById('cb-event-time-end-group');
-    if (cmg) cmg.style.display = 'block';
-    if (edg) edg.style.display = 'block';
-    if (etg) etg.style.display = 'block';
-    if (etge) etge.style.display = 'block';
+    // Show the event-details accordion (fields live inside it now), open by default
+    var _acc = document.getElementById('cb-event-accordion');
+    if (_acc) { _acc.style.display = 'block'; _acc.classList.add('open'); cbSyncEventAccordion(true); }
+    // Render check-in pills for this entry point too
+    cbRenderPillSelect('cb-checkin-mode', [
+      { value: 'self', label: t('cb_checkin_self'), icon: 'user' },
+      { value: 'scan', label: t('cb_checkin_scan'), icon: 'camera' }
+    ]);
     var _ag = document.getElementById('cb-agenda-group'); if (_ag) _ag.style.display = 'block';
     var dateInput = document.getElementById('cb-event-date');
     if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
@@ -690,13 +690,12 @@ function openCreateEventFromBubble(parentBubbleId) {
     if (parentLabel) parentLabel.style.display = 'block';
     // Show checkin mode + date/time for events
     var cmg = document.getElementById('cb-checkin-mode-group');
-    if (cmg) cmg.style.display = 'block';
-    var edg = document.getElementById('cb-event-date-group');
-    var etg = document.getElementById('cb-event-time-row');
-    var etge = document.getElementById('cb-event-time-end-group');
-    if (edg) edg.style.display = 'block';
-    if (etg) etg.style.display = 'block';
-    if (etge) etge.style.display = 'block';
+    var _acc2 = document.getElementById('cb-event-accordion');
+    if (_acc2) { _acc2.style.display = 'block'; _acc2.classList.add('open'); cbSyncEventAccordion(true); }
+    cbRenderPillSelect('cb-checkin-mode', [
+      { value: 'self', label: t('cb_checkin_self'), icon: 'user' },
+      { value: 'scan', label: t('cb_checkin_scan'), icon: 'camera' }
+    ]);
     var _ag2 = document.getElementById('cb-agenda-group'); if (_ag2) _ag2.style.display = 'block';
     // Default date to today
     var dateInput = document.getElementById('cb-event-date');
@@ -745,13 +744,8 @@ function openCreateSubBubble(parentBubbleId) {
     if (parentLabel) parentLabel.style.display = 'block';
     // Hide event-specific fields
     var cmg = document.getElementById('cb-checkin-mode-group');
-    if (cmg) cmg.style.display = 'none';
-    var edg = document.getElementById('cb-event-date-group');
-    var etg = document.getElementById('cb-event-time-row');
-    var etge = document.getElementById('cb-event-time-end-group');
-    if (edg) edg.style.display = 'none';
-    if (etg) etg.style.display = 'none';
-    if (etge) etge.style.display = 'none';
+    var _acc3 = document.getElementById('cb-event-accordion');
+    if (_acc3) { _acc3.style.display = 'none'; _acc3.classList.remove('open'); }
     var cag3 = document.getElementById('cb-agenda-group'); if (cag3) cag3.style.display = 'none';
     sb.from('bubbles').select('name').eq('id', parentBubbleId).maybeSingle().then(function(r) {
       if (r.data && parentLabel) {
@@ -779,14 +773,9 @@ function openCreateNetworkModal() {
   if (parentLabel) { parentLabel.style.display = 'none'; parentLabel.textContent = ''; }
   // Hide checkin mode + date/time (not relevant for networks)
   var cmg = document.getElementById('cb-checkin-mode-group');
-  if (cmg) cmg.style.display = 'none';
-  var edg = document.getElementById('cb-event-date-group');
-  var etg = document.getElementById('cb-event-time-row');
-  var etge = document.getElementById('cb-event-time-end-group');
-  if (edg) edg.style.display = 'none';
-  if (etg) etg.style.display = 'none';
+  var _acc4 = document.getElementById('cb-event-accordion');
+  if (_acc4) { _acc4.style.display = 'none'; _acc4.classList.remove('open'); }
   var cag4 = document.getElementById('cb-agenda-group'); if (cag4) cag4.style.display = 'none';
-  if (etge) etge.style.display = 'none';
   bbOpen('create-bubble');
   var _cbTitle = document.getElementById('cb-sheet-title');
   if (_cbTitle) _cbTitle.textContent = t('bb_create_network');
@@ -833,6 +822,8 @@ function cbRenderPillSelect(selectId, options) {
     btn.appendChild(lbl);
     btn.onclick = function() {
       select.value = opt.value;
+      // Update check-in help text when a check-in method pill is chosen
+      if (selectId === 'cb-checkin-mode' && typeof cbUpdateCheckinHelp === 'function') cbUpdateCheckinHelp();
       wrap.querySelectorAll('button').forEach(function(b) {
         b.style.borderColor = 'var(--glass-border)';
         b.style.background = 'rgba(30,27,46,0.04)';
@@ -844,11 +835,12 @@ function cbRenderPillSelect(selectId, options) {
       // Show/hide checkin_mode for event type
       if (selectId === 'cb-type') {
         var isEvt = (opt.value === 'event' || opt.value === 'live');
-        var cmg = document.getElementById('cb-checkin-mode-group');
-        var edg = document.getElementById('cb-event-date-group');
-        var etg = document.getElementById('cb-event-time-row');
-        var etge = document.getElementById('cb-event-time-end-group');
-        if (cmg) cmg.style.display = isEvt ? 'block' : 'none';
+        var acc = document.getElementById('cb-event-accordion');
+        if (acc) {
+          acc.style.display = isEvt ? 'block' : 'none';
+          // Auto-open the accordion when Event is picked so the fields are visible
+          if (isEvt) { acc.classList.add('open'); cbSyncEventAccordion(true); }
+        }
         if (isEvt) {
           // Render check-in method as pills (matches type/visibility) instead of
           // the native select — fixes both the ugly dropdown and the data-t bleed.
@@ -857,9 +849,6 @@ function cbRenderPillSelect(selectId, options) {
             { value: 'scan', label: t('cb_checkin_scan'), icon: 'camera' }
           ]);
         }
-        if (edg) edg.style.display = isEvt ? 'block' : 'none';
-        if (etg) etg.style.display = isEvt ? 'block' : 'none';
-        if (etge) etge.style.display = isEvt ? 'block' : 'none';
         var cag = document.getElementById('cb-agenda-group'); if (cag) cag.style.display = isEvt ? 'block' : 'none';
         var _cbN = document.getElementById('cb-name'); if (_cbN) _cbN.placeholder = isEvt ? t('cb_name_event') : t('cb_name');
       }
@@ -883,6 +872,31 @@ function cbRenderPillSelect(selectId, options) {
   select.parentNode.insertBefore(wrap, select.nextSibling);
 }
 var ebRenderPillSelect = cbRenderPillSelect;
+
+// Event-details accordion (create flow): collapse date/time/check-in into one section
+function cbSyncEventAccordion(open) {
+  var body = document.getElementById('cb-acc-body');
+  var chev = document.getElementById('cb-acc-chev');
+  if (body) body.style.maxHeight = open ? '600px' : '0';
+  if (chev) chev.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+function cbToggleEventAccordion() {
+  var acc = document.getElementById('cb-event-accordion');
+  if (!acc) return;
+  var willOpen = !acc.classList.contains('open');
+  acc.classList.toggle('open', willOpen);
+  cbSyncEventAccordion(willOpen);
+}
+// Update the check-in help text + accordion summary when a method is chosen
+function cbUpdateCheckinHelp() {
+  var sel = document.getElementById('cb-checkin-mode');
+  var help = document.getElementById('cb-checkin-help');
+  if (!sel || !help) return;
+  var v = sel.value;
+  if (v === 'self') { help.textContent = t('cb_checkin_help_self'); help.style.display = 'block'; }
+  else if (v === 'scan') { help.textContent = t('cb_checkin_help_scan'); help.style.display = 'block'; }
+  else { help.style.display = 'none'; }
+}
 
 var _bbSubmitLock = false; // Prevents double-tap on create/edit/delete bubble
 
