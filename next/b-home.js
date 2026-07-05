@@ -254,6 +254,10 @@ function homeSetMode(mode) {
       // is not reliably populated when this tray opens, so it read 0.
       coCount.textContent = (ctx.memberCount || 0) + ' ' + t('live_here_now');
     }
+    // Social enrichment: strong matches + saved contacts among those present.
+    // Both computed from _homeDartboardProfiles (present profiles with matchScore,
+    // excluding self) and getSavedContactIds — no new logging.
+    _populateLivePreviewSocial();
   }
   updateFilterChipStyle();
 }
@@ -334,6 +338,31 @@ function openLiveCheckoutTray() {
   tray.style.visibility = 'visible';
   void tray.offsetHeight;
   tray.style.transform = 'translateY(0)';
+}
+
+// Compute + render the social stats in the live preview: strong matches present
+// and saved contacts present. Uses _homeDartboardProfiles (present, scored, no
+// self) and getSavedContactIds. Async for the saved-contacts lookup.
+async function _populateLivePreviewSocial() {
+  try {
+    var present = Array.isArray(_homeDartboardProfiles) ? _homeDartboardProfiles : [];
+    var strongEl = document.getElementById('live-preview-strong');
+    var savedEl = document.getElementById('live-preview-saved');
+    // Strong matches present (score >= 60, same threshold as the radar 'strong' filter)
+    if (strongEl) {
+      var strong = present.filter(function(p) { return p.matchScore >= 60; }).length;
+      strongEl.querySelector('[data-val]').textContent = strong;
+      strongEl.style.display = strong > 0 ? 'flex' : 'none';
+    }
+    // Saved contacts present
+    if (savedEl) {
+      var savedIds = await getSavedContactIds();
+      var presentIds = present.map(function(p) { return p.id; });
+      var savedHere = (savedIds || []).filter(function(id) { return presentIds.indexOf(id) >= 0; }).length;
+      savedEl.querySelector('[data-val]').textContent = savedHere;
+      savedEl.style.display = savedHere > 0 ? 'flex' : 'none';
+    }
+  } catch(e) { console.debug('[live-preview social]', e); }
 }
 function closeLiveCheckoutTray() {
   var backdrop = document.getElementById('live-checkout-backdrop');

@@ -892,6 +892,8 @@ da: {
   // ── Live ──
   live_expires: 'udl.',
   live_here_now: 'her nu',
+  live_strong_here: 'staerke match her',
+  live_saved_here: 'gemte her',
   live_see_event_attendees: 'Se event og deltagere →',
   live_checkout: 'Check ud',
   live_scan_qr: 'Scan QR for check-in',
@@ -1937,6 +1939,8 @@ en: {
   // ── Live ──
   live_expires: 'exp.',
   live_here_now: 'here now',
+  live_strong_here: 'strong matches here',
+  live_saved_here: 'saved contacts here',
   live_see_event_attendees: 'See event and attendees →',
   live_checkout: 'Check out',
   live_scan_qr: 'Scan QR to check in',
