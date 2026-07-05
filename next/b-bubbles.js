@@ -811,7 +811,7 @@ function cbRenderPillSelect(selectId, options) {
     var btn = document.createElement('button');
     btn.type = 'button';
     var isActive = opt.value === current;
-    btn.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;gap:0.35rem;padding:0.4rem 0.75rem;border-radius:99px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.15s;border:1.5px solid ' + (isActive ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)') + ';background:' + (isActive ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)') + ';color:' + (isActive ? 'var(--accent)' : 'var(--muted)');
+    btn.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;gap:0.35rem;padding:0.4rem 0.75rem;border-radius:99px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.15s;border:1.5px solid ' + (isActive ? 'rgba(26,158,142,0.6)' : 'var(--glass-border)') + ';background:' + (isActive ? 'rgba(26,158,142,0.15)' : 'rgba(30,27,46,0.03)') + ';color:' + (isActive ? '#1A9E8E' : 'var(--muted)');
     var ico = document.createElement('span');
     ico.style.cssText = 'width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0';
     var icoSvg = ICONS[opt.icon] || '';
@@ -826,12 +826,12 @@ function cbRenderPillSelect(selectId, options) {
       if (selectId === 'cb-checkin-mode' && typeof cbUpdateCheckinHelp === 'function') cbUpdateCheckinHelp();
       wrap.querySelectorAll('button').forEach(function(b) {
         b.style.borderColor = 'var(--glass-border)';
-        b.style.background = 'rgba(30,27,46,0.04)';
+        b.style.background = 'rgba(30,27,46,0.03)';
         b.style.color = 'var(--muted)';
       });
-      btn.style.borderColor = 'rgba(124,92,252,0.5)';
-      btn.style.background = 'rgba(124,92,252,0.12)';
-      btn.style.color = 'var(--accent)';
+      btn.style.borderColor = 'rgba(26,158,142,0.6)';
+      btn.style.background = 'rgba(26,158,142,0.15)';
+      btn.style.color = '#1A9E8E';
       // Show/hide checkin_mode for event type
       if (selectId === 'cb-type') {
         var isEvt = (opt.value === 'event' || opt.value === 'live');
@@ -1011,7 +1011,7 @@ function _showBubbleCreatedModal(bubbleId, name, type) {
       '<div style="font-size:0.88rem;font-weight:600;color:var(--text);margin-bottom:0.15rem">' + escHtml(name) + '</div>' +
       '<div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:1.4rem">' + t('cb_created_body') + '</div>' +
       '<button id="bc-created-see" style="width:100%;padding:0.85rem;border-radius:12px;border:none;background:var(--cta-bg-solid, ' + iconColor + ');color:#fff;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + t('cb_see_bubble') + '</button>' +
-      '<button id="bc-created-close" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_stay_home') + '</button>' +
+      '<button id="bc-created-close" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_stay_home') + '</button>' +
     '</div>';
   document.body.appendChild(ov);
   document.getElementById('bc-created-see').onclick = function() {
