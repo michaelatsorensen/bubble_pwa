@@ -248,6 +248,12 @@ function homeSetMode(mode) {
     var coMeta = document.getElementById('live-checkout-meta');
     if (coName) coName.textContent = ctx.bubbleName;
     if (coMeta) coMeta.textContent = t('bc_checked_in') + ' · ' + t('live_expires') + ' ' + (ctx.expiryStr || '—');
+    var coCount = document.getElementById('live-checkout-count');
+    if (coCount) {
+      // Prefer the live checked-in count; fall back to member count from ctx.
+      var n = (typeof appMode !== 'undefined' && appMode.checkedInIds) ? appMode.checkedInIds.length : (ctx.memberCount || 0);
+      coCount.textContent = n + ' ' + t('live_here_now');
+    }
   }
   updateFilterChipStyle();
 }

@@ -892,6 +892,7 @@ da: {
   // ── Live ──
   live_expires: 'udl.',
   live_here_now: 'her nu',
+  live_see_event_attendees: 'Se event og deltagere →',
   live_checkout: 'Check ud',
   live_scan_qr: 'Scan QR for check-in',
 
@@ -1936,6 +1937,7 @@ en: {
   // ── Live ──
   live_expires: 'exp.',
   live_here_now: 'here now',
+  live_see_event_attendees: 'See event and attendees →',
   live_checkout: 'Check out',
   live_scan_qr: 'Scan QR to check in',
 
