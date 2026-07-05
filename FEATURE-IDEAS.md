@@ -249,3 +249,31 @@ hele salen, ikke kun app-brugere).
 allerede daekket af owner_admin) ELLER via maalrettet ny policy med `checked_in_at IS NULL`
 i WITH CHECK (registrering maa aldrig kunne forud-checke sig selv — check-in-tal er pilot/
 event-metrik og skal kun saettes af vaertens scan).
+
+## Boble-tags fra taggdatabasen + tag-baseret boble-eksponering (jul 2026, fra device-test-session)
+
+**Idé (Michael):** Brug de eksisterende 196 tags (4 kategorier, tag-data.js) som valgbare
+noegleord ved boble-oprettelse i stedet for/sammen med fri tekst. Boble-tags kan saa overlappe
+med personers valgte tags, og bobler med hoejt overlap fremhaeves/eksponeres som mere
+relevante end andre.
+
+**Hvorfor staerk:**
+1. Lukker semantisk hul: boble-keywords er i dag fri tekst (cbChips), person-tags er
+   strukturerede — de kan ikke tale sammen. Samme database goer boble<->person-overlap
+   beregneligt med den EKSISTERENDE cluster-logik i calcMatchScore (tier 3).
+2. Genbruger onboarding-tag-vaelgeren — ingen ny interaktionsmodel.
+3. Eksponering = organisk relevans-ranking (ikke pay-to-win) — passer tillids-positionering
+   og forlaenger STRATEGI 16.7's "ny-relevans"-spor til bobler.
+
+**Designvalg besluttet ved idé-fangst:**
+- HYBRID: tag-vaelger primaer ("vaelg 3-5 tags") + valgfri fri-tekst-chips til det unikke
+  (fx "Havnefest 2026"). Kun strukturerede tags indgaar i scoring.
+- Eksponering virker i Discover-ranking + Home-anbefalinger. IKKE radaren (person<->person).
+
+**Timing: POST-PILOT.** To grunde: (1) create-flowet er netop device-testet — ombygning nu
+invaliderer testen; (2) det er reelt en match-motor-aendring (ny scoring-dimension), og
+piloten skal maale den NUVAERENDE motor. Byg efter HoS-data er i hus.
+
+**Teknisk skitse:** keywords-kolonnen kan beholdes (text[]), tags gemmes samme sted men
+valideres mod tag-databasen ved oprettelse. Discover-query scorer overlap mod currentProfile
+tags via _tagToCluster. Migration: eksisterende fri-tekst-keywords beholdes som fri tekst.
