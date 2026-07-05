@@ -221,12 +221,12 @@ function homeSetMode(mode) {
   var ctx = appMode.live;
 
   if (mode === 'live' && ctx) {
-    if (tabAll) { tabAll.style.background = 'transparent'; tabAll.style.border = '0.5px solid transparent'; tabAll.style.color = 'var(--muted)'; tabAll.style.fontWeight = '600'; }
-    if (tabLive) { tabLive.style.background = 'linear-gradient(135deg,#1A9E8E,#10B981)'; tabLive.style.border = '0.5px solid rgba(26,158,142,0.5)'; tabLive.style.color = 'white'; tabLive.style.fontWeight = '700'; }
+    if (tabAll) { tabAll.style.background = 'transparent'; tabAll.style.border = '0.5px solid transparent'; tabAll.style.color = 'rgba(255,255,255,0.35)'; tabAll.style.fontWeight = '600'; }
+    if (tabLive) { tabLive.style.background = 'rgba(26,158,142,0.18)'; tabLive.style.border = '0.5px solid rgba(26,158,142,0.4)'; tabLive.style.color = '#2ECFCF'; tabLive.style.fontWeight = '700'; }
     loadEventDartboard();
   } else {
-    if (tabAll) { tabAll.style.background = 'rgba(100,180,230,0.22)'; tabAll.style.border = '0.5px solid rgba(100,180,230,0.4)'; tabAll.style.color = '#0F4C75'; tabAll.style.fontWeight = '700'; }
-    if (tabLive) { tabLive.style.background = 'transparent'; tabLive.style.border = '0.5px solid transparent'; tabLive.style.color = 'var(--muted)'; tabLive.style.fontWeight = '600'; }
+    if (tabAll) { tabAll.style.background = 'rgba(100,180,230,0.18)'; tabAll.style.border = '0.5px solid rgba(100,180,230,0.3)'; tabAll.style.color = 'rgb(100,180,230)'; tabAll.style.fontWeight = '700'; }
+    if (tabLive) { tabLive.style.background = 'transparent'; tabLive.style.border = '0.5px solid transparent'; tabLive.style.color = 'rgba(255,255,255,0.35)'; tabLive.style.fontWeight = '600'; }
     _homeRadarFilter = 'all';
     if (!_homeBooting) renderHomeDartboard();
   }
