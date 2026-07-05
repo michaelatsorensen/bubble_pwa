@@ -221,11 +221,11 @@ function homeSetMode(mode) {
   var ctx = appMode.live;
 
   if (mode === 'live' && ctx) {
-    if (tabAll) { tabAll.style.background = 'transparent'; tabAll.style.color = 'var(--muted)'; tabAll.style.fontWeight = '600'; }
+    if (tabAll) { tabAll.style.background = 'transparent'; tabAll.style.border = 'none'; tabAll.style.color = 'var(--muted)'; tabAll.style.fontWeight = '600'; }
     if (tabLive) { tabLive.style.background = 'linear-gradient(135deg,#1A9E8E,#10B981)'; tabLive.style.color = 'white'; tabLive.style.fontWeight = '700'; }
     loadEventDartboard();
   } else {
-    if (tabAll) { tabAll.style.background = 'var(--gradient-primary)'; tabAll.style.color = 'white'; tabAll.style.fontWeight = '700'; }
+    if (tabAll) { tabAll.style.background = 'rgba(100,180,230,0.18)'; tabAll.style.border = '0.5px solid rgba(100,180,230,0.25)'; tabAll.style.color = 'rgba(255,255,255,0.9)'; tabAll.style.fontWeight = '700'; }
     if (tabLive) { tabLive.style.background = 'transparent'; tabLive.style.color = 'var(--muted)'; tabLive.style.fontWeight = '600'; }
     _homeRadarFilter = 'all';
     if (!_homeBooting) renderHomeDartboard();
