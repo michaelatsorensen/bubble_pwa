@@ -849,6 +849,14 @@ function cbRenderPillSelect(selectId, options) {
         var etg = document.getElementById('cb-event-time-row');
         var etge = document.getElementById('cb-event-time-end-group');
         if (cmg) cmg.style.display = isEvt ? 'block' : 'none';
+        if (isEvt) {
+          // Render check-in method as pills (matches type/visibility) instead of
+          // the native select — fixes both the ugly dropdown and the data-t bleed.
+          cbRenderPillSelect('cb-checkin-mode', [
+            { value: 'self', label: t('cb_checkin_self'), icon: 'user' },
+            { value: 'scan', label: t('cb_checkin_scan'), icon: 'camera' }
+          ]);
+        }
         if (edg) edg.style.display = isEvt ? 'block' : 'none';
         if (etg) etg.style.display = isEvt ? 'block' : 'none';
         if (etge) etge.style.display = isEvt ? 'block' : 'none';
