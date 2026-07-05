@@ -236,3 +236,28 @@ P0.2). Ingen to-trins-friktion.
 **NB efterladt uklarhed (ikke blocker):** en arrangoer der vaelger "Privat" til et event
 forventer maaske at godkende folk — men for events betyder privat kun "skjult fra Discover".
 Overvej post-pilot om synligheds-labels boer vaere event-specifikke for at undgaa forvirring.
+
+---
+
+## 11. LILLA-SWEEP (planlagt, EFTER test-scenarierne — 5. juli 2026)
+
+Prod-rest: lilla (#7C5CFC / rgba(124,92,252) / #6366F1 / --gradient-primary) findes ~135
+steder. Guiden udfaser lilla i UI-chrome (brug isblaa eller teal). ALLEREDE rettet loebende
+under test: pill-accent (v10.27), radar center-node (v10.29), Alle-tab (v10.30).
+
+**VIGTIGT — ikke en blind find-replace.** Kortlaegning viste at lilla har FIRE roller der
+skal behandles forskelligt:
+1. Fladefarve (knapper/badges) -> isblaa er rigtigt
+2. Tekstfarve (color:var(--accent), ~29 steder, ofte paa lys baggrund) -> isblaa er FOR LYS
+   (daarlig kontrast) -> moerkere nuance eller behold
+3. Avatar/identitet (person-avatar-ring, pp-avatar, avColors/proxColors) -> TILLADT
+   UNDTAGELSE, roeres IKKE (guiden: avatar-identitetspaletter er ok)
+4. PDF/rapport (generateEventReport .header/.section-title) -> TILLADT UNDTAGELSE
+
+**Naegle-variabler:** --accent (#7C5CFC) bruges baade som flade OG tekst -> kan ikke bare
+skiftes. --gradient-primary/--gradient-btn-border bruges bredt men nogle steder er teal
+kontekstuelt rigtigere (events/live).
+
+**Metode naar udfoert:** gennemgaa hver forekomst efter ROLLE (ikke farve), foreslaa
+isblaa/teal/moerk-nuance per kontekst, mockup de tvivlsomme foer deploy (MOCKUP-FIRST),
+ret samlet i eet bump. Est. ~1 time veludfoert. IKKE midt i device-test.
