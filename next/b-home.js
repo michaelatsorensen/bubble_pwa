@@ -250,9 +250,9 @@ function homeSetMode(mode) {
     if (coMeta) coMeta.textContent = t('bc_checked_in') + ' · ' + t('live_expires') + ' ' + (ctx.expiryStr || '—');
     var coCount = document.getElementById('live-checkout-count');
     if (coCount) {
-      // Prefer the live checked-in count; fall back to member count from ctx.
-      var n = (typeof appMode !== 'undefined' && appMode.checkedInIds) ? appMode.checkedInIds.length : (ctx.memberCount || 0);
-      coCount.textContent = n + ' ' + t('live_here_now');
+      // Use the same source as the banner (ctx.memberCount) — appMode.checkedInIds
+      // is not reliably populated when this tray opens, so it read 0.
+      coCount.textContent = (ctx.memberCount || 0) + ' ' + t('live_here_now');
     }
   }
   updateFilterChipStyle();
