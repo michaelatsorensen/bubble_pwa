@@ -1264,13 +1264,13 @@ async function loadJsPdf() {
   if (_jsPdfLoaded) return;
   await new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.src = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
     s.onload = resolve;
     s.onerror = () => reject(new Error(t('err_load_jspdf')));
     document.head.appendChild(s);
   });
   _jsPdfLoaded = true;
-  } catch(e) { logError("loadJsPdf", e); }
+  } catch(e) { logError("loadJsPdf", e); throw e; }
 }
 
 async function downloadQRPdf() {
