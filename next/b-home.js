@@ -1601,7 +1601,7 @@ async function loadMyNetworks() {
       var { data: lvl3 } = await sb.from('bubbles')
         .select('*, bubble_members(count)')
         .in('parent_bubble_id', lvl2NetIds)
-        .eq('type', 'event')
+        .in('type', ['event', 'live'])
         .order('event_date', { ascending: true, nullsFirst: false });
       if (_navVersion !== myNav) return;
       (lvl3 || []).forEach(function(e) {
