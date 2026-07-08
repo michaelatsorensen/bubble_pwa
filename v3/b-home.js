@@ -462,7 +462,7 @@ function showCheckinModal(eventName, opts) {
   }
 
   ov.innerHTML =
-    '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+    '<div style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
       '<div style="width:56px;height:56px;border-radius:50%;background:rgba(26,158,142,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">' +
         '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
       '</div>' +
@@ -667,7 +667,7 @@ async function showDeepLinkModal(type, targetId) {
         ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:14px">'
         : bEmoji;
       _renderSimpleDeepLinkModal({
-        iconBg: 'rgba(124,92,252,0.15)', iconSize: '56px', iconRadius: '14px',
+        iconBg: 'rgba(100,180,230,0.15)', iconSize: '56px', iconRadius: '14px',
         iconHtml: iconHtmlN, title: escHtml(b.name || '?'),
         subtitle: b.location ? escHtml(b.location) : '',
         kicker: t('dl_join_kicker'), kickerColor: '#4F9FD4',
@@ -730,7 +730,7 @@ function _renderSimpleDeepLinkModal(opts) {
   ov.id = 'deeplink-modal-overlay';
   ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
   ov.innerHTML =
-    '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+    '<div style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
       '<div style="width:' + opts.iconSize + ';height:' + opts.iconSize + ';border-radius:' + opts.iconRadius + ';background:' + opts.iconBg + ';display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;overflow:hidden">' + opts.iconHtml + '</div>' +
       (opts.kicker ? '<div style="font-size:0.7rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:' + (opts.kickerColor||'#6B6680') + ';margin-bottom:0.3rem">' + escHtml(opts.kicker) + '</div>' : '') +
       '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">' + opts.title + '</div>' +
@@ -844,13 +844,13 @@ function _renderEventDeepLinkModal(opts) {
   var declineBtnHtml = showDecline ? '<button id="dl-event-decline" style="width:100%;padding:0.6rem;border-radius:12px;border:none;background:none;color:#993556;font-size:0.75rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_decline_invitation') + '</button>' : '';
 
   ov.innerHTML =
-    '<div id="dl-event-card" style="background:#FFFFFF;border-radius:20px;padding:1.75rem 1.5rem 1.25rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(30,27,46,0.12);position:relative">' +
-      '<button id="dl-event-close" style="position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;background:rgba(30,27,46,0.06);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;color:#6B6680;border:none;font-family:inherit">×</button>' +
+    '<div id="dl-event-card" style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:1.75rem 1.5rem 1.25rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(30,27,46,0.12);position:relative">' +
+      '<button id="dl-event-close" style="position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;background:rgba(30,27,46,0.06);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;color:rgba(207,230,247,0.55);border:none;font-family:inherit">×</button>' +
       '<div id="dl-event-fadable">' +
         '<div style="width:56px;height:56px;border-radius:14px;background:rgba(46,207,207,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 0.85rem;overflow:hidden;opacity:' + opts.iconOpacity + '">' + opts.iconHtml + '</div>' +
         (joinKicker ? '<div style="font-size:0.7rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#0F6E56;margin-bottom:0.3rem">' + escHtml(joinKicker) + '</div>' : '') +
-        '<div style="font-size:1.05rem;font-weight:700;color:#1E1B2E;margin-bottom:0.2rem">' + opts.title + '</div>' +
-        (opts.subtitle ? '<div style="font-size:0.78rem;color:#6B6680;margin-bottom:0.25rem">' + opts.subtitle + '</div>' : '') +
+        '<div style="font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:0.2rem">' + opts.title + '</div>' +
+        (opts.subtitle ? '<div style="font-size:0.78rem;color:rgba(207,230,247,0.55);margin-bottom:0.25rem">' + opts.subtitle + '</div>' : '') +
         (opts.timingHtml ? '<div style="font-size:0.72rem;color:' + (opts.timingIsLive ? '#0F6E56' : (opts.timingIsEnded ? '#888780' : '#6B6680')) + ';margin-bottom:1rem;font-weight:500">' + opts.timingHtml + '</div>' : '<div style="margin-bottom:1rem"></div>') +
         memberBanner +
         readonlyBanner +
@@ -918,7 +918,7 @@ function _renderEventDeepLinkModal(opts) {
           '<div style="background:rgba(153,53,86,0.06);border:1px solid rgba(153,53,86,0.15);border-radius:12px;padding:0.85rem 0.75rem 0.75rem">' +
             '<div style="font-size:0.78rem;color:#993556;font-weight:600;text-align:center;margin-bottom:0.6rem">' + t('dl_decline_confirm_q') + '</div>' +
             '<div style="display:flex;gap:0.5rem">' +
-              '<button id="dl-decline-undo" style="flex:1;padding:0.6rem;border-radius:10px;border:1px solid rgba(30,27,46,0.12);background:white;color:#1E1B2E;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_undo') + '</button>' +
+              '<button id="dl-decline-undo" style="flex:1;padding:0.6rem;border-radius:10px;border:0.5px solid rgba(255,255,255,0.12);background:white;color:var(--text);font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_undo') + '</button>' +
               '<button id="dl-decline-yes" style="flex:1;padding:0.6rem;border-radius:10px;border:none;background:#993556;color:white;font-size:0.78rem;font-weight:700;font-family:inherit;cursor:pointer">' + t('dl_yes_decline') + '</button>' +
             '</div>' +
           '</div>';
@@ -962,7 +962,7 @@ async function _showSavedContactModal(contactId) {
     ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
 
     ov.innerHTML =
-      '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+      '<div style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
         '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#6366F1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;box-shadow:0 4px 12px rgba(124,92,252,0.25)">' + avHtml + '</div>' +
         '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">' + escHtml(name) + '</div>' +
         (subtitle ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.3rem">' + escHtml(subtitle) + '</div>' : '') +
@@ -2084,7 +2084,7 @@ async function loadTopMatches() {
         '<div style="width:40px;height:40px;border-radius:50%;background:' + avColors[i % 5] + ';display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>';
 
       var sharedTags = s.shared.slice(0, 3).map(function(t) {
-        return '<span style="font-size:0.58rem;padding:0.1rem 0.4rem;background:rgba(124,92,252,0.06);color:var(--accent);border-radius:99px;font-weight:600">' + escHtml(t) + '</span>';
+        return '<span style="font-size:0.58rem;padding:0.1rem 0.4rem;background:rgba(100,180,230,0.06);color:var(--accent);border-radius:99px;font-weight:600">' + escHtml(t) + '</span>';
       }).join('');
 
       return '<div style="background:var(--glass-bg-strong);border:1px solid var(--glass-border-subtle);border-radius:12px;padding:0.6rem 0.75rem;display:flex;align-items:center;gap:0.65rem;cursor:pointer" onclick="openPerson(\'' + p.id + '\',\'screen-home\')">' +
@@ -2413,9 +2413,9 @@ function _homeDrawProxRings(canvas) {
   var ctx = canvas.getContext('2d'); ctx.scale(2,2); ctx.clearRect(0,0,w,h);
   var cx = w/2, cy = h/2, maxR = Math.min(cx,cy);
   var zones = [
-    {r:0.10,fill:'rgba(124,92,252,0.18)'},{r:0.26,fill:'rgba(124,92,252,0.10)'},
-    {r:0.42,fill:'rgba(46,207,207,0.08)'},{r:0.58,fill:'rgba(107,139,255,0.06)'},
-    {r:0.74,fill:'rgba(139,92,246,0.04)'},{r:0.90,fill:'rgba(124,92,252,0.02)'}
+    {r:0.10,fill:'rgba(100,180,230,0.16)'},{r:0.26,fill:'rgba(100,180,230,0.10)'},
+    {r:0.42,fill:'rgba(100,180,230,0.07)'},{r:0.58,fill:'rgba(100,180,230,0.05)'},
+    {r:0.74,fill:'rgba(100,180,230,0.03)'},{r:0.90,fill:'rgba(100,180,230,0.015)'}
   ];
   for (var i = zones.length-1; i >= 0; i--) {
     ctx.beginPath(); ctx.arc(cx,cy,zones[i].r*maxR,0,Math.PI*2);
@@ -2423,10 +2423,10 @@ function _homeDrawProxRings(canvas) {
   }
   for (var i = 0; i < zones.length; i++) {
     ctx.beginPath(); ctx.arc(cx,cy,zones[i].r*maxR,0,Math.PI*2);
-    ctx.strokeStyle = 'rgba(30,27,46,0.08)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1; ctx.stroke();
   }
   var g = ctx.createRadialGradient(cx,cy,0,cx,cy,zones[0].r*maxR);
-  g.addColorStop(0,'rgba(124,92,252,0.12)'); g.addColorStop(1,'rgba(124,92,252,0)');
+  g.addColorStop(0,'rgba(100,180,230,0.14)'); g.addColorStop(1,'rgba(100,180,230,0)');
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx,cy,zones[0].r*maxR,0,Math.PI*2); ctx.fill();
 }
 
@@ -2701,7 +2701,7 @@ function renderHomeTrayList() {
     if (ml.text) {
       var badgeColor, badgeBg;
       if (p.matchScore >= 60)      { badgeColor = '#34D399'; badgeBg = 'rgba(26,158,142,0.18)'; }
-      else if (p.matchScore >= 40) { badgeColor = '#A78BFA'; badgeBg = 'rgba(124,92,252,0.18)'; }
+      else if (p.matchScore >= 40) { badgeColor = '#FBBF24'; badgeBg = 'rgba(251,191,36,0.18)'; }
       else if (p.matchScore >= 20) { badgeColor = '#60A5FA'; badgeBg = 'rgba(59,130,246,0.18)'; }
       else                          { badgeColor = 'rgba(255,255,255,0.65)'; badgeBg = 'rgba(255,255,255,0.08)'; }
       badgeHtml = '<span style="font-size:0.58rem;font-weight:700;color:' + badgeColor + ';background:' + badgeBg + ';padding:0.18rem 0.5rem;border-radius:99px;white-space:nowrap;letter-spacing:0.01em">' + ml.text + '</span>';
