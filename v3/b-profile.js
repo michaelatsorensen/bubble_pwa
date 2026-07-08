@@ -526,7 +526,7 @@ function drawProxRings(canvas) {
   for (var i = 0; i < zones.length; i++) {
     ctx.beginPath();
     ctx.arc(cx, cy, zones[i].r * maxR, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(30,27,46,0.08)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
     ctx.lineWidth = 1;
     ctx.stroke();
   }
@@ -556,7 +556,7 @@ function toggleProximityVisibility() {
       btn.style.borderColor = 'rgba(26,158,142,0.3)';
       btn.style.color = '#1A9E8E';
     } else {
-      btn.style.background = 'rgba(30,27,46,0.04)';
+      btn.style.background = 'rgba(255,255,255,0.04)';
       btn.style.borderColor = 'rgba(255,255,255,0.08)';
       btn.style.color = 'rgba(255,255,255,0.25)';
     }

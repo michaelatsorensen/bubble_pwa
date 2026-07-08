@@ -826,7 +826,7 @@ function cbRenderPillSelect(selectId, options) {
       if (selectId === 'cb-checkin-mode' && typeof cbUpdateCheckinHelp === 'function') cbUpdateCheckinHelp();
       wrap.querySelectorAll('button').forEach(function(b) {
         b.style.borderColor = 'var(--glass-border)';
-        b.style.background = 'rgba(30,27,46,0.03)';
+        b.style.background = 'rgba(255,255,255,0.04)';
         b.style.color = 'var(--muted)';
       });
       btn.style.borderColor = 'rgba(26,158,142,0.6)';
@@ -1005,7 +1005,7 @@ function _showBubbleCreatedModal(bubbleId, name, type) {
   var iconColor = isEvent ? '#2ECFCF' : '#1A9E8E';
   var iconBg = isEvent ? 'rgba(46,207,207,0.15)' : 'rgba(26,158,142,0.15)';
   ov.innerHTML =
-    '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+    '<div style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
       '<div style="width:56px;height:56px;border-radius:50%;background:' + iconBg + ';display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;color:' + iconColor + ';font-size:26px">✓</div>' +
       '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.35rem">' + t(isEvent ? 'cb_created_title_event' : 'cb_created_title') + '</div>' +
       '<div style="font-size:0.88rem;font-weight:600;color:var(--text);margin-bottom:0.15rem">' + escHtml(name) + '</div>' +

@@ -321,8 +321,8 @@ async function loadQRProfilePreview(userId, bubbleId) {
           bubblesEl.innerHTML = memberships.map(function(m) {
             var b = m.bubbles || {};
             var isEvent = b.type === 'event' || b.type === 'live';
-            var col = isEvent ? 'rgba(46,207,207,' : 'rgba(124,92,252,';
-            var dotCol = isEvent ? '#2ECFCF' : '#7C5CFC';
+            var col = isEvent ? 'rgba(46,207,207,' : 'rgba(100,180,230,';
+            var dotCol = isEvent ? '#2ECFCF' : 'rgb(100,180,230)';
             var txtCol = isEvent ? '#0F6E56' : '#534AB7';
             return '<div style="display:flex;align-items:center;gap:0.3rem;padding:0.35rem 0.65rem;border-radius:10px;background:' + col + '0.06);border:1px solid ' + col + '0.12);flex-shrink:0">' +
               '<div style="width:6px;height:6px;border-radius:50%;background:' + dotCol + '"></div>' +
@@ -614,7 +614,7 @@ async function loadEventSocialProof(bubbleId) {
       var ini = (p.name || '?').split(' ').map(function(w){ return w[0]; }).join('').slice(0,2).toUpperCase();
       var tags = (p.keywords || []).slice(0,2).map(function(k) { return '<span style="font-size:0.58rem;padding:0.1rem 0.4rem;background:rgba(124,92,252,0.06);color:var(--accent);border-radius:99px">' + escHtml(k) + '</span>'; }).join('');
       var badgeHtml = badge ? '<span style="font-size:0.52rem;font-weight:700;letter-spacing:0.03em;color:#2c7fb8;background:rgba(100,180,230,0.15);border-radius:5px;padding:0.05rem 0.35rem;margin-left:0.35rem;vertical-align:middle">' + badge + '</span>' : '';
-      return '<div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:0.7rem 0.9rem;display:flex;align-items:center;gap:0.6rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
+      return '<div style="background:rgba(255,255,255,0.055);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.12);border-radius:var(--radius);padding:0.7rem 0.9rem;display:flex;align-items:center;gap:0.6rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
         '<div style="width:36px;height:36px;border-radius:50%;background:' + avColors[idx % avColors.length] + ';display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>' +
         '<div style="flex:1;min-width:0"><div style="font-size:0.8rem;font-weight:600;color:var(--text)">' + escHtml(p.name || 'Deltager') + badgeHtml + '</div>' +
         '<div style="font-size:0.68rem;color:var(--text-secondary)">' + escHtml(p.title || '') + (p.workplace ? ' \u00B7 ' + escHtml(p.workplace) : '') + '</div>' +
@@ -839,8 +839,8 @@ function showUpdateBanner() {
     + 'padding-top:env(safe-area-inset-top,0px);'
     + 'background:rgba(255,255,255,0.96);'
     + 'backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);'
-    + 'border-bottom:1px solid rgba(124,92,252,0.25);'
-    + 'box-shadow:0 4px 24px rgba(30,27,46,0.12);';
+    + 'border-bottom:0.5px solid rgba(255,255,255,0.12);'
+    + 'box-shadow:0 4px 24px rgba(0,0,0,0.35);';
   banner.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;'
     + 'padding:0.55rem 1rem;gap:0.75rem;font-family:inherit">'
     + '<div style="display:flex;align-items:center;gap:0.5rem;min-width:0">'

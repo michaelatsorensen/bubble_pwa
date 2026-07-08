@@ -1753,7 +1753,7 @@ async function bcLoadMembers() {
       var _matchBadge = '';
       if (!isOwnerRow && !_isSelf && (m._score || 0) >= 40) {
         var _mCol = (m._score >= 60) ? '#34D399' : '#B9A6FF';
-        var _mBg = (m._score >= 60) ? 'rgba(26,158,142,0.18)' : 'rgba(124,92,252,0.2)';
+        var _mBg = (m._score >= 60) ? 'rgba(26,158,142,0.18)' : 'rgba(251,191,36,0.2)';
         _matchBadge = '<span style="font-size:0.58rem;font-weight:700;color:' + _mCol + ';background:' + _mBg + ';padding:0.18rem 0.5rem;border-radius:99px;white-space:nowrap">' + matchLabel(m._score).text + '</span>';
       }
       var _rightSide = isOwnerRow
@@ -2088,7 +2088,7 @@ async function bcLoadInfo() {
         statsHtml = '<div class="section-card">' +
           '<div class="section-card-title">' + t('bi_statistics') + '</div>' +
           '<div class="dash-pair"><div class="dash-row">' +
-            oCard('o-mem-' + b.id, 'users', 'rgba(124,92,252,0.08)', 'var(--accent)', memTotalCount, t('bi_members_label'), memNewCount, 'accent') +
+            oCard('o-mem-' + b.id, 'users', 'rgba(100,180,230,0.08)', 'var(--accent)', memTotalCount, t('bi_members_label'), memNewCount, 'accent') +
             oCard('o-msg-' + b.id, 'chat', 'rgba(232,121,168,0.08)', 'var(--pink)', msgTotal.count || 0, t('bi_messages_label'), msgNew.count, 'pink') +
           '</div><div class="dash-tray" id="dtray-o1-' + b.id.slice(0,8) + '"><div class="dash-tray-collapse"><div class="dash-tray-inner" id="dti-o1"><div style="font-size:0.72rem;font-weight:700" id="dtitle-o1"></div><div style="font-size:0.55rem;color:rgba(255,255,255,0.55)" id="dsub-o1"></div><div class="dash-chart-wrap"><canvas id="dcv-o1"></canvas></div></div></div></div></div>' +
           '</div>';

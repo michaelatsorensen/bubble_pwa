@@ -443,9 +443,9 @@ function bubbleEmoji(type) {
 
 function bubbleColor(type, alpha) {
   var typ = (type || '').toLowerCase();
-  // Event = cyan (#2ECFCF), Network = purple (#7C5CFC)
+  // Event = cyan (#2ECFCF), Network = ice-blue (v3.0)
   if (typ === 'event' || typ === 'live') return `rgba(46,207,207,${alpha})`;
-  return `rgba(124,92,252,${alpha})`; // network + all legacy types
+  return `rgba(100,180,230,${alpha})`; // network + all legacy types
 }
 
 function typeLabel(type) {

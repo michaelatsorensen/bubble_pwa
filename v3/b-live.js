@@ -1066,7 +1066,7 @@ function _connectShowBubbleCard(bub, isEventFlow) {
       '<div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:1rem">' +
         '<div style="width:52px;height:52px;border-radius:14px;background:' + (isEvent ? 'rgba(46,207,207,0.22)' : 'rgba(100,180,230,0.22)') + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">' + iconHtml + '</div>' +
         '<div style="flex:1;min-width:0">' +
-          '<div style="font-size:1rem;font-weight:800;color:#1E1B2E">' + escHtml(bub.name) + '</div>' +
+          '<div style="font-size:1rem;font-weight:800;color:var(--text)">' + escHtml(bub.name) + '</div>' +
           '<div style="font-size:0.75rem;color:#888;margin-top:2px">' +
             (isEvent ? 'Event' : t('pf_networks_label')) + ' · ' + memberLabel +
           '</div>' +

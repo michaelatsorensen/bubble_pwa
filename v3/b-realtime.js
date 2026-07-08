@@ -159,7 +159,7 @@ function _showOfflineModal() {
       '<style>@keyframes _obBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}@keyframes _obPulse{0%,100%{opacity:.4}50%{opacity:1}}</style>' +
       '<div style="display:flex;justify-content:center;gap:8px;margin-bottom:14px">' +
         '<div style="width:10px;height:10px;border-radius:50%;background:#2ECFCF;animation:_obBob 1.4s ease-in-out infinite"></div>' +
-        '<div style="width:10px;height:10px;border-radius:50%;background:#7C5CFC;animation:_obBob 1.4s ease-in-out infinite 0.15s"></div>' +
+        '<div style="width:10px;height:10px;border-radius:50%;background:rgb(100,180,230);animation:_obBob 1.4s ease-in-out infinite 0.15s"></div>' +
         '<div style="width:10px;height:10px;border-radius:50%;background:#E879A8;animation:_obBob 1.4s ease-in-out infinite 0.3s"></div>' +
       '</div>' +
       '<div style="font-size:0.88rem;font-weight:700;color:#412402;margin-bottom:6px">' + t('offline_title') +
@@ -635,7 +635,7 @@ function initGlobalRealtime() {
         ov.id = 'checkin-confirm-overlay';
         ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.3s ease';
         ov.innerHTML =
-          '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+          '<div style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
             '<div style="width:56px;height:56px;border-radius:50%;background:rgba(26,158,142,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">' +
               '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
             '</div>' +

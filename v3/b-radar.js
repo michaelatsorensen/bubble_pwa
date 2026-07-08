@@ -58,8 +58,8 @@ function renderRadarList() {
     var isA = p.is_anon;
     var name = isA ? t('ps_anonymous') : (p.name || '?');
     var ini = isA ? '?' : name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-    var col = isA ? 'rgba(30,27,46,0.05)' : colors[i % colors.length];
-    var bd = isA ? 'border:1px solid rgba(30,27,46,0.04);' : '';
+    var col = isA ? 'rgba(255,255,255,0.05)' : colors[i % colors.length];
+    var bd = isA ? 'border:0.5px solid rgba(255,255,255,0.08);' : '';
     var theirKw = (p.keywords || []).map(function(k){ return k.toLowerCase(); });
     var overlap = myKw.filter(function(k){ return theirKw.indexOf(k) >= 0; });
     var matchPct = p.matchScore || Math.min(Math.round(p.relevance * 85 + 10), 99);
@@ -227,7 +227,7 @@ async function openRadarPerson(userId) {
     matchEl.textContent = ml.text;
     // Dark-context match badge colors (matchLabel uses light-mode colors)
     if (score >= 60)      { matchEl.style.color = '#34D399'; matchEl.style.background = 'rgba(26,158,142,0.18)'; }
-    else if (score >= 40) { matchEl.style.color = '#A78BFA'; matchEl.style.background = 'rgba(124,92,252,0.18)'; }
+    else if (score >= 40) { matchEl.style.color = '#FBBF24'; matchEl.style.background = 'rgba(251,191,36,0.18)'; }
     else if (score >= 20) { matchEl.style.color = '#60A5FA'; matchEl.style.background = 'rgba(59,130,246,0.18)'; }
     else if (score >= 1)  { matchEl.style.color = 'rgba(255,255,255,0.65)'; matchEl.style.background = 'rgba(255,255,255,0.08)'; }
     else                  { matchEl.style.color = 'transparent'; matchEl.style.background = 'transparent'; }

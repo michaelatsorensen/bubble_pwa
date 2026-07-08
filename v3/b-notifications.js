@@ -636,7 +636,7 @@ function setPushBtnActive(btn) {
 function setPushBtnInactive(btn) {
   if (!btn) return;
   btn.textContent = t('settings_enable');
-  btn.style.background = 'rgba(30,27,46,0.035)';
+  btn.style.background = 'rgba(255,255,255,0.04)';
   btn.style.borderColor = 'var(--glass-border)';
   btn.style.color = 'var(--muted)';
 }

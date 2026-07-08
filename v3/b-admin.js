@@ -33,7 +33,7 @@ async function adminLoadReports() {
       var reportedName = r.reported ? r.reported.name : t('misc_unknown');
       var isBanned = r.reported && r.reported.banned;
       var timeAgo = adminTimeAgo(r.created_at);
-      return '<div style="padding:0.4rem 0;border-bottom:1px solid rgba(30,27,46,0.025)">' +
+      return '<div style="padding:0.4rem 0;border-bottom:0.5px solid rgba(255,255,255,0.085)">' +
         '<div style="display:flex;justify-content:space-between;align-items:center">' +
         '<div><span style="font-weight:600">' + escHtml(reportedName) + '</span>' +
         (isBanned ? ' <span style="font-size:0.55rem;background:rgba(26,122,138,0.2);color:var(--pink);padding:0.1rem 0.3rem;border-radius:4px">Banned</span>' : '') +
@@ -237,7 +237,7 @@ var _dashMeta = {
 };
 
 var _dashColors = {
-  accent: { solid: '#7C5CFC', bg: 'rgba(124,92,252,0.08)' },
+  accent: { solid: 'rgb(100,180,230)', bg: 'rgba(100,180,230,0.08)' },
   teal: { solid: '#1A9E8E', bg: 'rgba(46,207,207,0.08)' },
   pink: { solid: '#E879A8', bg: 'rgba(232,121,168,0.08)' }
 };
@@ -353,7 +353,7 @@ async function adminBanUser(userId, userName) {
         tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0.5rem;margin-top:0.3rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:8px;gap:0.4rem';
         tray.innerHTML = '<span style="font-size:0.68rem;color:var(--text-secondary)">Ban ' + escHtml(userName||t('pf_user_lc')) + '?</span>' +
           '<div style="display:flex;gap:0.25rem">' +
-          '<button style="font-size:0.65rem;padding:0.2rem 0.5rem;background:rgba(124,92,252,0.12);color:var(--pink);border:1px solid rgba(26,122,138,0.3);border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600" onclick="adminConfirmBan()">Ban</button>' +
+          '<button style="font-size:0.65rem;padding:0.2rem 0.5rem;background:rgba(100,180,230,0.12);color:var(--pink);border:1px solid rgba(26,122,138,0.3);border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600" onclick="adminConfirmBan()">Ban</button>' +
           '<button style="font-size:0.65rem;padding:0.2rem 0.5rem;background:none;color:rgba(255,255,255,0.25);border:1px solid var(--glass-border);border-radius:6px;cursor:pointer;font-family:inherit" onclick="adminCancelBan(this)">Annuller</button>' +
           '</div>';
         row.appendChild(tray);
