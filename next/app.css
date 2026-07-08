@@ -4215,3 +4215,25 @@ a:not(.btn-primary):not(.btn-secondary):active {
   margin: 0 -1.2rem;
   padding: 0 1.2rem calc(1.2rem + env(safe-area-inset-bottom, 0px));
 }
+
+/* ═══════════════════════════════════════════════════════════
+   TRÆ-FOLD AUTORITATIV OVERRIDE (v10.43)
+   Der findes duplikerede bb-tree-regler (Variant 2, ~linje 3319+) der
+   overskriver det kanoniske design og kan bryde fold-mekanikken. Denne
+   blok står sidst = vinder i kaskaden. Sikrer at trunk/leaves KAN folde
+   ud (åben = stor max-height, collapsed = 0). Diagnose + fix i ét.
+   ═══════════════════════════════════════════════════════════ */
+.bb-tree-trunk, .bb-tree-leaves {
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
+}
+.bb-tree-trunk:not(.collapsed), .bb-tree-leaves:not(.collapsed) {
+  max-height: 3000px;
+  opacity: 1;
+  pointer-events: auto;
+}
+.bb-tree-trunk.collapsed, .bb-tree-leaves.collapsed {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
