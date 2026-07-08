@@ -1,0 +1,128 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+*::-webkit-scrollbar { width:0; height:0; display:none; }
+* { scrollbar-width:none; }
+@keyframes bg-ripple { 0% { transform:translate(-50%,-50%) scale(0.3); opacity:0.5; } 100% { transform:translate(-50%,-50%) scale(1); opacity:0; } }
+@keyframes bg-live { 0%,100% { box-shadow:0 0 0 0 rgba(26,158,142,0.35); } 50% { box-shadow:0 0 0 4px rgba(26,158,142,0); } }
+body { height:812px; width:375px; margin:0 auto; position:relative; overflow:hidden; background:#0E141C; font-family:'Figtree',system-ui,sans-serif; color:rgba(255,255,255,0.95); }
+</style></head>
+<body>
+<!-- ATMOSFAERE -->
+<div style="position:absolute;inset:0;z-index:0;pointer-events:none">
+  <div style="position:absolute;top:9%;left:-70px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle at 35% 30%, rgba(150,205,250,0.22), rgba(70,120,180,0.08) 60%, transparent 75%);filter:blur(8px)"></div>
+  <div style="position:absolute;top:52%;right:-90px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle at 40% 35%, rgba(100,150,210,0.16), rgba(60,100,160,0.06) 60%, transparent 75%);filter:blur(10px)"></div>
+  <div style="position:absolute;bottom:6%;left:20%;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle at 45% 40%, rgba(90,200,175,0.10), transparent 70%);filter:blur(14px)"></div>
+</div>
+
+<div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+  <!-- TOPBAR -->
+  <div style="margin-top:56px;height:52px;flex-shrink:0;padding:0 16px;display:flex;align-items:center;gap:7px">
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:5px"><span style="font-size:19px;font-weight:900;letter-spacing:-0.04em;background:linear-gradient(135deg,#2ECFCF 0%,#6B8BFF 40%,#8B5CF6 70%,#E879A8 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent">bubble</span></div>
+      <div style="font-size:10.5px;font-weight:600;color:rgba(255,255,255,0.5);margin-top:2px">Godaften, Michael</div>
+    </div>
+    <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.14);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:center">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"><path d="M2 7V2h5M17 2h5v5M22 17v5h-5M7 22H2v-5"></path><line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2 2"></line></svg>
+    </div>
+    <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.14);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:center">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="3.5" height="3.5"></rect></svg>
+    </div>
+    <div style="position:relative;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.14);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:center">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"><path d="M15 17h5l-1.4-1.4A6 6 0 0019 11V8a7 7 0 00-14 0v3a6 6 0 00.4 4.6L4 17h5m6 0a3 3 0 01-6 0m6 0H9"></path></svg>
+      <div style="position:absolute;top:1px;right:1px;width:7px;height:7px;border-radius:50%;background:#E879A8;box-shadow:0 0 6px rgba(232,121,168,0.5)"></div>
+    </div>
+    <div style="width:32px;height:32px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.25);overflow:hidden;background:linear-gradient(135deg,#CECBF6,#AFA9EC);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff">MW</div>
+  </div>
+
+  <!-- SCROLL -->
+  <div style="flex:1;overflow:auto;padding:4px 16px 100px;display:grid;grid-auto-rows:min-content;gap:9px">
+    <!-- LIVE/ALLE toggle-bar -->
+    <div style="border-radius:16px;padding:9px 10px;display:flex;align-items:center;gap:9px;background:rgba(255,255,255,0.055);border:0.5px solid rgba(255,255,255,0.12);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);backdrop-filter:blur(20px)">
+      <div style="flex:1;min-width:0;height:34px;display:flex;align-items:center;gap:8px">
+        <div style="width:8px;height:8px;border-radius:50%;background:#2ECFCF;flex-shrink:0;animation:bg-live 2s infinite"></div>
+        <div style="min-width:0"><div style="font-size:8px;font-weight:800;letter-spacing:0.08em;color:#2ECFCF">LIVE NU</div><div style="font-size:11.5px;font-weight:700;color:#A7EDE4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Netvaerksaften · Alsion</div><div style="font-size:9px;color:rgba(167,237,228,0.55)">128 til stede</div></div>
+      </div>
+      <div style="display:flex;background:rgba(0,0,0,0.22);border-radius:99px;padding:3px;flex-shrink:0">
+        <div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 11px;border-radius:99px;font-size:11px;font-weight:800;color:#A7EDE4;background:rgba(26,158,142,0.28);border:0.5px solid rgba(26,158,142,0.45)"><span style="width:5px;height:5px;border-radius:50%;background:#2ECFCF;display:inline-block"></span>Live</div>
+        <div style="display:flex;align-items:center;justify-content:center;padding:6px 11px;border-radius:99px;font-size:11px;font-weight:700;color:rgba(255,255,255,0.5)">Alle</div>
+      </div>
+    </div>
+
+    <!-- RADAR HERO -->
+    <div style="position:relative;background:rgba(255,255,255,0.055);border:0.5px solid rgba(255,255,255,0.12);box-shadow:inset 0 1px 0 rgba(255,255,255,0.09);backdrop-filter:blur(24px);border-radius:24px;overflow:hidden">
+      <div style="position:relative;z-index:5;display:flex;gap:8px;padding:12px 12px 0;align-items:center">
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:rgba(255,255,255,0.8);background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.14);border-radius:99px;padding:6px 12px;cursor:pointer">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v5l-4 2v-7z"></path></svg>
+          Alle<span style="font-size:9px;font-weight:800;color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.08);border-radius:99px;padding:1px 6px">13</span>
+        </div>
+        <div style="flex:1"></div>
+        <div style="width:29px;height:29px;border-radius:50%;background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.14);display:flex;align-items:center;justify-content:center;cursor:pointer">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round"><line x1="8" y1="6" x2="20" y2="6"></line><line x1="8" y1="12" x2="20" y2="12"></line><line x1="8" y1="18" x2="20" y2="18"></line><circle cx="4" cy="6" r="1" fill="rgba(255,255,255,0.85)" stroke="none"></circle><circle cx="4" cy="12" r="1" fill="rgba(255,255,255,0.85)" stroke="none"></circle><circle cx="4" cy="18" r="1" fill="rgba(255,255,255,0.85)" stroke="none"></circle></svg>
+        </div>
+      </div>
+      <div style="position:relative;height:344px">
+        
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:290px;height:290px;border-radius:50%;background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.05)"></div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:236px;height:236px;border-radius:50%;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.055)"></div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:186px;height:186px;border-radius:50%;background:rgba(100,180,230,0.045);border:1px solid rgba(255,255,255,0.06)"></div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:134px;height:134px;border-radius:50%;background:rgba(46,207,207,0.06);border:1px solid rgba(255,255,255,0.07)"></div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:82px;height:82px;border-radius:50%;background:rgba(100,180,230,0.10);border:1px solid rgba(100,180,230,0.14)"></div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;background:rgba(100,180,230,0.18)"></div>
+        <!-- Sonar-ripple -->
+        <div style="position:absolute;top:50%;left:50%;width:290px;height:290px;border-radius:50%;border:1px solid rgba(100,180,230,0.3);animation:bg-ripple 3.8s ease-out infinite"></div>
+        <!-- Centrum-glow + DU -->
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border-radius:50%;background:radial-gradient(circle, rgba(100,180,230,0.16), transparent 68%)"></div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;border:1.5px solid rgba(100,180,230,0.65);box-shadow:0 0 26px rgba(100,180,230,0.28);overflow:hidden;background:linear-gradient(135deg,#CECBF6,#AFA9EC);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff">MW</div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(calc(-50% + 32px), calc(-50% + 0px));z-index:3"><div style="width:32px;height:32px;border-radius:50%;border:1px solid rgba(100,180,230,0.7);box-shadow:0 0 14px rgba(100,180,230,0.3);overflow:hidden;background:#2ECFCF;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">T</div><div style="position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;white-space:nowrap;font-size:10px;font-weight:700;color:rgba(255,255,255,0.8)">T</div></div><div style="position:absolute;top:50%;left:50%;transform:translate(calc(-50% + -36px), calc(-50% + 33px));z-index:3"><div style="width:32px;height:32px;border-radius:50%;border:1px solid rgba(100,180,230,0.7);box-shadow:0 0 14px rgba(100,180,230,0.3);overflow:hidden;background:#6366F1;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">BT</div><div style="position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;white-space:nowrap;font-size:10px;font-weight:700;color:rgba(255,255,255,0.8)">BT</div></div><div style="position:absolute;top:50%;left:50%;transform:translate(calc(-50% + 6px), calc(-50% + -66px));z-index:3"><div style="width:28px;height:28px;border-radius:50%;border:1px solid rgba(46,207,207,0.5);box-shadow:none;overflow:hidden;background:#8B5CF6;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">JI</div><div style="position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;white-space:nowrap;font-size:10px;font-weight:700;color:rgba(255,255,255,0.8)">JI</div></div><div style="position:absolute;top:50%;left:50%;transform:translate(calc(-50% + 48px), calc(-50% + 62px));z-index:3"><div style="width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,0.24);box-shadow:none;overflow:hidden;background:#E879A8;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff"></div></div><div style="position:absolute;top:50%;left:50%;transform:translate(calc(-50% + -81px), calc(-50% + -14px));z-index:3"><div style="width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,0.24);box-shadow:none;overflow:hidden;background:#1A9E8E;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">CF</div></div><div style="position:absolute;top:50%;left:50%;transform:translate(calc(-50% + 70px), calc(-50% + -45px));z-index:3"><div style="width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,0.24);box-shadow:none;overflow:hidden;background:#F59E0B;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">C</div></div><div style="position:absolute;top:50%;left:50%;transform:translate(calc(-50% + -22px), calc(-50% + 82px));z-index:3"><div style="width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,0.24);box-shadow:none;overflow:hidden;background:#3B82F6;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">CW</div></div><div style="position:absolute;top:50%;left:50%;transform:translate(calc(-50% + -40px), calc(-50% + -76px));z-index:3"><div style="width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,0.24);box-shadow:none;overflow:hidden;background:#EC4899;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">TP</div></div><div style="position:absolute;top:50%;left:50%;transform:translate(calc(-50% + 82px), calc(-50% + 30px));z-index:3"><div style="width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,0.24);box-shadow:none;overflow:hidden;background:#10B981;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff"></div></div><div style="position:absolute;top:50%;left:50%;transform:translate(calc(-50% + -82px), calc(-50% + 34px));z-index:3"><div style="width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,0.24);box-shadow:none;overflow:hidden;background:#6366F1;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">C</div></div><div style="position:absolute;top:50%;left:50%;transform:translate(calc(-50% + 38px), calc(-50% + -81px));z-index:3"><div style="width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,0.24);box-shadow:none;overflow:hidden;background:#2ECFCF;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff"></div></div><div style="position:absolute;top:50%;left:50%;transform:translate(calc(-50% + 27px), calc(-50% + 86px));z-index:3"><div style="width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,0.24);box-shadow:none;overflow:hidden;background:#8B5CF6;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff"></div></div><div style="position:absolute;top:50%;left:50%;transform:translate(calc(-50% + -79px), calc(-50% + -46px));z-index:3"><div style="width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,0.24);box-shadow:none;overflow:hidden;background:#F59E0B;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">JC</div></div><div style="position:absolute;top:50%;left:50%;transform:translate(calc(-50% + 91px), calc(-50% + -20px));z-index:3"><div style="width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,0.24);box-shadow:none;overflow:hidden;background:#3B82F6;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">T</div></div><div style="position:absolute;top:50%;left:50%;transform:translate(calc(-50% + -54px), calc(-50% + 77px));z-index:3"><div style="width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,0.24);box-shadow:none;overflow:hidden;background:#E879A8;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">TN</div></div><div style="position:absolute;top:50%;left:50%;transform:translate(calc(-50% + -12px), calc(-50% + -94px));z-index:3"><div style="width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,0.24);box-shadow:none;overflow:hidden;background:#1A9E8E;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">FG</div></div>
+      </div>
+    </div>
+
+    <!-- SAVED CONTACTS -->
+    <div style="background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);backdrop-filter:blur(20px);border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px">
+      <div style="width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.3);overflow:hidden;background:linear-gradient(135deg,#2ECFCF,#22B8CF)"></div>
+      <div style="flex:1;font-size:11.5px;font-weight:600;color:rgba(255,255,255,0.9)">1 gemt kontakt</div>
+      <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.09);display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,0.5)">&#8250;</div>
+    </div>
+
+    <!-- PROFILE STRENGTH -->
+    <div style="background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);backdrop-filter:blur(20px);border-radius:14px;padding:11px 12px">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
+        <div style="width:30px;height:30px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#CECBF6,#AFA9EC);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff">MW</div>
+        <div style="flex:1;min-width:0"><div style="font-size:11.5px;font-weight:700;color:rgba(255,255,255,0.92)">Profilstyrke</div><div style="font-size:9.5px;color:rgba(255,255,255,0.45)">Tilfoej 2 tags mere - bliv et bedre match</div></div>
+        <div style="font-size:11.5px;font-weight:800;color:rgba(255,255,255,0.92)">15%</div>
+      </div>
+      <div style="height:5px;border-radius:3px;background:rgba(255,255,255,0.12);overflow:hidden"><div style="height:100%;width:15%;border-radius:3px;background:rgba(100,180,230,0.8)"></div></div>
+    </div>
+
+    <!-- FEEDBACK -->
+    <div style="background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);backdrop-filter:blur(20px);border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px">
+      <div style="width:30px;height:30px;border-radius:10px;background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"></path></svg></div>
+      <div style="flex:1;min-width:0"><div style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,0.9)">Giv feedback</div><div style="font-size:9.5px;color:rgba(255,255,255,0.45)">Hjaelp os med at goere Bubble bedre</div></div>
+      <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.09);display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,0.5)">&#8250;</div>
+    </div>
+  </div>
+
+  <!-- NAVBAR -->
+  <div style="position:absolute;left:14px;right:14px;bottom:24px;z-index:2000;padding:10px 8px 8px;background:rgba(20,22,28,0.55);border:0.5px solid rgba(255,255,255,0.13);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 30px rgba(0,0,0,0.35);backdrop-filter:blur(28px);border-radius:22px;display:flex;justify-content:space-around">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:rgb(100,180,230);flex:1">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.4L12 4l8 7.4"></path><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"></path></svg>
+      <div style="font-size:9px;font-weight:800">Hjem</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:rgba(255,255,255,0.45);flex:1">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="9.5" r="6" opacity="0.85"></circle><circle cx="16" cy="13.5" r="4.5" opacity="0.6"></circle><circle cx="8" cy="16" r="3" opacity="0.45"></circle></svg>
+      <div style="font-size:9px;font-weight:800">Bobler</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:rgba(255,255,255,0.45);flex:1">
+      <span style="position:relative;display:flex"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5c0 4-3.6 7-8 7a9.4 9.4 0 01-3.2-.55L4 20l1.3-3.2A7.5 7.5 0 014 11.5c0-4 3.6-7.5 8-7.5s8 3.5 8 7.5z"></path><circle cx="9.5" cy="11.5" r=".8" fill="currentColor" stroke="none"></circle><circle cx="12" cy="11.5" r=".8" fill="currentColor" stroke="none"></circle><circle cx="14.5" cy="11.5" r=".8" fill="currentColor" stroke="none"></circle></svg><span style="position:absolute;top:-1px;right:-2px;width:7px;height:7px;border-radius:50%;background:#E879A8;box-shadow:0 0 6px rgba(232,121,168,0.5)"></span></span>
+      <div style="font-size:9px;font-weight:800">Beskeder</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:rgba(255,255,255,0.45);flex:1">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5.5 20.5c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"></path></svg>
+      <div style="font-size:9px;font-weight:800">Profil</div>
+    </div>
+  </div>
+</div>
+</body></html>
