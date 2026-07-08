@@ -277,3 +277,35 @@ piloten skal maale den NUVAERENDE motor. Byg efter HoS-data er i hus.
 **Teknisk skitse:** keywords-kolonnen kan beholdes (text[]), tags gemmes samme sted men
 valideres mod tag-databasen ved oprettelse. Discover-query scorer overlap mod currentProfile
 tags via _tagToCluster. Migration: eksisterende fri-tekst-keywords beholdes som fri tekst.
+
+## Personlige radar-filtre (custom filters) — jul 2026, fra design-session
+
+**Idé (Michael):** Valgfri profil-sektion hvor brugeren udpeger interesser/tags de gerne vil
+MØDE hos andre ("interesser jeg vil matche på"). Hvert udpeget tag bliver til et individuelt
+taend/sluk-filter paa radaren, saa brugeren selv styrer praecist hvilke profiler der vises.
+
+**Afklaret ved idé-fangst:**
+- Tag-kilde: HYBRID — vaelg fra de 196 eksisterende tags + tilfoej egne i fri tekst.
+- Radar-adfaerd: ét filter PER tag (taend/sluk hvert enkelt uafhaengigt). Radaren viser kun
+  profiler der matcher mindst ét taendt filter.
+- KUN VISNING — filtrerer radaren, paavirker IKKE match-scoren. Bevidst valg: forudsigelig,
+  gennemskuelig adfaerd, ingen skjult algoritme-effekt.
+
+**Hvorfor staerk:** giver brugeren AGENCY over radaren uden at komplicere matching-logikken.
+"Jeg bestemmer selv hvem der er relevant" passer Bubbles positionering (bruger i kontrol,
+ikke algoritmen). Udvider et moenster der ALLEREDE findes visuelt (radar-filter-panel:
+Alle/Faelles interesser/Staerke matches + interesse-chips).
+
+**Design-prompt skrevet** (glas-aestetik, DEL 1 profil-sektion tom+fyldt, DEL 2 radar-filtre
+taendt/slukket med adskillelse mellem indbyggede og personlige). Afventer mockup fra Design.
+
+**Teknisk skitse (naar godkendt):** ny valgfri profiles-kolonne `match_interests` text[];
+profil-sektion genbruger onboarding-tag-vaelger + fri-tekst-chips; radar-filter-udvidelse der
+filtrerer _homeDartboardProfiles paa tag-overlap. Roerer IKKE calcMatchScore.
+
+**Relateret:** roerer samme underliggende tema (tag-baseret relevans) som "Boble-tags fra
+tag-database" ovenfor. Post-pilot kunne de to taenkes sammen til et sammenhaengende
+interesse-graf-system — men hver idé staar fint alene. Begge POST-PILOT.
+
+**UI-retning:** glas-design (mörk glasmorfisme) er den besluttede vej for UI fremover
+(design-vaerktoej-eksploration jul 2026). Ikke implementeret endnu — separat beslutning.
