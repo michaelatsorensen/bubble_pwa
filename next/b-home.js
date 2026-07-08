@@ -1892,6 +1892,24 @@ function bcToggleEventHistory() {
 function bbTreeToggle(accId) {
   var trunk = document.getElementById('trunk-' + accId);
   var tog = document.getElementById('tog-' + accId);
+  // TEMP DIAGNOSTIC (v10.44) — remove after debugging. Shows exactly what happens.
+  try {
+    var diag = 'TREE TAP: accId=' + accId +
+      ' | trunk found=' + (!!trunk) +
+      ' | tog found=' + (!!tog);
+    if (trunk) {
+      var cs = getComputedStyle(trunk);
+      diag += ' | collapsed=' + trunk.classList.contains('collapsed') +
+        ' | maxH=' + cs.maxHeight + ' | children=' + trunk.children.length +
+        ' | scrollH=' + trunk.scrollHeight;
+    }
+    showToast(diag);
+    console.log('[TREE-DIAG] ' + diag);
+    if (typeof sb !== 'undefined' && sb && currentUser) {
+      sb.from('error_log').insert({ user_id: currentUser.id, context: 'TREE_DIAG',
+        message: diag, stack: '', extra: '{}' }).then(function(){}).catch(function(){});
+    }
+  } catch(e) {}
   if (!trunk) return;
   var isOpen = tog && tog.classList.contains('open');
   if (isOpen) {
