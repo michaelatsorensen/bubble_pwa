@@ -291,3 +291,40 @@ STRATEGI 16.8 siger netvaerks-CHAT-push = "stoejkatastrofe". Sandsynlig skelnen:
 **Beslutning: afklar model foerst, byg ikke endnu.** Arbejd videre paa andet; vend
 tilbage naar modellen er moden. Naar bygget: ny per-medlem push-funktion + mute-kontrol
 sandsynligt noedvendig. Ogsaa uafklaret: virker DM-push overhovedet? (test naar naturligt).
+
+---
+
+## 13. VISUELT UDTRYK-LØFT fra Claude Design (planlagt — jul 2026)
+
+**Status:** Michael bygger et FÆRDIGT nyt visuelt udtryk i Claude Design (mørkt glas,
+premium look). Teaser set: markant modnet udseende, men STRUKTUR bevaret 1:1 (radar-bullseye,
+boble-træ med foraeldre-forbindelser + fold, Mine/Opdag-faner, live-banner, beskeder-blanding
+— alt genkendeligt fra nuvaerende build).
+
+**Natur: ren VISUEL tilpasning, ikke omstrukturering.** Kun udtrykket aendres (farver, glas,
+spacing, radius) + FÅ steder hvor workflow/funktionalitet er strammet op. Logik/struktur
+roeres ikke.
+
+**BESLUTTET plan (Michaels valg):**
+1. Vent til Design-udtrykket er HELT faerdigt (ikke stykkevis).
+2. Naar klar: byg en ISOLERET test hvor det nye look laegges paa nuvaerende build i
+   /home/claude (rører IKKE next/ prod). Test live paa rigtig struktur + data.
+3. Kun ved eksplicit godkendelse migreres til next/.
+
+**To mulige migrations-veje (afgoeres naar udtrykket ses fuldt):**
+- Vej 1 TOKEN-SWAP (kirurgisk): nyt udtryk = aendringer i CSS-variabler + komponent-styles.
+  Redefiner eksisterende :root-variabler + ~210 klasser UDEN at roere HTML/JS. Hurtigst/
+  sikrest HVIS udtrykket kan udtrykkes gennem eksisterende klasser. Teaser tyder paa at
+  DET MESTE er denne vej (samme komponent-struktur, nyt look).
+- Vej 2 KOMPONENT-FOR-KOMPONENT (grundig): hvis udtrykket aendrer selve komponent-OPBYGNING
+  (nye elementer, andet indre layout), migreres hver komponent enkeltvis mod eksisterende
+  markup. Kun for de faa steder hvor workflow er strammet.
+
+**Arbejdsgang naar Design leverer:** Michael bringer udtrykket herind (kode/screenshots) →
+Claude analyserer forskelle mod eksisterende klasser → bygger isoleret override-lag
+(test-app.css) → laegger paa KOPI af build → Michael tester live → beslutning.
+
+**UI-bibliotek-prompt + kravspec findes allerede** (ui-bibliotek-kravspec-og-prompt.md) —
+kan bruges til at faa Design til at levere i det format der mapper til eksisterende klasser.
+
+Glas-UI = besluttet retning. Ikke implementeret. Separat fra feature-arbejde.
