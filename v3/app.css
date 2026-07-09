@@ -3147,7 +3147,7 @@ a:not(.btn-primary):not(.btn-secondary):active {
 #screen-profile .profile-hero #prof-strength-bar {
   /* keep ice-blue bar — works on both bg colors */
 }
-#screen-profile .card { background:rgba(20,22,28,0.85); border:0.5px solid rgba(255,255,255,0.06); box-shadow:none; color:rgba(255,255,255,0.9); }
+#screen-profile .card { background:rgba(255,255,255,0.055); border:0.5px solid rgba(255,255,255,0.12); box-shadow:inset 0 1px 0 rgba(255,255,255,0.09); color:rgba(255,255,255,0.9); }
 #screen-profile .card .fw-600 { color:rgba(255,255,255,0.95); }
 #screen-profile .card .text-muted { color:rgba(255,255,255,0.62); }
 #screen-profile .saved-action-btn { border:0.5px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.55); }

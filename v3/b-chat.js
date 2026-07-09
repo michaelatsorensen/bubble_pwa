@@ -144,7 +144,7 @@ function bbRenderTree(nodes, expandedIds, opts) {
     var liveBadge = b._live ? ' <span class="bb-pill bb-pill-live">LIVE</span>' : '';
     var pastBadge = (isPast && typeof _evEndedBadge === 'function') ? _evEndedBadge(b) : '';
     var unreadDot = b._unread ? '<span style="width:8px;height:8px;border-radius:50%;background:#E879A8;flex-shrink:0"></span>' : '';
-    var starH = (b._star && typeof bubbleStarRender === 'function') ? bubbleStarRender(b.id) : '';
+    var starH = (b._star && typeof bubbleStarRender === 'function' && bubbleStarRender(b.id)) ? '<span style="display:inline-flex;align-items:center;color:#F5C518;font-size:11px;letter-spacing:1px;flex-shrink:0;line-height:1">' + '\u2605'.repeat(bubbleStarGet(b.id)) + '</span>' : '';
 
     // Chevron / toggle
     var chevHtml;
