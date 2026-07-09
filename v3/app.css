@@ -19,7 +19,7 @@
   --p-scene:        #0E141C;              /* app-baggrund */
   --p-chrome:       rgba(20,22,28,0.9);   /* topbar/navbar/sheet glas (blur-uafhaengig) */
   --p-chrome-solid: rgba(20,22,28,0.94);  /* sheets/modals */
-  --p-overlay:      rgba(13,18,26,0.85);  /* backdrop bag sheets (prototype: kraftig fade) */
+  --p-overlay:      rgba(8,10,14,0.55);  /* backdrop bag sheets (prototype: let blur3) */
 
   /* — Glas (3 niveauer, prototype-opskrift) — */
   --p-glass:        rgba(255,255,255,0.075);  /* kort-fyld (16.7:1 tekst-1 paa scene) */
@@ -632,7 +632,7 @@ textarea.input { min-height:80px; resize:vertical; }
 .profile-hero { text-align:center; padding:1.5rem 1rem 0.5rem; }
 
 /* ── PERSON SHEET ── */
-.person-sheet-overlay { position:fixed; inset:0; z-index:200; background:rgba(13,18,26,0.85); backdrop-filter:blur(22px) saturate(1.2); -webkit-backdrop-filter:blur(22px) saturate(1.2); opacity:0; pointer-events:none; transition:opacity 0.3s; }
+.person-sheet-overlay { position:fixed; inset:0; z-index:200; background:rgba(8,10,14,0.55); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); opacity:0; pointer-events:none; transition:opacity 0.3s; }
 .person-sheet-overlay.open { opacity:1; pointer-events:auto; }
 .person-sheet { position:fixed; bottom:0; left:0; right:0; width:100%; max-width:100vw; box-sizing:border-box; z-index:201; max-height:88vh; /* UNDTAGELSE fra --sheet-max-h: person-indhold er hoejt (besluttet) */ overscroll-behavior:contain; background:rgba(20,22,28,0.94); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%); border:none; border-radius:var(--sheet-radius) var(--sheet-radius) 0 0; transform:translateY(100%); transition:transform var(--sheet-dur) var(--sheet-ease); overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:env(safe-area-inset-bottom,1rem); }
 /* overlay does not contain sheet — .open applied directly to sheet */
@@ -736,7 +736,7 @@ textarea.input { min-height:80px; resize:vertical; }
 .person-action-btn.secondary { background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.55); }
 
 /* ── MODALS ── */
-.modal-overlay { position:fixed; inset:0; z-index:300; background:rgba(13,18,26,0.85); backdrop-filter:blur(22px) saturate(1.2); -webkit-backdrop-filter:blur(22px) saturate(1.2); display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.25s ease; touch-action:none; overscroll-behavior:contain; }
+.modal-overlay { position:fixed; inset:0; z-index:300; background:rgba(8,10,14,0.55); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.25s ease; touch-action:none; overscroll-behavior:contain; }
 .modal-overlay.open { opacity:1; pointer-events:auto; }
 .modal-sheet { width:100%; max-width:100vw; box-sizing:border-box; max-height:var(--sheet-max-h); background:rgba(20,22,28,0.94); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%); border:none; border-radius:var(--sheet-radius) var(--sheet-radius) 0 0; padding:0.5rem 1.5rem 2rem; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; transform:translateY(100%); transition:transform var(--sheet-dur) var(--sheet-ease); overscroll-behavior:contain; touch-action:pan-y; color:rgba(255,255,255,0.9); }
 .modal-sheet .input, .modal-sheet select, .modal-sheet input { max-width:100%; box-sizing:border-box; }
@@ -829,7 +829,7 @@ textarea.input { min-height:80px; resize:vertical; }
 */
 
 /* Pattern 1: bb-overlay — backdrop behind sheets/modals */
-.bb-overlay { position:fixed; inset:0; z-index:400; background:rgba(13,18,26,0.85); backdrop-filter:blur(22px) saturate(1.2); -webkit-backdrop-filter:blur(22px) saturate(1.2); opacity:0; pointer-events:none; transition:opacity 0.3s ease; touch-action:none; overscroll-behavior:contain; }
+.bb-overlay { position:fixed; inset:0; z-index:400; background:rgba(8,10,14,0.55); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); opacity:0; pointer-events:none; transition:opacity 0.3s ease; touch-action:none; overscroll-behavior:contain; }
 .bb-overlay.open { opacity:1; pointer-events:auto; }
 
 /* Pattern 2: bb-sheet — bottom sheet (slides up from bottom) */
@@ -845,7 +845,7 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 .bb-sheet .text-muted { color:rgba(255,255,255,0.55); }
 .bb-sheet .invite-row { border-bottom-color:rgba(255,255,255,0.08); }
 .bb-sheet .invite-check { border-color:rgba(255,255,255,0.35); }
-.bb-dyn-overlay { position:fixed; inset:0; z-index:999; background:rgba(13,18,26,0.85); backdrop-filter:blur(22px) saturate(1.2); -webkit-backdrop-filter:blur(22px) saturate(1.2); display:flex; align-items:flex-end; justify-content:center; opacity:0; transition:opacity 0.25s ease; touch-action:none; overscroll-behavior:contain; }
+.bb-dyn-overlay { position:fixed; inset:0; z-index:999; background:rgba(8,10,14,0.55); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); display:flex; align-items:flex-end; justify-content:center; opacity:0; transition:opacity 0.25s ease; touch-action:none; overscroll-behavior:contain; }
 .bb-dyn-overlay.open { opacity:1; }
 .bb-dyn-sheet { width:100%; max-width:680px; max-height:var(--sheet-max-h); overflow-y:auto; -webkit-overflow-scrolling:touch; background:rgba(20,22,28,0.94); border-radius:var(--sheet-radius) var(--sheet-radius) 0 0; padding:1.5rem; color:var(--text); font-family:Figtree,sans-serif; transform:translateY(100%); transition:transform var(--sheet-dur) var(--sheet-ease); overscroll-behavior:contain; touch-action:pan-y; }
 .bb-dyn-overlay.open .bb-dyn-sheet { transform:translateY(0); }
@@ -2930,7 +2930,7 @@ input[type="range"] {
 .debug-fab{position:fixed;bottom:80px;right:16px;width:44px;height:44px;border-radius:50%;background:rgba(224,163,58,0.18);border:1px solid rgba(224,163,58,0.45);box-shadow:0 2px 14px rgba(224,163,58,0.22),inset 0 0 12px rgba(224,163,58,0.1);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:9000;-webkit-tap-highlight-color:transparent}
 .debug-fab:active{transform:scale(0.92)}
 .debug-fab-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:#EF4444;color:white;font-size:0.55rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;border:1.5px solid #0E141C}
-.debug-overlay{position:fixed;inset:0;z-index:9500;background:rgba(13,18,26,0.85);backdrop-filter:blur(22px) saturate(1.2);-webkit-backdrop-filter:blur(22px) saturate(1.2);opacity:0;pointer-events:none;transition:opacity 0.3s ease;touch-action:none;overscroll-behavior:contain;-webkit-tap-highlight-color:transparent}
+.debug-overlay{position:fixed;inset:0;z-index:9500;background:rgba(8,10,14,0.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity 0.3s ease;touch-action:none;overscroll-behavior:contain;-webkit-tap-highlight-color:transparent}
 .debug-overlay.open{opacity:1;pointer-events:auto}
 .debug-sheet{position:fixed;bottom:0;left:0;right:0;z-index:9501;height:85vh;display:flex;flex-direction:column;background:rgba(20,22,28,0.94);border:none;border-top:0.5px solid rgba(255,255,255,0.08);border-radius:20px 20px 0 0;padding:0;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1);overflow:hidden;overscroll-behavior:contain;touch-action:pan-y;box-shadow:0 -4px 24px rgba(30,27,46,0.1)}
 .debug-overlay.open .debug-sheet{transform:translateY(0)}
