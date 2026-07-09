@@ -456,8 +456,10 @@ body {
 #global-nav {
   position: fixed;
   bottom: 24px;
-  left: 14px;
-  right: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 28px);
+  max-width: 360px;
   z-index: 100;
   background: var(--p-chrome);
   backdrop-filter: blur(28px);
@@ -2093,9 +2095,9 @@ a.person-action-btn { text-decoration:none; }
       40px 0 60px rgba(30,27,46,0.15);
   }
 
-  /* Floating nav is already centered via transform */
+  /* Floating nav: max-width pill, centered via left:50% + translateX */
 
-  /* Nav is in flow — inherits width from app-shell/body */
+
 
   .toast { max-width: 540px; margin:0 auto; }
 
