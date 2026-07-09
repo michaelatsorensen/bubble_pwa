@@ -254,7 +254,7 @@ async function openRadarPerson(userId) {
           var isShared = myKw.indexOf(k.toLowerCase()) >= 0;
           return isShared
             ? '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.18);color:#34D399;font-weight:600">\u2713 ' + escHtml(k) + '</span>'
-            : '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7)">' + escHtml(k) + '</span>';
+            : '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(255,255,255,0.075);color:rgba(255,255,255,0.7)">' + escHtml(k) + '</span>';
         }).join('') +
         (hiddenCount > 0 ? '<span style="font-size:0.55rem;padding:2px 7px;color:rgba(255,255,255,0.45)">+' + hiddenCount + ' mere</span>' : '') +
         '</div>';

@@ -999,9 +999,9 @@ function etBuildBody(s) {
     h += '<button style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.3rem 0.75rem;border-radius:99px;font-size:0.7rem;font-weight:600;cursor:pointer;border:1.5px dashed rgba(100,180,230,0.4);color:rgba(100,180,230,0.9);background:transparent;font-family:inherit" onclick="etShowIn(\''+s.id+'\')"><span style="font-size:0.9rem;line-height:1">+</span> '+t('ob_add_own_tag')+'</button>';
   } else {
     h += '<div style="display:flex;gap:0.35rem;align-items:center;margin-top:0.4rem">' +
-      '<input id="etci-'+s.id+'" style="flex:1;padding:0.35rem 0.65rem;border-radius:99px;font-size:0.72rem;font-family:inherit;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);outline:none;color:rgba(255,255,255,0.9);min-width:0" placeholder="'+t('ob_tag_placeholder')+'" maxlength="40" oninput="etCiChk(\''+s.id+'\')" onkeydown="etCiKey(event,\''+s.id+'\')">' +
+      '<input id="etci-'+s.id+'" style="flex:1;padding:0.35rem 0.65rem;border-radius:99px;font-size:0.72rem;font-family:inherit;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.075);outline:none;color:rgba(255,255,255,0.9);min-width:0" placeholder="'+t('ob_tag_placeholder')+'" maxlength="40" oninput="etCiChk(\''+s.id+'\')" onkeydown="etCiKey(event,\''+s.id+'\')">' +
       '<button id="etci-btn-'+s.id+'" disabled style="padding:0.35rem 0.75rem;border-radius:99px;font-size:0.7rem;font-weight:700;font-family:inherit;border:none;background:'+s.color+';color:white;cursor:pointer;opacity:0.35" onclick="etConfirmC(\''+s.id+'\')">'+t('misc_add')+'</button>' +
-      '<button style="padding:0.35rem 0.6rem;border-radius:99px;font-size:0.7rem;font-weight:600;font-family:inherit;border:0.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.06);cursor:pointer;color:rgba(255,255,255,0.4)" onclick="etHideIn(\''+s.id+'\')">×</button>' +
+      '<button style="padding:0.35rem 0.6rem;border-radius:99px;font-size:0.7rem;font-weight:600;font-family:inherit;border:0.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.075);cursor:pointer;color:rgba(255,255,255,0.4)" onclick="etHideIn(\''+s.id+'\')">×</button>' +
     '</div>';
   }
   h += '</div>';
@@ -1136,7 +1136,7 @@ function etUpdateUI(){
     var rest=all.length-3;
     preview.innerHTML=shown.map(function(e){
       var v=e[1];
-      return '<span style="padding:0.18rem 0.5rem;border-radius:99px;font-size:0.62rem;font-weight:600;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);border:0.5px solid rgba(255,255,255,0.12);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px">'+escHtml(e[0])+'</span>';
+      return '<span style="padding:0.18rem 0.5rem;border-radius:99px;font-size:0.62rem;font-weight:600;background:rgba(255,255,255,0.075);color:rgba(255,255,255,0.7);border:0.5px solid rgba(255,255,255,0.12);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px">'+escHtml(e[0])+'</span>';
     }).join('')+(rest>0?'<span style="font-size:0.62rem;font-weight:600;color:rgba(255,255,255,0.3);white-space:nowrap">+'+rest+' '+t('et_more')+'</span>':'');
   }
 
@@ -1149,7 +1149,7 @@ function etUpdateUI(){
   if(drawer&&drawer.style.display!=='none'){
     drawer.innerHTML=Array.from(etSelected.entries()).map(function(e){
       var tg=e[0],v=e[1];
-      return '<span style="display:inline-flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem 0.2rem 0.55rem;border-radius:99px;font-size:0.65rem;font-weight:600;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);border:0.5px solid rgba(255,255,255,0.12)">' +
+      return '<span style="display:inline-flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem 0.2rem 0.55rem;border-radius:99px;font-size:0.65rem;font-weight:600;background:rgba(255,255,255,0.075);color:rgba(255,255,255,0.7);border:0.5px solid rgba(255,255,255,0.12)">' +
         escHtml(tg)+
         '<span data-tag="' + escHtml(tg) + '" onclick="etRemoveTag(this.dataset.tag)" style="cursor:pointer;opacity:0.45;font-size:0.65rem;margin-left:1px;line-height:1">×</span></span>';
     }).join('');

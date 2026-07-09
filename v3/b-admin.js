@@ -765,7 +765,7 @@ function _debugRow(label, value) {
 }
 
 function _debugMono(val) {
-  return '<code style="font-size:0.58rem;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);padding:1px 4px;border-radius:3px">' + escHtml(val) + '</code>';
+  return '<code style="font-size:0.58rem;background:rgba(255,255,255,0.075);color:rgba(255,255,255,0.85);padding:1px 4px;border-radius:3px">' + escHtml(val) + '</code>';
 }
 
 function _fmtUptime(sec) {
