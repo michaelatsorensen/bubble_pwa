@@ -699,14 +699,24 @@ var _messagesLoading = false;
 async function loadMessages() {
   if (_messagesLoading) return;
   _messagesLoading = true;
+  // TEMP DEBUG v3.88: synligt taeller-badge for at diagnosticere dobbelt-load.
+  // Fjernes naar aarsagen er fundet.
+  try {
+    window._lmCount = (window._lmCount || 0) + 1;
+    var _dbg = document.getElementById('_lm-debug');
+    if (!_dbg) {
+      _dbg = document.createElement('div');
+      _dbg.id = '_lm-debug';
+      _dbg.style.cssText = 'position:fixed;top:calc(env(safe-area-inset-top,0px) + 4px);left:50%;transform:translateX(-50%);z-index:99999;background:#E11;color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:99px;pointer-events:none;font-family:monospace';
+      document.body.appendChild(_dbg);
+    }
+    _dbg.textContent = 'loadMessages x' + window._lmCount + ' @' + (navState.screen || '?').replace('screen-','');
+  } catch(e) {}
   try {
     var myNav = _navVersion;
     const list = document.getElementById('conversations-list');
     if (!list) { _messagesLoading = false; return; }
-    // Vis kun skeleton ved foerste load (tom liste). Ved genindlaesning
-    // (fx realtime-opdatering eller tilbage-navigation) beholdes eksisterende
-    // indhold indtil nyt er klar - undgaar dobbelt-load-flash.
-    if (!list.querySelector('.conv-card')) { list.innerHTML = skelCards(5); }
+    list.innerHTML = skelCards(5);
 
     const { data: convs } = await sb.from('messages')
       .select('*')
