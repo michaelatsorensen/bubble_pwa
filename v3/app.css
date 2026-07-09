@@ -430,9 +430,10 @@ body {
 /* ── TOPBAR ── */
 .topbar { display:flex; align-items:center; padding:0.6rem 1rem; padding-top:calc(0.6rem + env(safe-area-inset-top,0px)); gap:0.45rem; flex-shrink:0; background:transparent; border-bottom:none; box-shadow:none; z-index:5; }
 .topbar-title { font-size:1rem; font-weight:800; letter-spacing:-0.03em; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.25; color:rgba(255,255,255,0.9); }
-.chat-topbar-cards { display:flex; align-items:center; gap:10px; padding:0.6rem 1rem; padding-top:calc(0.6rem + env(safe-area-inset-top,0px)); flex-shrink:0; background:rgba(20,22,28,0.85); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:0.5px solid rgba(255,255,255,0.06); z-index:5; }
-.chat-topbar-back { width:32px; height:32px; border-radius:50%; background:none; border:none; display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; color:rgba(255,255,255,0.6); font-family:inherit; font-size:1.1rem; }
-.chat-topbar-back:active { background:rgba(255,255,255,0.06); }
+.chat-topbar-cards { display:flex; align-items:center; gap:10px; padding:0.6rem 1rem; padding-top:calc(0.6rem + env(safe-area-inset-top,0px)); flex-shrink:0; position:relative; background:rgba(14,20,28,0.55); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); border-bottom:0.5px solid rgba(255,255,255,0.08); z-index:5; }
+.chat-topbar-cards::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 90% 60% at 20% 0%, rgba(100,140,190,0.18), transparent 60%); pointer-events:none; z-index:-1; }
+.chat-topbar-back { width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,0.07); border:0.5px solid rgba(255,255,255,0.14); display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; color:rgba(255,255,255,0.8); font-family:inherit; font-size:1.1rem; }
+.chat-topbar-back:active { background:rgba(255,255,255,0.12); }
 .chat-topbar-identity { flex:1; display:flex; align-items:center; gap:10px; padding:0; background:none; border-radius:0; border:none; cursor:pointer; min-width:0; }
 .chat-topbar-identity:active { opacity:0.7; }
 .chat-topbar-icon { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:rgba(255,255,255,0.95); }
