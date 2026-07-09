@@ -3761,29 +3761,29 @@ a:not(.btn-primary):not(.btn-secondary):active {
    Overrides legacy iceblue tabs for unified design system look
    ═══════════════════════════════════════════════════════════════════ */
 .bubble-tabs {
-  background: rgba(255,255,255,0.05) !important;
-  border-radius: 99px !important;
+  background: rgba(255,255,255,0.04) !important;
+  border-radius: 14px !important;
   padding: 3px !important;
   gap: 2px !important;
-  border: 0.5px solid rgba(255,255,255,0.15) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06) !important;
+  border: 0.5px solid rgba(255,255,255,0.13) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05) !important;
 }
 .bubble-tab {
-  color: rgba(255,255,255,0.62) !important;
-  border-radius: 99px !important;
+  color: rgba(255,255,255,0.55) !important;
+  border-radius: 11px !important;
   padding: 0.5rem 0.2rem !important;
   font-size: 0.72rem !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
   border: 0.5px solid transparent !important;
   background: transparent !important;
   box-shadow: none !important;
 }
 .bubble-tab.active {
-  background: rgba(100,180,230,0.18) !important;
+  background: rgba(255,255,255,0.08) !important;
   color: rgba(255,255,255,0.98) !important;
-  border: 0.5px solid rgba(100,180,230,0.4) !important;
-  box-shadow: none !important;
-  font-weight: 800 !important;
+  border: 0.5px solid rgba(255,255,255,0.16) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25) !important;
+  font-weight: 700 !important;
 }
 .bubble-tab:active { transform: scale(0.97); }
 
