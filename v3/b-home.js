@@ -343,13 +343,9 @@ async function loadEventDartboard() {
 //  LIVE CHECKOUT TRAY
 // ══════════════════════════════════════════════════════════
 function openLiveCheckoutTray() {
-  var backdrop = document.getElementById('live-checkout-backdrop');
-  var tray = document.getElementById('live-checkout-tray');
-  if (!backdrop || !tray) return;
-  backdrop.style.display = 'block';
-  tray.style.visibility = 'visible';
-  void tray.offsetHeight;
-  tray.style.transform = 'translateY(0)';
+  // Beslutnings-modal (centreret vindue) - aabnes via .open klasse
+  var overlay = document.getElementById('live-checkout-overlay');
+  if (overlay) overlay.classList.add('open');
 }
 
 // Compute + render the social stats in the live preview: strong matches present
@@ -398,10 +394,8 @@ async function _populateLivePreviewSocial() {
   } catch(e) { console.debug('[live-preview social]', e); }
 }
 function closeLiveCheckoutTray() {
-  var backdrop = document.getElementById('live-checkout-backdrop');
-  var tray = document.getElementById('live-checkout-tray');
-  if (backdrop) backdrop.style.display = 'none';
-  if (tray) { tray.style.transform = 'translateY(100%)'; setTimeout(function() { tray.style.visibility = 'hidden'; }, 350); }
+  var overlay = document.getElementById('live-checkout-overlay');
+  if (overlay) overlay.classList.remove('open');
 }
 
 // ══════════════════════════════════════════════════════════
