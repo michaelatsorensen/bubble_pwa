@@ -4274,3 +4274,32 @@ a:not(.btn-primary):not(.btn-secondary):active {
   padding: 0 1.2rem calc(1.2rem + env(safe-area-inset-bottom, 0px));
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   UTILITY-KLASSER (v3.04 — erstatter gentagne inline-styles)
+   Prototype-tokens. Se FRONTEND-ARCHITECTURE.md.
+   ═══════════════════════════════════════════════════════════════════════ */
+.u-hidden { display:none; }
+.u-flex { display:flex; }
+.u-flex1 { flex:1; }
+.u-flex1-min { flex:1; min-width:0; }
+.u-noshrink { flex-shrink:0; }
+.u-rel { position:relative; }
+.u-icon20 { width:20px; height:20px; }
+
+/* Sheet-greb (drag-handle) */
+.u-sheet-grip { width:36px; height:4px; border-radius:2px; background:rgba(255,255,255,0.15); }
+
+/* Runde glas-ikon-knapper (topbar/sheet-actions) */
+.u-icon-btn { width:32px; height:32px; border-radius:50%; background:var(--p-glass-lo); border:0.5px solid var(--p-glass-border); display:flex; align-items:center; justify-content:center; }
+.u-icon-btn-isbla { width:32px; height:32px; border-radius:50%; background:var(--p-isbla-glass); border:0.5px solid var(--p-isbla-border); display:flex; align-items:center; justify-content:center; }
+.u-icon-btn-sq { width:32px; height:32px; border-radius:10px; border:none; background:rgba(255,255,255,0.08); cursor:pointer; font-size:0.82rem; display:flex; align-items:center; justify-content:center; color:var(--p-text-2); font-family:var(--font); }
+
+/* Sheet-header (titel + luk) */
+.u-sheet-header { padding:6px 1.2rem 10px; display:flex; justify-content:space-between; align-items:center; border-bottom:0.5px solid var(--p-glass-border); flex-shrink:0; }
+.u-sheet-grip-row { padding:10px 0 4px; display:flex; justify-content:center; flex-shrink:0; }
+
+/* Tekst-hierarki (prototype) */
+.u-title { font-size:1rem; font-weight:800; color:var(--p-text); }
+.u-subtitle { font-size:0.72rem; font-weight:600; color:var(--p-text-2); margin-top:1px; }
+.u-section-label { margin-top:1.25rem; margin-bottom:0.25rem; color:var(--p-text-2); }
+/* ═══════════════════════════════════════════════════════════════════════ */
