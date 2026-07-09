@@ -159,7 +159,6 @@ async function loadHome() {
 //  LIVE BANNER + MODE TABS (Alle / Live)
 // ══════════════════════════════════════════════════════════
 async function loadLiveBanner() {
-  var tabs = document.getElementById('home-mode-tabs');
   var banner = document.getElementById('home-live-banner');
   if (!currentUser) return;
   try {
@@ -193,18 +192,15 @@ async function loadLiveBanner() {
         expiryStr: expiryStr
       });
 
-      if (tabs) tabs.style.display = 'block';
       homeSetMode('live');
     } else {
       appMode.set('normal');
-      if (tabs) tabs.style.display = 'none';
       hsSlotHide('home-live-banner');
       homeSetMode('all');
     }
   } catch(e) {
     logError('loadLiveBanner', e);
     appMode.set('normal');
-    if (tabs) tabs.style.display = 'none';
     hsSlotHide('home-live-banner');
   }
 }
@@ -215,18 +211,27 @@ function homeSetMode(mode) {
   if (mode === 'live' && !appMode.is('live')) appMode.set('live', appMode.live);
   else if (mode !== 'live' && appMode.is('live')) {} // keep live context, just switch tab view
 
-  var tabAll = document.getElementById('home-tab-all');
-  var tabLive = document.getElementById('home-tab-live');
   var banner = document.getElementById('home-live-banner');
+  // Nye kombinerede banner-toggle knapper + venstre-sider
+  var hlbTabLive = document.getElementById('hlb-tab-live');
+  var hlbTabAll = document.getElementById('hlb-tab-all');
+  var hlbLiveSide = document.getElementById('hlb-live-side');
+  var hlbAllSide = document.getElementById('hlb-all-side');
   var ctx = appMode.live;
 
   if (mode === 'live' && ctx) {
-    if (tabAll) { tabAll.style.background = 'transparent'; tabAll.style.border = '0.5px solid transparent'; tabAll.style.color = 'rgba(255,255,255,0.35)'; tabAll.style.fontWeight = '600'; }
-    if (tabLive) { tabLive.style.background = 'rgba(26,158,142,0.18)'; tabLive.style.border = '0.5px solid rgba(26,158,142,0.4)'; tabLive.style.color = '#2ECFCF'; tabLive.style.fontWeight = '700'; }
+    // Nye banner-toggle: Live aktiv (teal), Alle inaktiv + vis live-side
+    if (hlbTabLive) { hlbTabLive.style.background = 'rgba(26,158,142,0.28)'; hlbTabLive.style.color = '#A7EDE4'; hlbTabLive.style.fontWeight = '800'; }
+    if (hlbTabAll) { hlbTabAll.style.background = 'transparent'; hlbTabAll.style.color = 'rgba(255,255,255,0.5)'; hlbTabAll.style.fontWeight = '700'; }
+    if (hlbLiveSide) hlbLiveSide.style.display = 'flex';
+    if (hlbAllSide) hlbAllSide.style.display = 'none';
     loadEventDartboard();
   } else {
-    if (tabAll) { tabAll.style.background = 'rgba(100,180,230,0.18)'; tabAll.style.border = '0.5px solid rgba(100,180,230,0.3)'; tabAll.style.color = 'rgb(100,180,230)'; tabAll.style.fontWeight = '700'; }
-    if (tabLive) { tabLive.style.background = 'transparent'; tabLive.style.border = '0.5px solid transparent'; tabLive.style.color = 'rgba(255,255,255,0.35)'; tabLive.style.fontWeight = '600'; }
+    // Nye banner-toggle: Alle aktiv (blaa), Live inaktiv + vis alle-side
+    if (hlbTabAll) { hlbTabAll.style.background = 'rgba(100,180,230,0.2)'; hlbTabAll.style.color = 'rgba(255,255,255,0.95)'; hlbTabAll.style.fontWeight = '800'; }
+    if (hlbTabLive) { hlbTabLive.style.background = 'transparent'; hlbTabLive.style.color = 'rgba(255,255,255,0.5)'; hlbTabLive.style.fontWeight = '700'; }
+    if (hlbAllSide) hlbAllSide.style.display = 'flex';
+    if (hlbLiveSide) hlbLiveSide.style.display = 'none';
     _homeRadarFilter = 'all';
     if (!_homeBooting) renderHomeDartboard();
   }
