@@ -2733,14 +2733,14 @@ function renderHomeTrayList() {
       else                          { badgeColor = 'rgba(255,255,255,0.65)'; badgeBg = 'rgba(255,255,255,0.08)'; }
       badgeHtml = '<span style="font-size:0.58rem;font-weight:700;color:' + badgeColor + ';background:' + badgeBg + ';padding:0.18rem 0.5rem;border-radius:99px;white-space:nowrap;letter-spacing:0.01em">' + ml.text + '</span>';
     }
-    return '<div onclick="openRadarPerson(\'' + p.id + '\')" style="display:flex;align-items:center;gap:0.75rem;padding:0.7rem 0.85rem;margin-bottom:0.4rem;border-radius:14px;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);cursor:pointer;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);-webkit-tap-highlight-color:transparent" ontouchstart="this.style.transform=\'scale(0.97)\'" ontouchend="this.style.transform=\'scale(1)\'">' +
+    return '<div onclick="openRadarPerson(\'' + p.id + '\')" style="display:flex;align-items:center;gap:11px;padding:10px 12px;margin-bottom:0.4rem;border-radius:14px;background:rgba(255,255,255,0.055);border:0.5px solid rgba(255,255,255,0.12);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);cursor:pointer;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);-webkit-tap-highlight-color:transparent" ontouchstart="this.style.transform=\'scale(0.97)\'" ontouchend="this.style.transform=\'scale(1)\'">' +
       avHtml +
       '<div style="flex:1;min-width:0">' +
         '<div style="display:flex;align-items:center;gap:0.4rem">' +
-          '<span style="font-weight:700;font-size:0.85rem;color:rgba(255,255,255,0.95)">' + escHtml(name) + '</span>' +
+          '<span style="font-weight:800;font-size:13px;color:rgba(255,255,255,0.95)">' + escHtml(name) + '</span>' +
           badgeHtml +
         '</div>' +
-        '<div style="font-size:0.72rem;color:rgba(255,255,255,0.55);margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
+        '<div style="font-size:10.5px;color:rgba(255,255,255,0.5);margin-top:0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
       '</div>' +
       '<span style="color:rgba(255,255,255,0.3);font-size:0.9rem">›</span>' +
     '</div>';
