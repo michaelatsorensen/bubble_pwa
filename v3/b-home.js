@@ -105,18 +105,12 @@ async function loadHome() {
   _homeLoading = true;
   _homeBooting = true;
   _dartboardDataLoaded = false;
-  // Vis samlet load-overlay (bouncing dots) + skjul indhold indtil ALT er klar.
-  // Undgaar at radar/banner/kort popper ind i klumper paa forskellige tidspunkter.
-  var _hl = document.getElementById('home-loading');
-  var _hcw = document.getElementById('home-content-wrap');
-  if (_hl) { _hl.classList.remove('hidden'); _hl.style.display = 'flex'; }
-  if (_hcw) _hcw.style.opacity = '0';
   // Ryd gamle dots med det samme — ellers ses stale dots under screenFadeIn (0.2s)
   // og kombinationen med ny drip-animation ser ud som dobbelt drip
   var _avEl = document.getElementById('home-prox-avatars');
   if (_avEl) _avEl.innerHTML = '';
   try {
-    if (!currentUser) { _homeLoading = false; _homeBooting = false; var cwe = document.getElementById('home-content-wrap'); if (cwe) cwe.style.opacity = '1'; var hle = document.getElementById('home-loading'); if (hle) hle.classList.add('hidden'); return; }
+    if (!currentUser) { _homeLoading = false; _homeBooting = false; var cwe = document.getElementById('home-content-wrap'); if (cwe) cwe.style.opacity = '1'; return; }
     if (!currentProfile) await loadCurrentProfile();
     updateHomeAvatar();
 
@@ -153,9 +147,6 @@ async function loadHome() {
       // dobbelt rAF sikrer at browseren har malet DOM-opdateringerne foer fade
       requestAnimationFrame(function() {
         requestAnimationFrame(function() {
-          // Skjul load-overlay og afsloer alt indhold samlet paa een gang
-          var _hl = document.getElementById('home-loading');
-          if (_hl) _hl.classList.add('hidden');
           contentWrap.style.opacity = '1';
         });
       });
@@ -172,8 +163,6 @@ async function loadHome() {
     // ellers ville en fejl efterlade skaermen usynlig (vaerre end flicker).
     var cw = document.getElementById('home-content-wrap');
     if (cw && cw.style.opacity !== '1') cw.style.opacity = '1';
-    var hlf = document.getElementById('home-loading');
-    if (hlf) hlf.classList.add('hidden');
   }
 }
 
