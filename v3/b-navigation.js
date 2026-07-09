@@ -17,6 +17,44 @@
 var _navLock = false;
 var _navStack = []; // History stack for back navigation
 var _navPopLock = false; // Prevents infinite loops with popstate
+var _navScrollMemory = {}; // screenId -> scrollTop (restore position on back-navigation)
+
+// Gem scroll-position for en skaerms .scroll-area
+function _navSaveScroll(screenId) {
+  if (!screenId) return;
+  var screen = document.getElementById(screenId);
+  if (!screen) return;
+  var sa = screen.querySelector('.scroll-area');
+  if (sa) _navScrollMemory[screenId] = sa.scrollTop;
+}
+// Genskab scroll-position for en skaerms .scroll-area (0 hvis ingen gemt).
+// Modstandsdygtig over for async-indlaest indhold: proever igen indtil
+// indholdet har hoejde nok til at naa den gemte position.
+function _navRestoreScroll(screenId) {
+  if (!screenId) return;
+  var saved = _navScrollMemory[screenId] || 0;
+  if (saved <= 0) return; // ingen grund til at genskabe top
+  var screen = document.getElementById(screenId);
+  if (!screen) return;
+  var sa = screen.querySelector('.scroll-area');
+  if (!sa) return;
+  var attempts = 0;
+  function tryRestore() {
+    attempts++;
+    // Kan indholdet overhovedet naa den gemte position?
+    if (sa.scrollHeight - sa.clientHeight >= saved) {
+      sa.scrollTop = saved;
+      return;
+    }
+    // Indhold ikke fuldt indlaest endnu - proev igen (op til ~1.5s)
+    if (attempts < 30) {
+      requestAnimationFrame(tryRestore);
+    } else {
+      sa.scrollTop = saved; // sidste forsoeg (clampes hvis for kort)
+    }
+  }
+  requestAnimationFrame(tryRestore);
+}
 
 // ── Central navigation state (single source of truth) ──
 var navState = {
@@ -314,6 +352,9 @@ function goTo(screenId) {
 
   // ── Phase 1: Leave previous screen ──
   try {
+    // Gem scroll-position for skaermen vi forlader (til back-restore)
+    _navSaveScroll(_activeScreen);
+
     // Global cleanup first (GIF picker, plus menus, send flags)
     _navGlobalCleanup();
 
@@ -346,6 +387,8 @@ function goTo(screenId) {
     target.classList.add('active');
   } catch(e) { console.error('[nav] screen switch error:', e); }
   window.scrollTo(0, 0);
+  // Genskab scroll-position for target-skaermens .scroll-area (back-restore)
+  _navRestoreScroll(screenId);
 
   // ── Phase 3: Update bottom nav ──
   try {
