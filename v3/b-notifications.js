@@ -479,7 +479,10 @@ async function initPushNotifications() {
     }
 
     // Register service worker
-    var registration = await navigator.serviceWorker.register('./sw.js');
+    // updateViaCache:'none' -> browseren henter ALTID frisk sw.js (ikke fra HTTP-cache).
+    // Uden dette cacher browseren sw.js op til 24t, saa reg.update() ser ingen ny version
+    // og auto-update slaar ikke igennem. Kritisk for at deploys naar brugeren.
+    var registration = await navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
     console.debug('SW registered:', registration.scope);
 
     // Check if already subscribed
