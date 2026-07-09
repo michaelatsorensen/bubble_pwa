@@ -140,6 +140,14 @@ async function resolvePostAuthDestination() {
     if (typeof loadHome === 'function') { await loadHome(); _homeJustPreloaded = true; }
   } catch (e) { logError('resolvePostAuth:preloadHome', e); }
   goTo('screen-home');
+  // Radaren beregner avatar-positioner ud fra container-stoerrelsen. Under
+  // pre-loaden var Home skjult (offsetWidth=0) saa radaren blev warped. Nu hvor
+  // Home er synlig og har rigtige dimensioner: gen-render radaren korrekt.
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      try { if (typeof renderHomeDartboard === 'function') renderHomeDartboard(); } catch (e) { logError('resolvePostAuth:radarRerender', e); }
+    });
+  });
 }
 
 // Full orchestrator: single entry point after any successful auth
