@@ -1729,11 +1729,11 @@ async function loadMyNetworks() {
       html += bbRenderTree(_treeNodes, _bbFlatExpanded, { fromScreen: 'screen-bubbles' });
       // Wire re-render callback (toggle re-bygger traeet)
       _bbFlatRerender = function() {
+        // Re-render KUN traeet fra allerede-indlaeste _treeNodes (ingen DB-kald).
+        // Kun expanded-state aendrer sig ved toggle, ikke selve dataene.
         var _l = document.getElementById('bb-net-list');
         if (_l) {
-          var _h = bbRenderTree(_treeNodes, _bbFlatExpanded, { fromScreen: 'screen-bubbles' });
-          // Bevar evt. andet indhold: erstat kun tree-delen ved fuld reload
-          loadMyNetworks();
+          _l.innerHTML = bbRenderTree(_treeNodes, _bbFlatExpanded, { fromScreen: 'screen-bubbles' });
         }
       };
     }
