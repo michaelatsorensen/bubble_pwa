@@ -9,6 +9,63 @@
 *::-webkit-scrollbar { display: none; }
 
 :root {
+  /* ═══════════════════════════════════════════════════════════════════════
+     ★ PROTOTYPE DESIGN TOKENS (v3.03 — KILDE TIL SANDHED) ★
+     Prototypen er loven. Alle nye styles refererer disse tokens.
+     Kontrast-verificeret WCAG AA (9. juli 2026). Se MIGRATION-MAP.md.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  /* — Scene & chrome — */
+  --p-scene:        #0E141C;              /* app-baggrund */
+  --p-chrome:       rgba(20,22,28,0.9);   /* topbar/navbar/sheet glas (blur-uafhaengig) */
+  --p-chrome-solid: rgba(20,22,28,0.94);  /* sheets/modals */
+  --p-overlay:      rgba(10,12,16,0.55);  /* backdrop bag sheets */
+
+  /* — Glas (3 niveauer, prototype-opskrift) — */
+  --p-glass:        rgba(255,255,255,0.075);  /* kort-fyld (16.7:1 tekst-1 paa scene) */
+  --p-glass-hi:     rgba(255,255,255,0.09);   /* haevet kort (hover/aktiv) */
+  --p-glass-lo:     rgba(255,255,255,0.055);  /* subtilt (nested) */
+  --p-glass-border: rgba(255,255,255,0.12);   /* kort-kant */
+  --p-glass-inset:  inset 0 1px 0 rgba(255,255,255,0.08);  /* top-lys */
+
+  /* — Tekst (kontrast-verificeret paa scene OG glas) — */
+  --p-text:      rgba(255,255,255,0.95);   /* titler/navne — 16.7:1 */
+  --p-text-2:    rgba(255,255,255,0.5);    /* subtitler/meta — 5.3:1 scene, 4.93:1 glas */
+  --p-text-3:    rgba(255,255,255,0.4);    /* hints — 3.82:1 (stor tekst) */
+
+  /* — Isblaa (CTA & accent) — */
+  --p-isbla:        rgb(100,180,230);         /* solid CTA + aktiv nav */
+  --p-isbla-text:   #CFE6F7;                  /* accent-tekst — 14.4:1 paa scene */
+  --p-isbla-on:     #0E2A3C;                  /* tekst PAA solid isbla-knap */
+  --p-isbla-glass:  rgba(100,180,230,0.16);   /* isbla-glas-flade */
+  --p-isbla-border: rgba(100,180,230,0.3);    /* isbla-glas-kant */
+  --p-isbla-glow:   0 4px 16px rgba(100,180,230,0.35);  /* CTA-glow */
+
+  /* — Teal (live/events) — */
+  --p-teal:       #2ECFCF;   /* live-prik — 9.64:1 */
+  --p-teal-text:  #A7EDE4;   /* live-tekst — 13.98:1 */
+  --p-teal-glass: rgba(26,158,142,0.16);
+  --p-teal-border:rgba(26,158,142,0.4);
+
+  /* — Pink (dots/notif) — */
+  --p-pink:       #E879A8;   /* 6.81:1 paa scene */
+
+  /* — Avatar-gradient (prototypens egen, tilladt undtagelse) — */
+  --p-avatar:     linear-gradient(135deg,#CECBF6,#AFA9EC);
+
+  /* — Radius (prototype-skala) — */
+  --p-r-card:  14px;
+  --p-r-hero:  24px;
+  --p-r-pill:  99px;
+  --p-r-tile:  11px;
+
+  /* — Spacing top/bund (next-ideel, bekraeftet) — */
+  --p-top:    max(calc(env(safe-area-inset-top,0px) - 10px), 4px);
+  --p-bottom: max(env(safe-area-inset-bottom,0px), 14px);
+  /* ═══════════════════════════════════════════════════════════════════════
+     END PROTOTYPE TOKENS
+     ═══════════════════════════════════════════════════════════════════════ */
+
   /* ═══════════════════════════════════════════════════════
      BUBBLE v6 — STRANDGLAS DESIGN SYSTEM
      Three-tier glass: Frostet (blur) → Tonet (fill) → Slebet (solid)
@@ -22,12 +79,12 @@
   --sheet-ease: cubic-bezier(0.22, 1, 0.36, 1); /* flad landing, INGEN spring */
 
   /* ── Page ── */
-  --page-bg: #0E141C;   /* v3.0: mork inversion (prototype #0E141C) */
+  --page-bg: var(--p-scene);   /* v3.0: mork inversion (prototype #0E141C) */
   --midnight: #0E141C;   /* bevaret: bruges som mork glas-tint mange steder */
 
   /* ── Text (3 levels only) ── */
-  --text-1: rgba(255,255,255,0.9);     /* headings, names */
-  --text-2: rgba(255,255,255,0.55);     /* subtitles, meta */
+  --text-1: var(--p-text);     /* headings, names */
+  --text-2: var(--p-text-2);     /* subtitles, meta */
   --text-3: rgba(255,255,255,0.25);    /* hints, placeholders */
 
   /* ── Borders (2 levels only) ── */
@@ -35,7 +92,7 @@
   --border-2: rgba(255,255,255,0.06);  /* separators */
 
   /* ── Accent colors ── */
-  --isbla: rgb(100,180,230);
+  --isbla: var(--p-isbla);
   --teal: #1A9E8E;
   --pink: #E879A8;
   --green: #2ECFCF;
@@ -44,11 +101,11 @@
 
   /* ── Niveau 1: Frostet glas (backdrop-filter: blur) ── */
   --n1-radar: rgba(255,255,255,0.85);
-  --n1-topbar: rgba(20,22,28,0.82);
-  --n1-navbar: rgba(20,22,28,0.9);
+  --n1-topbar: var(--p-chrome);
+  --n1-navbar: var(--p-chrome);
   --n1-toast: rgba(20,22,28,0.9);
-  --n1-sheet: rgba(20,22,28,0.94);
-  --n1-overlay: rgba(10,12,16,0.55);
+  --n1-sheet: var(--p-chrome-solid);
+  --n1-overlay: var(--p-overlay);
 
   /* ── Niveau 2: Tonet glas (farvet fill, ingen blur) ── */
   --n2-teal: rgba(26,158,142,0.07);
@@ -57,14 +114,14 @@
   --n2-isbla-border: rgba(100,180,230,0.12);
 
   /* ── Niveau 3: Slebet glas (solid fill) ── */
-  --n3-card: rgba(255,255,255,0.075);   /* v8.05: bumpet 0.78 → 0.85 (matcher hybrid pattern fra v7.95+) */
+  --n3-card: var(--p-glass);   /* v8.05: bumpet 0.78 → 0.85 (matcher hybrid pattern fra v7.95+) */
   --n3-input: rgba(255,255,255,0.06);
   --n3-btn-sec: rgba(255,255,255,0.06);
 
   /* ── CTA (Isblå strandglas) ── */
   --cta-bg: rgba(100,180,230,0.18);
   --cta-border: rgba(100,180,230,0.25);
-  --cta-text: rgba(255,255,255,0.9);
+  --cta-text: var(--p-text);
 
   /* ── Saved/Gemt (Teal) ── */
   --saved-bg: rgba(26,158,142,0.12);
@@ -79,7 +136,7 @@
      ═══════════════════════════════════════════════════════════════════════ */
 
   /* Tekst på LIGHT backdrop (mørk tekst) */
-  --text-on-light:        #CFE6F7;                   /* v3.0: prototype lys primaertekst */
+  --text-on-light:        var(--p-isbla-text);                   /* v3.0: prototype lys primaertekst */
   --text-on-light-muted:  rgba(207,230,247,0.55);   /* v3.0: lys meta */
   --text-on-light-subtle: rgba(207,230,247,0.38);   /* v3.0: lys subtle */
 
