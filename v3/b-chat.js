@@ -2326,8 +2326,8 @@ async function bcLoadInfo() {
       }
       bottomHtml = '<div style="display:flex;flex-direction:column;gap:0.4rem;border-top:0.5px solid rgba(20,22,28,0.08);padding-top:0.8rem">' +
         checkoutBtn +
-        '<button data-action="leaveBubble" data-id="' + b.id + '" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.12);border:0.5px solid rgba(239,68,68,0.3);color:#B91C1C;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_leave_event') : t('bb_leave_bubble')) + '</button>' +
-        (isOwner ? '<button onclick="confirmPopBubble(\'' + b.id + '\')" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.18);border:0.5px solid rgba(239,68,68,0.4);color:#991B1B;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_delete_event') : t('bb_delete_bubble')) + '</button>' : '') +
+        '<button data-action="leaveBubble" data-id="' + b.id + '" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(230,150,60,0.10);border:0.5px solid rgba(230,150,60,0.28);color:rgba(235,170,90,0.9);font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_leave_event') : t('bb_leave_bubble')) + '</button>' +
+        (isOwner ? '<button onclick="confirmPopBubble(\'' + b.id + '\')" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(220,60,60,0.9);border:none;color:#fff;font-size:0.8rem;font-weight:700;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_delete_event') : t('bb_delete_bubble')) + '</button>' : '') +
         '</div>';
     } else if (bcBubbleData._isPending) {
       bottomHtml = ''; // Banner at top (bcLoadMembership) already shows pending state
