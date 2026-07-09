@@ -99,9 +99,13 @@ function hsSlotHide(id) {
 var _homeViewMode = 'all'; // UI tab toggle: 'all' or 'live'
 
 var _homeLoading = false;
+var _homeJustPreloaded = false; // sat af boot-preload; springer KUN den umiddelbare enter-hook reload over
 var _homeBooting = false; // true under initial loadHome — forhindrer homeSetMode i at rendere
-async function loadHome() {
+async function loadHome(opts) {
   if (_homeLoading) return;
+  // Boot-preload satte indhold; spring den ene efterfoelgende enter-hook reload over
+  // (ellers ville den re-fade og give flicker lige efter det rene reveal). Engangsflag.
+  if (_homeJustPreloaded && !(opts && opts.force)) { _homeJustPreloaded = false; return; }
   _homeLoading = true;
   _homeBooting = true;
   _dartboardDataLoaded = false;

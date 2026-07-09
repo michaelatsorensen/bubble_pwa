@@ -131,9 +131,15 @@ async function resolvePostAuthDestination() {
     return;
   }
 
-  // Step 4: Default
-  goTo('screen-home');
+  // Step 4: Default — Home.
+  // Boot-sti: hold brand-splash (#screen-loading) synlig mens Home henter ALT
+  // data, og skift foerst til Home naar det er klart. Undgaar at man ser Home
+  // loade i klumper ved app-start/hard-refresh. (Kun her - ikke ved navigation.)
   flowClearAll();
+  try {
+    if (typeof loadHome === 'function') { await loadHome(); _homeJustPreloaded = true; }
+  } catch (e) { logError('resolvePostAuth:preloadHome', e); }
+  goTo('screen-home');
 }
 
 // Full orchestrator: single entry point after any successful auth
