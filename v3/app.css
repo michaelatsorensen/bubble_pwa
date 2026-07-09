@@ -2927,7 +2927,7 @@ input[type="range"] {
 
 
 /* ══ Admin Debug FAB + Overlay ══ */
-.debug-fab{position:fixed;bottom:80px;right:16px;width:44px;height:44px;border-radius:50%;background:rgba(224,163,58,0.18);border:1px solid rgba(224,163,58,0.45);box-shadow:0 2px 14px rgba(224,163,58,0.22),inset 0 0 12px rgba(224,163,58,0.1);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:9000;-webkit-tap-highlight-color:transparent}
+.debug-fab{position:fixed;bottom:150px;right:16px;width:44px;height:44px;border-radius:50%;background:rgba(224,163,58,0.18);border:1px solid rgba(224,163,58,0.45);box-shadow:0 2px 14px rgba(224,163,58,0.22),inset 0 0 12px rgba(224,163,58,0.1);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:9000;-webkit-tap-highlight-color:transparent}
 .debug-fab:active{transform:scale(0.92)}
 .debug-fab-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:#EF4444;color:white;font-size:0.55rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;border:1.5px solid #0E141C}
 .debug-overlay{position:fixed;inset:0;z-index:9500;background:rgba(8,10,14,0.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity 0.3s ease;touch-action:none;overscroll-behavior:contain;-webkit-tap-highlight-color:transparent}
