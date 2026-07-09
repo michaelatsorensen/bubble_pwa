@@ -1193,13 +1193,13 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 #screen-auth .auth-hero-tagline {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #0E141C;
+  color: rgba(255,255,255,0.95);
   margin-top: 0.4rem;
   letter-spacing: -0.01em;
 }
 #screen-auth .auth-hero-sub {
   font-size: 0.78rem;
-  color: #56536E;
+  color: rgba(255,255,255,0.6);
   margin-top: 0.2rem;
 }
 
@@ -1480,9 +1480,9 @@ button {
    below. Modals/sheets/auth-card keep their own more-specific dark overrides. */
 /* btn-primary light-surface values now live in the base rule (above), on the CTA standard */
 .btn-secondary {
-  background: rgba(255,255,255,0.85);
-  border: 0.5px solid var(--border-on-light);
-  color: var(--text-on-light);
+  background: rgba(255,255,255,0.06);
+  border: 0.5px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.85);
 }
 /* Dark screens: white text on ice-blue (legible on the dark backdrop) */
 #screen-bubble-chat .btn-primary, #screen-chat .btn-primary,
