@@ -2406,7 +2406,6 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
     }).catch(function(){});
   }
   document.getElementById('ps-overlay').classList.add('open');
-  document.body.classList.add('person-sheet-active');
   setTimeout(() => document.getElementById('person-sheet-el').classList.add('open'), 10);
 }
 
@@ -2423,7 +2422,6 @@ function psClose() {
   if (sheet) { sheet.classList.remove('open'); sheet.style.transform = ''; }
   document.getElementById('ps-bubbleup-btn').style.display = 'flex';
   document.getElementById('ps-bubbleup-confirm').classList.remove('show');
-  document.body.classList.remove('person-sheet-active');
   setTimeout(function() {
     document.getElementById('ps-overlay').classList.remove('open');
   }, 320);
