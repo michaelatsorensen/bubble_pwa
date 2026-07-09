@@ -135,12 +135,12 @@ function bbRenderTree(nodes, expandedIds, opts) {
       chevHtml = '<div style="width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:14px">\u203A</div>';
     }
 
-    var rowHtml = '<div style="position:relative">' +
+    var rowHtml = '<div style="position:relative;min-width:0">' +
       guidesHtml +
-      '<div style="' + pastOp + 'margin-left:' + (depth * 20) + 'px;background:' + bg + ';border:0.5px solid rgba(255,255,255,' + bd + ');' + shadow + 'backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:' + radius + ';padding:' + pad + ';display:flex;align-items:center;gap:10px">' +
+      '<div style="' + pastOp + 'margin-left:' + (depth * 20) + 'px;width:calc(100% - ' + (depth * 20) + 'px);box-sizing:border-box;background:' + bg + ';border:0.5px solid rgba(255,255,255,' + bd + ');' + shadow + 'backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:' + radius + ';padding:' + pad + ';display:flex;align-items:center;gap:10px;overflow:hidden">' +
         '<div onclick="openBubbleChat(\'' + key + '\',\'' + fromScreen + '\')" style="width:' + iconSz + 'px;height:' + iconSz + 'px;border-radius:' + iconR + 'px;background:' + iconBg + ';border:0.5px solid ' + iconBd + ';color:' + iconCol + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;overflow:hidden">' + iconInner + '</div>' +
-        '<div onclick="openBubbleChat(\'' + key + '\',\'' + fromScreen + '\')" style="flex:1;min-width:0;cursor:pointer">' +
-          '<div style="display:flex;align-items:center;gap:6px"><div style="font-size:' + (isRoot ? 14 : 13) + 'px;font-weight:' + (isRoot ? 700 : 600) + ';color:rgba(255,255,255,0.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(b.name) + '</div>' + liveBadge + pastBadge + unreadDot + '</div>' +
+        '<div onclick="openBubbleChat(\'' + key + '\',\'' + fromScreen + '\')" style="flex:1 1 0;min-width:0;cursor:pointer;overflow:hidden">' +
+          '<div style="display:flex;align-items:center;gap:6px;min-width:0"><div style="font-size:' + (isRoot ? 14 : 13) + 'px;font-weight:' + (isRoot ? 700 : 600) + ';color:rgba(255,255,255,0.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">' + escHtml(b.name) + '</div>' + liveBadge + pastBadge + unreadDot + '</div>' +
           '<div style="font-size:' + (isRoot ? 10.5 : 10) + 'px;color:rgba(255,255,255,0.5);margin-top:2px;display:flex;align-items:center;gap:3px">' + visH + '<span>' + meta + '</span></div>' +
         '</div>' +
         starH +
@@ -164,7 +164,7 @@ function bbRenderTree(nodes, expandedIds, opts) {
     walk(b.id, 0, [], ri === roots.length - 1);
   });
 
-  return '<div style="display:grid;grid-auto-rows:min-content;gap:9px">' + rows.join('') + '</div>';
+  return '<div style="display:grid;grid-auto-rows:min-content;gap:9px;width:100%;max-width:100%;overflow:hidden">' + rows.join('') + '</div>';
 }
 
 // Toggle for flad tree: opdater expanded-state + re-render (guides skifter)
