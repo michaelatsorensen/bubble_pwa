@@ -1684,199 +1684,63 @@ async function loadMyNetworks() {
       return rb - ra;
     });
 
+    // ═══ FLAD TREE (prototype walk-algoritme via bbRenderTree) ═══
+    // Saml alle noder (roots + boern + grandchildren) i flad liste med parent_id.
+    // bbRenderTree bygger selv hierarki + guide-linjer fra parent_id.
+    var _treeNodes = [];
+    var _seenIds = {};
+    function _pushNode(b, parentId) {
+      if (!b || _seenIds[b.id]) return;
+      _seenIds[b.id] = true;
+      var isEv = b.type === 'event' || b.type === 'live';
+      var isLiveNow = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === b.id);
+      _treeNodes.push({
+        id: b.id,
+        name: b.name,
+        type: b.type,
+        parent_id: parentId || null,
+        member_count: b.member_count ?? b.bubble_members?.[0]?.count ?? 0,
+        event_date: b.event_date || null,
+        event_end_date: b.event_end_date || null,
+        visibility: b.visibility,
+        icon_url: b.icon_url || null,
+        _live: isLiveNow,
+        _unread: !!_bubbleUnreadSet[b.id],
+        _star: !isEv,
+        _pending: !!pendingSet[b.id],
+        _ghost: !!b._isGhost
+      });
+    }
     parentNets.forEach(function(net) {
+      _pushNode(net, null);
       var kids = childrenMap[net.id] || [];
       var isOwner = net.created_by === currentUser.id;
       if (!isOwner) {
         kids = kids.filter(function(k) { return k.visibility !== 'hidden' || myIds.indexOf(k.id) >= 0; });
       }
-      var childNets = kids.filter(function(k) { return k.type !== 'event' && k.type !== 'live'; });
-      var childEvents = kids.filter(function(k) { return k.type === 'event' || k.type === 'live'; });
-      var totalChildren = childNets.length + childEvents.length;
-      var mc = net.member_count ?? net.bubble_members?.[0]?.count ?? 0;
-      var badgeParts = [];
-      if (childNets.length > 0) badgeParts.push(childNets.length + ' ' + t('bb_networks_count'));
-      if (childEvents.length > 0) {
-        var upN = childEvents.filter(function(e) { return e.event_date && new Date(e.event_date) >= now; }).length;
-        badgeParts.push(upN > 0 ? upN + ' ' + t('bb_upcoming') : childEvents.length + ' ' + t('bb_events_count'));
-      }
-      var badgeText = badgeParts.join(' \u00B7 ');
-      var accId = 'acc-' + net.id.slice(0, 8);
-
-      // Root card
-      html += '<div class="bb-accordion">';
-      html += '<div class="bb-tree-root">';
-      html += '<div style="position:relative;flex-shrink:0"><div class="bb-tree-root-ico">' + _bIco(net, _netIco, 9) + '</div>' + ((typeof bubbleStarRender === 'function') ? bubbleStarRender(net.id) : '') + '</div>';
-      html += '<div class="bb-tree-body" onclick="openBubbleChat(\'' + net.id + '\',\'screen-bubbles\')">';
-      html += '<div style="font-size:0.8rem;font-weight:700">' + escHtml(net.name) + (pendingSet[net.id] ? ' <span class="pending-badge">Afventer</span>' : '') + '</div>';
-      html += '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px;flex-wrap:wrap">' + visIcon(net.visibility) + mc + ' ' + t('bb_members') + (badgeText ? ' \u00B7 ' + badgeText : '') + '</div>';
-      html += '</div>';
-      html += _unreadDot(net.id);
-      if (totalChildren > 0) {
-        html += '<button class="bb-tree-toggle' + _togClass(accId) + '" id="tog-' + accId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + accId + '\')">' + _chevSvg + '</button>';
-      }
-      html += '</div>';
-
-      // Children
-      if (totalChildren > 0) {
-        html += '<div class="bb-tree-trunk' + _accClass(accId) + '" id="trunk-' + accId + '"' + _accState(accId) + '>';
-
-        // Child networks (level 2)
-        childNets.forEach(function(cn) {
-          var cnMc = cn.member_count ?? cn.bubble_members?.[0]?.count ?? 0;
-          var cnEvents = lvl3Map[cn.id] || [];
-          var cnAdopted = adoptedGrandchildMap[cn.id] || [];
-          var cnAccId = 'acc-' + cn.id.slice(0, 8);
-          var isGhost = cn._isGhost || false;
-          var isMember = myIds.indexOf(cn.id) >= 0;
-          var hasChildren = cnEvents.length > 0 || cnAdopted.length > 0;
-
-          html += '<div class="bb-tree-branch">';
-          html += '<div class="bb-card-list' + (isGhost && !isMember ? ' is-ghost' : '') + '">';
-          html += '<div class="bb-card-icon-sq icon-wrap">' + _bIco(cn, _netIcoSm, 8) + (isMember ? _memberCheck : '') + '</div>';
-          html += '<div class="bb-card-text" onclick="event.stopPropagation();openBubbleChat(\'' + cn.id + '\',\'screen-bubbles\')">';
-          html += '<div class="bb-card-title">' + escHtml(cn.name) + (pendingSet[cn.id] ? ' <span class="pending-badge">Afventer</span>' : '') + '</div>';
-          html += '<div class="bb-card-meta">' + visIcon(cn.visibility) + '<span class="bb-card-meta-text">' + cnMc + ' ' + t('bb_members_short') + (cnEvents.length > 0 ? ' \u00B7 ' + cnEvents.length + ' ' + t('bb_events_count') : '') + '</span></div>';
-          html += '</div>';
-          html += _unreadDot(cn.id);
-          if (hasChildren) {
-            html += '<button class="bb-tree-toggle' + _togClass(cnAccId) + '" id="tog-' + cnAccId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + cnAccId + '\')">' + _chevSm + '</button>';
-          }
-          html += '</div>';
-
-          // Level 3: events + adopted grandchildren
-          if (hasChildren) {
-            html += '<div class="bb-tree-leaves' + _accClass(cnAccId) + '" id="trunk-' + cnAccId + '"' + _accState(cnAccId) + '>';
-
-            // Adopted grandchildren (member networks nested under ghost parent)
-            cnAdopted.forEach(function(gc) {
-              var gcMc = gc.member_count ?? gc.bubble_members?.[0]?.count ?? 0;
-
-              html += '<div class="bb-tree-leaf"><div class="bb-card-list" onclick="event.stopPropagation();openBubbleChat(\'' + gc.id + '\',\'screen-bubbles\')">';
-              html += '<div class="bb-card-icon-sq icon-wrap">' + _bIco(cn, _netIcoSm, 8) + '</div>';
-              html += '<div class="bb-card-text">';
-              html += '<div class="bb-card-title">' + escHtml(gc.name) + '</div>';
-              html += '<div class="bb-card-meta">' + visIcon(gc.visibility) + '<span class="bb-card-meta-text">' + gcMc + ' medl.</span></div>';
-              html += '</div>';
-              html += _unreadDot(gc.id) + '<div class="bb-card-chev">\u203A</div>';
-              html += '</div></div>';
-            });
-
-            // Events
-            cnEvents.forEach(function(ev) {
-              var isPast = ev.event_date && new Date(ev.event_end_date || ev.event_date) < now;
-              var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
-              var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
-              var gcLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
-              var evIsMember = myIds.indexOf(ev.id) >= 0;
-              html += '<div class="bb-tree-leaf"><div class="bb-card-list' + (isPast && !gcLive ? ' is-past' : '') + '" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')">';
-              html += '<div class="bb-card-icon-sq icon-wrap is-event">' + _bIco(ev, _calIco, 6) + (evIsMember ? _memberCheck : '') + '</div>';
-              html += '<div class="bb-card-text">';
-              html += '<div class="bb-card-title">' + escHtml(ev.name) + _evEndedBadge(ev) + '</div>';
-              html += '<div class="bb-card-meta">' + visIcon(ev.visibility) + '<span class="bb-card-meta-text">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</span></div>';
-              html += '</div>';
-              html += _unreadDot(ev.id) + (_goLiveBtn(ev, evIsMember) || '<div class="bb-card-chev">\u203A</div>');
-              html += '</div></div>';
-            });
-            if (isOwner) {
-              html += '<div class="bb-tree-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + cn.id + '\')">' + _addIco + ' ' + t('bb_create_event') + '</div>';
-            }
-            html += '</div>';
-          }
-          html += '</div>';
-        });
-
-        // Direct child events (level 2)
-        childEvents.forEach(function(ev) {
-          var isPast = ev.event_date && new Date(ev.event_end_date || ev.event_date) < now;
-          var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
-          var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
-          var evLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
-          var evIsMember = myIds.indexOf(ev.id) >= 0;
-          html += '<div class="bb-tree-branch"><div class="bb-card-list' + (isPast && !evLive ? ' is-past' : '') + '" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')">';
-          html += '<div class="bb-card-icon-sq icon-wrap is-event">' + _bIco(ev, _calIco, 6) + (evIsMember ? _memberCheck : '') + '</div>';
-          html += '<div class="bb-card-text">';
-          html += '<div class="bb-card-title">' + escHtml(ev.name) + _evEndedBadge(ev) + '</div>';
-          html += '<div class="bb-card-meta">' + visIcon(ev.visibility) + '<span class="bb-card-meta-text">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</span></div>';
-          html += '</div>';
-          html += _unreadDot(ev.id) + (_goLiveBtn(ev, evIsMember) || '<div class="bb-card-chev">\u203A</div>');
-          html += '</div></div>';
-        });
-
-        if (isOwner) {
-          html += '<div class="bb-tree-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + net.id + '\')">' + _addIco + ' ' + t('bb_create_network_event') + '</div>';
-        }
-        html += '</div>';
-      }
-      html += '</div>';
+      kids.forEach(function(cn) {
+        _pushNode(cn, net.id);
+        // Grandchildren (events under sub-netvaerk)
+        var gcs = (lvl3Map[cn.id] || []).concat(adoptedGrandchildMap[cn.id] || []);
+        gcs.forEach(function(gc) { _pushNode(gc, cn.id); });
+      });
     });
-
-    // True orphans: ghost parent + member child
-    trueOrphans.forEach(function(net) {
-      var mc = net.member_count ?? net.bubble_members?.[0]?.count ?? 0;
-      var ghost = ghostParentMap[net.parent_bubble_id];
-      var ghostName = ghost ? ghost.name : '';
-      var ghostMc = ghost ? (ghost.member_count ?? ghost.bubble_members?.[0]?.count ?? 0) : 0;
-      var orphanEvents = lvl3Map[net.id] || [];
-      var accId = 'acc-' + net.id.slice(0, 8);
-      var isOwner = net.created_by === currentUser.id;
-
-      html += '<div class="bb-accordion">';
-
-      // Ghost parent as root (if available)
-      if (ghost) {
-        html += '<div class="bb-tree-root" style="opacity:0.55;border-style:dashed">';
-        html += '<div class="bb-tree-root-ico">' + _bIco(ghost, _netIco, 9) + '</div>';
-        html += '<div class="bb-tree-body">';
-        html += '<div style="font-size:0.8rem;font-weight:700">' + escHtml(ghostName) + '</div>';
-        html += '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(ghost.visibility) + ghostMc + ' ' + t('bb_members') + '</div>';
-        html += '</div></div>';
-        // Member child nested under ghost
-        html += '<div class="bb-tree-trunk" style="max-height:2000px;opacity:1">';
-        html += '<div class="bb-tree-branch">';
+    if (_treeNodes.length > 0) {
+      // Auto-udfold alt (som den gamle tree default-tilstand)
+      if (!_bbFlatExpanded || _bbFlatExpanded.length === 0) {
+        _bbFlatExpanded = _treeNodes.filter(function(n){ return n.type !== 'event' && n.type !== 'live'; }).map(function(n){ return n.id; });
       }
-
-      // The actual member network
-      html += '<div class="bb-tree-' + (ghost ? 'net' : 'root') + '">';
-      if (!ghost) html += '<div class="bb-tree-root-ico">' + _bIco(net, _netIco, 9) + '</div>';
-      else html += '<div class="bb-tree-net-ico">' + _bIco(net, _netIcoSm, 8) + '</div>';
-      html += '<div class="bb-tree-body" onclick="openBubbleChat(\'' + net.id + '\',\'screen-bubbles\')">';
-      html += '<div style="font-size:' + (ghost ? '0.75rem' : '0.8rem') + ';font-weight:' + (ghost ? '600' : '700') + '">' + escHtml(net.name) + (pendingSet[net.id] ? ' <span class="pending-badge">Afventer</span>' : '') + '</div>';
-      html += '<div style="font-size:' + (ghost ? '0.58' : '0.62') + 'rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(net.visibility) + mc + ' ' + t('bb_members') + '</div>';
-      html += '</div>';
-      html += _unreadDot(net.id);
-      if (orphanEvents.length > 0) {
-        html += '<button class="bb-tree-toggle' + _togClass(accId) + '" id="tog-' + accId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + accId + '\')"' + (ghost ? ' style="width:24px;height:24px"' : '') + '>' + (ghost ? _chevSm : _chevSvg) + '</button>';
-      }
-      html += '</div>';
-
-      if (orphanEvents.length > 0) {
-        html += '<div class="bb-tree-leaves' + _accClass(accId) + '" id="trunk-' + accId + '"' + _accState(accId) + '>';
-        orphanEvents.forEach(function(ev) {
-          var isPast = ev.event_date && new Date(ev.event_end_date || ev.event_date) < now;
-          var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
-          var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
-          var evIsMember = myIds.indexOf(ev.id) >= 0;
-          html += '<div class="bb-tree-leaf"><div class="bb-card-list' + (isPast ? ' is-past' : '') + '" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')">';
-          html += '<div class="bb-card-icon-sq icon-wrap is-event">' + _bIco(ev, _calIco, 6) + (evIsMember ? _memberCheck : '') + '</div>';
-          html += '<div class="bb-card-text">';
-          html += '<div class="bb-card-title">' + escHtml(ev.name) + _evEndedBadge(ev) + '</div>';
-          html += '<div class="bb-card-meta">' + visIcon(ev.visibility) + '<span class="bb-card-meta-text">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</span></div>';
-          html += '</div>';
-          html += _unreadDot(ev.id) + (_goLiveBtn(ev, evIsMember) || '<div class="bb-card-chev">\u203A</div>');
-          html += '</div></div>';
-        });
-        if (isOwner) {
-          html += '<div class="bb-tree-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + net.id + '\')">' + _addIco + ' ' + t('bb_create_event') + '</div>';
+      html += bbRenderTree(_treeNodes, _bbFlatExpanded, { fromScreen: 'screen-bubbles' });
+      // Wire re-render callback (toggle re-bygger traeet)
+      _bbFlatRerender = function() {
+        var _l = document.getElementById('bb-net-list');
+        if (_l) {
+          var _h = bbRenderTree(_treeNodes, _bbFlatExpanded, { fromScreen: 'screen-bubbles' });
+          // Bevar evt. andet indhold: erstat kun tree-delen ved fuld reload
+          loadMyNetworks();
         }
-        html += '</div>';
-      }
-
-      if (ghost) {
-        html += '</div></div>'; // close bb-tree-branch + bb-tree-trunk
-      }
-      html += '</div>';
-    });
+      };
+    }
 
     if (!html) {
       html = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">' + t('home_no_networks') + '</div><div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:center"><button class="btn-primary" onclick="bbSwitchTab(\'explore\')" style="font-size:0.82rem;padding:0.6rem 1.2rem">' + t('home_discover_networks') + '</button><button class="btn-secondary" onclick="bbSwitchSub(\'evt\')" style="font-size:0.82rem;padding:0.6rem 1.2rem">' + t('home_see_events') + '</button></div></div>';

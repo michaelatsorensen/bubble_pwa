@@ -32,6 +32,152 @@ registerState(function() {
   if (typeof _bcPostsCache !== 'undefined') _bcPostsCache = null;
 });
 
+// ═══════════════════════════════════════════════════════════
+//  FLAT-LIST BUBBLE TREE RENDERER (prototype walk-algoritme)
+//  Erstatter nestede .bb-tree-branch/.bb-tree-leaves med prototypens
+//  flad liste + beregnede guide-linjer per raekke (marginLeft-indent).
+//  Genbruges af home-tree (loadMyNetworks) og chat-tree.
+//  nodes: [{id,name,type,parent_id,member_count,event_date,event_end_date,
+//           visibility,icon_url,_live,_unread,_star}]
+//  expandedIds: array af udfoldede node-ids
+// ═══════════════════════════════════════════════════════════
+function bbRenderTree(nodes, expandedIds, opts) {
+  opts = opts || {};
+  var fromScreen = opts.fromScreen || 'screen-bubbles';
+  var GAP = 9;
+  var LC = '1.5px solid rgba(255,255,255,0.16)';
+  var xOf = function(D) { return (D * 20 - 11) + 'px'; };
+  expandedIds = expandedIds || [];
+
+  var byId = {};
+  nodes.forEach(function(b) { byId[b.id] = b; });
+  var kids = {};
+  nodes.forEach(function(b) {
+    if (b.parent_id && byId[b.parent_id]) {
+      (kids[b.parent_id] = kids[b.parent_id] || []).push(b.id);
+    }
+  });
+
+  var now = new Date();
+  var rows = [];
+
+  function walk(key, depth, ancHasNext, isLast) {
+    var b = byId[key];
+    if (!b) return;
+    var children = kids[key] || [];
+    var hasChildren = children.length > 0;
+    var isExp = expandedIds.indexOf(key) >= 0;
+    var isEvent = b.type === 'event' || b.type === 'live';
+    var isPast = isEvent && b.event_date && new Date(b.event_end_date || b.event_date) < now;
+
+    // ── Guide-linjer (prototype-algoritme) ──
+    var guides = [];
+    for (var j = 1; j < depth; j++) {
+      if (ancHasNext[j]) {
+        guides.push('position:absolute;left:' + xOf(j) + ';top:-' + GAP + 'px;bottom:0;width:0;border-left:' + LC + ';pointer-events:none');
+      }
+    }
+    if (depth > 0) {
+      if (isLast) {
+        guides.push('position:absolute;left:' + xOf(depth) + ';top:-' + GAP + 'px;bottom:50%;width:11px;border-left:' + LC + ';border-bottom:' + LC + ';border-bottom-left-radius:8px;pointer-events:none');
+      } else {
+        guides.push('position:absolute;left:' + xOf(depth) + ';top:-' + GAP + 'px;bottom:0;width:0;border-left:' + LC + ';pointer-events:none');
+        guides.push('position:absolute;left:' + xOf(depth) + ';top:50%;width:11px;height:0;border-top:' + LC + ';pointer-events:none');
+      }
+    }
+    var guidesHtml = guides.map(function(g) { return '<div style="' + g + '"></div>'; }).join('');
+
+    // ── Row-styling (varierer med depth) ──
+    var isRoot = depth === 0;
+    var bg = isRoot ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.035)';
+    var bd = isRoot ? '0.12' : '0.09';
+    var shadow = isRoot ? 'box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);' : '';
+    var radius = isRoot ? '18px' : '15px';
+    var pad = isRoot ? '13px 14px' : '11px 12px';
+    var iconSz = isRoot ? 44 : 38;
+    var iconR = isRoot ? 13 : 11;
+    var pastOp = isPast ? 'opacity:0.55;' : '';
+
+    // Icon
+    var iconBg = isEvent ? 'rgba(46,207,207,0.15)' : 'rgba(100,180,230,0.16)';
+    var iconBd = isEvent ? 'rgba(46,207,207,0.35)' : 'rgba(100,180,230,0.35)';
+    var iconCol = isEvent ? '#2ECFCF' : 'rgb(100,180,230)';
+    var iconInner;
+    if (b.icon_url) {
+      iconInner = '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:' + iconR + 'px">';
+    } else {
+      var isz = Math.round(iconSz * 0.42);
+      iconInner = isEvent
+        ? '<svg width="' + isz + '" height="' + isz + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'
+        : '<svg width="' + isz + '" height="' + isz + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6"/><circle cx="16" cy="13.5" r="4.5"/></svg>';
+    }
+
+    // Meta
+    var visH = (typeof visIcon === 'function') ? visIcon(b.visibility) : '';
+    var countLabel = isEvent ? ' tilmeldt' : ' medl.';
+    var dateStr = '';
+    if (isEvent && b.event_date) {
+      try { dateStr = new Date(b.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) + ' \u00B7 '; } catch(e) {}
+    }
+    var meta = dateStr + (b.member_count || 0) + countLabel;
+
+    // Badges
+    var liveBadge = b._live ? ' <span class="bb-pill bb-pill-live">LIVE</span>' : '';
+    var pastBadge = (isPast && typeof _evEndedBadge === 'function') ? _evEndedBadge(b) : '';
+    var unreadDot = b._unread ? '<span style="width:8px;height:8px;border-radius:50%;background:#E879A8;flex-shrink:0"></span>' : '';
+    var starH = (b._star && typeof bubbleStarRender === 'function') ? bubbleStarRender(b.id) : '';
+
+    // Chevron / toggle
+    var chevHtml;
+    if (hasChildren) {
+      chevHtml = '<div onclick="event.stopPropagation();bbTreeToggleFlat(\'' + key + '\')" style="width:22px;height:22px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;font-size:12px;color:rgba(255,255,255,0.75);transform:' + (isExp ? 'rotate(180deg)' : 'rotate(0deg)') + ';transition:transform 0.25s">\u2304</div>';
+    } else {
+      chevHtml = '<div style="width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:14px">\u203A</div>';
+    }
+
+    var rowHtml = '<div style="position:relative">' +
+      guidesHtml +
+      '<div style="' + pastOp + 'margin-left:' + (depth * 20) + 'px;background:' + bg + ';border:0.5px solid rgba(255,255,255,' + bd + ');' + shadow + 'backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:' + radius + ';padding:' + pad + ';display:flex;align-items:center;gap:10px">' +
+        '<div onclick="openBubbleChat(\'' + key + '\',\'' + fromScreen + '\')" style="width:' + iconSz + 'px;height:' + iconSz + 'px;border-radius:' + iconR + 'px;background:' + iconBg + ';border:0.5px solid ' + iconBd + ';color:' + iconCol + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;overflow:hidden">' + iconInner + '</div>' +
+        '<div onclick="openBubbleChat(\'' + key + '\',\'' + fromScreen + '\')" style="flex:1;min-width:0;cursor:pointer">' +
+          '<div style="display:flex;align-items:center;gap:6px"><div style="font-size:' + (isRoot ? 14 : 13) + 'px;font-weight:' + (isRoot ? 700 : 600) + ';color:rgba(255,255,255,0.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(b.name) + '</div>' + liveBadge + pastBadge + unreadDot + '</div>' +
+          '<div style="font-size:' + (isRoot ? 10.5 : 10) + 'px;color:rgba(255,255,255,0.5);margin-top:2px;display:flex;align-items:center;gap:3px">' + visH + '<span>' + meta + '</span></div>' +
+        '</div>' +
+        starH +
+        chevHtml +
+      '</div>' +
+    '</div>';
+
+    rows.push(rowHtml);
+
+    if (isExp) {
+      var childAnc = ancHasNext.slice();
+      childAnc[depth] = !isLast;
+      children.forEach(function(c, ci) {
+        walk(c, depth + 1, childAnc, ci === children.length - 1);
+      });
+    }
+  }
+
+  var roots = nodes.filter(function(b) { return !b.parent_id || !byId[b.parent_id]; });
+  roots.forEach(function(b, ri) {
+    walk(b.id, 0, [], ri === roots.length - 1);
+  });
+
+  return '<div style="display:grid;grid-auto-rows:min-content;gap:9px">' + rows.join('') + '</div>';
+}
+
+// Toggle for flad tree: opdater expanded-state + re-render (guides skifter)
+var _bbFlatExpanded = [];
+function bbTreeToggleFlat(id) {
+  var i = _bbFlatExpanded.indexOf(id);
+  if (i >= 0) _bbFlatExpanded.splice(i, 1);
+  else _bbFlatExpanded.push(id);
+  // Re-render det aktive tree (home eller chat) via gemt callback
+  if (typeof _bbFlatRerender === 'function') _bbFlatRerender();
+}
+var _bbFlatRerender = null;
+
 function toggleGifPicker(mode) {
   var picker = document.getElementById('gif-picker');
   var overlay = document.getElementById('gif-picker-overlay');
