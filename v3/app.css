@@ -3055,12 +3055,12 @@ a:not(.btn-primary):not(.btn-secondary):active {
 }
 
 /* ── Auto-stagger on known list containers ── */
-#conversations-list > *,
-#bc-members-list > *,
-#bc-info-list > *,
-#notif-list > *,
-#discover-networks > *,
-#discover-events > * {
+#conversations-list > *:not(.skel-card),
+#bc-members-list > *:not(.skel-card),
+#bc-info-list > *:not(.skel-card),
+#notif-list > *:not(.skel-card),
+#discover-networks > *:not(.skel-card),
+#discover-events > *:not(.skel-card) {
   opacity: 0;
   animation: staggerFadeIn 0.3s ease forwards;
 }

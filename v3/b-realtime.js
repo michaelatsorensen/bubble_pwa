@@ -709,13 +709,6 @@ async function loadMessages(opts) {
   }
   _lmLastLoadedAt = _now;   // stempel med det samme (blokerer parallelle/hurtige gentagne kald)
   _messagesLoading = true;
-  // TEMP DEBUG v3.91: bekraeft at guarden nu virker.
-  try {
-    window._lmCount = (window._lmCount || 0) + 1;
-    var _dbg = document.getElementById('_lm-debug');
-    if (!_dbg) { _dbg = document.createElement('div'); _dbg.id = '_lm-debug'; _dbg.style.cssText = 'position:fixed;top:calc(env(safe-area-inset-top,0px) + 4px);left:50%;transform:translateX(-50%);z-index:99999;background:#0A7;color:#fff;font-size:11px;font-weight:800;padding:3px 12px;border-radius:99px;pointer-events:none;font-family:monospace'; document.body.appendChild(_dbg); }
-    _dbg.textContent = 'loadMessages x' + window._lmCount;
-  } catch(e) {}
   try {
     var myNav = _navVersion;
     const list = document.getElementById('conversations-list');
