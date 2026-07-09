@@ -883,11 +883,12 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
       var upvoted = myUpvotes[b.id];
       var hiddenNonEvent = (b.visibility === 'hidden') && b.type !== 'event' && b.type !== 'live';
       var _lockSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>';
+      var _strikeSvg = '<svg class="bc-strike" preserveAspectRatio="none" viewBox="0 0 100 40"><line x1="0" y1="0" x2="100" y2="40" stroke="rgba(235,120,120,0.55)" stroke-width="1"/></svg>';
       var delBtn = hiddenNonEvent
-        ? `<button class="bc-bar-btn" style="opacity:0.5" onclick="bcHiddenShareInfo()">${_lockSvg} Del</button>`
+        ? `<button class="bc-bar-btn locked" onclick="bcHiddenShareInfo()">${_lockSvg} Del${_strikeSvg}</button>`
         : `<button class="bc-bar-btn" onclick="shareBubbleLink('${b.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Del</button>`;
       var qrBtn = hiddenNonEvent
-        ? `<button class="bc-bar-btn" style="opacity:0.5" onclick="bcHiddenShareInfo()">${_lockSvg} QR</button>`
+        ? `<button class="bc-bar-btn locked" onclick="bcHiddenShareInfo()">${_lockSvg} QR${_strikeSvg}</button>`
         : `<button class="bc-bar-btn" data-action="openQRModal" data-id="${b.id}">${icon('qrcode')} QR</button>`;
       actionBar.innerHTML =
         `<button class="bc-bar-btn" onclick="openInviteModal('${b.id}')">${icon('user-plus')} Invitér</button>` +

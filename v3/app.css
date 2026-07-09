@@ -2341,6 +2341,8 @@ a.person-action-btn { text-decoration:none; }
 .bc-bar-btn .ico { width:0.78rem; height:0.78rem; }
 .bc-bar-btn:active { background:rgba(255,255,255,0.1); transform:scale(0.97); }
 .bc-bar-btn.active { background:rgba(46,207,207,0.12); border-color:rgba(46,207,207,0.3); color:#5FD3A0; }
+.bc-bar-btn.locked { background:rgba(230,90,90,0.10); border-color:rgba(230,90,90,0.28); color:rgba(235,120,120,0.85); position:relative; overflow:hidden; }
+.bc-bar-btn.locked .bc-strike { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 
 /* Person sheet star rating */
 .ps-star-row { display:flex; align-items:center; justify-content:space-between; padding:0.5rem 0; margin:0 1.2rem; border-top:1px solid rgba(255,255,255,0.1); }
