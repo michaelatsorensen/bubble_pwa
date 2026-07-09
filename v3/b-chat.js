@@ -130,9 +130,9 @@ function bbRenderTree(nodes, expandedIds, opts) {
     // Chevron / toggle
     var chevHtml;
     if (hasChildren) {
-      chevHtml = '<div onclick="event.stopPropagation();bbTreeToggleFlat(\'' + key + '\')" style="width:22px;height:22px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;font-size:12px;color:rgba(255,255,255,0.75);transform:' + (isExp ? 'rotate(180deg)' : 'rotate(0deg)') + ';transition:transform 0.25s">\u2304</div>';
+      chevHtml = '<div onclick="event.stopPropagation();bbTreeToggleFlat(\'' + key + '\')" style="width:22px;height:22px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.12);cursor:pointer"><div style="font-size:12px;color:rgba(255,255,255,0.75);transform:' + (isExp ? 'rotate(90deg)' : 'rotate(0deg)') + ';transition:transform 0.22s ease;line-height:1">\u203A</div></div>';
     } else {
-      chevHtml = '<div style="width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:14px">\u203A</div>';
+      chevHtml = '<div style="width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:14px;line-height:1">\u203A</div>';
     }
 
     var rowHtml = '<div style="position:relative;min-width:0">' +

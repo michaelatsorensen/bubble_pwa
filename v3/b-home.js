@@ -1726,10 +1726,6 @@ async function loadMyNetworks() {
       });
     });
     if (_treeNodes.length > 0) {
-      // Auto-udfold alt (som den gamle tree default-tilstand)
-      if (!_bbFlatExpanded || _bbFlatExpanded.length === 0) {
-        _bbFlatExpanded = _treeNodes.filter(function(n){ return n.type !== 'event' && n.type !== 'live'; }).map(function(n){ return n.id; });
-      }
       html += bbRenderTree(_treeNodes, _bbFlatExpanded, { fromScreen: 'screen-bubbles' });
       // Wire re-render callback (toggle re-bygger traeet)
       _bbFlatRerender = function() {

@@ -3773,12 +3773,11 @@ a:not(.btn-primary):not(.btn-secondary):active {
   box-shadow: none !important;
 }
 .bubble-tab.active {
-  background: rgba(255,255,255,0.95) !important;
-  color: #1E1B2E !important;
-  border: none !important;
-  border-color: transparent !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
-  font-weight: 700 !important;
+  background: rgba(100,180,230,0.16) !important;
+  color: rgba(255,255,255,0.95) !important;
+  border: 0.5px solid rgba(100,180,230,0.3) !important;
+  box-shadow: none !important;
+  font-weight: 800 !important;
 }
 .bubble-tab:active { transform: scale(0.97); }
 
