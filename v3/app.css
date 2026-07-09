@@ -131,7 +131,7 @@
   /* ═══════════════════════════════════════════════════════════════════════
      HYBRID PATTERN TOKENS (v7.95-v8.04 establishment)
      ═══════════════════════════════════════════════════════════════════════
-     Til skærme med LIGHT backdrop (#F0EEF5) hvor dark glass cards lever.
+     Til skærme med LIGHT backdrop (var(--p-scene)) hvor dark glass cards lever.
      Bruges på: Bobler, Beskeder, Profil, Auth — primært "main view" skærme.
      Mørke chrome-zoner (topbar, navbar, modals) bruger stadig --text-1/2/3.
      ═══════════════════════════════════════════════════════════════════════ */
@@ -244,7 +244,7 @@
 .glass-radar { background: var(--n1-radar); border: 0.5px solid var(--p-glass-border); box-shadow: var(--p-glass-inset); border-radius: 18px; }
 .glass-topbar { background: var(--n1-topbar); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 0.5px solid var(--border-2); }
 .glass-navbar { background: var(--n1-navbar); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 0.5px solid rgba(255,255,255,0.1); box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.06); border-radius: 22px; }
-.glass-toast { background: var(--n1-toast); -webkit-border: 0.5px solid var(--border-1); border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+.glass-toast { background: var(--n1-toast); border: 0.5px solid var(--border-1); border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
 .glass-sheet { background: var(--n1-sheet); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 24px 24px 0 0; }
 .glass-overlay { background: var(--n1-overlay); -webkit-}
 
@@ -284,7 +284,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    HYBRID PATTERN UTILITIES (v7.95-v8.04 establishment)
    ───────────────────────────────────────────────────────────────────────────
-   Brug disse på skærme med LIGHT backdrop (#F0EEF5):
+   Brug disse på skærme med LIGHT backdrop (var(--p-scene)):
      • Bobler (Mine + Opdag)
      • Beskeder
      • Profil
@@ -526,7 +526,7 @@ body {
 /* ── CARDS ── */
 /* Glass utility classes (next redesign) */
 .glass-dark { background:rgba(20,22,28,0.85);backdrop-filter:blur(12px) saturate(130%);-webkit-backdrop-filter:blur(12px) saturate(130%);border:0.5px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.9); }
-.glass-light { background:rgba(255,255,255,0.82);-webkit-border:0.5px solid rgba(0,0,0,0.06);box-shadow:0 1px 3px rgba(0,0,0,0.04); }
+.glass-light { background:rgba(255,255,255,0.82);border:0.5px solid rgba(0,0,0,0.06);box-shadow:0 1px 3px rgba(0,0,0,0.3); }
 .card { background:rgba(255,255,255,0.055); border:0.5px solid rgba(255,255,255,0.12); border-radius:var(--radius); padding:0.85rem 1.1rem; margin-bottom:0.5rem; cursor:pointer; transition:transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease; -webkit-box-shadow:inset 0 1px 0 rgba(255,255,255,0.09); -webkit-tap-highlight-color:transparent; }
 .card:hover { border-color:rgba(216,213,228,0.8); box-shadow:0 2px 6px rgba(30,27,46,0.06), 0 8px 24px rgba(30,27,46,0.04); }
 .card:active { transform:scale(0.97); }
@@ -677,9 +677,9 @@ textarea.input { min-height:80px; resize:vertical; }
 
 /* ── REDESIGN (v8.56): full profile in strandglas / bubble-info language ── */
 .pp-topbar { display:flex; justify-content:space-between; align-items:center; padding:0.7rem 1rem 0.7rem; padding-top:calc(0.7rem + env(safe-area-inset-top,0px)); gap:0.6rem; }
-.pp-back { width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,0.85); -webkit-border:0.5px solid var(--border-on-light); color:var(--text-on-light); font-size:1rem; font-family:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 1px 4px rgba(30,27,46,0.08); }
+.pp-back { width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,0.85); border:0.5px solid var(--border-on-light); color:var(--text-on-light); font-size:1rem; font-family:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 1px 4px rgba(30,27,46,0.08); }
 .pp-match { font-size:0.68rem; font-weight:700; padding:0.34rem 0.78rem; border-radius:99px; line-height:1; white-space:nowrap; display:none; }
-.pp-hero { margin:0.5rem 1rem 0.7rem; background:var(--n3-card); -webkit-border:0.5px solid rgba(255,255,255,0.1); border-radius:var(--radius); padding:1rem; box-shadow:0 6px 22px rgba(20,22,28,0.18); }
+.pp-hero { margin:0.5rem 1rem 0.7rem; background:var(--n3-card); border:0.5px solid rgba(255,255,255,0.1); border-radius:var(--radius); padding:1rem; box-shadow:0 6px 22px rgba(20,22,28,0.18); }
 .pp-hero-top { display:flex; align-items:center; gap:0.8rem; }
 .pp-avatar { width:60px; height:60px; border-radius:17px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:1.25rem; font-weight:800; color:#fff; background:linear-gradient(135deg,#2ECFCF,#6B8BFF,#8B5CF6); box-shadow:0 4px 16px rgba(124,92,252,0.25); overflow:hidden; cursor:pointer; }
 .pp-avatar img { width:100%; height:100%; object-fit:cover; border-radius:17px; }
@@ -694,7 +694,7 @@ textarea.input { min-height:80px; resize:vertical; }
 .pp-btn.linkedin svg { fill:#5BA3E0; }
 .pp-btn .ico { width:16px; height:16px; }
 .pp-btn:active { transform:scale(0.97); }
-.pp-card { margin:0 1rem 0.7rem; background:rgba(255,255,255,0.05); -webkit-border:0.5px solid rgba(255,255,255,0.09); border-radius:var(--radius); padding:0.9rem 1rem; }
+.pp-card { margin:0 1rem 0.7rem; background:rgba(255,255,255,0.05); border:0.5px solid rgba(255,255,255,0.09); border-radius:var(--radius); padding:0.9rem 1rem; }
 .pp-sec-label { font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:rgba(255,255,255,0.5); margin-bottom:0.5rem; }
 
 /* ── Full profile: dark sheet (v9.37 — overhaul fra lys fuldskaerm til konsistent sheet) ── */
@@ -882,7 +882,7 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 /* msg-bubble styles moved to unified msg-row block below */
 
 /* ── BUBBLE CHAT (group) ── */
-.bubble-tabs { display:flex; margin:0.4rem 1.1rem 0; background:rgba(20,22,28,0.92); -webkit-border-radius:10px; padding:3px; gap:2px; flex-shrink:0; border:0.5px solid rgba(255,255,255,0.08); box-shadow:none; }
+.bubble-tabs { display:flex; margin:0.4rem 1.1rem 0; background:rgba(20,22,28,0.92); border-radius:10px; padding:3px; gap:2px; flex-shrink:0; border:0.5px solid rgba(255,255,255,0.08); box-shadow:none; }
 .bubble-tab { flex:1 1 0; text-align:center; padding:0.4rem 0.2rem; border-radius:8px; font-size:0.68rem; font-weight:600; color:rgba(255,255,255,0.35); cursor:pointer; transition:background 0.25s ease, color 0.2s ease, box-shadow 0.25s ease, border-color 0.25s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); user-select:none; font-family:'Figtree',sans-serif; border:0.5px solid transparent; background:none; position:relative; min-width:0; -webkit-tap-highlight-color:transparent; }
 .bubble-tab.active { background:rgba(100,180,230,0.15); border-color:rgba(100,180,230,0.25); color:rgb(100,180,230); font-weight:700; box-shadow:none; }
 .bubble-tab-badge { position:absolute; top:-2px; right:8px; min-width:14px; height:14px; border-radius:99px; background:var(--pink); font-size:0.48rem; font-weight:800; color:white; display:none; align-items:center; justify-content:center; padding:0 3px; }
@@ -1022,7 +1022,7 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
 .notif-btn.decline { background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.5); }
 
 /* ── TOAST — N1 Frostet glas, farvekodet ikon ── */
-.toast { position:fixed; top:calc(env(safe-area-inset-top,0px) + 12px); left:12px; right:12px; z-index:500; display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:14px; font-size:0.75rem; font-weight:600; opacity:0; pointer-events:none; transform:translateY(-16px); transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1); background:rgba(20,22,28,0.85); -webkit-border:0.5px solid rgba(255,255,255,0.08); box-shadow:0 8px 32px rgba(0,0,0,0.15); color:rgba(255,255,255,0.9); }
+.toast { position:fixed; top:calc(env(safe-area-inset-top,0px) + 12px); left:12px; right:12px; z-index:500; display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:14px; font-size:0.75rem; font-weight:600; opacity:0; pointer-events:none; transform:translateY(-16px); transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1); background:rgba(20,22,28,0.85); border:0.5px solid rgba(255,255,255,0.08); box-shadow:0 8px 32px rgba(0,0,0,0.15); color:rgba(255,255,255,0.9); }
 .toast.show { opacity:1; transform:translateY(0); pointer-events:auto; }
 .toast-ico { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; font-weight:700; }
 /* Farvekodet ikon — alle typer deler mørk glasbaggrund */
@@ -1692,12 +1692,12 @@ a.person-action-btn { text-decoration:none; }
 .conv-online-dot { position:absolute; bottom:1px; right:1px; width:10px; height:10px; border-radius:50%; background:#1A9E8E; border:2px solid rgba(20,22,28,0.9); }
 /* Long-press context overlay */
 .dm-ctx-overlay { position:fixed; inset:0; z-index:600; background:rgba(0,0,0,0.15); }
-.dm-ctx-menu { background:rgba(20,22,28,0.94); -webkit-border-radius:12px; border:0.5px solid rgba(255,255,255,0.08); overflow:hidden; min-width:160px; margin-top:6px; }
+.dm-ctx-menu { background:rgba(20,22,28,0.94); border-radius:12px; border:0.5px solid rgba(255,255,255,0.08); overflow:hidden; min-width:160px; margin-top:6px; }
 .dm-ctx-menu button { width:100%; padding:11px 16px; border:none; background:transparent; font-size:0.82rem; text-align:left; cursor:pointer; font-family:'Figtree',sans-serif; color:rgba(255,255,255,0.85); border-bottom:0.5px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:8px; }
 .dm-ctx-menu button:last-child { border-bottom:none; }
 .dm-ctx-menu button:active { background:rgba(255,255,255,0.06); }
 .dm-ctx-menu button.danger { color:#EF4444; }
-.dm-ctx-reactions { background:rgba(20,22,28,0.92); -webkit-border-radius:24px; padding:4px 6px; display:flex; gap:2px; border:0.5px solid rgba(255,255,255,0.1); }
+.dm-ctx-reactions { background:rgba(20,22,28,0.92); border-radius:24px; padding:4px 6px; display:flex; gap:2px; border:0.5px solid rgba(255,255,255,0.1); }
 .dm-ctx-reactions button { width:36px; height:36px; border-radius:50%; border:none; background:transparent; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
 .dm-ctx-reactions button:active { background:rgba(255,255,255,0.08); }
 
@@ -1808,7 +1808,7 @@ a.person-action-btn { text-decoration:none; }
 .radar-list-card {
   display: flex; flex-direction: column;
   padding: 0.85rem 1.1rem; border-radius: var(--radius);
-  background: rgba(255,255,255,0.055); -webkit-border: 0.5px solid rgba(255,255,255,0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.09);
+  background: rgba(255,255,255,0.055); border: 0.5px solid rgba(255,255,255,0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.09);
   border: 1px solid rgba(216,213,228,0.5);
   margin-bottom: 0.5rem; cursor: pointer;
   transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
@@ -2329,7 +2329,7 @@ a.person-action-btn { text-decoration:none; }
 .hs-view-btn.active { background:rgba(100,180,230,0.15) !important; color:var(--accent) !important; border-color:rgba(100,180,230,0.3) !important; }
 
 /* Bubble action bar under tabs */
-.bc-action-bar { display:flex; gap:3px; padding:4px; margin:3px 1.1rem 0; flex-shrink:0; background:rgba(20,22,28,0.85); -webkit-border-radius:10px; border:0.5px solid rgba(255,255,255,0.06); }
+.bc-action-bar { display:flex; gap:3px; padding:4px; margin:3px 1.1rem 0; flex-shrink:0; background:rgba(20,22,28,0.85); border-radius:10px; border:0.5px solid rgba(255,255,255,0.06); }
 .bc-bar-btn { display:flex; align-items:center; gap:0.25rem; font-size:0.72rem; font-weight:600; font-family:inherit; padding:0.45rem 0.6rem; border-radius:8px; border:none; background:transparent; color:rgba(255,255,255,0.95); cursor:pointer; transition:all 0.15s; white-space:nowrap; flex:1; justify-content:center; }
 .bc-bar-btn .ico { width:0.78rem; height:0.78rem; }
 .bc-bar-btn:active { background:rgba(255,255,255,0.06); transform:scale(0.97); }
@@ -2936,7 +2936,7 @@ input[type="range"] {
 .debug-fab-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:#EF4444;color:white;font-size:0.55rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;border:1.5px solid #0E141C}
 .debug-overlay{position:fixed;inset:0;z-index:9500;background:rgba(30,27,46,0.25);-webkit-opacity:0;pointer-events:none;transition:opacity 0.3s ease;touch-action:none;overscroll-behavior:contain;-webkit-tap-highlight-color:transparent}
 .debug-overlay.open{opacity:1;pointer-events:auto}
-.debug-sheet{position:fixed;bottom:0;left:0;right:0;z-index:9501;height:85vh;display:flex;flex-direction:column;background:rgba(20,22,28,0.94);-webkit-border:none;border-top:0.5px solid rgba(255,255,255,0.08);border-radius:20px 20px 0 0;padding:0;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1);overflow:hidden;overscroll-behavior:contain;touch-action:pan-y;box-shadow:0 -4px 24px rgba(30,27,46,0.1)}
+.debug-sheet{position:fixed;bottom:0;left:0;right:0;z-index:9501;height:85vh;display:flex;flex-direction:column;background:rgba(20,22,28,0.94);border:none;border-top:0.5px solid rgba(255,255,255,0.08);border-radius:20px 20px 0 0;padding:0;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1);overflow:hidden;overscroll-behavior:contain;touch-action:pan-y;box-shadow:0 -4px 24px rgba(30,27,46,0.1)}
 .debug-overlay.open .debug-sheet{transform:translateY(0)}
 .debug-sheet .skel{background:linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);background-size:200% 100%}
 .debug-sheet .skel-card{background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.06)}
@@ -3134,7 +3134,7 @@ a:not(.btn-primary):not(.btn-secondary):active {
 #screen-profile .profile-hero #prof-strength-bar {
   /* keep ice-blue bar — works on both bg colors */
 }
-#screen-profile .card { background:rgba(20,22,28,0.85); -webkit-border:0.5px solid rgba(255,255,255,0.06); box-shadow:none; color:rgba(255,255,255,0.9); }
+#screen-profile .card { background:rgba(20,22,28,0.85); border:0.5px solid rgba(255,255,255,0.06); box-shadow:none; color:rgba(255,255,255,0.9); }
 #screen-profile .card .fw-600 { color:rgba(255,255,255,0.95); }
 #screen-profile .card .text-muted { color:rgba(255,255,255,0.62); }
 #screen-profile .saved-action-btn { border:0.5px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.55); }
@@ -3176,7 +3176,7 @@ a:not(.btn-primary):not(.btn-secondary):active {
 
 /* ═══ BESKEDER SCREEN — dark glass (matches Bobler/Profil) ═══ */
 /* v7.95: removed #screen-messages dark bg — light backdrop matches Bubbles pattern.
-   Dark glass cards (.card below) sit on body's #F0EEF5 like Bubbles screen. */
+   Dark glass cards (.card below) sit on body's var(--p-scene) like Bubbles screen. */
 #screen-messages .card { background:rgba(20,22,28,0.85); border:0.5px solid rgba(255,255,255,0.06); box-shadow:none; color:rgba(255,255,255,0.95); }
 #screen-messages .card:hover { border-color:rgba(255,255,255,0.12); box-shadow:none; }
 #screen-messages .empty-text { color:var(--text-on-light-muted); }
