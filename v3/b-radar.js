@@ -155,11 +155,15 @@ async function openRadarPerson(userId) {
       var sv = document.getElementById('rp-save-btn'); if (sv) { sv.textContent = t('ps_save'); sv.dataset.saved = '0'; }
     };
     _rpReset();
-    var _rpSheet = document.getElementById('radar-person-sheet');
+    var _rpSheet = document.getElementById('home-preview');
     // Show overlay now (backdrop), but keep the sheet BELOW the screen (translateY
     // via .open withheld) until content is filled. The sheet is in the DOM and
     // laid out, so it can be measured, but the user sees nothing slide yet.
-    document.getElementById('radar-person-overlay').classList.add('open');
+    // Inline preview: vis kompakt raekke, kollaps evt tidligere udvidelse
+    var _hp = document.getElementById('home-preview');
+    if (_hp) _hp.style.display = 'block';
+    var _hpx = document.getElementById('home-preview-expand'); if (_hpx) _hpx.style.display = 'none';
+    var _hpc = document.getElementById('home-preview-chev'); if (_hpc) _hpc.style.transform = 'rotate(0deg)';
 
     // Fetch profile + saved-state in parallel (live check needs only userId too,
     // but keeps its own conditional block below for clarity)
@@ -297,19 +301,28 @@ async function openRadarPerson(userId) {
     // correct final height — nothing resizes after it becomes visible, so no twitch.
     var _rpAv2 = document.getElementById('rp-avatar'); if (_rpAv2) _rpAv2.classList.remove('rp-skel-pulse');
     if (_rpSheet) {
-      requestAnimationFrame(function() { _rpSheet.classList.add('open'); });
+      // inline preview allerede synlig (vist ved aabning)
     }
   } catch(e) {
-    var _rpSheetE = document.getElementById('radar-person-sheet'); if (_rpSheetE) { _rpSheetE.classList.remove('open'); }
-    document.getElementById('radar-person-overlay').classList.remove('open');
+    var _hpE = document.getElementById('home-preview'); if (_hpE) _hpE.style.display = 'none';
     var _rpAvE = document.getElementById('rp-avatar'); if (_rpAvE) _rpAvE.classList.remove('rp-skel-pulse');
     logError("openRadarPerson", e); errorToast("load", e);
   }
 }
 
 function closeRadarPerson() {
-  document.getElementById('radar-person-sheet').classList.remove('open');
-  setTimeout(function(){ document.getElementById('radar-person-overlay').classList.remove('open'); }, 320);
+  var hp = document.getElementById('home-preview');
+  if (hp) hp.style.display = 'none';
+}
+
+// Udvid/kollaps inline preview (prototype: toggleMatch)
+function toggleHomePreview() {
+  var ex = document.getElementById('home-preview-expand');
+  var chev = document.getElementById('home-preview-chev');
+  if (!ex) return;
+  var isOpen = ex.style.display !== 'none';
+  ex.style.display = isOpen ? 'none' : 'block';
+  if (chev) chev.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
 }
 
 function rpMessage() { closeRadarPerson(); closeHomeTray(); setTimeout(function(){ openChat(rpCurrentUserId, 'screen-home'); }, 400); }

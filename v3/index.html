@@ -13,39 +13,39 @@
 <meta name="theme-color" content="#0E141C">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=30014">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=30014">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=30014">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=30014">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=30014">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=30014">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=30014">
+<link rel="manifest" href="manifest.json?v=30015">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=30015">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=30015">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=30015">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=30015">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=30015">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=30015">
 
-<link rel="stylesheet" href="app.css?v=30014">
+<link rel="stylesheet" href="app.css?v=30015">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous" defer></script>
-<script src="bubble-icons.js?v=30014" defer></script>
-<script src="tag-data.js?v=30014" defer></script>
-<script src="b-i18n.js?v=30014" defer></script>
-<script src="b-config.js?v=30014" defer></script>
-<script src="b-utils.js?v=30014" defer></script>
-<script src="b-guides.js?v=30014" defer></script>
-<script src="b-terms.js?v=30014" defer></script>
-<script src="b-auth.js?v=30014" defer></script>
-<script src="b-home.js?v=30014" defer></script>
-<script src="b-bubbles.js?v=30014" defer></script>
-<script src="b-profile.js?v=30014" defer></script>
-<script src="b-radar.js?v=30014" defer></script>
-<script src="b-messages.js?v=30014" defer></script>
-<script src="b-realtime.js?v=30014" defer></script>
-<script src="b-onboarding.js?v=30014" defer></script>
-<script src="b-chat.js?v=30014" defer></script>
-<script src="b-notifications.js?v=30014" defer></script>
-<script src="b-live.js?v=30014" defer></script>
-<script src="b-admin.js?v=30014" defer></script>
-<script src="b-navigation.js?v=30014" defer></script>
-<script src="b-boot.js?v=30014" defer></script>
+<script src="bubble-icons.js?v=30015" defer></script>
+<script src="tag-data.js?v=30015" defer></script>
+<script src="b-i18n.js?v=30015" defer></script>
+<script src="b-config.js?v=30015" defer></script>
+<script src="b-utils.js?v=30015" defer></script>
+<script src="b-guides.js?v=30015" defer></script>
+<script src="b-terms.js?v=30015" defer></script>
+<script src="b-auth.js?v=30015" defer></script>
+<script src="b-home.js?v=30015" defer></script>
+<script src="b-bubbles.js?v=30015" defer></script>
+<script src="b-profile.js?v=30015" defer></script>
+<script src="b-radar.js?v=30015" defer></script>
+<script src="b-messages.js?v=30015" defer></script>
+<script src="b-realtime.js?v=30015" defer></script>
+<script src="b-onboarding.js?v=30015" defer></script>
+<script src="b-chat.js?v=30015" defer></script>
+<script src="b-notifications.js?v=30015" defer></script>
+<script src="b-live.js?v=30015" defer></script>
+<script src="b-admin.js?v=30015" defer></script>
+<script src="b-navigation.js?v=30015" defer></script>
+<script src="b-boot.js?v=30015" defer></script>
   
 
 
@@ -636,6 +636,32 @@
             <div class="spinner" style="width:24px;height:24px"></div>
           </div>
         </div>
+        <!-- ═══ INLINE PROFILE PREVIEW (prototype: erstatter top-sheet) ═══ -->
+        <div id="home-preview" style="display:none;margin:0 10px 10px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.14);box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);border-radius:16px;overflow:hidden;animation:screenFadeIn 0.24s cubic-bezier(0.22,1,0.36,1)">
+          <div onclick="toggleHomePreview()" style="padding:11px 12px;display:flex;align-items:center;gap:11px;cursor:pointer">
+            <div style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(100,180,230,0.55);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:800;color:white" id="rp-avatar">?</div>
+            <div class="u-flex1-min">
+              <div style="font-size:12.5px;font-weight:800;color:rgba(255,255,255,0.95)" id="rp-name">...</div>
+              <div style="font-size:10px;color:rgba(255,255,255,0.5)" id="rp-sub">...</div>
+              <div id="rp-live-badge" style="display:none;font-size:0.62rem;font-weight:600;color:#1A9E8E;margin-top:2px"></div>
+            </div>
+            <div id="rp-match" class="radar-person-match" style="display:none"></div>
+            <div id="home-preview-chev" style="flex-shrink:0;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div>
+          </div>
+          <div id="home-preview-expand" style="display:none;padding:0 12px 12px">
+            <div style="height:0.5px;background:rgba(255,255,255,0.1);margin:0 0 10px"></div>
+            <div id="rp-bio" class="radar-person-bio" style="margin-bottom:10px"></div>
+            <div id="rp-shared-bubbles" style="display:none;margin:0 0 10px"></div>
+            <div id="rp-tags" class="radar-person-tags" style="margin-bottom:11px"></div>
+            <div id="rp-overlap" class="radar-person-overlap"></div>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <button id="rp-save-btn" onclick="event.stopPropagation();rpSaveContact()" data-t="rp_save" style="width:42px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.16);border-radius:99px;cursor:pointer;color:rgba(255,255,255,0.85);flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></button>
+              <a id="rp-linkedin-btn" href="#" target="_blank" rel="noopener" style="display:none;text-decoration:none"></a>
+              <button onclick="event.stopPropagation();rpFullProfile()" style="flex:1;text-align:center;font-size:12px;font-weight:800;color:rgba(255,255,255,0.9);background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.16);border-radius:99px;padding:10px;cursor:pointer" data-t="rp_profile">Se profil</button>
+              <button onclick="event.stopPropagation();rpMessage()" style="flex:1;text-align:center;font-size:12px;font-weight:800;color:#0E2A3C;background:rgb(100,180,230);box-shadow:0 4px 16px rgba(100,180,230,0.35);border-radius:99px;padding:10px;cursor:pointer">Send besked</button>
+            </div>
+          </div>
+        </div>
         <!-- Filter bar: + left, list right -->
         <div style="display:flex;align-items:center;padding:6px 12px 6px">
           <button id="home-filter-plus" onclick="toggleRadarFilters()" style="width:30px;height:30px;border-radius:50%;background:rgba(20,22,28,0.85);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;border:none;-webkit-tap-highlight-color:transparent;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);padding:0"><svg id="home-filter-plus-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
@@ -1105,32 +1131,8 @@
 
 
 <!-- TOP-DROP PERSON SHEET (radar) -->
-<div class="radar-person-overlay" id="radar-person-overlay" onclick="closeRadarPerson()"></div>
-<div class="radar-person-sheet" id="radar-person-sheet">
-  <div class="radar-person-inner">
-    <div class="radar-person-header">
-      <div class="radar-person-avatar" id="rp-avatar">?</div>
-      <div class="u-flex1-min">
-        <div class="radar-person-name" id="rp-name">...</div>
-        <div class="radar-person-sub" id="rp-sub">...</div>
-        <div id="rp-live-badge" style="display:none;font-size:0.62rem;font-weight:600;color:#1A9E8E;background:rgba(46,207,207,0.08);padding:2px 8px;border-radius:99px;margin-top:3px;width:fit-content;display:none"></div>
-      </div>
-      <div class="radar-person-match" id="rp-match"></div>
-      <button class="radar-person-close" onclick="closeRadarPerson()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M17 7L7 17M7 7l10 10"/></svg></button>
-    </div>
-    <div class="radar-person-bio" id="rp-bio"></div>
-    <div id="rp-shared-bubbles" style="display:none;margin:0.4rem 0"></div>
-    <div class="radar-person-tags" id="rp-tags"></div>
-    <div class="radar-person-overlap" id="rp-overlap"></div>
-    <div class="radar-person-actions">
-      <button class="radar-person-action-btn primary" onclick="rpMessage()">Besked</button>
-      <button class="radar-person-action-btn" id="rp-save-btn" onclick="rpSaveContact()" data-t="rp_save">Gem</button>
-      <button class="radar-person-action-btn" onclick="rpFullProfile()" data-t="rp_profile">Profil</button>
-      <a class="radar-person-action-btn" id="rp-linkedin-btn" href="#" target="_blank" rel="noopener" style="display:none;text-decoration:none">LinkedIn</a>
-    </div>
-    <div class="radar-person-handle" onclick="closeRadarPerson()"></div>
-  </div>
-</div>
+
+
 
 <!-- ════════════════════════════════════════
      SCREEN: MESSAGES LIST
