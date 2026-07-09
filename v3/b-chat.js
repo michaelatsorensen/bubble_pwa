@@ -51,14 +51,33 @@ function bbRenderTree(nodes, expandedIds, opts) {
 
   var byId = {};
   nodes.forEach(function(b) { byId[b.id] = b; });
+  var now = new Date();
+
   var kids = {};
   nodes.forEach(function(b) {
     if (b.parent_id && byId[b.parent_id]) {
       (kids[b.parent_id] = kids[b.parent_id] || []).push(b.id);
     }
   });
+  // Sortér hvert netvaerks children: sub-netvaerk -> kommende events (naermest dato) -> afsluttede events
+  function _isEv(id) { var n = byId[id]; return n && (n.type === 'event' || n.type === 'live'); }
+  function _isPastEv(id) { var n = byId[id]; return _isEv(id) && n.event_date && new Date(n.event_end_date || n.event_date) < now; }
+  function _evTime(id) { var n = byId[id]; return n && n.event_date ? new Date(n.event_date).getTime() : Infinity; }
+  Object.keys(kids).forEach(function(pid) {
+    kids[pid].sort(function(a, b) {
+      var aEv = _isEv(a), bEv = _isEv(b);
+      // Sub-netvaerk (ikke-event) foerst
+      if (!aEv && bEv) return -1;
+      if (aEv && !bEv) return 1;
+      if (!aEv && !bEv) return 0; // begge sub-netvaerk: bevar raekkefoelge
+      // Begge events: afsluttede sidst, ellers naermest dato foerst
+      var aPast = _isPastEv(a), bPast = _isPastEv(b);
+      if (aPast && !bPast) return 1;
+      if (!aPast && bPast) return -1;
+      return _evTime(a) - _evTime(b); // naermest dato foerst
+    });
+  });
 
-  var now = new Date();
   var rows = [];
 
   function walk(key, depth, ancHasNext, isLast) {
@@ -153,9 +172,44 @@ function bbRenderTree(nodes, expandedIds, opts) {
     if (isExp) {
       var childAnc = ancHasNext.slice();
       childAnc[depth] = !isLast;
-      children.forEach(function(c, ci) {
-        walk(c, depth + 1, childAnc, ci === children.length - 1);
+      // Del children i aktive vs afsluttede events
+      var activeCh = children.filter(function(c) { return !_isPastEv(c); });
+      var pastEvs = children.filter(function(c) { return _isPastEv(c); });
+      var histId = 'hist-' + key;
+      var histExp = expandedIds.indexOf(histId) >= 0;
+      var hasHist = pastEvs.length > 0;
+      // Render aktive children (Historik-raekken taeller som sidste hvis den findes)
+      activeCh.forEach(function(c, ci) {
+        var isLastActive = (ci === activeCh.length - 1) && !hasHist;
+        walk(c, depth + 1, childAnc, isLastActive);
       });
+      // Render Historik-accordion nederst (hvis der er afsluttede events)
+      if (hasHist) {
+        var histDepth = depth + 1;
+        var histGuides = [];
+        for (var hj = 1; hj < histDepth; hj++) {
+          if (childAnc[hj]) histGuides.push('position:absolute;left:' + xOf(hj) + ';top:-' + GAP + 'px;bottom:0;width:0;border-left:' + LC + ';pointer-events:none');
+        }
+        // Historik er sidste child -> albue
+        histGuides.push('position:absolute;left:' + xOf(histDepth) + ';top:-' + GAP + 'px;bottom:50%;width:11px;border-left:' + LC + ';border-bottom:' + LC + ';border-bottom-left-radius:8px;pointer-events:none');
+        var histGuidesHtml = histGuides.map(function(g) { return '<div style="' + g + '"></div>'; }).join('');
+        var histChev = '<div style="width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:12px;transform:' + (histExp ? 'rotate(90deg)' : 'rotate(0deg)') + ';transition:transform 0.22s ease;line-height:1">\u203A</div>';
+        rows.push('<div style="position:relative;min-width:0">' + histGuidesHtml +
+          '<div onclick="bbTreeToggleFlat(\'' + histId + '\')" style="box-sizing:border-box;margin-left:' + (histDepth * 20) + 'px;width:calc(100% - ' + (histDepth * 20) + 'px);display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:0.5px dashed rgba(255,255,255,0.13);border-radius:12px;cursor:pointer">' +
+            '<div style="width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);flex-shrink:0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>' +
+            '<div style="flex:1;min-width:0;font-size:11.5px;font-weight:600;color:rgba(255,255,255,0.55)">' + t('misc_past') + ' (' + pastEvs.length + ')</div>' +
+            histChev +
+          '</div>' +
+        '</div>');
+        // Udfoldede afsluttede events (dybere niveau, under Historik)
+        if (histExp) {
+          var pastAnc = childAnc.slice();
+          pastAnc[histDepth] = false; // Historik er sidste, saa ingen fortsaettende trunk
+          pastEvs.forEach(function(pe, pi) {
+            walk(pe, histDepth + 1, pastAnc, pi === pastEvs.length - 1);
+          });
+        }
+      }
     }
   }
 
