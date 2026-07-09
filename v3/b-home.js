@@ -110,7 +110,7 @@ async function loadHome() {
   var _avEl = document.getElementById('home-prox-avatars');
   if (_avEl) _avEl.innerHTML = '';
   try {
-    if (!currentUser) { _homeLoading = false; _homeBooting = false; return; }
+    if (!currentUser) { _homeLoading = false; _homeBooting = false; var cwe = document.getElementById('home-content-wrap'); if (cwe) cwe.style.opacity = '1'; return; }
     if (!currentProfile) await loadCurrentProfile();
     updateHomeAvatar();
 
@@ -139,19 +139,30 @@ async function loadHome() {
     // v7.53: Fade in all data cards together once everything is ready.
     // Cards stay invisible (opacity:0) while data loads — no pop-in,
     // no skeleton, no layout-shift. Radar/dartboard fades in independently.
-    var cardsWrap = document.getElementById('home-cards-wrap');
-    if (cardsWrap) {
-      // requestAnimationFrame ensures the fade-in happens after the
-      // browser has applied the show* DOM updates above
+    // Fade HELE indholdet ind samlet (banner + radar + cards) naar alt er klar.
+    // Forhindrer flicker ved kold start: intet vises foer data + tilstand er sat.
+    // (Tidligere fadede kun home-cards-wrap - radar/banner flickede udenfor.)
+    var contentWrap = document.getElementById('home-content-wrap');
+    if (contentWrap) {
+      // dobbelt rAF sikrer at browseren har malet DOM-opdateringerne foer fade
       requestAnimationFrame(function() {
-        cardsWrap.style.opacity = '1';
+        requestAnimationFrame(function() {
+          contentWrap.style.opacity = '1';
+        });
       });
     }
+    // home-cards-wrap fader stadig sin egen (harmloest - den er inde i content-wrap)
+    var cardsWrap = document.getElementById('home-cards-wrap');
+    if (cardsWrap) cardsWrap.style.opacity = '1';
   } catch(e) {
     logError("loadHome", e);
   } finally {
     _homeLoading = false;
     _homeBooting = false;
+    // Fail-safe: indholdet SKAL vaere synligt uanset fejl/tidlig exit —
+    // ellers ville en fejl efterlade skaermen usynlig (vaerre end flicker).
+    var cw = document.getElementById('home-content-wrap');
+    if (cw && cw.style.opacity !== '1') cw.style.opacity = '1';
   }
 }
 
