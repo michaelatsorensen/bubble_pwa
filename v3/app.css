@@ -4304,3 +4304,14 @@ a:not(.btn-primary):not(.btn-secondary):active {
 .u-subtitle { font-size:0.72rem; font-weight:600; color:var(--p-text-2); margin-top:1px; }
 .u-section-label { margin-top:1.25rem; margin-bottom:0.25rem; color:var(--p-text-2); }
 /* ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── JS-genererede moenstre (v3.07, erstatter gentagne inline) ── */
+.u-avatar-img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.u-ellipsis { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.u-row-gap { display:flex; align-items:center; gap:0.6rem; }
+.u-icon15 { width:15px; height:15px; display:flex; align-items:center; justify-content:center; color:var(--p-text-2); }
+.u-sheet-grip-c { width:36px; height:4px; border-radius:99px; background:rgba(255,255,255,0.15); margin:0 auto 1rem; cursor:pointer; }
+.u-sheet-title { font-size:1.1rem; font-weight:800; color:var(--p-text); margin-bottom:0.5rem; }
+.u-row-btn { display:flex; align-items:center; gap:0.6rem; padding:0.65rem 0.75rem; cursor:pointer; }
+.u-meta-sm { font-size:0.88rem; color:var(--p-text-3); }
+.u-thumb { width:1.2rem; height:1.2rem; border-radius:4px; object-fit:cover; }

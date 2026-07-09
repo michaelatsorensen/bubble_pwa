@@ -343,7 +343,7 @@ async function bcLoadBubbleCore(bubbleId) {
   var iconEl = document.getElementById('bc-topbar-icon');
   if (iconEl) {
     iconEl.style.background = isEvent ? 'rgba(46,207,207,0.22)' : 'rgba(100,180,230,0.22)';
-    iconEl.innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:1.2rem;height:1.2rem;border-radius:4px;object-fit:cover">' : bubbleEmoji(b.type);
+    iconEl.innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" class="u-thumb">' : bubbleEmoji(b.type);
   }
   document.getElementById('bc-name').textContent = b.name;
   if (typeof _bcUpdateSaveBtn === 'function') _bcUpdateSaveBtn(bubbleId);
@@ -850,7 +850,7 @@ async function bcLoadBubbleInfo() {
     if (iconEl) {
       var isEv = b.type === 'event' || b.type === 'live';
       iconEl.style.background = isEv ? 'rgba(46,207,207,0.22)' : 'rgba(100,180,230,0.22)';
-      iconEl.innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:1.2rem;height:1.2rem;border-radius:4px;object-fit:cover">' : bubbleEmoji(b.type);
+      iconEl.innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" class="u-thumb">' : bubbleEmoji(b.type);
     }
     document.getElementById('bc-name').textContent = b.name;
 
@@ -982,10 +982,10 @@ async function bcLoadEvents() {
           ? '<span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(30,27,46,0.06);color:var(--muted)">Afsluttet</span>'
           : '<span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(46,207,207,0.1);color:#0F6E56">Kommende</span>';
         return '<div class="card" style="padding:0.75rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')">' +
-          '<div style="display:flex;align-items:center;gap:0.6rem">' +
+          '<div class="u-row-gap">' +
           '<div style="width:38px;height:38px;border-radius:10px;background:' + (isPast ? 'rgba(30,27,46,0.04)' : 'rgba(46,207,207,0.08)') + ';display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0">' + icon('calendar') + '</div>' +
           '<div style="flex:1;min-width:0">' +
-          '<div style="display:flex;align-items:center;gap:0.4rem"><span class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(ch.name) + '</span>' + badge + '</div>' +
+          '<div style="display:flex;align-items:center;gap:0.4rem"><span class="fw-600 fs-085 u-ellipsis">' + escHtml(ch.name) + '</span>' + badge + '</div>' +
           '<div class="fs-072 text-muted">' + dateStr + ' · ' + mc + ' ' + (mc === 1 ? t('bc_participant_one') : t('bb_participants')) + '</div>' +
           avStack +
           '</div>' +
@@ -993,10 +993,10 @@ async function bcLoadEvents() {
       } else {
         // Sub-bubble (network type)
         return '<div class="card" style="padding:0.75rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')">' +
-          '<div style="display:flex;align-items:center;gap:0.6rem">' +
+          '<div class="u-row-gap">' +
           '<div style="width:38px;height:38px;border-radius:10px;background:rgba(100,180,230,0.22);display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;overflow:hidden;color:rgb(100,180,230)">' + (ch.icon_url ? '<img src="' + escHtml(ch.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : bubbleEmoji(ch.type)) + '</div>' +
           '<div style="flex:1;min-width:0">' +
-          '<div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(ch.name) + '</div>' +
+          '<div class="fw-600 fs-085 u-ellipsis">' + escHtml(ch.name) + '</div>' +
           '<div class="fs-072 text-muted">' + typeLabel(ch.type) + ' · ' + mc + ' ' + (mc === 1 ? t('bb_member') : t('bc_members_lc')) + '</div>' +
           avStack +
           '</div>' +
@@ -1147,7 +1147,7 @@ function bcRenderMsg(m) {
   var nameHtml = escHtml(name);
   var safeTitle = escHtml(p.title||'');
   var bcAvUrl = isMe ? currentProfile?.avatar_url : (p.avatar_url || null);
-  var bcAvInner = bcAvUrl ? '<img src="' + bcAvUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : initials;
+  var bcAvInner = bcAvUrl ? '<img src="' + bcAvUrl + '" class="u-avatar-img">' : initials;
   var avatarColor = 'linear-gradient(135deg,#CECBF6,#AFA9EC)';
   var avatarStyle = isMe ? 'display:none' : ('background:' + avatarColor + ';overflow:hidden' + (showAvatar ? ';cursor:pointer' : ';visibility:hidden'));
   var avatarClick = showAvatar ? " onclick=\"bcOpenPerson('" + m.user_id + "','" + nameHtml + "','" + safeTitle + "','" + avatarColor + "')\"" : '';
@@ -1695,7 +1695,7 @@ async function bcLoadMembers() {
       pendingMembers.forEach(function(m) {
         var p = profileMap[m.user_id] || {};
         var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-        var avHtml = p.avatar_url ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : ini;
+        var avHtml = p.avatar_url ? '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">' : ini;
         html += '<div class="chat-member-row" style="background:rgba(249,177,55,0.04);border:1px solid rgba(249,177,55,0.15);border-radius:12px;margin-bottom:6px;padding:0.65rem 0.75rem">' +
           '<div class="chat-member-avatar" style="background:linear-gradient(135deg,#F59E0B,#EAB308);overflow:hidden">' + avHtml + '</div>' +
           '<div style="flex:1;min-width:0">' +
@@ -1742,7 +1742,7 @@ async function bcLoadMembers() {
       var roleLabel = isEvent ? t('misc_organizer') : t('misc_owner');
 
       var avatarInner = (p.avatar_url && !p.is_anon)
-        ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        ? '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">'
         : initials;
 
       // Relevance signals — dark-context colors (matchBadgeHtml is light-mode, invisible here)
@@ -2102,21 +2102,21 @@ async function bcLoadInfo() {
       // Shared: admins
       if (isOwner) {
         adminItems += '<div onclick="openAdminDesignation(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
-          '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.55)">' + icon('users') + '</span>' +
+          '<span class="u-icon15">' + icon('users') + '</span>' +
           '<div style="flex:1;font-size:0.8rem;color:rgba(255,255,255,0.85)">' + t('bi_designate_admins') + '</div>' +
-          '<div style="font-size:0.88rem;color:rgba(255,255,255,0.4)">›</div></div>' +
+          '<div class="u-meta-sm">›</div></div>' +
           '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>';
       }
       // Shared: download list
       adminItems += '<div onclick="downloadMembersPdf(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
-        '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.55)">' + icon('file') + '</span>' +
+        '<span class="u-icon15">' + icon('file') + '</span>' +
         '<div style="flex:1;font-size:0.8rem;color:rgba(255,255,255,0.85)">Download ' + memberLabel + 'liste</div>' +
-        '<div style="font-size:0.88rem;color:rgba(255,255,255,0.4)">›</div></div>';
+        '<div class="u-meta-sm">›</div></div>';
       // Shared: chat lock toggle
       var chatLocked = b.chat_locked || false;
       adminItems += '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>' +
         '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem">' +
-        '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.55)">' + icon('lock') + '</span>' +
+        '<span class="u-icon15">' + icon('lock') + '</span>' +
         '<div style="flex:1;font-size:0.8rem;color:rgba(255,255,255,0.85)">' + t('bi_lock_chat') + '</div>' +
         '<label style="position:relative;width:36px;height:20px;flex-shrink:0;cursor:pointer">' +
         '<input type="checkbox" ' + (chatLocked ? 'checked' : '') + ' onchange="bcToggleChatLock(\'' + b.id + '\',this.checked)" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;margin:0">' +
@@ -2127,17 +2127,17 @@ async function bcLoadInfo() {
       if (isEvent) {
         adminItems += '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>' +
           '<div onclick="generateEventReport(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
-          '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.55)">' + icon('file') + '</span>' +
+          '<span class="u-icon15">' + icon('file') + '</span>' +
           '<div style="flex:1;font-size:0.8rem;color:rgba(255,255,255,0.85)">' + t('bi_event_report') + '</div>' +
-          '<div style="font-size:0.88rem;color:rgba(255,255,255,0.4)">›</div></div>';
+          '<div class="u-meta-sm">›</div></div>';
       }
       // Owner: transfer
       if (isOwner) {
         adminItems += '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>' +
           '<div onclick="openTransferOwnership(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
-          '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.55)">' + icon('crown') + '</span>' +
+          '<span class="u-icon15">' + icon('crown') + '</span>' +
           '<div style="flex:1;font-size:0.8rem;color:rgba(255,255,255,0.85)">' + t('bi_transfer_ownership') + '</div>' +
-          '<div style="font-size:0.88rem;color:rgba(255,255,255,0.4)">›</div></div>';
+          '<div class="u-meta-sm">›</div></div>';
       }
       adminHtml = '<div class="section-card">' +
         '<div class="section-card-title">' + (isEvent ? t('bi_event_admin') : t('bi_administration')) + '</div>' +
@@ -2469,7 +2469,7 @@ function bcExpandPost(postId) {
   }
 
   var { overlay, sheet } = bbDynOpen();
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
+  sheet.innerHTML = '<div class="u-sheet-grip-c" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
     '<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem">' + avatarHtml +
     '<div><div style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95)">' + name + '</div>' +
     '<div style="font-size:0.65rem;color:rgba(255,255,255,0.45)">' + timeAgo(post.created_at) + '</div></div></div>' +

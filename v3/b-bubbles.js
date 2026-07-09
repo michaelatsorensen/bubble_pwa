@@ -336,7 +336,7 @@ function _buildMemberSheet(title, subtitle, members) {
 
   var avColors = proxColors || ['linear-gradient(135deg,#6366F1,rgb(100,180,230))'];
 
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 1rem;cursor:pointer" onclick="closeMemberSheet()"></div>' +
+  sheet.innerHTML = '<div class="u-sheet-grip-c" onclick="closeMemberSheet()"></div>' +
     '<div style="font-size:1.05rem;font-weight:800;margin-bottom:0.3rem;color:rgba(255,255,255,0.95)">' + title + '</div>' +
     '<div style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin-bottom:1rem">' + subtitle + '</div>' +
     '<div id="member-sheet-list">' +
@@ -2222,7 +2222,7 @@ async function openInviteModal(bubbleId) {
       var stars = starGet(p.id);
       var starHtml = stars > 0 ? ' <span style="font-size:0.55rem;color:var(--accent)">' + '\u2605'.repeat(stars) + '</span>' : '';
       var avHtml = p.avatar_url ?
-        '<div class="invite-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>' :
+        '<div class="invite-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img"></div>' :
         '<div class="invite-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>';
       return '<label class="invite-row' + (isPending ? ' pending-active' : '') + '" data-uid="' + p.id + '">' +
         avHtml +
@@ -2367,7 +2367,7 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
     // Show avatar photo if available
     var psAv = document.getElementById('ps-avatar');
     if (psAv && data?.avatar_url) {
-      psAv.innerHTML = '<img src="' + escHtml(data.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      psAv.innerHTML = '<img src="' + escHtml(data.avatar_url) + '" class="u-avatar-img">';
     }
   }).catch(function(e) { logError('psLoadProfile', e); });
   // Store userId and fromScreen

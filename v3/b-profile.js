@@ -696,7 +696,7 @@ async function loadProfile() {
     const initials = (currentProfile.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     var myAvEl = document.getElementById('my-avatar');
     if (myAvEl) {
-      if (currentProfile.avatar_url) { myAvEl.innerHTML = '<img src="'+escHtml(currentProfile.avatar_url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+      if (currentProfile.avatar_url) { myAvEl.innerHTML = '<img src="'+escHtml(currentProfile.avatar_url)+'" class="u-avatar-img">'; }
       else { myAvEl.textContent = initials; }
     }
     document.getElementById('my-name').textContent = currentProfile.name || '...';
@@ -853,8 +853,8 @@ async function loadSavedContacts() {
             ${stars}
           </div>
           <div style="flex:1;min-width:0">
-            <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||t('misc_unknown'))}</div>
-            <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml([p.title, p.workplace].filter(Boolean).join(' · '))}</div>
+            <div class="fw-600 fs-085 u-ellipsis">${escHtml(p.name||t('misc_unknown'))}</div>
+            <div class="fs-075 text-muted u-ellipsis">${escHtml([p.title, p.workplace].filter(Boolean).join(' · '))}</div>
             ${_mbadge ? `<div style="margin-top:0.3rem">${_mbadge}</div>` : ''}
           </div>
           <div style="display:flex;gap:0.35rem;flex-shrink:0" onclick="event.stopPropagation()">
@@ -1098,7 +1098,7 @@ async function loadProfileBubbles() {
       if (stars > 0) {
         starHtml = '<div style="display:flex;gap:1px;flex-shrink:0;color:#F5C518;font-size:0.72rem">' + '\u2605'.repeat(stars) + '</div>';
       }
-      var h = '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem"><div style="display:flex;align-items:center;gap:0.6rem">';
+      var h = '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem"><div class="u-row-gap">';
       h += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(100,180,230,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgb(100,180,230);overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;filter:none">' : ico('bubble')) + '</div>';
       h += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
       h += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.45)">' + visIcon(b.visibility) + mc + ' ' + t('ps_members') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div>' + starHtml + '</div></div>';
@@ -1106,7 +1106,7 @@ async function loadProfileBubbles() {
     }
     function eventCard(b, past) {
       var dateStr = (past ? (b.event_end_date || b.event_date) : b.event_date) ? new Date(past ? (b.event_end_date || b.event_date) : b.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
-      var h = '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.3rem;' + (past ? 'opacity:0.55' : '') + '"><div style="display:flex;align-items:center;gap:0.6rem">';
+      var h = '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.3rem;' + (past ? 'opacity:0.55' : '') + '"><div class="u-row-gap">';
       h += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,' + (past ? '0.14' : '0.22') + ');display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E;overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;filter:none">' : ico('calendar')) + '</div>';
       h += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
       h += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.45)">' + visIcon(b.visibility) + dateStr + '</div></div></div></div>';
@@ -1214,8 +1214,8 @@ async function loadProfileInvitations() {
         <div class="flex-row-center" style="gap:0.7rem">
           <div class="avatar" style="background:${col};width:40px;height:40px;font-size:0.75rem;flex-shrink:0" data-action="openPerson" data-id="${inv.from_user_id}" data-from="screen-profile">${ini}</div>
           <div style="flex:1;min-width:0">
-            <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||t('misc_unknown'))}</div>
-            <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml([p.title, p.workplace].filter(Boolean).join(' · '))}</div>
+            <div class="fw-600 fs-085 u-ellipsis">${escHtml(p.name||t('misc_unknown'))}</div>
+            <div class="fs-075 text-muted u-ellipsis">${escHtml([p.title, p.workplace].filter(Boolean).join(' · '))}</div>
             ${b.name ? `<div class="fs-065 text-muted" style="margin-top:0.15rem">${icon('bubble')} ${escHtml(b.name)} · ${time}</div>` : `<div class="fs-065 text-muted" style="margin-top:0.15rem">Bubble Up · ${time}</div>`}
             ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.25rem">${tags}</div>` : ''}
           </div>
@@ -1922,7 +1922,7 @@ async function loadPersonBubbles(userId, navRef) {
       var colorBg = bubbleColor(b.type, 0.15);
       var colorFg = bubbleColor(b.type, 0.9);
       var emojiHtml = b.icon_url
-        ? '<img src="' + escHtml(b.icon_url) + '" style="width:1.2rem;height:1.2rem;border-radius:4px;object-fit:cover">'
+        ? '<img src="' + escHtml(b.icon_url) + '" class="u-thumb">'
         : bubbleEmoji(b.type);
       var avStack = renderAvatarStack(personBubbleMemberMap[b.id] || [], memberCount);
       return '<div class="person-bubble-pill" data-action="openBubble" data-id="' + b.id + '" data-from="screen-person">' +

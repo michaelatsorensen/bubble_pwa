@@ -432,10 +432,10 @@ function updateAllAvatars() {
   var ini = (currentProfile?.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
   // Home avatar — escape URL to prevent XSS even from own profile data
   var homeAv = document.getElementById('home-avatar');
-  if (homeAv) { if (url) homeAv.innerHTML = '<img src="'+escHtml(url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else homeAv.textContent = ini; }
+  if (homeAv) { if (url) homeAv.innerHTML = '<img src="'+escHtml(url)+'" class="u-avatar-img">'; else homeAv.textContent = ini; }
   // Profile avatar
   var myAv = document.getElementById('my-avatar');
-  if (myAv) { if (url) myAv.innerHTML = '<img src="'+escHtml(url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else myAv.textContent = ini; }
+  if (myAv) { if (url) myAv.innerHTML = '<img src="'+escHtml(url)+'" class="u-avatar-img">'; else myAv.textContent = ini; }
 }
 
 // Full-view avatar overlay
@@ -464,8 +464,8 @@ function updateHomeAvatar() {
   var url = currentProfile.avatar_url;
   var homeAv = document.getElementById('home-avatar');
   var myAv = document.getElementById('my-avatar');
-  if (homeAv) { if (url) homeAv.innerHTML = '<img src="'+escHtml(url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else homeAv.textContent = ini; }
-  if (myAv) { if (url) myAv.innerHTML = '<img src="'+escHtml(url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else myAv.textContent = ini; }
+  if (homeAv) { if (url) homeAv.innerHTML = '<img src="'+escHtml(url)+'" class="u-avatar-img">'; else homeAv.textContent = ini; }
+  if (myAv) { if (url) myAv.innerHTML = '<img src="'+escHtml(url)+'" class="u-avatar-img">'; else myAv.textContent = ini; }
 }
 
 // ── Auth lock: prevents double-tap on login/signup buttons ──
@@ -503,7 +503,7 @@ async function handleLogin() {
           formArea.innerHTML =
             '<div style="text-align:center;padding:2rem 1rem">' +
               '<div style="font-size:2rem;margin-bottom:0.8rem">🔒</div>' +
-              '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">' + t('auth_login_failed_title') + '</div>' +
+              '<div class="u-sheet-title">' + t('auth_login_failed_title') + '</div>' +
               '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem">' + t('auth_login_failed_body', { email: escHtml(email) }) + '</div>' +
               '<button class="btn-primary" id="login-linkedin-btn" style="width:100%;margin-bottom:0.6rem">' +
                 '<svg style="width:1rem;height:1rem;vertical-align:middle;margin-right:0.4rem" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14m-.5 15.5v-5.3a3.26 3.26 0 00-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 011.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 001.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 00-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>' +
@@ -562,7 +562,7 @@ async function handleSignup() {
         formArea.innerHTML =
           '<div style="text-align:center;padding:2rem 1rem">' +
             '<div style="font-size:2rem;margin-bottom:0.8rem">👤</div>' +
-            '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">' + t('auth_email_exists_title') + '</div>' +
+            '<div class="u-sheet-title">' + t('auth_email_exists_title') + '</div>' +
             '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem">' +
               t('auth_email_exists_body', { email: escHtml(email) }) +
             '</div>' +
@@ -591,7 +591,7 @@ async function handleSignup() {
       if (formArea) {
         formArea.innerHTML = '<div style="text-align:center;padding:2rem 1rem">' +
           '<div style="font-size:2rem;margin-bottom:0.8rem">📧</div>' +
-          '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">' + t('auth_check_email_title') + '</div>' +
+          '<div class="u-sheet-title">' + t('auth_check_email_title') + '</div>' +
           '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem">' + t('auth_check_email_body', { email: escHtml(email) }) + '</div>' +
           '<button class="btn-primary" id="confirm-retry-btn" style="width:100%;margin-bottom:0.5rem">' + t('auth_confirmed_login') + '</button>' +
           '<button class="btn-secondary" onclick="restoreAuthForms()" style="width:100%">' + t('auth_back_to_login') + '</button>' +
@@ -835,7 +835,7 @@ function showAuthForms(qrContext) {
       var avEl = document.getElementById('auth-qr-avatar');
       if (avEl) {
         if (p.avatar_url) {
-          avEl.innerHTML = '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+          avEl.innerHTML = '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">';
         } else {
           avEl.textContent = (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
         }
@@ -870,7 +870,7 @@ function showTerms() {
   var body = isEN
     ? (typeof TERMS_EN !== 'undefined' ? TERMS_EN : '')
     : (typeof TERMS_DA !== 'undefined' ? TERMS_DA : '');
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
+  sheet.innerHTML = '<div class="u-sheet-grip-c" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
     '<h2 style="font-size:1.2rem;font-weight:800;margin-bottom:0.8rem;color:rgba(255,255,255,0.95)">' + title + '</h2>' +
     body +
     '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:1.2rem;padding:0.7rem;border-radius:12px;border:0.5px solid rgba(255,255,255,0.1);background:none;color:rgba(255,255,255,0.7);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">' + closeLabel + '</button>';
@@ -879,7 +879,7 @@ function showTerms() {
 
 function openFeedback() {
   var { overlay, sheet } = bbDynOpen();
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
+  sheet.innerHTML = '<div class="u-sheet-grip-c" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
     '<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem;color:rgba(255,255,255,0.95)">Giv feedback</h2>' +
     '<p style="font-size:0.78rem;color:rgba(255,255,255,0.5);margin-bottom:1rem">Vi er i beta — din feedback er guld værd og hjælper os med at bygge det bedste produkt.</p>' +
     '<textarea id="feedback-text" placeholder="Hvad virker godt? Hvad kan gøres bedre? Har du oplevet fejl?" style="width:100%;height:120px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:0.7rem;font-family:Figtree,sans-serif;font-size:0.82rem;color:rgba(255,255,255,0.9);resize:none;outline:none"></textarea>' +
@@ -1008,7 +1008,7 @@ async function openMyQR() {
   
   var { overlay, sheet } = bbDynOpen();
   sheet.style.textAlign = 'center';
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
+  sheet.innerHTML = '<div class="u-sheet-grip-c" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
     '<div style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem;color:rgba(255,255,255,0.95)">Min QR-kode</div>' +
     '<div style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin-bottom:1rem">Gyldig i 10 minutter · opdateres automatisk</div>' +
     '<div style="display:flex;justify-content:center;margin-bottom:1rem"><div id="my-qr-container" style="background:#fff;padding:16px;border-radius:14px;line-height:0"></div></div>' +

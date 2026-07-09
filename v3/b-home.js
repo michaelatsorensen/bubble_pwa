@@ -630,7 +630,7 @@ async function showDeepLinkModal(type, targetId) {
       var nameText = p.name || '?';
       var ini = nameText.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var iconHtml = p.avatar_url
-        ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        ? '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">'
         : '<span style="font-size:1.1rem;font-weight:700;color:white">' + escHtml(ini) + '</span>';
       var title = escHtml(nameText);
       var subtitle = [p.title, p.workplace].filter(Boolean).join(' · ');
@@ -954,7 +954,7 @@ async function _showSavedContactModal(contactId) {
     var ini = name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     var subtitle = [p.title, p.workplace].filter(Boolean).join(' · ');
     var avHtml = p.avatar_url
-      ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+      ? '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">'
       : '<span style="font-size:1.1rem;font-weight:700;color:white">' + escHtml(ini) + '</span>';
 
     var ov = document.createElement('div');
@@ -1060,7 +1060,7 @@ function showProfileSetupCTA() {
   var avEl = document.getElementById('setup-cta-avatar');
   if (avEl) {
     if (currentProfile.avatar_url) {
-      avEl.innerHTML = '<img src="' + escHtml(currentProfile.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      avEl.innerHTML = '<img src="' + escHtml(currentProfile.avatar_url) + '" class="u-avatar-img">';
     } else {
       avEl.textContent = (currentProfile.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     }
@@ -1476,7 +1476,7 @@ async function _bbLoadPendingInvites() {
       var b = bubbleMap[inv.bubble_id] || {};
       var ini = (p.name || '?').split(' ').map(function(w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
       html += '<div class="card" style="padding:0.6rem 0.8rem;margin-bottom:0.4rem;border-left:2px solid var(--accent)" id="bb-inv-' + inv.id + '">';
-      html += '<div style="display:flex;align-items:center;gap:0.6rem">';
+      html += '<div class="u-row-gap">';
       html += '<div class="avatar" style="width:32px;height:32px;font-size:0.65rem;flex-shrink:0">' + ini + '</div>';
       html += '<div style="flex:1;min-width:0">';
       html += '<div style="font-size:0.78rem;font-weight:600">' + escHtml(p.name || t('misc_unknown')) + '</div>';
@@ -2555,7 +2555,7 @@ function _doRenderHomeDartboard() {
       var dCol = dp.is_anon ? 'var(--glass-border)' : colors[dmeta.col % colors.length];
       var dIni = dp.is_anon ? '?' : (dp.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
       var dInner = (dp.avatar_url && !dp.is_anon)
-        ? '<img src="' + escHtml(dp.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        ? '<img src="' + escHtml(dp.avatar_url) + '" class="u-avatar-img">'
         : dIni;
       var dDelay = (di * 40);
       out += '<div class="prox-dot" style="width:'+dSz+'px;height:'+dSz+'px;left:'+dPos.x.toFixed(1)+'px;top:'+dPos.y.toFixed(1)+'px;background:'+dCol+';font-size:'+(dSz<34?'0.48':'0.55')+'rem;animation-delay:'+dDelay+'ms" onclick="event.stopPropagation();openRadarPerson(\''+dp.id+'\')" data-id="'+dp.id+'">'+dInner+(appMode.checkedInIds.indexOf(dp.id)>=0?'<span class="live-dot" style="position:absolute;bottom:-1px;right:-1px;width:8px;height:8px;border:2px solid var(--bg)"></span>':'')+'</div>';
@@ -2591,7 +2591,7 @@ function _doRenderHomeDartboard() {
     var col = p.is_anon ? 'var(--glass-border)' : colors[meta.col % colors.length];
     var ini = p.is_anon ? '?' : (p.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
     var inner = (p.avatar_url && !p.is_anon)
-      ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+      ? '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">'
       : ini;
     var isLive = appMode.checkedInIds.indexOf(p.id) >= 0;
     var liveSpan = isLive ? '<span class="live-dot" style="position:absolute;bottom:-1px;right:-1px;width:8px;height:8px;border:2px solid var(--bg)"></span>' : '';

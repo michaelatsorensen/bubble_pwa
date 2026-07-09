@@ -753,7 +753,7 @@ async function loadMessages() {
         '<div class="flex-row-center" style="gap:0.75rem">' + convAvatar +
         '<div style="flex:1;min-width:0">' +
         '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:0.5rem">' +
-        '<div class="conv-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.name||t('misc_unknown')) + liveBadge + '</div>' +
+        '<div class="conv-name u-ellipsis">' + escHtml(p.name||t('misc_unknown')) + liveBadge + '</div>' +
         '<div class="conv-time">' + time + '</div></div>' +
         '<div class="conv-preview" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;margin-top:0.1rem">' + preview + '</div>' +
         '</div>' + (isUnread ? '<div class="conv-unread-dot"></div>' : '') +
@@ -789,7 +789,7 @@ async function openChat(userId, fromScreen) {
     if (chatInput) chatInput.placeholder = t('dm_write_to', { name: currentChatName.split(' ')[0] || '' });
     var dmAvatar = document.getElementById('dm-topbar-avatar');
     if (dmAvatar) {
-      if (p?.avatar_url) { dmAvatar.innerHTML = '<img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+      if (p?.avatar_url) { dmAvatar.innerHTML = '<img src="'+escHtml(p.avatar_url)+'" class="u-avatar-img">'; }
       else { dmAvatar.textContent = (currentChatName).split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); }
     }
     const backBtn = document.getElementById('dm-back-btn');
@@ -965,7 +965,7 @@ function dmRenderMsg(m) {
   let avatarInner = '';
   if (!sent && showAvatar) {
     if (theirAvUrl) {
-      avatarInner = '<img src="' + theirAvUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      avatarInner = '<img src="' + theirAvUrl + '" class="u-avatar-img">';
     } else {
       avatarInner = (currentChatName||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     }
@@ -1025,7 +1025,7 @@ async function loadChatMessages() {
       var partnerAvatar = window._chatPartnerAvatar;
       var partnerInit = partnerName.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var avHtml = partnerAvatar
-        ? '<img src="' + escHtml(partnerAvatar) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        ? '<img src="' + escHtml(partnerAvatar) + '" class="u-avatar-img">'
         : partnerInit;
       el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;padding:3rem 1.5rem 1rem;text-align:center">' +
         '<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#6366F1,rgb(100,180,230));display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:white;overflow:hidden">' + avHtml + '</div>' +

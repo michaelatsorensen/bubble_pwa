@@ -335,14 +335,14 @@ function abortOnboarding() {
     if (_reRunningOnboarding) {
       // Existing user — just go back, no logout
       s.innerHTML =
-        '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">' + t('ob_abort_title') + '</div>' +
+        '<div class="u-sheet-title">' + t('ob_abort_title') + '</div>' +
         '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">' + t('ob_abort_body_rerun') + '</div>' +
         '<button onclick="cancelReRunOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid rgba(100,180,230,0.2);background:rgba(100,180,230,0.08);color:var(--accent);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.4rem">' + t('ob_abort_back_profile') + '</button>' +
         '<button onclick="cancelAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">' + t('ob_abort_continue') + '</button>';
     } else {
       // First-time user — original behavior
       s.innerHTML =
-        '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">' + t('ob_abort_title') + '</div>' +
+        '<div class="u-sheet-title">' + t('ob_abort_title') + '</div>' +
         '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">' + t('ob_abort_body_new') + '</div>' +
         '<button onclick="confirmAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid rgba(26,122,138,0.3);background:rgba(26,122,138,0.1);color:var(--accent2);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.4rem">' + t('ob_abort_confirm') + '</button>' +
         '<button onclick="cancelAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">' + t('ob_abort_continue') + '</button>';

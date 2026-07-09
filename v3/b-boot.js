@@ -300,7 +300,7 @@ async function loadQRProfilePreview(userId, bubbleId) {
         }
         if (avatarEl) {
           if (profile.avatar_url) {
-            avatarEl.innerHTML = '<img src="' + escHtml(profile.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+            avatarEl.innerHTML = '<img src="' + escHtml(profile.avatar_url) + '" class="u-avatar-img">';
           } else {
             avatarEl.textContent = (profile.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
           }
@@ -351,7 +351,7 @@ async function loadQRProfilePreview(userId, bubbleId) {
               var p = c.profiles || {};
               var ini = (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
               var avHtml = p.avatar_url
-                ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+                ? '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">'
                 : ini;
               var tags = (p.keywords || []).slice(0, 2).map(function(t) {
                 return '<span style="font-size:0.55rem;padding:0.1rem 0.35rem;border-radius:6px;background:rgba(100,180,230,0.07);color:#534AB7">' + escHtml(t) + '</span>';
@@ -434,10 +434,10 @@ async function loadTeaserProfiles(bubbleId) {
       var ini = (p.name || '?').split(' ').map(function(w){return w[0]}).join('').slice(0,2).toUpperCase();
       var subtitle = [p.title, p.workplace].filter(Boolean).join(' \u00B7 ');
       var avHtml = p.avatar_url
-        ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        ? '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">'
         : ini;
       var fade = i >= 3 ? 'opacity:' + (0.6 - (i - 3) * 0.2) : '';
-      return '<div class="card" style="margin:0 1.2rem;' + fade + '"><div style="display:flex;align-items:center;gap:0.6rem">' +
+      return '<div class="card" style="margin:0 1.2rem;' + fade + '"><div class="u-row-gap">' +
         '<div class="avatar" style="width:36px;height:36px;background:' + colors[i % colors.length] + ';overflow:hidden">' + avHtml + '</div>' +
         '<div><div style="font-size:0.82rem;font-weight:600">' + escHtml(p.name) + '</div>' +
         '<div style="font-size:0.68rem;color:var(--text-secondary)">' + escHtml(subtitle) + '</div></div></div></div>';

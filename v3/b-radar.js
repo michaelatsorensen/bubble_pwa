@@ -69,8 +69,8 @@ function renderRadarList() {
       '<div class="flex-row-center" style="gap:0.7rem">' +
         '<div class="radar-list-avatar" style="background:' + col + ';' + bd + '" onclick="openRadarPerson(\'' + p.id + '\')">' + escHtml(ini) + '</div>' +
         '<div style="flex:1;min-width:0;cursor:pointer" onclick="openRadarPerson(\'' + p.id + '\')">' +
-          '<div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(name) + '</div>' +
-          (isA ? '' : '<div class="fs-072 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml([p.title, p.workplace].filter(Boolean).join(' \u00B7 ')) + '</div>') +
+          '<div class="fw-600 fs-085 u-ellipsis">' + escHtml(name) + '</div>' +
+          (isA ? '' : '<div class="fs-072 text-muted u-ellipsis">' + escHtml([p.title, p.workplace].filter(Boolean).join(' \u00B7 ')) + '</div>') +
         '</div>' +
         matchBadge +
         '<button class="radar-list-remove" onclick="event.stopPropagation();radarConfirmRemove(\'' + p.id + '\',\'' + escHtml(name).replace(/'/g,'') + '\')" title="' + t('misc_remove') + '">' + icon('x') + '</button>' +
@@ -196,7 +196,7 @@ async function openRadarPerson(userId) {
     var ini = isA ? '?' : name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     var rpAvEl = document.getElementById('rp-avatar');
     if (rpAvEl) {
-      if (p.avatar_url && !isA) { rpAvEl.innerHTML = '<img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; rpAvEl.style.overflow = 'hidden'; }
+      if (p.avatar_url && !isA) { rpAvEl.innerHTML = '<img src="'+escHtml(p.avatar_url)+'" class="u-avatar-img">'; rpAvEl.style.overflow = 'hidden'; }
       else { rpAvEl.textContent = ini; }
     }
     document.getElementById('rp-name').textContent = name;

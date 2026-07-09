@@ -24,14 +24,18 @@ for den kontrast-verificerede værdi-mapping.
 - **backdrop-filter er en iOS-twitch-fælde.** Kun på faste flader (topbar/navbar/sheets),
   ALDRIG på scroll-indhold. Kompensér med hævet fyld (--p-glass).
 
-## Migration-status (v3.03)
+## Migration-status (v3.07)
 - [x] app.css farver → prototype (0 midnight-rester)
-- [x] backdrop-filter 125 → 25 (twitch-fix)
-- [x] Prototype-token-lag etableret
-- [x] Semantiske tokens aliaset mod prototype
-- [ ] index.html inline-styles → klasser (702 tilbage)
-- [ ] JS-genereret HTML inline-styles → klasser (b-home, b-bubbles, b-chat, ...)
-- [ ] Skærm-for-skærm prototype-tro finish
+- [x] backdrop-filter ~215 → 45 total på tværs af v3 (iOS twitch-fix)
+- [x] Prototype-token-lag etableret (--p-* = kilde til sandhed)
+- [x] Semantiske tokens aliaset mod prototype (592 klasser migreret)
+- [x] index.html farver → prototype + 16 utility-klasser (702→559 inline)
+- [x] Alle 11 JS-filer: farver → prototype (0 midnight, legitim lilla bevaret)
+- [x] JS gentagne inline-mønstre → 9 klasser (61 forekomster)
+- [x] Glas-fyld hævet 0.055/0.06 → 0.075 (kompenserer fjernet blur)
+- [ ] Resterende inline-styles → klasser (~1539 tilbage, mest unikke enkelt-tilfælde)
+- [ ] Skærm-for-skærm prototype-tro finish (layout/spacing/komposition)
+- [ ] Nye prototype-features (foldet preview, animationer) via kvalificerede gæt
 
 ## Filstruktur
 - app.css — al styling (592 klasser + tokens)

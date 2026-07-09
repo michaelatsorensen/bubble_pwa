@@ -1144,7 +1144,7 @@ async function _connectShowProfileSheet(p, profileId) {
 
   // Avatar
   var avatarHtml = p.avatar_url && !isAnon
-    ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+    ? '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">'
     : '<span style="font-size:1.2rem;font-weight:700;color:white">' + initials + '</span>';
 
   var resultEl = document.getElementById('connect-scan-result');
