@@ -297,9 +297,14 @@ async function openRadarPerson(userId) {
           '<div style="display:flex;flex-wrap:wrap;gap:4px">' +
           bubbles.slice(0, 5).map(function(b) {
             var isEvt = b.type === 'event' || b.type === 'live';
-            // Rene piller (radius99) som prototypen - ingen generiske emojis.
-            // Event vs almindelig boble skelnes via FARVE: event=teal, almindelig=isbla.
-            return '<span style="font-size:10.5px;font-weight:700;border-radius:99px;padding:4px 11px;background:' + (isEvt ? 'rgba(46,207,207,0.14);color:#5EEAD4;border:0.5px solid rgba(46,207,207,0.28)' : 'rgba(100,180,230,0.14);color:#CFE6F7;border:0.5px solid rgba(100,180,230,0.28)') + '">' + escHtml(b.name) + '</span>';
+            // Piller (radius99) med RENE ikoner (ikke emojis): boble for netvaerk, kalender for event.
+            // Dobbelt signal: farve (event=teal/netvaerk=isbla) + ikon. Ikon arver farve via currentColor.
+            var bIco = isEvt ? ico('calendar') : ico('bubble');
+            var bStyle = isEvt
+              ? 'rgba(46,207,207,0.14);color:#5EEAD4;border:0.5px solid rgba(46,207,207,0.28)'
+              : 'rgba(100,180,230,0.14);color:#CFE6F7;border:0.5px solid rgba(100,180,230,0.28)';
+            return '<span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;border-radius:99px;padding:4px 11px 4px 9px;background:' + bStyle + '">' +
+              '<span style="width:12px;height:12px;flex-shrink:0;display:inline-flex">' + bIco + '</span>' + escHtml(b.name) + '</span>';
           }).join('') +
           (bubbles.length > 5 ? '<span style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.45);padding:4px 6px">+' + (bubbles.length - 5) + '</span>' : '') +
           '</div>';
