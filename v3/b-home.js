@@ -2350,7 +2350,8 @@ function filterRadarHome(filter) {
     r.classList.toggle('active', r.dataset.filter === filter);
   });
   // Opdater filter-knappens label til valgt filter
-  var labelMap = { all: t('home_all'), interest: t('ps_shared_interests'), good: t('ps_good_match'), strong: t('ps_strong_match'), live: 'Live nu' };
+  // Korte labels paa KNAPPEN (holder den kompakt); taleboblens raekker viser fulde navne
+  var labelMap = { all: t('home_all'), interest: t('home_filter_short_interest'), good: t('home_filter_short_good'), strong: t('home_filter_short_strong'), live: 'Live' };
   var lbl = document.getElementById('home-filter-btn-label');
   if (lbl) lbl.textContent = labelMap[filter] || t('home_all');
   _homeMagnetNext = true; // dette er et filterskift -> brug magnet-bevaegelse
