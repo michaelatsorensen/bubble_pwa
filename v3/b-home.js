@@ -2336,6 +2336,8 @@ async function loadHomeDartboardData() {
       _homeDartboardProfiles = scored;
       renderHomeDartboard();
     }
+    // Opdater filter-knap counter + taleboblens raekke-countere nu hvor data er hentet
+    updateFilterChipStyle();
   } catch(e) { logError('loadHomeDartboardData', e); }
 }
 
