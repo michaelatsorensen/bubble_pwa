@@ -1655,7 +1655,7 @@ async function loadDashboard() {
     }
 
     el.innerHTML =
-      '<div style="background:rgba(20,22,28,0.85);-webkit-border:0.5px solid rgba(255,255,255,0.06);border-radius:16px;padding:0.8rem;margin-bottom:0.5rem">' +
+      '<div style="background:rgba(20,22,28,0.85);border:0.5px solid rgba(255,255,255,0.06);border-radius:16px;padding:0.8rem;margin-bottom:0.5rem">' +
       '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.55);margin-bottom:0.4rem">' + t('pf_bubble_week') + '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem">' +
         statCard('eye', t('pf_dash_views'), views, 'rgba(100,180,230,0.22)', 'rgb(100,180,230)') +
@@ -1680,7 +1680,7 @@ async function loadDashboard() {
 
 // ── Tags card in dashboard ──
 function _renderDashboardTagsCard() {
-  return '<div style="margin-top:0.75rem;background:rgba(20,22,28,0.85);-webkit-border:0.5px solid rgba(255,255,255,0.06);border-radius:var(--radius);box-shadow:none;overflow:hidden">' +
+  return '<div style="margin-top:0.75rem;background:rgba(20,22,28,0.85);border:0.5px solid rgba(255,255,255,0.06);border-radius:var(--radius);box-shadow:none;overflow:hidden">' +
 
     // ── Header ──
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem 0.5rem">' +

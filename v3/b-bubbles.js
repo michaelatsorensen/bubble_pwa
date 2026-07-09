@@ -1858,7 +1858,7 @@ async function generateEventReport(bubbleId) {
 
     // ── 6. Generate HTML ──
     function statBox(label, value, sub, color) {
-      return '<div style="background:white;border-radius:16px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.04)">' +
+      return '<div style="background:white;border-radius:16px;padding:1.25rem;box-shadow:0 1px 4px rgba(255,255,255,0.12);border:1px solid rgba(0,0,0,0.3)">' +
         '<div style="font-size:2rem;font-weight:800;color:' + color + ';line-height:1">' + value + '</div>' +
         '<div style="font-size:0.85rem;font-weight:600;color:#1E1B2E;margin-top:0.3rem">' + label + '</div>' +
         (sub ? '<div style="font-size:0.72rem;color:#8C8A97;margin-top:0.15rem">' + sub + '</div>' : '') +
@@ -1912,7 +1912,7 @@ async function generateEventReport(bubbleId) {
         '.section{margin-bottom:1.75rem}' +
         '.section-title{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgb(100,180,230);margin-bottom:0.75rem}' +
         '.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem}' +
-        '.card{background:white;border-radius:16px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.04)}' +
+        '.card{background:white;border-radius:16px;padding:1.25rem;box-shadow:0 1px 4px rgba(255,255,255,0.12);border:1px solid rgba(0,0,0,0.3)}' +
         '.highlight-card{background:linear-gradient(135deg,rgba(100,180,230,0.06),rgba(99,102,241,0.04));border:1px solid rgba(100,180,230,0.12)}' +
         'table{width:100%;border-collapse:collapse}' +
         'th{text-align:left;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#8C8A97;padding:0.5rem 0.6rem;border-bottom:2px solid #ECEAF5}' +

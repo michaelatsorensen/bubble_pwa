@@ -774,7 +774,7 @@ function _renderEventDeepLinkModal(opts) {
     // Slut + ikke medlem: kun "Se info"
     primaryLabel = t('dl_see_info') + ' →';
     primaryFn = seeInfoFn;
-    readonlyBanner = '<div style="background:rgba(95,94,90,0.08);color:#5F5E5A;font-size:0.72rem;padding:0.5rem 0.75rem;border-radius:8px;text-align:center;margin-bottom:0.75rem">' + t('dl_event_ended_readonly') + '</div>';
+    readonlyBanner = '<div style="background:rgba(95,94,90,0.08);color:rgba(255,255,255,0.5);font-size:0.72rem;padding:0.5rem 0.75rem;border-radius:8px;text-align:center;margin-bottom:0.75rem">' + t('dl_event_ended_readonly') + '</div>';
   } else if (opts.isMember) {
     // Allerede medlem (event aktivt eller kommende)
     memberBanner = '<div style="background:rgba(26,158,142,0.10);color:#0F6E56;font-size:0.72rem;font-weight:600;padding:0.5rem 0.75rem;border-radius:8px;text-align:center;margin-bottom:0.75rem">' + t('dl_already_member') + '</div>';
@@ -1003,7 +1003,7 @@ function showWelcomeCard() {
   if (!isNewUser) return;
 
   el.innerHTML =
-    '<div style="background:rgba(20,22,28,0.85);-webkit-border:0.5px solid rgba(255,255,255,0.06);border-radius:14px;padding:1rem 1.1rem;position:relative">' +
+    '<div style="background:rgba(20,22,28,0.85);border:0.5px solid rgba(255,255,255,0.06);border-radius:14px;padding:1rem 1.1rem;position:relative">' +
       '<button onclick="dismissWelcomeCard()" style="position:absolute;top:0.6rem;right:0.7rem;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);font-size:1rem;line-height:1;padding:0.2rem;font-family:inherit" aria-label="Luk">×</button>' +
       '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">' +
         '<div style="width:28px;height:28px;color:rgb(100,180,230);flex-shrink:0">' + ico('bubble') + '</div>' +
@@ -2487,7 +2487,7 @@ function _doRenderHomeDartboard() {
     // Don't show empty state until data has actually loaded — prevents flash
     if (!_dartboardDataLoaded) return;
     if (_homeViewMode === 'live') {
-      av.innerHTML = '<div class="dartboard-empty" style="position:absolute;top:50%;left:50%;transform:translate(-50%, calc(-100% - 40px));text-align:center;padding:0.6rem 1.2rem;background:rgba(255,255,255,0.85);-webkit-border-radius:12px;border:1px solid var(--glass-border-subtle);box-shadow:0 2px 8px rgba(30,27,46,0.06);white-space:nowrap">' +
+      av.innerHTML = '<div class="dartboard-empty" style="position:absolute;top:50%;left:50%;transform:translate(-50%, calc(-100% - 40px));text-align:center;padding:0.6rem 1.2rem;background:var(--p-glass);border-radius:12px;border:1px solid var(--glass-border-subtle);box-shadow:0 2px 8px rgba(0,0,0,0.3);white-space:nowrap">' +
         '<div style="font-size:0.78rem;font-weight:600;color:var(--text)">' + t('home_first_here') + '</div>' +
         '<div style="font-size:0.68rem;color:var(--muted);margin-top:0.15rem">' + t('home_waiting') + '</div>' +
         '</div>';

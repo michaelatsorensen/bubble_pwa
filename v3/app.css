@@ -101,7 +101,7 @@
   --teal-dark: #0F6E56;   /* v8.05: bumpet #0D5C52 → #0F6E56 (matcher event-status og dato-tekst fra v8.03) */
 
   /* ── Niveau 1: Frostet glas (backdrop-filter: blur) ── */
-  --n1-radar: rgba(255,255,255,0.85);
+  --n1-radar: var(--p-glass);
   --n1-topbar: var(--p-chrome);
   --n1-navbar: var(--p-chrome);
   --n1-toast: rgba(20,22,28,0.9);
@@ -241,7 +241,7 @@
 .t-red { color: var(--red); }
 
 /* Niveau 1: Frostet glas */
-.glass-radar { background: var(--n1-radar); -webkit-border: 0.5px solid rgba(0,0,0,0.06); box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-radius: 18px; }
+.glass-radar { background: var(--n1-radar); border: 0.5px solid var(--p-glass-border); box-shadow: var(--p-glass-inset); border-radius: 18px; }
 .glass-topbar { background: var(--n1-topbar); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 0.5px solid var(--border-2); }
 .glass-navbar { background: var(--n1-navbar); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 0.5px solid rgba(255,255,255,0.1); box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.06); border-radius: 22px; }
 .glass-toast { background: var(--n1-toast); -webkit-border: 0.5px solid var(--border-1); border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
