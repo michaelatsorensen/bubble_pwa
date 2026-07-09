@@ -277,6 +277,19 @@ function updateFilterChipStyle() {
     setCount('fcount-good', allProfiles.filter(function(p){ return (p.matchScore||0) >= 40; }).length);
     setCount('fcount-strong', allProfiles.filter(function(p){ return (p.matchScore||0) >= 60; }).length);
   }
+  // Opdater tael-badge paa selve filter-knappen: antal der matcher aktivt filter (som prototypen)
+  var cnt = document.getElementById('home-filter-btn-count');
+  if (cnt) {
+    var matchN = _getFilteredProfiles().length;
+    cnt.textContent = String(matchN);
+    if (_homeRadarFilter !== 'all') {
+      cnt.style.color = '#CFE6F7';
+      cnt.style.background = 'rgba(100,180,230,0.2)';
+    } else {
+      cnt.style.color = 'rgba(255,255,255,0.4)';
+      cnt.style.background = 'rgba(255,255,255,0.08)';
+    }
+  }
 }
 
 // ── Event-aware dartboard: load only event members ──
