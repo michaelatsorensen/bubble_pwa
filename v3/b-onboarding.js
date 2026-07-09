@@ -989,8 +989,8 @@ function etBuildBody(s) {
     h += '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.35rem">';
     ct.forEach(function(tag, idx){
       var isSel = etSelected.has(tag);
-      var bg = isSel ? s.color : s.bg; var col = isSel ? 'white' : s.color;
-      h += '<span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.25rem 0.55rem;border-radius:99px;font-size:0.68rem;font-weight:600;border:1.5px dashed '+s.color+'40;background:'+bg+';color:'+col+';cursor:pointer" onclick="etTglIdx('+idx+',\''+s.id+'\')">' +
+      var bg = isSel ? s.color : 'rgba(255,255,255,0.06)'; var col = isSel ? 'white' : 'rgba(255,255,255,0.85)';
+      h += '<span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.25rem 0.55rem;border-radius:99px;font-size:0.68rem;font-weight:600;border:0.5px solid '+(isSel?s.color:'rgba(255,255,255,0.12)')+';background:'+bg+';color:'+col+';cursor:pointer" onclick="etTglIdx('+idx+',\''+s.id+'\')">' +
         escHtml(tag) + '<span style="opacity:0.55;font-size:0.65rem" onclick="event.stopPropagation();etRmCustomIdx('+idx+',\''+s.id+'\')">×</span></span>';
     });
     h += '</div>';

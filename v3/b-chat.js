@@ -174,7 +174,7 @@ function _bcShowSkeleton() {
   skel.style.cssText = 'flex:1;display:flex;flex-direction:column;overflow:hidden;padding:0';
   // Fake tab bar
   skel.innerHTML =
-    '<div style="display:flex;margin:0.4rem 1.1rem 0;background:#F4F3F9;border-radius:10px;padding:3px;gap:2px;border:1px solid var(--glass-border-subtle)">' +
+    '<div style="display:flex;margin:0.4rem 1.1rem 0;background:rgba(20,22,28,0.92);border-radius:10px;padding:3px;gap:2px;border:0.5px solid var(--p-glass-border)">' +
       '<div class="skel" style="flex:1;height:28px;border-radius:8px"></div>' +
       '<div class="skel" style="flex:1;height:28px;border-radius:8px"></div>' +
       '<div class="skel" style="flex:1;height:28px;border-radius:8px"></div>' +
