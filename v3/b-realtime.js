@@ -699,20 +699,27 @@ var _messagesLoading = false;
 var _lmLastLoadedAt = 0; // tidsstempel for seneste faerdige loadMessages (dobbelt-load-guard)
 async function loadMessages(opts) {
   if (_messagesLoading) return;
-  // Undgaa dobbelt-load: hvis listen allerede blev hentet for nylig (fx af
-  // boot-preload) og har indhold, spring en redundant genindlaesning over.
-  // force:true (fx eksplicit refresh) omgaar dette.
+  // Undgaa dobbelt-load: hvis en indlaesning netop er startet/faerdig (fx boot-preload
+  // OG nav-hook fyrer taet efter hinanden), spring redundant kald over.
+  // force:true omgaar dette. Saet stempel FOER async-fetch saa naeste kald blokeres straks.
   opts = opts || {};
   var _now = Date.now();
-  if (!opts.force && _lmLastLoadedAt && (_now - _lmLastLoadedAt) < 2500) {
-    var _existingList = document.getElementById('conversations-list');
-    if (_existingList && _existingList.querySelector('.conv-card')) return;
+  if (!opts.force && _lmLastLoadedAt && (_now - _lmLastLoadedAt) < 3000) {
+    return;
   }
+  _lmLastLoadedAt = _now;   // stempel med det samme (blokerer parallelle/hurtige gentagne kald)
   _messagesLoading = true;
+  // TEMP DEBUG v3.91: bekraeft at guarden nu virker.
+  try {
+    window._lmCount = (window._lmCount || 0) + 1;
+    var _dbg = document.getElementById('_lm-debug');
+    if (!_dbg) { _dbg = document.createElement('div'); _dbg.id = '_lm-debug'; _dbg.style.cssText = 'position:fixed;top:calc(env(safe-area-inset-top,0px) + 4px);left:50%;transform:translateX(-50%);z-index:99999;background:#0A7;color:#fff;font-size:11px;font-weight:800;padding:3px 12px;border-radius:99px;pointer-events:none;font-family:monospace'; document.body.appendChild(_dbg); }
+    _dbg.textContent = 'loadMessages x' + window._lmCount;
+  } catch(e) {}
   try {
     var myNav = _navVersion;
     const list = document.getElementById('conversations-list');
-    if (!list) { _messagesLoading = false; return; }
+    if (!list) { _messagesLoading = false; _lmLastLoadedAt = 0; return; }
     list.innerHTML = skelCards(5);
 
     const { data: convs } = await sb.from('messages')
@@ -769,7 +776,6 @@ async function loadMessages(opts) {
         '</div>' + (isUnread ? '<div class="conv-unread-dot"></div>' : '') +
         '</div></div>';
     }).join('');
-    _lmLastLoadedAt = Date.now(); // markér succesfuld indlaesning (dobbelt-load-guard)
   } catch(e) { logError("loadMessages", e); showRetryState('conversations-list', 'loadMessages', t('toast_load_failed')); }
   finally { _messagesLoading = false; }
 }
