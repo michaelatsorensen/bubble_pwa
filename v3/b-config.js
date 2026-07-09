@@ -14,8 +14,12 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-07-09 12:40';
-const BUILD_VERSION  = 'v3-v3.36';
+const BUILD_TIMESTAMP = '2026-07-09 12:49';
+const BUILD_VERSION  = 'v3-v3.37';
+// AUTO_UPDATE: naar true, aktiverer ny service worker STRAKS (auto-reload) uden at
+// vente paa brugeren. Til udviklingsfasen (v3) saa deploys slaar igennem med det samme.
+// SAET TIL false FOER produktion/pilot - ellers genindlaeses appen under brugere midt i noget.
+const AUTO_UPDATE = true;
 const SUPABASE_URL  = "https://api.bubbleme.dk";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";

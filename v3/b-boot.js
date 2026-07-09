@@ -740,7 +740,7 @@ if ('serviceWorker' in navigator) {
 
     // Ny app-version tilgængelig
     if (msg.type === 'SW_UPDATED') {
-      showUpdateBanner();
+      handleUpdateAvailable();
       return;
     }
 
@@ -748,7 +748,7 @@ if ('serviceWorker' in navigator) {
     if (msg.type === 'SW_VERSION') {
       var expected = 'bubble-' + BUILD_VERSION;
       if (msg.version && msg.version !== expected) {
-        showUpdateBanner();
+        handleUpdateAvailable();
       }
       return;
     }
@@ -777,7 +777,7 @@ if ('serviceWorker' in navigator) {
     // Ported from PROD v8.17.31 (Fix 7): detect waiting SW at boot
     // (in case SW_UPDATED postMessage missed)
     if (reg.waiting && navigator.serviceWorker.controller) {
-      showUpdateBanner();
+      handleUpdateAvailable();
     }
     // Listen for new SW becoming waiting AFTER boot (deploy happens mid-session)
     reg.addEventListener('updatefound', function() {
@@ -786,7 +786,7 @@ if ('serviceWorker' in navigator) {
       newSW.addEventListener('statechange', function() {
         if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
           // New SW installed but not yet active — show banner
-          showUpdateBanner();
+          handleUpdateAvailable();
         }
       });
     });
@@ -829,6 +829,18 @@ if ('serviceWorker' in navigator) {
     _swReloaded = true;
     window.location.reload();
   });
+}
+
+// Naar en ny service worker er klar: auto-opdater (dev) ELLER vis banner (prod).
+// Styret af AUTO_UPDATE i b-config.js.
+function handleUpdateAvailable() {
+  if (typeof AUTO_UPDATE !== 'undefined' && AUTO_UPDATE) {
+    // Udviklingsfase: aktiver ny SW straks + reload (deploys slaar igennem med det samme)
+    acceptUpdate();
+  } else {
+    // Produktion: vent paa brugeren via banner
+    handleUpdateAvailable();
+  }
 }
 
 function showUpdateBanner() {
