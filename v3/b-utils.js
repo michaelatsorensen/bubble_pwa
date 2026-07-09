@@ -335,7 +335,7 @@ function showConfirmDialog(opts) {
   if (existing) existing.remove();
   var ov = document.createElement('div');
   ov.id = 'confirm-dialog-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:650;background:rgba(10,7,24,0.55);-webkit-display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.25s ease';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:650;background:rgba(10,7,24,0.55);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.25s ease';
   var confirmBg = opts.danger ? 'linear-gradient(135deg,#FF5A6E,#E23D52)' : 'linear-gradient(135deg,#1A9E8E,#17877A)';
   ov.innerHTML =
     '<div style="background:rgba(20,22,28,0.98);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:1.6rem 1.3rem 1.3rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.5)">' +

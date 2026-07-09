@@ -432,7 +432,7 @@ function showCheckinModal(eventName, opts) {
 
   var ov = document.createElement('div');
   ov.id = 'checkin-confirm-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);-webkit-display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.3s ease';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.3s ease';
 
   var buttonsHtml = '';
   if (opts.fromHome && eventId) {
@@ -711,7 +711,7 @@ async function showDeepLinkModal(type, targetId) {
 function _renderSimpleDeepLinkModal(opts) {
   var ov = document.createElement('div');
   ov.id = 'deeplink-modal-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);-webkit-display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
   ov.innerHTML =
     '<div style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
       '<div style="width:' + opts.iconSize + ';height:' + opts.iconSize + ';border-radius:' + opts.iconRadius + ';background:' + opts.iconBg + ';display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;overflow:hidden">' + opts.iconHtml + '</div>' +
@@ -740,7 +740,7 @@ function _renderEventDeepLinkModal(opts) {
   var bubbleId = opts.bubbleId;
   var ov = document.createElement('div');
   ov.id = 'deeplink-modal-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);-webkit-display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
 
   // Determine button set based on state
   var primaryLabel = '', primaryFn = null;
@@ -942,7 +942,7 @@ async function _showSavedContactModal(contactId) {
 
     var ov = document.createElement('div');
     ov.id = 'saved-contact-overlay';
-    ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);-webkit-display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
 
     ov.innerHTML =
       '<div style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +

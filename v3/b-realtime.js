@@ -153,7 +153,7 @@ function _showOfflineModal() {
   if (existing) existing.remove();
   var ov = document.createElement('div');
   ov.id = 'offline-modal-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(30,27,46,0.4);-webkit-display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 4rem) 1.5rem 0;animation:fadeSlideUp 0.3s ease';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(30,27,46,0.4);display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 4rem) 1.5rem 0;animation:fadeSlideUp 0.3s ease';
   ov.innerHTML =
     '<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:16px;padding:1.5rem 1.25rem;text-align:center;max-width:320px;width:100%">' +
       '<style>@keyframes _obBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}@keyframes _obPulse{0%,100%{opacity:.4}50%{opacity:1}}</style>' +
@@ -633,7 +633,7 @@ function initGlobalRealtime() {
         if (existing) existing.remove();
         var ov = document.createElement('div');
         ov.id = 'checkin-confirm-overlay';
-        ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);-webkit-display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.3s ease';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.3s ease';
         ov.innerHTML =
           '<div style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
             '<div style="width:56px;height:56px;border-radius:50%;background:rgba(26,158,142,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">' +

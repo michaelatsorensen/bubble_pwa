@@ -1001,7 +1001,7 @@ function _showBubbleCreatedModal(bubbleId, name, type) {
   if (existing) existing.remove();
   var ov = document.createElement('div');
   ov.id = 'bubble-created-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:620;background:rgba(30,27,46,0.45);-webkit-display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:620;background:rgba(30,27,46,0.45);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
   var iconColor = isEvent ? '#2ECFCF' : '#1A9E8E';
   var iconBg = isEvent ? 'rgba(46,207,207,0.15)' : 'rgba(26,158,142,0.15)';
   ov.innerHTML =
@@ -2010,7 +2010,7 @@ async function generateEventReport(bubbleId) {
 
     // ── 7. Show in-app report tray ──
     var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(30,27,46,0.3);-webkit-opacity:0;transition:opacity 0.3s';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(30,27,46,0.3);opacity:0;transition:opacity 0.3s';
     overlay.onclick = function() { closeReportTray(); };
 
     var tray = document.createElement('div');
@@ -2447,7 +2447,7 @@ function confirmRequestJoin(bubbleId) {
   var bName = bcBubbleData?.name || '';
   var tray = document.createElement('div');
   tray.id = 'request-join-tray';
-  tray.style.cssText = 'position:fixed;bottom:0;left:0;right:0;padding:1.2rem 1rem;background:var(--n3-card);-webkit-border-top:0.5px solid var(--border-1);box-shadow:0 -4px 20px rgba(0,0,0,0.15);z-index:999;text-align:center;color:rgba(255,255,255,0.95)';
+  tray.style.cssText = 'position:fixed;bottom:0;left:0;right:0;padding:1.2rem 1rem;background:var(--n3-card);border-top:0.5px solid var(--border-1);box-shadow:0 -4px 20px rgba(0,0,0,0.15);z-index:999;text-align:center;color:rgba(255,255,255,0.95)';
   tray.innerHTML =
     '<div style="font-size:0.9rem;font-weight:700;margin-bottom:0.2rem;color:rgba(255,255,255,0.95)">' + t('bb_request_membership_q') + '</div>' +
     '<div style="font-size:0.75rem;color:rgba(255,255,255,0.55);margin-bottom:0.8rem">' + escHtml(bName) + ' ' + t('bb_is_private_suffix') + '</div>' +

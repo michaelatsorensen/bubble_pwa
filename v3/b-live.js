@@ -1173,11 +1173,11 @@ async function _connectShowProfileSheet(p, profileId) {
             '<div style="font-size:0.92rem;font-weight:700;color:white;line-height:1.4;padding:0 8px">' + t('sc_already_saved') + '</div>' +
           '</div>' +
           '<div style="display:flex;gap:8px;margin-top:16px">' +
-            '<button onclick="closeConnectScanner();setTimeout(function(){openPerson(\'' + profileId + '\',\'screen-home\')},300)" style="flex:1;padding:12px;border-radius:14px;border:0.5px solid rgba(100,180,230,0.3);background:rgba(100,180,230,0.22);color:rgba(255,255,255,0.95);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;-webkit-">' + t('ps_view_profile') + '</button>' +
+            '<button onclick="closeConnectScanner();setTimeout(function(){openPerson(\'' + profileId + '\',\'screen-home\')},300)" style="flex:1;padding:12px;border-radius:14px;border:0.5px solid rgba(100,180,230,0.3);background:rgba(100,180,230,0.22);color:rgba(255,255,255,0.95);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent">' + t('ps_view_profile') + '</button>' +
             '<button onclick="closeConnectScanner();setTimeout(function(){openChat(\'' + profileId + '\',\'screen-home\')},300)" style="flex:1;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.15);background:none;color:rgba(255,255,255,0.7);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">' + t('pf_send_message') + '</button>' +
           '</div>'
         : '<div style="display:flex;gap:8px;margin-top:16px">' +
-            '<button onclick="_connectSaveContact()" style="flex:2;padding:12px;border-radius:14px;border:0.5px solid rgba(100,180,230,0.3);background:rgba(100,180,230,0.22);color:rgba(255,255,255,0.95);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;-webkit-">' + t('live_save_contact') + '</button>' +
+            '<button onclick="_connectSaveContact()" style="flex:2;padding:12px;border-radius:14px;border:0.5px solid rgba(100,180,230,0.3);background:rgba(100,180,230,0.22);color:rgba(255,255,255,0.95);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent">' + t('live_save_contact') + '</button>' +
             '<button onclick="_connectDismissSheet()" style="flex:1;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.15);background:none;color:rgba(255,255,255,0.7);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">' + t('misc_cancel') + '</button>' +
           '</div>') +
     '</div>';
@@ -1209,7 +1209,7 @@ async function _connectSaveContact() {
           '<div style="font-size:0.72rem;color:rgba(255,255,255,0.5);margin-top:4px">' + t('live_find_saved') + '</div>' +
         '</div>' +
         '<div style="display:flex;gap:8px;margin-top:16px">' +
-          '<button onclick="closeConnectScanner();setTimeout(function(){openPerson(\'' + savedId + '\',\'screen-home\')},300)" style="flex:1;padding:12px;border-radius:14px;border:0.5px solid rgba(100,180,230,0.3);background:rgba(100,180,230,0.22);color:rgba(255,255,255,0.95);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;-webkit-">' + t('ps_view_profile') + '</button>' +
+          '<button onclick="closeConnectScanner();setTimeout(function(){openPerson(\'' + savedId + '\',\'screen-home\')},300)" style="flex:1;padding:12px;border-radius:14px;border:0.5px solid rgba(100,180,230,0.3);background:rgba(100,180,230,0.22);color:rgba(255,255,255,0.95);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent">' + t('ps_view_profile') + '</button>' +
           '<button onclick="closeConnectScanner();setTimeout(function(){openChat(\'' + savedId + '\',\'screen-home\')},300)" style="flex:1;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.15);background:none;color:rgba(255,255,255,0.7);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">' + t('pf_send_message') + '</button>' +
         '</div>';
     }
