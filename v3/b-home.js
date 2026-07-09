@@ -2715,6 +2715,7 @@ function renderHomeTrayList() {
   }
 
   var colors = proxColors || ['linear-gradient(135deg,#6366F1,rgb(100,180,230))'];
+  var myKw = (currentProfile && currentProfile.keywords ? currentProfile.keywords : []).map(function(k){ return k.toLowerCase(); });
   list.innerHTML = sorted.map(function(p, i) {
     var name = p.is_anon ? 'Anonym' : (p.name || '?');
     var ini = name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
@@ -2723,7 +2724,6 @@ function renderHomeTrayList() {
     var avHtml = p.avatar_url && !p.is_anon
       ? '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>'
       : '<div style="width:40px;height:40px;border-radius:50%;background:' + col + ';display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;color:white;flex-shrink:0">' + escHtml(ini) + '</div>';
-    // Build match badge with dark-context-friendly colors (matchLabel uses light-mode colors which become invisible on dark glass)
     var badgeHtml = '';
     if (ml.text) {
       var badgeColor, badgeBg;
@@ -2733,19 +2733,68 @@ function renderHomeTrayList() {
       else                          { badgeColor = 'rgba(255,255,255,0.65)'; badgeBg = 'rgba(255,255,255,0.08)'; }
       badgeHtml = '<span style="font-size:0.58rem;font-weight:700;color:' + badgeColor + ';background:' + badgeBg + ';padding:0.18rem 0.5rem;border-radius:99px;white-space:nowrap;letter-spacing:0.01em">' + ml.text + '</span>';
     }
-    return '<div onclick="openRadarPerson(\'' + p.id + '\')" style="display:flex;align-items:center;gap:11px;padding:10px 12px;margin-bottom:0.4rem;border-radius:14px;background:rgba(255,255,255,0.055);border:0.5px solid rgba(255,255,255,0.12);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);cursor:pointer;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);-webkit-tap-highlight-color:transparent" ontouchstart="this.style.transform=\'scale(0.97)\'" ontouchend="this.style.transform=\'scale(1)\'">' +
-      avHtml +
-      '<div style="flex:1;min-width:0">' +
-        '<div style="display:flex;align-items:center;gap:0.4rem">' +
-          '<span style="font-weight:800;font-size:13px;color:rgba(255,255,255,0.95)">' + escHtml(name) + '</span>' +
-          badgeHtml +
+    // Delte interesser (piller) til den udfoldede del
+    var theirKw = (p.keywords || []);
+    var chipsHtml = '';
+    if (!p.is_anon && theirKw.length > 0) {
+      var sortedTags = theirKw.slice().sort(function(a, b) {
+        var aS = myKw.indexOf(a.toLowerCase()) >= 0 ? 0 : 1;
+        var bS = myKw.indexOf(b.toLowerCase()) >= 0 ? 0 : 1;
+        return aS - bS;
+      }).slice(0, 8);
+      chipsHtml = sortedTags.map(function(k) {
+        var isShared = myKw.indexOf(k.toLowerCase()) >= 0;
+        return isShared
+          ? '<span style="font-size:10.5px;font-weight:700;color:#CFE6F7;background:rgba(100,180,230,0.14);border:0.5px solid rgba(100,180,230,0.28);border-radius:99px;padding:4px 11px">' + escHtml(k) + '</span>'
+          : '<span style="font-size:10.5px;font-weight:700;color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.14);border-radius:99px;padding:4px 11px">' + escHtml(k) + '</span>';
+      }).join('');
+    }
+    // Accordion: header toggler expand-delen inline (prototype - IKKE separat preview)
+    return '<div class="htray-item" data-uid="' + p.id + '" style="margin-bottom:0.4rem;border-radius:14px;background:rgba(255,255,255,0.055);border:0.5px solid rgba(255,255,255,0.12);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);overflow:hidden">' +
+      '<div onclick="htrayToggle(\'' + p.id + '\')" style="display:flex;align-items:center;gap:11px;padding:10px 12px;cursor:pointer;-webkit-tap-highlight-color:transparent">' +
+        avHtml +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="display:flex;align-items:center;gap:0.4rem">' +
+            '<span style="font-weight:800;font-size:13px;color:rgba(255,255,255,0.95)">' + escHtml(name) + '</span>' +
+            badgeHtml +
+          '</div>' +
+          '<div style="font-size:10.5px;color:rgba(255,255,255,0.5);margin-top:0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
         '</div>' +
-        '<div style="font-size:10.5px;color:rgba(255,255,255,0.5);margin-top:0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
+        '<span class="htray-chev" style="color:rgba(255,255,255,0.4);font-size:0.9rem;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);flex-shrink:0">\u2039</span>' +
       '</div>' +
-      '<span style="color:rgba(255,255,255,0.3);font-size:0.9rem">›</span>' +
+      '<div class="htray-expand" style="display:none;padding:0 12px 12px">' +
+        '<div style="height:0.5px;background:rgba(255,255,255,0.09);margin:0 0 9px"></div>' +
+        (chipsHtml ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px">' + chipsHtml + '</div>' : '') +
+        '<div style="display:flex;gap:8px">' +
+          '<div onclick="event.stopPropagation();htrayFullProfile(\'' + p.id + '\')" style="width:40px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.16);border-radius:99px;cursor:pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></div>' +
+          '<div onclick="event.stopPropagation();htrayFullProfile(\'' + p.id + '\')" style="flex:1;text-align:center;font-size:11.5px;font-weight:800;color:rgba(255,255,255,0.9);background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.16);border-radius:99px;padding:9px;cursor:pointer">' + t('ps_view_profile') + '</div>' +
+          '<div onclick="event.stopPropagation();htrayMessage(\'' + p.id + '\')" style="flex:1;text-align:center;font-size:11.5px;font-weight:800;color:#0E2A3C;background:rgb(100,180,230);border-radius:99px;padding:9px;cursor:pointer">' + t('pf_send_message') + '</div>' +
+        '</div>' +
+      '</div>' +
     '</div>';
   }).join('');
 }
+
+// Accordion toggle: udfold/kollaps en list-item inline (prototype-stil)
+function htrayToggle(uid) {
+  var item = document.querySelector('.htray-item[data-uid="' + uid + '"]');
+  if (!item) return;
+  var expand = item.querySelector('.htray-expand');
+  var chev = item.querySelector('.htray-chev');
+  if (!expand) return;
+  var isOpen = expand.style.display !== 'none';
+  // Luk alle andre foerst (kun een aaben ad gangen - som prototype)
+  document.querySelectorAll('.htray-item .htray-expand').forEach(function(e) { e.style.display = 'none'; });
+  document.querySelectorAll('.htray-item .htray-chev').forEach(function(c) { c.style.transform = 'rotate(0deg)'; });
+  if (!isOpen) {
+    expand.style.display = 'block';
+    if (chev) chev.style.transform = 'rotate(-90deg)';
+  }
+}
+
+// Knap-handlinger fra accordion (samme som preview: profil + besked)
+function htrayFullProfile(uid) { rpCurrentUserId = uid; closeHomeTray(); setTimeout(function(){ openPerson(uid, 'screen-home'); }, 320); }
+function htrayMessage(uid) { closeHomeTray(); setTimeout(function(){ openChat(uid, 'screen-home'); }, 400); }
 
 // ══════════════════════════════════════════════════════════
 //  HOME BUBBLE PILLS (horizontal scroll)
