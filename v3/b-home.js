@@ -2561,13 +2561,7 @@ function _doRenderHomeDartboard() {
         ? '<img src="' + escHtml(dp.avatar_url) + '" class="u-avatar-img">'
         : dIni;
       var dDelay = (di * 40);
-      // Prototype: de 4 naermeste (hoejeste match) faar fornavn under dot'en
-      var dNameHtml = '';
-      if (di < 4 && !dp.is_anon && dp.name) {
-        var dFirst = escHtml((dp.name || '').split(' ')[0]);
-        dNameHtml = '<div class="prox-dot-name" style="position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;white-space:nowrap;font-size:10px;font-weight:700;color:rgba(255,255,255,0.8);pointer-events:none">'+dFirst+'</div>';
-      }
-      out += '<div class="prox-dot" style="width:'+dSz+'px;height:'+dSz+'px;left:'+dPos.x.toFixed(1)+'px;top:'+dPos.y.toFixed(1)+'px;background:'+dCol+';border-color:'+dRing+';box-shadow:'+dGlow+';font-size:'+(dSz<34?'0.48':'0.55')+'rem;animation-delay:'+dDelay+'ms" onclick="event.stopPropagation();openRadarPerson(\''+dp.id+'\')" data-id="'+dp.id+'">'+dInner+(appMode.checkedInIds.indexOf(dp.id)>=0?'<span class="live-dot" style="position:absolute;bottom:-1px;right:-1px;width:8px;height:8px;border:2px solid var(--bg)"></span>':'')+dNameHtml+'</div>';
+      out += '<div class="prox-dot" style="width:'+dSz+'px;height:'+dSz+'px;left:'+dPos.x.toFixed(1)+'px;top:'+dPos.y.toFixed(1)+'px;background:'+dCol+';border-color:'+dRing+';box-shadow:'+dGlow+';font-size:'+(dSz<34?'0.48':'0.55')+'rem;animation-delay:'+dDelay+'ms" onclick="event.stopPropagation();openRadarPerson(\''+dp.id+'\')" data-id="'+dp.id+'">'+dInner+(appMode.checkedInIds.indexOf(dp.id)>=0?'<span class="live-dot" style="position:absolute;bottom:-1px;right:-1px;width:8px;height:8px;border:2px solid var(--bg)"></span>':'')+'</div>';
     }
     av.innerHTML = out;
     return;
@@ -2607,13 +2601,6 @@ function _doRenderHomeDartboard() {
       : ini;
     var isLive = appMode.checkedInIds.indexOf(p.id) >= 0;
     var liveSpan = isLive ? '<span class="live-dot" style="position:absolute;bottom:-1px;right:-1px;width:8px;height:8px;border:2px solid var(--bg)"></span>' : '';
-    // Prototype: de 4 naermeste (hoejeste match) faar fornavn under dot'en (konsistent med foerste render)
-    var nameHtml = '';
-    if (i < 4 && !p.is_anon && p.name) {
-      var firstNm = escHtml((p.name || '').split(' ')[0]);
-      nameHtml = '<div class="prox-dot-name" style="position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;white-space:nowrap;font-size:10px;font-weight:700;color:rgba(255,255,255,0.8);pointer-events:none">'+firstNm+'</div>';
-    }
-
     var el = existing[p.id];
     if (el) {
       // BLIVER (eller vender tilbage fra exit): glider til ny radius
@@ -2628,10 +2615,6 @@ function _doRenderHomeDartboard() {
       el.style.top = tly.toFixed(1) + 'px';
       el.style.borderColor = ring;
       el.style.boxShadow = glow;
-      // Sikr navn er til stede paa glidende dot (kan mangle fra tidligere render)
-      var exName = el.querySelector('.prox-dot-name');
-      if (nameHtml && !exName) { el.insertAdjacentHTML('beforeend', nameHtml); }
-      else if (!nameHtml && exName) { exName.remove(); }
     } else {
       // NY: tiltraekkes IND fra kanten langs sin vinkel (magnet) + sikkerhedsnet
       el = document.createElement('div');
@@ -2644,7 +2627,7 @@ function _doRenderHomeDartboard() {
       el.style.background = col;
       el.style.borderColor = ring;
       el.style.boxShadow = glow;
-      el.innerHTML = inner + liveSpan + nameHtml;
+      el.innerHTML = inner + liveSpan;
       var startR = maxR + 90;
       el.style.left = (cx + startR*Math.cos(ang) - sz/2).toFixed(1) + 'px';
       el.style.top = (cy + startR*Math.sin(ang) - sz/2).toFixed(1) + 'px';
