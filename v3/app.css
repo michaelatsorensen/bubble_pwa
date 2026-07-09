@@ -246,7 +246,7 @@
 .glass-navbar { background: var(--n1-navbar); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 0.5px solid rgba(255,255,255,0.1); box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.06); border-radius: 22px; }
 .glass-toast { background: var(--n1-toast); border: 0.5px solid var(--border-1); border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
 .glass-sheet { background: var(--n1-sheet); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 24px 24px 0 0; }
-.glass-overlay { background: var(--n1-overlay); -webkit-}
+.glass-overlay { background: var(--n1-overlay);}
 
 /* Niveau 2: Tonet glas */
 .tint-teal { background: var(--n2-teal); border: 0.5px solid var(--n2-teal-border); }
@@ -302,8 +302,6 @@
 /* Section-card: dark glass card med titel + indhold (Statistik, Administration, etc.) */
 .section-card {
   background: var(--n3-card);
-  
-  -webkit-
   border: 0.5px solid var(--border-1);
   border-radius: var(--radius-sm);
   padding: 0.75rem 0.85rem;
@@ -457,18 +455,17 @@ body {
 /* ── FLOATING NAV (position fixed, midnight indigo pill) ── */
 #global-nav {
   position: fixed;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 240px;
+  bottom: 24px;
+  left: 14px;
+  right: 14px;
   z-index: 100;
-  background: rgba(35,28,62,0.92);
-  
-  -webkit-
-  border-radius: 24px;
-  border: 1px solid rgba(180,210,235,0.25);
-  box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.12), 0 4px 16px rgba(0,0,0,0.3);
-  padding-bottom: 0px;
+  background: var(--p-chrome);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-radius: 22px;
+  border: 0.5px solid rgba(255,255,255,0.13);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 30px rgba(0,0,0,0.35);
+  padding: 10px 8px 8px;
 }
 /* Safe-area padding only in standalone PWA — browser uses dvh for viewport sizing */
 @media all and (display-mode: standalone) {
@@ -476,13 +473,13 @@ body {
 }
 #global-nav .nav-row {
   display: flex;
-  justify-content: space-evenly;
+  justify-content: space-around;
   align-items: center;
-  height: 48px;
   padding: 0;
   position: relative;
 }
 #nav-slide-indicator {
+  display: none;
   position: absolute;
   width: 36px;
   height: 36px;
@@ -503,9 +500,10 @@ body {
 }
 .nav-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.45);
   cursor: pointer;
   position: relative;
   padding: 0;
@@ -514,10 +512,10 @@ body {
   -webkit-tap-highlight-color: transparent;
   line-height: 1;
 }
-.nav-item > span:not(.nav-icon) { display: none; }
-.nav-item.active { color: rgba(255,255,255,0.95); }
-.nav-item.active .nav-icon .ico { stroke: rgba(255,255,255,0.95); }
-.nav-item:not(.active) .nav-icon .ico { stroke: rgba(255,255,255,0.3); }
+.nav-item > span:not(.nav-icon) { display: block; font-size: 9px; font-weight: 800; margin-top: 3px; }
+.nav-item.active { color: var(--p-isbla); }
+.nav-item.active .nav-icon .ico { stroke: var(--p-isbla); }
+.nav-item:not(.active) .nav-icon .ico { stroke: rgba(255,255,255,0.45); }
 .nav-item .nav-icon .ico { transition: stroke 0.25s ease-out; }
 .nav-icon { display:flex; align-items:center; justify-content:center; width:1.2rem; height:1.2rem; line-height:0; position:relative; z-index:1; transform:translateZ(0); -webkit-transform:translateZ(0); backface-visibility:hidden; -webkit-backface-visibility:hidden; }
 .main-nav-badge, .badge-bobler, .badge-beskeder, .badge-notif { position:absolute; top:-6px; right:-6px; min-width:22px; height:22px; border-radius:99px; background:var(--accent2); font-size:0.62rem; font-weight:800; color:white; display:none; align-items:center; justify-content:center; padding:0 6px; border:2px solid rgba(20,22,28,0.84); }
@@ -705,7 +703,6 @@ textarea.input { min-height:80px; resize:vertical; }
     radial-gradient(120% 70% at 50% 0%, rgba(100,180,230,0.20), transparent 58%),
     radial-gradient(90% 55% at 92% 4%, rgba(26,158,142,0.12), transparent 52%),
     rgba(20,22,28,0.94);
-  -webkit-
   border-top:0.5px solid rgba(255,255,255,0.1); border-radius:22px 22px 0 0;
   box-shadow:0 -10px 44px rgba(0,0,0,0.45);
   transform:translateY(100%); transition:transform 0.4s cubic-bezier(0.32,0.72,0,1);
@@ -769,7 +766,7 @@ textarea.input { min-height:80px; resize:vertical; }
 /* ── Forgot-password centered overlay (over blurred auth) ── */
 #forgot-overlay { position:fixed; inset:0; z-index:320; display:flex; align-items:center; justify-content:center; padding:22px; opacity:0; pointer-events:none; transition:opacity 0.22s ease; }
 #forgot-overlay.open { opacity:1; pointer-events:auto; }
-#forgot-overlay .fp-scrim { position:absolute; inset:0; background:rgba(15,10,30,0.5); -webkit-}
+#forgot-overlay .fp-scrim { position:absolute; inset:0; background:rgba(15,10,30,0.5);}
 #forgot-overlay .fp-card { position:relative; z-index:1; width:100%; max-width:380px; background:rgba(28,19,58,0.98); border:0.5px solid rgba(255,255,255,0.08); border-radius:20px; padding:1.3rem 1.25rem 1.4rem; box-shadow:0 24px 70px rgba(0,0,0,0.55); text-align:left; transform:scale(0.96); transition:transform 0.22s cubic-bezier(0.34,1.4,0.64,1); }
 #forgot-overlay.open .fp-card { transform:scale(1); }
 #forgot-overlay .fp-x { position:absolute; top:12px; right:12px; width:30px; height:30px; border-radius:9px; border:none; background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.7); font-size:0.78rem; cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:var(--font); }
@@ -1363,8 +1360,6 @@ button {
 .person-sheet-overlay {
   position: fixed; inset: 0; z-index: 200;
   background: rgba(30,27,46,0.2);
-  
-  -webkit-
   opacity: 0; pointer-events: none;
   transition: opacity 0.3s;
 }
@@ -1738,8 +1733,6 @@ a.person-action-btn { text-decoration:none; }
   width: 36px; height: 36px;
   border-radius: 50%;
   background: rgba(20,22,28,0.85);
-  
-  -webkit-
   border: 0.5px solid rgba(255,255,255,0.12);
   display: flex; align-items: center; justify-content: center;
   opacity: 0;
@@ -1798,7 +1791,7 @@ a.person-action-btn { text-decoration:none; }
 .radar-filter-btn {
   font-size: 0.65rem; font-weight: 600; font-family: inherit;
   padding: 0.3rem 0.6rem; border-radius: 99px; cursor: pointer;
-  border: 0.5px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.055); -webkit-
+  border: 0.5px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.055); 
   color: var(--text-secondary); transition: all 0.15s; white-space: nowrap;
   box-shadow: 0 1px 3px rgba(30,27,46,0.05);
 }
@@ -1851,7 +1844,6 @@ a.person-action-btn { text-decoration:none; }
 
 .radar-person-inner {
   background: rgba(20,22,28,0.94);
-  -webkit-
   border-bottom: 0.5px solid rgba(255,255,255,0.12);
   border-radius: 0 0 20px 20px;
   padding: calc(env(safe-area-inset-top, 20px) + 0.8rem) 1.25rem 0.8rem;
@@ -1935,7 +1927,6 @@ a.person-action-btn { text-decoration:none; }
   border-radius: var(--radius);
   background: rgba(255,255,255,0.055);
   border: 0.5px solid rgba(255,255,255,0.12);
-  -webkit-
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.09);
 }
 .live-bubble-header {
@@ -2690,7 +2681,7 @@ textarea ~ .input-confirm-btn { top:0.7rem; transform:none; }
 
 .chat-plus-menu {
   display:none;position:absolute;bottom:calc(100% + 6px);left:0.5rem;
-  background:rgba(20,22,28,0.94);-webkit-
+  background:rgba(20,22,28,0.94);
   border:0.5px solid rgba(255,255,255,0.08);border-radius:14px;
   padding:0.35rem;min-width:140px;z-index:20;
   box-shadow:0 -4px 16px rgba(0,0,0,0.2);
@@ -2797,8 +2788,6 @@ input[type="range"] {
 /* ═══ PROFILE SETUP SHEETS ═══ */
 .setup-sheet {
   background: rgba(20,22,28,0.94);
-  
-  -webkit-
   border-radius: 24px 24px 0 0;
   padding: 1.2rem 1.2rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
   width: 100%;
@@ -3194,8 +3183,6 @@ a:not(.btn-primary):not(.btn-secondary):active {
 /* Dark glass list-item card (baseline for all list views) */
 .bb-card-list {
   background: rgba(20,22,28,0.85);
-  
-  -webkit-
   border: 0.5px solid rgba(255,255,255,0.06);
   border-radius: 16px;
   padding: 12px 14px;
@@ -3430,8 +3417,6 @@ a:not(.btn-primary):not(.btn-secondary):active {
 /* Stat card — horizontal layout (Variant 1) */
 .bb-stat-card {
   background: rgba(20,22,28,0.85);
-  
-  -webkit-
   border: 0.5px solid rgba(255,255,255,0.06);
   border-radius: 16px;
   padding: 12px 14px;
@@ -3481,8 +3466,6 @@ a:not(.btn-primary):not(.btn-secondary):active {
   padding: 12px 14px;
   border-radius: 16px;
   background: rgba(20,22,28,0.85);
-  
-  -webkit-
   border: 0.5px solid rgba(255,255,255,0.06);
   margin-bottom: 8px;
   color: #FFFFFF;
@@ -3573,8 +3556,6 @@ a:not(.btn-primary):not(.btn-secondary):active {
   padding: 12px 14px;
   border-radius: 16px;
   background: rgba(20,22,28,0.85);
-  
-  -webkit-
   border: 0.5px solid rgba(255,255,255,0.06);
   border-left: 0.5px solid rgba(255,255,255,0.06);
   color: #FFFFFF;
@@ -3757,8 +3738,6 @@ a:not(.btn-primary):not(.btn-secondary):active {
    ═══════════════════════════════════════════════════════════════════ */
 .bubble-tabs {
   background: rgba(20,22,28,0.92) !important;
-  
-  -webkit-
   border-radius: 12px !important;
   padding: 4px !important;
   gap: 2px !important;
@@ -4006,8 +3985,6 @@ a:not(.btn-primary):not(.btn-secondary):active {
   font-weight: 700;
   border-radius: 14px;
   border: 1px solid rgba(101,168,50,0.4);
-  
-  -webkit-
   cursor: pointer;
   font-family: 'Figtree', sans-serif;
   -webkit-tap-highlight-color: transparent;
@@ -4032,8 +4009,6 @@ a:not(.btn-primary):not(.btn-secondary):active {
   font-weight: 700;
   border-radius: 14px;
   border: 1px solid rgba(100,180,230,0.4);
-  
-  -webkit-
   cursor: pointer;
   font-family: 'Figtree', sans-serif;
   -webkit-tap-highlight-color: transparent;
