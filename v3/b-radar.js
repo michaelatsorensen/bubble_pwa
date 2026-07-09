@@ -146,9 +146,10 @@ async function openRadarPerson(userId) {
     // state, fetch everything in parallel after. Previously three SEQUENTIAL awaits ran
     // before the sheet opened -> visible tap delay, worst on conference WiFi.
     var _rpReset = function() {
-      var ids = { 'rp-name': '', 'rp-sub': '' };
-      Object.keys(ids).forEach(function(k) { var el = document.getElementById(k); if (el) el.textContent = ids[k]; });
-      var av = document.getElementById('rp-avatar'); if (av) { av.innerHTML = ''; av.textContent = ''; av.classList.add('rp-skel-pulse'); }
+      // Skeleton-bjaelker for navn/sub mens data hentes (i stedet for tom/pop-in)
+      var nm = document.getElementById('rp-name'); if (nm) nm.innerHTML = '<span class="rp-skel-bar name"></span>';
+      var sb = document.getElementById('rp-sub'); if (sb) sb.innerHTML = '<span class="rp-skel-bar sub"></span>';
+      var av = document.getElementById('rp-avatar'); if (av) { av.innerHTML = ''; av.textContent = ''; av.style.background = ''; av.classList.add('rp-skel-pulse', 'rp-skel-avatar'); }
       ['rp-live-badge','rp-bio','rp-tags','rp-overlap','rp-shared-bubbles'].forEach(function(k) { var el = document.getElementById(k); if (el) el.style.display = 'none'; });
       var m = document.getElementById('rp-match'); if (m) { m.textContent = ''; m.style.color = 'transparent'; m.style.background = 'transparent'; }
       var li = document.getElementById('rp-linkedin-btn'); if (li) li.style.display = 'none';
@@ -200,8 +201,22 @@ async function openRadarPerson(userId) {
     var ini = isA ? '?' : name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     var rpAvEl = document.getElementById('rp-avatar');
     if (rpAvEl) {
-      if (p.avatar_url && !isA) { rpAvEl.innerHTML = '<img src="'+escHtml(p.avatar_url)+'" class="u-avatar-img">'; rpAvEl.style.overflow = 'hidden'; }
-      else { rpAvEl.textContent = ini; }
+      rpAvEl.classList.remove('rp-skel-pulse', 'rp-skel-avatar');
+      if (p.avatar_url && !isA) {
+        // Uploadet billede: vis billedet (ingen farve)
+        rpAvEl.innerHTML = '<img src="'+escHtml(p.avatar_url)+'" class="u-avatar-img">';
+        rpAvEl.style.overflow = 'hidden';
+        rpAvEl.style.background = '';
+      } else {
+        // Ingen billede: forbogstaver paa SAMME farve som personens dot i radaren
+        rpAvEl.textContent = ini;
+        if (isA) {
+          rpAvEl.style.background = 'var(--glass-border)';
+        } else if (typeof _homeProxMetaFor === 'function' && typeof proxColors !== 'undefined' && proxColors) {
+          var dotMeta = _homeProxMetaFor(p.id);
+          rpAvEl.style.background = proxColors[dotMeta.col % proxColors.length];
+        }
+      }
     }
     document.getElementById('rp-name').textContent = name;
     // Subtitle: title · workplace
