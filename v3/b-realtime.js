@@ -153,7 +153,7 @@ function _showOfflineModal() {
   if (existing) existing.remove();
   var ov = document.createElement('div');
   ov.id = 'offline-modal-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(30,27,46,0.4);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 4rem) 1.5rem 0;animation:fadeSlideUp 0.3s ease';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(30,27,46,0.4);-webkit-display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 4rem) 1.5rem 0;animation:fadeSlideUp 0.3s ease';
   ov.innerHTML =
     '<div style="background:#FAEEDA;border:1.5px solid rgba(239,159,39,0.35);border-radius:16px;padding:1.5rem 1.25rem;text-align:center;max-width:320px;width:100%">' +
       '<style>@keyframes _obBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}@keyframes _obPulse{0%,100%{opacity:.4}50%{opacity:1}}</style>' +
@@ -633,7 +633,7 @@ function initGlobalRealtime() {
         if (existing) existing.remove();
         var ov = document.createElement('div');
         ov.id = 'checkin-confirm-overlay';
-        ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.3s ease';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);-webkit-display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.3s ease';
         ov.innerHTML =
           '<div style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
             '<div style="width:56px;height:56px;border-radius:50%;background:rgba(26,158,142,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">' +
@@ -641,8 +641,8 @@ function initGlobalRealtime() {
             '</div>' +
             '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.3rem">' + t('modal_approved_title') + '</div>' +
             '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.25rem">' + escHtml(bName) + '</div>' +
-            (bId ? '<button id="approved-goto-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + t('modal_goto_bubble') + '</button>' : '') +
-            '<button id="approved-ok-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_ok') + '</button>' +
+            (bId ? '<button id="approved-goto-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,rgb(100,180,230),#6366F1);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + t('modal_goto_bubble') + '</button>' : '') +
+            '<button id="approved-ok-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(100,180,230,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_ok') + '</button>' +
           '</div>';
         document.body.appendChild(ov);
         var gotoBtn = document.getElementById('approved-goto-btn');
@@ -748,7 +748,7 @@ async function loadMessages() {
       const liveBadge = isPartnerLive ? ' <span class="live-badge-mini">LIVE</span>' : '';
       const convAvatar = '<div class="conv-avatar-wrap">' + (p.avatar_url ?
         '<div class="avatar" style="width:44px;height:44px;overflow:hidden;border-radius:50%"><img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover"></div>' :
-        '<div class="avatar" style="background:linear-gradient(135deg,#6366F1,#7C5CFC);width:44px;height:44px">'+initials+'</div>') + onlineDot + '</div>';
+        '<div class="avatar" style="background:linear-gradient(135deg,#6366F1,rgb(100,180,230));width:44px;height:44px">'+initials+'</div>') + onlineDot + '</div>';
       return '<div class="card conv-card' + (isUnread ? ' unread' : '') + '" data-action="openChat" data-id="' + partnerId + '" data-from="screen-messages" data-conv-id="' + partnerId + '">' +
         '<div class="flex-row-center" style="gap:0.75rem">' + convAvatar +
         '<div style="flex:1;min-width:0">' +
@@ -1028,7 +1028,7 @@ async function loadChatMessages() {
         ? '<img src="' + escHtml(partnerAvatar) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
         : partnerInit;
       el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;padding:3rem 1.5rem 1rem;text-align:center">' +
-        '<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#7C5CFC);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:white;overflow:hidden">' + avHtml + '</div>' +
+        '<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#6366F1,rgb(100,180,230));display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:white;overflow:hidden">' + avHtml + '</div>' +
         '<div style="font-size:0.92rem;font-weight:700;margin-top:0.6rem;color:rgba(255,255,255,0.95)">' + escHtml(partnerName) + '</div>' +
         '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.2rem">'+t('dm_write_first')+'</div>' +
         '</div>';

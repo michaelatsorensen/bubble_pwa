@@ -283,7 +283,7 @@ function updateFilterChipStyle() {
   });
   chips.querySelectorAll('.radar-filter-chip.active').forEach(function(c) {
     // NEXT design v6: ice-blue beach glass for CTA (normal), teal for live.
-    // Lilac gradient (#7C5CFC) is DEPRECATED per DESIGN-GUIDE — never use.
+    // Lilac gradient (rgb(100,180,230)) is DEPRECATED per DESIGN-GUIDE — never use.
     if (isLive) {
       c.style.background = 'linear-gradient(135deg,#1A9E8E,#17877A)';
       c.style.color = 'rgba(255,255,255,0.95)';
@@ -402,7 +402,7 @@ var _setupSelectedLifestage = null;
 
 var SETUP_INTERESTS = [
   { id: 'startup',        label: 'Startup & Iværksætteri',    color: '#E879A8', bg: 'rgba(232,121,168,', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4.5 16.5c-1.5 1.5-2 5-2 5s3.5-.5 5-2c.8-.8 1-2 .4-2.8a2.1 2.1 0 00-3.4-.2z"/><path d="M14.5 2.5c-3 2-5 5.5-5.5 9l3.5 3.5c3.5-.5 7-2.5 9-5.5z"/></svg>' },
-  { id: 'tech',           label: 'Teknologi & Digitalisering', color: '#7C5CFC', bg: 'rgba(124,92,252,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>' },
+  { id: 'tech',           label: 'Teknologi & Digitalisering', color: 'rgb(100,180,230)', bg: 'rgba(100,180,230,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>' },
   { id: 'sustainability', label: 'Bæredygtighed & Energi',     color: '#1A9E8E', bg: 'rgba(26,158,142,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v19M5 8l7-5 7 5M5 16l7 5 7-5"/></svg>' },
   { id: 'leadership',     label: 'Ledelse & Strategi',         color: '#F59E0B', bg: 'rgba(245,158,11,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>' },
   { id: 'public',         label: 'Offentlig & NGO',            color: '#1A9E8E', bg: 'rgba(26,158,142,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M10 21v-3h4v3"/></svg>' },
@@ -449,13 +449,13 @@ function showCheckinModal(eventName, opts) {
 
   var ov = document.createElement('div');
   ov.id = 'checkin-confirm-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.3s ease';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);-webkit-display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.3s ease';
 
   var buttonsHtml = '';
   if (opts.fromHome && eventId) {
     buttonsHtml =
       '<button id="checkin-goto-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#1A9E8E,#17877A);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:center;gap:0.4rem">' + t('ob_goto_event') + '</button>' +
-      '<button id="checkin-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_stay_home') + '</button>';
+      '<button id="checkin-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(100,180,230,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_stay_home') + '</button>';
   } else {
     buttonsHtml =
       '<button id="checkin-ok-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#1A9E8E,#17877A);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.4rem">' + t('modal_understood') + '</button>';
@@ -635,9 +635,9 @@ async function showDeepLinkModal(type, targetId) {
       var title = escHtml(nameText);
       var subtitle = [p.title, p.workplace].filter(Boolean).join(' · ');
       _renderSimpleDeepLinkModal({
-        iconBg: 'linear-gradient(135deg,#7C5CFC,#6366F1)', iconSize: '64px', iconRadius: '50%',
+        iconBg: 'linear-gradient(135deg,rgb(100,180,230),#6366F1)', iconSize: '64px', iconRadius: '50%',
         iconHtml: iconHtml, title: title, subtitle: subtitle,
-        kicker: t('dl_contact_kicker'), kickerColor: '#7C5CFC',
+        kicker: t('dl_contact_kicker'), kickerColor: 'rgb(100,180,230)',
         primaryLabel: t('dl_save_contact') + ' →',
         primaryFn: async function() {
           var result = await dbActions.saveContact(targetId);
@@ -728,7 +728,7 @@ async function showDeepLinkModal(type, targetId) {
 function _renderSimpleDeepLinkModal(opts) {
   var ov = document.createElement('div');
   ov.id = 'deeplink-modal-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);-webkit-display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
   ov.innerHTML =
     '<div style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
       '<div style="width:' + opts.iconSize + ';height:' + opts.iconSize + ';border-radius:' + opts.iconRadius + ';background:' + opts.iconBg + ';display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;overflow:hidden">' + opts.iconHtml + '</div>' +
@@ -736,7 +736,7 @@ function _renderSimpleDeepLinkModal(opts) {
       '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">' + opts.title + '</div>' +
       (opts.subtitle ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:1.25rem">' + opts.subtitle + '</div>' : '<div style="margin-bottom:1.25rem"></div>') +
       '<button id="dl-action-btn" style="width:100%;padding:0.85rem;border-radius:12px;border:none;background:linear-gradient(180deg,#6FB8E8,#4F9FD4);color:#fff;box-shadow:0 6px 16px rgba(79,159,212,0.3);font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + escHtml(opts.primaryLabel) + '</button>' +
-      '<button id="dl-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_stay_home') + '</button>' +
+      '<button id="dl-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(100,180,230,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_stay_home') + '</button>' +
     '</div>';
   document.body.appendChild(ov);
   document.getElementById('dl-action-btn').onclick = async function() {
@@ -757,7 +757,7 @@ function _renderEventDeepLinkModal(opts) {
   var bubbleId = opts.bubbleId;
   var ov = document.createElement('div');
   ov.id = 'deeplink-modal-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);-webkit-display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
 
   // Determine button set based on state
   var primaryLabel = '', primaryFn = null;
@@ -840,7 +840,7 @@ function _renderEventDeepLinkModal(opts) {
 
   // Build modal HTML
   var primaryBtnHtml = '<button id="dl-event-primary" style="width:100%;padding:0.85rem;border-radius:12px;border:none;background:linear-gradient(180deg,#6FB8E8,#4F9FD4);color:#fff;box-shadow:0 6px 16px rgba(79,159,212,0.3);font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + primaryLabel + '</button>';
-  var secondaryBtnHtml = secondaryLabel ? '<button id="dl-event-secondary" style="width:100%;padding:0.75rem;border-radius:12px;border:1px solid rgba(124,92,252,0.18);background:none;color:#534AB7;font-size:0.82rem;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:0.4rem">' + secondaryLabel + '</button>' : '';
+  var secondaryBtnHtml = secondaryLabel ? '<button id="dl-event-secondary" style="width:100%;padding:0.75rem;border-radius:12px;border:1px solid rgba(100,180,230,0.18);background:none;color:#534AB7;font-size:0.82rem;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:0.4rem">' + secondaryLabel + '</button>' : '';
   var declineBtnHtml = showDecline ? '<button id="dl-event-decline" style="width:100%;padding:0.6rem;border-radius:12px;border:none;background:none;color:#993556;font-size:0.75rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_decline_invitation') + '</button>' : '';
 
   ov.innerHTML =
@@ -959,11 +959,11 @@ async function _showSavedContactModal(contactId) {
 
     var ov = document.createElement('div');
     ov.id = 'saved-contact-overlay';
-    ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);-webkit-display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
 
     ov.innerHTML =
       '<div style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
-        '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#6366F1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;box-shadow:0 4px 12px rgba(124,92,252,0.25)">' + avHtml + '</div>' +
+        '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,rgb(100,180,230),#6366F1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;box-shadow:0 4px 12px rgba(100,180,230,0.25)">' + avHtml + '</div>' +
         '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">' + escHtml(name) + '</div>' +
         (subtitle ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.3rem">' + escHtml(subtitle) + '</div>' : '') +
         '<div style="display:flex;align-items:center;justify-content:center;gap:0.4rem;margin-bottom:1.25rem">' +
@@ -971,7 +971,7 @@ async function _showSavedContactModal(contactId) {
           '<span style="font-size:0.78rem;font-weight:600;color:#1A9E8E">' + t('home_contact_saved') + '</span>' +
         '</div>' +
         '<button id="sc-view-btn" style="width:100%;padding:0.85rem;border-radius:12px;border:none;background:linear-gradient(180deg,#6FB8E8,#4F9FD4);color:#fff;box-shadow:0 6px 16px rgba(79,159,212,0.3);font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">Se profil →</button>' +
-        '<button id="sc-close-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_ok') + '</button>' +
+        '<button id="sc-close-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(100,180,230,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_ok') + '</button>' +
       '</div>';
 
     document.body.appendChild(ov);
@@ -1003,7 +1003,7 @@ function showWelcomeCard() {
   if (!isNewUser) return;
 
   el.innerHTML =
-    '<div style="background:rgba(23,15,52,0.85);backdrop-filter:blur(12px) saturate(130%);-webkit-backdrop-filter:blur(12px) saturate(130%);border:0.5px solid rgba(255,255,255,0.06);border-radius:14px;padding:1rem 1.1rem;position:relative">' +
+    '<div style="background:rgba(20,22,28,0.85);-webkit-border:0.5px solid rgba(255,255,255,0.06);border-radius:14px;padding:1rem 1.1rem;position:relative">' +
       '<button onclick="dismissWelcomeCard()" style="position:absolute;top:0.6rem;right:0.7rem;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);font-size:1rem;line-height:1;padding:0.2rem;font-family:inherit" aria-label="Luk">×</button>' +
       '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">' +
         '<div style="width:28px;height:28px;color:rgb(100,180,230);flex-shrink:0">' + ico('bubble') + '</div>' +
@@ -2074,13 +2074,13 @@ async function loadTopMatches() {
     if (scored.length === 0) { container.style.display = 'none'; return; }
 
     // Render
-    var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)'];
+    var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,rgb(100,180,230))','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)'];
 
     list.innerHTML = scored.map(function(s, i) {
       var p = s.profile;
       var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var avHtml = p.avatar_url ?
-        '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid rgba(124,92,252,0.15)"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
+        '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid rgba(100,180,230,0.15)"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
         '<div style="width:40px;height:40px;border-radius:50%;background:' + avColors[i % 5] + ';display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>';
 
       var sharedTags = s.shared.slice(0, 3).map(function(t) {
@@ -2487,7 +2487,7 @@ function _doRenderHomeDartboard() {
     // Don't show empty state until data has actually loaded — prevents flash
     if (!_dartboardDataLoaded) return;
     if (_homeViewMode === 'live') {
-      av.innerHTML = '<div class="dartboard-empty" style="position:absolute;top:50%;left:50%;transform:translate(-50%, calc(-100% - 40px));text-align:center;padding:0.6rem 1.2rem;background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:12px;border:1px solid var(--glass-border-subtle);box-shadow:0 2px 8px rgba(30,27,46,0.06);white-space:nowrap">' +
+      av.innerHTML = '<div class="dartboard-empty" style="position:absolute;top:50%;left:50%;transform:translate(-50%, calc(-100% - 40px));text-align:center;padding:0.6rem 1.2rem;background:rgba(255,255,255,0.85);-webkit-border-radius:12px;border:1px solid var(--glass-border-subtle);box-shadow:0 2px 8px rgba(30,27,46,0.06);white-space:nowrap">' +
         '<div style="font-size:0.78rem;font-weight:600;color:var(--text)">' + t('home_first_here') + '</div>' +
         '<div style="font-size:0.68rem;color:var(--muted);margin-top:0.15rem">' + t('home_waiting') + '</div>' +
         '</div>';
@@ -2512,7 +2512,7 @@ function _doRenderHomeDartboard() {
   var cx = w/2, cy = h/2, maxR = Math.min(cx,cy) - 24;
 
   var colors = (typeof proxColors !== 'undefined' && proxColors) ? proxColors : [
-    'linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)',
+    'linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,rgb(100,180,230))',
     'linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)',
     'linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)',
     'linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)',
@@ -2687,7 +2687,7 @@ function renderHomeTrayList() {
     return;
   }
 
-  var colors = proxColors || ['linear-gradient(135deg,#6366F1,#7C5CFC)'];
+  var colors = proxColors || ['linear-gradient(135deg,#6366F1,rgb(100,180,230))'];
   list.innerHTML = sorted.map(function(p, i) {
     var name = p.is_anon ? 'Anonym' : (p.name || '?');
     var ini = name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();

@@ -295,7 +295,7 @@ async function loadQRProfilePreview(userId, bubbleId) {
         }
         if (tagsEl) {
           tagsEl.innerHTML = (profile.keywords || []).slice(0, 5).map(function(t) {
-            return '<span style="font-size:0.68rem;padding:0.2rem 0.55rem;border-radius:99px;background:rgba(124,92,252,0.07);color:#534AB7;font-weight:500">' + escHtml(t) + '</span>';
+            return '<span style="font-size:0.68rem;padding:0.2rem 0.55rem;border-radius:99px;background:rgba(100,180,230,0.07);color:#534AB7;font-weight:500">' + escHtml(t) + '</span>';
           }).join('');
         }
         if (avatarEl) {
@@ -344,7 +344,7 @@ async function loadQRProfilePreview(userId, bubbleId) {
           var colors = [
             'linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#8B5CF6,#A855F7)',
             'linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#1A9E8E,#10B981)',
-            'linear-gradient(135deg,#6366F1,#7C5CFC)'
+            'linear-gradient(135deg,#6366F1,rgb(100,180,230))'
           ];
           if (contacts && contacts.length > 0) {
             listEl.innerHTML = contacts.map(function(c, i) {
@@ -354,7 +354,7 @@ async function loadQRProfilePreview(userId, bubbleId) {
                 ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
                 : ini;
               var tags = (p.keywords || []).slice(0, 2).map(function(t) {
-                return '<span style="font-size:0.55rem;padding:0.1rem 0.35rem;border-radius:6px;background:rgba(124,92,252,0.07);color:#534AB7">' + escHtml(t) + '</span>';
+                return '<span style="font-size:0.55rem;padding:0.1rem 0.35rem;border-radius:6px;background:rgba(100,180,230,0.07);color:#534AB7">' + escHtml(t) + '</span>';
               }).join('');
               return '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.6rem 0.7rem;border-radius:12px;background:rgba(30,27,46,0.02);border:1px solid var(--glass-border-subtle)">' +
                 '<div style="width:38px;height:38px;border-radius:50%;background:' + colors[i % colors.length] + ';display:flex;align-items:center;justify-content:center;color:white;font-size:0.72rem;font-weight:700;flex-shrink:0;overflow:hidden">' + avHtml + '</div>' +
@@ -405,7 +405,7 @@ async function loadTeaserProfiles(bubbleId) {
     var colors = [
       'linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#E879A8,#EC4899)',
       'linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#1A9E8E,#10B981)',
-      'linear-gradient(135deg,#6366F1,#7C5CFC)'
+      'linear-gradient(135deg,#6366F1,rgb(100,180,230))'
     ];
 
     var _tz = ((await sb.rpc('get_bubble_teaser', { p_bubble_id: bubbleId || null })).data) || {};
@@ -607,14 +607,14 @@ async function loadEventSocialProof(bubbleId) {
     var container = document.getElementById('event-blurred-profiles');
     if (!container) return;
 
-    var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)'];
+    var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,rgb(100,180,230))','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)'];
 
     // Render one social-proof card. badge = optional label (e.g. VAERT).
     function _spCard(p, idx, badge) {
       var ini = (p.name || '?').split(' ').map(function(w){ return w[0]; }).join('').slice(0,2).toUpperCase();
-      var tags = (p.keywords || []).slice(0,2).map(function(k) { return '<span style="font-size:0.58rem;padding:0.1rem 0.4rem;background:rgba(124,92,252,0.06);color:var(--accent);border-radius:99px">' + escHtml(k) + '</span>'; }).join('');
+      var tags = (p.keywords || []).slice(0,2).map(function(k) { return '<span style="font-size:0.58rem;padding:0.1rem 0.4rem;background:rgba(100,180,230,0.06);color:var(--accent);border-radius:99px">' + escHtml(k) + '</span>'; }).join('');
       var badgeHtml = badge ? '<span style="font-size:0.52rem;font-weight:700;letter-spacing:0.03em;color:#2c7fb8;background:rgba(100,180,230,0.15);border-radius:5px;padding:0.05rem 0.35rem;margin-left:0.35rem;vertical-align:middle">' + badge + '</span>' : '';
-      return '<div style="background:rgba(255,255,255,0.055);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.12);border-radius:var(--radius);padding:0.7rem 0.9rem;display:flex;align-items:center;gap:0.6rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
+      return '<div style="background:rgba(255,255,255,0.055);-webkit-border:0.5px solid rgba(255,255,255,0.12);border-radius:var(--radius);padding:0.7rem 0.9rem;display:flex;align-items:center;gap:0.6rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
         '<div style="width:36px;height:36px;border-radius:50%;background:' + avColors[idx % avColors.length] + ';display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>' +
         '<div style="flex:1;min-width:0"><div style="font-size:0.8rem;font-weight:600;color:var(--text)">' + escHtml(p.name || 'Deltager') + badgeHtml + '</div>' +
         '<div style="font-size:0.68rem;color:var(--text-secondary)">' + escHtml(p.title || '') + (p.workplace ? ' \u00B7 ' + escHtml(p.workplace) : '') + '</div>' +
@@ -838,7 +838,7 @@ function showUpdateBanner() {
   banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;'
     + 'padding-top:env(safe-area-inset-top,0px);'
     + 'background:rgba(255,255,255,0.96);'
-    + 'backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);'
+    + '-webkit-'
     + 'border-bottom:0.5px solid rgba(255,255,255,0.12);'
     + 'box-shadow:0 4px 24px rgba(0,0,0,0.35);';
   banner.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;'

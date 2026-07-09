@@ -39,7 +39,7 @@ async function adminLoadReports() {
         (isBanned ? ' <span style="font-size:0.55rem;background:rgba(26,122,138,0.2);color:var(--pink);padding:0.1rem 0.3rem;border-radius:4px">Banned</span>' : '') +
         '<div style="font-size:0.62rem;color:rgba(255,255,255,0.25)">' + escHtml(r.type || 'report') + ' · ' + escHtml(r.reason || t('admin_no_reason')) + ' · ' + timeAgo + '</div>' +
         '<div style="font-size:0.6rem;color:rgba(255,255,255,0.25)">Af: ' + escHtml(reporterName) + '</div></div>' +
-        (!isBanned ? '<button class="btn-sm" onclick="adminBanUser(\'' + r.reported_id + '\',\'' + escHtml(reportedName).replace(/'/g,"\\'") + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(124,92,252,0.12);color:var(--pink);border:1px solid rgba(26,122,138,0.3);border-radius:6px;flex-shrink:0">Ban</button>' :
+        (!isBanned ? '<button class="btn-sm" onclick="adminBanUser(\'' + r.reported_id + '\',\'' + escHtml(reportedName).replace(/'/g,"\\'") + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(100,180,230,0.12);color:var(--pink);border:1px solid rgba(26,122,138,0.3);border-radius:6px;flex-shrink:0">Ban</button>' :
         '<button class="btn-sm" onclick="adminUnbanUser(\'' + r.reported_id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,158,142,0.15);color:var(--green);border:1px solid rgba(26,158,142,0.3);border-radius:6px;flex-shrink:0">Unban</button>') +
         '</div></div>';
     }).join('');
@@ -425,7 +425,7 @@ function adminSearchUser(query) {
           '<div style="font-size:0.6rem;color:rgba(255,255,255,0.25)">' + escHtml(p.title || '') + ' · ' + escHtml(p.email || p.id.slice(0,8)) + '</div>' +
           '</div>' +
           (!isBanned ?
-            '<button class="btn-sm" onclick="adminBanUser(\'' + p.id + '\',\'' + escHtml(p.name||'').replace(/'/g,"\\'") + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(124,92,252,0.12);color:var(--pink);border:1px solid rgba(26,122,138,0.3);border-radius:6px;flex-shrink:0">Ban</button>' :
+            '<button class="btn-sm" onclick="adminBanUser(\'' + p.id + '\',\'' + escHtml(p.name||'').replace(/'/g,"\\'") + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(100,180,230,0.12);color:var(--pink);border:1px solid rgba(26,122,138,0.3);border-radius:6px;flex-shrink:0">Ban</button>' :
             '<button class="btn-sm" onclick="adminUnbanUser(\'' + p.id + '\')" style="font-size:0.6rem;padding:0.2rem 0.5rem;background:rgba(26,158,142,0.15);color:var(--green);border:1px solid rgba(26,158,142,0.3);border-radius:6px;flex-shrink:0">Unban</button>') +
           '</div>';
       }).join('');

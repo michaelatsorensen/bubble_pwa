@@ -23,7 +23,7 @@ function getAppMode() {
 // Score 0-100 from tier-based calcMatchScore
 function matchLabel(score) {
   if (score >= 60) return { tier:'strong',  text: t('ml_strong'),  color: 'var(--green)',  bg: 'rgba(26,158,142,0.08)' };
-  if (score >= 40) return { tier:'good',     text: t('ml_good'),    color: 'var(--accent)', bg: 'rgba(124,92,252,0.08)' };
+  if (score >= 40) return { tier:'good',     text: t('ml_good'),    color: 'var(--accent)', bg: 'rgba(100,180,230,0.08)' };
   if (score >= 20) return { tier:'shared',   text: t('ml_shared'),  color: '#3B82F6',       bg: 'rgba(59,130,246,0.08)' };
   if (score >= 1)  return { tier:'network',  text: t('ml_network'), color: 'rgba(255,255,255,0.6)',  bg: 'rgba(255,255,255,0.08)' };
   return              { tier:'none', text: '',              color: 'var(--muted)',  bg: 'transparent' };
@@ -335,10 +335,10 @@ function showConfirmDialog(opts) {
   if (existing) existing.remove();
   var ov = document.createElement('div');
   ov.id = 'confirm-dialog-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:650;background:rgba(10,7,24,0.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.25s ease';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:650;background:rgba(10,7,24,0.55);-webkit-display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.25s ease';
   var confirmBg = opts.danger ? 'linear-gradient(135deg,#FF5A6E,#E23D52)' : 'linear-gradient(135deg,#1A9E8E,#17877A)';
   ov.innerHTML =
-    '<div style="background:rgba(23,15,52,0.98);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:1.6rem 1.3rem 1.3rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.5)">' +
+    '<div style="background:rgba(20,22,28,0.98);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:1.6rem 1.3rem 1.3rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.5)">' +
       (opts.title ? '<div style="font-size:1.1rem;font-weight:800;color:rgba(255,255,255,0.97);margin-bottom:0.4rem">' + escHtml(opts.title) + '</div>' : '') +
       (opts.message ? '<div style="font-size:0.85rem;color:rgba(255,255,255,0.6);line-height:1.5;margin-bottom:1.3rem">' + escHtml(opts.message) + '</div>' : '<div style="height:0.5rem"></div>') +
       '<button id="cfd-confirm" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:' + confirmBg + ';color:#fff;font-size:0.9rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + escHtml(opts.confirmText || 'Bekræft') + '</button>' +
@@ -585,7 +585,7 @@ async function fetchMemberAvatarsForBubbles(bubbleIds, max) {
 // Render compact avatar stack: up to 4 faces + "+N"
 function renderAvatarStack(members, totalCount) {
   if (!members || members.length === 0) return '';
-  var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)'];
+  var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,rgb(100,180,230))','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)'];
   var avs = members.slice(0, 4).map(function(p, i) {
     var ml = i > 0 ? 'margin-left:-6px;' : '';
     var z = 'z-index:' + (5-i) + ';position:relative;';

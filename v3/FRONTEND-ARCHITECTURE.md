@@ -38,3 +38,11 @@ for den kontrast-verificerede værdi-mapping.
 - index.html — app-shell + skærm-struktur (migreres til klasser)
 - b-*.js — logik + genereret HTML (nervesystem: Supabase/auth/realtime)
 - Nervesystemet (b-boot, b-auth, b-realtime, b-utils dbActions) RØRES IKKE ved styling-migration.
+
+## Bevidst bevarede "lilla"-forekomster (IKKE gæld)
+Efter migration er der 8 lilla-forekomster tilbage — alle legitime:
+- **tag-data.js `rolle` #7C5CFC** — prototypen bruger SELV denne farve for rolle-tag-kategorien.
+  Tag-kategori-farver er en funktionel taksonomi (rolle=lilla/branche=blå/kompetence=teal/interesse=pink).
+- **Avatar-glows rgba(124,92,252,*)** — skygge på avatar-elementer, matcher prototypens
+  avatar-gradient. Avatar-farver er en dokumenteret prototype-undtagelse. Token: --p-avatar-glow.
+- **proximity-map** — geo-feature, urørt (aktiveres ikke før pilot).

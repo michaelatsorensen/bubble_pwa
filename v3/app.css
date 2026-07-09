@@ -52,6 +52,7 @@
 
   /* — Avatar-gradient (prototypens egen, tilladt undtagelse) — */
   --p-avatar:     linear-gradient(135deg,#CECBF6,#AFA9EC);
+  --p-avatar-glow:  rgba(124,92,252,0.2);   /* avatar-skygge (matcher avatar-gradient, prototype-undtagelse) */
 
   /* — Radius (prototype-skala) — */
   --p-r-card:  14px;

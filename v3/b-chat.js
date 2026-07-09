@@ -1642,7 +1642,7 @@ async function bcLoadMembers() {
       m._shared = (pp.keywords || []).filter(function(k) { return _myKwL.indexOf(String(k).toLowerCase()) >= 0; }).slice(0, 3);
     });
 
-    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
+    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,rgb(100,180,230))','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
     const ownerId = bcBubbleData?.created_by;
     const isOwner = currentUser && ownerId === currentUser.id;
 
@@ -1748,7 +1748,7 @@ async function bcLoadMembers() {
       // Relevance signals — dark-context colors (matchBadgeHtml is light-mode, invisible here)
       var _isSelf = m.user_id === currentUser.id;
       var _sharedChips = (m._shared && m._shared.length)
-        ? '<div style="display:flex;gap:0.2rem;margin-top:0.2rem;flex-wrap:wrap">' + m._shared.map(function(tg) { return '<span style="font-size:0.55rem;padding:0.1rem 0.4rem;background:rgba(124,92,252,0.16);color:#B9A6FF;border-radius:99px">' + escHtml(tg) + '</span>'; }).join('') + '</div>'
+        ? '<div style="display:flex;gap:0.2rem;margin-top:0.2rem;flex-wrap:wrap">' + m._shared.map(function(tg) { return '<span style="font-size:0.55rem;padding:0.1rem 0.4rem;background:rgba(100,180,230,0.16);color:#B9A6FF;border-radius:99px">' + escHtml(tg) + '</span>'; }).join('') + '</div>'
         : '';
       var _matchBadge = '';
       if (!isOwnerRow && !_isSelf && (m._score || 0) >= 40) {
@@ -2029,7 +2029,7 @@ async function bcLoadInfo() {
             else { childCards += _card; }
           });
           if (_pastEventCount > 0) {
-            childCards += '<div class="bb-tree-branch"><div id="bc-evhist-toggle" onclick="bcToggleEventHistory()" style="display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.7rem;background:rgba(23,15,52,0.04);border-radius:12px;cursor:pointer;user-select:none">' +
+            childCards += '<div class="bb-tree-branch"><div id="bc-evhist-toggle" onclick="bcToggleEventHistory()" style="display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.7rem;background:rgba(20,22,28,0.04);border-radius:12px;cursor:pointer;user-select:none">' +
               '<span style="display:flex;align-items:center;color:var(--text-on-light-muted)">' + ico('history') + '</span>' +
               '<span style="flex:1;font-size:0.68rem;font-weight:700;color:var(--text-on-light-muted);text-transform:uppercase;letter-spacing:0.04em">' + t('pf_past_events') + ' (' + _pastEventCount + ')</span>' +
               '<span id="bc-evhist-chevron" style="display:flex;align-items:center;color:var(--text-on-light-subtle);transition:transform 0.2s">' + ico('chevron-down') + '</span></div>' +
@@ -2165,7 +2165,7 @@ async function bcLoadInfo() {
       if (isEvent && myCheckinLive) {
         checkoutBtn = '<button onclick="bcCheckout()" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(46,207,207,0.18);border:0.5px solid rgba(46,207,207,0.35);color:#0F6E56;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + t('bi_checkout') + '</button>';
       }
-      bottomHtml = '<div style="display:flex;flex-direction:column;gap:0.4rem;border-top:0.5px solid rgba(23,15,52,0.08);padding-top:0.8rem">' +
+      bottomHtml = '<div style="display:flex;flex-direction:column;gap:0.4rem;border-top:0.5px solid rgba(20,22,28,0.08);padding-top:0.8rem">' +
         checkoutBtn +
         '<button data-action="leaveBubble" data-id="' + b.id + '" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.12);border:0.5px solid rgba(239,68,68,0.3);color:#B91C1C;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_leave_event') : t('bb_leave_bubble')) + '</button>' +
         (isOwner ? '<button onclick="confirmPopBubble(\'' + b.id + '\')" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.18);border:0.5px solid rgba(239,68,68,0.4);color:#991B1B;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_delete_event') : t('bb_delete_bubble')) + '</button>' : '') +
@@ -2234,7 +2234,7 @@ async function bcLoadInfo() {
           var starsInner = [1,2,3].map(function(n) {
             return '<div class="ps-star ' + (n <= r ? 'filled' : 'empty') + '" onclick="bubbleSetStar(\'' + b.id + '\',' + n + ')">\u2605</div>';
           }).join('');
-          return '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:0.35rem;margin-top:0.7rem;padding:0.6rem 1rem;background:rgba(23,15,52,0.04);border-radius:12px">' +
+          return '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:0.35rem;margin-top:0.7rem;padding:0.6rem 1rem;background:rgba(20,22,28,0.04);border-radius:12px">' +
             '<div class="text-on-light-muted" style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em">' + t('pf_your_rating') + '</div>' +
             '<div id="bubble-star-rating" class="ps-stars">' + starsInner + '</div>' +
           '</div>';
@@ -2248,7 +2248,7 @@ async function bcLoadInfo() {
             ? (_lang === 'da' ? 'slutter kl. ' : 'ends at ') + new Date(b.event_end_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' })
             : '';
           var evBadge = evPast
-            ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(23,15,52,0.08);color:#56536E;font-weight:600;border:0.5px solid rgba(23,15,52,0.12)">Afsluttet</span>'
+            ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(20,22,28,0.08);color:#56536E;font-weight:600;border:0.5px solid rgba(20,22,28,0.12)">Afsluttet</span>'
             : (evD <= new Date()
               ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(46,207,207,0.22);color:#0F6E56;font-weight:600;border:0.5px solid rgba(46,207,207,0.4)">I gang</span>'
               : '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(100,180,230,0.18);color:rgb(60,130,180);font-weight:600;border:0.5px solid rgba(100,180,230,0.35)">' + t('bb_coming') + '</span>');

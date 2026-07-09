@@ -508,12 +508,12 @@ function drawProxRings(canvas) {
 
   var centerR = 0.10;
   var zones = [
-    { r: centerR, fill: 'rgba(23,15,52,0.08)' },
-    { r: 0.26, fill: 'rgba(23,15,52,0.05)' },
+    { r: centerR, fill: 'rgba(20,22,28,0.08)' },
+    { r: 0.26, fill: 'rgba(20,22,28,0.05)' },
     { r: 0.42, fill: 'rgba(46,207,207,0.08)' },
     { r: 0.58, fill: 'rgba(107,139,255,0.06)' },
     { r: 0.74, fill: 'rgba(139,92,246,0.04)' },
-    { r: 0.90, fill: 'rgba(23,15,52,0.02)' },
+    { r: 0.90, fill: 'rgba(20,22,28,0.02)' },
   ];
   // Draw filled zones from outside in so inner overlaps
   for (var i = zones.length - 1; i >= 0; i--) {
@@ -532,8 +532,8 @@ function drawProxRings(canvas) {
   }
   // Subtle center glow
   var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, zones[0].r * maxR);
-  g.addColorStop(0, 'rgba(23,15,52,0.06)');
-  g.addColorStop(1, 'rgba(23,15,52,0)');
+  g.addColorStop(0, 'rgba(20,22,28,0.06)');
+  g.addColorStop(1, 'rgba(20,22,28,0)');
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.arc(cx, cy, zones[0].r * maxR, 0, Math.PI * 2);
@@ -1124,7 +1124,7 @@ async function loadProfileBubbles() {
     }
     if (pastEvents.length > 0) {
       var HIST_SHOWN = 5;
-      html += '<div id="pf-hist-toggle" onclick="pfToggleHistory()" style="margin-top:0.7rem;display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.7rem;background:rgba(23,15,52,0.04);border-radius:12px;cursor:pointer;user-select:none">';
+      html += '<div id="pf-hist-toggle" onclick="pfToggleHistory()" style="margin-top:0.7rem;display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.7rem;background:rgba(20,22,28,0.04);border-radius:12px;cursor:pointer;user-select:none">';
       html += '<span style="display:flex;align-items:center;color:var(--text-on-light-muted)">' + ico('history') + '</span>';
       html += '<span style="flex:1;font-size:0.68rem;font-weight:700;color:var(--text-on-light-muted);text-transform:uppercase;letter-spacing:0.04em">' + t('pf_past_events') + ' (' + pastEvents.length + ')</span>';
       html += '<span id="pf-hist-chevron" style="display:flex;align-items:center;color:var(--text-on-light-subtle);transition:transform 0.2s">' + ico('chevron-down') + '</span></div>';
@@ -1655,7 +1655,7 @@ async function loadDashboard() {
     }
 
     el.innerHTML =
-      '<div style="background:rgba(23,15,52,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:0.5px solid rgba(255,255,255,0.06);border-radius:16px;padding:0.8rem;margin-bottom:0.5rem">' +
+      '<div style="background:rgba(20,22,28,0.85);-webkit-border:0.5px solid rgba(255,255,255,0.06);border-radius:16px;padding:0.8rem;margin-bottom:0.5rem">' +
       '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.55);margin-bottom:0.4rem">' + t('pf_bubble_week') + '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem">' +
         statCard('eye', t('pf_dash_views'), views, 'rgba(100,180,230,0.22)', 'rgb(100,180,230)') +
@@ -1680,7 +1680,7 @@ async function loadDashboard() {
 
 // ── Tags card in dashboard ──
 function _renderDashboardTagsCard() {
-  return '<div style="margin-top:0.75rem;background:rgba(23,15,52,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:0.5px solid rgba(255,255,255,0.06);border-radius:var(--radius);box-shadow:none;overflow:hidden">' +
+  return '<div style="margin-top:0.75rem;background:rgba(20,22,28,0.85);-webkit-border:0.5px solid rgba(255,255,255,0.06);border-radius:var(--radius);box-shadow:none;overflow:hidden">' +
 
     // ── Header ──
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem 0.5rem">' +

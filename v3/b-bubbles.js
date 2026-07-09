@@ -334,7 +334,7 @@ function _buildMemberSheet(title, subtitle, members) {
   var { overlay, sheet } = bbDynOpen();
   overlay.id = 'member-action-overlay';
 
-  var avColors = proxColors || ['linear-gradient(135deg,#6366F1,#7C5CFC)'];
+  var avColors = proxColors || ['linear-gradient(135deg,#6366F1,rgb(100,180,230))'];
 
   sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:0 auto 1rem;cursor:pointer" onclick="closeMemberSheet()"></div>' +
     '<div style="font-size:1.05rem;font-weight:800;margin-bottom:0.3rem;color:rgba(255,255,255,0.95)">' + title + '</div>' +
@@ -1001,7 +1001,7 @@ function _showBubbleCreatedModal(bubbleId, name, type) {
   if (existing) existing.remove();
   var ov = document.createElement('div');
   ov.id = 'bubble-created-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:620;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:620;background:rgba(30,27,46,0.45);-webkit-display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
   var iconColor = isEvent ? '#2ECFCF' : '#1A9E8E';
   var iconBg = isEvent ? 'rgba(46,207,207,0.15)' : 'rgba(26,158,142,0.15)';
   ov.innerHTML =
@@ -1875,7 +1875,7 @@ async function generateEventReport(bubbleId) {
           '<div style="flex:1;height:22px;background:#F4F3F9;border-radius:6px;overflow:hidden">' +
             '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,rgb(100,180,230),rgb(70,150,210));border-radius:6px;min-width:2px"></div>' +
           '</div>' +
-          '<div style="width:28px;font-size:0.72rem;font-weight:700;color:#7C5CFC;text-align:right">' + d.value + '</div>' +
+          '<div style="width:28px;font-size:0.72rem;font-weight:700;color:rgb(100,180,230);text-align:right">' + d.value + '</div>' +
           '</div>';
       }).join('');
     }
@@ -1903,24 +1903,24 @@ async function generateEventReport(bubbleId) {
         '*{margin:0;padding:0;box-sizing:border-box}' +
         'body{font-family:"Figtree",system-ui,sans-serif;background:#FAFAFA;color:#1E1B2E;line-height:1.5;-webkit-font-smoothing:antialiased}' +
         '.wrap{max-width:800px;margin:0 auto;padding:2rem 1.5rem}' +
-        '.header{background:linear-gradient(135deg,#7C5CFC 0%,#6366F1 50%,#4F46E5 100%);color:white;padding:2.5rem 2rem;border-radius:20px;margin-bottom:2rem;position:relative;overflow:hidden}' +
+        '.header{background:linear-gradient(135deg,rgb(100,180,230) 0%,#6366F1 50%,#4F46E5 100%);color:white;padding:2.5rem 2rem;border-radius:20px;margin-bottom:2rem;position:relative;overflow:hidden}' +
         '.header::after{content:"";position:absolute;top:-50%;right:-20%;width:300px;height:300px;background:rgba(255,255,255,0.06);border-radius:50%}' +
         '.header::before{content:"";position:absolute;bottom:-30%;left:-10%;width:200px;height:200px;background:rgba(255,255,255,0.04);border-radius:50%}' +
         '.header h1{font-size:1.6rem;font-weight:900;letter-spacing:-0.03em;position:relative;z-index:1}' +
         '.header .meta{font-size:0.85rem;opacity:0.85;margin-top:0.3rem;position:relative;z-index:1}' +
         '.header .bubble-badge{display:inline-flex;align-items:center;gap:0.3rem;background:rgba(255,255,255,0.18);padding:0.3rem 0.7rem;border-radius:99px;font-size:0.72rem;font-weight:600;margin-top:0.75rem;position:relative;z-index:1}' +
         '.section{margin-bottom:1.75rem}' +
-        '.section-title{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#7C5CFC;margin-bottom:0.75rem}' +
+        '.section-title{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgb(100,180,230);margin-bottom:0.75rem}' +
         '.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem}' +
         '.card{background:white;border-radius:16px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.04)}' +
-        '.highlight-card{background:linear-gradient(135deg,rgba(124,92,252,0.06),rgba(99,102,241,0.04));border:1px solid rgba(124,92,252,0.12)}' +
+        '.highlight-card{background:linear-gradient(135deg,rgba(100,180,230,0.06),rgba(99,102,241,0.04));border:1px solid rgba(100,180,230,0.12)}' +
         'table{width:100%;border-collapse:collapse}' +
         'th{text-align:left;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#8C8A97;padding:0.5rem 0.6rem;border-bottom:2px solid #ECEAF5}' +
         '.connector-card{display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;border-bottom:1px solid #F4F3F9}' +
-        '.connector-rank{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;flex-shrink:0}' +
+        '.connector-rank{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,rgb(100,180,230),#6366F1);color:white;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;flex-shrink:0}' +
         '.tag{display:inline-block;background:#F4F3F9;color:#1E1B2E;padding:0.2rem 0.55rem;border-radius:99px;font-size:0.72rem;font-weight:500;margin:0.15rem}' +
         '.footer{text-align:center;padding:2rem 0 1rem;font-size:0.72rem;color:#8C8A97;border-top:1px solid #ECEAF5;margin-top:2rem}' +
-        '.footer a{color:#7C5CFC;text-decoration:none;font-weight:600}' +
+        '.footer a{color:rgb(100,180,230);text-decoration:none;font-weight:600}' +
         '@media print{body{background:white}.wrap{padding:1rem}.header{break-inside:avoid}.section{break-inside:avoid}.no-print{display:none!important}}' +
         '@media(max-width:600px){.stat-grid{grid-template-columns:1fr 1fr}.wrap{padding:1rem}}' +
       '</style></head><body><div class="wrap">' +
@@ -1936,7 +1936,7 @@ async function generateEventReport(bubbleId) {
       '<div class="section">' +
         '<div class="section-title">' + t('rep_overview') + '</div>' +
         '<div class="stat-grid">' +
-          statBox(t('rep_attendees'), totalMembers, totalCheckedIn > 0 ? totalCheckedIn + ' checked in' : null, '#7C5CFC') +
+          statBox(t('rep_attendees'), totalMembers, totalCheckedIn > 0 ? totalCheckedIn + ' checked in' : null, 'rgb(100,180,230)') +
           statBox('Connections', connectionCount, connectionRate + t('rep_made_min1'), '#1A9E8E') +
           statBox(t('rep_profileviews'), viewCount, '', '#E879A8') +
           statBox(t('rep_messages'), totalMessages, '', '#2ECFCF') +
@@ -1948,7 +1948,7 @@ async function generateEventReport(bubbleId) {
       // Connection rate highlight
       '<div class="section">' +
         '<div class="card highlight-card" style="text-align:center;padding:1.5rem">' +
-          '<div style="font-size:2.5rem;font-weight:900;color:#7C5CFC">' + connectionRate + '%</div>' +
+          '<div style="font-size:2.5rem;font-weight:900;color:rgb(100,180,230)">' + connectionRate + '%</div>' +
           '<div style="font-size:0.9rem;font-weight:600;margin-top:0.2rem">Connection rate</div>' +
           '<div style="font-size:0.78rem;color:#8C8A97;margin-top:0.2rem">' + t('rep_made_conn', { x: usersWithConnections, y: totalMembers }) + '</div>' +
         '</div>' +
@@ -2003,14 +2003,14 @@ async function generateEventReport(bubbleId) {
       '<div class="footer">' +
         '<div>' + t('rep_generated') + ' ' + new Date().toLocaleDateString(_locale(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + '</div>' +
         '<div style="margin-top:0.3rem">Powered by <a href="https://bubbleme.dk" target="_blank">Bubble</a> — ' + t('rep_tagline') + '</div>' +
-        '<button class="no-print" onclick="window.print()" style="margin-top:1rem;padding:0.6rem 1.5rem;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;border:none;border-radius:10px;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Print / Gem som PDF</button>' +
+        '<button class="no-print" onclick="window.print()" style="margin-top:1rem;padding:0.6rem 1.5rem;background:linear-gradient(135deg,rgb(100,180,230),#6366F1);color:white;border:none;border-radius:10px;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Print / Gem som PDF</button>' +
       '</div>' +
 
       '</div></body></html>';
 
     // ── 7. Show in-app report tray ──
     var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(30,27,46,0.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:0;transition:opacity 0.3s';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(30,27,46,0.3);-webkit-opacity:0;transition:opacity 0.3s';
     overlay.onclick = function() { closeReportTray(); };
 
     var tray = document.createElement('div');
@@ -2046,12 +2046,12 @@ async function generateEventReport(bubbleId) {
         '<div style="font-size:0.68rem;font-weight:600;color:var(--text-secondary);margin-top:0.1rem">' + label + '</div></div>';
     }
 
-    trayHtml += miniStat(t('rep_attendees'), totalMembers, '#7C5CFC');
+    trayHtml += miniStat(t('rep_attendees'), totalMembers, 'rgb(100,180,230)');
     trayHtml += miniStat('Check-ins', totalCheckedIn, '#2ECFCF');
     trayHtml += miniStat('Connections', connectionCount, '#1A9E8E');
     trayHtml += miniStat(t('rep_messages'), totalMessages, '#E879A8');
     if (avgStay > 0) trayHtml += miniStat(t('rep_avgstay'), avgStayLabel, '#F59E0B');
-    trayHtml += miniStat('Connection rate', connectionRate + '%', '#7C5CFC');
+    trayHtml += miniStat('Connection rate', connectionRate + '%', 'rgb(100,180,230)');
     trayHtml += '</div>';
 
     // Top connectors
@@ -2447,7 +2447,7 @@ function confirmRequestJoin(bubbleId) {
   var bName = bcBubbleData?.name || '';
   var tray = document.createElement('div');
   tray.id = 'request-join-tray';
-  tray.style.cssText = 'position:fixed;bottom:0;left:0;right:0;padding:1.2rem 1rem;background:var(--n3-card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:0.5px solid var(--border-1);box-shadow:0 -4px 20px rgba(0,0,0,0.15);z-index:999;text-align:center;color:rgba(255,255,255,0.95)';
+  tray.style.cssText = 'position:fixed;bottom:0;left:0;right:0;padding:1.2rem 1rem;background:var(--n3-card);-webkit-border-top:0.5px solid var(--border-1);box-shadow:0 -4px 20px rgba(0,0,0,0.15);z-index:999;text-align:center;color:rgba(255,255,255,0.95)';
   tray.innerHTML =
     '<div style="font-size:0.9rem;font-weight:700;margin-bottom:0.2rem;color:rgba(255,255,255,0.95)">' + t('bb_request_membership_q') + '</div>' +
     '<div style="font-size:0.75rem;color:rgba(255,255,255,0.55);margin-bottom:0.8rem">' + escHtml(bName) + ' ' + t('bb_is_private_suffix') + '</div>' +
