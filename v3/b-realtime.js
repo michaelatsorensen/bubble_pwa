@@ -696,25 +696,19 @@ function initGlobalRealtime() {
 
 
 var _messagesLoading = false;
-async function loadMessages() {
+var _lmLastLoadedAt = 0; // tidsstempel for seneste faerdige loadMessages (dobbelt-load-guard)
+async function loadMessages(opts) {
   if (_messagesLoading) return;
+  // Undgaa dobbelt-load: hvis listen allerede blev hentet for nylig (fx af
+  // boot-preload) og har indhold, spring en redundant genindlaesning over.
+  // force:true (fx eksplicit refresh) omgaar dette.
+  opts = opts || {};
+  var _now = Date.now();
+  if (!opts.force && _lmLastLoadedAt && (_now - _lmLastLoadedAt) < 2500) {
+    var _existingList = document.getElementById('conversations-list');
+    if (_existingList && _existingList.querySelector('.conv-card')) return;
+  }
   _messagesLoading = true;
-  // TEMP DEBUG v3.89: badge viser kald-tal OG hvor kaldet kom fra (stack).
-  try {
-    window._lmCount = (window._lmCount || 0) + 1;
-    window._lmStacks = window._lmStacks || [];
-    var _st = '';
-    try { _st = new Error().stack.split('\n').slice(2,5).map(function(l){return l.trim().replace(/^at /,'').replace(/ \(.*/,'').replace(/https?:\/\/[^ ]*\//,'');}).join(' < '); } catch(e) {}
-    window._lmStacks.push('#' + window._lmCount + ': ' + _st);
-    var _dbg = document.getElementById('_lm-debug');
-    if (!_dbg) {
-      _dbg = document.createElement('div');
-      _dbg.id = '_lm-debug';
-      _dbg.style.cssText = 'position:fixed;top:calc(env(safe-area-inset-top,0px) + 4px);left:6px;right:6px;z-index:99999;background:rgba(220,20,20,0.95);color:#fff;font-size:9px;font-weight:600;padding:4px 8px;border-radius:8px;pointer-events:none;font-family:monospace;line-height:1.3;white-space:pre-wrap';
-      document.body.appendChild(_dbg);
-    }
-    _dbg.textContent = 'loadMessages x' + window._lmCount + ' @' + (navState.screen||'?').replace('screen-','') + '\n' + window._lmStacks.slice(-3).join('\n');
-  } catch(e) {}
   try {
     var myNav = _navVersion;
     const list = document.getElementById('conversations-list');
@@ -775,6 +769,7 @@ async function loadMessages() {
         '</div>' + (isUnread ? '<div class="conv-unread-dot"></div>' : '') +
         '</div></div>';
     }).join('');
+    _lmLastLoadedAt = Date.now(); // markér succesfuld indlaesning (dobbelt-load-guard)
   } catch(e) { logError("loadMessages", e); showRetryState('conversations-list', 'loadMessages', t('toast_load_failed')); }
   finally { _messagesLoading = false; }
 }
