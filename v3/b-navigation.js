@@ -18,10 +18,13 @@ var _navLock = false;
 var _navStack = []; // History stack for back navigation
 var _navPopLock = false; // Prevents infinite loops with popstate
 var _navScrollMemory = {}; // screenId -> scrollTop (restore position on back-navigation)
+var _navRestoreToken = 0;  // afbryder en igangvaerende restore-retry naar man navigerer vaek
 
 // Gem scroll-position for en skaerms .scroll-area
 function _navSaveScroll(screenId) {
   if (!screenId) return;
+  // Afbryd enhver igangvaerende restore-retry (ellers overskriver zombie-loop den nye scroll)
+  _navRestoreToken++;
   var screen = document.getElementById(screenId);
   if (!screen) return;
   var sa = screen.querySelector('.scroll-area');
@@ -29,7 +32,7 @@ function _navSaveScroll(screenId) {
 }
 // Genskab scroll-position for en skaerms .scroll-area (0 hvis ingen gemt).
 // Modstandsdygtig over for async-indlaest indhold: proever igen indtil
-// indholdet har hoejde nok til at naa den gemte position.
+// indholdet har hoejde nok. Afbrydes hvis man navigerer vaek (via token).
 function _navRestoreScroll(screenId) {
   if (!screenId) return;
   var saved = _navScrollMemory[screenId] || 0;
@@ -38,19 +41,20 @@ function _navRestoreScroll(screenId) {
   if (!screen) return;
   var sa = screen.querySelector('.scroll-area');
   if (!sa) return;
+  var myToken = ++_navRestoreToken; // denne restores egen token
   var attempts = 0;
   function tryRestore() {
+    // Afbrudt? (ny navigation/save/restore startede) -> stop
+    if (myToken !== _navRestoreToken) return;
     attempts++;
-    // Kan indholdet overhovedet naa den gemte position?
     if (sa.scrollHeight - sa.clientHeight >= saved) {
       sa.scrollTop = saved;
       return;
     }
-    // Indhold ikke fuldt indlaest endnu - proev igen (op til ~1.5s)
     if (attempts < 30) {
       requestAnimationFrame(tryRestore);
     } else {
-      sa.scrollTop = saved; // sidste forsoeg (clampes hvis for kort)
+      sa.scrollTop = saved;
     }
   }
   requestAnimationFrame(tryRestore);
