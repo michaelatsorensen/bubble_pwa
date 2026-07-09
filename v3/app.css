@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap');
+/* Figtree font indlaeses nu via <link> i index.html head (hurtigere end @import) */
 /* ═══════════════════════════════════════════════════════════
    BUBBLE — GLASSMORPHISM DESIGN SYSTEM
    ═══════════════════════════════════════════════════════════ */
@@ -421,7 +421,7 @@ body {
 #screens-wrap { flex:1; position:relative; overflow:hidden; min-height:0; }
 .screen { position:absolute; inset:0; display:none; flex-direction:column; z-index:1; overflow:hidden; }
 .screen.active { display:flex; animation:screenFadeIn 0.2s cubic-bezier(0.22, 1, 0.36, 1); }
-@keyframes screenFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+@keyframes screenFadeIn { from { opacity:0; } to { opacity:1; } }
 @media (prefers-reduced-motion: reduce) {
   .screen.active { animation:none; }
   *, *::before, *::after { transition-duration:0.01ms !important; animation-duration:0.01ms !important; }
