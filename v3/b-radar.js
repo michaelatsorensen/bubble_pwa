@@ -297,9 +297,11 @@ async function openRadarPerson(userId) {
           '<div style="display:flex;flex-wrap:wrap;gap:4px">' +
           bubbles.slice(0, 5).map(function(b) {
             var isEvt = b.type === 'event' || b.type === 'live';
-            return '<span style="font-size:0.58rem;padding:2px 8px;border-radius:6px;font-weight:600;background:' + (isEvt ? 'rgba(46,207,207,0.15);color:#34D399;border:0.5px solid rgba(46,207,207,0.25)' : 'rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);border:0.5px solid rgba(255,255,255,0.12)') + '">' + (isEvt ? '\uD83D\uDCC5 ' : '\uD83D\uDD17 ') + escHtml(b.name) + '</span>';
+            // Rene piller (radius99) som prototypen - ingen generiske emojis.
+            // Event vs almindelig boble skelnes via FARVE: event=teal, almindelig=isbla.
+            return '<span style="font-size:10.5px;font-weight:700;border-radius:99px;padding:4px 11px;background:' + (isEvt ? 'rgba(46,207,207,0.14);color:#5EEAD4;border:0.5px solid rgba(46,207,207,0.28)' : 'rgba(100,180,230,0.14);color:#CFE6F7;border:0.5px solid rgba(100,180,230,0.28)') + '">' + escHtml(b.name) + '</span>';
           }).join('') +
-          (bubbles.length > 5 ? '<span style="font-size:0.55rem;color:rgba(255,255,255,0.45)">+' + (bubbles.length - 5) + ' mere</span>' : '') +
+          (bubbles.length > 5 ? '<span style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.45);padding:4px 6px">+' + (bubbles.length - 5) + '</span>' : '') +
           '</div>';
         sharedEl.style.display = 'block';
       }
