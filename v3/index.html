@@ -13,39 +13,39 @@
 <meta name="theme-color" content="#0E141C">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=30017">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=30017">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=30017">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=30017">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=30017">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=30017">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=30017">
+<link rel="manifest" href="manifest.json?v=30018">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=30018">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=30018">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=30018">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=30018">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=30018">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=30018">
 
-<link rel="stylesheet" href="app.css?v=30017">
+<link rel="stylesheet" href="app.css?v=30018">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous" defer></script>
-<script src="bubble-icons.js?v=30017" defer></script>
-<script src="tag-data.js?v=30017" defer></script>
-<script src="b-i18n.js?v=30017" defer></script>
-<script src="b-config.js?v=30017" defer></script>
-<script src="b-utils.js?v=30017" defer></script>
-<script src="b-guides.js?v=30017" defer></script>
-<script src="b-terms.js?v=30017" defer></script>
-<script src="b-auth.js?v=30017" defer></script>
-<script src="b-home.js?v=30017" defer></script>
-<script src="b-bubbles.js?v=30017" defer></script>
-<script src="b-profile.js?v=30017" defer></script>
-<script src="b-radar.js?v=30017" defer></script>
-<script src="b-messages.js?v=30017" defer></script>
-<script src="b-realtime.js?v=30017" defer></script>
-<script src="b-onboarding.js?v=30017" defer></script>
-<script src="b-chat.js?v=30017" defer></script>
-<script src="b-notifications.js?v=30017" defer></script>
-<script src="b-live.js?v=30017" defer></script>
-<script src="b-admin.js?v=30017" defer></script>
-<script src="b-navigation.js?v=30017" defer></script>
-<script src="b-boot.js?v=30017" defer></script>
+<script src="bubble-icons.js?v=30018" defer></script>
+<script src="tag-data.js?v=30018" defer></script>
+<script src="b-i18n.js?v=30018" defer></script>
+<script src="b-config.js?v=30018" defer></script>
+<script src="b-utils.js?v=30018" defer></script>
+<script src="b-guides.js?v=30018" defer></script>
+<script src="b-terms.js?v=30018" defer></script>
+<script src="b-auth.js?v=30018" defer></script>
+<script src="b-home.js?v=30018" defer></script>
+<script src="b-bubbles.js?v=30018" defer></script>
+<script src="b-profile.js?v=30018" defer></script>
+<script src="b-radar.js?v=30018" defer></script>
+<script src="b-messages.js?v=30018" defer></script>
+<script src="b-realtime.js?v=30018" defer></script>
+<script src="b-onboarding.js?v=30018" defer></script>
+<script src="b-chat.js?v=30018" defer></script>
+<script src="b-notifications.js?v=30018" defer></script>
+<script src="b-live.js?v=30018" defer></script>
+<script src="b-admin.js?v=30018" defer></script>
+<script src="b-navigation.js?v=30018" defer></script>
+<script src="b-boot.js?v=30018" defer></script>
   
 
 
@@ -578,17 +578,17 @@
       <div style="display:flex;align-items:center;gap:5px"><img src="bubble-logo-topbar-v2.png" alt="bubble" onclick="goTo('screen-home')" style="cursor:pointer;height:20px;width:auto"><span style="font-size:7px;font-weight:700;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.08);padding:2px 5px;border-radius:4px;letter-spacing:0.5px">NEXT</span></div>
       <div class="u-subtitle" id="home-greeting-name"></div>
     </div>
-    <button onclick="openConnectScanner()" class="topbar-action-btn" title="Scan QR" class="u-icon-btn">
+    <button onclick="openConnectScanner()" class="u-icon-btn" title="Scan QR" >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"><path d="M2 7V2h5M17 2h5v5M22 17v5h-5M7 22H2v-5"/><line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2 2"/></svg>
     </button>
-    <button onclick="openMyQR()" class="topbar-action-btn" title="Min QR-kode" class="u-icon-btn">
+    <button onclick="openMyQR()" class="u-icon-btn" title="Min QR-kode" >
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3.5" height="3.5"/><path d="M20 14h-2.5v3M14 20h3v-3M20 20h-3"/></svg>
     </button>
     <button id="topbar-notif-btn" onclick="openNotifTray()" class="topbar-action-btn" title="Notifikationer" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.1);border:0.5px solid rgba(255,255,255,0.12);box-shadow:none;display:flex;align-items:center;justify-content:center;position:relative">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"><path d="M15 17h5l-1.4-1.4A6 6 0 0019 11V8a7 7 0 00-14 0v3a6 6 0 00.4 4.6L4 17h5m6 0a3 3 0 01-6 0m6 0H9"/></svg>
       <div id="topbar-notif-badge" style="display:none;position:absolute;top:0;right:0;width:8px;height:8px;border-radius:50%;background:#E879A8;box-shadow:0 0 6px rgba(232,121,168,0.5)"></div>
     </button>
-    <button onclick="showGuide('home')" class="topbar-action-btn topbar-guide-btn" title="Sådan virker Home" data-t-title="guide_home_title" class="u-icon-btn-isbla">
+    <button onclick="showGuide('home')" class="u-icon-btn-isbla" title="Sådan virker Home" data-t-title="guide_home_title" >
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(207,230,247,0.95)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.3a2.8 2.8 0 015.4 1c0 1.9-2.8 2.5-2.8 4"/><line x1="12" y1="17.2" x2="12" y2="17.3"/></svg>
     </button>
     <div class="home-avatar" id="home-avatar" onclick="goTo('screen-profile')" style="width:32px;height:32px;font-size:10px;border-radius:50%;background:linear-gradient(135deg,#1A9E8E,#10B981);border:1.5px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-weight:800;color:white">?</div>
@@ -672,7 +672,7 @@
         </div>
         <!-- Expandable filter chips (hidden by default) -->
         <div id="home-filter-chips" style="display:flex;gap:0.3rem;padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:0;opacity:0;transition:max-height 0.35s cubic-bezier(0.34,1.56,0.64,1),opacity 0.25s,padding 0.3s;padding-top:0;padding-bottom:0">
-          <button class="radar-filter-chip" onclick="filterRadarHome('live')" data-filter="live" id="radar-live-chip" class="u-hidden">🟢 Live <span id="radar-live-count" style="opacity:0.6"></span></button>
+          <button class="radar-filter-chip u-hidden" onclick="filterRadarHome('live')" data-filter="live" id="radar-live-chip">🟢 Live <span id="radar-live-count" style="opacity:0.6"></span></button>
           <button class="radar-filter-chip active" onclick="filterRadarHome('all')" data-filter="all"><span data-t="home_all">Alle</span> <span id="radar-count-home" style="opacity:0.6"></span></button>
           <button class="radar-filter-chip" onclick="filterRadarHome('interest')" data-filter="interest" data-t="ps_shared_interests">Fælles interesser</button>
           <button class="radar-filter-chip" onclick="filterRadarHome('good')" data-filter="good" data-t="ps_good_match">Godt match</button>
@@ -838,10 +838,10 @@
       <div class="topbar-title" data-t="bb_topbar">Bobler</div>
       <div class="u-subtitle" id="bb-topbar-sub">Dine netværk og events</div>
     </div>
-    <button onclick="showGuide('bobler')" class="topbar-action-btn topbar-guide-btn" title="Sådan virker Bobler" data-t-title="guide_bobler_title" class="u-icon-btn-isbla">
+    <button onclick="showGuide('bobler')" class="u-icon-btn-isbla" title="Sådan virker Bobler" data-t-title="guide_bobler_title" >
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(207,230,247,0.95)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.3a2.8 2.8 0 015.4 1c0 1.9-2.8 2.5-2.8 4"/><line x1="12" y1="17.2" x2="12" y2="17.3"/></svg>
     </button>
-    <button onclick="openCreateBubble()" class="topbar-action-btn" title="Opret ny boble" class="u-icon-btn">
+    <button onclick="openCreateBubble()" class="u-icon-btn" title="Opret ny boble" >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </button>
   </div>
@@ -850,8 +850,8 @@
     <button class="bubble-tab" id="bb-tab-explore" onclick="bbSwitchTab('explore')" data-t="bb_discover">Opdag</button>
   </div>
   <div class="bubble-tabs bb-sub-tabs" id="bb-sub-tabs" style="margin:0.3rem 1.1rem 0">
-    <button class="bubble-tab bb-sub-tab active" id="bb-sub-net" onclick="bbSwitchSub('net')" data-t="home_networks" class="u-rel">Netværk<div id="bb-sub-net-dot" style="display:none;position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#E879A8"></div></button>
-    <button class="bubble-tab bb-sub-tab" id="bb-sub-evt" onclick="bbSwitchSub('evt')" data-t="home_events" class="u-rel">Events<div id="bb-sub-evt-dot" style="display:none;position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#E879A8"></div></button>
+    <button class="bubble-tab bb-sub-tab active u-rel" id="bb-sub-net" onclick="bbSwitchSub('net')" data-t="home_networks">Netværk<div id="bb-sub-net-dot" style="display:none;position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#E879A8"></div></button>
+    <button class="bubble-tab bb-sub-tab u-rel" id="bb-sub-evt" onclick="bbSwitchSub('evt')" data-t="home_events">Events<div id="bb-sub-evt-dot" style="display:none;position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#E879A8"></div></button>
   </div>
   <div class="scroll-area" style="padding-top:0.5rem">
     <div id="bb-panel-mine-net">
@@ -935,7 +935,7 @@
       </div>
     </div>
     <!-- Star priority rating (only if saved) -->
-    <div class="pp-card" id="person-star-section" class="u-hidden">
+    <div class="pp-card u-hidden" id="person-star-section">
       <div class="pp-sec-label">Prioritet</div>
       <div class="person-star-rating" id="person-star-rating"></div>
     </div>
@@ -949,7 +949,7 @@
       <div id="person-tags"></div>
     </div>
     <!-- Dynamic keywords (Søger lige nu) — card shown/hidden by JS -->
-    <div class="pp-card" id="person-dynamic-card" class="u-hidden">
+    <div class="pp-card u-hidden" id="person-dynamic-card">
       <div id="person-dynamic-keywords"></div>
     </div>
     <!-- Public bubbles (identity badges) -->
@@ -1027,12 +1027,12 @@
     <button class="bubble-tab active" id="bc-tab-members" onclick="bcSwitchTab('members')" data-t="bc_members">Medlemmer</button>
     <!-- Events tab removed in v8.6.1 — hierarchy shown via accordion in Info tab -->
     <button class="bubble-tab" id="bc-tab-posts" onclick="bcSwitchTab('posts')" data-t="bc_posts">Opslag</button>
-    <button class="bubble-tab" id="bc-tab-chat" onclick="bcSwitchTab('chat')"><span data-t="bc_chat">Chat</span> <span class="bubble-tab-badge" id="bc-unread-badge" class="u-hidden">0</span></button>
+    <button class="bubble-tab" id="bc-tab-chat" onclick="bcSwitchTab('chat')"><span data-t="bc_chat">Chat</span> <span class="bubble-tab-badge u-hidden" id="bc-unread-badge">0</span></button>
     <button class="bubble-tab" id="bc-tab-info" onclick="bcSwitchTab('info')" data-t="bc_info">Info</button>
   </div>
 
   <!-- Action bar: Invitér / Anbefal / QR -->
-  <div class="bc-action-bar" id="bc-action-bar" class="u-hidden"></div>
+  <div class="bc-action-bar u-hidden" id="bc-action-bar"></div>
 
   <!-- MEMBERS TAB (default) -->
   <div id="bc-panel-members" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
@@ -1100,7 +1100,7 @@
     <button class="person-sheet-close" onclick="psClose()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17M7 7l10 10"/></svg></button>
   </div>
   <div class="person-sheet-bio" id="ps-bio"></div>
-  <div class="ps-star-row" id="ps-star-row" class="u-hidden">
+  <div class="ps-star-row u-hidden" id="ps-star-row">
     <span style="font-size:0.72rem;color:rgba(255,255,255,0.55);font-weight:600">Prioritet</span>
     <div class="ps-stars" id="ps-stars"></div>
   </div>
@@ -1143,10 +1143,10 @@
       <div class="topbar-title" data-t="nav_messages">Beskeder</div>
       <div class="u-subtitle" id="msg-topbar-sub">Dine samtaler</div>
     </div>
-    <button onclick="showGuide('dms')" class="topbar-action-btn topbar-guide-btn" title="Sådan virker Beskeder" data-t-title="guide_dms_title" class="u-icon-btn-isbla">
+    <button onclick="showGuide('dms')" class="u-icon-btn-isbla" title="Sådan virker Beskeder" data-t-title="guide_dms_title" >
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(207,230,247,0.95)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.3a2.8 2.8 0 015.4 1c0 1.9-2.8 2.5-2.8 4"/><line x1="12" y1="17.2" x2="12" y2="17.3"/></svg>
     </button>
-    <button id="conv-select-btn" onclick="convToggleSelectMode()" class="topbar-action-btn" title="Vælg samtaler" data-t-title="misc_select" class="u-icon-btn">
+    <button id="conv-select-btn" onclick="convToggleSelectMode()" class="u-icon-btn" title="Vælg samtaler" data-t-title="misc_select" >
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
     </button>
   </div>
@@ -1228,13 +1228,13 @@
       <div class="topbar-title" data-t="pf_my_profile">Min profil</div>
       <div class="u-subtitle" id="prof-topbar-sub"></div>
     </div>
-    <button onclick="openEditProfile()" class="topbar-action-btn" title="Rediger profil" data-t-title="pf_edit_btn" class="u-icon-btn">
+    <button onclick="openEditProfile()" class="u-icon-btn" title="Rediger profil" data-t-title="pf_edit_btn" >
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
     </button>
-    <button onclick="showGuide('profil')" class="topbar-action-btn topbar-guide-btn" title="Sådan virker Profil" data-t-title="guide_profil_title" class="u-icon-btn-isbla">
+    <button onclick="showGuide('profil')" class="u-icon-btn-isbla" title="Sådan virker Profil" data-t-title="guide_profil_title" >
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(207,230,247,0.95)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.3a2.8 2.8 0 015.4 1c0 1.9-2.8 2.5-2.8 4"/><line x1="12" y1="17.2" x2="12" y2="17.3"/></svg>
     </button>
-    <button onclick="openSettingsModal()" class="topbar-action-btn" title="Indstillinger" data-t-title="pf_settings" class="u-icon-btn">
+    <button onclick="openSettingsModal()" class="u-icon-btn" title="Indstillinger" data-t-title="pf_settings" >
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     </button>
   </div>
@@ -1460,26 +1460,26 @@
       <div class="input-label">Link (valgfrit)</div>
       <input class="input" id="eb-external-url" maxlength="500" placeholder="f.eks. https://tilmelding.dk/event" type="url" inputmode="url">
     </div>
-    <div class="input-group" id="eb-checkin-mode-group" class="u-hidden">
+    <div class="input-group u-hidden" id="eb-checkin-mode-group">
       <div class="input-label" data-t="cb_checkin_mode">Check-in metode</div>
       <select class="input" id="eb-checkin-mode">
         <option value="self">Selvbetjening (deltagere checker sig selv ind)</option>
         <option value="scan">Reverse QR (arrangør scanner deltagere)</option>
       </select>
     </div>
-    <div class="input-group" id="eb-event-date-group" class="u-hidden">
+    <div class="input-group u-hidden" id="eb-event-date-group">
       <div class="input-label" data-t="cb_date">Dato</div>
-      <div class="u-flex"><input class="input" type="date" id="eb-event-date" class="u-flex1-min"></div>
+      <div class="u-flex"><input class="input u-flex1-min" type="date" id="eb-event-date"></div>
     </div>
     <div class="input-group u-hidden" id="eb-event-time-row">
       <div class="input-label" data-t="cb_time_start">Starttidspunkt</div>
-      <div class="u-flex"><input class="input" type="time" id="eb-event-time" class="u-flex1-min"></div>
+      <div class="u-flex"><input class="input u-flex1-min" type="time" id="eb-event-time"></div>
     </div>
     <div class="input-group u-hidden" id="eb-event-time-end-group">
       <div class="input-label" data-t="cb_time_end">Sluttidspunkt</div>
-      <div class="u-flex"><input class="input" type="time" id="eb-event-time-end" class="u-flex1-min"></div>
+      <div class="u-flex"><input class="input u-flex1-min" type="time" id="eb-event-time-end"></div>
     </div>
-    <div class="input-group" id="eb-agenda-group" class="u-hidden">
+    <div class="input-group u-hidden" id="eb-agenda-group">
       <div class="input-label" data-t="cb_agenda">Program / Agenda</div>
       <textarea class="input" id="eb-agenda" maxlength="2000" rows="4" data-t-placeholder="cb_agenda_ph" placeholder="f.eks. 09:00 Velkomst&#10;09:30 Workshop&#10;12:00 Frokost" style="white-space:pre-wrap"></textarea>
     </div>
@@ -1570,16 +1570,16 @@
         <div style="padding:0.3rem 1rem 1rem;border-top:0.5px solid rgba(255,255,255,0.08)">
           <div class="input-group" id="cb-event-date-group" style="margin-top:0.8rem">
             <div class="input-label" data-t="cb_date">Dato</div>
-            <div class="u-flex"><input class="input" type="date" id="cb-event-date" class="u-flex1-min"></div>
+            <div class="u-flex"><input class="input u-flex1-min" type="date" id="cb-event-date"></div>
           </div>
           <div style="display:flex;gap:0.6rem">
-            <div class="input-group" id="cb-event-time-row" class="u-flex1">
+            <div class="input-group u-flex1" id="cb-event-time-row">
               <div class="input-label" data-t="cb_time_start">Starttidspunkt</div>
-              <div class="u-flex"><input class="input" type="time" id="cb-event-time" class="u-flex1-min"></div>
+              <div class="u-flex"><input class="input u-flex1-min" type="time" id="cb-event-time"></div>
             </div>
-            <div class="input-group" id="cb-event-time-end-group" class="u-flex1">
+            <div class="input-group u-flex1" id="cb-event-time-end-group">
               <div class="input-label" data-t="cb_time_end">Sluttidspunkt</div>
-              <div class="u-flex"><input class="input" type="time" id="cb-event-time-end" class="u-flex1-min"></div>
+              <div class="u-flex"><input class="input u-flex1-min" type="time" id="cb-event-time-end"></div>
             </div>
           </div>
           <div class="input-group" id="cb-checkin-mode-group" style="margin-bottom:0.2rem">
@@ -1594,7 +1594,7 @@
         </div>
       </div>
     </div>
-    <div class="input-group" id="cb-agenda-group" class="u-hidden">
+    <div class="input-group u-hidden" id="cb-agenda-group">
       <div class="input-label" data-t="cb_agenda">Program / Agenda</div>
       <textarea class="input" id="cb-agenda" maxlength="2000" rows="4" data-t-placeholder="cb_agenda_ph" placeholder="f.eks. 09:00 Velkomst&#10;09:30 Workshop&#10;12:00 Frokost" style="white-space:pre-wrap"></textarea>
     </div>
@@ -1905,7 +1905,7 @@
       <div class="live-scan-found-name" id="live-scan-found-name"></div>
       <div class="live-scan-found-meta" id="live-scan-found-meta"></div>
       <div style="display:flex;gap:0.4rem;margin-top:0.5rem">
-        <button class="live-bubble-btn primary" id="live-scan-confirm-btn" onclick="liveScanConfirmJoin()" class="u-flex1">Check ind her</button>
+        <button class="live-bubble-btn primary u-flex1" id="live-scan-confirm-btn" onclick="liveScanConfirmJoin()">Check ind her</button>
         <button class="live-bubble-btn ghost" onclick="liveScanReset()" style="flex:0 0 auto" data-t="misc_cancel">Annuller</button>
       </div>
     </div>
