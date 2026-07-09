@@ -263,37 +263,20 @@ function homeSetMode(mode) {
 }
 
 function updateFilterChipStyle() {
-  var chips = document.getElementById('home-filter-chips');
-  if (!chips) return;
   var isLive = appMode.is('live') && appMode.live;
-  var firstChip = chips.querySelector('[data-filter="all"]');
-  if (firstChip) {
-    var countSpan = firstChip.querySelector('#radar-count-home') || firstChip.querySelector('span');
-    if (isLive) {
-      firstChip.childNodes[0].textContent = t('home_all_attendees') + ' ';
-      if (countSpan) countSpan.textContent = '· ' + (appMode.live.memberCount || 0);
-    } else {
-      firstChip.childNodes[0].textContent = t('home_all') + ' ';
-    }
+  // Vis live-raekken i taleboblen kun naar man er i et live-event
+  var liveRow = document.getElementById('home-filter-row-live');
+  if (liveRow) liveRow.style.display = isLive ? 'flex' : 'none';
+  // Opdater per-filter taellere i taleboblen
+  var allProfiles = (typeof proxAllProfiles !== 'undefined' && proxAllProfiles) ? proxAllProfiles : [];
+  var setCount = function(id, n) { var el = document.getElementById(id); if (el) el.textContent = n > 0 ? String(n) : ''; };
+  if (allProfiles.length) {
+    // Taerskler matcher _getFilteredProfiles: interest>=20, good>=40, strong>=60
+    setCount('fcount-all', allProfiles.length);
+    setCount('fcount-interest', allProfiles.filter(function(p){ return (p.matchScore||0) >= 20; }).length);
+    setCount('fcount-good', allProfiles.filter(function(p){ return (p.matchScore||0) >= 40; }).length);
+    setCount('fcount-strong', allProfiles.filter(function(p){ return (p.matchScore||0) >= 60; }).length);
   }
-  chips.querySelectorAll('.radar-filter-chip').forEach(function(c) {
-    c.style.background = '';
-    c.style.borderColor = '';
-    c.style.color = '';
-  });
-  chips.querySelectorAll('.radar-filter-chip.active').forEach(function(c) {
-    // NEXT design v6: ice-blue beach glass for CTA (normal), teal for live.
-    // Lilac gradient (rgb(100,180,230)) is DEPRECATED per DESIGN-GUIDE — never use.
-    if (isLive) {
-      c.style.background = 'linear-gradient(135deg,#1A9E8E,#17877A)';
-      c.style.color = 'rgba(255,255,255,0.95)';
-      c.style.borderColor = 'transparent';
-    } else {
-      c.style.background = 'rgba(100,180,230,0.18)';
-      c.style.color = 'rgb(46,110,160)';
-      c.style.borderColor = 'rgba(100,180,230,0.25)';
-    }
-  });
 }
 
 // ── Event-aware dartboard: load only event members ──
@@ -2362,12 +2345,18 @@ function _getFilteredProfiles() {
 // ── Filter chip handler ──
 function filterRadarHome(filter) {
   _homeRadarFilter = filter;
-  document.querySelectorAll('.radar-filter-chip').forEach(function(c) {
-    c.classList.toggle('active', c.dataset.filter === filter);
+  // Marker aktiv raekke i taleboble-popover
+  document.querySelectorAll('.home-filter-row').forEach(function(r) {
+    r.classList.toggle('active', r.dataset.filter === filter);
   });
+  // Opdater filter-knappens label til valgt filter
+  var labelMap = { all: t('home_all'), interest: t('ps_shared_interests'), good: t('ps_good_match'), strong: t('ps_strong_match'), live: 'Live nu' };
+  var lbl = document.getElementById('home-filter-btn-label');
+  if (lbl) lbl.textContent = labelMap[filter] || t('home_all');
   _homeMagnetNext = true; // dette er et filterskift -> brug magnet-bevaegelse
   renderHomeDartboard();
   updateFilterChipStyle();
+  closeRadarFilters(); // luk taleboblen efter valg
 }
 
 // ── Toggle expandable filter chips (NEXT design: filters hidden behind + button) ──
@@ -2376,22 +2365,15 @@ function filterRadarHome(filter) {
 var _radarFiltersExpanded = false;
 function toggleRadarFilters() {
   _radarFiltersExpanded = !_radarFiltersExpanded;
-  var chips = document.getElementById('home-filter-chips');
-  var plusBtn = document.getElementById('home-filter-plus');
-  if (!chips) return;
-  if (_radarFiltersExpanded) {
-    chips.style.maxHeight = '60px';
-    chips.style.opacity = '1';
-    chips.style.paddingTop = '6px';
-    chips.style.paddingBottom = '6px';
-    if (plusBtn) plusBtn.style.transform = 'rotate(45deg)'; // + visually becomes ×
-  } else {
-    chips.style.maxHeight = '0';
-    chips.style.opacity = '0';
-    chips.style.paddingTop = '0';
-    chips.style.paddingBottom = '0';
-    if (plusBtn) plusBtn.style.transform = 'rotate(0deg)';
-  }
+  var pop = document.getElementById('home-filter-popover-wrap');
+  if (!pop) return;
+  pop.style.display = _radarFiltersExpanded ? 'block' : 'none';
+}
+
+function closeRadarFilters() {
+  _radarFiltersExpanded = false;
+  var pop = document.getElementById('home-filter-popover-wrap');
+  if (pop) pop.style.display = 'none';
 }
 
 // ── Tap dartboard background → open tray ──
