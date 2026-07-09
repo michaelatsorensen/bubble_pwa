@@ -372,12 +372,12 @@ function _bcShowSkeleton() {
   var skel = document.createElement('div');
   skel.id = 'bc-skeleton';
   skel.style.cssText = 'flex:1;display:flex;flex-direction:column;overflow:hidden;padding:0';
-  // Fake tab bar
+  // Fake tab bar (matcher pille-tabs: lyst glas, 99px radius)
   skel.innerHTML =
-    '<div style="display:flex;margin:0.4rem 1.1rem 0;background:rgba(20,22,28,0.92);border-radius:10px;padding:3px;gap:2px;border:0.5px solid var(--p-glass-border)">' +
-      '<div class="skel" style="flex:1;height:28px;border-radius:8px"></div>' +
-      '<div class="skel" style="flex:1;height:28px;border-radius:8px"></div>' +
-      '<div class="skel" style="flex:1;height:28px;border-radius:8px"></div>' +
+    '<div style="display:flex;margin:0.4rem 1.1rem 0;background:rgba(255,255,255,0.055);border-radius:99px;padding:3px;gap:2px;border:0.5px solid rgba(255,255,255,0.12)">' +
+      '<div class="skel" style="flex:1;height:30px;border-radius:99px"></div>' +
+      '<div class="skel" style="flex:1;height:30px;border-radius:99px"></div>' +
+      '<div class="skel" style="flex:1;height:30px;border-radius:99px"></div>' +
     '</div>' +
     // Fake action bar
     '<div style="display:flex;gap:0.4rem;padding:0.5rem 1.1rem">' +
@@ -448,11 +448,12 @@ async function openBubbleChat(bubbleId, fromScreen) {
     _bcBackFn();
   };
 
-  // Reset ALL visible state BEFORE showing screen — prevents previous bubble flashing
-  document.getElementById('bc-name').textContent = '';
-  document.getElementById('bc-members-count').textContent = '';
+  // Reset ALL visible state BEFORE showing screen — prevents previous bubble flashing.
+  // Vis skeleton-shimmer i topbar (navn/ikon) i stedet for tomt — foeles ikke tomt under load.
+  document.getElementById('bc-name').innerHTML = '<span class="skel" style="display:inline-block;width:140px;height:15px;border-radius:6px;vertical-align:middle"></span>';
+  document.getElementById('bc-members-count').innerHTML = '<span class="skel" style="display:inline-block;width:80px;height:11px;border-radius:5px;vertical-align:middle;margin-top:3px"></span>';
   var iconEl = document.getElementById('bc-topbar-icon');
-  if (iconEl) iconEl.innerHTML = '';
+  if (iconEl) iconEl.innerHTML = '<span class="skel" style="display:block;width:100%;height:100%;border-radius:inherit"></span>';
   var actionBtns = document.getElementById('bc-action-btns');
   if (actionBtns) { actionBtns.innerHTML = ''; actionBtns.style.display = 'none'; }
   // Clear old content from ALL panels (sub-loaders will repopulate)

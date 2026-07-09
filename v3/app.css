@@ -2757,9 +2757,14 @@ input[type="range"] {
 
 /* Dark skeleton variants for dark contexts only */
 #notif-tray-list .skel,
-#home-tray-list .skel { background:linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; }
+#home-tray-list .skel,
+#bc-skeleton .skel,
+#bc-topbar-icon .skel,
+#bc-name .skel,
+#bc-members-count .skel { background:linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; }
 #notif-tray-list .skel-card,
-#home-tray-list .skel-card { background:rgba(255,255,255,0.04); border:0.5px solid rgba(255,255,255,0.06); }
+#home-tray-list .skel-card,
+#bc-skeleton .skel-card { background:rgba(255,255,255,0.04); border:0.5px solid rgba(255,255,255,0.06); }
 /* Full-profile sheet: dark skeleton variant (v9.38) */
 .pp-sheet .skel { background:linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.05) 75%); background-size:200% 100%; }
 
