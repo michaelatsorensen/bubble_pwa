@@ -703,7 +703,10 @@ async function loadMessages() {
     var myNav = _navVersion;
     const list = document.getElementById('conversations-list');
     if (!list) { _messagesLoading = false; return; }
-    list.innerHTML = skelCards(5);
+    // Vis kun skeleton ved foerste load (tom liste). Ved genindlaesning
+    // (fx realtime-opdatering eller tilbage-navigation) beholdes eksisterende
+    // indhold indtil nyt er klar - undgaar dobbelt-load-flash.
+    if (!list.querySelector('.conv-card')) { list.innerHTML = skelCards(5); }
 
     const { data: convs } = await sb.from('messages')
       .select('*')
