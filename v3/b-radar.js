@@ -266,16 +266,17 @@ async function openRadarPerson(userId) {
       var maxTags = 12;
       var visibleTags = sortedTags.slice(0, maxTags);
       var hiddenCount = sortedTags.length - maxTags;
-      var tagLabel = overlap.length > 0 ? 'Interesser \u00B7 ' + overlap.length + ' f\u00e6lles' : 'Interesser';
-      tagsEl.innerHTML = '<div style="font-size:0.6rem;font-weight:600;color:rgba(255,255,255,0.55);margin-bottom:3px">' + tagLabel + '</div>' +
-        '<div style="display:flex;flex-wrap:wrap;gap:4px">' +
+      // Prototype: uppercase label "I HAR TILFAELLES" + piller (radius99), delte isbla, resten glas
+      var tagLabel = t('rp_in_common') + (overlap.length > 0 ? ' \u00B7 ' + overlap.length : '');
+      tagsEl.innerHTML = '<div style="font-size:9.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:7px">' + escHtml(tagLabel) + '</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
         visibleTags.map(function(k) {
           var isShared = myKw.indexOf(k.toLowerCase()) >= 0;
           return isShared
-            ? '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.18);color:#34D399;font-weight:600">\u2713 ' + escHtml(k) + '</span>'
-            : '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(255,255,255,0.075);color:rgba(255,255,255,0.7)">' + escHtml(k) + '</span>';
+            ? '<span style="font-size:10.5px;font-weight:700;color:#CFE6F7;background:rgba(100,180,230,0.14);border:0.5px solid rgba(100,180,230,0.28);border-radius:99px;padding:4px 11px">' + escHtml(k) + '</span>'
+            : '<span style="font-size:10.5px;font-weight:700;color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.14);border-radius:99px;padding:4px 11px">' + escHtml(k) + '</span>';
         }).join('') +
-        (hiddenCount > 0 ? '<span style="font-size:0.55rem;padding:2px 7px;color:rgba(255,255,255,0.45)">+' + hiddenCount + ' mere</span>' : '') +
+        (hiddenCount > 0 ? '<span style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.45);padding:4px 6px">+' + hiddenCount + '</span>' : '') +
         '</div>';
       tagsEl.style.display = 'block';
     } else {
@@ -292,7 +293,7 @@ async function openRadarPerson(userId) {
       // chain that popped in as a separate chunk after everything else)
       var bubbles = _rpShared;
       if (bubbles.length > 0) {
-        sharedEl.innerHTML = '<div style="font-size:0.6rem;font-weight:600;color:rgba(255,255,255,0.55);margin-bottom:3px">' + t('ps_public_bubbles') + ' \u00B7 ' + bubbles.length + '</div>' +
+        sharedEl.innerHTML = '<div style="font-size:9.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:7px">' + t('ps_public_bubbles') + ' \u00B7 ' + bubbles.length + '</div>' +
           '<div style="display:flex;flex-wrap:wrap;gap:4px">' +
           bubbles.slice(0, 5).map(function(b) {
             var isEvt = b.type === 'event' || b.type === 'live';

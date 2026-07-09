@@ -21,7 +21,7 @@ const ICONS = {
   cpu: `<svg ${_s}><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9.5 2.5v4M14.5 2.5v4M9.5 17.5v4M14.5 17.5v4M2.5 9.5h4M2.5 14.5h4M17.5 9.5h4M17.5 14.5h4"/></svg>`,
   building: `<svg ${_s}><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/><path d="M10 21v-3h4v3"/></svg>`,
   coffee: `<svg ${_s}><path d="M17 8h1.5a2.5 2.5 0 010 5H17"/><path d="M5 8h12v8a4 4 0 01-4 4H9a4 4 0 01-4-4V8z"/><path d="M8 2v3M11 2v3M14 2v3"/></svg>`,
-  bookmark: `<svg ${_s}><path d="M6 4a1.5 1.5 0 011.5-1.5h9A1.5 1.5 0 0118 4v17l-6-3.5L6 21V4z"/></svg>`,
+  bookmark: `<svg ${_s}><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>`,
   bookmarkFill: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4a1.5 1.5 0 011.5-1.5h9A1.5 1.5 0 0118 4v17l-6-3.5L6 21V4z"/></svg>`,
   edit: `<svg ${_s}><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg>`,
   clip: `<svg ${_s}><path d="M21.4 11.1l-9.2 9.2a5.5 5.5 0 01-7.8-7.8l9.2-9.2a3.7 3.7 0 015.2 5.2l-9.2 9.2a1.8 1.8 0 01-2.6-2.6l8.5-8.4"/></svg>`,
