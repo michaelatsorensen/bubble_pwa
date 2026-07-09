@@ -1748,11 +1748,11 @@ async function bcLoadMembers() {
       // Relevance signals — dark-context colors (matchBadgeHtml is light-mode, invisible here)
       var _isSelf = m.user_id === currentUser.id;
       var _sharedChips = (m._shared && m._shared.length)
-        ? '<div style="display:flex;gap:0.2rem;margin-top:0.2rem;flex-wrap:wrap">' + m._shared.map(function(tg) { return '<span style="font-size:0.55rem;padding:0.1rem 0.4rem;background:rgba(100,180,230,0.16);color:#B9A6FF;border-radius:99px">' + escHtml(tg) + '</span>'; }).join('') + '</div>'
+        ? '<div style="display:flex;gap:0.2rem;margin-top:0.2rem;flex-wrap:wrap">' + m._shared.map(function(tg) { return '<span style="font-size:0.55rem;padding:0.1rem 0.4rem;background:rgba(100,180,230,0.16);color:#CFE6F7;border-radius:99px">' + escHtml(tg) + '</span>'; }).join('') + '</div>'
         : '';
       var _matchBadge = '';
       if (!isOwnerRow && !_isSelf && (m._score || 0) >= 40) {
-        var _mCol = (m._score >= 60) ? '#34D399' : '#B9A6FF';
+        var _mCol = (m._score >= 60) ? '#34D399' : '#7DBEE8';
         var _mBg = (m._score >= 60) ? 'rgba(26,158,142,0.18)' : 'rgba(251,191,36,0.2)';
         _matchBadge = '<span style="font-size:0.58rem;font-weight:700;color:' + _mCol + ';background:' + _mBg + ';padding:0.18rem 0.5rem;border-radius:99px;white-space:nowrap">' + matchLabel(m._score).text + '</span>';
       }
