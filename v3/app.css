@@ -409,9 +409,9 @@ body {
 /* ── ANIMATED BG ── */
 .bg-canvas { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; transform:translateZ(0); will-change:transform; isolation:isolate; contain:layout paint size; }
 .orb { position:absolute; border-radius:50%; transform:translateZ(0); backface-visibility:hidden; will-change:transform; }
-.orb.o1 { width:260px;height:260px; top:9%;left:-70px; background:radial-gradient(circle at 35% 30%, rgba(150,205,250,0.22), rgba(70,120,180,0.08) 60%, transparent 75%); filter:blur(8px); }
-.orb.o2 { width:300px;height:300px; top:52%;right:-90px; background:radial-gradient(circle at 40% 35%, rgba(100,150,210,0.16), rgba(60,100,160,0.06) 60%, transparent 75%); filter:blur(10px); }
-.orb.o3 { width:220px;height:220px; bottom:6%;left:20%; background:radial-gradient(circle at 45% 40%, rgba(90,200,175,0.10), transparent 70%); filter:blur(14px); }
+.orb.o1 { width:260px;height:260px; top:76px;left:-70px; background:radial-gradient(circle at 35% 30%, rgba(150,205,250,0.22), rgba(70,120,180,0.08) 60%, transparent 75%); filter:blur(8px); }
+.orb.o2 { width:300px;height:300px; top:445px;right:-90px; background:radial-gradient(circle at 40% 35%, rgba(100,150,210,0.16), rgba(60,100,160,0.06) 60%, transparent 75%); filter:blur(10px); }
+.orb.o3 { width:220px;height:220px; bottom:50px;left:20%; background:radial-gradient(circle at 45% 40%, rgba(90,200,175,0.10), transparent 70%); filter:blur(14px); }
 
 
 
@@ -421,6 +421,10 @@ body {
 #screens-wrap { flex:1; position:relative; overflow:hidden; min-height:0; }
 .screen { position:absolute; inset:0; display:none; flex-direction:column; z-index:1; overflow:hidden; }
 .screen.active { display:flex; animation:screenFadeIn 0.2s cubic-bezier(0.22, 1, 0.36, 1); }
+/* Home har sin egen home-content-wrap opacity-fade. Skaerm-niveau-faden faar
+   Homes backdrop-filter-kort til at fade deres blur ind over orbsene = udvaskning.
+   Derfor: ingen skaerm-fade paa Home (content-wrap fader indholdet i stedet). */
+#screen-home.active { animation:none; }
 @keyframes screenFadeIn { from { opacity:0; } to { opacity:1; } }
 @media (prefers-reduced-motion: reduce) {
   .screen.active { animation:none; }
