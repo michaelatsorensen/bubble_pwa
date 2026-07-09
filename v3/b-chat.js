@@ -214,9 +214,36 @@ function bbRenderTree(nodes, expandedIds, opts) {
   }
 
   var roots = nodes.filter(function(b) { return !b.parent_id || !byId[b.parent_id]; });
-  roots.forEach(function(b, ri) {
-    walk(b.id, 0, [], ri === roots.length - 1);
+  // Del roots i aktive vs afsluttede events (samme moenster som children).
+  // Vigtigt for chat-tree hvor boblens direkte events er roots.
+  // NB: roots er node-objekter, men _isPastEv forventer et id -> brug b.id.
+  var activeRoots = roots.filter(function(b) { return !_isPastEv(b.id); });
+  var pastRoots = roots.filter(function(b) { return _isPastEv(b.id); });
+  var rootHistId = 'hist-__roots__';
+  var rootHistExp = expandedIds.indexOf(rootHistId) >= 0;
+  var hasRootHist = pastRoots.length > 0;
+
+  activeRoots.forEach(function(b, ri) {
+    var isLastRoot = (ri === activeRoots.length - 1) && !hasRootHist;
+    walk(b.id, 0, [], isLastRoot);
   });
+
+  // Historik-accordion for boblens direkte afsluttede events (depth 0)
+  if (hasRootHist) {
+    var rhChev = '<div style="width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:12px;transform:' + (rootHistExp ? 'rotate(90deg)' : 'rotate(0deg)') + ';transition:transform 0.22s ease;line-height:1">\u203A</div>';
+    rows.push('<div style="position:relative;min-width:0">' +
+      '<div onclick="bbTreeToggleFlat(\'' + rootHistId + '\')" style="box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:0.5px dashed rgba(255,255,255,0.13);border-radius:12px;cursor:pointer">' +
+        '<div style="width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);flex-shrink:0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>' +
+        '<div style="flex:1;min-width:0;font-size:11.5px;font-weight:600;color:rgba(255,255,255,0.55)">' + t('misc_past') + ' (' + pastRoots.length + ')</div>' +
+        rhChev +
+      '</div>' +
+    '</div>');
+    if (rootHistExp) {
+      pastRoots.forEach(function(pe, pi) {
+        walk(pe.id, 1, [false], pi === pastRoots.length - 1);
+      });
+    }
+  }
 
   return '<div style="display:grid;grid-auto-rows:min-content;gap:9px;width:100%;max-width:100%;overflow:hidden">' + rows.join('') + '</div>';
 }
@@ -2171,7 +2198,7 @@ async function bcLoadInfo() {
             '<div class="bb-section-header" style="display:flex;align-items:center;justify-content:space-between">' +
             '<span>' + t('bi_network_events') + '</span>' +
             '<span class="bb-section-count">' + childBubbles.length + '</span></div>' +
-            '<div class="bb-tree-trunk" id="bc-info-tree">' + childCards + '</div>' +
+            '<div id="bc-info-tree">' + childCards + '</div>' +
             (canEdit ? '<div style="display:flex;gap:0.4rem;margin-top:0.8rem">' +
               '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" class="bb-cta-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Event</button>' +
               '<button onclick="openCreateSubBubble(\'' + b.id + '\')" class="bb-cta-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6"/><circle cx="16" cy="13.5" r="4.5"/></svg>' + t('bb_create_sub') + '</button></div>' : '') +
