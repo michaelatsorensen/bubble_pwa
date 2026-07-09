@@ -152,7 +152,7 @@ async function openRadarPerson(userId) {
       ['rp-live-badge','rp-bio','rp-tags','rp-overlap','rp-shared-bubbles'].forEach(function(k) { var el = document.getElementById(k); if (el) el.style.display = 'none'; });
       var m = document.getElementById('rp-match'); if (m) { m.textContent = ''; m.style.color = 'transparent'; m.style.background = 'transparent'; }
       var li = document.getElementById('rp-linkedin-btn'); if (li) li.style.display = 'none';
-      var sv = document.getElementById('rp-save-btn'); if (sv) { sv.textContent = t('ps_save'); sv.dataset.saved = '0'; }
+      var sv = document.getElementById('rp-save-btn'); if (sv) { sv.dataset.saved = '0'; sv.style.background = 'rgba(255,255,255,0.08)'; sv.style.borderColor = 'rgba(255,255,255,0.16)'; sv.style.color = 'rgba(255,255,255,0.85)'; var svi = document.getElementById('rp-save-icon'); if (svi) svi.setAttribute('fill', 'none'); }
     };
     _rpReset();
     var _rpSheet = document.getElementById('home-preview');
@@ -292,10 +292,21 @@ async function openRadarPerson(userId) {
     var liBtn = document.getElementById('rp-linkedin-btn');
     if (p.linkedin && !isA) { liBtn.style.display = 'inline-flex'; liBtn.href = p.linkedin.startsWith('http') ? p.linkedin : 'https://' + p.linkedin; }
     else { liBtn.style.display = 'none'; }
-    // Save state (fetched in parallel above)
+    // Save state (fetched in parallel above) — ikon-knap: skift fill, ikke tekst
     var saveBtn = document.getElementById('rp-save-btn');
-    saveBtn.textContent = savedCheck ? t('ps_saved') + ' \u2713' : t('ps_save');
     saveBtn.dataset.saved = savedCheck ? '1' : '0';
+    var saveIcon = document.getElementById('rp-save-icon');
+    if (savedCheck) {
+      if (saveIcon) saveIcon.setAttribute('fill', 'currentColor');
+      saveBtn.style.background = 'rgba(100,180,230,0.2)';
+      saveBtn.style.borderColor = 'rgba(100,180,230,0.4)';
+      saveBtn.style.color = '#CFE6F7';
+    } else {
+      if (saveIcon) saveIcon.setAttribute('fill', 'none');
+      saveBtn.style.background = 'rgba(255,255,255,0.08)';
+      saveBtn.style.borderColor = 'rgba(255,255,255,0.16)';
+      saveBtn.style.color = 'rgba(255,255,255,0.85)';
+    }
     // Single reveal with FLIP height glide: lock current (skeleton) height,
     // Content is now fully populated in the hidden sheet. Slide it up in its
     // correct final height — nothing resizes after it becomes visible, so no twitch.
@@ -337,7 +348,15 @@ async function rpSaveContact() {
     if (btn) { btn.disabled = true; }
     var result = await dbActions.saveContact(rpCurrentUserId);
     if (!result.ok) return;
-    if (btn) { btn.textContent = t('ps_saved') + ' \u2713'; btn.dataset.saved = '1'; }
+    if (btn) {
+      btn.dataset.saved = '1';
+      // Skift bookmark-ikon til fyldt + isbla (gemt-tilstand) - IKKE tekst (ikon-knap)
+      var svg = document.getElementById('rp-save-icon');
+      if (svg) svg.setAttribute('fill', 'currentColor');
+      btn.style.background = 'rgba(100,180,230,0.2)';
+      btn.style.borderColor = 'rgba(100,180,230,0.4)';
+      btn.style.color = '#CFE6F7';
+    }
     showSuccessToast(t('toast_saved'));
     loadSavedContacts();
     clearSavedContactIdsCache();

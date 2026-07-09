@@ -13,39 +13,39 @@
 <meta name="theme-color" content="#0E141C">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=30022">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=30022">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=30022">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=30022">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=30022">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=30022">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=30022">
+<link rel="manifest" href="manifest.json?v=30023">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=30023">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=30023">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=30023">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=30023">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=30023">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=30023">
 
-<link rel="stylesheet" href="app.css?v=30022">
+<link rel="stylesheet" href="app.css?v=30023">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous" defer></script>
-<script src="bubble-icons.js?v=30022" defer></script>
-<script src="tag-data.js?v=30022" defer></script>
-<script src="b-i18n.js?v=30022" defer></script>
-<script src="b-config.js?v=30022" defer></script>
-<script src="b-utils.js?v=30022" defer></script>
-<script src="b-guides.js?v=30022" defer></script>
-<script src="b-terms.js?v=30022" defer></script>
-<script src="b-auth.js?v=30022" defer></script>
-<script src="b-home.js?v=30022" defer></script>
-<script src="b-bubbles.js?v=30022" defer></script>
-<script src="b-profile.js?v=30022" defer></script>
-<script src="b-radar.js?v=30022" defer></script>
-<script src="b-messages.js?v=30022" defer></script>
-<script src="b-realtime.js?v=30022" defer></script>
-<script src="b-onboarding.js?v=30022" defer></script>
-<script src="b-chat.js?v=30022" defer></script>
-<script src="b-notifications.js?v=30022" defer></script>
-<script src="b-live.js?v=30022" defer></script>
-<script src="b-admin.js?v=30022" defer></script>
-<script src="b-navigation.js?v=30022" defer></script>
-<script src="b-boot.js?v=30022" defer></script>
+<script src="bubble-icons.js?v=30023" defer></script>
+<script src="tag-data.js?v=30023" defer></script>
+<script src="b-i18n.js?v=30023" defer></script>
+<script src="b-config.js?v=30023" defer></script>
+<script src="b-utils.js?v=30023" defer></script>
+<script src="b-guides.js?v=30023" defer></script>
+<script src="b-terms.js?v=30023" defer></script>
+<script src="b-auth.js?v=30023" defer></script>
+<script src="b-home.js?v=30023" defer></script>
+<script src="b-bubbles.js?v=30023" defer></script>
+<script src="b-profile.js?v=30023" defer></script>
+<script src="b-radar.js?v=30023" defer></script>
+<script src="b-messages.js?v=30023" defer></script>
+<script src="b-realtime.js?v=30023" defer></script>
+<script src="b-onboarding.js?v=30023" defer></script>
+<script src="b-chat.js?v=30023" defer></script>
+<script src="b-notifications.js?v=30023" defer></script>
+<script src="b-live.js?v=30023" defer></script>
+<script src="b-admin.js?v=30023" defer></script>
+<script src="b-navigation.js?v=30023" defer></script>
+<script src="b-boot.js?v=30023" defer></script>
   
 
 
@@ -696,7 +696,7 @@
             <div id="rp-tags" class="radar-person-tags" style="margin-bottom:11px"></div>
             <div id="rp-overlap" class="radar-person-overlap"></div>
             <div style="display:flex;gap:8px;margin-top:4px">
-              <button id="rp-save-btn" onclick="event.stopPropagation();rpSaveContact()" data-t="rp_save" style="width:42px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.16);border-radius:99px;cursor:pointer;color:rgba(255,255,255,0.85);flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></button>
+              <button id="rp-save-btn" onclick="event.stopPropagation();rpSaveContact()" data-t="rp_save" style="width:42px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.16);border-radius:99px;cursor:pointer;color:rgba(255,255,255,0.85);flex-shrink:0"><svg id="rp-save-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4a1.5 1.5 0 011.5-1.5h9A1.5 1.5 0 0118 4v17l-6-3.5L6 21V4z"/></svg></button>
               <a id="rp-linkedin-btn" href="#" target="_blank" rel="noopener" style="display:none;text-decoration:none"></a>
               <button onclick="event.stopPropagation();rpFullProfile()" style="flex:1;text-align:center;font-size:12px;font-weight:800;color:rgba(255,255,255,0.9);background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.16);border-radius:99px;padding:10px;cursor:pointer" data-t="rp_profile">Se profil</button>
               <button onclick="event.stopPropagation();rpMessage()" style="flex:1;text-align:center;font-size:12px;font-weight:800;color:#0E2A3C;background:rgb(100,180,230);box-shadow:0 4px 16px rgba(100,180,230,0.35);border-radius:99px;padding:10px;cursor:pointer">Send besked</button>
