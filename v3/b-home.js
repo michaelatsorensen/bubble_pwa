@@ -2378,13 +2378,17 @@ function closeRadarFilters() {
 
 // ── Tap dartboard background → open tray ──
 function onDartboardTap(event) {
-  // If the tap was on a dot (person avatar), don't open tray — the dot handles it
+  // Prototype (collapseMatch): tap paa dot haandteres af dotten selv; tap i tomt
+  // omraade paa radaren LUKKER preview + filter-taleboble (aabner IKKE list view -
+  // list view aabnes kun via liste-knappen, praecis som prototypen).
   var target = event.target;
   while (target && target !== event.currentTarget) {
-    if (target.onclick && target !== event.currentTarget) return; // clicked a dot
+    if (target.onclick && target !== event.currentTarget) return; // klik paa dot
     target = target.parentElement;
   }
-  openHomeTray();
+  // Tomt omraade: ryd preview + luk evt aaben filter-taleboble
+  if (typeof closeRadarPerson === 'function') closeRadarPerson();
+  if (typeof closeRadarFilters === 'function') closeRadarFilters();
 }
 
 function _homeDrawProxRings(canvas) {
