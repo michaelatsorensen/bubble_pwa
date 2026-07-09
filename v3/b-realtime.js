@@ -1082,14 +1082,13 @@ function dmTouchStart(event, msgId, isSent) {
   var sel = window.getSelection();
   if (sel && !sel.isCollapsed) return;
 
-  // Active monitor: cancel timer if iOS starts a selection during the long-press window.
-  // Polling is cheap and catches the case where selectstart event fires too late
-  // or doesn't propagate to our handler.
+  // Active monitor: if iOS starts a selection during the long-press window,
+  // clear it immediately so it cannot compete with the apps own menu.
+  // (Previously this aborted our menu and let native win - now app menu wins.)
   _dmLongPressSelMon = setInterval(function() {
     var s = window.getSelection();
     if (s && (s.toString() || !s.isCollapsed)) {
-      // iOS started selecting — abort our menu so we don't collide
-      dmTouchEnd();
+      if (s.removeAllRanges) s.removeAllRanges();
     }
   }, 50);
 
@@ -1105,10 +1104,12 @@ function dmTouchEnd() {
 }
 
 function dmLongPress(msgId, isSent) {
-  // Check both selection text AND collapsed state — iOS may have started selection
-  // even if the resulting string is briefly empty mid-gesture
+  // Ryd enhver selektion iOS maatte have startet - appens menu er nu det eneste
+  // system, saa vi lader ikke native selektion overtage (undgaar konflikt).
   var sel = window.getSelection();
-  if (sel && (sel.toString() || !sel.isCollapsed)) return; // Let native text selection work
+  if (sel && (sel.toString() || !sel.isCollapsed)) {
+    if (sel.removeAllRanges) sel.removeAllRanges();
+  }
   _dmLongPressId = msgId;
   if (navigator.vibrate) navigator.vibrate(10);
 

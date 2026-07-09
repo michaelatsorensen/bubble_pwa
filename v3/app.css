@@ -1636,6 +1636,11 @@ a.person-action-btn { text-decoration:none; }
    UNIFIED MESSAGE ROWS (bubble + DM)
    ══════════════════════════════════════ */
 .msg-row { display:flex; gap:0.4rem; padding:0.12rem 0; align-items:flex-end; }
+/* Blokér iOS native tekst-selektion paa HELE besked-rowen + alle boern.
+   user-select:none paa msg-bubble alene er ikke nok - iOS starter stadig
+   selektion via row/content-niveau. Denne omfattende regel stopper det,
+   saa kun appens egen long-press menu vises (ingen konflikt). */
+.msg-row, .msg-row * { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
 .msg-row.me { flex-direction:row-reverse; }
 .msg-row.msg-single, .msg-row.msg-first { padding-top:0.35rem; }
 .msg-avatar { width:24px; height:24px; border-radius:50%; font-size:0.48rem; font-weight:800; color:white; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
