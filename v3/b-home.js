@@ -1009,7 +1009,7 @@ function showWelcomeCard() {
   if (!isNewUser) return;
 
   el.innerHTML =
-    '<div style="background:rgba(20,22,28,0.85);border:0.5px solid rgba(255,255,255,0.06);border-radius:14px;padding:1rem 1.1rem;position:relative">' +
+    '<div style="background:rgba(255,255,255,0.055);border:0.5px solid rgba(255,255,255,0.12);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:14px;padding:1rem 1.1rem;position:relative">' +
       '<button onclick="dismissWelcomeCard()" style="position:absolute;top:0.6rem;right:0.7rem;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);font-size:1rem;line-height:1;padding:0.2rem;font-family:inherit" aria-label="Luk">×</button>' +
       '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">' +
         '<div style="width:28px;height:28px;color:rgb(100,180,230);flex-shrink:0">' + ico('bubble') + '</div>' +

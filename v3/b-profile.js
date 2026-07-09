@@ -564,7 +564,7 @@ function toggleProximityVisibility() {
   if (c) { if (proxVisible && currentProfile && currentProfile.name) { 
     if (currentProfile.avatar_url) { c.innerHTML = '<img src="' + escHtml(currentProfile.avatar_url) + '">'; } 
     else { c.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); }
-    c.style.background = 'linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))'; } else { c.textContent = '?'; c.style.background = 'rgba(30,27,46,0.06)'; } }
+    c.style.background = 'linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))'; } else { c.textContent = '?'; c.style.background = 'rgba(255,255,255,0.06)'; } }
   var hint = document.getElementById('prox-toggle-hint');
   if (hint) hint.textContent = proxVisible ? t('pf_visible_on_radar') : t('pf_invisible_on_radar');
   toggleAnon();
@@ -1655,7 +1655,7 @@ async function loadDashboard() {
     }
 
     el.innerHTML =
-      '<div style="background:rgba(20,22,28,0.85);border:0.5px solid rgba(255,255,255,0.06);border-radius:16px;padding:0.8rem;margin-bottom:0.5rem">' +
+      '<div style="background:rgba(255,255,255,0.055);border:0.5px solid rgba(255,255,255,0.12);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:16px;padding:0.8rem;margin-bottom:0.5rem">' +
       '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.55);margin-bottom:0.4rem">' + t('pf_bubble_week') + '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem">' +
         statCard('eye', t('pf_dash_views'), views, 'rgba(100,180,230,0.22)', 'rgb(100,180,230)') +
@@ -1680,7 +1680,7 @@ async function loadDashboard() {
 
 // ── Tags card in dashboard ──
 function _renderDashboardTagsCard() {
-  return '<div style="margin-top:0.75rem;background:rgba(20,22,28,0.85);border:0.5px solid rgba(255,255,255,0.06);border-radius:var(--radius);box-shadow:none;overflow:hidden">' +
+  return '<div style="margin-top:0.75rem;background:rgba(255,255,255,0.055);border:0.5px solid rgba(255,255,255,0.12);border-radius:var(--radius);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);overflow:hidden">' +
 
     // ── Header ──
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem 0.5rem">' +
