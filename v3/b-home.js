@@ -2553,12 +2553,21 @@ function _doRenderHomeDartboard() {
       var dPos = findSafe(dIx, dIy, dSz);
       placed.push({x:dPos.x,y:dPos.y,s:dSz});
       var dCol = dp.is_anon ? 'var(--glass-border)' : colors[dmeta.col % colors.length];
+      // Prototype: tier-ring + glow efter match-styrke
+      var dRing = dMatch >= 68 ? 'rgba(100,180,230,0.7)' : dMatch >= 44 ? 'rgba(46,207,207,0.5)' : 'rgba(255,255,255,0.24)';
+      var dGlow = dMatch >= 68 ? '0 0 14px rgba(100,180,230,0.3)' : 'none';
       var dIni = dp.is_anon ? '?' : (dp.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
       var dInner = (dp.avatar_url && !dp.is_anon)
         ? '<img src="' + escHtml(dp.avatar_url) + '" class="u-avatar-img">'
         : dIni;
       var dDelay = (di * 40);
-      out += '<div class="prox-dot" style="width:'+dSz+'px;height:'+dSz+'px;left:'+dPos.x.toFixed(1)+'px;top:'+dPos.y.toFixed(1)+'px;background:'+dCol+';font-size:'+(dSz<34?'0.48':'0.55')+'rem;animation-delay:'+dDelay+'ms" onclick="event.stopPropagation();openRadarPerson(\''+dp.id+'\')" data-id="'+dp.id+'">'+dInner+(appMode.checkedInIds.indexOf(dp.id)>=0?'<span class="live-dot" style="position:absolute;bottom:-1px;right:-1px;width:8px;height:8px;border:2px solid var(--bg)"></span>':'')+'</div>';
+      // Prototype: de 4 naermeste (hoejeste match) faar fornavn under dot'en
+      var dNameHtml = '';
+      if (di < 4 && !dp.is_anon && dp.name) {
+        var dFirst = escHtml((dp.name || '').split(' ')[0]);
+        dNameHtml = '<div class="prox-dot-name" style="position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;white-space:nowrap;font-size:10px;font-weight:700;color:rgba(255,255,255,0.8);pointer-events:none">'+dFirst+'</div>';
+      }
+      out += '<div class="prox-dot" style="width:'+dSz+'px;height:'+dSz+'px;left:'+dPos.x.toFixed(1)+'px;top:'+dPos.y.toFixed(1)+'px;background:'+dCol+';border-color:'+dRing+';box-shadow:'+dGlow+';font-size:'+(dSz<34?'0.48':'0.55')+'rem;animation-delay:'+dDelay+'ms" onclick="event.stopPropagation();openRadarPerson(\''+dp.id+'\')" data-id="'+dp.id+'">'+dInner+(appMode.checkedInIds.indexOf(dp.id)>=0?'<span class="live-dot" style="position:absolute;bottom:-1px;right:-1px;width:8px;height:8px;border:2px solid var(--bg)"></span>':'')+dNameHtml+'</div>';
     }
     av.innerHTML = out;
     return;
@@ -2589,12 +2598,21 @@ function _doRenderHomeDartboard() {
     placed.push({x:pos.x, y:pos.y, s:sz});
     var tlx = pos.x, tly = pos.y;
     var col = p.is_anon ? 'var(--glass-border)' : colors[meta.col % colors.length];
+    // Prototype: tier-ring + glow efter match-styrke
+    var ring = matchPct >= 68 ? 'rgba(100,180,230,0.7)' : matchPct >= 44 ? 'rgba(46,207,207,0.5)' : 'rgba(255,255,255,0.24)';
+    var glow = matchPct >= 68 ? '0 0 14px rgba(100,180,230,0.3)' : 'none';
     var ini = p.is_anon ? '?' : (p.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
     var inner = (p.avatar_url && !p.is_anon)
       ? '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">'
       : ini;
     var isLive = appMode.checkedInIds.indexOf(p.id) >= 0;
     var liveSpan = isLive ? '<span class="live-dot" style="position:absolute;bottom:-1px;right:-1px;width:8px;height:8px;border:2px solid var(--bg)"></span>' : '';
+    // Prototype: de 4 naermeste (hoejeste match) faar fornavn under dot'en (konsistent med foerste render)
+    var nameHtml = '';
+    if (i < 4 && !p.is_anon && p.name) {
+      var firstNm = escHtml((p.name || '').split(' ')[0]);
+      nameHtml = '<div class="prox-dot-name" style="position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;white-space:nowrap;font-size:10px;font-weight:700;color:rgba(255,255,255,0.8);pointer-events:none">'+firstNm+'</div>';
+    }
 
     var el = existing[p.id];
     if (el) {
@@ -2608,6 +2626,12 @@ function _doRenderHomeDartboard() {
       el.style.fontSize = (sz < 34 ? '0.48' : '0.55') + 'rem';
       el.style.left = tlx.toFixed(1) + 'px';
       el.style.top = tly.toFixed(1) + 'px';
+      el.style.borderColor = ring;
+      el.style.boxShadow = glow;
+      // Sikr navn er til stede paa glidende dot (kan mangle fra tidligere render)
+      var exName = el.querySelector('.prox-dot-name');
+      if (nameHtml && !exName) { el.insertAdjacentHTML('beforeend', nameHtml); }
+      else if (!nameHtml && exName) { exName.remove(); }
     } else {
       // NY: tiltraekkes IND fra kanten langs sin vinkel (magnet) + sikkerhedsnet
       el = document.createElement('div');
@@ -2618,7 +2642,9 @@ function _doRenderHomeDartboard() {
       el.style.width = el.style.height = sz + 'px';
       el.style.fontSize = (sz < 34 ? '0.48' : '0.55') + 'rem';
       el.style.background = col;
-      el.innerHTML = inner + liveSpan;
+      el.style.borderColor = ring;
+      el.style.boxShadow = glow;
+      el.innerHTML = inner + liveSpan + nameHtml;
       var startR = maxR + 90;
       el.style.left = (cx + startR*Math.cos(ang) - sz/2).toFixed(1) + 'px';
       el.style.top = (cy + startR*Math.sin(ang) - sz/2).toFixed(1) + 'px';
