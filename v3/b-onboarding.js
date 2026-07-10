@@ -197,7 +197,7 @@ function _showMinimalOnboarding(hasName, hasWorkplace, autoName) {
       (!hasName ? '<div class="input-group"><div class="input-label">' + t('ob_name_label') + '</div><input class="input" id="mini-ob-name" maxlength="60" placeholder="" data-t-placeholder="ob_name_ph" value="' + escHtml(nameVal) + '" oninput="_miniObCheck()"></div>' : '') +
       (!hasWorkplace ? '<div class="input-group"><div class="input-label">' + t('ob_workplace_label') + '</div><input class="input" id="mini-ob-workplace" maxlength="80" placeholder="" data-t-placeholder="ob_workplace_ph" value="' + escHtml(wpVal) + '" oninput="_miniObCheck()"></div>' : '') +
       '<label style="display:flex;align-items:flex-start;gap:0.5rem;margin:0.6rem 0;cursor:pointer" onclick="_miniObToggleConsent()">' +
-        '<div id="mini-ob-consent" style="width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s;margin-top:1px"></div>' +
+        '<div id="mini-ob-consent" style="width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s, opacity 0.15s, box-shadow 0.15s;margin-top:1px"></div>' +
         '<span style="font-size:0.72rem;color:var(--text-secondary);line-height:1.4">' + t('ob_consent_full') + '</span>' +
       '</label>' +
       '<button class="btn-primary" id="mini-ob-save" onclick="_miniObSave()" style="margin-top:0.8rem" disabled>' + (flowGet('event_flow') ? t('ob_event_continue') : t('ob_continue')) + '</button>' +
@@ -978,7 +978,7 @@ function etBuildBody(s) {
     g.tags.forEach(function(tag){
       var isSel = etSelected.has(tag);
       var style = isSel ? 'background:'+s.color+';border-color:'+s.color+';color:white' : 'background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.85)';
-      h += '<span style="padding:0.27rem 0.65rem;border-radius:99px;font-size:0.7rem;font-weight:500;cursor:pointer;border:1.5px solid;transition:all .13s;'+style+'" data-tag="' + escHtml(tag) + '" data-sec="' + escHtml(s.id) + '" onclick="etTgl(this.dataset.tag,this.dataset.sec)">' + escHtml(tag) + '</span>';
+      h += '<span style="padding:0.27rem 0.65rem;border-radius:99px;font-size:0.7rem;font-weight:500;cursor:pointer;border:1.5px solid;transition:background .13s, border-color .13s, color .13s, transform .13s, opacity .13s, box-shadow .13s;'+style+'" data-tag="' + escHtml(tag) + '" data-sec="' + escHtml(s.id) + '" onclick="etTgl(this.dataset.tag,this.dataset.sec)">' + escHtml(tag) + '</span>';
     });
     h += '</div></div>';
   });

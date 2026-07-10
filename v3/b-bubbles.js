@@ -348,7 +348,7 @@ function _buildMemberSheet(title, subtitle, members) {
         '<div style="width:40px;height:40px;border-radius:50%;background:' + avColors[i % avColors.length] + ';display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>';
       var isAdmin = m.role === 'admin';
       var adminBadge = isAdmin ? '<span class="admin-badge" style="font-size:0.55rem;background:rgba(100,180,230,0.15);color:rgb(100,180,230);padding:0.1rem 0.35rem;border-radius:6px;font-weight:600;border:0.5px solid rgba(100,180,230,0.25)">Admin</span>' : '';
-      return '<div class="member-pick-row" data-uid="' + m.user_id + '" data-name="' + escHtml(p.name||'?').replace(/"/g,'&quot;') + '" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border-radius:12px;border:1px solid var(--glass-border-subtle);margin-bottom:0.4rem;cursor:pointer;transition:all 0.15s">' +
+      return '<div class="member-pick-row" data-uid="' + m.user_id + '" data-name="' + escHtml(p.name||'?').replace(/"/g,'&quot;') + '" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border-radius:12px;border:1px solid var(--glass-border-subtle);margin-bottom:0.4rem;cursor:pointer;transition:background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s, opacity 0.15s, box-shadow 0.15s">' +
         avHtml +
         '<div style="flex:1"><div style="font-weight:600;font-size:0.85rem;display:flex;align-items:center;gap:0.3rem">' + escHtml(p.name||t('misc_unknown')) + ' ' + adminBadge + '</div><div style="font-size:0.72rem;color:var(--text-secondary)">' + escHtml(p.title||'') + '</div></div>' +
         '<div style="color:rgb(100,180,230);font-size:0.72rem;font-weight:600">' + t('bb_choose') + '</div>' +
@@ -811,7 +811,7 @@ function cbRenderPillSelect(selectId, options) {
     var btn = document.createElement('button');
     btn.type = 'button';
     var isActive = opt.value === current;
-    btn.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;gap:0.35rem;padding:0.4rem 0.75rem;border-radius:99px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.15s;border:1.5px solid ' + (isActive ? 'rgba(26,158,142,0.6)' : 'var(--glass-border)') + ';background:' + (isActive ? 'rgba(26,158,142,0.15)' : 'rgba(30,27,46,0.03)') + ';color:' + (isActive ? '#1A9E8E' : 'var(--muted)');
+    btn.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;gap:0.35rem;padding:0.4rem 0.75rem;border-radius:99px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;transition:background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s, opacity 0.15s, box-shadow 0.15s;border:1.5px solid ' + (isActive ? 'rgba(26,158,142,0.6)' : 'var(--glass-border)') + ';background:' + (isActive ? 'rgba(26,158,142,0.15)' : 'rgba(30,27,46,0.03)') + ';color:' + (isActive ? '#1A9E8E' : 'var(--muted)');
     var ico = document.createElement('span');
     ico.style.cssText = 'width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0';
     var icoSvg = ICONS[opt.icon] || '';

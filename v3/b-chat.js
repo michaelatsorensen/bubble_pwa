@@ -2678,7 +2678,7 @@ async function bcOpenCreatePost() {
           '<input type="radio" name="bp-event" value="' + ev.id + '" style="display:none">' +
           '<div style="width:24px;height:24px;border-radius:8px;background:rgba(46,207,207,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green);font-size:0.7rem">' + ico('calendar') + '</div>' +
           '<div style="flex:1;font-size:0.78rem;font-weight:600;color:var(--text)">' + escHtml(ev.name) + '</div>' +
-          '<div class="bp-radio-dot" style="width:16px;height:16px;border-radius:50%;border:2px solid var(--glass-border);flex-shrink:0;transition:all 0.15s"></div>' +
+          '<div class="bp-radio-dot" style="width:16px;height:16px;border-radius:50%;border:2px solid var(--glass-border);flex-shrink:0;transition:background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s, opacity 0.15s, box-shadow 0.15s"></div>' +
           '</label>';
       }).join('');
     }
