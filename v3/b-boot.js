@@ -838,8 +838,8 @@ function handleUpdateAvailable() {
     // Udviklingsfase: aktiver ny SW straks + reload (deploys slaar igennem med det samme)
     acceptUpdate();
   } else {
-    // Produktion: vent paa brugeren via banner
-    handleUpdateAvailable();
+    // Produktion/pilot: vent paa brugeren via banner (de vaelger selv hvornaar de opdaterer)
+    showUpdateBanner();
   }
 }
 
