@@ -850,8 +850,8 @@ function _renderEventDeepLinkModal(opts) {
 
   // Build modal HTML
   var primaryBtnHtml = '<button id="dl-event-primary" style="width:100%;padding:0.85rem;border-radius:12px;border:none;background:linear-gradient(180deg,#6FB8E8,#4F9FD4);color:#fff;box-shadow:0 6px 16px rgba(79,159,212,0.3);font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + primaryLabel + '</button>';
-  var secondaryBtnHtml = secondaryLabel ? '<button id="dl-event-secondary" style="width:100%;padding:0.75rem;border-radius:12px;border:1px solid rgba(100,180,230,0.18);background:none;color:#534AB7;font-size:0.82rem;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:0.4rem">' + secondaryLabel + '</button>' : '';
-  var declineBtnHtml = showDecline ? '<button id="dl-event-decline" style="width:100%;padding:0.6rem;border-radius:12px;border:none;background:none;color:#993556;font-size:0.75rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_decline_invitation') + '</button>' : '';
+  var secondaryBtnHtml = secondaryLabel ? '<button id="dl-event-secondary" style="width:100%;padding:0.75rem;border-radius:12px;border:1px solid rgba(100,180,230,0.18);background:none;color:#A9BFFF;font-size:0.82rem;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:0.4rem">' + secondaryLabel + '</button>' : '';
+  var declineBtnHtml = showDecline ? '<button id="dl-event-decline" style="width:100%;padding:0.6rem;border-radius:12px;border:none;background:none;color:#F0889F;font-size:0.75rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_decline_invitation') + '</button>' : '';
 
   ov.innerHTML =
     '<div id="dl-event-card" style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:1.75rem 1.5rem 1.25rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(30,27,46,0.12);position:relative">' +
@@ -926,7 +926,7 @@ function _renderEventDeepLinkModal(opts) {
         if (!actions) return;
         actions.innerHTML =
           '<div style="background:rgba(153,53,86,0.06);border:1px solid rgba(153,53,86,0.15);border-radius:12px;padding:0.85rem 0.75rem 0.75rem">' +
-            '<div style="font-size:0.78rem;color:#993556;font-weight:600;text-align:center;margin-bottom:0.6rem">' + t('dl_decline_confirm_q') + '</div>' +
+            '<div style="font-size:0.78rem;color:#F0889F;font-weight:600;text-align:center;margin-bottom:0.6rem">' + t('dl_decline_confirm_q') + '</div>' +
             '<div style="display:flex;gap:0.5rem">' +
               '<button id="dl-decline-undo" style="flex:1;padding:0.6rem;border-radius:10px;border:0.5px solid rgba(255,255,255,0.12);background:white;color:var(--text);font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_undo') + '</button>' +
               '<button id="dl-decline-yes" style="flex:1;padding:0.6rem;border-radius:10px;border:none;background:#993556;color:white;font-size:0.78rem;font-weight:700;font-family:inherit;cursor:pointer">' + t('dl_yes_decline') + '</button>' +

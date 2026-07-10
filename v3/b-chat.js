@@ -766,7 +766,7 @@ function bcRenderPendingBanner(isPending) {
     if (anchor) {
       var pb = document.createElement('div');
       pb.id = 'bc-pending-banner';
-      pb.style.cssText = 'display:none;padding:0.55rem 1rem;margin:0.4rem 1.1rem 0;border-radius:10px;background:rgba(249,177,55,0.08);border:1px solid rgba(249,177,55,0.2);font-size:0.75rem;color:#854F0B;font-weight:600';
+      pb.style.cssText = 'display:none;padding:0.55rem 1rem;margin:0.4rem 1.1rem 0;border-radius:10px;background:rgba(249,177,55,0.08);border:1px solid rgba(249,177,55,0.2);font-size:0.75rem;color:#F5C877;font-weight:600';
       anchor.insertAdjacentElement('afterend', pb);
       pendingBanner = pb;
     }
@@ -778,7 +778,7 @@ function bcRenderPendingBanner(isPending) {
       pendingBanner.style.justifyContent = 'space-between';
       pendingBanner.style.gap = '0.5rem';
       pendingBanner.innerHTML = '<div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#F59E0B;animation:livePulse 1.5s infinite;flex-shrink:0"></span> Afventer godkendelse</div>' +
-        '<button onclick="bcCancelPending()" style="font-size:0.65rem;padding:3px 10px;border-radius:6px;border:1px solid rgba(133,79,11,0.2);background:none;color:#854F0B;cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0">Annuller</button>';
+        '<button onclick="bcCancelPending()" style="font-size:0.65rem;padding:3px 10px;border-radius:6px;border:1px solid rgba(245,200,119,0.3);background:none;color:#F5C877;cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0">Annuller</button>';
     } else {
       pendingBanner.style.display = 'none';
     }
@@ -1458,7 +1458,7 @@ function bcUpdateChatLockUI() {
     if (!lockBanner) {
       lockBanner = document.createElement('div');
       lockBanner.id = 'bc-chat-lock-banner';
-      lockBanner.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 16px;background:rgba(245,158,11,0.06);border-top:1px solid rgba(245,158,11,0.15);color:#78350F;font-size:0.75rem;font-weight:600';
+      lockBanner.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 16px;background:rgba(245,158,11,0.06);border-top:1px solid rgba(245,158,11,0.15);color:#F5C877;font-size:0.75rem;font-weight:600';
       lockBanner.innerHTML = '<span style="font-size:13px;display:flex">' + ico('lock') + '</span> ' + t('bc_chat_locked');
       var panel = document.getElementById('bc-panel-chat');
       if (panel) panel.appendChild(lockBanner);

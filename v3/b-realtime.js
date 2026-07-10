@@ -167,7 +167,7 @@ function _showOfflineModal() {
         '<span style="display:inline-block;animation:_obPulse 1.2s ease-in-out infinite 0.2s">.</span>' +
         '<span style="display:inline-block;animation:_obPulse 1.2s ease-in-out infinite 0.4s">.</span>' +
       '</div>' +
-      '<div style="font-size:0.72rem;color:#854F0B;line-height:1.4;margin-bottom:16px">' + t('offline_body') + '</div>' +
+      '<div style="font-size:0.72rem;color:#F5C877;line-height:1.4;margin-bottom:16px">' + t('offline_body') + '</div>' +
       '<button onclick="_retryConnection()" style="background:#EF9F27;color:#FCD34D;border:none;border-radius:8px;padding:8px 24px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit">' + t('offline_retry') + '</button>' +
     '</div>';
   document.body.appendChild(ov);
