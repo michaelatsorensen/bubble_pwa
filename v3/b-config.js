@@ -14,12 +14,19 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-07-10 06:57';
-const BUILD_VERSION  = 'v3-v3.109';
+const BUILD_TIMESTAMP = '2026-07-10 10:14';
+const BUILD_VERSION  = 'v3-v3.110';
 // AUTO_UPDATE: naar true, aktiverer ny service worker STRAKS (auto-reload) uden at
 // vente paa brugeren. Til udviklingsfasen (v3) saa deploys slaar igennem med det samme.
 // SAET TIL false FOER produktion/pilot - ellers genindlaeses appen under brugere midt i noget.
 const AUTO_UPDATE = true;
+// DEBUG: naar false, gøres console.debug til en no-op saa udviklings-støj ikke
+// vises i produktion. console.warn/error bevares (nyttige i produktion). Saet true
+// under fejlfinding for at faa debug-output tilbage uden at aendre kaldstederne.
+const DEBUG = false;
+if (!DEBUG && typeof console !== 'undefined' && console.debug) {
+  console.debug = function(){};
+}
 const SUPABASE_URL  = "https://api.bubbleme.dk";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";

@@ -548,7 +548,7 @@ function toggleProximityVisibility() {
   var l = document.getElementById('prox-toggle-label');
   var c = document.getElementById('prox-center');
   if (d) d.style.background = proxVisible ? '#1A9E8E' : 'rgba(255,255,255,0.25)';
-  if (l) l.textContent = proxVisible ? 'Synlig' : 'Skjult';
+  if (l) l.textContent = proxVisible ? t('prox_visible') : t('prox_hidden');
   // Restyle the whole button for clear on/off state
   if (btn) {
     if (proxVisible) {

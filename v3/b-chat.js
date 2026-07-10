@@ -2120,7 +2120,7 @@ async function bcLoadInfo() {
         if (parent) {
           parentHtml = '<div onclick="openBubble(\'' + parent.id + '\')" class="parent-link" style="margin-bottom:0.9rem">' +
             '<div style="width:24px;height:24px;border-radius:7px;background:rgba(100,180,230,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;color:rgb(100,180,230)">' + ico('bubble') + '</div>' +
-            '<div style="flex:1"><div class="parent-link-label">Del af</div><div class="parent-link-name">' + escHtml(parent.name) + '</div></div>' +
+            '<div style="flex:1"><div class="parent-link-label">' + t('bc_part_of') + '</div><div class="parent-link-name">' + escHtml(parent.name) + '</div></div>' +
             '<div class="parent-link-chev">›</div></div>';
         }
       } catch(e) { /* silent */ }

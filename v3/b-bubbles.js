@@ -305,7 +305,7 @@ async function joinBubble(bubbleId) {
   try {
     var result = await dbActions.joinBubble(bubbleId);
     if (!result.ok) return; // dbActions already showed error toast
-    showSuccessToast(t('toast_joined'));
+    showSuccessToast(result.status === 'already_member' ? t('toast_already_member') : t('toast_joined'));
     _bbAfterJoin(bubbleId);
     await openBubble(bubbleId);
     loadHome();
