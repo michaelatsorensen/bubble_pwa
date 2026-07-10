@@ -608,8 +608,8 @@ textarea.input { min-height:80px; resize:vertical; }
 
 /* ── TAGS ── */
 .tag { display:inline-block; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:var(--radius-pill); padding:0.22rem 0.6rem; font-size:0.68rem; font-weight:600; color:var(--text); margin:0.15rem 0.15rem 0 0; }
-.tag.mint { background:rgba(26,158,142,0.15); border-color:rgba(26,158,142,0.3); color:#085041; }
-.tag.gold { background:rgba(245,158,11,0.15); border-color:rgba(245,158,11,0.3); color:#633806; }
+.tag.mint { background:rgba(26,158,142,0.15); border-color:rgba(26,158,142,0.3); color:#5FE0CC; }
+.tag.gold { background:rgba(245,158,11,0.15); border-color:rgba(245,158,11,0.3); color:#F5C16E; }
 .tag.active-tag { background:rgba(100,180,230,0.15); border-color:rgba(100,180,230,0.3); color:#A9D9F5; }
 
 /* ── AVATARS ── */
@@ -678,7 +678,7 @@ textarea.input { min-height:80px; resize:vertical; }
 
 /* ── REDESIGN (v8.56): full profile in strandglas / bubble-info language ── */
 .pp-topbar { display:flex; justify-content:space-between; align-items:center; padding:0.7rem 1rem 0.7rem; padding-top:calc(0.7rem + env(safe-area-inset-top,0px)); gap:0.6rem; }
-.pp-back { width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,0.85); border:0.5px solid var(--border-on-light); color:var(--text-on-light); font-size:1rem; font-family:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+.pp-back { width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,0.08); border:0.5px solid rgba(255,255,255,0.12); color:rgba(255,255,255,0.9); font-size:1rem; font-family:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 1px 4px rgba(0,0,0,0.08); }
 .pp-match { font-size:0.68rem; font-weight:700; padding:0.34rem 0.78rem; border-radius:99px; line-height:1; white-space:nowrap; display:none; }
 .pp-hero { margin:0.5rem 1rem 0.7rem; background:var(--n3-card); border:0.5px solid rgba(255,255,255,0.1); border-radius:var(--radius); padding:1rem; box-shadow:0 6px 22px rgba(20,22,28,0.18); }
 .pp-hero-top { display:flex; align-items:center; gap:0.8rem; }
@@ -736,7 +736,7 @@ textarea.input { min-height:80px; resize:vertical; }
 .pp-sheet .person-bubble-pill-chevron { color:rgba(255,255,255,0.4); }
 
 .person-action-bar { display:flex; gap:0.5rem; padding:0.75rem 1.25rem; flex-wrap:wrap; }
-.person-action-btn { flex:1; padding:0.65rem 0.3rem; border-radius:var(--radius-sm); font-size:0.78rem; font-family:'Figtree',sans-serif; font-weight:600; cursor:pointer; background:rgba(255,255,255,0.7); border:0.5px solid var(--border-on-light); color:var(--text-on-light); text-align:center; transition:all 0.2s; display:flex; flex-direction:column; align-items:center; gap:0.25rem; }
+.person-action-btn { flex:1; padding:0.65rem 0.3rem; border-radius:var(--radius-sm); font-size:0.78rem; font-family:'Figtree',sans-serif; font-weight:600; cursor:pointer; background:rgba(255,255,255,0.08); border:0.5px solid rgba(255,255,255,0.12); color:rgba(255,255,255,0.9); text-align:center; transition:all 0.2s; display:flex; flex-direction:column; align-items:center; gap:0.25rem; }
 .person-action-btn.primary { background:rgba(100,180,230,0.18); border:0.5px solid rgba(100,180,230,0.25); color:rgba(255,255,255,0.95); }
 .person-action-btn.secondary { background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.55); }
 
@@ -1144,7 +1144,7 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
   padding: 5px 13px;
   border-radius: 999px;
   background: transparent;
-  color: #56536E;
+  color: rgba(255,255,255,0.55);
   transition: background 0.15s ease, color 0.15s ease;
 }
 .auth-lang-toggle button.active {
@@ -3181,18 +3181,18 @@ a:not(.btn-primary):not(.btn-secondary):active {
 #screen-bubbles .card .fw-600 { color:rgba(255,255,255,0.9); }
 #screen-bubbles .card .text-muted { color:rgba(255,255,255,0.3); }
 /* v8.00: empty-state on light bg — was white-on-white before */
-#screen-bubbles .empty-text { color:#56536E; }
-#screen-bubbles .empty-icon { color:rgba(20,22,28,0.25); }
-/* Empty-state buttons on light bg need dark text (override v6 dark-context defaults) */
+#screen-bubbles .empty-text { color:rgba(255,255,255,0.6); }
+#screen-bubbles .empty-icon { color:rgba(255,255,255,0.25); }
+/* Empty-state buttons on dark bg */
 #screen-bubbles .empty-state .btn-primary {
-  color: #0E141C;
+  color: #fff;
   background: rgba(100,180,230,0.22);
   border: 0.5px solid rgba(100,180,230,0.45);
 }
 #screen-bubbles .empty-state .btn-secondary {
-  color: #56536E;
-  background: rgba(20,22,28,0.05);
-  border: 0.5px solid rgba(20,22,28,0.12);
+  color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.05);
+  border: 0.5px solid rgba(255,255,255,0.12);
 }
 #screen-bubbles .bubble-icon { border:0.5px solid rgba(255,255,255,0.06); }
 
@@ -4016,7 +4016,7 @@ a:not(.btn-primary):not(.btn-secondary):active {
   width: 100%;
   padding: 14px;
   background: rgba(101,168,50,0.15);
-  color: #3F6920;
+  color: #6FDC92;
   font-size: 14px;
   font-weight: 700;
   border-radius: 14px;

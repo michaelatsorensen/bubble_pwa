@@ -686,7 +686,7 @@ function _bcShowEventGreeting() {
 
   var banner = document.createElement('div');
   banner.id = 'bc-event-greeting';
-  banner.style.cssText = 'padding:0.6rem 1rem;margin:0.5rem 1.1rem 0;border-radius:10px;background:rgba(26,158,142,0.08);border:1px solid rgba(26,158,142,0.18);font-size:0.8rem;color:#085041;font-weight:600;display:flex;align-items:center;gap:0.5rem;cursor:pointer;animation:fadeSlideUp 0.3s ease';
+  banner.style.cssText = 'padding:0.6rem 1rem;margin:0.5rem 1.1rem 0;border-radius:10px;background:rgba(26,158,142,0.08);border:1px solid rgba(26,158,142,0.18);font-size:0.8rem;color:#5FE0CC;font-weight:600;display:flex;align-items:center;gap:0.5rem;cursor:pointer;animation:fadeSlideUp 0.3s ease';
   banner.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
     '<span>' + t('event_greeting', { name: escHtml(eventName) }) + '</span>';
   banner.onclick = function() { banner.remove(); };
@@ -1209,7 +1209,7 @@ async function bcLoadEvents() {
           : new Date(ch.created_at).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' });
         var badge = isPast
           ? '<span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(30,27,46,0.06);color:var(--muted)">Afsluttet</span>'
-          : '<span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(46,207,207,0.1);color:#0F6E56">Kommende</span>';
+          : '<span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(46,207,207,0.1);color:#5FE0CC">Kommende</span>';
         return '<div class="card" style="padding:0.75rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')">' +
           '<div class="u-row-gap">' +
           '<div style="width:38px;height:38px;border-radius:10px;background:' + (isPast ? 'rgba(30,27,46,0.04)' : 'rgba(46,207,207,0.08)') + ';display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0">' + icon('calendar') + '</div>' +
@@ -1235,7 +1235,7 @@ async function bcLoadEvents() {
     // Add create buttons for owners
     if (bcBubbleData?._canEdit) {
       html += '<div style="display:flex;gap:0.4rem;margin-top:0.8rem">' +
-        '<button onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('calendar') + ' Event</button>' +
+        '<button onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#5FE0CC;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('calendar') + ' Event</button>' +
         '<button onclick="openCreateSubBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(100,180,230,0.15);border:0.5px solid rgba(100,180,230,0.25);color:rgb(100,180,230);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('bubble') + ' ' + t('bb_create_sub') + '</button>' +
         '</div>';
     }
@@ -2322,7 +2322,7 @@ async function bcLoadInfo() {
 
       var checkoutBtn = '';
       if (isEvent && myCheckinLive) {
-        checkoutBtn = '<button onclick="bcCheckout()" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(46,207,207,0.18);border:0.5px solid rgba(46,207,207,0.35);color:#0F6E56;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + t('bi_checkout') + '</button>';
+        checkoutBtn = '<button onclick="bcCheckout()" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(46,207,207,0.18);border:0.5px solid rgba(46,207,207,0.35);color:#5FE0CC;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + t('bi_checkout') + '</button>';
       }
       bottomHtml = '<div style="display:flex;flex-direction:column;gap:0.4rem;border-top:0.5px solid rgba(20,22,28,0.08);padding-top:0.8rem">' +
         checkoutBtn +
@@ -2407,14 +2407,14 @@ async function bcLoadInfo() {
             ? (_lang === 'da' ? 'slutter kl. ' : 'ends at ') + new Date(b.event_end_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' })
             : '';
           var evBadge = evPast
-            ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(20,22,28,0.08);color:#56536E;font-weight:600;border:0.5px solid rgba(20,22,28,0.12)">Afsluttet</span>'
+            ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);font-weight:600;border:0.5px solid rgba(255,255,255,0.12)">Afsluttet</span>'
             : (evD <= new Date()
-              ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(46,207,207,0.22);color:#0F6E56;font-weight:600;border:0.5px solid rgba(46,207,207,0.4)">I gang</span>'
-              : '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(100,180,230,0.18);color:rgb(60,130,180);font-weight:600;border:0.5px solid rgba(100,180,230,0.35)">' + t('bb_coming') + '</span>');
+              ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(46,207,207,0.22);color:#5FE0CC;font-weight:600;border:0.5px solid rgba(46,207,207,0.4)">I gang</span>'
+              : '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(100,180,230,0.18);color:#A9D9F5;font-weight:600;border:0.5px solid rgba(100,180,230,0.35)">' + t('bb_coming') + '</span>');
           return '<div style="background:rgba(46,207,207,0.12);border:0.5px solid rgba(46,207,207,0.28);border-radius:10px;padding:8px 12px;margin-top:0.6rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem">' +
             '<div style="text-align:left">' +
-              '<div style="font-size:0.8rem;font-weight:700;color:#0F6E56">' + evDateStr + '</div>' +
-              (evEndStr ? '<div style="font-size:0.68rem;color:rgba(15,110,86,0.75);margin-top:1px">' + evEndStr + '</div>' : '') +
+              '<div style="font-size:0.8rem;font-weight:700;color:#5FE0CC">' + evDateStr + '</div>' +
+              (evEndStr ? '<div style="font-size:0.68rem;color:rgba(95,224,204,0.75);margin-top:1px">' + evEndStr + '</div>' : '') +
             '</div>' +
             evBadge +
           '</div>';

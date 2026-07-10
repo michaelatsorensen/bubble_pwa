@@ -787,7 +787,7 @@ function _renderEventDeepLinkModal(opts) {
     readonlyBanner = '<div style="background:rgba(95,94,90,0.08);color:rgba(255,255,255,0.5);font-size:0.72rem;padding:0.5rem 0.75rem;border-radius:8px;text-align:center;margin-bottom:0.75rem">' + t('dl_event_ended_readonly') + '</div>';
   } else if (opts.isMember) {
     // Allerede medlem (event aktivt eller kommende)
-    memberBanner = '<div style="background:rgba(26,158,142,0.10);color:#0F6E56;font-size:0.72rem;font-weight:600;padding:0.5rem 0.75rem;border-radius:8px;text-align:center;margin-bottom:0.75rem">' + t('dl_already_member') + '</div>';
+    memberBanner = '<div style="background:rgba(26,158,142,0.10);color:#5FE0CC;font-size:0.72rem;font-weight:600;padding:0.5rem 0.75rem;border-radius:8px;text-align:center;margin-bottom:0.75rem">' + t('dl_already_member') + '</div>';
     if (opts.timingIsLive) {
       // Live + medlem: Tjek ind primær
       primaryLabel = t('dl_check_in') + ' →';
@@ -858,7 +858,7 @@ function _renderEventDeepLinkModal(opts) {
       '<button id="dl-event-close" style="position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;background:rgba(30,27,46,0.06);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;color:rgba(207,230,247,0.55);border:none;font-family:inherit">×</button>' +
       '<div id="dl-event-fadable">' +
         '<div style="width:56px;height:56px;border-radius:14px;background:rgba(46,207,207,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 0.85rem;overflow:hidden;opacity:' + opts.iconOpacity + '">' + opts.iconHtml + '</div>' +
-        (joinKicker ? '<div style="font-size:0.7rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#0F6E56;margin-bottom:0.3rem">' + escHtml(joinKicker) + '</div>' : '') +
+        (joinKicker ? '<div style="font-size:0.7rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#5FE0CC;margin-bottom:0.3rem">' + escHtml(joinKicker) + '</div>' : '') +
         '<div style="font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:0.2rem">' + opts.title + '</div>' +
         (opts.subtitle ? '<div style="font-size:0.78rem;color:rgba(207,230,247,0.55);margin-bottom:0.25rem">' + opts.subtitle + '</div>' : '') +
         (opts.timingHtml ? '<div style="font-size:0.72rem;color:' + (opts.timingIsLive ? '#0F6E56' : (opts.timingIsEnded ? '#888780' : '#6B6680')) + ';margin-bottom:1rem;font-weight:500">' + opts.timingHtml + '</div>' : '<div style="margin-bottom:1rem"></div>') +
