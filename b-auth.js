@@ -245,6 +245,15 @@ async function checkAuth() {
       // If the recovery link fired PASSWORD_RECOVERY while we were resolving the
       // session, do NOT route into the app — the user must set a new password first.
       if (_inPasswordRecovery) { return; }
+      // Scenario 2: a logged-in user who lands on the bare root (plain browser visit,
+      // no deep-link / OAuth / ?auth=1 / installed-PWA launch) should see the landing
+      // and choose to enter — not be auto-logged straight in. The landing is the
+      // deliberate entry point. shouldBypassLanding() covers all cases that MUST
+      // still go straight in (deep-links, OAuth callbacks, PWA launch, came-from-landing).
+      if (typeof shouldBypassLanding === 'function' && !shouldBypassLanding()) {
+        redirectToLanding();
+        return;
+      }
       var _authProfileOk = await ensureProfileExists(session);
       if (!_authProfileOk) {
         showErrorToast(t('toast_generic_error'));

@@ -17,6 +17,11 @@ var _cameFromLanding = false; // Set true in load handler if ?auth=1 was present
 
 function shouldBypassLanding() {
   if (_cameFromLanding) return true;
+  // Installed PWA (home-screen launch): user installed the app to use it, not to
+  // see the marketing landing every launch — go straight in.
+  var _isStandalone = window.navigator.standalone === true ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  if (_isStandalone) return true;
   var params = new URLSearchParams(window.location.search);
   return params.has('qrt') || params.has('profile') || params.has('join') ||
          params.has('event') || params.has('push') || params.has('auth') ||
