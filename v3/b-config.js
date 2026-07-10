@@ -14,12 +14,13 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-07-10 11:09';
-const BUILD_VERSION  = 'v3-v3.112';
+const BUILD_TIMESTAMP = '2026-07-10 11:40';
+const BUILD_VERSION  = 'v3-v3.113';
 // AUTO_UPDATE: naar true, aktiverer ny service worker STRAKS (auto-reload) uden at
 // vente paa brugeren. Til udviklingsfasen (v3) saa deploys slaar igennem med det samme.
 // SAET TIL false FOER produktion/pilot - ellers genindlaeses appen under brugere midt i noget.
-const AUTO_UPDATE = true;
+// PILOT: false = brugeren ser opdater-banner og vaelger selv hvornaar (ingen afbrydelse).
+const AUTO_UPDATE = false;
 // DEBUG: naar false, gøres console.debug til en no-op saa udviklings-støj ikke
 // vises i produktion. console.warn/error bevares (nyttige i produktion). Saet true
 // under fejlfinding for at faa debug-output tilbage uden at aendre kaldstederne.

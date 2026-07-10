@@ -851,12 +851,13 @@ function showUpdateBanner() {
     + 'padding-top:env(safe-area-inset-top,0px);'
     + 'background:rgba(20,22,28,0.94);'
     + 'backdrop-filter:blur(24px) saturate(1.2);-webkit-backdrop-filter:blur(24px) saturate(1.2);'
-    + 'border-bottom:1px solid rgba(100,180,230,0.35);'
-    + 'box-shadow:0 4px 24px rgba(0,0,0,0.4),0 0 0 0.5px rgba(100,180,230,0.15);';
+    + 'border-bottom:2px solid rgba(245,190,90,0.7);'
+    + 'border-bottom-left-radius:18px;border-bottom-right-radius:18px;'
+    + 'box-shadow:0 4px 24px rgba(0,0,0,0.4),0 3px 20px rgba(245,190,90,0.28);';
   banner.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;'
     + 'padding:0.7rem 1rem;gap:0.75rem;font-family:inherit">'
     + '<div style="display:flex;align-items:center;gap:0.6rem;min-width:0">'
-    + '<div style="width:30px;height:30px;border-radius:9px;background:rgba(100,180,230,0.16);border:0.5px solid rgba(100,180,230,0.35);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#CFE6F7">'
+    + '<div style="width:30px;height:30px;border-radius:9px;background:rgba(245,190,90,0.18);border:0.5px solid rgba(245,190,90,0.4);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#F5C877">'
     + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6M3 12a9 9 0 0115-6.7L21 8M3 22v-6h6M21 12a9 9 0 01-15 6.7L3 16"/></svg>'
     + '</div>'
     + '<span style="font-size:0.76rem;font-weight:600;color:rgba(255,255,255,0.92);line-height:1.35">' + t('update_banner_text') + '</span>'
