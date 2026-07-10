@@ -17,6 +17,48 @@
 var _navLock = false;
 var _navStack = []; // History stack for back navigation
 var _navPopLock = false; // Prevents infinite loops with popstate
+var _navScrollMemory = {}; // screenId -> scrollTop (restore position on back-navigation)
+var _navRestoreToken = 0;  // afbryder en igangvaerende restore-retry naar man navigerer vaek
+
+// Gem scroll-position for en skaerms .scroll-area
+function _navSaveScroll(screenId) {
+  if (!screenId) return;
+  // Afbryd enhver igangvaerende restore-retry (ellers overskriver zombie-loop den nye scroll)
+  _navRestoreToken++;
+  var screen = document.getElementById(screenId);
+  if (!screen) return;
+  var sa = screen.querySelector('.scroll-area');
+  if (sa) _navScrollMemory[screenId] = sa.scrollTop;
+}
+// Genskab scroll-position for en skaerms .scroll-area (0 hvis ingen gemt).
+// Modstandsdygtig over for async-indlaest indhold: proever igen indtil
+// indholdet har hoejde nok. Afbrydes hvis man navigerer vaek (via token).
+function _navRestoreScroll(screenId) {
+  if (!screenId) return;
+  var saved = _navScrollMemory[screenId] || 0;
+  if (saved <= 0) return; // ingen grund til at genskabe top
+  var screen = document.getElementById(screenId);
+  if (!screen) return;
+  var sa = screen.querySelector('.scroll-area');
+  if (!sa) return;
+  var myToken = ++_navRestoreToken; // denne restores egen token
+  var attempts = 0;
+  function tryRestore() {
+    // Afbrudt? (ny navigation/save/restore startede) -> stop
+    if (myToken !== _navRestoreToken) return;
+    attempts++;
+    if (sa.scrollHeight - sa.clientHeight >= saved) {
+      sa.scrollTop = saved;
+      return;
+    }
+    if (attempts < 30) {
+      requestAnimationFrame(tryRestore);
+    } else {
+      sa.scrollTop = saved;
+    }
+  }
+  requestAnimationFrame(tryRestore);
+}
 
 // ── Central navigation state (single source of truth) ──
 var navState = {
@@ -36,10 +78,19 @@ function navBack() {
   // Priority 1: Close overlays/sheets
   var dynOverlays = document.querySelectorAll('.bb-dyn-overlay');
   if (dynOverlays.length > 0) { dynOverlays.forEach(function(el) { bbDynClose(el); }); return; }
+  var ppOverlay = document.getElementById('pp-overlay');
+  if (ppOverlay && ppOverlay.classList.contains('open')) { if (typeof closePersonSheet === 'function') closePersonSheet(); return; }
   var psOverlay = document.getElementById('ps-overlay');
   if (psOverlay && psOverlay.classList.contains('open')) { if (typeof psClose === 'function') psClose(); return; }
   var openSheet = document.querySelector('.bb-overlay.open');
   if (openSheet) { if (typeof bbCloseAll === 'function') bbCloseAll(); return; }
+
+  // Priority 1.5: Fullscreen bubble-chat -> back returns to the bubble detail (Info), not out of the bubble
+  var _bcFs = document.getElementById('screen-bubble-chat');
+  if (_bcFs && _bcFs.classList.contains('active') && _bcFs.classList.contains('bc-fullscreen-chat') && typeof bcSwitchTab === 'function') {
+    bcSwitchTab('info');
+    return;
+  }
 
   // Priority 2: Navigate back in stack
   if (_navStack.length > 1) {
@@ -82,7 +133,15 @@ window.addEventListener('popstate', function() {
     return;
   }
 
-  // Priority 2: Close person sheet
+  // Priority 2: Close full-profile sheet
+  var ppOverlay = document.getElementById('pp-overlay');
+  if (ppOverlay && ppOverlay.classList.contains('open')) {
+    if (typeof closePersonSheet === 'function') closePersonSheet();
+    history.pushState(null, '');
+    return;
+  }
+
+  // Priority 2b: Close person sheet
   var psOverlay = document.getElementById('ps-overlay');
   if (psOverlay && psOverlay.classList.contains('open')) {
     if (typeof psClose === 'function') psClose();
@@ -264,7 +323,22 @@ function _runHook(hookVal) {
 // ── Main router ──
 var _publicScreens = ['screen-auth','screen-loading','screen-onboarding','screen-qr-preview','screen-qr-teaser','screen-social-proof','screen-guest-checkin','screen-event-ready','screen-welcome'];
 
+function _slideNavIndicator(idx) {
+  var indicator = document.getElementById('nav-slide-indicator');
+  var navRow = indicator ? indicator.parentElement : null;
+  if (!indicator || !navRow) return;
+  var items = navRow.querySelectorAll('.nav-item');
+  if (idx < 0 || idx >= items.length) return;
+  var item = items[idx];
+  var rowRect = navRow.getBoundingClientRect();
+  var itemRect = item.getBoundingClientRect();
+  var cx = itemRect.left + itemRect.width / 2 - rowRect.left;
+  indicator.style.transform = 'translateX(' + (cx - 18) + 'px)';
+}
+
 function goTo(screenId) {
+  // Close any open trays
+  try { if (typeof closeNotifTray === 'function') closeNotifTray(); } catch(e) {}
   // Auth guard
   if (!currentUser && _publicScreens.indexOf(screenId) < 0) {
     console.warn('[nav] auth guard: no user, redirecting to auth');
@@ -282,6 +356,9 @@ function goTo(screenId) {
 
   // ── Phase 1: Leave previous screen ──
   try {
+    // Gem scroll-position for skaermen vi forlader (til back-restore)
+    _navSaveScroll(_activeScreen);
+
     // Global cleanup first (GIF picker, plus menus, send flags)
     _navGlobalCleanup();
 
@@ -314,6 +391,8 @@ function goTo(screenId) {
     target.classList.add('active');
   } catch(e) { console.error('[nav] screen switch error:', e); }
   window.scrollTo(0, 0);
+  // Genskab scroll-position for target-skaermens .scroll-area (back-restore)
+  _navRestoreScroll(screenId);
 
   // ── Phase 3: Update bottom nav ──
   try {
@@ -326,6 +405,7 @@ function goTo(screenId) {
         globalNav.querySelectorAll('.nav-item').forEach(function(btn, i) {
           btn.classList.toggle('active', i === activeIdx);
         });
+        _slideNavIndicator(activeIdx);
       }
     }
   } catch(e) { console.error('[nav] nav update error:', e); }

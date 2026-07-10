@@ -234,7 +234,3 @@ function getTagCategory(label) {
 }
 
 // Category color for a tag
-function tagCategoryColor(label) {
-  var cat = getTagCategory(label);
-  return TAG_CATEGORIES[cat]?.color || 'var(--accent)';
-}

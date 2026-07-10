@@ -14,8 +14,20 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-04-06T13:08:12';
-const BUILD_VERSION  = 'v8.17.31';
+const BUILD_TIMESTAMP = '2026-07-10 13:24';
+const BUILD_VERSION  = 'v3-v3.114';
+// AUTO_UPDATE: naar true, aktiverer ny service worker STRAKS (auto-reload) uden at
+// vente paa brugeren. Til udviklingsfasen (v3) saa deploys slaar igennem med det samme.
+// SAET TIL false FOER produktion/pilot - ellers genindlaeses appen under brugere midt i noget.
+// PILOT: false = brugeren ser opdater-banner og vaelger selv hvornaar (ingen afbrydelse).
+const AUTO_UPDATE = false;
+// DEBUG: naar false, gøres console.debug til en no-op saa udviklings-støj ikke
+// vises i produktion. console.warn/error bevares (nyttige i produktion). Saet true
+// under fejlfinding for at faa debug-output tilbage uden at aendre kaldstederne.
+const DEBUG = false;
+if (!DEBUG && typeof console !== 'undefined' && console.debug) {
+  console.debug = function(){};
+}
 const SUPABASE_URL  = "https://api.bubbleme.dk";
 const SUPABASE_ANON_KEY = "sb_publishable_y6BftA4RQw91dLHPXIncag_oGomBk-A";
 const GIPHY_API_KEY = "5GbVR1NiodxCj61uImKnLydncCGdNGfi";
@@ -218,7 +230,7 @@ var _activeScreen = null;
 
 // ── Centralized flow state ──
 // Primary mechanism: URL params via OAuth redirectTo (see b-auth.js getOAuthRedirectTo)
-// Fallback: localStorage with 5-min TTL (enough for OAuth + slow WiFi)
+// Fallback: localStorage with 15-min TTL (enough for email confirmation + OAuth + slow WiFi)
 // Keys: pending_contact, pending_join, event_flow, post_tags_destination
 // Single storage — sessionStorage removed (added complexity without value;
 // localStorage alone is sufficient since URL params handle cross-redirect survival)
@@ -256,11 +268,6 @@ function consumeFlow(key) {
   return val;
 }
 
-// ── UUID validator: used to validate IDs from URL params before storing as flow flags ──
-// Prevents injection attacks via ?profile=<malicious> or ?join=<malicious>
-var _uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-function isUuid(s) { return typeof s === 'string' && _uuidRe.test(s); }
-
 // Safety clear — removes ALL flow flags to prevent stale state
 function flowClearAll() {
   ['pending_contact', 'pending_join', 'event_flow', 'post_tags_destination'].forEach(function(key) {
@@ -277,31 +284,6 @@ function flowClearAll() {
 //  Usage: registerState(function() { myVar = null; myFlag = false; })
 //  resetAppState() iterates the registry automatically.
 //  This prevents "forgot to reset" bugs when adding new state.
-//
-//  ⚠️ CRITICAL RULE — what to clear (and NOT clear):
-//
-//  ✅ DO clear in registerState callbacks:
-//    - User-specific UI state (cached profiles, current views, ratings)
-//    - Timers and intervals (will fire against invalid session otherwise)
-//    - Camera/media resources (privacy — must not persist between users)
-//    - In-memory caches that contain user-specific data
-//    - Locks and pending submission flags
-//    - Consent and onboarding completion flags (GDPR)
-//
-//  ❌ DO NOT clear in registerState callbacks:
-//    - Flow-continuation state: pending_join, pending_contact, event_flow
-//      (sessionStorage keys via flowSet/flowGet)
-//    - bubble_came_from_landing flag (OAuth callback survival)
-//    - bb_route (navigation restore after deep-link auth)
-//    - event_greeting / event_greeting_id (post-checkin welcome)
-//    - _eventBubble, _qrContactProfile (deep-link captured data)
-//
-//  WHY: resetAppState() fires on stale SIGNED_OUT events at boot.
-//  Wiping flow-continuation state at that point would break OAuth callbacks,
-//  deep-link restore, and event onboarding completion. Only handleLogout()
-//  explicitly clears flow flags via flowClearAll().
-//
-//  Rule of thumb: "Reset user-specific UI/cache state — not flow-continuation state."
 // ══════════════════════════════════════════════════════════
 var _stateRegistry = [];
 function registerState(resetFn) {
@@ -438,3 +420,7 @@ var appMode = {
   }
 };
 
+// ── UUID validator: used to validate IDs from URL params before storing as flow flags ──
+// Prevents injection attacks via ?profile=<malicious> or ?join=<malicious>
+var _uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isUuid(s) { return typeof s === 'string' && _uuidRe.test(s); }

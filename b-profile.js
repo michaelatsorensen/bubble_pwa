@@ -9,30 +9,39 @@
 
 //  PERSON PROFILE
 // ══════════════════════════════════════════════════════════
+var _personSheetSeq = 0;
+function openPersonSheet() {
+  var ov = document.getElementById('pp-overlay');
+  var sh = document.getElementById('pp-sheet');
+  if (!ov || !sh) return;
+  var scr = sh.querySelector('.pp-sheet-scroll'); if (scr) scr.scrollTop = 0;
+  ov.classList.add('open');
+  setTimeout(function() { sh.classList.add('open'); }, 10);
+}
+function closePersonSheet() {
+  var ov = document.getElementById('pp-overlay');
+  var sh = document.getElementById('pp-sheet');
+  _personSheetSeq++;                 // invalidate any in-flight profile load
+  navState.personSheetId = null;
+  if (sh) sh.classList.remove('open');
+  setTimeout(function() { if (ov) ov.classList.remove('open'); }, 320);
+}
 async function openPerson(userId, fromScreen) {
   try {
     currentPerson = userId;
     navState.personSheetId = userId;
-    const backBtn = document.getElementById('person-back-btn');
-    // Capture bubble ID and actual origin screen before navigation clears it
-    var _backBubbleId = (fromScreen === 'screen-bubble-chat' && typeof bcBubbleId !== 'undefined') ? bcBubbleId : null;
-    var _backScreen = fromScreen || 'screen-home';
-    backBtn.onclick = function() {
-      if (_backBubbleId) {
-        openBubbleChat(_backBubbleId, _backScreen === 'screen-bubble-chat' ? 'screen-home' : _backScreen);
-      } else {
-        goTo(_backScreen);
-      }
-    };
-    goTo('screen-person');
-    var myNav = _navVersion;
+    // Open as dark sheet (consistent with rest of app). Dismiss = closePersonSheet (hardcoded in HTML).
+    openPersonSheet();
+    var myNav = ++_personSheetSeq;
 
-    // Reset all stateful UI from previous profile
+    // Reset all stateful UI from previous profile + show skeleton over hidden content
     _personReset();
+    var ppSheet = document.getElementById('pp-sheet');
+    if (ppSheet) ppSheet.classList.add('pp-loading');
 
     const { data: p } = await sb.from('profiles').select('*').eq('id', userId).maybeSingle();
-    if (!p || _navVersion !== myNav) {
-      if (!p && _navVersion === myNav) _personRenderEmpty();
+    if (!p || _personSheetSeq !== myNav) {
+      if (!p && _personSheetSeq === myNav) { _personRenderEmpty(); if (ppSheet) ppSheet.classList.remove('pp-loading'); }
       return;
     }
 
@@ -49,29 +58,31 @@ async function openPerson(userId, fromScreen) {
       trackEvent('profile_viewed', { viewed_id: userId, from: fromScreen || 'unknown' });
     }
 
-    // Render identity: avatar, name, title, live badge, bio, linkedin
-    _personRenderIdentity(p);
-    await _personRenderLive(p, userId);
-
-    // Render match: score label + shared interests
-    await _personRenderMatch(p, userId, myNav);
-
-    // Render content: dynamic keywords + public bubbles
-    _personRenderDynamic(p);
-    loadPersonBubbles(userId, myNav);
-
-    // Render bubble-up label
+    // Render synchronous parts into the (still hidden) content
+    _personRenderIdentity(p);      // avatar, name, title, bio, tags, linkedin
+    _personRenderDynamic(p);       // dynamic keywords (Soeger lige nu)
     var firstName = p.is_anon ? 'personen' : (p.name || '').split(' ')[0] || 'personen';
     var bupLabel = document.getElementById('person-bubbleup-label');
     if (bupLabel) bupLabel.textContent = t('ps_bubbleup_create', { name: firstName });
 
-    // Render saved state + stars
-    await _personRenderSaved(userId);
-  } catch(e) { logError("openPerson", e); errorToast("load", e); }
+    // Fetch + render every async section in parallel, then reveal it all at once
+    // (no chunky progressive paint — the sheet stays on the skeleton until ready)
+    await Promise.allSettled([
+      _personRenderLive(p, userId),
+      _personRenderMatch(p, userId, myNav),
+      loadPersonBubbles(userId, myNav),
+      _personRenderSaved(userId)
+    ]);
+    if (_personSheetSeq !== myNav) return;             // user navigated away during load
+    if (ppSheet) ppSheet.classList.remove('pp-loading'); // reveal complete profile together
+  } catch(e) { logError("openPerson", e); errorToast("load", e); var s = document.getElementById('pp-sheet'); if (s) s.classList.remove('pp-loading'); }
 }
 
 // ── Person sub-renderers ──
 
+function _skelChips(widths) {
+  return widths.map(function(w) { return '<span class="skel" style="display:inline-block;width:' + w + 'px;height:24px;border-radius:99px;margin:0.15rem 0.15rem 0 0;vertical-align:middle"></span>'; }).join('');
+}
 function _personReset() {
   var bupBtn = document.getElementById('person-bubbleup-btn');
   var bupConfirm = document.getElementById('person-bubbleup-confirm');
@@ -80,7 +91,7 @@ function _personReset() {
   var starSec = document.getElementById('person-star-section');
   if (starSec) starSec.style.display = 'none';
   var matchEl = document.getElementById('person-match-label');
-  if (matchEl) { matchEl.textContent = ''; matchEl.style.display = 'none'; }
+  if (matchEl) { matchEl.innerHTML = '<span class="skel" style="display:inline-block;width:64px;height:10px;border-radius:99px"></span>'; matchEl.style.display = ''; matchEl.style.background = 'transparent'; matchEl.style.border = '0.5px solid transparent'; matchEl.style.color = 'inherit'; }
   var bubSec = document.getElementById('person-bubbles-section');
   if (bubSec) bubSec.style.display = 'none';
   // Skeleton loading state
@@ -89,14 +100,15 @@ function _personReset() {
   var roleEl = document.getElementById('person-role');
   if (roleEl) roleEl.innerHTML = '<div class="skel" style="width:100px;height:12px;display:inline-block"></div>';
   var personAvEl = document.getElementById('person-avatar');
-  if (personAvEl) personAvEl.innerHTML = '<div class="skel" style="width:100%;height:100%;border-radius:50%"></div>';
+  if (personAvEl) personAvEl.innerHTML = '<div class="skel" style="width:100%;height:100%;border-radius:15px"></div>';
   var overlapEl = document.getElementById('person-overlap');
-  if (overlapEl) overlapEl.innerHTML = '';
+  if (overlapEl) overlapEl.innerHTML = '<div class="skel" style="width:96px;height:9px;border-radius:6px;margin-bottom:0.55rem"></div>' + _skelChips([80,62,92]);
   var bioS = document.getElementById('person-bio-inline');
   if (bioS) bioS.style.display = 'none';
   var tagS = document.getElementById('person-tags-section');
-  if (tagS) tagS.style.display = 'none';
+  if (tagS) { tagS.style.display = ''; var tagsEl0 = document.getElementById('person-tags'); if (tagsEl0) tagsEl0.innerHTML = _skelChips([70,90,56,78,64,84]); }
   document.getElementById('person-dynamic-keywords').innerHTML = '';
+  var dynC = document.getElementById('person-dynamic-card'); if (dynC) dynC.style.display = 'none';
 }
 
 function _personRenderEmpty() {
@@ -105,10 +117,12 @@ function _personRenderEmpty() {
   document.getElementById('person-name').textContent = t('ps_profile_not_available');
   document.getElementById('person-role').textContent = t('ps_profile_not_exists');
   document.getElementById('person-overlap').innerHTML = '';
+  var matchE0 = document.getElementById('person-match-label'); if (matchE0) { matchE0.textContent = ''; matchE0.style.display = 'none'; }
   var bioS = document.getElementById('person-bio-inline'); if (bioS) bioS.style.display = 'none';
   var tagS = document.getElementById('person-tags-section'); if (tagS) tagS.style.display = 'none';
   var bubS = document.getElementById('person-bubbles-section'); if (bubS) bubS.style.display = 'none';
   document.getElementById('person-dynamic-keywords').innerHTML = '';
+  var dynCe = document.getElementById('person-dynamic-card'); if (dynCe) dynCe.style.display = 'none';
 }
 
 function _personRenderIdentity(p) {
@@ -116,12 +130,12 @@ function _personRenderIdentity(p) {
   var initials = p.is_anon ? '?' : (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   var personAvEl = document.getElementById('person-avatar');
   if (personAvEl) {
-    if (p.avatar_url && !p.is_anon) { personAvEl.innerHTML = '<img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+    if (p.avatar_url && !p.is_anon) { personAvEl.innerHTML = '<img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:15px">'; }
     else { personAvEl.textContent = initials; personAvEl.innerHTML = initials; }
   }
   // Name + title
   document.getElementById('person-name').textContent = p.is_anon ? t('ps_anonymous') : (p.name || '?');
-  document.getElementById('person-role').textContent = p.is_anon ? '' : ((p.title || '') + (p.workplace ? ' · ' + p.workplace : ''));
+  document.getElementById('person-role').textContent = p.is_anon ? '' : ((p.workplace || '') + (p.title && p.workplace ? ' · ' + p.title : (p.title || '')));
   // Bio (inline under name)
   document.getElementById('person-bio').textContent = p.bio || '';
   var bioInline = document.getElementById('person-bio-inline');
@@ -130,14 +144,22 @@ function _personRenderIdentity(p) {
   var liBtn = document.getElementById('person-linkedin-btn');
   if (p.linkedin && !p.is_anon) {
     liBtn.style.display = 'flex';
-    liBtn.style.flexDirection = 'column';
     liBtn.href = p.linkedin.startsWith('http') ? p.linkedin : 'https://' + p.linkedin;
   } else {
     liBtn.style.display = 'none';
   }
-  // Tags section hidden — only show in edit profile
+  // Interesser — show the person's FULL interest list. This was previously hidden, which
+  // made the full profile poorer than the radar preview (which shows all tags). The match
+  // section above still highlights SHARED interests; this shows the complete set.
   var tagsSection = document.getElementById('person-tags-section');
-  if (tagsSection) tagsSection.style.display = 'none';
+  var tagsEl = document.getElementById('person-tags');
+  var kws = p.keywords || [];
+  if (tagsSection && tagsEl && kws.length) {
+    tagsEl.innerHTML = kws.map(function(k) { return '<span class="tag">' + escHtml(k) + '</span>'; }).join('');
+    tagsSection.style.display = '';
+  } else if (tagsSection) {
+    tagsSection.style.display = 'none';
+  }
 }
 
 async function _personRenderLive(p, userId) {
@@ -183,7 +205,10 @@ async function _personRenderMatch(p, userId, myNav) {
     var ml = matchLabel(score);
     var matchEl = document.getElementById('person-match-label');
     matchEl.textContent = ml.text;
-    matchEl.style.background = ml.color;
+    // Dark sheet topbar: use the bright tier colors directly (tuned for dark, like the radar preview).
+    matchEl.style.background = ml.bg;
+    matchEl.style.color = ml.color;
+    matchEl.style.border = '0.5px solid ' + (ml.tier === 'network' ? 'rgba(255,255,255,0.18)' : 'transparent');
     matchEl.style.display = ml.text ? '' : 'none';
 
     // Shared interests — collapsible (show 6, expand to all)
@@ -201,7 +226,7 @@ async function _personRenderMatch(p, userId, myNav) {
       overlapEl.innerHTML = '<div class="person-section-title" style="margin-bottom:0.4rem">'+t('ps_shared_interests')+' · ' + overlap.length + '</div>' +
         '<div id="person-tags-visible">' + visibleHtml + '</div>' +
         (hasMore ? '<div id="person-tags-hidden" style="display:none">' + hiddenHtml + '</div>' +
-          '<button id="person-tags-toggle" onclick="togglePersonTags()" style="font-size:0.7rem;font-weight:600;color:var(--accent);background:none;border:none;padding:0.4rem 0;cursor:pointer;font-family:inherit">'+t('ps_show_all',{n:overlap.length})+'</button>' : '');
+          '<button id="person-tags-toggle" onclick="togglePersonTags()" style="font-size:0.7rem;font-weight:600;color:var(--isbla);background:none;border:none;padding:0.4rem 0;cursor:pointer;font-family:inherit">'+t('ps_show_all',{n:overlap.length})+'</button>' : '');
     } else {
       overlapEl.innerHTML = '<span class="fs-085 text-muted">'+t('ps_no_shared')+'</span>';
     }
@@ -210,17 +235,19 @@ async function _personRenderMatch(p, userId, myNav) {
 
 function _personRenderDynamic(p) {
   var dynEl = document.getElementById('person-dynamic-keywords');
+  var card = document.getElementById('person-dynamic-card');
   if ((p.dynamic_keywords||[]).length) {
-    dynEl.innerHTML = '<div class="person-section-title">'+t("ps_seeking_now")+'</div>' + p.dynamic_keywords.map(k => `<span class="tag gold">${icon("fire")} ${escHtml(k)}</span>`).join('');
-  } else { dynEl.innerHTML = ''; }
+    dynEl.innerHTML = '<div class="pp-sec-label">'+t("ps_seeking_now")+'</div>' + p.dynamic_keywords.map(k => `<span class="tag gold">${icon("fire")} ${escHtml(k)}</span>`).join('');
+    if (card) card.style.display = '';
+  } else { dynEl.innerHTML = ''; if (card) card.style.display = 'none'; }
 }
 
 async function _personRenderSaved(userId) {
   var { data: savedCheck } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
-  document.getElementById('save-btn').innerHTML = savedCheck ? icon('checkCircle') + '<span>Gemt</span>' : icon('bookmark') + '<span>Gem</span>';
+  document.getElementById('save-btn').innerHTML = savedCheck ? icon('checkCircle') + '<span>' + t('pf_saved_state') + '</span>' : icon('bookmark') + '<span>' + t('ps_save') + '</span>';
   var psBtn = document.getElementById('ps-save-btn');
   if (psBtn) {
-    psBtn.innerHTML = savedCheck ? icon('checkCircle') + ' Gemt' : icon('bookmark') + ' Gem';
+    psBtn.innerHTML = savedCheck ? icon('checkCircle') + ' ' + t('pf_saved_state') : icon('bookmark') + ' ' + t('ps_save');
     psBtn.className = savedCheck ? 'person-sheet-btn saved' : 'person-sheet-btn secondary';
   }
   var starSection = document.getElementById('person-star-section');
@@ -246,7 +273,7 @@ async function saveContact() {
     _saveContactLock = true;
     var result = await dbActions.saveContact(currentPerson);
     if (!result.ok) return;
-    document.getElementById('save-btn').innerHTML = icon('checkCircle') + '<span>Gemt</span>';
+    document.getElementById('save-btn').innerHTML = icon('checkCircle') + '<span>' + t('pf_saved_state') + '</span>';
     showSuccessToast(t('toast_saved'));
     loadSavedContacts();
   } catch(e) { logError("saveContact", e); errorToast("save", e); }
@@ -268,10 +295,10 @@ function removeSavedContact(savedId, btn) {
   confirm.className = 'remove-confirm';
   confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:10px;gap:0.5rem';
   confirm.onclick = function(e) { e.stopPropagation(); };
-  confirm.innerHTML = `<span style="font-size:0.72rem;color:var(--text-secondary)">Fjern kontakt?</span>
+  confirm.innerHTML = `<span style="font-size:0.72rem;color:rgba(255,255,255,0.4)">${t('sc_remove_confirm')}</span>
     <div style="display:flex;gap:0.3rem">
-      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="event.stopPropagation();confirmRemoveSaved()">Fjern</button>
-      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelRemoveSaved(this)">Annuller</button>
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="event.stopPropagation();confirmRemoveSaved()">${t('misc_remove')}</button>
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelRemoveSaved(this)">${t('misc_cancel')}</button>
     </div>`;
   card.appendChild(confirm);
 }
@@ -317,21 +344,6 @@ var _radarFilter = 'all';    // all | strong | good | shared
 var _radarPage = 0;
 var RADAR_PAGE_SIZE = 25;
 
-function setRadarFilter(filter, btn) {
-  _radarFilter = filter;
-  _radarPage = 0;
-  matchPage = 0;  // Reset map pagination too
-  // Update active button
-  document.querySelectorAll('.radar-filter-btn').forEach(function(b) { b.classList.remove('active'); });
-  if (btn) btn.classList.add('active');
-  // Re-render both views
-  renderProximityDots();
-  renderRadarList();
-  // Update count label
-  var filtered = getFilteredProfiles();
-  var el = document.getElementById('prox-range-label');
-  if (el) el.textContent = filtered.length + ' personer';
-}
 
 function getFilteredProfiles() {
   return proxAllProfiles.filter(function(p) {
@@ -345,16 +357,9 @@ function getFilteredProfiles() {
   });
 }
 
-function radarNextPage() {
-  _radarPage++;
-  renderRadarList();
-  // Scroll list to top
-  var listEl = document.getElementById('radar-view-list');
-  if (listEl) listEl.scrollTop = 0;
-}
 var proxColors = [
   'linear-gradient(135deg,#2ECFCF,#22B8CF)',  // cyan
-  'linear-gradient(135deg,#6366F1,#7C5CFC)',  // indigo→purple
+  'linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))',  // indigo→purple
   'linear-gradient(135deg,#E879A8,#EC4899)',  // pink→rose
   'linear-gradient(135deg,#F59E0B,#EAB308)',  // amber
   'linear-gradient(135deg,#1A9E8E,#10B981)',  // teal→emerald
@@ -365,7 +370,6 @@ var proxColors = [
   'linear-gradient(135deg,#D946EF,#C026D3)',  // fuchsia
 ];
 // Radar (map): relevance labels + thresholds — "who matches me?"
-function _proxRangeLabels() { return [t('prox_near'),t('prox_good'),t('prox_all'),t('prox_extended'),t('prox_everyone')]; }
 var proxThresholds  = [0.6, 0.35, 0.15, 0.05, 0];
 // List: proximity labels — "who is nearby?" (GPS-ready, simulated for now)
 var listRangeLabels = ['50m','200m','500m','2km','10km'];
@@ -493,13 +497,6 @@ function renderProximityDots() {
 }
 
 
-function radarShowMore() {
-  var allFil = getFilteredProfiles();
-  var maxPages = Math.ceil(allFil.length / MATCH_CAP);
-  matchPage = (matchPage + 1) % maxPages;
-  renderProximityDots();
-  showToast('Side ' + (matchPage + 1) + ' af ' + maxPages);
-}
 
 function drawProxRings(canvas) {
   if (!canvas) return;
@@ -511,12 +508,12 @@ function drawProxRings(canvas) {
 
   var centerR = 0.10;
   var zones = [
-    { r: centerR, fill: 'rgba(124,92,252,0.18)' },
-    { r: 0.26, fill: 'rgba(124,92,252,0.10)' },
+    { r: centerR, fill: 'rgba(20,22,28,0.08)' },
+    { r: 0.26, fill: 'rgba(20,22,28,0.05)' },
     { r: 0.42, fill: 'rgba(46,207,207,0.08)' },
     { r: 0.58, fill: 'rgba(107,139,255,0.06)' },
     { r: 0.74, fill: 'rgba(139,92,246,0.04)' },
-    { r: 0.90, fill: 'rgba(124,92,252,0.02)' },
+    { r: 0.90, fill: 'rgba(20,22,28,0.02)' },
   ];
   // Draw filled zones from outside in so inner overlaps
   for (var i = zones.length - 1; i >= 0; i--) {
@@ -529,31 +526,20 @@ function drawProxRings(canvas) {
   for (var i = 0; i < zones.length; i++) {
     ctx.beginPath();
     ctx.arc(cx, cy, zones[i].r * maxR, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(30,27,46,0.08)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
     ctx.lineWidth = 1;
     ctx.stroke();
   }
   // Subtle center glow
   var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, zones[0].r * maxR);
-  g.addColorStop(0, 'rgba(124,92,252,0.12)');
-  g.addColorStop(1, 'rgba(124,92,252,0)');
+  g.addColorStop(0, 'rgba(20,22,28,0.06)');
+  g.addColorStop(1, 'rgba(20,22,28,0)');
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.arc(cx, cy, zones[0].r * maxR, 0, Math.PI * 2);
   ctx.fill();
 }
 
-function updateProximityRange(val) {
-  // Now driven by filter buttons, not slider
-  var el = document.getElementById('prox-range-label');
-  var filtered = getFilteredProfiles();
-  if (el) el.textContent = filtered.length + ' personer';
-  if (radarCurrentView === 'map') {
-    renderProximityDots();
-  } else {
-    renderRadarList();
-  }
-}
 
 function toggleProximityVisibility() {
   proxVisible = !proxVisible;
@@ -561,8 +547,8 @@ function toggleProximityVisibility() {
   var d = document.getElementById('prox-toggle-dot');
   var l = document.getElementById('prox-toggle-label');
   var c = document.getElementById('prox-center');
-  if (d) d.style.background = proxVisible ? '#1A9E8E' : 'var(--muted)';
-  if (l) l.textContent = proxVisible ? 'Synlig' : 'Skjult';
+  if (d) d.style.background = proxVisible ? '#1A9E8E' : 'rgba(255,255,255,0.25)';
+  if (l) l.textContent = proxVisible ? t('prox_visible') : t('prox_hidden');
   // Restyle the whole button for clear on/off state
   if (btn) {
     if (proxVisible) {
@@ -570,17 +556,17 @@ function toggleProximityVisibility() {
       btn.style.borderColor = 'rgba(26,158,142,0.3)';
       btn.style.color = '#1A9E8E';
     } else {
-      btn.style.background = 'rgba(30,27,46,0.04)';
-      btn.style.borderColor = 'var(--glass-border)';
-      btn.style.color = 'var(--muted)';
+      btn.style.background = 'rgba(255,255,255,0.04)';
+      btn.style.borderColor = 'rgba(255,255,255,0.08)';
+      btn.style.color = 'rgba(255,255,255,0.25)';
     }
   }
   if (c) { if (proxVisible && currentProfile && currentProfile.name) { 
     if (currentProfile.avatar_url) { c.innerHTML = '<img src="' + escHtml(currentProfile.avatar_url) + '">'; } 
     else { c.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); }
-    c.style.background = 'var(--gradient-primary)'; } else { c.textContent = '?'; c.style.background = 'rgba(30,27,46,0.06)'; } }
+    c.style.background = 'linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))'; } else { c.textContent = '?'; c.style.background = 'rgba(255,255,255,0.06)'; } }
   var hint = document.getElementById('prox-toggle-hint');
-  if (hint) hint.textContent = proxVisible ? 'Andre kan se dig på radar' : 'Du er usynlig på radar';
+  if (hint) hint.textContent = proxVisible ? t('pf_visible_on_radar') : t('pf_invisible_on_radar');
   toggleAnon();
 }
 
@@ -668,19 +654,19 @@ async function psSaveContact() {
   try {
     const userId = document.getElementById('person-sheet-el')?.dataset?.userId;
     if (!userId) return;
-    if (userId === currentUser.id) { showWarningToast('Du kan ikke gemme dig selv'); return; }
+    if (userId === currentUser.id) { showWarningToast(t('pf_cant_save_self')); return; }
     const { data: existing } = await sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle();
     const btn = document.getElementById('ps-save-btn');
     if (existing) {
       await dbActions.removeContact(userId);
-      if (btn) { btn.innerHTML = icon('bookmark') + ' Gem'; btn.className = 'person-sheet-btn secondary'; }
+      if (btn) { btn.innerHTML = icon('bookmark') + ' ' + t('ps_save'); btn.className = 'person-sheet-btn secondary'; }
       var sr = document.getElementById('ps-star-row');
       if (sr) sr.style.display = 'none';
       starSet(userId, 0);
       showToast(t('toast_deleted'));
     } else {
       await dbActions.saveContact(userId);
-      if (btn) { btn.innerHTML = icon('checkCircle') + ' Gemt'; btn.className = 'person-sheet-btn saved'; }
+      if (btn) { btn.innerHTML = icon('checkCircle') + ' ' + t('pf_saved_state'); btn.className = 'person-sheet-btn saved'; }
       // Show star rating row
       var sr2 = document.getElementById('ps-star-row');
       var starsEl2 = document.getElementById('ps-stars');
@@ -710,14 +696,22 @@ async function loadProfile() {
     const initials = (currentProfile.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     var myAvEl = document.getElementById('my-avatar');
     if (myAvEl) {
-      if (currentProfile.avatar_url) { myAvEl.innerHTML = '<img src="'+escHtml(currentProfile.avatar_url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+      if (currentProfile.avatar_url) { myAvEl.innerHTML = '<img src="'+escHtml(currentProfile.avatar_url)+'" class="u-avatar-img">'; }
       else { myAvEl.textContent = initials; }
     }
     document.getElementById('my-name').textContent = currentProfile.name || '...';
-    document.getElementById('my-role').textContent = (currentProfile.title || '') + (currentProfile.workplace ? ' · ' + currentProfile.workplace : '');
+    document.getElementById('my-role').textContent = (currentProfile.workplace || '') + (currentProfile.title && currentProfile.workplace ? ' · ' + currentProfile.title : (currentProfile.title || ''));
+    var profSub = document.getElementById('prof-topbar-sub');
+    if (profSub) profSub.textContent = currentProfile.name || '';
 
     isAnon = currentProfile.is_anon || false;
     updateAnonToggle();
+
+    // If returning with the Bobler sub-tab open, fire its loader FIRST so the skeleton
+    // shows immediately, then let the fetch run in parallel with the other panels.
+    // (Calling it after Promise.all left stale cards lingering, then a late skeleton flash.)
+    var _sblRefresh = document.getElementById('saved-bubbles-list');
+    if (_sblRefresh && _sblRefresh.style.display !== 'none') loadSavedBubbles();
 
     await Promise.all([loadSavedContacts(), loadProfileBubbles(), loadProfileInvitations(), loadDashboard()]);
 
@@ -731,26 +725,15 @@ async function loadProfile() {
           sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).then(function(r) { return r.count || 0; }).catch(function() { return 0; })
         ]);
         function qStat(val, label) {
-          return '<div style="text-align:center;flex:1"><div style="font-size:1rem;font-weight:800;color:var(--text)">' + val + '</div><div style="font-size:0.6rem;color:var(--text-secondary);font-weight:500">' + label + '</div></div>';
+          return '<div style="text-align:center;flex:1"><div style="font-size:1rem;font-weight:800;color:rgba(255,255,255,0.9)">' + val + '</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);font-weight:500">' + label + '</div></div>';
         }
         qs.innerHTML = qStat(qViews, t('pf_stat_views')) + qStat(qSaved, t('pf_stat_saved_you')) + qStat(qBubbles, t('pf_stat_bubbles'));
       } catch(e) { qs.innerHTML = ''; }
     }
 
-    // Admin panel — only for admin role
-    var adminPanel = document.getElementById('admin-panel');
-    if (adminPanel) {
-      if (isAdmin()) {
-        adminPanel.style.display = 'block';
-        adminLoadReports();
-        adminLoadBanned();
-        adminLoadStats();
-        if (typeof initAdminDebug === 'function') initAdminDebug();
-      } else {
-        adminPanel.style.display = 'none';
-      }
-    }
-  } catch(e) { logError("loadProfile", e); _renderToast('Kunne ikke hente profil — tjek forbindelsen', 'error'); }
+    // Admin — super admin lives behind the FAB cockpit, not in profile
+    if (isAdmin() && typeof initAdminDebug === 'function') initAdminDebug();
+  } catch(e) { logError("loadProfile", e); _renderToast(t('pf_load_profile_fail'), 'error'); }
 }
 
 // Standalone saved contacts loader — called from loadProfile AND after save/remove
@@ -775,6 +758,23 @@ function starRender(contactId) {
   return '<span class="star-badge">' + '\u2605'.repeat(r) + '</span>';
 }
 
+function bubbleStarGetAll() {
+  try { var s = localStorage.getItem('bubble_bubblestars'); return s ? JSON.parse(s) : {}; } catch(e) { return {}; }
+}
+function bubbleStarGet(bubbleId) {
+  return bubbleStarGetAll()[bubbleId] || 0;
+}
+function bubbleStarSet(bubbleId, rating) {
+  var all = bubbleStarGetAll();
+  if (rating <= 0) { delete all[bubbleId]; } else { all[bubbleId] = Math.min(rating, 3); }
+  try { localStorage.setItem('bubble_bubblestars', JSON.stringify(all)); } catch(e) {}
+}
+function bubbleStarRender(bubbleId) {
+  var r = bubbleStarGet(bubbleId);
+  if (r === 0) return '';
+  return '<span class="star-badge">' + '\u2605'.repeat(r) + '</span>';
+}
+
 async function loadSavedContacts() {
   try {
     if (!currentUser) return;
@@ -789,7 +789,7 @@ async function loadSavedContacts() {
 
     if (savedErr) {
       console.error('loadSavedContacts query error:', savedErr);
-      if (savedEl) savedEl.innerHTML = '<div class="empty-state" style="padding:1rem 0"><div class="empty-text" style="font-size:0.72rem;color:var(--muted)">Kunne ikke hente kontakter</div></div>';
+      if (savedEl) savedEl.innerHTML = '<div class="empty-state" style="padding:1rem 0"><div class="empty-text" style="font-size:0.72rem;color:var(--text-on-light-muted)">' + t('pf_load_contacts_fail') + '</div></div>';
       renderSavedStoryBar(null, {});
       return;
     }
@@ -806,16 +806,28 @@ async function loadSavedContacts() {
     // Fetch profiles separately — no FK dependency
     const contactIds = saved.map(s => s.contact_id);
     const { data: profiles, error: profErr } = await sb.from('profiles')
-      .select('id, name, title, keywords, workplace, avatar_url').in('id', contactIds);
+      .select('id, name, title, keywords, workplace, avatar_url, dynamic_keywords, bio, linkedin, is_anon').in('id', contactIds);
 
     if (profErr) console.error('loadSavedContacts profiles error:', profErr);
     const profileMap = {};
     (profiles || []).forEach(p => { profileMap[p.id] = p; });
 
+    // Shared-bubble counts per saved contact — same input the radar uses for calcMatchScore,
+    // so the match category shown here matches what the user saw on the dartboard.
+    var savedBmMap = {};
+    try {
+      var { data: myBubs } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
+      var myBubIds = (myBubs || []).map(function(m) { return m.bubble_id; });
+      if (myBubIds.length > 0) {
+        var { data: bmRows } = await sb.from('bubble_members').select('user_id,bubble_id').in('bubble_id', myBubIds).in('user_id', contactIds);
+        (bmRows || []).forEach(function(bm) { savedBmMap[bm.user_id] = (savedBmMap[bm.user_id] || 0) + 1; });
+      }
+    } catch(e) {}
+
     // Update home screen story bar
     renderSavedStoryBar(saved, profileMap);
 
-    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
+    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
 
     // Sort by star rating (highest first), then by date
     // .slice() creates a mutable copy — Supabase objects are frozen on iOS Safari
@@ -825,13 +837,15 @@ async function loadSavedContacts() {
       return new Date(b.created_at) - new Date(a.created_at);
     });
 
-    if (savedEl) savedEl.innerHTML = '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.5rem">Du har ' + saved.length + ' gemte profil' + (saved.length !== 1 ? 'er' : '') + '</div>' + saved.map((s, i) => {
+    if (savedEl) savedEl.innerHTML = '<div style="font-size:0.72rem;color:var(--text-on-light-muted);margin-bottom:0.5rem">' + (saved.length === 1 ? t('pf_saved_count_one', {count: saved.length}) : t('pf_saved_count_many', {count: saved.length})) + '</div>' + saved.map((s, i) => {
       const p = profileMap[s.contact_id] || {};
       if (s.contact_id === currentUser?.id) return '';
       const ini = (p.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const col = colors[i % colors.length];
       const stars = starRender(s.contact_id);
       const pid = p.id || s.contact_id;
+      const _mscore = (typeof calcMatchScore === 'function' && currentProfile) ? calcMatchScore(currentProfile, p, savedBmMap[s.contact_id] || 0) : 0;
+      const _mbadge = (typeof matchBadgeHtml === 'function') ? matchBadgeHtml(_mscore) : '';
       return `<div class="card saved-card" style="padding:0.7rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="bcOpenPerson('${pid}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${col}','screen-profile')">
         <div class="flex-row-center" style="gap:0.7rem">
           <div class="saved-avatar-wrap" style="position:relative;flex-shrink:0">
@@ -839,12 +853,13 @@ async function loadSavedContacts() {
             ${stars}
           </div>
           <div style="flex:1;min-width:0">
-            <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||t('misc_unknown'))}</div>
-            <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml([p.title, p.workplace].filter(Boolean).join(' · '))}</div>
+            <div class="fw-600 fs-085 u-ellipsis">${escHtml(p.name||t('misc_unknown'))}</div>
+            <div class="fs-075 text-muted u-ellipsis">${escHtml([p.title, p.workplace].filter(Boolean).join(' · '))}</div>
+            ${_mbadge ? `<div style="margin-top:0.3rem">${_mbadge}</div>` : ''}
           </div>
           <div style="display:flex;gap:0.35rem;flex-shrink:0" onclick="event.stopPropagation()">
-            <button class="saved-action-btn" onclick="openChat('${pid}','screen-profile')" title="Send besked">${icon('chat')}</button>
-            <button class="saved-action-btn danger" onclick="removeSavedContact('${s.id}',this)" title="Fjern">${icon('x')}</button>
+            <button class="saved-action-btn" onclick="openChat('${pid}','screen-profile')" title="' + t('pf_send_message') + '">${icon('chat')}</button>
+            <button class="saved-action-btn danger" onclick="removeSavedContact('${s.id}',this)" title="' + t('misc_remove') + '">${icon('x')}</button>
           </div>
         </div>
       </div>`;
@@ -862,34 +877,124 @@ function renderSavedStoryBar(saved, profileMap) {
   if (!saved || saved.length === 0) { bar.style.display = 'none'; return; }
   bar.style.display = 'block';
   if (badge) badge.textContent = saved.length;
-  // Sort by stars for story bar too
   saved = saved.slice().sort(function(a, b) {
     var sa = starGet(a.contact_id), sb2 = starGet(b.contact_id);
     return sb2 - sa;
   });
-  var colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
-  list.innerHTML = saved.map(function(s, i) {
+  var colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)'];
+  var maxShow = Math.min(saved.length, 5);
+  list.innerHTML = saved.slice(0, maxShow).map(function(s, i) {
     var p = profileMap[s.contact_id];
-    if (s.contact_id === currentUser?.id) return '';
-    var name = p ? p.name : '?';
-    var ini = (name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    var ini = ((p && p.name) || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     var col = colors[i % colors.length];
-    var firstName = (name||'?').split(' ')[0];
-    var starCount = starGet(s.contact_id);
-    var starBadge = starCount > 0 ? '<span class="star-badge">' + '★'.repeat(starCount) + '</span>' : '';
-    var storyAvatar = (p && p.avatar_url) ?
-      '<div style="position:relative"><div class="saved-story-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>' + starBadge + '</div>' :
-      '<div style="position:relative"><div class="saved-story-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>' + starBadge + '</div>';
-    return '<div class="saved-story-item" onclick="openPerson(\'' + s.contact_id + '\',\'screen-home\')">' +
-      storyAvatar +
-      '<div class="saved-story-name">' + escHtml(firstName) + '</div></div>';
+    var ml = i > 0 ? 'margin-left:-7px;' : '';
+    var zi = 'z-index:' + (maxShow - i) + ';';
+    if (p && p.avatar_url) {
+      return '<div style="width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);overflow:hidden;position:relative;' + ml + zi + '"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
+    }
+    return '<div style="width:24px;height:24px;border-radius:50%;background:' + col + ';border:2px solid rgba(255,255,255,0.2);font-size:7px;font-weight:600;color:white;display:flex;align-items:center;justify-content:center;position:relative;' + ml + zi + '">' + escHtml(ini) + '</div>';
   }).join('');
 }
 
 // Profile tab switching — same pattern as bcSwitchTab
 function openSettingsModal() {
   _updateLangBtns();
+  var bc = document.getElementById('blocked-count-badge');
+  if (bc) bc.textContent = (typeof _blockedUsers !== 'undefined' && _blockedUsers.length) ? String(_blockedUsers.length) : '';
+  _collapseDeleteAccountAccordion();
   openModal('modal-settings');
+}
+
+// ══ GDPR: slet konto (fold-ud i Indstillinger) ══
+// Sammenfold + nulstil DELETE-feltet hver gang Indstillinger aabnes (saa fold-ud aldrig huskes aaben)
+function _collapseDeleteAccountAccordion() {
+  var head = document.getElementById('del-acc-head');
+  var panel = document.getElementById('del-acc-panel');
+  var inp = document.getElementById('del-acc-input');
+  if (panel) panel.classList.remove('open');
+  if (head) head.classList.remove('open');
+  if (inp) { inp.value = ''; inp.disabled = false; }
+  _checkDeleteConfirmInput();
+}
+
+function toggleDeleteAccountAccordion() {
+  var head = document.getElementById('del-acc-head');
+  var panel = document.getElementById('del-acc-panel');
+  if (!head || !panel) return;
+  var open = panel.classList.toggle('open');
+  head.classList.toggle('open', open);
+  if (!open) {
+    var inp = document.getElementById('del-acc-input');
+    if (inp) inp.value = '';
+    _checkDeleteConfirmInput();
+  } else {
+    setTimeout(function() { panel.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 140);
+  }
+}
+
+function _checkDeleteConfirmInput() {
+  var inp = document.getElementById('del-acc-input');
+  var btn = document.getElementById('del-acc-btn');
+  if (!inp || !btn) return;
+  var ok = (inp.value.trim() === 'DELETE'); // case-sensitive, eksakt; samme ord paa DA+EN
+  btn.classList.toggle('armed', ok);
+  btn.disabled = !ok;
+  inp.classList.toggle('ok', ok);
+}
+
+// Best-effort: slet personlige filer via Storage-API (SQL-RPC kan ikke slette fra storage.objects).
+async function _deleteOwnStorageFiles(uid) {
+  var prefixes = ['avatars/' + uid, 'dm/' + uid];
+  for (var i = 0; i < prefixes.length; i++) {
+    try {
+      var res = await sb.storage.from('bubble-files').list(prefixes[i], { limit: 100 });
+      var files = res && res.data;
+      if (files && files.length) {
+        var paths = files.filter(function(f) { return f.id; }).map(function(f) { return prefixes[i] + '/' + f.name; });
+        if (paths.length) await sb.storage.from('bubble-files').remove(paths);
+      }
+    } catch (e) { console.debug('[gdpr] storage cleanup ' + prefixes[i] + ':', e); }
+  }
+}
+
+async function confirmDeleteAccount() {
+  var btn = document.getElementById('del-acc-btn');
+  if (!btn || !btn.classList.contains('armed')) return;
+  if (!currentUser) return;
+  var uid = currentUser.id;
+  var inp = document.getElementById('del-acc-input');
+  // Laas mod dobbelt-tryk
+  btn.classList.remove('armed');
+  btn.disabled = true;
+  if (inp) inp.disabled = true;
+  try {
+    // 1. Personlige filer (best-effort — maa ikke blokere selve sletningen)
+    await _deleteOwnStorageFiles(uid);
+    // 2. Anonymisering + permanent sletning af konto
+    var resp = await sb.rpc('gdpr_delete_user', { p_user_id: uid });
+    if (resp.error || !resp.data || resp.data.ok !== true) {
+      logError('gdpr_delete_user', resp.error || resp.data);
+      showErrorToast(t('del_acc_error'));
+      btn.disabled = false;
+      if (inp) inp.disabled = false;
+      _checkDeleteConfirmInput();
+      return;
+    }
+    // 3. Teardown + log ud + tilbage til landing
+    try { bcUnsubscribeAll(); rtUnsubscribeAll(); sb.removeAllChannels(); } catch (e) {}
+    await sb.auth.signOut();
+    flowClearAll();
+    resetAppState();
+    try { sessionStorage.removeItem('bubble_came_from_landing'); } catch (e) {}
+    redirectToLanding();
+    showSuccessToast(t('del_acc_success'));
+  } catch (e) {
+    logError('confirmDeleteAccount', e);
+    showErrorToast(t('del_acc_error'));
+    btn.disabled = false;
+    if (inp) inp.disabled = false;
+    _checkDeleteConfirmInput();
+  }
 }
 
 function profSwitchTab(tab) {
@@ -903,6 +1008,47 @@ function profSwitchTab(tab) {
   if (tab === 'bubbles') loadProfileBubbles();
 }
 
+// Saved tab sub-toggle: Kontakter | Bobler — share one panel, choice persists via DOM
+function profSavedSub(which) {
+  var sc = document.getElementById('saved-contacts');
+  var sbl = document.getElementById('saved-bubbles-list');
+  var btnC = document.getElementById('saved-sub-contacts');
+  var btnB = document.getElementById('saved-sub-bobler');
+  if (sc) sc.style.display = which === 'contacts' ? 'block' : 'none';
+  if (sbl) sbl.style.display = which === 'bobler' ? 'block' : 'none';
+  if (btnC) btnC.classList.toggle('active', which === 'contacts');
+  if (btnB) btnB.classList.toggle('active', which === 'bobler');
+  if (which === 'bobler') loadSavedBubbles();
+}
+
+// Load saved bubbles — reuses the native Discover card (event lifecycle + Afsluttet come free)
+async function loadSavedBubbles() {
+  var el = document.getElementById('saved-bubbles-list');
+  if (!el || !currentUser) return;
+  try {
+    el.innerHTML = skelCards(3);
+    await getSavedBubbleIds(true); // refresh shared cache so bookmarks stay accurate
+    var { data: savedRows } = await sb.from('saved_bubbles')
+      .select('bubble_id, created_at')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
+    if (!savedRows || savedRows.length === 0) {
+      el.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bookmark') + '</div><div class="empty-text">' + t('pf_no_saved_bubbles') + '<br>' + t('pf_no_saved_bubbles_desc') + '</div></div>';
+      return;
+    }
+    var ids = savedRows.map(function(s) { return s.bubble_id; });
+    var { data: bubbles } = await sb.from('bubbles').select('*').in('id', ids);
+    if (!bubbles || bubbles.length === 0) {
+      el.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bookmark') + '</div><div class="empty-text">' + t('pf_no_saved_bubbles') + '<br>' + t('pf_no_saved_bubbles_desc') + '</div></div>';
+      return;
+    }
+    var byId = {};
+    bubbles.forEach(function(b) { byId[b.id] = b; });
+    var ordered = ids.map(function(id) { return byId[id]; }).filter(Boolean);
+    el.innerHTML = ordered.map(function(b) { return bubbleCard(b, false, 'screen-profile'); }).join('');
+  } catch (e) { logError('loadSavedBubbles', e); errorToast('load', e); }
+}
+
 // Load user's bubbles into profile bubbles tab
 async function loadProfileBubbles() {
   var el = document.getElementById('profile-bubbles');
@@ -911,7 +1057,7 @@ async function loadProfileBubbles() {
     el.innerHTML = skelCards(3);
     var { data: memberships } = await sb.from('bubble_members').select('bubble_id').eq('user_id', currentUser.id);
     if (!memberships || memberships.length === 0) {
-      el.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke med i nogen bobler endnu</div></div>';
+      el.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">' + t('pf_no_bubbles') + '</div></div>';
       return;
     }
     var myIds = memberships.map(function(m) { return m.bubble_id; });
@@ -920,35 +1066,96 @@ async function loadProfileBubbles() {
       .in('id', myIds)
       .order('created_at', { ascending: false });
     if (!bubbles || bubbles.length === 0) {
-      el.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke med i nogen bobler endnu</div></div>';
+      el.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">' + t('pf_no_bubbles') + '</div></div>';
       return;
     }
     var networks = bubbles.filter(function(b) { return b.type !== 'event' && b.type !== 'live'; });
     var events = bubbles.filter(function(b) { return b.type === 'event' || b.type === 'live'; });
+
+    // Networks sorted by user star rating (highest first), then chronological
+    networks.sort(function(a, b) {
+      var ra = bubbleStarGet(a.id), rb = bubbleStarGet(b.id);
+      if (rb !== ra) return rb - ra;
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    // Split events by whether they have ended (event_end_date, else event_date)
+    var now = new Date();
+    function eventEnded(b) {
+      var end = b.event_end_date || b.event_date;
+      return end && new Date(end) < now;
+    }
+    var activeEvents = events.filter(function(b) { return !eventEnded(b); });
+    var pastEvents = events.filter(eventEnded);
+    // Active: soonest first. History: most recently ended first.
+    activeEvents.sort(function(a, b) { return new Date(a.event_date || 0) - new Date(b.event_date || 0); });
+    pastEvents.sort(function(a, b) { return new Date(b.event_end_date || b.event_date || 0) - new Date(a.event_end_date || a.event_date || 0); });
+
+    function networkCard(b) {
+      var mc = b.member_count ?? b.bubble_members?.[0]?.count ?? 0;
+      var stars = bubbleStarGet(b.id);
+      var starHtml = '';
+      if (stars > 0) {
+        starHtml = '<div style="display:flex;gap:1px;flex-shrink:0;color:#F5C518;font-size:0.72rem">' + '\u2605'.repeat(stars) + '</div>';
+      }
+      var h = '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem"><div class="u-row-gap">';
+      h += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(100,180,230,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgb(100,180,230);overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;filter:none">' : ico('bubble')) + '</div>';
+      h += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
+      h += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.45)">' + visIcon(b.visibility) + mc + ' ' + t('ps_members') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div>' + starHtml + '</div></div>';
+      return h;
+    }
+    function eventCard(b, past) {
+      var dateStr = (past ? (b.event_end_date || b.event_date) : b.event_date) ? new Date(past ? (b.event_end_date || b.event_date) : b.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
+      var h = '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.3rem;' + (past ? 'opacity:0.55' : '') + '"><div class="u-row-gap">';
+      h += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,' + (past ? '0.14' : '0.22') + ');display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E;overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;filter:none">' : ico('calendar')) + '</div>';
+      h += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
+      h += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.45)">' + visIcon(b.visibility) + dateStr + '</div></div></div></div>';
+      return h;
+    }
+
     var html = '';
     if (networks.length > 0) {
-      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">Netværk (' + networks.length + ')</div>';
-      networks.forEach(function(b) {
-        var mc = b.member_count ?? b.bubble_members?.[0]?.count ?? 0;
-        html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem"><div style="display:flex;align-items:center;gap:0.6rem">';
-        html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7C5CFC;overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : ico('bubble')) + '</div>';
-        html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
-        html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(b.visibility) + mc + ' ' + t('ps_members') + (b.location ? ' · ' + escHtml(b.location) : '') + '</div></div></div></div>';
-      });
+      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-on-light-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">' + t('pf_networks_label') + ' (' + networks.length + ')</div>';
+      networks.forEach(function(b) { html += networkCard(b); });
     }
-    if (events.length > 0) {
-      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin:0.6rem 0 0.4rem">Events (' + events.length + ')</div>';
-      events.forEach(function(b) {
-        var dateStr = b.event_date ? new Date(b.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
-        var isPast = b.event_date && new Date(b.event_date) < new Date();
-        html += '<div class="card" data-action="openBubble" data-id="' + b.id + '" style="margin-bottom:0.35rem;' + (isPast ? 'opacity:0.5' : '') + '"><div style="display:flex;align-items:center;gap:0.6rem">';
-        html += '<div style="width:36px;height:36px;border-radius:10px;background:rgba(46,207,207,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#1A9E8E;overflow:hidden">' + (b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : ico('calendar')) + '</div>';
-        html += '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600">' + escHtml(b.name) + '</div>';
-        html += '<div style="font-size:0.68rem;color:var(--muted)">' + visIcon(b.visibility) + dateStr + '</div></div></div></div>';
-      });
+    if (activeEvents.length > 0) {
+      html += '<div style="font-size:0.68rem;font-weight:700;color:var(--text-on-light-muted);text-transform:uppercase;letter-spacing:0.04em;margin:0.6rem 0 0.4rem">Events (' + activeEvents.length + ')</div>';
+      activeEvents.forEach(function(b) { html += eventCard(b, false); });
+    }
+    if (pastEvents.length > 0) {
+      var HIST_SHOWN = 5;
+      html += '<div id="pf-hist-toggle" onclick="pfToggleHistory()" style="margin-top:0.7rem;display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.7rem;background:rgba(20,22,28,0.04);border-radius:12px;cursor:pointer;user-select:none">';
+      html += '<span style="display:flex;align-items:center;color:var(--text-on-light-muted)">' + ico('history') + '</span>';
+      html += '<span style="flex:1;font-size:0.68rem;font-weight:700;color:var(--text-on-light-muted);text-transform:uppercase;letter-spacing:0.04em">' + t('pf_past_events') + ' (' + pastEvents.length + ')</span>';
+      html += '<span id="pf-hist-chevron" style="display:flex;align-items:center;color:var(--text-on-light-subtle);transition:transform 0.2s">' + ico('chevron-down') + '</span></div>';
+      html += '<div id="pf-hist-body" style="display:none;margin-top:0.35rem">';
+      pastEvents.slice(0, HIST_SHOWN).forEach(function(b) { html += eventCard(b, true); });
+      if (pastEvents.length > HIST_SHOWN) {
+        var rest = '';
+        pastEvents.slice(HIST_SHOWN).forEach(function(b) { rest += eventCard(b, true); });
+        html += '<div id="pf-hist-rest" style="display:none">' + rest + '</div>';
+        html += '<div id="pf-hist-more" onclick="pfShowMoreHistory()" style="text-align:center;font-size:0.68rem;color:rgb(120,190,235);padding:0.5rem 0;cursor:pointer">' + t('pf_show_more').replace('{n}', pastEvents.length - HIST_SHOWN) + '</div>';
+      }
+      html += '</div>';
     }
     el.innerHTML = html;
-  } catch(e) { logError('loadProfileBubbles', e); el.innerHTML = '<div class="empty-state" style="padding:1rem"><div class="empty-text">Kunne ikke hente bobler</div></div>'; }
+  } catch(e) { logError('loadProfileBubbles', e); el.innerHTML = '<div class="empty-state" style="padding:1rem"><div class="empty-text">' + t('pf_load_bubbles_fail') + '</div></div>'; }
+}
+
+function pfToggleHistory() {
+  var body = document.getElementById('pf-hist-body');
+  var chev = document.getElementById('pf-hist-chevron');
+  if (!body) return;
+  var open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chev) chev.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+
+function pfShowMoreHistory() {
+  var rest = document.getElementById('pf-hist-rest');
+  var more = document.getElementById('pf-hist-more');
+  if (rest) rest.style.display = 'block';
+  if (more) more.style.display = 'none';
 }
 
 // Load invitations into profile invitations tab
@@ -975,7 +1182,7 @@ async function loadProfileInvitations() {
     }
 
     if (!invites || invites.length === 0) {
-      list.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bell') + '</div><div class="empty-text">Ingen invitationer lige nu.<br>Når nogen sender dig en Bubble Up,<br>dukker den op her.</div></div>';
+      list.innerHTML = '<div class="empty-state" style="padding:1.5rem 0"><div class="empty-icon">' + icon('bell') + '</div><div class="empty-text">' + t('pf_no_invites') + '</div></div>';
       return;
     }
 
@@ -993,7 +1200,7 @@ async function loadProfileInvitations() {
       (bubbles || []).forEach(b => { bubbleMap[b.id] = b; });
     }
 
-    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
+    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
 
     list.innerHTML = invites.map((inv, i) => {
       const p = profileMap[inv.from_user_id] || {};
@@ -1007,15 +1214,15 @@ async function loadProfileInvitations() {
         <div class="flex-row-center" style="gap:0.7rem">
           <div class="avatar" style="background:${col};width:40px;height:40px;font-size:0.75rem;flex-shrink:0" data-action="openPerson" data-id="${inv.from_user_id}" data-from="screen-profile">${ini}</div>
           <div style="flex:1;min-width:0">
-            <div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.name||t('misc_unknown'))}</div>
-            <div class="fs-075 text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml([p.title, p.workplace].filter(Boolean).join(' · '))}</div>
+            <div class="fw-600 fs-085 u-ellipsis">${escHtml(p.name||t('misc_unknown'))}</div>
+            <div class="fs-075 text-muted u-ellipsis">${escHtml([p.title, p.workplace].filter(Boolean).join(' · '))}</div>
             ${b.name ? `<div class="fs-065 text-muted" style="margin-top:0.15rem">${icon('bubble')} ${escHtml(b.name)} · ${time}</div>` : `<div class="fs-065 text-muted" style="margin-top:0.15rem">Bubble Up · ${time}</div>`}
             ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-top:0.25rem">${tags}</div>` : ''}
           </div>
         </div>
         <div style="display:flex;gap:0.4rem;margin-top:0.5rem">
-          <button class="btn-sm" style="flex:1;padding:0.4rem;font-size:0.72rem;font-weight:600;background:var(--gradient-primary);border:1px solid var(--gradient-btn-border);color:white;border-radius:var(--radius-xs);cursor:pointer;font-family:inherit" onclick="profAcceptInvite('${inv.id}','${inv.from_user_id}')">Accepter</button>
-          <button class="btn-sm btn-ghost" style="flex:1;padding:0.4rem;font-size:0.72rem" onclick="profDeclineInvite('${inv.id}',this)">Afvis</button>
+          <button class="btn-sm" style="flex:1;padding:0.4rem;font-size:0.72rem;font-weight:600;background:var(--cta-bg);border:1px solid var(--cta-border);color:var(--cta-text);border-radius:var(--radius-xs);cursor:pointer;font-family:inherit" onclick="profAcceptInvite('${inv.id}','${inv.from_user_id}')">${t('inv_accept')}</button>
+          <button class="btn-sm btn-ghost" style="flex:1;padding:0.4rem;font-size:0.72rem" onclick="profDeclineInvite('${inv.id}',this)">${t('inv_decline')}</button>
         </div>
       </div>`;
     }).join('');
@@ -1050,10 +1257,10 @@ function profDeclineInvite(inviteId, btn) {
   const confirm = document.createElement('div');
   confirm.className = 'remove-confirm';
   confirm.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.6rem;margin-top:0.4rem;background:rgba(26,122,138,0.08);border:1px solid rgba(26,122,138,0.2);border-radius:10px;gap:0.5rem';
-  confirm.innerHTML = `<span style="font-size:0.72rem;color:var(--text-secondary)">Afvis invitation?</span>
+  confirm.innerHTML = `<span style="font-size:0.72rem;color:rgba(255,255,255,0.4)">${t('inv_decline_confirm')}</span>
     <div style="display:flex;gap:0.3rem">
-      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="confirmDeclineInvite()">Afvis</button>
-      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelDeclineInvite(this)">Annuller</button>
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--accent2);border-color:rgba(26,122,138,0.3)" onclick="profConfirmDeclineInvite()">${t('inv_decline')}</button>
+      <button class="btn-sm btn-ghost" style="padding:0.25rem 0.6rem;font-size:0.7rem" onclick="cancelDeclineInvite(this)">${t('misc_cancel')}</button>
     </div>`;
   card.appendChild(confirm);
 }
@@ -1065,7 +1272,7 @@ function cancelDeclineInvite(btn) {
   pendingDeclineBtn = null;
 }
 
-async function confirmDeclineInvite() {
+async function profConfirmDeclineInvite() {
   if (!pendingDeclineInviteId) return;
   const inviteId = pendingDeclineInviteId;
   pendingDeclineInviteId = null;
@@ -1090,7 +1297,7 @@ function openEditProfile() {
   document.getElementById('ep-name').value = currentProfile.name || '';
   // Show user's own email (read-only)
   var epEmail = document.getElementById('ep-email');
-  if (epEmail) epEmail.textContent = currentUser?.email || 'Ikke tilgængelig';
+  if (epEmail) epEmail.textContent = currentUser?.email || t('pf_not_available');
   document.getElementById('ep-title').value = currentProfile.title || '';
   document.getElementById('ep-bio').value = currentProfile.bio || '';
   document.getElementById('ep-linkedin').value = currentProfile.linkedin || '';
@@ -1119,6 +1326,7 @@ async function saveProfile() {
     const linkedin  = (document.getElementById('ep-linkedin')?.value || '').trim();
     const workplace = (document.getElementById('ep-workplace')?.value || '').trim();
     if (!name) return showWarningToast(t('val_name_required'));
+    if (tooLong(name, 'name') || tooLong(title, 'title') || tooLong(workplace, 'workplace') || tooLong(bio, 'bio') || tooLong(linkedin, 'url')) return;
     const { error } = await sb.from('profiles').upsert({
       id: currentUser.id, name, title, bio, linkedin, workplace,
       dynamic_keywords: epDynChips, is_anon: isAnon
@@ -1136,8 +1344,12 @@ function _updateLangBtns() {
   var lang = getLang();
   var da = document.getElementById('lang-btn-da');
   var en = document.getElementById('lang-btn-en');
-  if (da) { da.style.borderColor = lang === 'da' ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)'; da.style.background = lang === 'da' ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)'; da.style.color = lang === 'da' ? 'var(--accent)' : 'var(--muted)'; }
-  if (en) { en.style.borderColor = lang === 'en' ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)'; en.style.background = lang === 'en' ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)'; en.style.color = lang === 'en' ? 'var(--accent)' : 'var(--muted)'; }
+  if (da) { da.style.borderColor = lang === 'da' ? 'rgba(100,180,230,0.3)' : 'rgba(255,255,255,0.08)'; da.style.background = lang === 'da' ? 'rgba(100,180,230,0.1)' : 'rgba(255,255,255,0.04)'; da.style.color = lang === 'da' ? 'rgb(100,180,230)' : 'rgba(255,255,255,0.4)'; }
+  if (en) { en.style.borderColor = lang === 'en' ? 'rgba(100,180,230,0.3)' : 'rgba(255,255,255,0.08)'; en.style.background = lang === 'en' ? 'rgba(100,180,230,0.1)' : 'rgba(255,255,255,0.04)'; en.style.color = lang === 'en' ? 'rgb(100,180,230)' : 'rgba(255,255,255,0.4)'; }
+  var ada = document.getElementById('auth-lang-da');
+  var aen = document.getElementById('auth-lang-en');
+  if (ada) ada.classList.toggle('active', lang === 'da');
+  if (aen) aen.classList.toggle('active', lang === 'en');
 }
 
 function switchAppLanguage(lang) {
@@ -1156,7 +1368,7 @@ function toggleAnon() {
   isAnon = !isAnon;
   updateAnonToggle();
   sb.from('profiles').update({ is_anon: isAnon }).eq('id', currentUser.id).then(function() {
-    showToast(isAnon ? '\uD83D\uDD12 Anonym tilstand aktiveret' : '\uD83D\uDC41 Du er nu synlig');
+    showToast(isAnon ? t('pf_anon_on') : t('pf_visible_now'));
   }).catch(function(e) {
     // Revert on failure
     isAnon = !isAnon;
@@ -1185,21 +1397,77 @@ function isBlocked(userId) {
   return _blockedUsers.indexOf(userId) >= 0;
 }
 
-var _blockConfirm = null;
+// ── Blocked-users management UI (Settings → Privatliv) ──
+function openBlockedUsers() {
+  closeModal('modal-settings');
+  openModal('modal-blocked');
+  renderBlockedList();
+}
+
+async function renderBlockedList() {
+  var el = document.getElementById('blocked-users-list');
+  if (!el || !currentUser) return;
+  el.innerHTML = '<div style="color:rgba(255,255,255,0.4);padding:1.2rem 0;text-align:center;font-size:0.8rem">' + t('pf_loading') + '</div>';
+  try {
+    var { data: rows, error } = await sb.from('blocked_users').select('blocked_id, created_at').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+    if (error) throw error;
+    if (!rows || !rows.length) {
+      el.innerHTML = '<div style="color:rgba(255,255,255,0.4);padding:1.8rem 0;text-align:center;font-size:0.82rem">' + t('pf_no_blocked') + '</div>';
+      _blockedUsers = [];
+      return;
+    }
+    var ids = rows.map(function(r) { return r.blocked_id; });
+    var { data: profs } = await sb.from('profiles').select('id, name, title, workplace, avatar_url').in('id', ids);
+    var pmap = {}; (profs || []).forEach(function(p) { pmap[p.id] = p; });
+    el.innerHTML = rows.map(function(r) {
+      var p = pmap[r.blocked_id] || {};
+      var name = p.name || t('pf_user');
+      var ini = name.split(' ').map(function(w) { return w[0]; }).join('').slice(0,2).toUpperCase();
+      var av = p.avatar_url
+        ? '<img src="' + escHtml(p.avatar_url) + '" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">'
+        : '<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6B8BFF,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#fff;flex-shrink:0">' + escHtml(ini) + '</div>';
+      var meta = [p.title, p.workplace].filter(Boolean).join(' · ');
+      return '<div style="display:flex;align-items:center;gap:0.7rem;padding:0.6rem 0;border-bottom:0.5px solid rgba(255,255,255,0.06)">' +
+        av +
+        '<div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(name) + '</div>' +
+        (meta ? '<div style="font-size:0.68rem;color:rgba(255,255,255,0.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(meta) + '</div>' : '') + '</div>' +
+        '<button onclick="unblockUser(\'' + r.blocked_id + '\',this)" style="flex-shrink:0;font-size:0.72rem;font-weight:700;font-family:inherit;padding:0.4rem 0.85rem;border-radius:99px;border:0.5px solid rgba(100,180,230,0.3);background:rgba(100,180,230,0.12);color:rgb(100,180,230);cursor:pointer">' + t('misc_remove') + '</button>' +
+      '</div>';
+    }).join('');
+  } catch(e) { logError('renderBlockedList', e); el.innerHTML = '<div style="color:#FF7A8A;padding:1.2rem 0;text-align:center;font-size:0.8rem">' + t('pf_load_list_fail') + '</div>'; }
+}
+
+async function unblockUser(blockedId, btn) {
+  if (!currentUser || !blockedId) return;
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    var { error } = await sb.from('blocked_users').delete().eq('user_id', currentUser.id).eq('blocked_id', blockedId);
+    if (error) { logError('unblockUser', error); errorToast('save', error); if (btn) { btn.disabled = false; btn.textContent = t('misc_remove'); } return; }
+    var idx = _blockedUsers.indexOf(blockedId);
+    if (idx >= 0) _blockedUsers.splice(idx, 1);
+    showToast('Blokering fjernet');
+    renderBlockedList();
+    if (typeof loadProximityMap === 'function') loadProximityMap();
+  } catch(e) { logError('unblockUser', e); errorToast('save', e); if (btn) { btn.disabled = false; btn.textContent = t('misc_remove'); } }
+}
+
 async function psBlockUser() {
   try {
   var userId = document.getElementById('person-sheet-el')?.dataset?.userId;
-  var userName = document.getElementById('person-sheet-el')?.dataset?.userName || 'bruger';
+  var userName = document.getElementById('person-sheet-el')?.dataset?.userName || t('pf_user_lc');
   if (!userId || !currentUser) return;
-  if (userId === currentUser.id) { showWarningToast('Du kan ikke blokere dig selv'); return; }
-  // Confirm
-  if (_blockConfirm !== userId) {
-    _blockConfirm = userId;
-    showWarningToast('Blokér ' + userName + '? Tryk igen for at bekræfte');
-    setTimeout(function() { _blockConfirm = null; }, 3000);
-    return;
-  }
-  _blockConfirm = null;
+  if (userId === currentUser.id) { showWarningToast(t('pf_cant_block_self')); return; }
+  showConfirmDialog({
+    title: 'Blokér ' + userName + '?',
+    message: t('pf_block_confirm_msg'),
+    confirmText: 'Blokér',
+    danger: true,
+    onConfirm: function() { _doBlockUser(userId, userName); }
+  });
+  } catch(e) { logError("psBlockUser", e); }
+}
+
+async function _doBlockUser(userId, userName) {
   try {
     var { error: blockErr } = await sb.from('blocked_users').upsert({
       user_id: currentUser.id, blocked_id: userId
@@ -1214,24 +1482,25 @@ async function psBlockUser() {
     // Refresh visible lists
     if (typeof loadProximityMap === 'function') loadProximityMap();
     if (typeof loadSavedContacts === 'function') loadSavedContacts();
-  } catch(e) { logError('psBlockUser', e, { blocked: userId }); errorToast('save', e); }
-  } catch(e) { logError("psBlockUser", e); }
+  } catch(e) { logError('_doBlockUser', e, { blocked: userId }); errorToast('save', e); }
 }
 
-var _reportConfirm = null;
 async function psReportUser() {
   try {
   var userId = document.getElementById('person-sheet-el')?.dataset?.userId;
-  var userName = document.getElementById('person-sheet-el')?.dataset?.userName || 'bruger';
+  var userName = document.getElementById('person-sheet-el')?.dataset?.userName || t('pf_user_lc');
   if (!userId || !currentUser) return;
-  // Confirm
-  if (_reportConfirm !== userId) {
-    _reportConfirm = userId;
-    showWarningToast('Rapportér ' + userName + '? Tryk igen for at bekræfte');
-    setTimeout(function() { _reportConfirm = null; }, 4000);
-    return;
-  }
-  _reportConfirm = null;
+  showConfirmDialog({
+    title: 'Rapportér ' + userName + '?',
+    message: t('pf_report_thanks'),
+    confirmText: 'Rapportér',
+    danger: true,
+    onConfirm: function() { _doReportUser(userId, userName); }
+  });
+  } catch(e) { logError("psReportUser", e); }
+}
+
+async function _doReportUser(userId, userName) {
   try {
     var { error } = await sb.from('reports').insert({
       reporter_id: currentUser.id,
@@ -1242,9 +1511,8 @@ async function psReportUser() {
     if (error) { logError('psReportUser', error); errorToast('send', error); return; }
     // Also send email alert
     logError('USER_REPORT', new Error('Bruger rapporteret: ' + userName), { reported_id: userId, reporter_id: currentUser.id });
-    showToast('Tak — ' + userName + ' er rapporteret. Vi kigger på det.');
-  } catch(e) { logError('psReportUser', e); errorToast('send', e); }
-  } catch(e) { logError("psReportUser", e); }
+    showToast(t('pf_user_reported', {name: userName}));
+  } catch(e) { logError('_doReportUser', e); errorToast('send', e); }
 }
 
 // Report a specific message
@@ -1260,7 +1528,7 @@ async function reportMessage(msgId, context) {
     });
     if (error) { logError('reportMessage', error); errorToast('send', error); return; }
     logError('MSG_REPORT', new Error('Besked rapporteret'), { msg_id: msgId, context: context, reporter: currentUser.id });
-    showToast('Besked rapporteret. Tak!');
+    showToast(t('pf_msg_reported'));
   } catch(e) { logError('reportMessage', e); errorToast('send', e); }
 }
 
@@ -1364,38 +1632,41 @@ async function loadDashboard() {
     var completePct = Math.round((completeness / totalFields) * 100);
 
     // Render
-    var statCard = function(iconName, label, value, color) {
+    var statCard = function(iconName, label, value, color, iconColor) {
       var iconHtml = ico(iconName).replace('<svg ', '<svg style="width:18px;height:18px" ');
-      return '<div style="display:flex;align-items:center;gap:0.7rem;padding:0.7rem 0.9rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
-        '<div style="width:36px;height:36px;border-radius:10px;background:' + color + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">' + iconHtml + '</div>' +
-        '<div style="flex:1;min-width:0"><div style="font-size:1.1rem;font-weight:800;color:var(--text)">' + value + '</div><div style="font-size:0.68rem;color:var(--text-secondary)">' + label + '</div></div>' +
+      return '<div style="display:flex;align-items:center;gap:0.7rem;padding:0.65rem 0.8rem;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.06);border-radius:12px">' +
+        '<div style="width:34px;height:34px;border-radius:10px;background:' + color + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;color:' + iconColor + ';filter:brightness(1.6) saturate(1.1)">' + iconHtml + '</div>' +
+        '<div style="flex:1;min-width:0"><div style="font-size:1.05rem;font-weight:800;color:rgba(255,255,255,0.95)">' + value + '</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.55)">' + label + '</div></div>' +
         '</div>';
     };
 
     // Profile CTA based on completeness
     var ctaHtml = '';
     if (completePct >= 100) {
-      ctaHtml = '<div style="font-size:0.65rem;color:var(--green);margin-top:0.4rem;display:flex;align-items:center;gap:0.3rem">' + icon('check') + ' Din profil er komplet!</div>';
+      ctaHtml = '<div style="font-size:0.65rem;color:var(--green);margin-top:0.4rem;display:flex;align-items:center;gap:0.3rem">' + icon('check') + ' ' + t('pf_profile_complete') + '</div>';
     } else {
       var missing = [];
       if (!currentProfile.bio) missing.push('bio');
       if (!currentProfile.avatar_url) missing.push('billede');
       if ((currentProfile.keywords||[]).length < 3) missing.push('interesser');
       if (!currentProfile.title) missing.push('titel');
-      ctaHtml = '<div style="font-size:0.65rem;color:var(--text-secondary);margin-top:0.3rem">Tilføj ' + missing.join(', ') + ' for bedre matches</div>' +
-        '<button onclick="openEditProfile()" style="width:100%;margin-top:0.5rem;padding:0.55rem;font-size:0.78rem;font-weight:600;font-family:inherit;background:rgba(124,92,252,0.08);color:var(--accent);border:1px solid rgba(124,92,252,0.15);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.3rem">' + icon('edit') + ' Fortsæt med at forbedre din profil</button>';
+      ctaHtml = '<div style="font-size:0.65rem;color:rgba(255,255,255,0.55);margin-top:0.3rem">' + t('pf_add_for_matches', {missing: missing.join(', ')}) + '</div>' +
+        '<button onclick="openEditProfile()" style="width:100%;margin-top:0.5rem;padding:0.55rem;font-size:0.78rem;font-weight:600;font-family:inherit;background:rgba(100,180,230,0.15);color:rgb(100,180,230);border:0.5px solid rgba(100,180,230,0.25);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.3rem">' + icon('edit') + ' ' + t('pf_keep_improving') + '</button>';
     }
 
     el.innerHTML =
-      '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.4rem">Din Bubble-uge</div>' +
+      '<div style="background:rgba(255,255,255,0.055);border:0.5px solid rgba(255,255,255,0.12);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:16px;padding:0.8rem;margin-bottom:0.5rem">' +
+      '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.55);margin-bottom:0.4rem">' + t('pf_bubble_week') + '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem">' +
-        statCard('eye', t('pf_dash_views'), views, 'rgba(124,92,252,0.08)') +
-        statCard('bookmark', t('pf_dash_saved_you'), savedBy, 'rgba(232,121,168,0.08)') +
-        statCard('heart', t('pf_dash_you_saved'), mySaved, 'rgba(26,158,142,0.08)') +
-        statCard('bubble', t('pf_stat_bubbles'), bubbles, 'rgba(46,207,207,0.08)') +
+        statCard('eye', t('pf_dash_views'), views, 'rgba(100,180,230,0.22)', 'rgb(100,180,230)') +
+        statCard('bookmark', t('pf_dash_saved_you'), savedBy, 'rgba(232,121,168,0.22)', '#E879A8') +
+        statCard('heart', t('pf_dash_you_saved'), mySaved, 'rgba(26,158,142,0.22)', '#1A9E8E') +
+        statCard('bubble', t('pf_stat_bubbles'), bubbles, 'rgba(46,207,207,0.22)', '#1A9E8E') +
       '</div>' +
       '<div style="margin-top:0.4rem">' +
-        statCard('target', t('pf_dash_strong'), strongMatches, 'rgba(26,158,142,0.08)') +
+        statCard('target', t('pf_dash_strong'), strongMatches, 'rgba(26,158,142,0.22)', '#1A9E8E') +
+      '</div>' +
+      ctaHtml +
       '</div>' +
       _renderDashboardTagsCard();
     _etPrefix = 'dash-';
@@ -1403,48 +1674,48 @@ async function loadDashboard() {
 
   } catch(e) {
     logError('loadDashboard', e);
-    el.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">Kunne ikke hente dashboard-data</div>';
+    el.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.78rem;color:rgba(255,255,255,0.55)">' + t('pf_load_dashboard_fail') + '</div>';
   }
 }
 
 // ── Tags card in dashboard ──
 function _renderDashboardTagsCard() {
-  return '<div style="margin-top:0.75rem;background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);box-shadow:0 1px 3px rgba(30,27,46,0.06);overflow:hidden">' +
+  return '<div style="margin-top:0.75rem;background:rgba(255,255,255,0.055);border:0.5px solid rgba(255,255,255,0.12);border-radius:var(--radius);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);overflow:hidden">' +
 
     // ── Header ──
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem 0.5rem">' +
-      '<div style="font-size:0.72rem;font-weight:700;color:var(--text)">Tags &amp; interesser</div>' +
-      '<div id="dash-et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:var(--accent)">0 valgt</div>' +
+      '<div style="font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.9)">Tags &amp; interesser</div>' +
+      '<div id="dash-et-prog-lbl" style="font-size:0.6rem;font-weight:700;color:rgb(100,180,230)">0 ' + t('et_selected') + '</div>' +
     '</div>' +
 
     // ── Progress bar ──
     '<div style="padding:0 0.9rem 0.5rem;display:flex;align-items:center;gap:0.5rem">' +
-      '<div style="flex:1;height:3px;background:rgba(124,92,252,0.08);border-radius:99px;overflow:hidden"><div id="dash-et-prog-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#7C5CFC,#E879A8);transition:width .4s;width:0%"></div></div>' +
+      '<div style="flex:1;height:3px;background:rgba(100,180,230,0.1);border-radius:99px;overflow:hidden"><div id="dash-et-prog-bar" style="height:100%;border-radius:99px;background:rgb(100,180,230);transition:width .4s;width:0%"></div></div>' +
     '</div>' +
 
     // ── Tray: selected tags preview ──
-    '<div style="border-top:0.5px solid var(--glass-border-subtle);border-bottom:0.5px solid var(--glass-border-subtle)">' +
+    '<div style="border-top:0.5px solid rgba(255,255,255,0.06);border-bottom:0.5px solid rgba(255,255,255,0.06)">' +
       '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.55rem 0.9rem">' +
-        '<div style="width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0"></div>' +
-        '<div style="font-size:0.68rem;font-weight:600;color:var(--accent);flex-shrink:0">Dine tags</div>' +
+        '<div style="width:7px;height:7px;border-radius:50%;background:rgb(100,180,230);flex-shrink:0"></div>' +
+        '<div style="font-size:0.68rem;font-weight:600;color:rgb(100,180,230);flex-shrink:0">' + t('pf_your_tags') + '</div>' +
         '<div id="dash-et-tray-preview" style="display:flex;gap:0.3rem;flex:1;overflow:hidden;min-width:0;align-items:center"></div>' +
-        '<button onclick="etToggleTray()" id="dash-et-tray-btn" style="display:flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem;border-radius:99px;border:0.5px solid var(--glass-border);background:rgba(124,92,252,0.04);cursor:pointer;font-family:inherit;flex-shrink:0">' +
-          '<span id="dash-et-tray-btn-lbl" style="font-size:0.65rem;font-weight:600;color:var(--accent)">'+t('ps_see_all')+'</span>' +
-          '<span id="dash-et-tray-chev" style="font-size:0.6rem;color:var(--accent);transition:transform 0.2s">▾</span>' +
+        '<button onclick="etToggleTray()" id="dash-et-tray-btn" style="display:flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem;border-radius:99px;border:0.5px solid rgba(100,180,230,0.15);background:rgba(100,180,230,0.06);cursor:pointer;font-family:inherit;flex-shrink:0">' +
+          '<span id="dash-et-tray-btn-lbl" style="font-size:0.65rem;font-weight:600;color:rgb(100,180,230)">'+t('ps_see_all')+'</span>' +
+          '<span id="dash-et-tray-chev" style="font-size:0.6rem;color:rgb(100,180,230);transition:transform 0.2s">▾</span>' +
         '</button>' +
       '</div>' +
-      '<div id="dash-et-tray-drawer" style="display:none;flex-wrap:wrap;gap:0.3rem;padding:0.1rem 0.9rem 0.65rem;background:rgba(124,92,252,0.02)"></div>' +
+      '<div id="dash-et-tray-drawer" style="display:none;flex-wrap:wrap;gap:0.3rem;padding:0.1rem 0.9rem 0.65rem;background:rgba(255,255,255,0.03)"></div>' +
     '</div>' +
 
     // ── Beskæftigelse (DB column: lifestage) ──
     '<div style="padding:0.55rem 0.9rem 0.1rem">' +
-      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.4rem">Beskæftigelse</div>' +
+      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgb(100,180,230);margin-bottom:0.4rem">' + t('pf_occupation') + '</div>' +
       '<div id="dash-et-lifestage-btns" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.5rem"></div>' +
     '</div>' +
 
     // ── Category accordions ──
     '<div style="padding:0.1rem 0.9rem 0.2rem">' +
-      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:0.35rem">Tilføj fra kategorier</div>' +
+      '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgb(100,180,230);margin-bottom:0.35rem">' + t('pf_add_from_categories') + '</div>' +
     '</div>' +
     '<div id="dash-et-acc-list" style="padding:0 0.6rem 0.75rem;display:flex;flex-direction:column;gap:0.35rem"></div>' +
 
@@ -1488,6 +1759,22 @@ function personSetStar(userId, rating) {
   loadSavedContacts();
 }
 
+function bubbleSetStar(bubbleId, rating) {
+  var current = bubbleStarGet(bubbleId);
+  var newRating = (current === rating) ? 0 : rating;
+  bubbleStarSet(bubbleId, newRating);
+  var el = document.getElementById('bubble-star-rating');
+  if (el) {
+    el.innerHTML = [1,2,3].map(function(n) {
+      return '<div class="ps-star ' + (n <= newRating ? 'filled' : 'empty') + '" onclick="bubbleSetStar(\'' + bubbleId + '\',' + n + ')">\u2605</div>';
+    }).join('');
+  }
+  var badge = document.getElementById('bubble-info-star-badge');
+  if (badge) badge.innerHTML = (newRating > 0) ? bubbleStarRender(bubbleId) : '';
+  if (typeof loadProfileBubbles === 'function') loadProfileBubbles();
+  if (typeof loadMyBubbles === 'function' && _activeScreen === 'screen-bubbles') loadMyBubbles();
+}
+
 
 function psMessage() { const uid = document.getElementById('person-sheet-el').dataset.userId; var from = document.getElementById('person-sheet-el').dataset.fromScreen || 'screen-home'; if (from === 'screen-bubble-chat') from = 'screen-home'; psClose(); setTimeout(() => openChat(uid, from), 350); }
 function psProfile() { const uid = document.getElementById('person-sheet-el').dataset.userId; var from = document.getElementById('person-sheet-el').dataset.fromScreen || 'screen-home'; if (from === 'screen-bubble-chat') from = 'screen-home'; psClose(); setTimeout(() => openPerson(uid, from), 350); }
@@ -1511,7 +1798,7 @@ async function psConfirmBubbleUp() {
     const name = document.getElementById('person-sheet-el').dataset.userName?.split(' ')[0] || 'personen';
     await sendBubbleUpInvitation(toUserId);
     psClose();
-    showToast('🫧 Invitation sendt til ' + name + '!');
+    showToast(t('pf_invite_sent', {name: name}));
   } catch(e) { logError("psConfirmBubbleUp", e); errorToast("send", e); }
 }
 
@@ -1534,7 +1821,7 @@ async function personConfirmBubbleUp() {
     const name = (document.getElementById('person-name')?.textContent||'').split(' ')[0] || 'personen';
     await sendBubbleUpInvitation(currentPerson);
     personCancelBubbleUp();
-    showToast('🫧 Invitation sendt til ' + name + '!');
+    showToast(t('pf_invite_sent', {name: name}));
   } catch(e) { logError("personConfirmBubbleUp", e); errorToast("send", e); }
 }
 
@@ -1598,7 +1885,7 @@ async function loadPersonBubbles(userId, navRef) {
     if (prof && prof.show_bubbles === false) return;
 
     // Stale nav check
-    if (navRef && _navVersion !== navRef) return;
+    if (navRef && _personSheetSeq !== navRef) return;
 
     // Get user's bubble memberships
     var { data: memberships } = await sb.from('bubble_members')
@@ -1618,7 +1905,7 @@ async function loadPersonBubbles(userId, navRef) {
       .order('created_at', { ascending: false });
 
     if (!bubbles || bubbles.length === 0) return;
-    if (navRef && _navVersion !== navRef) return;
+    if (navRef && _personSheetSeq !== navRef) return;
 
     // Render
     var total = bubbles.length;
@@ -1635,7 +1922,7 @@ async function loadPersonBubbles(userId, navRef) {
       var colorBg = bubbleColor(b.type, 0.15);
       var colorFg = bubbleColor(b.type, 0.9);
       var emojiHtml = b.icon_url
-        ? '<img src="' + escHtml(b.icon_url) + '" style="width:1.2rem;height:1.2rem;border-radius:4px;object-fit:cover">'
+        ? '<img src="' + escHtml(b.icon_url) + '" class="u-thumb">'
         : bubbleEmoji(b.type);
       var avStack = renderAvatarStack(personBubbleMemberMap[b.id] || [], memberCount);
       return '<div class="person-bubble-pill" data-action="openBubble" data-id="' + b.id + '" data-from="screen-person">' +
@@ -1660,7 +1947,7 @@ async function loadPersonBubbles(userId, navRef) {
 
 function showAllPersonBubbles(userId) {
   // For now: show a toast — future: expand list or navigate
-  showToast('Kommer snart: Se alle bobler');
+  showToast(t('pf_coming_soon_bubbles'));
 }
 
 

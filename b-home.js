@@ -15,7 +15,8 @@ var _bubbleUnreadSet = {};
 var _allMyBubblesCache = [];
 var _myBubbleMemberIds = []; // Global liste af mine boble-IDs — bruges af b-realtime til unread nav-dot
 
-// v8.17.31: cleanup on logout — prevents user A's unread/bubble-cache from showing for user B
+// Ported from PROD v8.17.31 (Fix 6: registerState cleanup).
+// Prevents user A's unread/bubble-cache from showing for user B
 registerState(function() {
   _bubbleUnreadSet = {};
   _allMyBubblesCache = [];
@@ -23,6 +24,7 @@ registerState(function() {
   if (typeof _homeViewMode !== 'undefined') _homeViewMode = 'all';
   if (typeof _homeLoading !== 'undefined') _homeLoading = false;
   if (typeof _homeBooting !== 'undefined') _homeBooting = false;
+  if (typeof _radarFiltersExpanded !== 'undefined') _radarFiltersExpanded = false;
 });
 function _renderBubblesUnreadDot() {
   var dot = document.getElementById('bubbles-unread-dot');
@@ -97,9 +99,13 @@ function hsSlotHide(id) {
 var _homeViewMode = 'all'; // UI tab toggle: 'all' or 'live'
 
 var _homeLoading = false;
+var _homeJustPreloaded = false; // sat af boot-preload; springer KUN den umiddelbare enter-hook reload over
 var _homeBooting = false; // true under initial loadHome — forhindrer homeSetMode i at rendere
-async function loadHome() {
+async function loadHome(opts) {
   if (_homeLoading) return;
+  // Boot-preload satte indhold; spring den ene efterfoelgende enter-hook reload over
+  // (ellers ville den re-fade og give flicker lige efter det rene reveal). Engangsflag.
+  if (_homeJustPreloaded && !(opts && opts.force)) { _homeJustPreloaded = false; return; }
   _homeLoading = true;
   _homeBooting = true;
   _dartboardDataLoaded = false;
@@ -108,18 +114,16 @@ async function loadHome() {
   var _avEl = document.getElementById('home-prox-avatars');
   if (_avEl) _avEl.innerHTML = '';
   try {
-    if (!currentUser) { _homeLoading = false; _homeBooting = false; return; }
+    if (!currentUser) { _homeLoading = false; _homeBooting = false; var cwe = document.getElementById('home-content-wrap'); if (cwe) cwe.style.opacity = '1'; return; }
     if (!currentProfile) await loadCurrentProfile();
     updateHomeAvatar();
 
-    // Greeting
+    // Greeting — write directly to home-greeting-name (do NOT touch previousElementSibling)
     const nameEl = document.getElementById('home-greeting-name');
     if (nameEl && currentProfile?.name) {
       var hour = new Date().getHours();
       var greetText = hour < 5 ? t('home_greeting_evening') : hour < 12 ? t('home_greeting_morning') : hour < 17 ? t('home_greeting_afternoon') : hour < 22 ? t('home_greeting_evening') : t('home_greeting_evening');
-      var greetLabel = nameEl?.previousElementSibling;
-      if (greetLabel) greetLabel.textContent = greetText + ',';
-      nameEl.innerHTML = escHtml(currentProfile.name.split(' ')[0]) + '<span style="display:inline-flex;width:1.3rem;height:1.3rem">' + ico('wave') + '</span>';
+      nameEl.textContent = greetText + ', ' + currentProfile.name.split(' ')[0];
     }
 
     // Load all data in parallel — v5.2
@@ -135,11 +139,34 @@ async function loadHome() {
     showEventCheckinCard();
     showWelcomeCard();
     showProfileSetupCTA();
+
+    // v7.53: Fade in all data cards together once everything is ready.
+    // Cards stay invisible (opacity:0) while data loads — no pop-in,
+    // no skeleton, no layout-shift. Radar/dartboard fades in independently.
+    // Fade HELE indholdet ind samlet (banner + radar + cards) naar alt er klar.
+    // Forhindrer flicker ved kold start: intet vises foer data + tilstand er sat.
+    // (Tidligere fadede kun home-cards-wrap - radar/banner flickede udenfor.)
+    var contentWrap = document.getElementById('home-content-wrap');
+    if (contentWrap) {
+      // dobbelt rAF sikrer at browseren har malet DOM-opdateringerne foer fade
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          contentWrap.style.opacity = '1';
+        });
+      });
+    }
+    // home-cards-wrap fader stadig sin egen (harmloest - den er inde i content-wrap)
+    var cardsWrap = document.getElementById('home-cards-wrap');
+    if (cardsWrap) cardsWrap.style.opacity = '1';
   } catch(e) {
     logError("loadHome", e);
   } finally {
     _homeLoading = false;
     _homeBooting = false;
+    // Fail-safe: indholdet SKAL vaere synligt uanset fejl/tidlig exit —
+    // ellers ville en fejl efterlade skaermen usynlig (vaerre end flicker).
+    var cw = document.getElementById('home-content-wrap');
+    if (cw && cw.style.opacity !== '1') cw.style.opacity = '1';
   }
 }
 
@@ -147,7 +174,6 @@ async function loadHome() {
 //  LIVE BANNER + MODE TABS (Alle / Live)
 // ══════════════════════════════════════════════════════════
 async function loadLiveBanner() {
-  var tabs = document.getElementById('home-mode-tabs');
   var banner = document.getElementById('home-live-banner');
   if (!currentUser) return;
   try {
@@ -181,18 +207,15 @@ async function loadLiveBanner() {
         expiryStr: expiryStr
       });
 
-      if (tabs) tabs.style.display = 'block';
       homeSetMode('live');
     } else {
       appMode.set('normal');
-      if (tabs) tabs.style.display = 'none';
       hsSlotHide('home-live-banner');
       homeSetMode('all');
     }
   } catch(e) {
     logError('loadLiveBanner', e);
     appMode.set('normal');
-    if (tabs) tabs.style.display = 'none';
     hsSlotHide('home-live-banner');
   }
 }
@@ -203,18 +226,27 @@ function homeSetMode(mode) {
   if (mode === 'live' && !appMode.is('live')) appMode.set('live', appMode.live);
   else if (mode !== 'live' && appMode.is('live')) {} // keep live context, just switch tab view
 
-  var tabAll = document.getElementById('home-tab-all');
-  var tabLive = document.getElementById('home-tab-live');
   var banner = document.getElementById('home-live-banner');
+  // Nye kombinerede banner-toggle knapper + venstre-sider
+  var hlbTabLive = document.getElementById('hlb-tab-live');
+  var hlbTabAll = document.getElementById('hlb-tab-all');
+  var hlbLiveSide = document.getElementById('hlb-live-side');
+  var hlbAllSide = document.getElementById('hlb-all-side');
   var ctx = appMode.live;
 
   if (mode === 'live' && ctx) {
-    if (tabAll) { tabAll.style.background = 'transparent'; tabAll.style.color = 'var(--muted)'; tabAll.style.fontWeight = '600'; }
-    if (tabLive) { tabLive.style.background = 'linear-gradient(135deg,#1A9E8E,#10B981)'; tabLive.style.color = 'white'; tabLive.style.fontWeight = '700'; }
+    // Nye banner-toggle: Live aktiv (teal), Alle inaktiv + vis live-side
+    if (hlbTabLive) { hlbTabLive.style.background = 'rgba(26,158,142,0.28)'; hlbTabLive.style.color = '#A7EDE4'; hlbTabLive.style.fontWeight = '800'; }
+    if (hlbTabAll) { hlbTabAll.style.background = 'transparent'; hlbTabAll.style.color = 'rgba(255,255,255,0.5)'; hlbTabAll.style.fontWeight = '700'; }
+    if (hlbLiveSide) hlbLiveSide.style.display = 'flex';
+    if (hlbAllSide) hlbAllSide.style.display = 'none';
     loadEventDartboard();
   } else {
-    if (tabAll) { tabAll.style.background = 'var(--gradient-primary)'; tabAll.style.color = 'white'; tabAll.style.fontWeight = '700'; }
-    if (tabLive) { tabLive.style.background = 'transparent'; tabLive.style.color = 'var(--muted)'; tabLive.style.fontWeight = '600'; }
+    // Nye banner-toggle: Alle aktiv (blaa), Live inaktiv + vis alle-side
+    if (hlbTabAll) { hlbTabAll.style.background = 'rgba(100,180,230,0.2)'; hlbTabAll.style.color = 'rgba(255,255,255,0.95)'; hlbTabAll.style.fontWeight = '800'; }
+    if (hlbTabLive) { hlbTabLive.style.background = 'transparent'; hlbTabLive.style.color = 'rgba(255,255,255,0.5)'; hlbTabLive.style.fontWeight = '700'; }
+    if (hlbAllSide) hlbAllSide.style.display = 'flex';
+    if (hlbLiveSide) hlbLiveSide.style.display = 'none';
     _homeRadarFilter = 'all';
     if (!_homeBooting) renderHomeDartboard();
   }
@@ -236,36 +268,48 @@ function homeSetMode(mode) {
     var coMeta = document.getElementById('live-checkout-meta');
     if (coName) coName.textContent = ctx.bubbleName;
     if (coMeta) coMeta.textContent = t('bc_checked_in') + ' · ' + t('live_expires') + ' ' + (ctx.expiryStr || '—');
+    var coCount = document.getElementById('live-checkout-count');
+    if (coCount) {
+      // Use the same source as the banner (ctx.memberCount) — appMode.checkedInIds
+      // is not reliably populated when this tray opens, so it read 0.
+      coCount.textContent = (ctx.memberCount || 0) + ' ' + t('live_here_now');
+    }
+    // Social enrichment: strong matches + saved contacts among those present.
+    // Both computed from _homeDartboardProfiles (present profiles with matchScore,
+    // excluding self) and getSavedContactIds — no new logging.
+    _populateLivePreviewSocial();
   }
   updateFilterChipStyle();
 }
 
 function updateFilterChipStyle() {
-  var chips = document.getElementById('home-filter-chips');
-  if (!chips) return;
   var isLive = appMode.is('live') && appMode.live;
-  var firstChip = chips.querySelector('[data-filter="all"]');
-  if (firstChip) {
-    var countSpan = firstChip.querySelector('#radar-count-home') || firstChip.querySelector('span');
-    if (isLive) {
-      firstChip.childNodes[0].textContent = 'Alle deltagere ';
-      if (countSpan) countSpan.textContent = '· ' + (appMode.live.memberCount || 0);
+  // Vis live-raekken i taleboblen kun naar man er i et live-event
+  var liveRow = document.getElementById('home-filter-row-live');
+  if (liveRow) liveRow.style.display = isLive ? 'flex' : 'none';
+  // Opdater per-filter taellere i taleboblen
+  var allProfiles = (typeof proxAllProfiles !== 'undefined' && proxAllProfiles) ? proxAllProfiles : [];
+  var setCount = function(id, n) { var el = document.getElementById(id); if (el) el.textContent = n > 0 ? String(n) : ''; };
+  if (allProfiles.length) {
+    // Taerskler matcher _getFilteredProfiles: interest>=20, good>=40, strong>=60
+    setCount('fcount-all', allProfiles.length);
+    setCount('fcount-interest', allProfiles.filter(function(p){ return (p.matchScore||0) >= 20; }).length);
+    setCount('fcount-good', allProfiles.filter(function(p){ return (p.matchScore||0) >= 40; }).length);
+    setCount('fcount-strong', allProfiles.filter(function(p){ return (p.matchScore||0) >= 60; }).length);
+  }
+  // Opdater tael-badge paa selve filter-knappen: antal der matcher aktivt filter (som prototypen)
+  var cnt = document.getElementById('home-filter-btn-count');
+  if (cnt) {
+    var matchN = _getFilteredProfiles().length;
+    cnt.textContent = String(matchN);
+    if (_homeRadarFilter !== 'all') {
+      cnt.style.color = '#CFE6F7';
+      cnt.style.background = 'rgba(100,180,230,0.2)';
     } else {
-      firstChip.childNodes[0].textContent = 'Alle ';
+      cnt.style.color = 'rgba(255,255,255,0.4)';
+      cnt.style.background = 'rgba(255,255,255,0.08)';
     }
   }
-  chips.querySelectorAll('.radar-filter-chip').forEach(function(c) {
-    c.style.background = '';
-    c.style.borderColor = '';
-  });
-  chips.querySelectorAll('.radar-filter-chip.active').forEach(function(c) {
-    if (isLive) {
-      c.style.background = 'linear-gradient(135deg,#1A9E8E,#10B981)';
-    } else {
-      c.style.background = 'linear-gradient(135deg,#7C5CFC,#6366F1)';
-    }
-    c.style.borderColor = 'transparent';
-  });
 }
 
 // ── Event-aware dartboard: load only event members ──
@@ -303,19 +347,59 @@ async function loadEventDartboard() {
 //  LIVE CHECKOUT TRAY
 // ══════════════════════════════════════════════════════════
 function openLiveCheckoutTray() {
-  var backdrop = document.getElementById('live-checkout-backdrop');
-  var tray = document.getElementById('live-checkout-tray');
-  if (!backdrop || !tray) return;
-  backdrop.style.display = 'block';
-  tray.style.visibility = 'visible';
-  void tray.offsetHeight;
-  tray.style.transform = 'translateY(0)';
+  // Beslutnings-modal (centreret vindue) - aabnes via .open klasse
+  var overlay = document.getElementById('live-checkout-overlay');
+  if (overlay) overlay.classList.add('open');
+}
+
+// Compute + render the social stats in the live preview: strong matches present
+// and saved contacts present. Uses _homeDartboardProfiles (present, scored, no
+// self) and getSavedContactIds. Async for the saved-contacts lookup.
+async function _populateLivePreviewSocial() {
+  try {
+    var present = Array.isArray(_homeDartboardProfiles) ? _homeDartboardProfiles : [];
+    var strongEl = document.getElementById('live-preview-strong');
+    var savedEl = document.getElementById('live-preview-saved');
+    // Strong matches present (score >= 60, same threshold as the radar 'strong' filter)
+    if (strongEl) {
+      var strong = present.filter(function(p) { return p.matchScore >= 60; }).length;
+      strongEl.querySelector('[data-val]').textContent = strong;
+      strongEl.style.display = strong > 0 ? 'flex' : 'none';
+    }
+    // Saved contacts present
+    if (savedEl) {
+      var savedIds = await getSavedContactIds();
+      var presentIds = present.map(function(p) { return p.id; });
+      var savedHere = (savedIds || []).filter(function(id) { return presentIds.indexOf(id) >= 0; }).length;
+      savedEl.querySelector('[data-val]').textContent = savedHere;
+      savedEl.style.display = savedHere > 0 ? 'flex' : 'none';
+    }
+    // Profile views AT THIS EVENT: how many people present have viewed my
+    // profile. Event-scoped is the relevant signal in a live preview (the global
+    // total lives on the profile tab / home widget). Count only for now; 'se
+    // hvem' (names) comes later with Profile Views. RLS allows viewed_id = me.
+    var viewsEl = document.getElementById('live-preview-views');
+    if (viewsEl) {
+      var presentIds2 = present.map(function(p) { return p.id; });
+      if (presentIds2.length > 0) {
+        try {
+          var { count } = await sb.from('profile_views')
+            .select('*', { count: 'exact', head: true })
+            .eq('viewed_id', currentUser.id)
+            .in('viewer_id', presentIds2);
+          var vCount = count || 0;
+          viewsEl.querySelector('[data-val]').textContent = vCount;
+          viewsEl.style.display = vCount > 0 ? 'flex' : 'none';
+        } catch(e) { viewsEl.style.display = 'none'; }
+      } else {
+        viewsEl.style.display = 'none';
+      }
+    }
+  } catch(e) { console.debug('[live-preview social]', e); }
 }
 function closeLiveCheckoutTray() {
-  var backdrop = document.getElementById('live-checkout-backdrop');
-  var tray = document.getElementById('live-checkout-tray');
-  if (backdrop) backdrop.style.display = 'none';
-  if (tray) { tray.style.transform = 'translateY(100%)'; setTimeout(function() { tray.style.visibility = 'hidden'; }, 350); }
+  var overlay = document.getElementById('live-checkout-overlay');
+  if (overlay) overlay.classList.remove('open');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -328,7 +412,7 @@ var _setupSelectedLifestage = null;
 
 var SETUP_INTERESTS = [
   { id: 'startup',        label: 'Startup & Iværksætteri',    color: '#E879A8', bg: 'rgba(232,121,168,', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4.5 16.5c-1.5 1.5-2 5-2 5s3.5-.5 5-2c.8-.8 1-2 .4-2.8a2.1 2.1 0 00-3.4-.2z"/><path d="M14.5 2.5c-3 2-5 5.5-5.5 9l3.5 3.5c3.5-.5 7-2.5 9-5.5z"/></svg>' },
-  { id: 'tech',           label: 'Teknologi & Digitalisering', color: '#7C5CFC', bg: 'rgba(124,92,252,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>' },
+  { id: 'tech',           label: 'Teknologi & Digitalisering', color: 'rgb(100,180,230)', bg: 'rgba(100,180,230,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>' },
   { id: 'sustainability', label: 'Bæredygtighed & Energi',     color: '#1A9E8E', bg: 'rgba(26,158,142,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v19M5 8l7-5 7 5M5 16l7 5 7-5"/></svg>' },
   { id: 'leadership',     label: 'Ledelse & Strategi',         color: '#F59E0B', bg: 'rgba(245,158,11,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>' },
   { id: 'public',         label: 'Offentlig & NGO',            color: '#1A9E8E', bg: 'rgba(26,158,142,',  icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M10 21v-3h4v3"/></svg>' },
@@ -375,20 +459,20 @@ function showCheckinModal(eventName, opts) {
 
   var ov = document.createElement('div');
   ov.id = 'checkin-confirm-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.3s ease';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.3s ease';
 
   var buttonsHtml = '';
   if (opts.fromHome && eventId) {
     buttonsHtml =
       '<button id="checkin-goto-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#1A9E8E,#17877A);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:center;gap:0.4rem">' + t('ob_goto_event') + '</button>' +
-      '<button id="checkin-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_stay_home') + '</button>';
+      '<button id="checkin-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(100,180,230,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_stay_home') + '</button>';
   } else {
     buttonsHtml =
       '<button id="checkin-ok-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#1A9E8E,#17877A);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.4rem">' + t('modal_understood') + '</button>';
   }
 
   ov.innerHTML =
-    '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+    '<div style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
       '<div style="width:56px;height:56px;border-radius:50%;background:rgba(26,158,142,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">' +
         '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
       '</div>' +
@@ -556,17 +640,21 @@ async function showDeepLinkModal(type, targetId) {
       var nameText = p.name || '?';
       var ini = nameText.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var iconHtml = p.avatar_url
-        ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        ? '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">'
         : '<span style="font-size:1.1rem;font-weight:700;color:white">' + escHtml(ini) + '</span>';
       var title = escHtml(nameText);
       var subtitle = [p.title, p.workplace].filter(Boolean).join(' · ');
       _renderSimpleDeepLinkModal({
-        iconBg: 'linear-gradient(135deg,#7C5CFC,#6366F1)', iconSize: '64px', iconRadius: '50%',
+        iconBg: 'linear-gradient(135deg,rgb(100,180,230),#6366F1)', iconSize: '64px', iconRadius: '50%',
         iconHtml: iconHtml, title: title, subtitle: subtitle,
+        kicker: t('dl_contact_kicker'), kickerColor: 'rgb(100,180,230)',
         primaryLabel: t('dl_save_contact') + ' →',
         primaryFn: async function() {
           var result = await dbActions.saveContact(targetId);
-          if (result.ok) showSuccessToast(t('toast_saved'));
+          // P1.1: saveContact already shows an error toast on failure. Don't proceed
+          // forward (openPerson) as if it succeeded — that's the false-continuity part.
+          if (!result.ok) return;
+          showSuccessToast(t('toast_saved'));
           openPerson(targetId, 'screen-home');
         }
       });
@@ -589,12 +677,15 @@ async function showDeepLinkModal(type, targetId) {
         ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:14px">'
         : bEmoji;
       _renderSimpleDeepLinkModal({
-        iconBg: 'rgba(124,92,252,0.15)', iconSize: '56px', iconRadius: '14px',
+        iconBg: 'rgba(100,180,230,0.15)', iconSize: '56px', iconRadius: '14px',
         iconHtml: iconHtmlN, title: escHtml(b.name || '?'),
         subtitle: b.location ? escHtml(b.location) : '',
-        primaryLabel: t('dl_go_to_network') + ' →',
+        kicker: t('dl_join_kicker'), kickerColor: '#4F9FD4',
+        primaryLabel: (b.visibility === 'private' ? t('dl_request_access') : t('dl_join_network')) + ' →',
         primaryFn: async function() {
           var result = await dbActions.joinBubble(targetId, 'invite_link');
+          if (result.status === 'invite_only') { showWarningToast(t('dl_invite_only')); return; }
+          if (result.status === 'requested')   { showSuccessToast(t('toast_request_sent')); return; }
           if (!result.ok) {
             showErrorToast(t('err_join_failed'));
             return;
@@ -640,21 +731,22 @@ async function showDeepLinkModal(type, targetId) {
       timingIsEnded: timing.isEnded,
       isMember: isMember
     });
-  } catch(e) { logError('showDeepLinkModal', e); }
+  } catch(e) { logError('showDeepLinkModal', e); showWarningToast(t('dl_event_open_failed')); }
 }
 
 // Helper: render simple two-button modal (contact / network) — preserves prior behavior
 function _renderSimpleDeepLinkModal(opts) {
   var ov = document.createElement('div');
   ov.id = 'deeplink-modal-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
   ov.innerHTML =
-    '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+    '<div style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
       '<div style="width:' + opts.iconSize + ';height:' + opts.iconSize + ';border-radius:' + opts.iconRadius + ';background:' + opts.iconBg + ';display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;overflow:hidden">' + opts.iconHtml + '</div>' +
+      (opts.kicker ? '<div style="font-size:0.7rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:' + (opts.kickerColor||'#6B6680') + ';margin-bottom:0.3rem">' + escHtml(opts.kicker) + '</div>' : '') +
       '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">' + opts.title + '</div>' +
       (opts.subtitle ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:1.25rem">' + opts.subtitle + '</div>' : '<div style="margin-bottom:1.25rem"></div>') +
-      '<button id="dl-action-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + escHtml(opts.primaryLabel) + '</button>' +
-      '<button id="dl-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_stay_home') + '</button>' +
+      '<button id="dl-action-btn" style="width:100%;padding:0.85rem;border-radius:12px;border:none;background:linear-gradient(180deg,#6FB8E8,#4F9FD4);color:#fff;box-shadow:0 6px 16px rgba(79,159,212,0.3);font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + escHtml(opts.primaryLabel) + '</button>' +
+      '<button id="dl-stay-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(100,180,230,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_stay_home') + '</button>' +
     '</div>';
   document.body.appendChild(ov);
   document.getElementById('dl-action-btn').onclick = async function() {
@@ -675,7 +767,7 @@ function _renderEventDeepLinkModal(opts) {
   var bubbleId = opts.bubbleId;
   var ov = document.createElement('div');
   ov.id = 'deeplink-modal-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
 
   // Determine button set based on state
   var primaryLabel = '', primaryFn = null;
@@ -683,6 +775,7 @@ function _renderEventDeepLinkModal(opts) {
   var showDecline = false;
   var memberBanner = '';
   var readonlyBanner = '';
+  var joinKicker = (!opts.isMember && !opts.timingIsEnded) ? t('dl_join_kicker') : '';
 
   // Common: "Se info" handler — joinless bubble open, lands on info tab via bcRenderActions()
   var seeInfoFn = function() { openBubbleChat(bubbleId, 'screen-home'); };
@@ -691,16 +784,22 @@ function _renderEventDeepLinkModal(opts) {
     // Slut + ikke medlem: kun "Se info"
     primaryLabel = t('dl_see_info') + ' →';
     primaryFn = seeInfoFn;
-    readonlyBanner = '<div style="background:rgba(95,94,90,0.08);color:#5F5E5A;font-size:0.72rem;padding:0.5rem 0.75rem;border-radius:8px;text-align:center;margin-bottom:0.75rem">' + t('dl_event_ended_readonly') + '</div>';
+    readonlyBanner = '<div style="background:rgba(95,94,90,0.08);color:rgba(255,255,255,0.5);font-size:0.72rem;padding:0.5rem 0.75rem;border-radius:8px;text-align:center;margin-bottom:0.75rem">' + t('dl_event_ended_readonly') + '</div>';
   } else if (opts.isMember) {
     // Allerede medlem (event aktivt eller kommende)
-    memberBanner = '<div style="background:rgba(26,158,142,0.10);color:#0F6E56;font-size:0.72rem;font-weight:600;padding:0.5rem 0.75rem;border-radius:8px;text-align:center;margin-bottom:0.75rem">' + t('dl_already_member') + '</div>';
+    memberBanner = '<div style="background:rgba(26,158,142,0.10);color:#5FE0CC;font-size:0.72rem;font-weight:600;padding:0.5rem 0.75rem;border-radius:8px;text-align:center;margin-bottom:0.75rem">' + t('dl_already_member') + '</div>';
     if (opts.timingIsLive) {
       // Live + medlem: Tjek ind primær
       primaryLabel = t('dl_check_in') + ' →';
       primaryFn = async function() {
         var r = await dbActions.checkIn(bubbleId);
-        if (r.ok) { showSuccessToast(t('toast_saved')); if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus(); }
+        if (!r.ok) {
+          // P0.2: failed check-in must NOT open the chat (false continuity).
+          showErrorToast(t('err_checkin_failed'));
+          return true; // keep modal open for retry
+        }
+        showSuccessToast(t('toast_saved'));
+        if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus();
         openBubbleChat(bubbleId, 'screen-home');
       };
       secondaryLabel = t('dl_see_info');
@@ -717,15 +816,16 @@ function _renderEventDeepLinkModal(opts) {
       var jr = await dbActions.joinBubble(bubbleId, 'invite_link');
       if (!jr.ok) {
         showErrorToast(t('err_join_failed'));
-        return;
+        return true; // keep modal open for retry
       }
       var cr = await dbActions.checkIn(bubbleId);
-      if (cr.ok) {
-        if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus();
-        showSuccessToast(jr.status === 'already_member' ? t('toast_already_member') : t('toast_joined'));
-      } else {
+      if (!cr.ok) {
+        // P0.2: joined, but check-in failed — don't open chat as if checked in.
         showWarningToast(t('err_checkin_failed'));
+        return true; // keep modal open; join is idempotent, retry only re-runs check-in
       }
+      if (typeof loadLiveBubbleStatus === 'function') await loadLiveBubbleStatus();
+      showSuccessToast(jr.status === 'already_member' ? t('toast_already_member') : t('toast_joined'));
       openBubbleChat(bubbleId, 'screen-home');
     };
     secondaryLabel = t('dl_see_info');
@@ -733,7 +833,7 @@ function _renderEventDeepLinkModal(opts) {
     showDecline = true;
   } else {
     // Kommende + ikke medlem (default for upcoming events)
-    primaryLabel = t('dl_accept_invitation') + ' →';
+    primaryLabel = t('dl_join_event') + ' →';
     primaryFn = async function() {
       var r = await dbActions.joinBubble(bubbleId, 'invite_link');
       if (!r.ok) {
@@ -749,17 +849,18 @@ function _renderEventDeepLinkModal(opts) {
   }
 
   // Build modal HTML
-  var primaryBtnHtml = '<button id="dl-event-primary" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + primaryLabel + '</button>';
-  var secondaryBtnHtml = secondaryLabel ? '<button id="dl-event-secondary" style="width:100%;padding:0.75rem;border-radius:12px;border:1px solid rgba(124,92,252,0.18);background:none;color:#534AB7;font-size:0.82rem;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:0.4rem">' + secondaryLabel + '</button>' : '';
-  var declineBtnHtml = showDecline ? '<button id="dl-event-decline" style="width:100%;padding:0.6rem;border-radius:12px;border:none;background:none;color:#993556;font-size:0.75rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_decline_invitation') + '</button>' : '';
+  var primaryBtnHtml = '<button id="dl-event-primary" style="width:100%;padding:0.85rem;border-radius:12px;border:none;background:linear-gradient(180deg,#6FB8E8,#4F9FD4);color:#fff;box-shadow:0 6px 16px rgba(79,159,212,0.3);font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + primaryLabel + '</button>';
+  var secondaryBtnHtml = secondaryLabel ? '<button id="dl-event-secondary" style="width:100%;padding:0.75rem;border-radius:12px;border:1px solid rgba(100,180,230,0.18);background:none;color:#A9BFFF;font-size:0.82rem;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:0.4rem">' + secondaryLabel + '</button>' : '';
+  var declineBtnHtml = showDecline ? '<button id="dl-event-decline" style="width:100%;padding:0.6rem;border-radius:12px;border:none;background:none;color:#F0889F;font-size:0.75rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_decline_invitation') + '</button>' : '';
 
   ov.innerHTML =
-    '<div id="dl-event-card" style="background:#FFFFFF;border-radius:20px;padding:1.75rem 1.5rem 1.25rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(30,27,46,0.12);position:relative">' +
-      '<button id="dl-event-close" style="position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;background:rgba(30,27,46,0.06);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;color:#6B6680;border:none;font-family:inherit">×</button>' +
+    '<div id="dl-event-card" style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:1.75rem 1.5rem 1.25rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(30,27,46,0.12);position:relative">' +
+      '<button id="dl-event-close" style="position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;background:rgba(30,27,46,0.06);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;color:rgba(207,230,247,0.55);border:none;font-family:inherit">×</button>' +
       '<div id="dl-event-fadable">' +
         '<div style="width:56px;height:56px;border-radius:14px;background:rgba(46,207,207,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 0.85rem;overflow:hidden;opacity:' + opts.iconOpacity + '">' + opts.iconHtml + '</div>' +
-        '<div style="font-size:1.05rem;font-weight:700;color:#1E1B2E;margin-bottom:0.2rem">' + opts.title + '</div>' +
-        (opts.subtitle ? '<div style="font-size:0.78rem;color:#6B6680;margin-bottom:0.25rem">' + opts.subtitle + '</div>' : '') +
+        (joinKicker ? '<div style="font-size:0.7rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#5FE0CC;margin-bottom:0.3rem">' + escHtml(joinKicker) + '</div>' : '') +
+        '<div style="font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:0.2rem">' + opts.title + '</div>' +
+        (opts.subtitle ? '<div style="font-size:0.78rem;color:rgba(207,230,247,0.55);margin-bottom:0.25rem">' + opts.subtitle + '</div>' : '') +
         (opts.timingHtml ? '<div style="font-size:0.72rem;color:' + (opts.timingIsLive ? '#0F6E56' : (opts.timingIsEnded ? '#888780' : '#6B6680')) + ';margin-bottom:1rem;font-weight:500">' + opts.timingHtml + '</div>' : '<div style="margin-bottom:1rem"></div>') +
         memberBanner +
         readonlyBanner +
@@ -789,7 +890,15 @@ function _renderEventDeepLinkModal(opts) {
     btn.onclick = async function() {
       this.disabled = true;
       this.textContent = t('ui_saving');
-      try { await primaryFn(); } catch(e) { logError('deepLinkPrimary', e); errorToast('save', e); }
+      var _keepOpen = false;
+      // P0.2: primaryFn may return true to keep the modal open (e.g. failed check-in
+      // so the user can retry) instead of being dropped into the chat / left with no path.
+      try { _keepOpen = await primaryFn(); } catch(e) { logError('deepLinkPrimary', e); errorToast('save', e); }
+      if (_keepOpen) {
+        this.disabled = false;
+        this.textContent = primaryLabel;
+        return;
+      }
       if (ov.parentNode) ov.remove();
     };
   };
@@ -817,9 +926,9 @@ function _renderEventDeepLinkModal(opts) {
         if (!actions) return;
         actions.innerHTML =
           '<div style="background:rgba(153,53,86,0.06);border:1px solid rgba(153,53,86,0.15);border-radius:12px;padding:0.85rem 0.75rem 0.75rem">' +
-            '<div style="font-size:0.78rem;color:#993556;font-weight:600;text-align:center;margin-bottom:0.6rem">' + t('dl_decline_confirm_q') + '</div>' +
+            '<div style="font-size:0.78rem;color:#F0889F;font-weight:600;text-align:center;margin-bottom:0.6rem">' + t('dl_decline_confirm_q') + '</div>' +
             '<div style="display:flex;gap:0.5rem">' +
-              '<button id="dl-decline-undo" style="flex:1;padding:0.6rem;border-radius:10px;border:1px solid rgba(30,27,46,0.12);background:white;color:#1E1B2E;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_undo') + '</button>' +
+              '<button id="dl-decline-undo" style="flex:1;padding:0.6rem;border-radius:10px;border:0.5px solid rgba(255,255,255,0.12);background:white;color:var(--text);font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_undo') + '</button>' +
               '<button id="dl-decline-yes" style="flex:1;padding:0.6rem;border-radius:10px;border:none;background:#993556;color:white;font-size:0.78rem;font-weight:700;font-family:inherit;cursor:pointer">' + t('dl_yes_decline') + '</button>' +
             '</div>' +
           '</div>';
@@ -842,11 +951,6 @@ function _renderEventDeepLinkModal(opts) {
 }
 
 // Legacy aliases (safe to call from other files)
-function goToEventFromCard() {}
-function dismissEventCard() {
-  var ov = document.getElementById('checkin-confirm-overlay');
-  if (ov) ov.remove();
-}
 
 // ── Saved contact modal (shown after QR scan signup) ──
 async function _showSavedContactModal(contactId) {
@@ -860,24 +964,24 @@ async function _showSavedContactModal(contactId) {
     var ini = name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     var subtitle = [p.title, p.workplace].filter(Boolean).join(' · ');
     var avHtml = p.avatar_url
-      ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+      ? '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">'
       : '<span style="font-size:1.1rem;font-weight:700;color:white">' + escHtml(ini) + '</span>';
 
     var ov = document.createElement('div');
     ov.id = 'saved-contact-overlay';
-    ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
 
     ov.innerHTML =
-      '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
-        '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#6366F1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;box-shadow:0 4px 12px rgba(124,92,252,0.25)">' + avHtml + '</div>' +
+      '<div style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+        '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,rgb(100,180,230),#6366F1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;box-shadow:0 4px 12px rgba(100,180,230,0.25)">' + avHtml + '</div>' +
         '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.2rem">' + escHtml(name) + '</div>' +
         (subtitle ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.3rem">' + escHtml(subtitle) + '</div>' : '') +
         '<div style="display:flex;align-items:center;justify-content:center;gap:0.4rem;margin-bottom:1.25rem">' +
           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
-          '<span style="font-size:0.78rem;font-weight:600;color:#1A9E8E">Kontakt gemt</span>' +
+          '<span style="font-size:0.78rem;font-weight:600;color:#1A9E8E">' + t('home_contact_saved') + '</span>' +
         '</div>' +
-        '<button id="sc-view-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">Se profil →</button>' +
-        '<button id="sc-close-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_ok') + '</button>' +
+        '<button id="sc-view-btn" style="width:100%;padding:0.85rem;border-radius:12px;border:none;background:linear-gradient(180deg,#6FB8E8,#4F9FD4);color:#fff;box-shadow:0 6px 16px rgba(79,159,212,0.3);font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">Se profil →</button>' +
+        '<button id="sc-close-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(100,180,230,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_ok') + '</button>' +
       '</div>';
 
     document.body.appendChild(ov);
@@ -909,18 +1013,18 @@ function showWelcomeCard() {
   if (!isNewUser) return;
 
   el.innerHTML =
-    '<div style="background:#FFFFFF;border:1px solid rgba(124,92,252,0.15);border-radius:16px;padding:1rem 1.1rem;position:relative">' +
-      '<button onclick="dismissWelcomeCard()" style="position:absolute;top:0.6rem;right:0.7rem;background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;line-height:1;padding:0.2rem;font-family:inherit" aria-label="Luk">×</button>' +
+    '<div style="background:rgba(255,255,255,0.055);border:0.5px solid rgba(255,255,255,0.12);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:14px;padding:1rem 1.1rem;position:relative">' +
+      '<button onclick="dismissWelcomeCard()" style="position:absolute;top:0.6rem;right:0.7rem;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);font-size:1rem;line-height:1;padding:0.2rem;font-family:inherit" aria-label="Luk">×</button>' +
       '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">' +
-        '<div style="width:28px;height:28px;color:var(--accent);flex-shrink:0">' + ico('bubble') + '</div>' +
-        '<div style="font-size:0.88rem;font-weight:800;color:var(--text)">Velkommen til Bubble' + (currentProfile.name ? ', ' + currentProfile.name.split(' ')[0] : '') + '!</div>' +
+        '<div style="width:28px;height:28px;color:rgb(100,180,230);flex-shrink:0">' + ico('bubble') + '</div>' +
+        '<div style="font-size:0.88rem;font-weight:800;color:rgba(255,255,255,0.95)">' + t('home_welcome') + (currentProfile.name ? ', ' + currentProfile.name.split(' ')[0] : '') + '!</div>' +
       '</div>' +
-      '<div style="font-size:0.78rem;color:var(--text-secondary);line-height:1.55;margin-bottom:0.75rem">' +
-        'Bubble matcher dig med relevante mennesker i nærheden — baseret på hvem du er og hvad du søger. Jo mere du udfylder, jo bedre og mere præcise matches får du i radaren.' +
+      '<div style="font-size:0.78rem;color:rgba(255,255,255,0.7);line-height:1.55;margin-bottom:0.75rem">' +
+        t('home_welcome_desc') +
       '</div>' +
       '<div style="display:flex;gap:0.5rem;align-items:center">' +
-        '<button onclick="dismissWelcomeCard();goTo(\'screen-profile\');setTimeout(function(){profSwitchTab(\'dashboard\')},200)" style="flex:1;padding:0.55rem;border-radius:10px;font-size:0.78rem;font-weight:700;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;border:none">Udfyld profil →</button>' +
-        '<button onclick="dismissWelcomeCard()" style="padding:0.55rem 0.8rem;border-radius:10px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;background:none;border:1px solid var(--glass-border);color:var(--muted)">Senere</button>' +
+        '<button onclick="dismissWelcomeCard();goTo(\'screen-profile\');setTimeout(function(){profSwitchTab(\'dashboard\')},200)" style="flex:1;padding:0.55rem;border-radius:10px;font-size:0.78rem;font-weight:700;font-family:inherit;cursor:pointer;background:rgba(100,180,230,0.18);border:0.5px solid rgba(100,180,230,0.25);color:rgba(255,255,255,0.95)">Udfyld profil →</button>' +
+        '<button onclick="dismissWelcomeCard()" style="padding:0.55rem 0.8rem;border-radius:10px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;background:none;border:0.5px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.45)">Senere</button>' +
       '</div>' +
     '</div>';
   el.style.display = 'block';
@@ -966,7 +1070,7 @@ function showProfileSetupCTA() {
   var avEl = document.getElementById('setup-cta-avatar');
   if (avEl) {
     if (currentProfile.avatar_url) {
-      avEl.innerHTML = '<img src="' + escHtml(currentProfile.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      avEl.innerHTML = '<img src="' + escHtml(currentProfile.avatar_url) + '" class="u-avatar-img">';
     } else {
       avEl.textContent = (currentProfile.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     }
@@ -992,10 +1096,10 @@ function _updateProfileStrengthBar(strength) {
   if (bar) bar.style.width = strength + '%';
   if (pct) pct.textContent = strength + '%';
   if (lbl) {
-    if (strength >= 80) { lbl.textContent = 'Stærk profil'; lbl.style.color = '#1A9E8E'; }
+    if (strength >= 80) { lbl.textContent = t('home_strong_profile'); lbl.style.color = '#1A9E8E'; }
     else if (strength >= 50) { lbl.textContent = 'God profil'; lbl.style.color = 'var(--accent)'; }
     else if (strength >= 25) { lbl.textContent = 'Basis profil'; lbl.style.color = 'var(--gold)'; }
-    else { lbl.textContent = 'Kom i gang'; lbl.style.color = 'var(--accent2)'; }
+    else { lbl.textContent = 'Ny profil'; lbl.style.color = 'var(--accent2)'; }
   }
 }
 
@@ -1011,32 +1115,7 @@ function openNextProfileSetupSheet() {
 }
 
 // ── WORKPLACE SHEET ──
-function openSetupWorkplaceSheet() {
-  var { overlay, sheet } = bbDynOpen();
-  sheet.innerHTML = '<div style="padding:1.2rem 1rem">' +
-    '<div style="font-size:1rem;font-weight:800;margin-bottom:0.3rem">Hvor arbejder du?</div>' +
-    '<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Andre kan se din arbejdsplads på din profil</div>' +
-    '<input class="input" id="setup-workplace-input" maxlength="80" placeholder="f.eks. Danfoss, SDU, selvstændig..." value="' + escHtml(currentProfile?.workplace || '') + '">' +
-    '<button class="btn-primary" onclick="saveSetupWorkplace()" style="width:100%;margin-top:0.8rem">Gem</button>' +
-    '</div>';
-  setTimeout(function() { var el = document.getElementById('setup-workplace-input'); if (el) el.focus(); }, 200);
-}
 
-async function saveSetupWorkplace() {
-  var input = document.getElementById('setup-workplace-input');
-  if (!input) return;
-  var val = input.value.trim();
-  if (!val) return showWarningToast(t('val_workplace_required'));
-  try {
-    var { error } = await sb.from('profiles').update({ workplace: val }).eq('id', currentUser.id);
-    if (error) return errorToast('save', error);
-    currentProfile.workplace = val;
-    showSuccessToast('Arbejdsplads gemt');
-    var ov = document.querySelector('.bb-dyn-overlay');
-    if (ov) bbDynClose(ov);
-    showProfileSetupCTA();
-  } catch(e) { errorToast('save', e); }
-}
 
 // ── TITLE SHEET ──
 function openSetupTitleSheet() {
@@ -1057,10 +1136,6 @@ function setupTitleChanged() {
   btns.forEach(function(b) { b.classList.toggle('active', b.textContent.trim() === val); });
 }
 
-function pickSetupTitle(btn) {
-  var input = document.getElementById('setup-title-input');
-  if (input) { input.value = btn.textContent.trim(); setupTitleChanged(); }
-}
 
 async function saveSetupTitle() {
   var title = (document.getElementById('setup-title-input')?.value || '').trim();
@@ -1121,6 +1196,7 @@ function openSetupBioSheet() {
 
 async function saveSetupBio() {
   var bio = (document.getElementById('setup-bio-input')?.value || '').trim();
+  if (tooLong(bio, 'bio')) return;
   try {
     var { error } = await sb.from('profiles').update({ bio: bio }).eq('id', currentUser.id);
     if (error) { logError('saveSetupBio', error); errorToast('save', error); return; }
@@ -1204,9 +1280,6 @@ function setupGoToStep(step) {
   if (target) setTimeout(target.open, 60);
 }
 
-function openProfileSetupTags() {
-  openSetupTagsSheet();
-}
 
 // Alias for onclick references in radar empty states
 function openEditTags() {
@@ -1237,7 +1310,7 @@ function showDartboardEmpty(filter) {
   var div = document.createElement('div');
   div.className = 'dartboard-empty';
   div.innerHTML = '<div class="de-title">' + msg + '</div>' +
-    '<div class="de-sub">Tilføj flere tags for at finde folk der matcher dine specifikke interesser</div>' +
+    '<div class="de-sub">' + t('home_add_tags_hint') + '</div>' +
     '<div class="de-link" onclick="' + linkFn + '">' + link + '</div>';
   container.appendChild(div);
 }
@@ -1268,9 +1341,9 @@ async function updateTopbarNotifBadge() {
       pendingCount = pc || 0;
     }
     var total = (invRes.count || 0) + (saveRes.count || 0) + pendingCount;
+    // Topbar bell: pure dot only (no number) — matches unreadState.notifSet pattern
     if (total > 0) {
-      badge.textContent = total > 9 ? '9+' : total;
-      badge.style.display = 'flex';
+      badge.style.display = 'block';
     } else {
       badge.style.display = 'none';
     }
@@ -1291,7 +1364,7 @@ function bbAcceptInvite(inviteId, fromUserId) {
   if (!card) return;
   bbConfirm(card, {
     label: 'Join denne boble?',
-    confirmText: 'Ja, join',
+    confirmText: t('home_yes_join'),
     confirmClass: 'bb-confirm-btn-accept',
     onConfirm: "bbConfirmAccept('" + inviteId + "','" + fromUserId + "')"
   });
@@ -1304,7 +1377,7 @@ async function bbConfirmAccept(inviteId, fromUserId) {
     if (result.ok) {
       var invCard = document.getElementById('bb-inv-' + inviteId);
       if (invCard) { invCard.style.transition = 'opacity 0.2s'; invCard.style.opacity = '0'; setTimeout(function() { invCard.remove(); }, 200); }
-      showSuccessToast('Du er nu med i boblen!');
+      showSuccessToast(t('home_joined_bubble'));
       if (inv?.bubble_id) {
         _bbAfterJoin(inv.bubble_id);
         loadMyBubbles();
@@ -1318,8 +1391,8 @@ function bbDeclineInvite(inviteId) {
   var card = document.getElementById('bb-inv-' + inviteId);
   if (!card) return;
   bbConfirm(card, {
-    label: 'Afvis invitation?',
-    confirmText: 'Ja, afvis',
+    label: t('home_decline_invite_q'),
+    confirmText: t('home_yes_decline'),
     confirmClass: 'bb-confirm-btn-danger',
     onConfirm: "bbConfirmDecline('" + inviteId + "')"
   });
@@ -1413,15 +1486,15 @@ async function _bbLoadPendingInvites() {
       var b = bubbleMap[inv.bubble_id] || {};
       var ini = (p.name || '?').split(' ').map(function(w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
       html += '<div class="card" style="padding:0.6rem 0.8rem;margin-bottom:0.4rem;border-left:2px solid var(--accent)" id="bb-inv-' + inv.id + '">';
-      html += '<div style="display:flex;align-items:center;gap:0.6rem">';
+      html += '<div class="u-row-gap">';
       html += '<div class="avatar" style="width:32px;height:32px;font-size:0.65rem;flex-shrink:0">' + ini + '</div>';
       html += '<div style="flex:1;min-width:0">';
       html += '<div style="font-size:0.78rem;font-weight:600">' + escHtml(p.name || t('misc_unknown')) + '</div>';
       if (b.name) html += '<div style="font-size:0.62rem;color:var(--muted)">' + icon('bubble') + ' ' + escHtml(b.name) + '</div>';
       html += '</div>';
       html += '<div style="display:flex;gap:0.3rem;flex-shrink:0">';
-      html += '<button class="btn-sm" style="padding:0.3rem 0.6rem;font-size:0.65rem;font-weight:600;background:var(--gradient-primary);color:white;border:none;border-radius:var(--radius-xs);cursor:pointer;font-family:inherit" onclick="event.stopPropagation();bbAcceptInvite(\'' + inv.id + '\',\'' + inv.from_user_id + '\')">Accepter</button>';
-      html += '<button class="btn-sm btn-ghost" style="padding:0.3rem 0.5rem;font-size:0.65rem" onclick="event.stopPropagation();bbDeclineInvite(\'' + inv.id + '\',this)">Afvis</button>';
+      html += '<button class="btn-sm" style="padding:0.3rem 0.6rem;font-size:0.65rem;font-weight:600;background:var(--cta-bg);color:var(--cta-text);border:1px solid var(--cta-border);border-radius:var(--radius-xs);cursor:pointer;font-family:inherit" onclick="event.stopPropagation();bbAcceptInvite(\'' + inv.id + '\',\'' + inv.from_user_id + '\')">Accepter</button>';
+      html += '<button class="btn-sm btn-ghost" style="padding:0.3rem 0.5rem;font-size:0.65rem" onclick="event.stopPropagation();bbDeclineInvite(\'' + inv.id + '\',this)">' + t('bc_reject') + '</button>';
       html += '</div></div></div>';
     });
     html += '</div>';
@@ -1459,7 +1532,7 @@ async function loadMyNetworks() {
 
     // 2. Fetch my bubbles
     var { data: allMyBubbles, error: fetchErr } = await sb.from('bubbles').select('*, bubble_members(count)').in('id', myIds);
-    if (fetchErr) { logError('loadMyNetworks:fetch', fetchErr); showRetryState('bb-net-list', 'loadMyNetworks', 'Kunne ikke hente netværk'); return; }
+    if (fetchErr) { logError('loadMyNetworks:fetch', fetchErr); showRetryState('bb-net-list', 'loadMyNetworks', t('home_load_network_fail')); return; }
     if (_navVersion !== myNav) return;
     var allMy = allMyBubbles || [];
     _allMyBubblesCache = allMy;
@@ -1538,7 +1611,7 @@ async function loadMyNetworks() {
       var { data: lvl3 } = await sb.from('bubbles')
         .select('*, bubble_members(count)')
         .in('parent_bubble_id', lvl2NetIds)
-        .eq('type', 'event')
+        .in('type', ['event', 'live'])
         .order('event_date', { ascending: true, nullsFirst: false });
       if (_navVersion !== myNav) return;
       (lvl3 || []).forEach(function(e) {
@@ -1564,8 +1637,8 @@ async function loadMyNetworks() {
         : fallback;
     }
 
-    // ── Membership checkmark overlay (small green ✓ on icon) ──
-    var _memberCheck = '<div style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:#1A9E8E;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--bg)"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M5 12.5l5 5L20 7"/></svg></div>';
+    // ── Membership checkmark overlay (16px teal badge with subtle glow — Variant 2) ──
+    var _memberCheck = '<div class="bb-mem-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M5 12.5l5 5L20 7"/></svg></div>';
 
     // ── Event time window check ──
     // Returns: 'before' | 'active' | 'after' | 'no_date'
@@ -1585,15 +1658,17 @@ async function loadMyNetworks() {
       var mode = ev.checkin_mode || 'self';
       var win = _eventTimeWindow(ev);
       var isLiveHere = appMode.live && appMode.live.bubbleId === ev.id;
-      if (isLiveHere) return '<span style="font-size:0.58rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.15);color:#0F6E56;font-weight:700">LIVE</span>';
-      if (mode === 'scan') return '<span style="font-size:0.55rem;color:var(--muted)">' + t('live_scan_checkin') + '</span>';
+      if (isLiveHere) return '<span class="bb-pill bb-pill-live" style="margin-right:4px">LIVE</span>';
+      // Ended events: no check-in / scan affordance at all. The title's "Afsluttet"
+      // badge carries the status (and shows for non-members too, unlike this pill).
+      if (win === 'after') return '';
+      if (mode === 'scan') return '<span class="bb-pill bb-pill-coming" style="margin-right:4px">' + t('live_scan_checkin') + '</span>';
       if (win === 'before') {
         var dateStr = new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' });
-        return '<span style="font-size:0.55rem;color:var(--muted)">' + t('live_starts') + ' ' + dateStr + '</span>';
+        return '<span class="bb-pill bb-pill-coming" style="margin-right:4px">' + t('live_starts') + ' ' + dateStr + '</span>';
       }
-      if (win === 'after') return '<span style="font-size:0.55rem;color:var(--muted)">' + t('live_ended') + '</span>';
-      // Active window + self check-in
-      return '<button onclick="event.stopPropagation();quickGoLive(\'' + ev.id + '\',\'' + escHtml(ev.name).replace(/'/g,"\\'") + '\')" style="font-size:0.58rem;font-weight:700;padding:3px 8px;border-radius:7px;border:none;background:linear-gradient(135deg,#2ECFCF,#1A9E8E);color:white;cursor:pointer;font-family:inherit;white-space:nowrap">' + t('live_go_live') + '</button>';
+      // Active window + self check-in — use new pink CTA button
+      return '<button onclick="event.stopPropagation();quickGoLive(\'' + ev.id + '\',\'' + escHtml(ev.name).replace(/'/g,"\\'") + '\')" class="bb-go-live-btn">' + t('live_go_live') + '</button>';
     }
 
     // ── Accordion restore helper ──
@@ -1607,198 +1682,81 @@ async function loadMyNetworks() {
       return _bbAccordionOpen[accId] ? ' open' : '';
     }
 
+    parentNets.sort(function(a, b) {
+      var ra = (typeof bubbleStarGet === 'function') ? bubbleStarGet(a.id) : 0;
+      var rb = (typeof bubbleStarGet === 'function') ? bubbleStarGet(b.id) : 0;
+      return rb - ra;
+    });
+
+    // ═══ FLAD TREE (prototype walk-algoritme via bbRenderTree) ═══
+    // Saml alle noder (roots + boern + grandchildren) i flad liste med parent_id.
+    // bbRenderTree bygger selv hierarki + guide-linjer fra parent_id.
+    var _treeNodes = [];
+    var _seenIds = {};
+    function _pushNode(b, parentId) {
+      if (!b || _seenIds[b.id]) return;
+      _seenIds[b.id] = true;
+      var isEv = b.type === 'event' || b.type === 'live';
+      var isLiveNow = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === b.id);
+      _treeNodes.push({
+        id: b.id,
+        name: b.name,
+        type: b.type,
+        parent_id: parentId || null,
+        member_count: b.member_count ?? b.bubble_members?.[0]?.count ?? 0,
+        event_date: b.event_date || null,
+        event_end_date: b.event_end_date || null,
+        visibility: b.visibility,
+        icon_url: b.icon_url || null,
+        _live: isLiveNow,
+        _unread: !!_bubbleUnreadSet[b.id],
+        _star: !isEv,
+        _pending: !!pendingSet[b.id],
+        _ghost: !!b._isGhost
+      });
+    }
     parentNets.forEach(function(net) {
+      _pushNode(net, null);
       var kids = childrenMap[net.id] || [];
       var isOwner = net.created_by === currentUser.id;
       if (!isOwner) {
         kids = kids.filter(function(k) { return k.visibility !== 'hidden' || myIds.indexOf(k.id) >= 0; });
       }
-      var childNets = kids.filter(function(k) { return k.type !== 'event' && k.type !== 'live'; });
-      var childEvents = kids.filter(function(k) { return k.type === 'event' || k.type === 'live'; });
-      var totalChildren = childNets.length + childEvents.length;
-      var mc = net.member_count ?? net.bubble_members?.[0]?.count ?? 0;
-      var badgeParts = [];
-      if (childNets.length > 0) badgeParts.push(childNets.length + ' ' + t('bb_networks_count'));
-      if (childEvents.length > 0) {
-        var upN = childEvents.filter(function(e) { return e.event_date && new Date(e.event_date) >= now; }).length;
-        badgeParts.push(upN > 0 ? upN + ' ' + t('bb_upcoming') : childEvents.length + ' ' + t('bb_events_count'));
-      }
-      var badgeText = badgeParts.join(' \u00B7 ');
-      var accId = 'acc-' + net.id.slice(0, 8);
-
-      // Root card
-      html += '<div class="bb-accordion">';
-      html += '<div class="bb-tree-root">';
-      html += '<div class="bb-tree-root-ico">' + _bIco(net, _netIco, 9) + '</div>';
-      html += '<div class="bb-tree-body" onclick="openBubbleChat(\'' + net.id + '\',\'screen-bubbles\')">';
-      html += '<div style="font-size:0.8rem;font-weight:700">' + escHtml(net.name) + (pendingSet[net.id] ? ' <span class="pending-badge">Afventer</span>' : '') + '</div>';
-      html += '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px;flex-wrap:wrap">' + visIcon(net.visibility) + mc + ' ' + t('bb_members') + (badgeText ? ' \u00B7 ' + badgeText : '') + '</div>';
-      html += '</div>';
-      html += _unreadDot(net.id);
-      if (totalChildren > 0) {
-        html += '<button class="bb-tree-toggle' + _togClass(accId) + '" id="tog-' + accId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + accId + '\')">' + _chevSvg + '</button>';
-      }
-      html += '</div>';
-
-      // Children
-      if (totalChildren > 0) {
-        html += '<div class="bb-tree-trunk' + _accClass(accId) + '" id="trunk-' + accId + '"' + _accState(accId) + '>';
-
-        // Child networks (level 2)
-        childNets.forEach(function(cn) {
-          var cnMc = cn.member_count ?? cn.bubble_members?.[0]?.count ?? 0;
-          var cnEvents = lvl3Map[cn.id] || [];
-          var cnAdopted = adoptedGrandchildMap[cn.id] || [];
-          var cnAccId = 'acc-' + cn.id.slice(0, 8);
-          var isGhost = cn._isGhost || false;
-          var isMember = myIds.indexOf(cn.id) >= 0;
-          var hasChildren = cnEvents.length > 0 || cnAdopted.length > 0;
-
-          html += '<div class="bb-tree-branch">';
-          html += '<div class="bb-tree-net" style="' + (isGhost && !isMember ? 'opacity:0.55;border-style:dashed;' : '') + '">';
-          html += '<div style="position:relative">' + '<div class="bb-tree-net-ico">' + _bIco(cn, _netIcoSm, 8) + '</div>' + (isMember ? _memberCheck : '') + '</div>';
-          html += '<div class="bb-tree-body" onclick="event.stopPropagation();openBubbleChat(\'' + cn.id + '\',\'screen-bubbles\')">';
-          html += '<div style="font-size:0.75rem;font-weight:600">' + escHtml(cn.name) + '</div>';
-          html += '<div style="font-size:0.58rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(cn.visibility) + cnMc + ' ' + t('bb_members_short') + (cnEvents.length > 0 ? ' \u00B7 ' + cnEvents.length + ' ' + t('bb_events_count') : '') + '</div>';
-          html += '</div>';
-          html += _unreadDot(cn.id);
-          if (hasChildren) {
-            html += '<button class="bb-tree-toggle' + _togClass(cnAccId) + '" id="tog-' + cnAccId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + cnAccId + '\')" style="width:24px;height:24px">' + _chevSm + '</button>';
-          }
-          html += '</div>';
-
-          // Level 3: events + adopted grandchildren
-          if (hasChildren) {
-            html += '<div class="bb-tree-leaves' + _accClass(cnAccId) + '" id="trunk-' + cnAccId + '"' + _accState(cnAccId) + '>';
-
-            // Adopted grandchildren (member networks nested under ghost parent)
-            cnAdopted.forEach(function(gc) {
-              var gcMc = gc.member_count ?? gc.bubble_members?.[0]?.count ?? 0;
-
-              html += '<div class="bb-tree-leaf"><div class="bb-tree-net" style="border-left-color:rgba(46,207,207,0.35)" onclick="event.stopPropagation();openBubbleChat(\'' + gc.id + '\',\'screen-bubbles\')">';
-              html += '<div class="bb-tree-net-ico">' + _bIco(cn, _netIcoSm, 8) + '</div>';
-              html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(gc.name) + '</div>';
-              html += '<div style="font-size:0.55rem;color:var(--muted)">' + visIcon(gc.visibility) + gcMc + ' medl.</div></div>';
-              html += _unreadDot(gc.id) + '<div class="bb-tree-go">\u203A</div>';
-              html += '</div></div>';
-            });
-
-            // Events
-            cnEvents.forEach(function(ev) {
-              var isPast = ev.event_date && new Date(ev.event_end_date || ev.event_date) < now;
-              var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
-              var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
-              var gcLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
-              var evIsMember = myIds.indexOf(ev.id) >= 0;
-              html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast && !gcLive ? 'opacity:0.5' : '') + '">';
-              html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _bIco(ev, _calIco, 6) + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
-              html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
-              html += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</div></div>';
-              html += _unreadDot(ev.id) + (_goLiveBtn(ev, evIsMember) || '<div class="bb-tree-go">\u203A</div>');
-              html += '</div></div>';
-            });
-            if (isOwner) {
-              html += '<div class="bb-tree-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + cn.id + '\')">' + _addIco + ' ' + t('bb_create_event') + '</div>';
-            }
-            html += '</div>';
-          }
-          html += '</div>';
-        });
-
-        // Direct child events (level 2)
-        childEvents.forEach(function(ev) {
-          var isPast = ev.event_date && new Date(ev.event_end_date || ev.event_date) < now;
-          var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
-          var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
-          var evLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
-          var evIsMember = myIds.indexOf(ev.id) >= 0;
-          html += '<div class="bb-tree-branch"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast && !evLive ? 'opacity:0.5' : '') + '">';
-          html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _bIco(ev, _calIco, 6) + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
-          html += '<div style="flex:1;min-width:0"><div style="font-size:0.75rem;font-weight:600">' + escHtml(ev.name) + '</div>';
-          html += '<div style="font-size:0.58rem;color:var(--muted)">' + visIcon(ev.visibility) + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</div></div>';
-          html += _unreadDot(ev.id) + (_goLiveBtn(ev, evIsMember) || '<div class="bb-tree-go">\u203A</div>');
-          html += '</div></div>';
-        });
-
-        if (isOwner) {
-          html += '<div class="bb-tree-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + net.id + '\')">' + _addIco + ' ' + t('bb_create_network_event') + '</div>';
-        }
-        html += '</div>';
-      }
-      html += '</div>';
+      kids.forEach(function(cn) {
+        _pushNode(cn, net.id);
+        // Grandchildren (events under sub-netvaerk)
+        var gcs = (lvl3Map[cn.id] || []).concat(adoptedGrandchildMap[cn.id] || []);
+        gcs.forEach(function(gc) { _pushNode(gc, cn.id); });
+      });
     });
-
-    // True orphans: ghost parent + member child
-    trueOrphans.forEach(function(net) {
-      var mc = net.member_count ?? net.bubble_members?.[0]?.count ?? 0;
-      var ghost = ghostParentMap[net.parent_bubble_id];
-      var ghostName = ghost ? ghost.name : '';
-      var ghostMc = ghost ? (ghost.member_count ?? ghost.bubble_members?.[0]?.count ?? 0) : 0;
-      var orphanEvents = lvl3Map[net.id] || [];
-      var accId = 'acc-' + net.id.slice(0, 8);
-      var isOwner = net.created_by === currentUser.id;
-
-      html += '<div class="bb-accordion">';
-
-      // Ghost parent as root (if available)
-      if (ghost) {
-        html += '<div class="bb-tree-root" style="opacity:0.55;border-style:dashed">';
-        html += '<div class="bb-tree-root-ico">' + _bIco(ghost, _netIco, 9) + '</div>';
-        html += '<div class="bb-tree-body">';
-        html += '<div style="font-size:0.8rem;font-weight:700">' + escHtml(ghostName) + '</div>';
-        html += '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(ghost.visibility) + ghostMc + ' ' + t('bb_members') + '</div>';
-        html += '</div></div>';
-        // Member child nested under ghost
-        html += '<div class="bb-tree-trunk" style="max-height:2000px;opacity:1">';
-        html += '<div class="bb-tree-branch">';
-      }
-
-      // The actual member network
-      html += '<div class="bb-tree-' + (ghost ? 'net' : 'root') + '">';
-      if (!ghost) html += '<div class="bb-tree-root-ico">' + _bIco(net, _netIco, 9) + '</div>';
-      else html += '<div class="bb-tree-net-ico">' + _bIco(net, _netIcoSm, 8) + '</div>';
-      html += '<div class="bb-tree-body" onclick="openBubbleChat(\'' + net.id + '\',\'screen-bubbles\')">';
-      html += '<div style="font-size:' + (ghost ? '0.75rem' : '0.8rem') + ';font-weight:' + (ghost ? '600' : '700') + '">' + escHtml(net.name) + (pendingSet[net.id] ? ' <span class="pending-badge">Afventer</span>' : '') + '</div>';
-      html += '<div style="font-size:' + (ghost ? '0.58' : '0.62') + 'rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(net.visibility) + mc + ' ' + t('bb_members') + '</div>';
-      html += '</div>';
-      html += _unreadDot(net.id);
-      if (orphanEvents.length > 0) {
-        html += '<button class="bb-tree-toggle' + _togClass(accId) + '" id="tog-' + accId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + accId + '\')"' + (ghost ? ' style="width:24px;height:24px"' : '') + '>' + (ghost ? _chevSm : _chevSvg) + '</button>';
-      }
-      html += '</div>';
-
-      if (orphanEvents.length > 0) {
-        html += '<div class="bb-tree-leaves' + _accClass(accId) + '" id="trunk-' + accId + '"' + _accState(accId) + '>';
-        orphanEvents.forEach(function(ev) {
-          var isPast = ev.event_date && new Date(ev.event_end_date || ev.event_date) < now;
-          var evMc = ev.member_count ?? ev.bubble_members?.[0]?.count ?? 0;
-          var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
-          var evIsMember = myIds.indexOf(ev.id) >= 0;
-          html += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubbles\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
-          html += '<div style="position:relative">' + '<div class="bb-tree-evt-ico">' + _bIco(ev, _calIco, 6) + '</div>' + (evIsMember ? _memberCheck : '') + '</div>';
-          html += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
-          html += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' ' + t('bb_attendees') : '') + '</div></div>';
-          html += _unreadDot(ev.id) + (_goLiveBtn(ev, evIsMember) || '<div class="bb-tree-go">\u203A</div>');
-          html += '</div></div>';
-        });
-        if (isOwner) {
-          html += '<div class="bb-tree-add" onclick="event.stopPropagation();openCreateEventFromBubble(\'' + net.id + '\')">' + _addIco + ' ' + t('bb_create_event') + '</div>';
+    if (_treeNodes.length > 0) {
+      html += bbRenderTree(_treeNodes, _bbFlatExpanded, { fromScreen: 'screen-bubbles' });
+      // Wire re-render callback (toggle re-bygger traeet)
+      _bbFlatRerender = function() {
+        // Re-render KUN traeet fra allerede-indlaeste _treeNodes (ingen DB-kald).
+        // Kun expanded-state aendrer sig ved toggle, ikke selve dataene.
+        var _l = document.getElementById('bb-net-list');
+        if (_l) {
+          _l.innerHTML = bbRenderTree(_treeNodes, _bbFlatExpanded, { fromScreen: 'screen-bubbles' });
         }
-        html += '</div>';
-      }
-
-      if (ghost) {
-        html += '</div></div>'; // close bb-tree-branch + bb-tree-trunk
-      }
-      html += '</div>';
-    });
+      };
+    }
 
     if (!html) {
-      html = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">Du er ikke med i nogen netv\u00E6rk endnu</div><div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:center"><button class="btn-primary" onclick="bbSwitchTab(\'explore\')" style="font-size:0.82rem;padding:0.6rem 1.2rem">Opdag netv\u00E6rk</button><button class="btn-secondary" onclick="bbSwitchSub(\'evt\')" style="font-size:0.82rem;padding:0.6rem 1.2rem">Se events</button></div></div>';
+      html = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('bubble') + '</div><div class="empty-text">' + t('home_no_networks') + '</div><div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:center"><button class="btn-primary" onclick="bbSwitchTab(\'explore\')" style="font-size:0.82rem;padding:0.6rem 1.2rem">' + t('home_discover_networks') + '</button><button class="btn-secondary" onclick="bbSwitchSub(\'evt\')" style="font-size:0.82rem;padding:0.6rem 1.2rem">' + t('home_see_events') + '</button></div></div>';
     }
     list.innerHTML = html;
     _renderSubTabDots();
-  } catch(e) { logError("loadMyNetworks", e); showRetryState('bb-net-list', 'loadMyNetworks', 'Kunne ikke hente netv\u00E6rk'); }
+  } catch(e) { logError("loadMyNetworks", e); showRetryState('bb-net-list', 'loadMyNetworks', t('home_load_network_fail')); }
+}
+
+function bcToggleEventHistory() {
+  var body = document.getElementById('bc-evhist-body');
+  var chev = document.getElementById('bc-evhist-chevron');
+  if (!body) return;
+  var open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chev) chev.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
 }
 
 function bbTreeToggle(accId) {
@@ -1907,7 +1865,7 @@ async function loadMyEvents() {
       html += '</div>';
     }
     list.innerHTML = html;
-  } catch(e) { logError("loadMyEvents", e); showRetryState('bb-evt-list', 'loadMyEvents', 'Kunne ikke hente events'); }
+  } catch(e) { logError("loadMyEvents", e); showRetryState('bb-evt-list', 'loadMyEvents', t('home_load_events_fail')); }
 }
 
 function _bbEventCard(e, parentMap, gpMap, isPast) {
@@ -1927,13 +1885,15 @@ function _bbEventCard(e, parentMap, gpMap, isPast) {
     breadcrumb = '<div class="bb-breadcrumb"><span class="bb-bc-pill">' + escHtml(parentName) + '</span></div>';
   }
   var evCardLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === e.id);
-  return '<div class="bb-tree-evt" data-action="openBubble" data-id="' + e.id + '" style="margin-bottom:0.45rem;' + (isPast ? 'opacity:0.5;' : '') + '">' +
-    '<div class="bb-tree-evt-ico">' + (e.icon_url ? '<img src="' + escHtml(e.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px">' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>') + '</div>' +
-    '<div style="flex:1;min-width:0">' +
-    '<div style="font-size:0.82rem;font-weight:700;line-height:1.3">' + escHtml(e.name) + '</div>' +
-    '<div style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;flex-wrap:wrap;gap:2px;margin-top:2px">' + visIcon(e.visibility) + dateStr + '</div>' +
+  // User is always member of events shown on Mine/Events tab — show checkmark
+  var memCheck = '<div class="bb-mem-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M5 12.5l5 5L20 7"/></svg></div>';
+  return '<div class="bb-card-list' + (isPast && !evCardLive ? ' is-past' : '') + '" data-action="openBubble" data-id="' + e.id + '">' +
+    '<div class="bb-card-icon-sq icon-wrap is-event">' + (e.icon_url ? '<img src="' + escHtml(e.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px">' : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>') + memCheck + '</div>' +
+    '<div class="bb-card-text">' +
     breadcrumb +
-    '</div>' + _unreadDot(e.id) + '<div class="bb-tree-go">\u203A</div></div>';
+    '<div class="bb-card-title">' + escHtml(e.name) + '</div>' +
+    '<div class="bb-card-meta">' + visIcon(e.visibility) + '<span class="bb-card-meta-text">' + dateStr + '</span></div>' +
+    '</div>' + _unreadDot(e.id) + '<div class="bb-card-chev">\u203A</div></div>';
 }
 // ══════════════════════════════════════════════════════════
 //  TOP MATCHES — "Vigtigste personer du bør møde"
@@ -1984,17 +1944,17 @@ async function loadTopMatches() {
     if (scored.length === 0) { container.style.display = 'none'; return; }
 
     // Render
-    var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)'];
+    var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,rgb(100,180,230))','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)'];
 
     list.innerHTML = scored.map(function(s, i) {
       var p = s.profile;
       var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var avHtml = p.avatar_url ?
-        '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid rgba(124,92,252,0.15)"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
+        '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid rgba(100,180,230,0.15)"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
         '<div style="width:40px;height:40px;border-radius:50%;background:' + avColors[i % 5] + ';display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>';
 
       var sharedTags = s.shared.slice(0, 3).map(function(t) {
-        return '<span style="font-size:0.58rem;padding:0.1rem 0.4rem;background:rgba(124,92,252,0.06);color:var(--accent);border-radius:99px;font-weight:600">' + escHtml(t) + '</span>';
+        return '<span style="font-size:0.58rem;padding:0.1rem 0.4rem;background:rgba(100,180,230,0.06);color:var(--accent);border-radius:99px;font-weight:600">' + escHtml(t) + '</span>';
       }).join('');
 
       return '<div style="background:var(--glass-bg-strong);border:1px solid var(--glass-border-subtle);border-radius:12px;padding:0.6rem 0.75rem;display:flex;align-items:center;gap:0.65rem;cursor:pointer" onclick="openPerson(\'' + p.id + '\',\'screen-home\')">' +
@@ -2014,76 +1974,114 @@ async function loadTopMatches() {
   } catch(e) { logError('loadTopMatches', e); }
 }
 
-function bubbleCard(b, joined) {
-  var ups = b.upvote_count || bubbleUpvotes[b.id] || 0;
-  var upLabel = ups > 0 ? `<div class="fs-065" style="color:var(--accent);display:flex;align-items:center;gap:0.15rem">${icon('rocket')}<span style="font-weight:700">${ups}</span></div>` : '';
+function _evEndedBadge(ev) {
+  if (!ev || !ev.event_date) return '';
+  var ended = new Date(ev.event_end_date || ev.event_date) < new Date();
+  var live = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
+  return (ended && !live) ? ' <span class="bb-pill bb-pill-past">' + (t('bb_status_past') || 'Afsluttet') + '</span>' : '';
+}
 
-  // Contact avatars (from Discover)
-  var contactHtml = '';
-  var contacts = b._contacts || [];
-  if (contacts.length > 0) {
-    var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
-    var avs = contacts.map(function(c, i) {
-      var ini = (c.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-      var ml = i > 0 ? 'margin-left:-5px;' : '';
-      if (c.avatar_url) return '<div style="width:20px;height:20px;border-radius:50%;overflow:hidden;border:1.5px solid var(--bg);' + ml + 'position:relative;z-index:' + (3-i) + '"><img src="' + escHtml(c.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>';
-      return '<div style="width:20px;height:20px;border-radius:50%;background:' + avColors[i % 10] + ';display:flex;align-items:center;justify-content:center;font-size:0.4rem;font-weight:700;color:white;border:1.5px solid var(--bg);' + ml + 'position:relative;z-index:' + (3-i) + '">' + ini + '</div>';
-    }).join('');
-    contactHtml = '<div style="display:flex;align-items:center;gap:0.25rem;margin-top:0.2rem"><div style="display:flex;align-items:center">' + avs + '</div><span class="fs-065 text-muted">' + contacts.length + ' kontakt' + (contacts.length > 1 ? 'er' : '') + '</span></div>';
+function bubbleCard(b, joined, fromScreen) {
+  // Visibility pill (always shown — encodes synlighed)
+  // BUG FIX: visibility values in DB are 'public', 'private', 'hidden' (NOT 'open')
+  // Previous check for 'open' would always fall through to 'private' for public bubbles
+  var visClass = b.visibility === 'public' ? 'bb-pill-open'
+               : b.visibility === 'hidden' ? 'bb-pill-hidden'
+               : 'bb-pill-private';
+  var visLabel = b.visibility === 'public' ? (t('bb_open') || 'Åben')
+                : b.visibility === 'hidden' ? (t('bb_hidden') || 'Skjult')
+                : (t('bb_private') || 'Privat');
+
+  // Icon — squircle (8px radius) with type-tinted background if no logo
+  var isEvent = b.type === 'event' || b.type === 'live';
+  var iconClass = isEvent ? 'bb-card-icon-sq is-event' : 'bb-card-icon-sq';
+  var iconInner;
+  if (b.icon_url) {
+    iconInner = '<img src="' + escHtml(b.icon_url) + '" alt="">';
+  } else {
+    iconInner = isEvent
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6"/><circle cx="16" cy="13.5" r="4.5"/></svg>';
   }
 
-  var memberLabel = (b.member_count || 0) > 0 ? '<div class="fw-700" style="font-size:0.75rem">' + ico('users') + ' ' + b.member_count + '</div>' : '';
-  var parentRef = '';
-  if (b._grandparentName && b._parentName) {
-    parentRef = '<div class="bb-breadcrumb"><span class="bb-bc-pill">↳ ' + escHtml(b._grandparentName) + '</span><span class="bb-bc-chev">›</span><span class="bb-bc-pill2">' + escHtml(b._parentName) + '</span></div>';
-  } else if (b._parentName) {
-    parentRef = '<div class="bb-breadcrumb"><span class="bb-bc-pill">↳ ' + escHtml(b._parentName) + '</span></div>';
+  // Status badge — state of the bubble (placed inline with title)
+  // Computed BEFORE meta so we can also set is-past on the card
+  var isPast = false;
+  var statusBadge = '';
+  if (isEvent && b.event_date) {
+    var endTime = new Date(b.event_end_date || b.event_date);
+    var startTime = new Date(b.event_date);
+    var now = new Date();
+    if (endTime < now) {
+      isPast = true;
+      statusBadge = ' <span class="bb-pill bb-pill-past">' + (t('bb_status_past') || 'Afsluttet') + '</span>';
+    } else if (startTime <= now && endTime >= now) {
+      // Currently live
+      statusBadge = ' <span class="bb-pill bb-pill-live">' + (t('bb_status_live') || 'Live nu') + '</span>';
+    }
+  }
+  // Pending membership status (overrides past — relevant even for past events)
+  if (b._pending) {
+    statusBadge = ' <span class="bb-pill bb-pill-pending">' + (t('bb_status_pending') || 'Afventer') + '</span>';
   }
 
-  // Child count pills (Opdag: "◎ 6 netværk · 📅 2 events")
-  var childPills = '';
+  // Meta line — pill + dot-separated info (members, location, event date)
+  var metaParts = [];
+  var memberCount = b.member_count || 0;
+  if (memberCount > 0) {
+    metaParts.push(memberCount + ' ' + (memberCount === 1 ? (t('bb_member') || 'medlem') : (t('bb_members') || 'medlemmer')));
+  }
+  if (b.location && !isEvent) metaParts.push(escHtml(b.location));
+
+  // Event date for events — formatted nicely on meta line
+  if (isEvent && b.event_date) {
+    var evD2 = new Date(b.event_date);
+    var evDateStr = evD2.toLocaleDateString(_locale(), { weekday: 'short', day: 'numeric', month: 'short' }) +
+      (evD2.getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + evD2.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '');
+    metaParts.push(evDateStr);
+  }
+
+  // Child counts (Opdag tab) — replace location/members with breakdown
   if (b._childNetCount > 0 || b._childEventCount > 0) {
-    var pills = [];
-    if (b._childNetCount > 0) pills.push('<span style="font-size:0.62rem;padding:2px 7px;border-radius:6px;background:rgba(124,92,252,0.06);color:#534AB7;font-weight:600;display:inline-flex;align-items:center;gap:3px">' + ico('bubble') + ' ' + b._childNetCount + ' netværk</span>');
-    if (b._childEventCount > 0) pills.push('<span style="font-size:0.62rem;padding:2px 7px;border-radius:6px;background:rgba(46,207,207,0.06);color:#0F6E56;font-weight:600;display:inline-flex;align-items:center;gap:3px">' + ico('calendar') + ' ' + b._childEventCount + ' event' + (b._childEventCount > 1 ? 's' : '') + '</span>');
-    childPills = '<div style="display:flex;gap:4px;margin-top:0.15rem">' + pills.join('') + '</div>';
+    var childParts = [];
+    if (b._childNetCount > 0) childParts.push(b._childNetCount + ' ' + t('bb_networks_count'));
+    if (b._childEventCount > 0) childParts.push(b._childEventCount + ' event' + (b._childEventCount > 1 ? 's' : ''));
+    metaParts = childParts;
   }
 
-  // Event date row — shown on event cards only
-  var eventDateHtml = '';
-  if ((b.type === 'event' || b.type === 'live') && b.event_date) {
-    var evD = new Date(b.event_date);
-    var evIsPast = new Date(b.event_end_date || b.event_date) < new Date();
-    var evDateStr = evD.toLocaleDateString(_locale(), { weekday: 'short', day: 'numeric', month: 'short' }) +
-      (evD.getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + evD.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) +
-        (b.event_end_date ? ' – ' + new Date(b.event_end_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '')
-      : '');
-    var evBadge = evIsPast
-      ? '<span style="font-size:0.58rem;padding:1px 5px;border-radius:99px;background:rgba(30,27,46,0.06);color:var(--muted);font-weight:600">Afsluttet</span>'
-      : '<span style="font-size:0.58rem;padding:1px 5px;border-radius:99px;background:rgba(46,207,207,0.12);color:#085041;font-weight:600">' + t('bb_coming') + '</span>';
-    eventDateHtml = '<div style="display:flex;align-items:center;gap:0.25rem;margin-top:0.2rem;opacity:' + (evIsPast ? '0.55' : '1') + '">' +
-      '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="' + (evIsPast ? 'currentColor' : '#0F6E56') + '" stroke-width="1.4" style="flex-shrink:0"><rect x="1" y="2" width="10" height="9" rx="1.5"/><path d="M4 1v2M8 1v2M1 5h10"/></svg>' +
-      '<span style="font-size:0.68rem;font-weight:600;color:' + (evIsPast ? 'var(--muted)' : '#0F6E56') + '">' + evDateStr + '</span>' +
-      '<span style="width:2px;height:2px;border-radius:50%;background:var(--muted);flex-shrink:0"></span>' +
-      evBadge + '</div>';
+  var metaText = metaParts.join(' · ');
+
+  // Card class — adds is-past for dimmed past events
+  var cardClass = 'bb-card-list' + (isPast ? ' is-past' : '');
+
+  // Breadcrumb (Variant A) — shown above title when bubble has a parent
+  // Format: "Grandparent › Parent" or just "Parent"
+  var breadcrumb = '';
+  if (b._grandparentName && b._parentName) {
+    breadcrumb = '<div class="bb-breadcrumb">' +
+      '<span class="bb-bc-pill">' + escHtml(b._grandparentName) + '</span>' +
+      '<span class="bb-bc-chev">›</span>' +
+      '<span class="bb-bc-pill2">' + escHtml(b._parentName) + '</span>' +
+    '</div>';
+  } else if (b._parentName) {
+    breadcrumb = '<div class="bb-breadcrumb">' +
+      '<span class="bb-bc-pill">' + escHtml(b._parentName) + '</span>' +
+    '</div>';
   }
 
-  return `<div class="card flex-row-center" data-action="openBubble" data-id="${b.id}">
-    <div class="bubble-icon" style="background:${bubbleColor(b.type, 0.15)};color:${bubbleColor(b.type, 0.9)}">${b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : bubbleEmoji(b.type)}</div>
-    <div style="flex:1;min-width:0">
-      <div class="fw-600 fs-085">${escHtml(b.name)}</div>
-      <div style="font-size:0.68rem;color:var(--muted);display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap">${visIcon(b.visibility)} ${escHtml(b.type_label || b.type)} ${b.location ? '<span>·</span> <span>' + escHtml(b.location) + '</span>' : ''}</div>
-      ${eventDateHtml}
-      ${parentRef}
-      ${childPills}
-      ${contactHtml}
-    </div>
-    <div class="flex-col-end" style="align-items:flex-end;gap:0.15rem">
-      ${memberLabel}
-      ${upLabel}
-      ${joined ? '<div class="live-dot"></div>' : '<div class="fs-09" style="color:var(--accent)">+</div>'}
-    </div>
-  </div>`;
+  return '<div class="' + cardClass + '" data-action="openBubble" data-id="' + b.id + '"' + (fromScreen ? ' data-from="' + fromScreen + '"' : '') + '>' +
+    '<div class="' + iconClass + '">' + iconInner + '</div>' +
+    '<div class="bb-card-text">' +
+      breadcrumb +
+      '<div class="bb-card-title">' + escHtml(b.name) + statusBadge + '</div>' +
+      '<div class="bb-card-meta">' +
+        '<span class="bb-pill ' + visClass + '">' + visLabel + '</span>' +
+        (metaText ? '<span class="bb-card-meta-text">' + metaText + '</span>' : '') +
+      '</div>' +
+    '</div>' +
+    '<button data-action="toggleSaveBubble" data-id="' + b.id + '" data-bookmark-id="' + b.id + '" title="' + (isBubbleSaved(b.id) ? t('saved_remove') : t('saved_add')) + '" style="background:none;border:none;cursor:pointer;padding:6px;flex-shrink:0;display:flex;align-items:center;-webkit-tap-highlight-color:transparent">' + bookmarkIcon(isBubbleSaved(b.id)) + '</button>' +
+    '<div class="bb-card-chev">›</div>' +
+  '</div>';
 }
 
 
@@ -2105,13 +2103,13 @@ function hsSavePrefs(prefs) {
 
 function hsUpdatePreview() {
   var prefs = hsGetPrefs();
-  var labels = { live: 'Live', saved: 'Gemte', bubbles: 'Bobler', notifs: 'Notif.', radar: 'Radar' };
+  var labels = { live: t('home_live'), saved: t('pf_tab_saved'), bubbles: t('nav_bubbles'), notifs: 'Notif.', radar: 'Radar' };
   var active = [];
   ['live','saved','bubbles','notifs','radar'].forEach(function(key) {
     if (prefs[key]) active.push(labels[key]);
   });
   var el = document.getElementById('hs-preview-text');
-  if (el) el.textContent = active.length > 0 ? 'Viser: ' + active.join(' \u00b7 ') : 'Alt er slået fra';
+  if (el) el.textContent = active.length > 0 ? t('home_showing') + active.join(' \u00b7 ') : t('home_all_off');
 }
 
 
@@ -2129,13 +2127,6 @@ function hsUpdateToggleUI(key, isOn) {
   if (el) el.setAttribute('data-on', isOn ? 'true' : 'false');
 }
 
-function hsUpdateAllToggles() {
-  var prefs = hsGetPrefs();
-  ['saved','nudge','feedback','profile_cta'].forEach(function(key) {
-    hsUpdateToggleUI(key, prefs[key] !== false);
-  });
-  hsUpdatePreview();
-}
 
 function hsApplyToHome() {
   var prefs = hsGetPrefs();
@@ -2172,6 +2163,7 @@ var _homeDartboardProfiles = [];
 var _homeRadarFilter = 'all';
 var _dartboardDataLoaded = false;
 var _renderDartboardTimer = null;
+var _homeMagnetNext = false; // saettes af filterRadarHome -> naeste render bruger magnet, ellers dryp
 
 async function loadHomeDartboardData() {
   try {
@@ -2218,6 +2210,8 @@ async function loadHomeDartboardData() {
       _homeDartboardProfiles = scored;
       renderHomeDartboard();
     }
+    // Opdater filter-knap counter + taleboblens raekke-countere nu hvor data er hentet
+    updateFilterChipStyle();
   } catch(e) { logError('loadHomeDartboardData', e); }
 }
 
@@ -2240,22 +2234,51 @@ function _getFilteredProfiles() {
 // ── Filter chip handler ──
 function filterRadarHome(filter) {
   _homeRadarFilter = filter;
-  document.querySelectorAll('.radar-filter-chip').forEach(function(c) {
-    c.classList.toggle('active', c.dataset.filter === filter);
+  // Marker aktiv raekke i taleboble-popover
+  document.querySelectorAll('.home-filter-row').forEach(function(r) {
+    r.classList.toggle('active', r.dataset.filter === filter);
   });
+  // Opdater filter-knappens label til valgt filter
+  // Korte labels paa KNAPPEN (holder den kompakt); taleboblens raekker viser fulde navne
+  var labelMap = { all: t('home_all'), interest: t('home_filter_short_interest'), good: t('home_filter_short_good'), strong: t('home_filter_short_strong'), live: 'Live' };
+  var lbl = document.getElementById('home-filter-btn-label');
+  if (lbl) lbl.textContent = labelMap[filter] || t('home_all');
+  _homeMagnetNext = true; // dette er et filterskift -> brug magnet-bevaegelse
   renderHomeDartboard();
   updateFilterChipStyle();
+  closeRadarFilters(); // luk taleboblen efter valg
+}
+
+// ── Toggle expandable filter chips (NEXT design: filters hidden behind + button) ──
+// The "+" button (home-filter-plus) folds the filter chips in/out. PROD shows chips
+// always; NEXT hides them behind this dynamic toggle to keep the radar card clean.
+var _radarFiltersExpanded = false;
+function toggleRadarFilters() {
+  _radarFiltersExpanded = !_radarFiltersExpanded;
+  var pop = document.getElementById('home-filter-popover-wrap');
+  if (!pop) return;
+  pop.style.display = _radarFiltersExpanded ? 'block' : 'none';
+}
+
+function closeRadarFilters() {
+  _radarFiltersExpanded = false;
+  var pop = document.getElementById('home-filter-popover-wrap');
+  if (pop) pop.style.display = 'none';
 }
 
 // ── Tap dartboard background → open tray ──
 function onDartboardTap(event) {
-  // If the tap was on a dot (person avatar), don't open tray — the dot handles it
+  // Prototype (collapseMatch): tap paa dot haandteres af dotten selv; tap i tomt
+  // omraade paa radaren LUKKER preview + filter-taleboble (aabner IKKE list view -
+  // list view aabnes kun via liste-knappen, praecis som prototypen).
   var target = event.target;
   while (target && target !== event.currentTarget) {
-    if (target.onclick && target !== event.currentTarget) return; // clicked a dot
+    if (target.onclick && target !== event.currentTarget) return; // klik paa dot
     target = target.parentElement;
   }
-  openHomeTray();
+  // Tomt omraade: ryd preview + luk evt aaben filter-taleboble
+  if (typeof closeRadarPerson === 'function') closeRadarPerson();
+  if (typeof closeRadarFilters === 'function') closeRadarFilters();
 }
 
 function _homeDrawProxRings(canvas) {
@@ -2266,9 +2289,9 @@ function _homeDrawProxRings(canvas) {
   var ctx = canvas.getContext('2d'); ctx.scale(2,2); ctx.clearRect(0,0,w,h);
   var cx = w/2, cy = h/2, maxR = Math.min(cx,cy);
   var zones = [
-    {r:0.10,fill:'rgba(124,92,252,0.18)'},{r:0.26,fill:'rgba(124,92,252,0.10)'},
-    {r:0.42,fill:'rgba(46,207,207,0.08)'},{r:0.58,fill:'rgba(107,139,255,0.06)'},
-    {r:0.74,fill:'rgba(139,92,246,0.04)'},{r:0.90,fill:'rgba(124,92,252,0.02)'}
+    {r:0.10,fill:'rgba(100,180,230,0.16)'},{r:0.26,fill:'rgba(100,180,230,0.10)'},
+    {r:0.42,fill:'rgba(100,180,230,0.07)'},{r:0.58,fill:'rgba(100,180,230,0.05)'},
+    {r:0.74,fill:'rgba(100,180,230,0.03)'},{r:0.90,fill:'rgba(100,180,230,0.015)'}
   ];
   for (var i = zones.length-1; i >= 0; i--) {
     ctx.beginPath(); ctx.arc(cx,cy,zones[i].r*maxR,0,Math.PI*2);
@@ -2276,11 +2299,23 @@ function _homeDrawProxRings(canvas) {
   }
   for (var i = 0; i < zones.length; i++) {
     ctx.beginPath(); ctx.arc(cx,cy,zones[i].r*maxR,0,Math.PI*2);
-    ctx.strokeStyle = 'rgba(30,27,46,0.08)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1; ctx.stroke();
   }
   var g = ctx.createRadialGradient(cx,cy,0,cx,cy,zones[0].r*maxR);
-  g.addColorStop(0,'rgba(124,92,252,0.12)'); g.addColorStop(1,'rgba(124,92,252,0)');
+  g.addColorStop(0,'rgba(100,180,230,0.14)'); g.addColorStop(1,'rgba(100,180,230,0)');
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx,cy,zones[0].r*maxR,0,Math.PI*2); ctx.fill();
+}
+
+// Stabil vinkel + farve pr. person (tildelt EN gang) — saa dots glider rent
+// ind/ud i stedet for at teleportere naar den filtrerede liste skifter index.
+var _homeProxMeta = {};
+var _homeProxCounter = 0;
+function _homeProxMetaFor(id) {
+  if (!_homeProxMeta[id]) {
+    _homeProxMeta[id] = { ang: _homeProxCounter * 2.399, col: _homeProxCounter };
+    _homeProxCounter++;
+  }
+  return _homeProxMeta[id];
 }
 
 function renderHomeDartboard() {
@@ -2314,7 +2349,7 @@ function _doRenderHomeDartboard() {
     } else {
       var ini = (currentProfile && currentProfile.name)
         ? currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase()
-        : 'DU';
+        : t('home_you_caps');
       ce.textContent = ini;
     }
     // Re-trigger dripCenter animation ved hver render
@@ -2328,7 +2363,7 @@ function _doRenderHomeDartboard() {
     // Don't show empty state until data has actually loaded — prevents flash
     if (!_dartboardDataLoaded) return;
     if (_homeViewMode === 'live') {
-      av.innerHTML = '<div class="dartboard-empty" style="position:absolute;top:50%;left:50%;transform:translate(-50%, calc(-100% - 40px));text-align:center;padding:0.6rem 1.2rem;background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:12px;border:1px solid var(--glass-border-subtle);box-shadow:0 2px 8px rgba(30,27,46,0.06);white-space:nowrap">' +
+      av.innerHTML = '<div class="dartboard-empty" style="position:absolute;top:50%;left:50%;transform:translate(-50%, calc(-100% - 40px));text-align:center;padding:0.6rem 1.2rem;background:var(--p-glass);border-radius:12px;border:1px solid var(--glass-border-subtle);box-shadow:0 2px 8px rgba(0,0,0,0.3);white-space:nowrap">' +
         '<div style="font-size:0.78rem;font-weight:600;color:var(--text)">' + t('home_first_here') + '</div>' +
         '<div style="font-size:0.68rem;color:var(--muted);margin-top:0.15rem">' + t('home_waiting') + '</div>' +
         '</div>';
@@ -2353,7 +2388,7 @@ function _doRenderHomeDartboard() {
   var cx = w/2, cy = h/2, maxR = Math.min(cx,cy) - 24;
 
   var colors = (typeof proxColors !== 'undefined' && proxColors) ? proxColors : [
-    'linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)',
+    'linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,rgb(100,180,230))',
     'linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)',
     'linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)',
     'linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)',
@@ -2376,27 +2411,131 @@ function _doRenderHomeDartboard() {
     return {x:tx,y:ty};
   }
 
-  var out = '';
+  // Standard-render: dryp-kaskade (som foer) ved load / skaerm-skift.
+  // Magnet-bevaegelsen bruges KUN ved filterskift (saettes af filterRadarHome).
+  var useMagnet = _homeMagnetNext;
+  _homeMagnetNext = false;
+  if (!useMagnet) {
+    var out = '';
+    for (var di = 0; di < profiles.length; di++) {
+      var dp = profiles[di];
+      var dmeta = _homeProxMetaFor(dp.id);
+      var dMatch = dp.matchScore || 0;
+      var dDist = 0.14 + (1 - dMatch/100) * (0.88 - 0.14);
+      var dR = dDist * maxR;
+      var dAng = dmeta.ang + (dMatch * 0.03);
+      var dSz = dMatch >= 70 ? 38 : dMatch >= 40 ? 34 : 30;
+      var dIx = cx + Math.cos(dAng)*dR - dSz/2, dIy = cy + Math.sin(dAng)*dR - dSz/2;
+      var dPos = findSafe(dIx, dIy, dSz);
+      placed.push({x:dPos.x,y:dPos.y,s:dSz});
+      var dCol = dp.is_anon ? 'var(--glass-border)' : colors[dmeta.col % colors.length];
+      // Prototype: tier-ring + glow efter match-styrke
+      var dRing = dMatch >= 68 ? 'rgba(100,180,230,0.7)' : dMatch >= 44 ? 'rgba(46,207,207,0.5)' : 'rgba(255,255,255,0.24)';
+      var dGlow = dMatch >= 68 ? '0 0 14px rgba(100,180,230,0.3)' : 'none';
+      var dIni = dp.is_anon ? '?' : (dp.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
+      var dInner = (dp.avatar_url && !dp.is_anon)
+        ? '<img src="' + escHtml(dp.avatar_url) + '" class="u-avatar-img">'
+        : dIni;
+      var dDelay = (di * 40);
+      out += '<div class="prox-dot" style="width:'+dSz+'px;height:'+dSz+'px;left:'+dPos.x.toFixed(1)+'px;top:'+dPos.y.toFixed(1)+'px;background:'+dCol+';border-color:'+dRing+';box-shadow:'+dGlow+';font-size:'+(dSz<34?'0.48':'0.55')+'rem;animation-delay:'+dDelay+'ms" onclick="event.stopPropagation();openRadarPerson(\''+dp.id+'\')" data-id="'+dp.id+'">'+dInner+(appMode.checkedInIds.indexOf(dp.id)>=0?'<span class="live-dot" style="position:absolute;bottom:-1px;right:-1px;width:8px;height:8px;border:2px solid var(--bg)"></span>':'')+'</div>';
+    }
+    av.innerHTML = out;
+    return;
+  }
+
+  // ── Magnet-diff (KUN ved filterskift): ikke-match fises ud, stayers glider, nye popper ind ──
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var E = reduce
+    ? { exit:'linear', exitT:0, enter:'linear', enterT:0, move:'linear', moveT:0 }
+    : { exit:'cubic-bezier(0.4,0,0.6,1)', exitT:650, enter:'cubic-bezier(0.25,0.9,0.4,1)', enterT:650, move:'cubic-bezier(0.4,0,0.2,1)', moveT:600 };
+
+  var existing = {};
+  var exDots = av.querySelectorAll('.prox-dot');
+  for (var ed = 0; ed < exDots.length; ed++) existing[exDots[ed].getAttribute('data-id')] = exDots[ed];
+
+  var visible = {};
   for (var i = 0; i < profiles.length; i++) {
     var p = profiles[i];
+    visible[p.id] = true;
+    var meta = _homeProxMetaFor(p.id);
     var matchPct = p.matchScore || 0;
     var dist = 0.14 + (1 - matchPct/100) * (0.88 - 0.14);
     var r = dist * maxR;
-    var ang = (i * 2.399) + (matchPct * 0.03);
+    var ang = meta.ang + (matchPct * 0.03);
     var sz = matchPct >= 70 ? 38 : matchPct >= 40 ? 34 : 30;
     var ix = cx + Math.cos(ang)*r - sz/2, iy = cy + Math.sin(ang)*r - sz/2;
     var pos = findSafe(ix, iy, sz);
-    placed.push({x:pos.x,y:pos.y,s:sz});
-    var col = p.is_anon ? 'var(--glass-border)' : colors[i % colors.length];
+    placed.push({x:pos.x, y:pos.y, s:sz});
+    var tlx = pos.x, tly = pos.y;
+    var col = p.is_anon ? 'var(--glass-border)' : colors[meta.col % colors.length];
+    // Prototype: tier-ring + glow efter match-styrke
+    var ring = matchPct >= 68 ? 'rgba(100,180,230,0.7)' : matchPct >= 44 ? 'rgba(46,207,207,0.5)' : 'rgba(255,255,255,0.24)';
+    var glow = matchPct >= 68 ? '0 0 14px rgba(100,180,230,0.3)' : 'none';
     var ini = p.is_anon ? '?' : (p.name||'?').split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
     var inner = (p.avatar_url && !p.is_anon)
-      ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+      ? '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">'
       : ini;
-    var liveIds = appMode.checkedInIds;
-    var dripDelay = (i * 40);
-    out += '<div class="prox-dot" style="width:'+sz+'px;height:'+sz+'px;left:'+pos.x.toFixed(1)+'px;top:'+pos.y.toFixed(1)+'px;background:'+col+';font-size:'+(sz<34?'0.48':'0.55')+'rem;animation-delay:'+dripDelay+'ms" onclick="event.stopPropagation();openRadarPerson(\''+p.id+'\')" data-id="'+p.id+'">'+inner+(liveIds.indexOf(p.id)>=0?'<span class="live-dot" style="position:absolute;bottom:-1px;right:-1px;width:8px;height:8px;border:2px solid var(--bg)"></span>':'')+'</div>';
+    var isLive = appMode.checkedInIds.indexOf(p.id) >= 0;
+    var liveSpan = isLive ? '<span class="live-dot" style="position:absolute;bottom:-1px;right:-1px;width:8px;height:8px;border:2px solid var(--bg)"></span>' : '';
+    var el = existing[p.id];
+    if (el) {
+      // BLIVER (eller vender tilbage fra exit): glider til ny radius
+      el.removeAttribute('data-exiting');
+      el.style.animation = 'none';
+      el.style.transition = 'left ' + E.moveT + 'ms ' + E.move + ', top ' + E.moveT + 'ms ' + E.move + ', opacity ' + E.moveT + 'ms ease, transform ' + E.moveT + 'ms ' + E.move + ', width 0.3s, height 0.3s';
+      el.style.opacity = '1';
+      el.style.transform = 'none';
+      el.style.width = el.style.height = sz + 'px';
+      el.style.fontSize = (sz < 34 ? '0.48' : '0.55') + 'rem';
+      el.style.left = tlx.toFixed(1) + 'px';
+      el.style.top = tly.toFixed(1) + 'px';
+      el.style.borderColor = ring;
+      el.style.boxShadow = glow;
+    } else {
+      // NY: tiltraekkes IND fra kanten langs sin vinkel (magnet) + sikkerhedsnet
+      el = document.createElement('div');
+      el.className = 'prox-dot';
+      el.setAttribute('data-id', p.id);
+      el.setAttribute('onclick', "event.stopPropagation();openRadarPerson('" + p.id + "')");
+      el.style.animation = 'none';
+      el.style.width = el.style.height = sz + 'px';
+      el.style.fontSize = (sz < 34 ? '0.48' : '0.55') + 'rem';
+      el.style.background = col;
+      el.style.borderColor = ring;
+      el.style.boxShadow = glow;
+      el.innerHTML = inner + liveSpan;
+      var startR = maxR + 90;
+      el.style.left = (cx + startR*Math.cos(ang) - sz/2).toFixed(1) + 'px';
+      el.style.top = (cy + startR*Math.sin(ang) - sz/2).toFixed(1) + 'px';
+      el.style.opacity = '0';
+      el.style.transform = 'none';
+      el.style.transition = 'none';
+      av.appendChild(el);
+      void el.offsetWidth;
+      el.style.transition = 'left ' + E.enterT + 'ms ' + E.enter + ', top ' + E.enterT + 'ms ' + E.enter + ', opacity ' + Math.round(E.enterT*0.5) + 'ms ease';
+      (function(eln, lx, ly){
+        requestAnimationFrame(function(){ eln.style.left = lx + 'px'; eln.style.top = ly + 'px'; eln.style.opacity = '1'; });
+        setTimeout(function(){ if (eln && eln.parentNode && eln.getAttribute('data-exiting') !== '1') { eln.style.left = lx + 'px'; eln.style.top = ly + 'px'; eln.style.opacity = '1'; } }, E.enterT + 120);
+      })(el, tlx.toFixed(1), tly.toFixed(1));
+    }
   }
-  av.innerHTML = out;
+
+  // EXIT: ikke-match frastodes radialt UD over kanten
+  Object.keys(existing).forEach(function(id) {
+    if (visible[id]) return;
+    var el = existing[id];
+    el.setAttribute('data-exiting', '1');
+    var ex = (parseFloat(el.style.left) || 0) + el.offsetWidth/2;
+    var ey = (parseFloat(el.style.top) || 0) + el.offsetHeight/2;
+    var ang2 = Math.atan2(ey - cy, ex - cx);
+    var flungR = maxR + 160;
+    el.style.transition = 'left ' + E.exitT + 'ms ' + E.exit + ', top ' + E.exitT + 'ms ' + E.exit + ', opacity ' + E.exitT + 'ms ease-in, transform ' + E.exitT + 'ms ' + E.exit;
+    el.style.left = (cx + flungR*Math.cos(ang2) - el.offsetWidth/2).toFixed(1) + 'px';
+    el.style.top = (cy + flungR*Math.sin(ang2) - el.offsetHeight/2).toFixed(1) + 'px';
+    el.style.opacity = '0';
+    el.style.transform = 'scale(0.5)';
+    (function(eln){ setTimeout(function(){ if (eln && eln.parentNode && eln.getAttribute('data-exiting') === '1') eln.parentNode.removeChild(eln); }, E.exitT + 60); })(el);
+  });
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2429,32 +2568,91 @@ function renderHomeTrayList() {
   if (subtitle) subtitle.textContent = sorted.length + ' personer';
 
   if (sorted.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:var(--muted)">Ingen matches' + (_homeRadarFilter !== 'all' ? ' i denne kategori' : '') + '</div>';
+    list.innerHTML = '<div style="text-align:center;padding:2rem 0;font-size:0.78rem;color:rgba(255,255,255,0.45)">' + t('home_no_matches') + (_homeRadarFilter !== 'all' ? ' ' + t('home_in_category') : '') + '</div>';
     return;
   }
 
-  var colors = proxColors || ['linear-gradient(135deg,#6366F1,#7C5CFC)'];
+  var colors = proxColors || ['linear-gradient(135deg,#6366F1,rgb(100,180,230))'];
+  var myKw = (currentProfile && currentProfile.keywords ? currentProfile.keywords : []).map(function(k){ return k.toLowerCase(); });
   list.innerHTML = sorted.map(function(p, i) {
     var name = p.is_anon ? 'Anonym' : (p.name || '?');
     var ini = name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-    var col = p.is_anon ? 'var(--glass-border)' : colors[i % colors.length];
+    var col = p.is_anon ? 'rgba(255,255,255,0.1)' : colors[i % colors.length];
     var ml = matchLabel(p.matchScore || 0);
     var avHtml = p.avatar_url && !p.is_anon
       ? '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>'
       : '<div style="width:40px;height:40px;border-radius:50%;background:' + col + ';display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;color:white;flex-shrink:0">' + escHtml(ini) + '</div>';
-    return '<div onclick="openRadarPerson(\'' + p.id + '\')" style="display:flex;align-items:center;gap:0.75rem;padding:0.7rem 0.85rem;margin-bottom:0.4rem;border-radius:14px;background:#FFFFFF;border:1px solid rgba(216,213,228,0.4);box-shadow:0 1px 3px rgba(30,27,46,0.03);cursor:pointer;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);-webkit-tap-highlight-color:transparent" ontouchstart="this.style.transform=\'scale(0.97)\'" ontouchend="this.style.transform=\'scale(1)\'">' +
-      avHtml +
-      '<div style="flex:1;min-width:0">' +
-        '<div style="display:flex;align-items:center;gap:0.4rem">' +
-          '<span style="font-weight:700;font-size:0.85rem">' + escHtml(name) + '</span>' +
-          (ml.text ? matchBadgeHtml(p.matchScore || 0) : '') +
+    var badgeHtml = '';
+    if (ml.text) {
+      var badgeColor, badgeBg;
+      if (p.matchScore >= 60)      { badgeColor = '#34D399'; badgeBg = 'rgba(26,158,142,0.18)'; }
+      else if (p.matchScore >= 40) { badgeColor = '#FBBF24'; badgeBg = 'rgba(251,191,36,0.18)'; }
+      else if (p.matchScore >= 20) { badgeColor = '#60A5FA'; badgeBg = 'rgba(59,130,246,0.18)'; }
+      else                          { badgeColor = 'rgba(255,255,255,0.65)'; badgeBg = 'rgba(255,255,255,0.08)'; }
+      badgeHtml = '<span style="font-size:0.58rem;font-weight:700;color:' + badgeColor + ';background:' + badgeBg + ';padding:0.18rem 0.5rem;border-radius:99px;white-space:nowrap;letter-spacing:0.01em">' + ml.text + '</span>';
+    }
+    // Delte interesser (piller) til den udfoldede del
+    var theirKw = (p.keywords || []);
+    var chipsHtml = '';
+    if (!p.is_anon && theirKw.length > 0) {
+      var sortedTags = theirKw.slice().sort(function(a, b) {
+        var aS = myKw.indexOf(a.toLowerCase()) >= 0 ? 0 : 1;
+        var bS = myKw.indexOf(b.toLowerCase()) >= 0 ? 0 : 1;
+        return aS - bS;
+      }).slice(0, 8);
+      chipsHtml = sortedTags.map(function(k) {
+        var isShared = myKw.indexOf(k.toLowerCase()) >= 0;
+        return isShared
+          ? '<span style="font-size:10.5px;font-weight:700;color:#CFE6F7;background:rgba(100,180,230,0.14);border:0.5px solid rgba(100,180,230,0.28);border-radius:99px;padding:4px 11px">' + escHtml(k) + '</span>'
+          : '<span style="font-size:10.5px;font-weight:700;color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.14);border-radius:99px;padding:4px 11px">' + escHtml(k) + '</span>';
+      }).join('');
+    }
+    // Accordion: header toggler expand-delen inline (prototype - IKKE separat preview)
+    return '<div class="htray-item" data-uid="' + p.id + '" style="margin-bottom:0.4rem;border-radius:14px;background:rgba(255,255,255,0.055);border:0.5px solid rgba(255,255,255,0.12);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);overflow:hidden">' +
+      '<div onclick="htrayToggle(\'' + p.id + '\')" style="display:flex;align-items:center;gap:11px;padding:10px 12px;cursor:pointer;-webkit-tap-highlight-color:transparent">' +
+        avHtml +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="display:flex;align-items:center;gap:0.4rem">' +
+            '<span style="font-weight:800;font-size:13px;color:rgba(255,255,255,0.95)">' + escHtml(name) + '</span>' +
+            badgeHtml +
+          '</div>' +
+          '<div style="font-size:10.5px;color:rgba(255,255,255,0.5);margin-top:0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
         '</div>' +
-        '<div style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
+        '<span class="htray-chev" style="color:rgba(255,255,255,0.4);font-size:0.9rem;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);flex-shrink:0">\u2039</span>' +
       '</div>' +
-      '<span style="color:var(--muted);font-size:0.9rem;opacity:0.3">›</span>' +
+      '<div class="htray-expand" style="display:none;padding:0 12px 12px">' +
+        '<div style="height:0.5px;background:rgba(255,255,255,0.09);margin:0 0 9px"></div>' +
+        (chipsHtml ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px">' + chipsHtml + '</div>' : '') +
+        '<div style="display:flex;gap:8px">' +
+          '<div onclick="event.stopPropagation();htrayFullProfile(\'' + p.id + '\')" style="width:40px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.16);border-radius:99px;cursor:pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></div>' +
+          '<div onclick="event.stopPropagation();htrayFullProfile(\'' + p.id + '\')" style="flex:1;text-align:center;font-size:11.5px;font-weight:800;color:rgba(255,255,255,0.9);background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.16);border-radius:99px;padding:9px;cursor:pointer">' + t('ps_view_profile') + '</div>' +
+          '<div onclick="event.stopPropagation();htrayMessage(\'' + p.id + '\')" style="flex:1;text-align:center;font-size:11.5px;font-weight:800;color:#0E2A3C;background:rgb(100,180,230);border-radius:99px;padding:9px;cursor:pointer">' + t('pf_send_message') + '</div>' +
+        '</div>' +
+      '</div>' +
     '</div>';
   }).join('');
 }
+
+// Accordion toggle: udfold/kollaps en list-item inline (prototype-stil)
+function htrayToggle(uid) {
+  var item = document.querySelector('.htray-item[data-uid="' + uid + '"]');
+  if (!item) return;
+  var expand = item.querySelector('.htray-expand');
+  var chev = item.querySelector('.htray-chev');
+  if (!expand) return;
+  var isOpen = expand.style.display !== 'none';
+  // Luk alle andre foerst (kun een aaben ad gangen - som prototype)
+  document.querySelectorAll('.htray-item .htray-expand').forEach(function(e) { e.style.display = 'none'; });
+  document.querySelectorAll('.htray-item .htray-chev').forEach(function(c) { c.style.transform = 'rotate(0deg)'; });
+  if (!isOpen) {
+    expand.style.display = 'block';
+    if (chev) chev.style.transform = 'rotate(-90deg)';
+  }
+}
+
+// Knap-handlinger fra accordion (samme som preview: profil + besked)
+function htrayFullProfile(uid) { rpCurrentUserId = uid; closeHomeTray(); setTimeout(function(){ openPerson(uid, 'screen-home'); }, 320); }
+function htrayMessage(uid) { closeHomeTray(); setTimeout(function(){ openChat(uid, 'screen-home'); }, 400); }
 
 // ══════════════════════════════════════════════════════════
 //  HOME BUBBLE PILLS (horizontal scroll)

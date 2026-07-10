@@ -26,12 +26,30 @@ function ttlSince(type) {
   return new Date(Date.now() - ms).toISOString();
 }
 
+var _notifTrayTarget = null;
+
+function openNotifTray() {
+  var backdrop = document.getElementById('notif-tray-backdrop');
+  var tray = document.getElementById('notif-tray');
+  if (backdrop) backdrop.style.display = 'block';
+  if (tray) { tray.style.visibility = 'visible'; setTimeout(function(){ tray.style.transform = 'translateY(0)'; }, 10); }
+  _notifTrayTarget = 'notif-tray-list';
+  loadNotifications();
+}
+function closeNotifTray() {
+  var backdrop = document.getElementById('notif-tray-backdrop');
+  var tray = document.getElementById('notif-tray');
+  if (tray) tray.style.transform = 'translateY(100%)';
+  if (backdrop) setTimeout(function(){ backdrop.style.display = 'none'; }, 350);
+  _notifTrayTarget = null;
+}
+
 async function loadNotifications() {
   try {
     var myNav = _navVersion;
     localStorage.setItem('bubble_notifs_seen', new Date().toISOString());
     updateTopbarNotifBadge();
-    const list = document.getElementById('notifications-list');
+    const list = document.getElementById(_notifTrayTarget || 'notifications-list');
     if (!list) return;
     list.innerHTML = skelCards(4);
 
@@ -88,14 +106,14 @@ async function _notifInvites() {
       var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       return '<div class="notif-card invite" id="invite-' + inv.id + '">' +
         '<div class="notif-header">' +
-        '<div class="notif-avatar" style="background:linear-gradient(135deg,#6366F1,#7C5CFC)">' + initials + '</div>' +
+        '<div class="notif-avatar" style="background:linear-gradient(135deg,#6366F1,rgb(100,180,230))">' + initials + '</div>' +
         '<div>' +
         '<div class="notif-title">' + icon("bubble") + ' ' + t('nf_invitations') + '</div>' +
-        '<div class="notif-sub">' + escHtml(p.name||'Nogen') + ' inviterer dig til ' + escHtml(bub.name||'en boble') + '</div>' +
+        '<div class="notif-sub">' + escHtml(p.name||t('bb_someone')) + ' ' + t('notif_invites_you') + ' ' + escHtml(bub.name||t('notif_a_bubble')) + '</div>' +
         '</div></div>' +
         '<div class="notif-actions">' +
         '<button class="notif-btn accept" onclick="acceptBubbleInvite(\'' + inv.id + '\',\'' + inv.from_user_id + '\')">Accepter</button>' +
-        '<button class="notif-btn decline" onclick="declineBubbleInvite(\'' + inv.id + '\')">Afvis</button>' +
+        '<button class="notif-btn decline" onclick="declineBubbleInvite(\'' + inv.id + '\')">' + t('bc_reject') + '</button>' +
         '</div></div>';
     }).join('');
   } catch(e) { logError('_notifInvites', e); return ''; }
@@ -129,11 +147,11 @@ async function _notifUnreadDMs() {
       var preview = d.latest.file_url ? 'Sendte et billede' : (d.latest.content || '').slice(0, 40);
       var avatarHtml = p.avatar_url ?
         '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
-        '<div class="notif-avatar" style="background:linear-gradient(135deg,#6366F1,#7C5CFC)">' + initials + '</div>';
+        '<div class="notif-avatar" style="background:linear-gradient(135deg,#6366F1,rgb(100,180,230))">' + initials + '</div>';
       return '<div class="notif-card" onclick="openChat(\'' + sid + '\',\'screen-notifications\')" style="cursor:pointer">' +
         '<div class="notif-header">' + avatarHtml +
         '<div>' +
-        '<div class="notif-title">' + icon("chat") + ' ' + escHtml(p.name||t('misc_unknown')) + (d.count > 1 ? ' (' + d.count + ' beskeder)' : '') + '</div>' +
+        '<div class="notif-title">' + icon("chat") + ' ' + escHtml(p.name||t('misc_unknown')) + (d.count > 1 ? ' (' + d.count + ' ' + t('notif_messages_word') + ')' : '') + '</div>' +
         '<div class="notif-sub">' + escHtml(preview) + ' · ' + time + '</div>' +
         '</div></div></div>';
     }).join('');
@@ -152,21 +170,22 @@ async function _notifSavedBy() {
     var { data: savedBy } = await q;
     if (!savedBy || savedBy.length === 0) return '';
     var saverIds = savedBy.map(function(s){return s.user_id;});
-    var { data: saverProfiles } = await sb.from('profiles').select('id,name,avatar_url').in('id', saverIds);
+    // PRIVACY (free tier): hent KUN arbejdsplads — aldrig navn/avatar/titel.
+    // Den der gemmer skal være anonym for den gemte. PREMIUM: lås fuld identitet
+    // (navn+avatar+klikbar profil) op her når tier-flag findes — jf. Profile Views (free=count, paid=names).
+    var { data: saverProfiles } = await sb.from('profiles').select('id,workplace').in('id', saverIds);
     var sPMap = {};
     (saverProfiles||[]).forEach(function(p) { sPMap[p.id] = p; });
     return savedBy.map(function(s) {
       var p = sPMap[s.user_id] || {};
-      var initials = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var time = new Date(s.created_at).toLocaleDateString(_locale(), {day:'numeric',month:'short'});
-      var avatarHtml = p.avatar_url ?
-        '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
-        '<div class="notif-avatar" style="background:linear-gradient(135deg,#1A9E8E,#10B981)">' + initials + '</div>';
-      return '<div class="notif-card" onclick="openPerson(\'' + s.user_id + '\',\'screen-notifications\')" style="cursor:pointer">' +
-        '<div class="notif-header">' + avatarHtml +
+      // Anonym teaser: arbejdsplads hvis den findes, ellers neutral fallback. IKKE klikbar (ville afsløre identitet).
+      var who = p.workplace ? t('nf_saved_you_from', { workplace: escHtml(p.workplace) }) : t('nf_saved_you_anon');
+      return '<div class="notif-card">' +
+        '<div class="notif-header"><div class="notif-avatar" style="background:rgba(26,158,142,0.18);color:#1A9E8E">' + icon('bookmark') + '</div>' +
         '<div>' +
-        '<div class="notif-title">' + icon("bookmark") + ' ' + t('nf_saved_you') + '</div>' +
-        '<div class="notif-sub">' + escHtml(p.name||t('misc_unknown')) + ' · ' + time + '</div>' +
+        '<div class="notif-title">' + t('nf_saved_you') + '</div>' +
+        '<div class="notif-sub">' + who + ' · ' + time + '</div>' +
         '</div></div></div>';
     }).join('');
   } catch(e) { logError('_notifSavedBy', e); return ''; }
@@ -231,12 +250,12 @@ async function _notifNewMembers() {
       var time = new Date(m.joined_at).toLocaleDateString(_locale(), {day:'numeric',month:'short'});
       var avatarHtml = p.avatar_url ?
         '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
-        '<div class="notif-avatar" style="background:linear-gradient(135deg,#2ECFCF,#7C5CFC)">' + initials + '</div>';
+        '<div class="notif-avatar" style="background:linear-gradient(135deg,#2ECFCF,rgb(100,180,230))">' + initials + '</div>';
       var bubbleName = m.bubbles?.name || '';
       return '<div class="notif-card" onclick="openBubbleChat(\'' + m.bubble_id + '\',\'screen-notifications\')" style="cursor:pointer">' +
         '<div class="notif-header">' + avatarHtml +
         '<div>' +
-        '<div class="notif-title">' + escHtml(p.name||t('misc_unknown')) + ' blev medlem</div>' +
+        '<div class="notif-title">' + escHtml(p.name||t('misc_unknown')) + ' ' + t('notif_became_member') + '</div>' +
         '<div class="notif-sub">' + (bubbleName ? escHtml(bubbleName) + ' · ' : '') + time + '</div>' +
         '</div></div></div>';
     }).join('');
@@ -278,12 +297,12 @@ async function _notifPendingRequests() {
         return '<div class="notif-card invite" style="border-left:3px solid #BA7517">' +
           '<div class="notif-header">' + avatarHtml +
           '<div>' +
-          '<div class="notif-title">' + escHtml(p.name || t('misc_unknown')) + ' anmoder om adgang</div>' +
+          '<div class="notif-title">' + escHtml(p.name || t('misc_unknown')) + ' ' + t('notif_requests_access') + '</div>' +
           '<div class="notif-sub">' + escHtml(bName) + (p.title ? ' \u00B7 ' + escHtml(p.title) : '') + '</div>' +
           '</div></div>' +
           '<div class="notif-actions">' +
-          '<button class="notif-btn accept" onclick="notifApproveJoin(\'' + m.bubble_id + '\',\'' + m.user_id + '\',this)">Godkend</button>' +
-          '<button class="notif-btn decline" onclick="notifRejectJoin(\'' + m.bubble_id + '\',\'' + m.user_id + '\',this)">Afvis</button>' +
+          '<button class="notif-btn accept" onclick="notifApproveJoin(\'' + m.bubble_id + '\',\'' + m.user_id + '\',this)">' + t('bc_approve') + '</button>' +
+          '<button class="notif-btn decline" onclick="notifRejectJoin(\'' + m.bubble_id + '\',\'' + m.user_id + '\',this)">' + t('bc_reject') + '</button>' +
           '</div></div>';
       }).join('');
   } catch(e) { logError('_notifPendingRequests', e); return ''; }
@@ -304,7 +323,7 @@ async function notifApproveJoin(bubbleId, userId, btn) {
       await ch.subscribe();
       await ch.send({ type: 'broadcast', event: 'approved', payload: { bubbleName: bub?.name || '', bubbleId: bubbleId } });
       setTimeout(function() { ch.unsubscribe(); }, 2000);
-      sendPush(userId, 'Du er godkendt!', 'Du er nu medlem af ' + (bub?.name || 'en boble'), { type: 'approved', bubble_id: bubbleId });
+      sendPush(userId, t('chat_approved_title'), t('chat_now_member_body', {bubble: (bub?.name || t('notif_a_bubble'))}), { type: 'approved', bubble_id: bubbleId });
     } catch(e2) { console.debug('[approve] broadcast error:', e2); }
   } catch(e) { errorToast('save', e); }
 }
@@ -373,7 +392,7 @@ async function _notifStrongMatches() {
     if (strong.length === 0) return '';
 
     // Render
-    return '<div style="padding:0.5rem 0 0.2rem;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--green)">Nye stærke matches</div>' +
+    return '<div style="padding:0.5rem 0 0.2rem;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--green)">' + t('notif_new_matches') + '</div>' +
       strong.map(function(s) {
         var p = s.profile;
         var m = s.member;
@@ -390,7 +409,7 @@ async function _notifStrongMatches() {
         return '<div class="notif-card" onclick="openPerson(\'' + p.id + '\',\'screen-notifications\')" style="cursor:pointer;border-left:3px solid var(--green)">' +
           '<div class="notif-header">' + avatarHtml +
           '<div style="flex:1;min-width:0">' +
-          '<div class="notif-title" style="display:flex;align-items:center;gap:0.3rem">' + escHtml(p.name||t('misc_unknown')) + ' <span style="font-size:0.58rem;font-weight:700;color:var(--green);background:rgba(26,158,142,0.08);padding:0.1rem 0.35rem;border-radius:6px">Stærkt match</span></div>' +
+          '<div class="notif-title" style="display:flex;align-items:center;gap:0.3rem">' + escHtml(p.name||t('misc_unknown')) + ' <span style="font-size:0.58rem;font-weight:700;color:var(--green);background:rgba(26,158,142,0.08);padding:0.1rem 0.35rem;border-radius:6px">' + t('ps_strong_match') + '</span></div>' +
           '<div class="notif-sub">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + ' · ' + escHtml(m.bubbles?.name||'') + ' · ' + time + '</div>' +
           sharedHtml +
           '</div></div></div>';
@@ -402,8 +421,8 @@ function acceptBubbleInvite(inviteId, fromUserId) {
   var card = document.getElementById('invite-' + inviteId);
   if (!card) return;
   bbConfirm(card, {
-    label: 'Join denne boble?',
-    confirmText: 'Ja, join',
+    label: t('notif_join_bubble_q'),
+    confirmText: t('notif_yes_join'),
     confirmClass: 'bb-confirm-btn-accept',
     onConfirm: "confirmAcceptInvite('" + inviteId + "')"
   });
@@ -414,7 +433,7 @@ async function confirmAcceptInvite(inviteId) {
     const { data: inv } = await sb.from('bubble_invitations').select('bubble_id').eq('id', inviteId).maybeSingle();
     var result = await dbActions.acceptInvitation(inviteId, inv?.bubble_id);
     if (result.ok) {
-      showSuccessToast('Du er nu med i boblen!');
+      showSuccessToast(t('notif_now_in_bubble'));
       loadNotifications();
       if (inv?.bubble_id) requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(inv.bubble_id, 'screen-notifications'); }); });
     }
@@ -425,20 +444,26 @@ function declineBubbleInvite(inviteId) {
   var card = document.getElementById('invite-' + inviteId);
   if (!card) return;
   bbConfirm(card, {
-    label: 'Afvis invitation?',
-    confirmText: 'Ja, afvis',
+    label: t('notif_decline_invite_q'),
+    confirmText: t('notif_yes_decline'),
     confirmClass: 'bb-confirm-btn-danger',
     onConfirm: "confirmDeclineInvite('" + inviteId + "')"
   });
 }
 
 async function confirmDeclineInvite(inviteId) {
-  var result = await dbActions.declineInvitation(inviteId);
-  if (result.ok) {
+  try {
+    // Ryd confirm-trayen straks (den er en sibling efter kortet — ellers hænger den som residual UI)
     var card = document.getElementById('invite-' + inviteId);
-    if (card) { card.style.transition = 'opacity 0.2s'; card.style.opacity = '0'; setTimeout(function() { card.remove(); }, 200); }
-    showToast(t('toast_deleted'));
-  }
+    if (card && card.nextElementSibling && card.nextElementSibling.classList.contains('bb-confirm')) {
+      card.nextElementSibling.remove();
+    }
+    var result = await dbActions.declineInvitation(inviteId);
+    if (result.ok) {
+      showToast(t('toast_deleted'));
+      loadNotifications();
+    }
+  } catch(e) { logError("confirmDeclineInvite", e); errorToast("save", e); }
 }
 
 
@@ -454,7 +479,10 @@ async function initPushNotifications() {
     }
 
     // Register service worker
-    var registration = await navigator.serviceWorker.register('./sw.js');
+    // updateViaCache:'none' -> browseren henter ALTID frisk sw.js (ikke fra HTTP-cache).
+    // Uden dette cacher browseren sw.js op til 24t, saa reg.update() ser ingen ny version
+    // og auto-update slaar ikke igennem. Kritisk for at deploys naar brugeren.
+    var registration = await navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
     console.debug('SW registered:', registration.scope);
 
     // Check if already subscribed
@@ -482,16 +510,16 @@ function showAddToHomescreenSheet() {
   sheet.innerHTML = '<div class="modal-sheet" style="padding-bottom:max(1.5rem,env(safe-area-inset-bottom))">'
     + '<div class="modal-handle"></div>'
     + '<div style="font-size:1.5rem;text-align:center;margin-bottom:0.5rem">📲</div>'
-    + '<div class="modal-title" style="text-align:center">Tilføj Bubble til hjemmeskærmen</div>'
-    + '<p style="color:var(--muted);font-size:0.85rem;margin:0.5rem 0 0.5rem;text-align:center;line-height:1.5">På iPhone kræver push-notifikationer at Bubble er installeret som app. Det tager 10 sekunder.</p>'
-    + '<p style="color:var(--accent);font-size:0.78rem;margin:0 0 1rem;text-align:center;line-height:1.4;font-weight:600">Første gang du åbner Bubble fra hjemsskærmen skal du logge ind én gang til — normalt på iPhone.</p>'
+    + '<div class="modal-title" style="text-align:center">' + t('notif_add_homescreen') + '</div>'
+    + '<p style="color:var(--muted);font-size:0.85rem;margin:0.5rem 0 0.5rem;text-align:center;line-height:1.5">' + t('notif_ios_install_p1') + '</p>'
+    + '<p style="color:var(--accent);font-size:0.78rem;margin:0 0 1rem;text-align:center;line-height:1.4;font-weight:600">' + t('notif_ios_install_p2') + '</p>'
     + '<ol style="color:var(--text);font-size:0.85rem;line-height:2;padding-left:1.25rem;margin-bottom:1.25rem">'
-    + '<li>Tryk på <strong>Del-ikonet</strong> nederst i Safari (' + String.fromCodePoint(0x1F4E4) + ')</li>'
-    + '<li>Vælg <strong>"Føj til hjemmeskærm"</strong></li>'
-    + '<li>Tryk <strong>Tilføj</strong> øverst til højre</li>'
-    + '<li>Åbn Bubble fra hjemmeskærmen og aktivér notifikationer</li>'
+    + '<li>' + t('notif_ios_step1') + ' (' + String.fromCodePoint(0x1F4E4) + ')</li>'
+    + '<li>' + t('notif_ios_step2') + '</li>'
+    + '<li>' + t('notif_ios_step3') + '</li>'
+    + '<li>' + t('notif_ios_step4') + '</li>'
     + '</ol>'
-    + '<button class="btn-primary" onclick="this.closest(\'[id=add-homescreen-sheet]\').remove()">Forstået</button>'
+    + '<button class="btn-primary" onclick="this.closest(\'[id=add-homescreen-sheet]\').remove()">' + t('modal_understood') + '</button>'
     + '</div>';
   sheet.onclick = function(e) { if (e.target === sheet) sheet.remove(); };
   document.body.appendChild(sheet);
@@ -502,11 +530,11 @@ function showPushBlockedSheet() {
   var isAndroid = /Android/.test(navigator.userAgent);
   var steps = '';
   if (isIOS) {
-    steps = '<li>Gå til <strong>Indstillinger → Safari</strong></li><li>Tryk på <strong>Avanceret → Websteder → Notifikationer</strong></li><li>Find Bubble og sæt til <strong>Tillad</strong></li>';
+    steps = t('notif_safari_steps');
   } else if (isAndroid) {
-    steps = '<li>Gå til <strong>Indstillinger → Apps → din browser</strong></li><li>Tryk på <strong>Notifikationer → Webstedsnotifikationer</strong></li><li>Find Bubble og aktivér</li>';
+    steps = t('notif_browser_steps');
   } else {
-    steps = '<li>Klik på <strong>hængelåsikonet</strong> i adresselinjen</li><li>Find <strong>Notifikationer</strong> og sæt til Tillad</li><li>Genindlæs siden</li>';
+    steps = t('notif_desktop_steps');
   }
   var existing = document.getElementById('push-blocked-sheet');
   if (existing) existing.remove();
@@ -517,10 +545,10 @@ function showPushBlockedSheet() {
   sheet.innerHTML = '<div class="modal-sheet" style="padding-bottom:max(1.5rem,env(safe-area-inset-bottom))">'
     + '<div class="modal-handle"></div>'
     + '<div style="font-size:1.5rem;text-align:center;margin-bottom:0.5rem">🔔</div>'
-    + '<div class="modal-title" style="text-align:center">Notifikationer er blokeret</div>'
-    + '<p style="color:var(--muted);font-size:0.85rem;margin:0.5rem 0 1rem;text-align:center;line-height:1.5">Du har tidligere afvist notifikationer. Din browser tillader ikke at vi spørger igen — du skal slå det til manuelt.</p>'
+    + '<div class="modal-title" style="text-align:center">' + t('notif_blocked_title') + '</div>'
+    + '<p style="color:var(--muted);font-size:0.85rem;margin:0.5rem 0 1rem;text-align:center;line-height:1.5">' + t('notif_blocked_desc') + '</p>'
     + '<ol style="color:var(--text);font-size:0.85rem;line-height:1.8;padding-left:1.25rem;margin-bottom:1.25rem">' + steps + '</ol>'
-    + '<button class="btn-primary" onclick="document.getElementById(\'push-blocked-sheet\').remove()">Forstået</button>'
+    + '<button class="btn-primary" onclick="document.getElementById(\'push-blocked-sheet\').remove()">' + t('modal_understood') + '</button>'
     + '</div>';
   sheet.onclick = function(e) { if (e.target === sheet) sheet.remove(); };
   document.body.appendChild(sheet);
@@ -529,7 +557,7 @@ function showPushBlockedSheet() {
 async function requestPushPermission() {
   try {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      showToast('Push-notifikationer understøttes ikke på denne enhed');
+      showToast(t('notif_unsupported'));
       return false;
     }
 
@@ -569,7 +597,7 @@ async function requestPushPermission() {
       _renderToast(t('err_push_activate'), 'error');
       return false;
     }
-    showToast('Notifikationer aktiveret!');
+    showToast(t('notif_enabled'));
     trackEvent('push_enabled');
     return true;
   } catch(e) {
@@ -611,7 +639,7 @@ function setPushBtnActive(btn) {
 function setPushBtnInactive(btn) {
   if (!btn) return;
   btn.textContent = t('settings_enable');
-  btn.style.background = 'rgba(30,27,46,0.035)';
+  btn.style.background = 'rgba(255,255,255,0.04)';
   btn.style.borderColor = 'var(--glass-border)';
   btn.style.color = 'var(--muted)';
 }
@@ -630,7 +658,7 @@ async function togglePushNotifications() {
       await sub.unsubscribe();
       await sb.from('push_subscriptions').delete().eq('user_id', currentUser.id).eq('endpoint', endpoint);
       setPushBtnInactive(btn);
-      showToast('Notifikationer deaktiveret');
+      showToast(t('notif_disabled'));
       trackEvent('push_disabled');
       return;
     }

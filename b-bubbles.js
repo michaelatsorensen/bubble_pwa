@@ -16,7 +16,8 @@
 var bubbleUpvotes = {}; // { bubbleId: count }
 var myUpvotes = {};     // { bubbleId: true }
 
-// v8.17.31: cleanup on logout — prevents user A's upvotes from being shown as user B's
+// Ported from PROD v8.17.31 (Fix 6: registerState cleanup).
+// Prevents user A's upvotes from being shown as user B's
 registerState(function() {
   bubbleUpvotes = {};
   myUpvotes = {};
@@ -252,11 +253,12 @@ async function loadDiscover() {
   else loadDiscoverNetworks();
 }
 
-function _renderDiscoverList(list, bubbles, label) {
+async function _renderDiscoverList(list, bubbles, label) {
   if (!bubbles.length) {
-    list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('search') + '</div><div class="empty-text">Ingen ' + label + ' at opdage endnu</div></div>';
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('search') + '</div><div class="empty-text">' + t('bb_none_to_discover', {label: label}) + '</div></div>';
     return;
   }
+  await getSavedBubbleIds(); // bookmark state must be known before cards render
   list.innerHTML = bubbles.map(function(b) { return bubbleCard(b, false); }).join('');
 }
 
@@ -279,7 +281,7 @@ function filterBubbles(type) {
     }) : source;
     var label = type === 'evt' ? 'events' : 'netværk';
     if (q && filtered.length === 0) {
-      list.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('search') + '</div><div class="empty-text">Ingen ' + label + ' matcher "' + escHtml(q) + '"</div></div>';
+      list.innerHTML = '<div class="empty-state" style="padding:2rem 0"><div class="empty-icon">' + icon('search') + '</div><div class="empty-text">' + t('bb_none_matches', {label: label, q: escHtml(q)}) + '</div></div>';
     } else {
       _renderDiscoverList(list, filtered, label);
     }
@@ -303,7 +305,6 @@ async function joinBubble(bubbleId) {
   try {
     var result = await dbActions.joinBubble(bubbleId);
     if (!result.ok) return; // dbActions already showed error toast
-    // Discriminated union: status='joined_now' (fresh) vs 'already_member' (idempotent)
     showSuccessToast(result.status === 'already_member' ? t('toast_already_member') : t('toast_joined'));
     _bbAfterJoin(bubbleId);
     await openBubble(bubbleId);
@@ -333,11 +334,11 @@ function _buildMemberSheet(title, subtitle, members) {
   var { overlay, sheet } = bbDynOpen();
   overlay.id = 'member-action-overlay';
 
-  var avColors = proxColors || ['linear-gradient(135deg,#6366F1,#7C5CFC)'];
+  var avColors = proxColors || ['linear-gradient(135deg,#6366F1,rgb(100,180,230))'];
 
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.12);margin:0 auto 1rem;cursor:pointer" onclick="closeMemberSheet()"></div>' +
-    '<div style="font-size:1.05rem;font-weight:800;margin-bottom:0.3rem">' + title + '</div>' +
-    '<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">' + subtitle + '</div>' +
+  sheet.innerHTML = '<div class="u-sheet-grip-c" onclick="closeMemberSheet()"></div>' +
+    '<div style="font-size:1.05rem;font-weight:800;margin-bottom:0.3rem;color:rgba(255,255,255,0.95)">' + title + '</div>' +
+    '<div style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin-bottom:1rem">' + subtitle + '</div>' +
     '<div id="member-sheet-list">' +
     members.map(function(m, i) {
       var p = m.profiles || {};
@@ -346,11 +347,11 @@ function _buildMemberSheet(title, subtitle, members) {
         '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
         '<div style="width:40px;height:40px;border-radius:50%;background:' + avColors[i % avColors.length] + ';display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>';
       var isAdmin = m.role === 'admin';
-      var adminBadge = isAdmin ? '<span class="admin-badge" style="font-size:0.55rem;background:rgba(124,92,252,0.1);color:var(--accent);padding:0.1rem 0.35rem;border-radius:6px;font-weight:600">Admin</span>' : '';
-      return '<div class="member-pick-row" data-uid="' + m.user_id + '" data-name="' + escHtml(p.name||'?').replace(/"/g,'&quot;') + '" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border-radius:12px;border:1px solid var(--glass-border-subtle);margin-bottom:0.4rem;cursor:pointer;transition:all 0.15s">' +
+      var adminBadge = isAdmin ? '<span class="admin-badge" style="font-size:0.55rem;background:rgba(100,180,230,0.15);color:rgb(100,180,230);padding:0.1rem 0.35rem;border-radius:6px;font-weight:600;border:0.5px solid rgba(100,180,230,0.25)">Admin</span>' : '';
+      return '<div class="member-pick-row" data-uid="' + m.user_id + '" data-name="' + escHtml(p.name||'?').replace(/"/g,'&quot;') + '" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border-radius:12px;border:1px solid var(--glass-border-subtle);margin-bottom:0.4rem;cursor:pointer;transition:background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s, opacity 0.15s, box-shadow 0.15s">' +
         avHtml +
         '<div style="flex:1"><div style="font-weight:600;font-size:0.85rem;display:flex;align-items:center;gap:0.3rem">' + escHtml(p.name||t('misc_unknown')) + ' ' + adminBadge + '</div><div style="font-size:0.72rem;color:var(--text-secondary)">' + escHtml(p.title||'') + '</div></div>' +
-        '<div style="color:var(--accent);font-size:0.72rem;font-weight:600">Vælg</div>' +
+        '<div style="color:rgb(100,180,230);font-size:0.72rem;font-weight:600">' + t('bb_choose') + '</div>' +
       '</div>';
     }).join('') +
     '</div>' +
@@ -407,10 +408,10 @@ async function openTransferOwnership(bubbleId) {
         list.style.display = 'none';
         tray.style.display = 'block';
         tray.innerHTML = '<div style="text-align:center;padding:1rem 0">' +
-          '<div style="font-size:0.92rem;font-weight:700;margin-bottom:0.3rem">Overdrag ejerskab til <strong>' + escHtml(uname) + '</strong>?</div>' +
-          '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem">Du mister ejer-rettigheder. Denne handling kan ikke fortrydes.</div>' +
+          '<div style="font-size:0.92rem;font-weight:700;margin-bottom:0.3rem">' + t('bb_request') + ' <strong>' + escHtml(uname) + '</strong> ' + t('bb_take_ownership_q') + '</div>' +
+          '<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:1rem">' + escHtml(uname) + ' ' + t('bb_ownership_warning') + '</div>' +
           '<div style="display:flex;gap:0.5rem;justify-content:center">' +
-          '<button id="transfer-confirm-yes" style="flex:1;padding:0.65rem;border-radius:12px;background:var(--gradient-primary);color:white;border:none;font-family:inherit;font-weight:700;font-size:0.82rem;cursor:pointer">Bekræft overdragelse</button>' +
+          '<button id="transfer-confirm-yes" style="flex:1;padding:0.65rem;border-radius:12px;background:var(--cta-bg);color:var(--cta-text);border:1px solid var(--cta-border);font-family:inherit;font-weight:700;font-size:0.82rem;cursor:pointer">' + t('bb_send_request') + '</button>' +
           '<button id="transfer-confirm-no" style="flex:1;padding:0.65rem;border-radius:12px;background:none;color:var(--text-secondary);border:1px solid var(--glass-border);font-family:inherit;font-weight:600;font-size:0.82rem;cursor:pointer">Annuller</button>' +
           '</div></div>';
         document.getElementById('transfer-confirm-yes').onclick = function() {
@@ -424,22 +425,52 @@ async function openTransferOwnership(bubbleId) {
   } catch(e) { logError('openTransferOwnership', e); errorToast('load', e); }
 }
 
+// ── ADR-009: ejerskab-banner handlers (modtager + afsender) ──
+async function acceptOwnership(bubbleId) {
+  if (!bubbleId) return;
+  var result = await dbActions.acceptOwnershipTransfer(bubbleId);
+  if (!result.ok) {
+    if (result.reason === 'recipient_no_longer_member') showWarningToast(t('ownreq_err_not_member') || 'Du er ikke længere medlem af boblen.');
+    else if (result.reason === 'not_pending_recipient') showWarningToast(t('ownreq_err_gone') || 'Anmodningen er ikke længere aktiv.');
+    return;
+  }
+  showSuccessToast(t('ownreq_accepted_toast') || 'Du er nu ejer af boblen');
+  if (typeof bcLoadBubbleInfo === 'function') await bcLoadBubbleInfo();
+  if (typeof bcLoadInfo === 'function') bcLoadInfo();
+}
+async function declineOwnership(bubbleId) {
+  if (!bubbleId) return;
+  var result = await dbActions.declineOwnershipTransfer(bubbleId);
+  if (!result.ok) { if (result.reason === 'not_pending_recipient') showWarningToast(t('ownreq_err_gone') || 'Anmodningen er ikke længere aktiv.'); return; }
+  showToast(t('ownreq_declined_toast') || 'Anmodning afvist');
+  if (typeof bcLoadBubbleInfo === 'function') await bcLoadBubbleInfo();
+  if (typeof bcLoadInfo === 'function') bcLoadInfo();
+}
+async function withdrawOwnership(bubbleId) {
+  if (!bubbleId) return;
+  var result = await dbActions.withdrawOwnershipTransfer(bubbleId);
+  if (!result.ok) return;
+  showToast(t('ownreq_withdrawn_toast') || 'Anmodning trukket tilbage');
+  if (typeof bcLoadBubbleInfo === 'function') await bcLoadBubbleInfo();
+  if (typeof bcLoadInfo === 'function') bcLoadInfo();
+}
+
 async function _executeTransfer(bubbleId, newOwnerId, newOwnerName) {
   try {
     var confirmBtn = document.getElementById('transfer-confirm-yes');
-    if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Overdrager...'; }
-    var result = await dbActions.transferBubble(bubbleId, newOwnerId);
-    if (!result.ok) { if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Bekræft overdragelse'; } return; }
-    if (!result.data || result.data.length === 0) {
-      _renderToast(t('err_transfer'), 'error');
-      if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Bekræft overdragelse'; }
+    if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = t('sending') || 'Sender...'; }
+    var result = await dbActions.requestOwnershipTransfer(bubbleId, newOwnerId);
+    if (!result.ok) {
+      if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = t('bb_send_request'); }
+      // Vis venlig årsag hvis RPC afviste (fx allerede pending / ikke medlem)
+      if (result.reason === 'transfer_already_pending') showWarningToast(t('transfer_already_pending') || 'Der er allerede en igangværende overdragelse. Træk den tilbage først.');
+      else if (result.reason === 'recipient_not_member') showWarningToast(t('transfer_not_member') || 'Personen skal være medlem af boblen.');
       return;
     }
     closeMemberSheet();
-    showSuccessToast(t('toast_ownership_transferred', {name: newOwnerName}));
-    trackEvent('bubble_ownership_transferred', { bubble_id: bubbleId, new_owner: newOwnerId });
-    // Notify new owner via broadcast
-    try { sb.channel('member-notify-' + newOwnerId).send({ type: 'broadcast', event: 'ownership', payload: { bubbleName: bcBubbleData?.name || '', senderName: currentProfile?.name || '', bubbleId: bubbleId } }); } catch(e2) {}
+    showSuccessToast(t('toast_ownership_requested', {name: newOwnerName}) || ('Anmodning sendt til ' + newOwnerName));
+    // Notify recipient via broadcast (subscribe -> send -> unsubscribe so the channel is cleaned up)
+    (function(nid, bn, sn, bid) { (async function() { try { var ch = sb.channel('member-notify-' + nid); await ch.subscribe(); await ch.send({ type: 'broadcast', event: 'ownership_request', payload: { bubbleName: bn, senderName: sn, bubbleId: bid } }); setTimeout(function() { ch.unsubscribe(); }, 2000); } catch(e2) { console.debug('[ownership] broadcast error:', e2); } })(); })(newOwnerId, bcBubbleData?.name || '', currentProfile?.name || '', bubbleId);
     // Refresh UI — must await bcLoadBubbleInfo before bcLoadInfo (data dependency)
     if (typeof bcLoadBubbleInfo === 'function') await bcLoadBubbleInfo();
     if (typeof bcLoadInfo === 'function') bcLoadInfo();
@@ -466,8 +497,8 @@ async function openAdminDesignation(bubbleId) {
     var pm = {}; (profs || []).forEach(function(p) { pm[p.id] = p; });
     members.forEach(function(m) { m.profiles = pm[m.user_id] || { name: t('misc_unknown') }; });
     _buildMemberSheet(
-      '<span style="display:inline-flex;align-items:center;gap:0.3rem">' + ico('crown').replace('<svg ','<svg style="width:1.1rem;height:1.1rem" ') + ' Udpeg admin</span>',
-      'Admins kan redigere boblen, invitere og fjerne medlemmer.',
+      '<span style="display:inline-flex;align-items:center;gap:0.3rem">' + ico('crown').replace('<svg ','<svg style="width:1.1rem;height:1.1rem" ') + ' ' + t('bb_designate_admin') + '</span>',
+      t('bb_admin_desc'),
       members
     );
     document.querySelectorAll('#member-sheet-list .member-pick-row').forEach(function(row) {
@@ -501,11 +532,11 @@ async function _executeSetRole(bubbleId, userId, userName, role) {
     if (error) { errorToast('save', error); return; }
     closeMemberSheet();
     if (role === 'admin') {
-      showSuccessToast(userName + ' er nu admin');
-      // Notify new admin via broadcast
-      try { sb.channel('member-notify-' + userId).send({ type: 'broadcast', event: 'admin', payload: { bubbleName: bcBubbleData?.name || '', senderName: currentProfile?.name || '', bubbleId: bubbleId } }); } catch(e2) {}
+      showSuccessToast(t('bb_now_admin', {name: userName}));
+      // Notify new admin via broadcast (subscribe -> send -> unsubscribe so the channel is cleaned up)
+      (function(tid, bn, sn, bid) { (async function() { try { var ch = sb.channel('member-notify-' + tid); await ch.subscribe(); await ch.send({ type: 'broadcast', event: 'admin', payload: { bubbleName: bn, senderName: sn, bubbleId: bid } }); setTimeout(function() { ch.unsubscribe(); }, 2000); } catch(e2) { console.debug('[admin] broadcast error:', e2); } })(); })(userId, bcBubbleData?.name || '', currentProfile?.name || '', bubbleId);
     } else {
-      showToast(userName + ' er ikke længere admin');
+      showToast(t('bb_no_longer_admin', {name: userName}));
     }
     trackEvent('bubble_role_changed', { bubble_id: bubbleId, user_id: userId, role: role });
     await bcLoadMembers();
@@ -575,7 +606,7 @@ function openCreateEventModal() {
   var _cbAg = document.getElementById('cb-agenda'); if (_cbAg) _cbAg.value = '';
   var _cbTm = document.getElementById('cb-event-time'); if (_cbTm) _cbTm.value = '';
   var _cbTe = document.getElementById('cb-event-time-end'); if (_cbTe) _cbTe.value = '';
-  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = 'self';
+  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = '';
   renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
   var modal = document.getElementById('bb-sheet-create-bubble');
   if (modal) delete modal.dataset.parentBubbleId;
@@ -601,14 +632,14 @@ function openCreateEventModal() {
       { value: 'hidden',  icon: 'eye',   label: t('bb_visibility_hidden') }
     ]);
     // Show event fields
-    var cmg = document.getElementById('cb-checkin-mode-group');
-    var edg = document.getElementById('cb-event-date-group');
-    var etg = document.getElementById('cb-event-time-row');
-    var etge = document.getElementById('cb-event-time-end-group');
-    if (cmg) cmg.style.display = 'block';
-    if (edg) edg.style.display = 'block';
-    if (etg) etg.style.display = 'block';
-    if (etge) etge.style.display = 'block';
+    // Show the event-details accordion (fields live inside it now), open by default
+    var _acc = document.getElementById('cb-event-accordion');
+    if (_acc) { _acc.style.display = 'block'; _acc.classList.add('open'); cbSyncEventAccordion(true); }
+    // Render check-in pills for this entry point too
+    cbRenderPillSelect('cb-checkin-mode', [
+      { value: 'self', label: t('cb_checkin_self'), icon: 'user' },
+      { value: 'scan', label: t('cb_checkin_scan'), icon: 'camera' }
+    ]);
     var _ag = document.getElementById('cb-agenda-group'); if (_ag) _ag.style.display = 'block';
     var dateInput = document.getElementById('cb-event-date');
     if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
@@ -631,7 +662,7 @@ function openCreateEventFromBubble(parentBubbleId) {
   var _cbAg = document.getElementById('cb-agenda'); if (_cbAg) _cbAg.value = '';
   var _cbTm = document.getElementById('cb-event-time'); if (_cbTm) _cbTm.value = '';
   var _cbTe = document.getElementById('cb-event-time-end'); if (_cbTe) _cbTe.value = '';
-  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = 'self';
+  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = '';
   renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
   // Store parent bubble id on the modal for use in createBubble()
   var modal = document.getElementById('bb-sheet-create-bubble');
@@ -659,13 +690,12 @@ function openCreateEventFromBubble(parentBubbleId) {
     if (parentLabel) parentLabel.style.display = 'block';
     // Show checkin mode + date/time for events
     var cmg = document.getElementById('cb-checkin-mode-group');
-    if (cmg) cmg.style.display = 'block';
-    var edg = document.getElementById('cb-event-date-group');
-    var etg = document.getElementById('cb-event-time-row');
-    var etge = document.getElementById('cb-event-time-end-group');
-    if (edg) edg.style.display = 'block';
-    if (etg) etg.style.display = 'block';
-    if (etge) etge.style.display = 'block';
+    var _acc2 = document.getElementById('cb-event-accordion');
+    if (_acc2) { _acc2.style.display = 'block'; _acc2.classList.add('open'); cbSyncEventAccordion(true); }
+    cbRenderPillSelect('cb-checkin-mode', [
+      { value: 'self', label: t('cb_checkin_self'), icon: 'user' },
+      { value: 'scan', label: t('cb_checkin_scan'), icon: 'camera' }
+    ]);
     var _ag2 = document.getElementById('cb-agenda-group'); if (_ag2) _ag2.style.display = 'block';
     // Default date to today
     var dateInput = document.getElementById('cb-event-date');
@@ -673,7 +703,7 @@ function openCreateEventFromBubble(parentBubbleId) {
     // Fetch parent name async
     sb.from('bubbles').select('name').eq('id', parentBubbleId).maybeSingle().then(function(r) {
       if (r.data && parentLabel) {
-        parentLabel.textContent = 'Event under: ' + r.data.name;
+        parentLabel.textContent = t('bb_event_under') + r.data.name;
       }
     }).catch(function() {});
   }, 50);
@@ -689,7 +719,7 @@ function openCreateSubBubble(parentBubbleId) {
   var _cbAg = document.getElementById('cb-agenda'); if (_cbAg) _cbAg.value = '';
   var _cbTm = document.getElementById('cb-event-time'); if (_cbTm) _cbTm.value = '';
   var _cbTe = document.getElementById('cb-event-time-end'); if (_cbTe) _cbTe.value = '';
-  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = 'self';
+  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = '';
   renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
   var modal = document.getElementById('bb-sheet-create-bubble');
   if (modal) modal.dataset.parentBubbleId = parentBubbleId;
@@ -714,17 +744,12 @@ function openCreateSubBubble(parentBubbleId) {
     if (parentLabel) parentLabel.style.display = 'block';
     // Hide event-specific fields
     var cmg = document.getElementById('cb-checkin-mode-group');
-    if (cmg) cmg.style.display = 'none';
-    var edg = document.getElementById('cb-event-date-group');
-    var etg = document.getElementById('cb-event-time-row');
-    var etge = document.getElementById('cb-event-time-end-group');
-    if (edg) edg.style.display = 'none';
-    if (etg) etg.style.display = 'none';
-    if (etge) etge.style.display = 'none';
+    var _acc3 = document.getElementById('cb-event-accordion');
+    if (_acc3) { _acc3.style.display = 'none'; _acc3.classList.remove('open'); }
     var cag3 = document.getElementById('cb-agenda-group'); if (cag3) cag3.style.display = 'none';
     sb.from('bubbles').select('name').eq('id', parentBubbleId).maybeSingle().then(function(r) {
       if (r.data && parentLabel) {
-        parentLabel.textContent = 'Sub-boble under: ' + r.data.name;
+        parentLabel.textContent = t('bb_subbubble_under') + r.data.name;
       }
     }).catch(function() {});
   }, 50);
@@ -739,7 +764,7 @@ function openCreateNetworkModal() {
   var _cbAg = document.getElementById('cb-agenda'); if (_cbAg) _cbAg.value = '';
   var _cbTm = document.getElementById('cb-event-time'); if (_cbTm) _cbTm.value = '';
   var _cbTe = document.getElementById('cb-event-time-end'); if (_cbTe) _cbTe.value = '';
-  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = 'self';
+  var _cbCm = document.getElementById('cb-checkin-mode'); if (_cbCm) _cbCm.value = '';
   renderChips('cb-chips', cbChips, 'cb-chips-container', 'cb-chip-input');
   // Clear any lingering parent bubble state
   var modal = document.getElementById('bb-sheet-create-bubble');
@@ -748,14 +773,9 @@ function openCreateNetworkModal() {
   if (parentLabel) { parentLabel.style.display = 'none'; parentLabel.textContent = ''; }
   // Hide checkin mode + date/time (not relevant for networks)
   var cmg = document.getElementById('cb-checkin-mode-group');
-  if (cmg) cmg.style.display = 'none';
-  var edg = document.getElementById('cb-event-date-group');
-  var etg = document.getElementById('cb-event-time-row');
-  var etge = document.getElementById('cb-event-time-end-group');
-  if (edg) edg.style.display = 'none';
-  if (etg) etg.style.display = 'none';
+  var _acc4 = document.getElementById('cb-event-accordion');
+  if (_acc4) { _acc4.style.display = 'none'; _acc4.classList.remove('open'); }
   var cag4 = document.getElementById('cb-agenda-group'); if (cag4) cag4.style.display = 'none';
-  if (etge) etge.style.display = 'none';
   bbOpen('create-bubble');
   var _cbTitle = document.getElementById('cb-sheet-title');
   if (_cbTitle) _cbTitle.textContent = t('bb_create_network');
@@ -791,7 +811,7 @@ function cbRenderPillSelect(selectId, options) {
     var btn = document.createElement('button');
     btn.type = 'button';
     var isActive = opt.value === current;
-    btn.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;gap:0.35rem;padding:0.4rem 0.75rem;border-radius:99px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.15s;border:1.5px solid ' + (isActive ? 'rgba(124,92,252,0.5)' : 'var(--glass-border)') + ';background:' + (isActive ? 'rgba(124,92,252,0.12)' : 'rgba(30,27,46,0.03)') + ';color:' + (isActive ? 'var(--accent)' : 'var(--muted)');
+    btn.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;gap:0.35rem;padding:0.4rem 0.75rem;border-radius:99px;font-size:0.78rem;font-weight:600;font-family:inherit;cursor:pointer;transition:background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s, opacity 0.15s, box-shadow 0.15s;border:1.5px solid ' + (isActive ? 'rgba(26,158,142,0.6)' : 'var(--glass-border)') + ';background:' + (isActive ? 'rgba(26,158,142,0.15)' : 'rgba(30,27,46,0.03)') + ';color:' + (isActive ? '#1A9E8E' : 'var(--muted)');
     var ico = document.createElement('span');
     ico.style.cssText = 'width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0';
     var icoSvg = ICONS[opt.icon] || '';
@@ -802,25 +822,33 @@ function cbRenderPillSelect(selectId, options) {
     btn.appendChild(lbl);
     btn.onclick = function() {
       select.value = opt.value;
+      // Update check-in help text when a check-in method pill is chosen
+      if (selectId === 'cb-checkin-mode' && typeof cbUpdateCheckinHelp === 'function') cbUpdateCheckinHelp();
       wrap.querySelectorAll('button').forEach(function(b) {
         b.style.borderColor = 'var(--glass-border)';
-        b.style.background = 'rgba(30,27,46,0.04)';
+        b.style.background = 'rgba(255,255,255,0.04)';
         b.style.color = 'var(--muted)';
       });
-      btn.style.borderColor = 'rgba(124,92,252,0.5)';
-      btn.style.background = 'rgba(124,92,252,0.12)';
-      btn.style.color = 'var(--accent)';
+      btn.style.borderColor = 'rgba(26,158,142,0.6)';
+      btn.style.background = 'rgba(26,158,142,0.15)';
+      btn.style.color = '#1A9E8E';
       // Show/hide checkin_mode for event type
       if (selectId === 'cb-type') {
         var isEvt = (opt.value === 'event' || opt.value === 'live');
-        var cmg = document.getElementById('cb-checkin-mode-group');
-        var edg = document.getElementById('cb-event-date-group');
-        var etg = document.getElementById('cb-event-time-row');
-        var etge = document.getElementById('cb-event-time-end-group');
-        if (cmg) cmg.style.display = isEvt ? 'block' : 'none';
-        if (edg) edg.style.display = isEvt ? 'block' : 'none';
-        if (etg) etg.style.display = isEvt ? 'block' : 'none';
-        if (etge) etge.style.display = isEvt ? 'block' : 'none';
+        var acc = document.getElementById('cb-event-accordion');
+        if (acc) {
+          acc.style.display = isEvt ? 'block' : 'none';
+          // Auto-open the accordion when Event is picked so the fields are visible
+          if (isEvt) { acc.classList.add('open'); cbSyncEventAccordion(true); }
+        }
+        if (isEvt) {
+          // Render check-in method as pills (matches type/visibility) instead of
+          // the native select — fixes both the ugly dropdown and the data-t bleed.
+          cbRenderPillSelect('cb-checkin-mode', [
+            { value: 'self', label: t('cb_checkin_self'), icon: 'user' },
+            { value: 'scan', label: t('cb_checkin_scan'), icon: 'camera' }
+          ]);
+        }
         var cag = document.getElementById('cb-agenda-group'); if (cag) cag.style.display = isEvt ? 'block' : 'none';
         var _cbN = document.getElementById('cb-name'); if (_cbN) _cbN.placeholder = isEvt ? t('cb_name_event') : t('cb_name');
       }
@@ -845,6 +873,31 @@ function cbRenderPillSelect(selectId, options) {
 }
 var ebRenderPillSelect = cbRenderPillSelect;
 
+// Event-details accordion (create flow): collapse date/time/check-in into one section
+function cbSyncEventAccordion(open) {
+  var body = document.getElementById('cb-acc-body');
+  var chev = document.getElementById('cb-acc-chev');
+  if (body) body.style.maxHeight = open ? '600px' : '0';
+  if (chev) chev.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+function cbToggleEventAccordion() {
+  var acc = document.getElementById('cb-event-accordion');
+  if (!acc) return;
+  var willOpen = !acc.classList.contains('open');
+  acc.classList.toggle('open', willOpen);
+  cbSyncEventAccordion(willOpen);
+}
+// Update the check-in help text + accordion summary when a method is chosen
+function cbUpdateCheckinHelp() {
+  var sel = document.getElementById('cb-checkin-mode');
+  var help = document.getElementById('cb-checkin-help');
+  if (!sel || !help) return;
+  var v = sel.value;
+  if (v === 'self') { help.textContent = t('cb_checkin_help_self'); help.style.display = 'block'; }
+  else if (v === 'scan') { help.textContent = t('cb_checkin_help_scan'); help.style.display = 'block'; }
+  else { help.style.display = 'none'; }
+}
+
 var _bbSubmitLock = false; // Prevents double-tap on create/edit/delete bubble
 
 async function createBubble() {
@@ -856,6 +909,7 @@ async function createBubble() {
     const desc = document.getElementById('cb-desc').value.trim();
     const location = document.getElementById('cb-location').value.trim();
     if (!name) return showWarningToast(t('cb_name_required'));
+    if (tooLong(name, 'name') || tooLong(desc, 'description') || tooLong(location, 'name')) return;
     const visibility = document.getElementById('cb-visibility')?.value || 'private';
     // Pick up parent bubble id if set (from openCreateEventFromBubble)
     var modal = document.getElementById('bb-sheet-create-bubble');
@@ -884,9 +938,13 @@ async function createBubble() {
     }
     // Event check-in mode (self = auto check-in, scan = reverse QR)
     if (type === 'event' || type === 'live') {
-      var checkinMode = document.getElementById('cb-checkin-mode')?.value || 'self';
+      var checkinMode = document.getElementById('cb-checkin-mode')?.value || '';
+      // Require an active choice — the dropdown defaults to an empty placeholder,
+      // so the organizer must consciously pick self-service or reverse QR.
+      if (!checkinMode) return showWarningToast(t('cb_checkin_required'));
       insertData.checkin_mode = checkinMode;
       var agendaVal = (document.getElementById('cb-agenda')?.value || '').trim();
+      if (tooLong(agendaVal, 'agenda')) return;
       if (agendaVal) insertData.agenda = agendaVal;
       // Event date/time
       var dateVal = document.getElementById('cb-event-date')?.value;
@@ -902,10 +960,25 @@ async function createBubble() {
     }
     const { data: bubble, error } = await sb.from('bubbles').insert(insertData).select().single();
     if (error) return errorToast('save', error);
-    // Auto-join
-    await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id });
+    // Auto-join — the bubble exists now, so a failed membership insert must not
+    // be silently ignored (would leave the creator in a bubble they can't act in).
+    var { error: joinErr } = await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id });
+    if (joinErr) {
+      // Retry once — most failures here are transient (network/timing).
+      var { error: joinErr2 } = await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id });
+      if (joinErr2) {
+        logError('createBubble:autojoin', joinErr2);
+        // Bubble was created (real work preserved); membership could not be added.
+        // Tell the user honestly rather than showing "created!" and dropping them
+        // into a bubble they aren't a member of. Rejoin is available by opening it.
+        bbClose('create-bubble');
+        showWarningToast(t('bb_created_join_retry'));
+        loadHome();
+        loadDiscover();
+        return;
+      }
+    }
     bbClose('create-bubble');
-    showToast(`"${name}" oprettet! 🫧`);
     trackEvent('bubble_created', { bubble_id: bubble.id, type: type, has_parent: !!parentBubbleId });
     // If created as child event, refresh parent bubble's info tab
     if (parentBubbleId && typeof bcLoadInfo === 'function' && bcBubbleId === parentBubbleId) {
@@ -913,10 +986,39 @@ async function createBubble() {
     }
     loadHome();
     loadDiscover();
-    // Open the new bubble
-    requestAnimationFrame(function() { requestAnimationFrame(function() { openBubbleChat(bubble.id, 'screen-bubbles'); }); });
+    // Confirmation modal with an explicit "See bubble" button instead of silently
+    // auto-opening — gives the creator a moment of closure and control.
+    _showBubbleCreatedModal(bubble.id, name, type);
   } catch(e) { logError("createBubble", e); errorToast("save", e); }
   finally { _bbSubmitLock = false; }
+}
+
+// Confirmation modal shown after a bubble/event is created. Explicit "See bubble"
+// button gives closure and control instead of silently auto-opening the bubble.
+function _showBubbleCreatedModal(bubbleId, name, type) {
+  var isEvent = (type === 'event' || type === 'live');
+  var existing = document.getElementById('bubble-created-overlay');
+  if (existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.id = 'bubble-created-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:620;background:rgba(30,27,46,0.45);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+  var iconColor = isEvent ? '#2ECFCF' : '#1A9E8E';
+  var iconBg = isEvent ? 'rgba(46,207,207,0.15)' : 'rgba(26,158,142,0.15)';
+  ov.innerHTML =
+    '<div style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+      '<div style="width:56px;height:56px;border-radius:50%;background:' + iconBg + ';display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;color:' + iconColor + ';font-size:26px">✓</div>' +
+      '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.35rem">' + t(isEvent ? 'cb_created_title_event' : 'cb_created_title') + '</div>' +
+      '<div style="font-size:0.88rem;font-weight:600;color:var(--text);margin-bottom:0.15rem">' + escHtml(name) + '</div>' +
+      '<div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:1.4rem">' + t('cb_created_body') + '</div>' +
+      '<button id="bc-created-see" style="width:100%;padding:0.85rem;border-radius:12px;border:none;background:var(--cta-bg-solid, ' + iconColor + ');color:#fff;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + t('cb_see_bubble') + '</button>' +
+      '<button id="bc-created-close" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('dl_stay_home') + '</button>' +
+    '</div>';
+  document.body.appendChild(ov);
+  document.getElementById('bc-created-see').onclick = function() {
+    ov.remove();
+    openBubbleChat(bubbleId, 'screen-bubbles');
+  };
+  document.getElementById('bc-created-close').onclick = function() { ov.remove(); };
 }
 
 
@@ -939,7 +1041,7 @@ async function requestJoin(bubbleId) {
         await ch.send({ type: 'broadcast', event: 'join_request', payload: { bubbleName: b.name || '', bubbleId: bubbleId, memberName: currentProfile?.name || '' } });
         setTimeout(function() { ch.unsubscribe(); }, 2000);
         // Push notification to owner
-        sendPush(b.created_by, 'Ny anmodning', (currentProfile?.name || 'Nogen') + ' vil gerne med i ' + (b.name || 'din boble'), { type: 'join_request', bubble_id: bubbleId });
+        sendPush(b.created_by, t('bb_new_request'), (currentProfile?.name || t('bb_someone')) + ' ' + t('bb_wants_join_mid') + ' ' + (b.name || t('bb_your_bubble')), { type: 'join_request', bubble_id: bubbleId });
       }
     } catch(e2) { console.debug('[requestJoin] broadcast error:', e2); }
   } catch(e) { logError("requestJoin", e); errorToast("save", e); }
@@ -1023,9 +1125,9 @@ async function handleBubbleIconUpload(input) {
   try {
     var file = input.files[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { showWarningToast('Maks 2MB'); input.value = ''; return; }
+    if (file.size > 2 * 1024 * 1024) { showWarningToast(t('bb_max_2mb')); input.value = ''; return; }
     var allowed = ['image/jpeg','image/png','image/webp'];
-    if (allowed.indexOf(file.type) < 0) { showWarningToast('Brug JPG, PNG eller WebP'); input.value = ''; return; }
+    if (allowed.indexOf(file.type) < 0) { showWarningToast(t('bb_use_jpg')); input.value = ''; return; }
     showToast('Uploader ikon...');
     var resized = typeof resizeImage === 'function' ? await resizeImage(file, 256) : file;
     var path = 'bubbles/' + currentEditBubbleId + '/icon-' + Date.now() + '.jpg';
@@ -1052,6 +1154,7 @@ async function saveEditBubble() {
     const desc       = document.getElementById('eb-desc').value.trim();
     const location   = document.getElementById('eb-location').value.trim();
     if (!name) return showWarningToast(t('cb_name_required'));
+    if (tooLong(name, 'name') || tooLong(desc, 'description') || tooLong(location, 'name')) return;
     var updateObj = {
       name, type, type_label: typeLabel(type),
       visibility, description: desc, location, keywords: ebChips
@@ -1072,6 +1175,7 @@ async function saveEditBubble() {
         updateObj.event_end_date = timeEndVal ? new Date(dateVal + 'T' + timeEndVal).toISOString() : null;
       }
       var agendaVal = (document.getElementById('eb-agenda')?.value || '').trim();
+      if (tooLong(agendaVal, 'agenda')) return;
       updateObj.agenda = agendaVal || null;
     }
     var editResult = await dbActions.updateBubble(currentEditBubbleId, updateObj);
@@ -1096,8 +1200,8 @@ async function shareBubbleLink(bubbleId) {
   var name = bcBubbleData ? bcBubbleData.name : 'Bubble';
   var isEvent = bcBubbleData && (bcBubbleData.type === 'event' || bcBubbleData.type === 'live');
   var text = isEvent
-    ? name + ' — åbn i Bubble for at tilmelde dig'
-    : name + ' — åbn i Bubble for at se netværket';
+    ? name + ' ' + t('bb_open_to_join')
+    : name + ' ' + t('bb_open_to_see');
 
   // Try native share (mobile: opens share sheet with mail, SMS, WhatsApp etc.)
   if (navigator.share) {
@@ -1160,13 +1264,13 @@ async function loadJsPdf() {
   if (_jsPdfLoaded) return;
   await new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.src = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
     s.onload = resolve;
     s.onerror = () => reject(new Error(t('err_load_jspdf')));
     document.head.appendChild(s);
   });
   _jsPdfLoaded = true;
-  } catch(e) { logError("loadJsPdf", e); }
+  } catch(e) { logError("loadJsPdf", e); throw e; }
 }
 
 async function downloadQRPdf() {
@@ -1268,13 +1372,13 @@ async function downloadQRPdf() {
   doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(240, 240, 248);
-  doc.text('Scan og join boblen', pageW/2, 245, { align: 'center' });
+  doc.text(t('bb_scan_join'), pageW/2, 245, { align: 'center' });
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(108, 108, 138);
-  doc.text('Åbn iPhone-kameraet og ret det mod QR-koden', pageW/2, 253, { align: 'center' });
-  doc.text('Du bliver automatisk tilføjet til boblen', pageW/2, 260, { align: 'center' });
+  doc.text(t('bb_open_camera'), pageW/2, 253, { align: 'center' });
+  doc.text(t('bb_auto_added'), pageW/2, 260, { align: 'center' });
 
   // Bottom accent
   doc.setFillColor(108, 99, 255);
@@ -1290,7 +1394,7 @@ async function downloadQRPdf() {
 // ══════════════════════════════════════════════════════════
 //  AUTO-JOIN VIA QR SCAN
 // ══════════════════════════════════════════════════════════
-// @deprecated as of v8.17.22 — function is not called from anywhere.
+// @deprecated as of v8.20 — function is not called from anywhere.
 // ?join= deep-links are captured during auth flow and handled by
 // resolvePostAuthDestination() in b-auth.js, which renders modal via
 // showDeepLinkModal() in b-home.js.
@@ -1300,6 +1404,7 @@ async function downloadQRPdf() {
 // Mutex preventing race between checkQRJoin + checkPendingJoin
 // Both handlers can fire during boot (one from URL, one from sessionStorage)
 // Without mutex, we get double join attempts → duplicate analytics + wrong toast
+// Ported from PROD v8.17.31 (Fix 3: _joinInFlight mutex).
 var _joinInFlight = false;
 registerState(function() { _joinInFlight = false; });
 
@@ -1412,7 +1517,7 @@ async function checkPendingJoin() {
 // ══════════════════════════════════════════════════════════
 async function downloadMembersPdf(bubbleId) {
   try {
-    showToast('Henter deltagerliste...');
+    showToast(t('bb_loading_attendees'));
     await loadJsPdf();
     const { jsPDF } = window.jspdf;
 
@@ -1442,11 +1547,7 @@ async function downloadMembersPdf(bubbleId) {
       if (!iso) return '–';
       return new Date(iso).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' });
     }
-    function fmtDate(iso) {
-      if (!iso) return '–';
-      return new Date(iso).toLocaleDateString(_locale(), { day: 'numeric', month: 'long', year: 'numeric' });
-    }
-    function fmtDuration(inIso, outIso) {
+        function fmtDuration(inIso, outIso) {
       if (!inIso) return '–';
       var end = outIso ? new Date(outIso) : new Date();
       var mins = Math.round((end - new Date(inIso)) / 60000);
@@ -1479,7 +1580,7 @@ async function downloadMembersPdf(bubbleId) {
     doc.setFontSize(8);
     doc.setTextColor(90, 90, 110);
     var today = new Date().toLocaleDateString(_locale(), { day: 'numeric', month: 'long', year: 'numeric' });
-    doc.text('Genereret ' + today, pw - mr, 16, { align: 'right' });
+    doc.text(t('rep_generated') + ' ' + today, pw - mr, 16, { align: 'right' });
 
     // Divider
     doc.setDrawColor(40, 40, 60);
@@ -1505,9 +1606,9 @@ async function downloadMembersPdf(bubbleId) {
     var boxY = 46;
     var boxH = 16;
     var boxes = [
-      { label: 'Tilmeldte', val: String(totalMembers), color: [108, 99, 255] },
+      { label: t('pdf_box_registered'), val: String(totalMembers), color: [108, 99, 255] },
       { label: 'Check-in', val: String(totalCheckedIn), color: [46, 207, 207] },
-      { label: 'Fremmøde', val: totalMembers > 0 ? Math.round(totalCheckedIn / totalMembers * 100) + '%' : '–', color: [16, 185, 129] }
+      { label: t('pdf_box_attendance'), val: totalMembers > 0 ? Math.round(totalCheckedIn / totalMembers * 100) + '%' : '–', color: [16, 185, 129] }
     ];
     var boxW = (contentW - 6) / 3;
     boxes.forEach(function(box, i) {
@@ -1537,12 +1638,12 @@ async function downloadMembersPdf(bubbleId) {
 
     // Column widths (sum = contentW = 182)
     var cols = [
-      { label: 'NAVN',         x: ml,      w: 44 },
-      { label: 'TITEL',        x: ml + 44, w: 38 },
-      { label: 'VIRKSOMHED',   x: ml + 82, w: 36 },
+      { label: t('pdf_col_name'),         x: ml,      w: 44 },
+      { label: t('pdf_col_title'),        x: ml + 44, w: 38 },
+      { label: t('pdf_col_company'),   x: ml + 82, w: 36 },
       { label: 'CHECK-IN',     x: ml + 118,w: 22 },
       { label: 'CHECK-OUT',    x: ml + 140,w: 22 },
-      { label: 'VARIGHED',     x: ml + 162,w: 20 }
+      { label: t('pdf_col_duration'),     x: ml + 162,w: 20 }
     ];
 
     cols.forEach(function(col) {
@@ -1637,8 +1738,8 @@ async function downloadMembersPdf(bubbleId) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     doc.setTextColor(70, 70, 90);
-    doc.text('Genereret af Bubble · bubble.app', ml, footerY);
-    doc.text('Side 1 af ' + doc.getNumberOfPages(), pw - mr, footerY, { align: 'right' });
+    doc.text(t('rep_gen_by'), ml, footerY);
+    doc.text(t('rep_page', { n: 1, total: doc.getNumberOfPages() }), pw - mr, footerY, { align: 'right' });
 
     // Bottom accent bar
     doc.setFillColor(108, 99, 255);
@@ -1659,7 +1760,7 @@ async function downloadMembersPdf(bubbleId) {
 // ══════════════════════════════════════════════════════════
 async function generateEventReport(bubbleId) {
   try {
-    showToast('Genererer event-rapport...');
+    showToast(t('bb_generating_report'));
 
     // ── 1. Fetch all data in parallel ──
     var [bubbleRes, membersRes, messagesRes, guestsRes, invitesRes] = await Promise.all([
@@ -1725,7 +1826,7 @@ async function generateEventReport(bubbleId) {
       if (mins > 0 && mins < 1440) { totalMins += mins; stayCount++; }
     });
     var avgStay = stayCount > 0 ? Math.round(totalMins / stayCount) : 0;
-    var avgStayLabel = avgStay < 60 ? avgStay + ' min' : Math.floor(avgStay / 60) + 't ' + (avgStay % 60) + 'min';
+    var avgStayLabel = avgStay < 60 ? avgStay + ' min' : Math.floor(avgStay / 60) + t('rep_hour_abbr') + (avgStay % 60) + 'min';
 
     // Messages per user
     var msgPerUser = {};
@@ -1757,7 +1858,7 @@ async function generateEventReport(bubbleId) {
 
     // ── 6. Generate HTML ──
     function statBox(label, value, sub, color) {
-      return '<div style="background:white;border-radius:16px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.04)">' +
+      return '<div style="background:white;border-radius:16px;padding:1.25rem;box-shadow:0 1px 4px rgba(255,255,255,0.12);border:1px solid rgba(0,0,0,0.3)">' +
         '<div style="font-size:2rem;font-weight:800;color:' + color + ';line-height:1">' + value + '</div>' +
         '<div style="font-size:0.85rem;font-weight:600;color:#1E1B2E;margin-top:0.3rem">' + label + '</div>' +
         (sub ? '<div style="font-size:0.72rem;color:#8C8A97;margin-top:0.15rem">' + sub + '</div>' : '') +
@@ -1772,9 +1873,9 @@ async function generateEventReport(bubbleId) {
         return '<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.35rem">' +
           '<div style="width:120px;font-size:0.75rem;color:#1E1B2E;font-weight:500;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + d.label + '</div>' +
           '<div style="flex:1;height:22px;background:#F4F3F9;border-radius:6px;overflow:hidden">' +
-            '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#7C5CFC,#6366F1);border-radius:6px;min-width:2px"></div>' +
+            '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,rgb(100,180,230),rgb(70,150,210));border-radius:6px;min-width:2px"></div>' +
           '</div>' +
-          '<div style="width:28px;font-size:0.72rem;font-weight:700;color:#7C5CFC;text-align:right">' + d.value + '</div>' +
+          '<div style="width:28px;font-size:0.72rem;font-weight:700;color:rgb(100,180,230);text-align:right">' + d.value + '</div>' +
           '</div>';
       }).join('');
     }
@@ -1796,30 +1897,30 @@ async function generateEventReport(bubbleId) {
     }
 
     var html = '<!DOCTYPE html><html lang="da"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
-      '<title>Event Rapport — ' + (b.name || 'Bubble') + '</title>' +
+      '<title>' + t('rep_title') + ' — ' + (b.name || 'Bubble') + '</title>' +
       '<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">' +
       '<style>' +
         '*{margin:0;padding:0;box-sizing:border-box}' +
         'body{font-family:"Figtree",system-ui,sans-serif;background:#FAFAFA;color:#1E1B2E;line-height:1.5;-webkit-font-smoothing:antialiased}' +
         '.wrap{max-width:800px;margin:0 auto;padding:2rem 1.5rem}' +
-        '.header{background:linear-gradient(135deg,#7C5CFC 0%,#6366F1 50%,#4F46E5 100%);color:white;padding:2.5rem 2rem;border-radius:20px;margin-bottom:2rem;position:relative;overflow:hidden}' +
+        '.header{background:linear-gradient(135deg,rgb(100,180,230) 0%,#6366F1 50%,#4F46E5 100%);color:white;padding:2.5rem 2rem;border-radius:20px;margin-bottom:2rem;position:relative;overflow:hidden}' +
         '.header::after{content:"";position:absolute;top:-50%;right:-20%;width:300px;height:300px;background:rgba(255,255,255,0.06);border-radius:50%}' +
         '.header::before{content:"";position:absolute;bottom:-30%;left:-10%;width:200px;height:200px;background:rgba(255,255,255,0.04);border-radius:50%}' +
         '.header h1{font-size:1.6rem;font-weight:900;letter-spacing:-0.03em;position:relative;z-index:1}' +
         '.header .meta{font-size:0.85rem;opacity:0.85;margin-top:0.3rem;position:relative;z-index:1}' +
         '.header .bubble-badge{display:inline-flex;align-items:center;gap:0.3rem;background:rgba(255,255,255,0.18);padding:0.3rem 0.7rem;border-radius:99px;font-size:0.72rem;font-weight:600;margin-top:0.75rem;position:relative;z-index:1}' +
         '.section{margin-bottom:1.75rem}' +
-        '.section-title{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#7C5CFC;margin-bottom:0.75rem}' +
+        '.section-title{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgb(100,180,230);margin-bottom:0.75rem}' +
         '.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem}' +
-        '.card{background:white;border-radius:16px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.04)}' +
-        '.highlight-card{background:linear-gradient(135deg,rgba(124,92,252,0.06),rgba(99,102,241,0.04));border:1px solid rgba(124,92,252,0.12)}' +
+        '.card{background:white;border-radius:16px;padding:1.25rem;box-shadow:0 1px 4px rgba(255,255,255,0.12);border:1px solid rgba(0,0,0,0.3)}' +
+        '.highlight-card{background:linear-gradient(135deg,rgba(100,180,230,0.06),rgba(99,102,241,0.04));border:1px solid rgba(100,180,230,0.12)}' +
         'table{width:100%;border-collapse:collapse}' +
         'th{text-align:left;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#8C8A97;padding:0.5rem 0.6rem;border-bottom:2px solid #ECEAF5}' +
         '.connector-card{display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;border-bottom:1px solid #F4F3F9}' +
-        '.connector-rank{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;flex-shrink:0}' +
+        '.connector-rank{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,rgb(100,180,230),#6366F1);color:white;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;flex-shrink:0}' +
         '.tag{display:inline-block;background:#F4F3F9;color:#1E1B2E;padding:0.2rem 0.55rem;border-radius:99px;font-size:0.72rem;font-weight:500;margin:0.15rem}' +
         '.footer{text-align:center;padding:2rem 0 1rem;font-size:0.72rem;color:#8C8A97;border-top:1px solid #ECEAF5;margin-top:2rem}' +
-        '.footer a{color:#7C5CFC;text-decoration:none;font-weight:600}' +
+        '.footer a{color:rgb(100,180,230);text-decoration:none;font-weight:600}' +
         '@media print{body{background:white}.wrap{padding:1rem}.header{break-inside:avoid}.section{break-inside:avoid}.no-print{display:none!important}}' +
         '@media(max-width:600px){.stat-grid{grid-template-columns:1fr 1fr}.wrap{padding:1rem}}' +
       '</style></head><body><div class="wrap">' +
@@ -1828,44 +1929,44 @@ async function generateEventReport(bubbleId) {
       '<div class="header">' +
         '<h1>' + (b.name || 'Event') + '</h1>' +
         '<div class="meta">' + eventDate + (b.location ? ' · ' + b.location : '') + '</div>' +
-        '<div class="bubble-badge">🫧 Rapport genereret via Bubble</div>' +
+        '<div class="bubble-badge">🫧 ' + t('rep_via') + '</div>' +
       '</div>' +
 
       // Key stats
       '<div class="section">' +
-        '<div class="section-title">Overblik</div>' +
+        '<div class="section-title">' + t('rep_overview') + '</div>' +
         '<div class="stat-grid">' +
-          statBox('Deltagere', totalMembers, totalCheckedIn > 0 ? totalCheckedIn + ' checked in' : null, '#7C5CFC') +
-          statBox('Connections', connectionCount, connectionRate + '% lavede min. 1', '#1A9E8E') +
-          statBox('Profilvisninger', viewCount, '', '#E879A8') +
-          statBox('Beskeder', totalMessages, '', '#2ECFCF') +
-          (avgStay > 0 ? statBox('Gns. opholdstid', avgStayLabel, '', '#F59E0B') : '') +
-          (totalGuests > 0 ? statBox('Gæster (manuel)', totalGuests, '', '#8C8A97') : '') +
+          statBox(t('rep_attendees'), totalMembers, totalCheckedIn > 0 ? totalCheckedIn + ' checked in' : null, 'rgb(100,180,230)') +
+          statBox('Connections', connectionCount, connectionRate + t('rep_made_min1'), '#1A9E8E') +
+          statBox(t('rep_profileviews'), viewCount, '', '#E879A8') +
+          statBox(t('rep_messages'), totalMessages, '', '#2ECFCF') +
+          (avgStay > 0 ? statBox(t('rep_avgstay'), avgStayLabel, '', '#F59E0B') : '') +
+          (totalGuests > 0 ? statBox(t('rep_guests'), totalGuests, '', '#8C8A97') : '') +
         '</div>' +
       '</div>' +
 
       // Connection rate highlight
       '<div class="section">' +
         '<div class="card highlight-card" style="text-align:center;padding:1.5rem">' +
-          '<div style="font-size:2.5rem;font-weight:900;color:#7C5CFC">' + connectionRate + '%</div>' +
+          '<div style="font-size:2.5rem;font-weight:900;color:rgb(100,180,230)">' + connectionRate + '%</div>' +
           '<div style="font-size:0.9rem;font-weight:600;margin-top:0.2rem">Connection rate</div>' +
-          '<div style="font-size:0.78rem;color:#8C8A97;margin-top:0.2rem">' + usersWithConnections + ' af ' + totalMembers + ' deltagere lavede mindst én ny forbindelse</div>' +
+          '<div style="font-size:0.78rem;color:#8C8A97;margin-top:0.2rem">' + t('rep_made_conn', { x: usersWithConnections, y: totalMembers }) + '</div>' +
         '</div>' +
       '</div>' +
 
       // Top connectors
       (topConnectors.length > 0 ? '<div class="section">' +
-        '<div class="section-title">Mest aktive networkere</div>' +
+        '<div class="section-title">' + t('rep_most_active') + '</div>' +
         '<div class="card">' +
           topConnectors.map(function(c, i) {
             return '<div class="connector-card">' +
               '<div class="connector-rank">' + (i + 1) + '</div>' +
               '<div style="flex:1;min-width:0">' +
-                '<div style="font-size:0.85rem;font-weight:700">Deltager #' + (i + 1) + '</div>' +
+                '<div style="font-size:0.85rem;font-weight:700">' + t('rep_attendee_hash') + (i + 1) + '</div>' +
               '</div>' +
               '<div style="text-align:right">' +
                 '<div style="font-size:0.78rem;font-weight:700;color:#1A9E8E">' + c.connections + ' connections</div>' +
-                '<div style="font-size:0.68rem;color:#8C8A97">' + c.messages + ' beskeder</div>' +
+                '<div style="font-size:0.68rem;color:#8C8A97">' + c.messages + ' ' + t('rep_messages_unit') + '</div>' +
               '</div>' +
             '</div>';
           }).join('') +
@@ -1874,7 +1975,7 @@ async function generateEventReport(bubbleId) {
 
       // Interest map
       (topKeywords.length > 0 ? '<div class="section">' +
-        '<div class="section-title">Interesser blandt deltagerne</div>' +
+        '<div class="section-title">' + t('rep_interests') + '</div>' +
         '<div class="card">' +
           barChart(topKeywords.map(function(kw) { return { label: kw[0], value: kw[1] }; })) +
         '</div>' +
@@ -1882,7 +1983,7 @@ async function generateEventReport(bubbleId) {
 
       // Join timeline
       (timelineData.length > 0 ? '<div class="section">' +
-        '<div class="section-title">Deltagertilgang over tid</div>' +
+        '<div class="section-title">' + t('rep_growth') + '</div>' +
         '<div class="card">' +
           barChart(timelineData) +
         '</div>' +
@@ -1890,26 +1991,26 @@ async function generateEventReport(bubbleId) {
 
       // Full member table
       '<div class="section">' +
-        '<div class="section-title">Alle deltagere (' + totalMembers + ')</div>' +
+        '<div class="section-title">' + t('rep_all_attendees', { n: totalMembers }) + '</div>' +
         '<div class="card" style="overflow-x:auto;padding:0.5rem">' +
           '<table><thead><tr>' +
-            '<th>Navn</th><th>Titel</th><th>Virksomhed</th>' +
+            '<th>' + t('rep_th_name') + '</th><th>' + t('rep_th_title') + '</th><th>' + t('rep_th_company') + '</th>' +
           '</tr></thead><tbody>' + memberRows + '</tbody></table>' +
         '</div>' +
       '</div>' +
 
       // Footer
       '<div class="footer">' +
-        '<div>Genereret ' + new Date().toLocaleDateString(_locale(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + '</div>' +
-        '<div style="margin-top:0.3rem">Powered by <a href="https://bubbleme.dk" target="_blank">Bubble</a> — Hyperlokal networking</div>' +
-        '<button class="no-print" onclick="window.print()" style="margin-top:1rem;padding:0.6rem 1.5rem;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;border:none;border-radius:10px;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Print / Gem som PDF</button>' +
+        '<div>' + t('rep_generated') + ' ' + new Date().toLocaleDateString(_locale(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + '</div>' +
+        '<div style="margin-top:0.3rem">Powered by <a href="https://bubbleme.dk" target="_blank">Bubble</a> — ' + t('rep_tagline') + '</div>' +
+        '<button class="no-print" onclick="window.print()" style="margin-top:1rem;padding:0.6rem 1.5rem;background:linear-gradient(135deg,rgb(100,180,230),#6366F1);color:white;border:none;border-radius:10px;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Print / Gem som PDF</button>' +
       '</div>' +
 
       '</div></body></html>';
 
     // ── 7. Show in-app report tray ──
     var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(30,27,46,0.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:0;transition:opacity 0.3s';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(30,27,46,0.3);opacity:0;transition:opacity 0.3s';
     overlay.onclick = function() { closeReportTray(); };
 
     var tray = document.createElement('div');
@@ -1922,16 +2023,16 @@ async function generateEventReport(bubbleId) {
       // Close + export bar
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">' +
         '<button onclick="closeReportTray()" style="border:none;background:none;font-size:1.2rem;cursor:pointer;padding:0.3rem;color:var(--text)">←</button>' +
-        '<div style="font-size:0.82rem;font-weight:800;color:var(--text)">Event-rapport</div>' +
+        '<div style="font-size:0.82rem;font-weight:800;color:var(--text)">' + t('rep_title_bar') + '</div>' +
         '<div style="display:flex;gap:0.3rem">' +
-          '<button onclick="exportReportPdf(\'' + bubbleId + '\')" style="font-size:0.65rem;padding:0.3rem 0.5rem;background:rgba(124,92,252,0.08);color:var(--accent);border:1px solid rgba(124,92,252,0.15);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">PDF</button>' +
+          '<button onclick="exportReportPdf(\'' + bubbleId + '\')" style="font-size:0.65rem;padding:0.3rem 0.5rem;background:rgba(100,180,230,0.15);color:rgb(100,180,230);border:0.5px solid rgba(100,180,230,0.25);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">PDF</button>' +
           '<button onclick="exportReportEmail(\'' + bubbleId + '\')" style="font-size:0.65rem;padding:0.3rem 0.5rem;background:rgba(46,207,207,0.08);color:#085041;border:1px solid rgba(46,207,207,0.15);border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Email</button>' +
         '</div>' +
       '</div>' +
 
       // Header card
       '<div style="background:var(--gradient-primary);color:white;padding:1.25rem 1rem;border-radius:16px;margin-bottom:1rem">' +
-        '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;opacity:0.75">Event Rapport</div>' +
+        '<div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;opacity:0.75">' + t('rep_title') + '</div>' +
         '<div style="font-size:1.2rem;font-weight:900;letter-spacing:-0.02em;margin-top:0.2rem">' + escHtml(b.name) + '</div>' +
         '<div style="font-size:0.75rem;opacity:0.85;margin-top:0.15rem">' + eventDate + (b.location ? ' · ' + escHtml(b.location) : '') + '</div>' +
       '</div>' +
@@ -1945,22 +2046,22 @@ async function generateEventReport(bubbleId) {
         '<div style="font-size:0.68rem;font-weight:600;color:var(--text-secondary);margin-top:0.1rem">' + label + '</div></div>';
     }
 
-    trayHtml += miniStat('Deltagere', totalMembers, '#7C5CFC');
+    trayHtml += miniStat(t('rep_attendees'), totalMembers, 'rgb(100,180,230)');
     trayHtml += miniStat('Check-ins', totalCheckedIn, '#2ECFCF');
     trayHtml += miniStat('Connections', connectionCount, '#1A9E8E');
-    trayHtml += miniStat('Beskeder', totalMessages, '#E879A8');
-    if (avgStay > 0) trayHtml += miniStat('Gns. opholdstid', avgStayLabel, '#F59E0B');
-    trayHtml += miniStat('Connection rate', connectionRate + '%', '#7C5CFC');
+    trayHtml += miniStat(t('rep_messages'), totalMessages, '#E879A8');
+    if (avgStay > 0) trayHtml += miniStat(t('rep_avgstay'), avgStayLabel, '#F59E0B');
+    trayHtml += miniStat('Connection rate', connectionRate + '%', 'rgb(100,180,230)');
     trayHtml += '</div>';
 
     // Top connectors
     if (topConnectors.length > 0) {
       trayHtml += '<div style="margin-bottom:1rem">' +
-        '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent);margin-bottom:0.4rem">Top networkere</div>';
+        '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgb(100,180,230);margin-bottom:0.4rem">' + t('rep_top_networkers') + '</div>';
       topConnectors.forEach(function(c, i) {
         trayHtml += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid var(--glass-border-subtle)">' +
           '<div style="width:22px;height:22px;border-radius:50%;background:var(--gradient-primary);color:white;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:800;flex-shrink:0">' + (i + 1) + '</div>' +
-          '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:700">Deltager #' + (i + 1) + '</div></div>' +
+          '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:700">' + t('rep_attendee_hash') + (i + 1) + '</div></div>' +
           '<div style="font-size:0.68rem;font-weight:700;color:#1A9E8E">' + c.connections + ' conn.</div>' +
         '</div>';
       });
@@ -1970,7 +2071,7 @@ async function generateEventReport(bubbleId) {
     // Top interests
     if (topKeywords.length > 0) {
       trayHtml += '<div style="margin-bottom:1rem">' +
-        '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent);margin-bottom:0.4rem">Interesser</div>' +
+        '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgb(100,180,230);margin-bottom:0.4rem">' + t('rep_interests_short') + '</div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:0.25rem">';
       topKeywords.forEach(function(kw) {
         trayHtml += '<span class="tag">' + escHtml(kw[0]) + ' <span style="color:var(--muted);font-size:0.6rem">' + kw[1] + '</span></span>';
@@ -1980,7 +2081,7 @@ async function generateEventReport(bubbleId) {
 
     // Participant list
     trayHtml += '<div style="margin-bottom:1rem">' +
-      '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent);margin-bottom:0.4rem">Alle deltagere (' + totalMembers + ')</div>';
+      '<div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgb(100,180,230);margin-bottom:0.4rem">' + t('rep_all_attendees', { n: totalMembers }) + '</div>';
 
     members.forEach(function(m) {
       var p = profileMap[m.user_id] || {};
@@ -1997,7 +2098,7 @@ async function generateEventReport(bubbleId) {
 
     // Footer
     trayHtml += '<div style="text-align:center;padding:1rem 0;font-size:0.68rem;color:var(--muted);border-top:1px solid var(--glass-border-subtle)">' +
-      'Genereret ' + new Date().toLocaleDateString(_locale(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) +
+      t('rep_generated') + ' ' + new Date().toLocaleDateString(_locale(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) +
       '<br>Powered by Bubble · bubbleme.dk</div>';
 
     trayHtml += '</div>';
@@ -2045,10 +2146,10 @@ async function exportReportEmail(bubbleId) {
     if (!b || !stats) { showWarningToast(t('err_no_report')); return; }
 
     // Ask for email
-    var email = prompt('Indtast email-adresse til rapporten:');
-    if (!email || !email.includes('@')) { showWarningToast('Ugyldig email'); return; }
+    var email = prompt(t('bb_enter_email'));
+    if (!email || !email.includes('@')) { showWarningToast(t('bb_invalid_email')); return; }
 
-    showToast('Sender rapport...');
+    showToast(t('bb_sending_report'));
 
     // Use EmailJS if available, otherwise fallback to mailto
     if (_emailjsLoaded && window.emailjs) {
@@ -2062,13 +2163,13 @@ async function exportReportEmail(bubbleId) {
           'Connection rate: ' + stats.connectionRate + '%\n\n' +
           'Fuld rapport er vedhæftet som PDF — download den fra appen via Event → Info → Event-rapport → PDF.'
       });
-      showSuccessToast('Rapport sendt til ' + email);
+      showSuccessToast(t('bb_report_sent', {email: email}));
     } else {
       // Fallback: open mailto
       var subject = encodeURIComponent('Event-rapport: ' + b.name);
       var body = encodeURIComponent('Event: ' + b.name + '\nDeltagere: ' + stats.totalMembers + '\nCheck-ins: ' + stats.totalCheckedIn + '\nConnection rate: ' + stats.connectionRate + '%');
       window.location.href = 'mailto:' + email + '?subject=' + subject + '&body=' + body;
-      showToast('Mail-app åbnet');
+      showToast(t('bb_mail_opened'));
     }
   } catch(e) { logError('exportReportEmail', e); errorToast('send', e); }
 }
@@ -2086,27 +2187,29 @@ async function openInviteModal(bubbleId) {
   var list = document.getElementById('invite-list');
   if (!list) return;
   bbOpen('invite');
-  list.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">Henter gemte kontakter...</div>';
+  list.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">' + t('bb_loading_saved') + '</div>';
   var btn = document.getElementById('invite-send-btn');
-  if (btn) btn.textContent = 'Send invitationer';
+  if (btn) btn.textContent = t('bb_send_invites');
 
   try {
     var r1 = await sb.from('saved_contacts').select('contact_id').eq('user_id', currentUser.id);
     var contactIds = (r1.data || []).map(function(s) { return s.contact_id; });
     if (contactIds.length === 0) {
-      list.innerHTML = '<div style="text-align:center;padding:2rem;font-size:0.78rem;color:var(--muted)">Du har ingen gemte kontakter endnu.<br>Gem profiler fra radaren f\u00f8rst.</div>';
+      list.innerHTML = '<div style="text-align:center;padding:2rem;font-size:0.78rem;color:var(--muted)">' + t('bb_no_saved') + '</div>';
       return;
     }
     var r2 = await sb.from('profiles').select('id,name,title,keywords,avatar_url').in('id', contactIds);
     var profiles = r2.data || [];
     var r3 = await sb.from('bubble_members').select('user_id').eq('bubble_id', bubbleId);
     var memberIds = (r3.data || []).map(function(m) { return m.user_id; });
-    var r4 = await sb.from('bubble_invitations').select('to_user_id').eq('bubble_id', bubbleId).eq('status', 'pending');
+    var r4 = await sb.from('bubble_invitations').select('id,to_user_id').eq('bubble_id', bubbleId).eq('status', 'pending');
     var pendingIds = (r4.data || []).map(function(inv) { return inv.to_user_id; });
+    var pendingInviteMap = {};
+    (r4.data || []).forEach(function(inv) { pendingInviteMap[inv.to_user_id] = inv.id; });
 
     var available = profiles.filter(function(p) { return memberIds.indexOf(p.id) < 0; });
     if (available.length === 0) {
-      list.innerHTML = '<div style="text-align:center;padding:2rem;font-size:0.78rem;color:var(--muted)">Alle dine gemte kontakter er allerede i denne boble.</div>';
+      list.innerHTML = '<div style="text-align:center;padding:2rem;font-size:0.78rem;color:var(--muted)">' + t('bb_all_saved_in') + '</div>';
       return;
     }
     // Sort by star rating
@@ -2119,15 +2222,18 @@ async function openInviteModal(bubbleId) {
       var stars = starGet(p.id);
       var starHtml = stars > 0 ? ' <span style="font-size:0.55rem;color:var(--accent)">' + '\u2605'.repeat(stars) + '</span>' : '';
       var avHtml = p.avatar_url ?
-        '<div class="invite-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>' :
+        '<div class="invite-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img"></div>' :
         '<div class="invite-avatar" style="background:' + col + '">' + escHtml(ini) + '</div>';
-      return '<label class="invite-row' + (isPending ? ' pending' : '') + '" data-uid="' + p.id + '">' +
+      return '<label class="invite-row' + (isPending ? ' pending-active' : '') + '" data-uid="' + p.id + '">' +
         avHtml +
         '<div style="flex:1;min-width:0">' +
           '<div class="fw-600 fs-085">' + escHtml(p.name || '?') + starHtml + '</div>' +
-          '<div class="fs-072 text-muted">' + escHtml(p.title || '') + '</div>' +
+          (isPending ?
+            '<div class="fs-072" style="color:#C9A227;display:flex;align-items:center;gap:0.3rem"><span style="width:6px;height:6px;border-radius:50%;background:#C9A227;display:inline-block"></span>' + t('invite_pending_label') + '</div>' :
+            '<div class="fs-072 text-muted">' + escHtml(p.title || '') + '</div>') +
         '</div>' +
-        (isPending ? '<span class="fs-065 text-muted">Afventer</span>' :
+        (isPending ?
+          '<button type="button" class="invite-withdraw-btn" onclick="withdrawInvite(\'' + pendingInviteMap[p.id] + '\')">' + t('invite_withdraw') + '</button>' :
           '<input type="checkbox" class="invite-check" data-uid="' + p.id + '" onchange="toggleInvite(this)">') +
       '</label>';
     }).join('');
@@ -2147,12 +2253,26 @@ function toggleInvite(cb) {
   var btn = document.getElementById('invite-send-btn');
   var n = inviteSelected.length;
   if (btn) {
-    btn.textContent = n > 0 ? 'Send (' + n + ')' : 'Send invitationer';
+    btn.textContent = n > 0 ? t('bb_send_n', {n: n}) : t('bb_send_invites');
     btn.disabled = n === 0;
   }
   // Update subtitle
   var sub = document.getElementById('invite-subtitle');
   if (sub) sub.textContent = n > 0 ? t('bb_n_selected', { n: n }) : t('bb_select_from_contacts');
+}
+
+// ADR-009: Træk en pending invitation tilbage (afsender). Sletter rækken.
+async function withdrawInvite(inviteId) {
+  if (!currentUser || !inviteId) return;
+  try {
+    var { error } = await sb.from('bubble_invitations').delete()
+      .eq('id', inviteId)
+      .eq('from_user_id', currentUser.id);
+    if (error) { errorToast('save', error); return; }
+    showToast(t('toast_invite_withdrawn'));
+    trackEvent('bubble_invite_withdrawn', { invite_id: inviteId });
+    if (inviteBubbleId) openInviteModal(inviteBubbleId);
+  } catch(e) { logError('withdrawInvite', e); errorToast('save', e); }
 }
 
 async function sendBubbleInvites() {
@@ -2179,22 +2299,32 @@ async function sendBubbleInvites() {
       // Notify each recipient via broadcast
       var bubbleName = bcBubbleData?.name || '';
       var senderName = currentProfile?.name || '';
+      var bid = inviteBubbleId;
       newIds.forEach(function(uid) {
-        try {
-          sb.channel('member-notify-' + uid).send({ type: 'broadcast', event: 'invite', payload: { bubbleName: bubbleName, senderName: senderName, bubbleId: inviteBubbleId } });
-        } catch(e2) {}
-        sendPush(uid, 'Invitation', senderName + ' inviterede dig til ' + bubbleName, { type: 'invitation', bubble_id: inviteBubbleId });
+        // Proper subscribe -> send -> unsubscribe so the broadcast channel is cleaned up.
+        // The old fire-and-forget sb.channel(...).send() never removed the channel, so a second
+        // invite in the same session piled up channels and froze the realtime client (app hang).
+        // Fire-and-forget IIFE so it never blocks the send flow. Push stays on the backend
+        // trigger notify_bubble_invite (ADR-006 trin 4).
+        (async function() {
+          try {
+            var ch = sb.channel('member-notify-' + uid);
+            await ch.subscribe();
+            await ch.send({ type: 'broadcast', event: 'invite', payload: { bubbleName: bubbleName, senderName: senderName, bubbleId: bid } });
+            setTimeout(function() { ch.unsubscribe(); }, 2000);
+          } catch(e2) { console.debug('[invite] broadcast error:', e2); }
+        })();
       });
     }
 
     closeInviteModal();
     var skipped = inviteSelected.length - newIds.length;
     if (newIds.length > 0 && skipped > 0) {
-      showToast(newIds.length + ' sendt · ' + skipped + ' allerede inviteret');
+      showToast(t('bb_sent_skipped', {sent: newIds.length, skipped: skipped}));
     } else if (newIds.length > 0) {
-      showSuccessToast(newIds.length + ' invitation' + (newIds.length > 1 ? 'er' : '') + ' sendt ✓');
+      showSuccessToast((newIds.length > 1 ? t('bb_invites_sent_many', {n: newIds.length}) : t('bb_invites_sent_one', {n: newIds.length})));
     } else {
-      showWarningToast('Alle er allerede inviteret');
+      showWarningToast(t('bb_all_invited'));
     }
     if (newIds.length > 0) trackEvent('invite_sent', { bubble_id: inviteBubbleId, count: newIds.length });
   } catch(e) {
@@ -2237,7 +2367,7 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
     // Show avatar photo if available
     var psAv = document.getElementById('ps-avatar');
     if (psAv && data?.avatar_url) {
-      psAv.innerHTML = '<img src="' + escHtml(data.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      psAv.innerHTML = '<img src="' + escHtml(data.avatar_url) + '" class="u-avatar-img">';
     }
   }).catch(function(e) { logError('psLoadProfile', e); });
   // Store userId and fromScreen
@@ -2252,9 +2382,9 @@ function bcOpenPerson(userId, name, title, color, fromScreen) {
     if (isOwnProfile) { saveBtn.style.display = 'none'; }
     else {
       saveBtn.style.display = '';
-      saveBtn.innerHTML = icon('bookmark') + ' Gem';
+      saveBtn.innerHTML = icon('bookmark') + ' ' + t('ps_save');
       sb.from('saved_contacts').select('id').eq('user_id', currentUser.id).eq('contact_id', userId).maybeSingle().then(({data}) => {
-        if (data) saveBtn.innerHTML = icon('bookmarkFill') + ' Gemt';
+        if (data) saveBtn.innerHTML = icon('bookmarkFill') + ' ' + t('pf_saved_state');
       }).catch(function(){});
     }
   }
@@ -2304,7 +2434,7 @@ function openBubbleScannerFromInfo(bubbleId) {
   // Store which bubble we're scanning for
   _scannerBubbleId = bubbleId;
   openLiveCheckin();
-  showToast('Scanner klar — scan en deltagers QR-kode');
+  showToast(t('bb_scanner_ready'));
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2317,13 +2447,13 @@ function confirmRequestJoin(bubbleId) {
   var bName = bcBubbleData?.name || '';
   var tray = document.createElement('div');
   tray.id = 'request-join-tray';
-  tray.style.cssText = 'position:fixed;bottom:0;left:0;right:0;padding:1.2rem 1rem;background:rgba(255,255,255,0.98);border-top:1px solid var(--glass-border-subtle);box-shadow:0 -4px 20px rgba(0,0,0,0.08);z-index:999;text-align:center;backdrop-filter:blur(12px)';
+  tray.style.cssText = 'position:fixed;bottom:0;left:0;right:0;padding:1.2rem 1rem;background:var(--n3-card);border-top:0.5px solid var(--border-1);box-shadow:0 -4px 20px rgba(0,0,0,0.15);z-index:999;text-align:center;color:rgba(255,255,255,0.95)';
   tray.innerHTML =
-    '<div style="font-size:0.9rem;font-weight:700;margin-bottom:0.2rem">Anmod om medlemskab?</div>' +
-    '<div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.8rem">' + escHtml(bName) + ' er privat — din anmodning sendes til ejeren</div>' +
+    '<div style="font-size:0.9rem;font-weight:700;margin-bottom:0.2rem;color:rgba(255,255,255,0.95)">' + t('bb_request_membership_q') + '</div>' +
+    '<div style="font-size:0.75rem;color:rgba(255,255,255,0.55);margin-bottom:0.8rem">' + escHtml(bName) + ' ' + t('bb_is_private_suffix') + '</div>' +
     '<div style="display:flex;gap:0.5rem;justify-content:center">' +
-      '<button onclick="document.getElementById(\'request-join-tray\').remove();requestJoin(\'' + bubbleId + '\')" style="padding:0.65rem 1.5rem;border-radius:12px;background:var(--gradient-primary);border:none;color:white;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font)">Send anmodning</button>' +
-      '<button onclick="document.getElementById(\'request-join-tray\').remove()" style="padding:0.65rem 1.2rem;border-radius:12px;background:none;border:1px solid var(--glass-border);color:var(--muted);font-size:0.85rem;cursor:pointer;font-family:var(--font)">Annuller</button>' +
+      '<button class="btn-primary" onclick="document.getElementById(\'request-join-tray\').remove();requestJoin(\'' + bubbleId + '\')" style="padding:0.65rem 1.5rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:0;width:auto">' + t('bb_send_request') + '</button>' +
+      '<button class="btn-secondary" onclick="document.getElementById(\'request-join-tray\').remove()" style="padding:0.65rem 1.2rem;font-size:0.85rem;cursor:pointer;font-family:var(--font);width:auto">Annuller</button>' +
     '</div>';
   document.body.appendChild(tray);
 }
@@ -2337,7 +2467,7 @@ function confirmPopBubble(bubbleId) {
   var tray = document.createElement('div');
   tray.id = 'pop-bubble-tray';
   tray.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.8rem;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:12px;margin-top:0.5rem;gap:0.5rem';
-  tray.innerHTML = '<div style="flex:1"><div style="font-size:0.78rem;font-weight:700;color:#EF4444">Slet denne boble?</div><div style="font-size:0.65rem;color:var(--text-secondary)">Chat, medlemmer, tilknyttede sub-bobler og events slettes permanent</div></div>' +
+  tray.innerHTML = '<div style="flex:1"><div style="font-size:0.78rem;font-weight:700;color:#EF4444">' + t('bb_delete_bubble_q') + '</div><div style="font-size:0.65rem;color:var(--text-secondary)">' + t('bb_delete_warning') + '</div></div>' +
     '<div style="display:flex;gap:0.3rem">' +
     '<button onclick="popBubble(\'' + bubbleId + '\')" style="font-size:0.72rem;padding:0.35rem 0.7rem;background:#EF4444;color:white;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700">Slet</button>' +
     '<button onclick="document.getElementById(\'pop-bubble-tray\').remove()" style="font-size:0.72rem;padding:0.35rem 0.7rem;background:none;color:var(--muted);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit">Annuller</button>' +
@@ -2347,7 +2477,7 @@ function confirmPopBubble(bubbleId) {
 
 async function popBubble(bubbleId) {
   try {
-    showToast('Sletter boble...');
+    showToast(t('bb_deleting'));
     // S4: Check for child bubbles and cascade-delete
     var { data: children } = await sb.from('bubbles').select('id').eq('parent_bubble_id', bubbleId);
     if (children && children.length > 0) {

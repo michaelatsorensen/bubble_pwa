@@ -22,11 +22,11 @@ function getAppMode() {
 // ── Match label system (v3 — tier-based thresholds) ──
 // Score 0-100 from tier-based calcMatchScore
 function matchLabel(score) {
-  if (score >= 60) return { text: 'Stærkt match',       color: 'var(--green)',  bg: 'rgba(26,158,142,0.08)' };
-  if (score >= 40) return { text: 'Godt match',          color: 'var(--accent)', bg: 'rgba(124,92,252,0.08)' };
-  if (score >= 20) return { text: 'Fælles interesser',   color: '#3B82F6',       bg: 'rgba(59,130,246,0.08)' };
-  if (score >= 1)  return { text: 'I dit netværk',       color: 'var(--muted)',  bg: 'rgba(30,27,46,0.04)' };
-  return              { text: '',                        color: 'var(--muted)',  bg: 'transparent' };
+  if (score >= 60) return { tier:'strong',  text: t('ml_strong'),  color: 'var(--green)',  bg: 'rgba(26,158,142,0.08)' };
+  if (score >= 40) return { tier:'good',     text: t('ml_good'),    color: 'var(--accent)', bg: 'rgba(100,180,230,0.08)' };
+  if (score >= 20) return { tier:'shared',   text: t('ml_shared'),  color: '#3B82F6',       bg: 'rgba(59,130,246,0.08)' };
+  if (score >= 1)  return { tier:'network',  text: t('ml_network'), color: 'rgba(255,255,255,0.6)',  bg: 'rgba(255,255,255,0.08)' };
+  return              { tier:'none', text: '',              color: 'var(--muted)',  bg: 'transparent' };
 }
 
 function matchBadgeHtml(score) {
@@ -57,7 +57,7 @@ function initInputConfirmButtons() {
     'cb-name','cb-desc','cb-location',
     'eb-name','eb-desc','eb-location',
     'login-email','login-password',
-    'signup-name','signup-email','signup-password','signup-title'
+    'signup-name','signup-email','signup-email-confirm','signup-password','signup-password-confirm','signup-title'
   ];
   ids.forEach(function(id) {
     var input = document.getElementById(id);
@@ -311,8 +311,46 @@ function showWarningToast(message) {
   _renderToast(message, 'warn');
 }
 
+// Resiliens: haard laengde-graense paa bruger-input for DB-skrivning.
+// Returnerer true hvis for langt (og viser advarsel), saa kalder kan afbryde.
+var FIELD_LIMITS = { name: 120, title: 120, workplace: 120, bio: 1000, description: 1500, agenda: 5000, message: 2000, tag: 40, url: 300 };
+function tooLong(value, field) {
+  var max = FIELD_LIMITS[field] || 1000;
+  if (value && value.length > max) {
+    showWarningToast(t('val_too_long', { max: max }));
+    return true;
+  }
+  return false;
+}
+
 function showErrorToast(message) {
   _renderToast(message, 'error');
+}
+
+// ── Reusable confirm dialog (dark, matches app sheets) ──
+// showConfirmDialog({ title, message, confirmText, cancelText, danger, onConfirm })
+function showConfirmDialog(opts) {
+  opts = opts || {};
+  var existing = document.getElementById('confirm-dialog-overlay');
+  if (existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.id = 'confirm-dialog-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:650;background:rgba(10,7,24,0.55);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.25s ease';
+  var confirmBg = opts.danger ? 'linear-gradient(135deg,#FF5A6E,#E23D52)' : 'linear-gradient(135deg,#1A9E8E,#17877A)';
+  ov.innerHTML =
+    '<div style="background:rgba(20,22,28,0.98);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:1.6rem 1.3rem 1.3rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.5)">' +
+      (opts.title ? '<div style="font-size:1.1rem;font-weight:800;color:rgba(255,255,255,0.97);margin-bottom:0.4rem">' + escHtml(opts.title) + '</div>' : '') +
+      (opts.message ? '<div style="font-size:0.85rem;color:rgba(255,255,255,0.6);line-height:1.5;margin-bottom:1.3rem">' + escHtml(opts.message) + '</div>' : '<div style="height:0.5rem"></div>') +
+      '<button id="cfd-confirm" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:' + confirmBg + ';color:#fff;font-size:0.9rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + escHtml(opts.confirmText || 'Bekræft') + '</button>' +
+      '<button id="cfd-cancel" style="width:100%;padding:0.7rem;border-radius:12px;border:0.5px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);font-size:0.82rem;font-weight:600;font-family:inherit;cursor:pointer">' + escHtml(opts.cancelText || 'Annullér') + '</button>' +
+    '</div>';
+  document.body.appendChild(ov);
+  function close() { ov.remove(); }
+  var cb = document.getElementById('cfd-confirm');
+  var xb = document.getElementById('cfd-cancel');
+  if (cb) cb.onclick = function() { close(); if (typeof opts.onConfirm === 'function') opts.onConfirm(); };
+  if (xb) xb.onclick = close;
+  ov.addEventListener('click', function(e) { if (e.target === ov) close(); });
 }
 
 // ── Push notification helper — fire-and-forget ──
@@ -367,6 +405,17 @@ function errorToast(context, error) {
 // ══════════════════════════════════════════════════════════
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
+// Resolve a scanned QR token to { user_id, expired } via SECURITY DEFINER RPC.
+// Returns null if the token does not exist. Replaces direct qr_tokens SELECT —
+// other users' token rows are no longer client-readable (resolve_qr_token RPC).
+async function resolveQrToken(token) {
+  if (!token) return null;
+  var { data, error } = await sb.rpc('resolve_qr_token', { p_token: token });
+  if (error) { logError('resolveQrToken', error); return null; }
+  if (Array.isArray(data)) return data.length ? data[0] : null;
+  return data || null;
+}
+
 function linkify(text) {
   if (!text) return text;
   return text.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">$1</a>');
@@ -394,9 +443,9 @@ function bubbleEmoji(type) {
 
 function bubbleColor(type, alpha) {
   var typ = (type || '').toLowerCase();
-  // Event = cyan (#2ECFCF), Network = purple (#7C5CFC)
+  // Event = cyan (#2ECFCF), Network = ice-blue (v3.0)
   if (typ === 'event' || typ === 'live') return `rgba(46,207,207,${alpha})`;
-  return `rgba(124,92,252,${alpha})`; // network + all legacy types
+  return `rgba(100,180,230,${alpha})`; // network + all legacy types
 }
 
 function typeLabel(type) {
@@ -409,9 +458,9 @@ function typeLabel(type) {
 }
 
 function visIcon(v) {
-  if (v === 'hidden') return '<span style="font-size:0.55rem;padding:1px 5px;border-radius:4px;background:rgba(239,68,68,0.08);color:#A32D2D;margin-right:3px">Skjult</span>';
-  if (v === 'private') return '<span style="font-size:0.55rem;padding:1px 5px;border-radius:4px;background:rgba(99,102,241,0.08);color:#534AB7;margin-right:3px">Privat</span>';
-  return '<span style="font-size:0.55rem;padding:1px 5px;border-radius:4px;background:rgba(26,158,142,0.08);color:#085041;margin-right:3px">\u00C5ben</span>';
+  if (v === 'hidden') return '<span class="bb-pill bb-pill-hidden" style="margin-right:4px">Skjult</span>';
+  if (v === 'private') return '<span class="bb-pill bb-pill-private" style="margin-right:4px">Privat</span>';
+  return '<span class="bb-pill bb-pill-open" style="margin-right:4px">Åben</span>';
 }
 
 // Clock removed — iPhone shows native status bar
@@ -429,6 +478,57 @@ async function getSavedContactIds(forceRefresh) {
   return _savedContactIds;
 }
 function clearSavedContactIdsCache() { _savedContactIds = null; }
+
+// ── Shared: saved BUBBLE IDs (cached per session) — mirrors saved-contact cache ──
+var _savedBubbleIds = null;
+var _savedBubbleIdsTs = 0;
+async function getSavedBubbleIds(forceRefresh) {
+  if (!forceRefresh && _savedBubbleIds && (Date.now() - _savedBubbleIdsTs < 30000)) return _savedBubbleIds;
+  if (!currentUser) { _savedBubbleIds = []; return _savedBubbleIds; }
+  var { data } = await sb.from('saved_bubbles').select('bubble_id').eq('user_id', currentUser.id);
+  _savedBubbleIds = (data || []).map(function(s) { return s.bubble_id; });
+  _savedBubbleIdsTs = Date.now();
+  return _savedBubbleIds;
+}
+function clearSavedBubbleIdsCache() { _savedBubbleIds = null; }
+function isBubbleSaved(id) { return !!(_savedBubbleIds && _savedBubbleIds.indexOf(id) >= 0); }
+
+// Bookmark SVG — outline (not saved) / teal fill (saved). Tuned for dark surfaces.
+function bookmarkIcon(saved) {
+  return saved
+    ? '<svg width="18" height="20" viewBox="0 0 24 24" fill="#1A9E8E" stroke="#1A9E8E" stroke-width="1.6"><path d="M6 3h12a1 1 0 011 1v17l-7-4-7 4V4a1 1 0 011-1z"/></svg>'
+    : '<svg width="18" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.6"><path d="M6 3h12a1 1 0 011 1v17l-7-4-7 4V4a1 1 0 011-1z"/></svg>';
+}
+// Update every bookmark element for a bubble id — Discover card + topbar share one state
+function _updateBookmarkEls(id, saved) {
+  document.querySelectorAll('[data-bookmark-id="' + id + '"]').forEach(function(el) {
+    el.innerHTML = bookmarkIcon(saved);
+    el.setAttribute('title', saved ? t('saved_remove') : t('saved_add'));
+  });
+}
+// Toggle save state — optimistic UI, shared across Discover card + bubble topbar
+async function toggleSaveBubble(id, el) {
+  if (!currentUser || !id) return;
+  var nowSaved = !isBubbleSaved(id);
+  if (!_savedBubbleIds) _savedBubbleIds = [];
+  if (nowSaved) { if (_savedBubbleIds.indexOf(id) < 0) _savedBubbleIds.push(id); }
+  else { _savedBubbleIds = _savedBubbleIds.filter(function(x) { return x !== id; }); }
+  _updateBookmarkEls(id, nowSaved);
+  var res = nowSaved ? await dbActions.saveBubble(id) : await dbActions.removeSavedBubble(id);
+  if (!res || !res.ok) {
+    // revert on failure
+    if (nowSaved) { _savedBubbleIds = _savedBubbleIds.filter(function(x) { return x !== id; }); }
+    else { if (_savedBubbleIds.indexOf(id) < 0) _savedBubbleIds.push(id); }
+    _updateBookmarkEls(id, !nowSaved);
+    return;
+  }
+  _renderToast(nowSaved ? t('saved_bubble_added') : t('saved_bubble_removed'), 'success');
+  // Keep the profile saved-bubbles list fresh if it is currently rendered
+  if (typeof loadSavedBubbles === 'function') {
+    var sbl = document.getElementById('saved-bubbles-list');
+    if (sbl && sbl.style.display !== 'none' && _activeScreen === 'screen-profile') loadSavedBubbles();
+  }
+}
 
 // ── Shared: enrich bubbles with saved contact avatars ──
 // Takes array of bubble IDs + saved contact IDs → returns { bubbleId: [{name, avatar_url}] }
@@ -485,7 +585,7 @@ async function fetchMemberAvatarsForBubbles(bubbleIds, max) {
 // Render compact avatar stack: up to 4 faces + "+N"
 function renderAvatarStack(members, totalCount) {
   if (!members || members.length === 0) return '';
-  var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)'];
+  var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,rgb(100,180,230))','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)'];
   var avs = members.slice(0, 4).map(function(p, i) {
     var ml = i > 0 ? 'margin-left:-6px;' : '';
     var z = 'z-index:' + (5-i) + ';position:relative;';
@@ -601,7 +701,7 @@ function timeAgo(dateStr) {
 //  effect as they exit the top. Large wrapper divs are
 //  skipped — their children are processed instead.
 //
-//  v3.1 (v8.17.22): cache collectItems result so DOM walk
+//  v3.1 (next-v8.21): cache collectItems result so DOM walk
 //  doesn't run on every scroll-tick. Cache invalidates on:
 //  - DOM mutation under scrollEl (MutationObserver)
 //  - element-not-in-DOM detected at process-time (lazy purge)
@@ -614,16 +714,44 @@ function timeAgo(dateStr) {
   var _rafPending = false;
 
   function collectItems(scrollEl) {
-    // Collect "leaf" content items — skip pure wrapper divs
-    var containerH = scrollEl.clientHeight;
+    // Collect "leaf" content items — skip pure wrapper divs.
+    // Strategy: known leaf classes are pushed directly. Wrappers
+    // (panels, list containers) are recursed into to find leaves.
     var items = [];
+    function isLeaf(el) {
+      if (!el.classList) return false;
+      return el.classList.contains('bb-card-list') ||
+             el.classList.contains('bb-accordion') ||
+             el.classList.contains('bb-tree-root') ||
+             el.classList.contains('saved-card-v2') ||
+             el.classList.contains('card');
+    }
+    function isWrapperId(el) {
+      // Known wrapper IDs that should always be recursed into
+      var id = el.id || '';
+      return id.indexOf('bb-panel-') === 0 ||
+             id === 'bb-net-list' ||
+             id === 'bb-evt-list' ||
+             id === 'bb-pending-invites' ||
+             id === 'discover-net-list' ||
+             id === 'discover-evt-list' ||
+             id === 'notifications-list';
+    }
     function walk(parent) {
       var kids = parent.children;
       for (var i = 0; i < kids.length; i++) {
         var el = kids[i];
         if (el.offsetHeight < 10) continue;
-        // If element is taller than 60% of viewport, it's a wrapper — go deeper
-        if (el.offsetHeight > containerH * 0.6 && el.children.length > 1) {
+        if (isLeaf(el)) {
+          items.push(el);
+          continue;
+        }
+        if (isWrapperId(el) && el.children.length > 0) {
+          walk(el);
+          continue;
+        }
+        // Fallback: tall element with multiple children = wrapper
+        if (el.offsetHeight > 200 && el.children.length > 1) {
           walk(el);
         } else {
           items.push(el);
@@ -746,14 +874,6 @@ function timeAgo(dateStr) {
 // ══════════════════════════════════════════════════════════
 
 // ── Avatar helper: returns HTML for avatar circle ──
-function renderAvatar(name, color, avatarUrl, size) {
-  var sz = size || 36;
-  var ini = (name || '?').split(' ').map(function(w) { return w[0] || ''; }).join('').slice(0, 2).toUpperCase();
-  if (avatarUrl) {
-    return '<div style="width:' + sz + 'px;height:' + sz + 'px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="' + escHtml(avatarUrl) + '" style="width:100%;height:100%;object-fit:cover"></div>';
-  }
-  return '<div style="width:' + sz + 'px;height:' + sz + 'px;border-radius:50%;background:' + (color || 'var(--accent)') + ';display:flex;align-items:center;justify-content:center;color:white;font-size:' + (sz < 30 ? '0.5' : '0.65') + 'rem;font-weight:700;flex-shrink:0">' + escHtml(ini) + '</div>';
-}
 
 // ══════════════════════════════════════════════════════════
 //  DB ACTIONS — centralized write layer for Supabase
@@ -775,6 +895,13 @@ var dbActions = {
       });
       if (error) { errorToast('save', error); return { ok: false, error: error }; }
       trackEvent('contact_saved', { contact_id: contactId });
+      // Refresh the Home saved-count widget live if the user is on Home — every
+      // save path (QR scan, connect-scanner, deeplink, radar sheet) routes through
+      // here, so centralizing the refresh avoids a stale count after any of them.
+      try {
+        clearSavedContactIdsCache();
+        if (_activeScreen === 'screen-home' && typeof loadHome === 'function') loadHome();
+      } catch(e) {}
       var senderName = currentProfile?.name || 'Nogen';
       // Push disabled for free tier — reactivate for Profile Views premium
       // sendPush(contactId, 'Ny kontakt', senderName + ' har gemt din profil', { type: 'saved_contact', sender_id: currentUser.id });
@@ -792,8 +919,33 @@ var dbActions = {
     } catch (e) { logError('dbActions.removeContact', e); return { ok: false, error: e }; }
   },
 
+  // ── SAVED BUBBLES ──
+  async saveBubble(bubbleId) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    try {
+      var { error } = await sb.from('saved_bubbles').upsert({
+        user_id: currentUser.id,
+        bubble_id: bubbleId
+      }, { onConflict: 'user_id,bubble_id' });
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      trackEvent('bubble_saved', { bubble_id: bubbleId });
+      return { ok: true };
+    } catch (e) { logError('dbActions.saveBubble', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  async removeSavedBubble(bubbleId) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    try {
+      var { error } = await sb.from('saved_bubbles').delete()
+        .eq('user_id', currentUser.id).eq('bubble_id', bubbleId);
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      return { ok: true };
+    } catch (e) { logError('dbActions.removeSavedBubble', e); return { ok: false, error: e }; }
+  },
+
   // ── BUBBLE MEMBERSHIP ──
   // joinBubble — discriminated union contract (v8.17.30, refined per ADR-005)
+  // Ported from PROD v8.17.30 (ADR-005 contract refactor).
   //
   // Success:
   //   { ok: true,  status: 'joined_now',      bubble_id }
@@ -822,18 +974,31 @@ var dbActions = {
     if (!bubbleId)    return { ok: false, status: 'invalid_input', reason: 'missing_bubble_id' };
     source = source || 'discover';
     try {
-      // Defense-in-depth: check visibility before join (bypass for QR/invite)
+      // Visibility-aware routing to match the RLS join gate.
+      var { data: bub } = await sb.from('bubbles').select('visibility,type').eq('id', bubbleId).maybeSingle();
+      var _isEventLike = bub && (bub.type === 'event' || bub.type === 'live');
+      var _vis = bub ? bub.visibility : null;
+      var _openJoin = !bub || _vis === 'public' || _vis == null || _isEventLike;
+
       if (source === 'discover') {
-        var { data: bub } = await sb.from('bubbles').select('visibility,type').eq('id', bubbleId).maybeSingle();
-        if (bub && bub.visibility === 'private' && bub.type !== 'event' && bub.type !== 'live') {
-          logError('dbActions.joinBubble', new Error('Attempted direct join on private bubble'), { bubble_id: bubbleId });
+        // Defense-in-depth: discover never direct-joins a non-open bubble
+        if (bub && _vis === 'private' && !_isEventLike) {
           return { ok: false, status: 'blocked', reason: 'private_bubble', bubble_id: bubbleId };
         }
-        if (bub && bub.visibility === 'hidden') {
-          logError('dbActions.joinBubble', new Error('Attempted direct join on hidden bubble'), { bubble_id: bubbleId });
+        if (bub && _vis === 'hidden' && !_isEventLike) {
           return { ok: false, status: 'blocked', reason: 'hidden_bubble', bubble_id: bubbleId };
         }
+      } else if (!_openJoin) {
+        // Link/QR on a non-open bubble: route to the correct path instead of a raw RLS error.
+        if (_vis === 'private') {
+          var _rq = await dbActions.requestJoin(bubbleId);
+          if (!_rq.ok) return _rq;
+          return { ok: true, status: 'requested', bubble_id: bubbleId };
+        }
+        // hidden non-event → invitation only
+        return { ok: false, status: 'invite_only', bubble_id: bubbleId };
       }
+
       var { error } = await sb.from('bubble_members').insert({
         bubble_id: bubbleId,
         user_id: currentUser.id
@@ -900,10 +1065,7 @@ var dbActions = {
       var { data, error } = await sb.from('messages').insert(payload).select().single();
       if (error) { errorToast('send', error); return { ok: false, error: error }; }
       trackEvent('dm_sent', { receiver_id: receiverId, has_file: !!opts.fileUrl, has_gif: !!opts.gifUrl });
-      // Push notification to receiver
-      var senderName = currentProfile?.name || 'Nogen';
-      var preview = content ? content.slice(0, 60) : (opts.gifUrl ? 'Sendte en GIF' : 'Sendte en fil');
-      sendPush(receiverId, 'Ny besked', senderName + ': ' + preview, { type: 'new_message', sender_id: currentUser.id });
+      // Push håndteres nu af backend-trigger notify_new_message (ADR-006 trin 4)
       return { ok: true, message: data };
     } catch (e) { logError('dbActions.sendDM', e); errorToast('send', e); return { ok: false, error: e }; }
   },
@@ -956,12 +1118,13 @@ var dbActions = {
     try {
       var now = new Date().toISOString();
       // Try UPDATE first (more RLS-friendly — user already has a row)
-      var { error } = await sb.from('bubble_members').update({
+      var { data: updated, error } = await sb.from('bubble_members').update({
         checked_in_at: now,
         checked_out_at: null
-      }).eq('bubble_id', bubbleId).eq('user_id', currentUser.id);
-      if (error) {
-        // Fallback: upsert (handles edge case where row doesn't exist)
+      }).eq('bubble_id', bubbleId).eq('user_id', currentUser.id).select('id');
+      // Fallback: upsert when the update hit no row (no membership yet) OR errored.
+      // Previously this only ran on error, so a 0-row update returned ok:true silently.
+      if (error || !updated || updated.length === 0) {
         var { error: e2 } = await sb.from('bubble_members').upsert({
           bubble_id: bubbleId,
           user_id: currentUser.id,
@@ -970,6 +1133,20 @@ var dbActions = {
         }, { onConflict: 'bubble_id,user_id' });
         if (e2) { errorToast('save', e2); return { ok: false, error: e2 }; }
       }
+      // Broadcast to everyone in the bubble so their view updates live. Fire-and-
+      // forget (subscribe → send → unsubscribe) — Broadcast bypasses RLS, so other
+      // members receive it even though postgres_changes on the row would not reach
+      // them. Wrapped so a broadcast failure never blocks the check-in result.
+      (function(bid) {
+        (async function() {
+          try {
+            var ch = sb.channel('bc-' + bid);
+            await ch.subscribe();
+            await ch.send({ type: 'broadcast', event: 'checkin', payload: { by: currentUser.id, at: now } });
+            setTimeout(function() { try { ch.unsubscribe(); } catch(e) {} }, 2000);
+          } catch(e) { console.debug('[checkin] broadcast error:', e); }
+        })();
+      })(bubbleId);
       return { ok: true };
     } catch(e) { logError('dbActions.checkIn', e); errorToast('save', e); return { ok: false, error: e }; }
   },
@@ -999,6 +1176,18 @@ var dbActions = {
       }).eq('bubble_id', bubbleId).eq('user_id', currentUser.id);
       if (error) { errorToast('save', error); return { ok: false, error: error }; }
       trackEvent('live_checkout', { bubble_id: bubbleId });
+      // Broadcast so other members see the departure live (same rationale as
+      // check-in: postgres_changes on the row may be RLS-blocked for others).
+      (function(bid) {
+        (async function() {
+          try {
+            var ch = sb.channel('bc-' + bid);
+            await ch.subscribe();
+            await ch.send({ type: 'broadcast', event: 'checkin', payload: { by: currentUser.id, out: true } });
+            setTimeout(function() { try { ch.unsubscribe(); } catch(e) {} }, 2000);
+          } catch(e) { console.debug('[checkout] broadcast error:', e); }
+        })();
+      })(bubbleId);
       return { ok: true };
     } catch(e) { logError('dbActions.checkOut', e); errorToast('save', e); return { ok: false, error: e }; }
   },
@@ -1040,7 +1229,12 @@ var dbActions = {
       var { data: bubble, error } = await sb.from('bubbles').insert(data).select().maybeSingle();
       if (error) { errorToast('save', error); return { ok: false, error: error }; }
       // Auto-join as member
-      await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id });
+      var { error: memberErr } = await sb.from('bubble_members').insert({ bubble_id: bubble.id, user_id: currentUser.id });
+      if (memberErr) {
+        // Boble er oprettet, men ejer blev ikke medlem — ærlig delvis-success så caller kan håndtere det
+        logError('dbActions.createBubble.autojoin', memberErr, { bubble_id: bubble.id });
+        return { ok: true, bubble: bubble, warning: 'owner_not_member' };
+      }
       trackEvent('bubble_created', { bubble_id: bubble.id, type: data.type });
       return { ok: true, bubble: bubble };
     } catch(e) { logError('dbActions.createBubble', e); errorToast('save', e); return { ok: false, error: e }; }
@@ -1055,14 +1249,46 @@ var dbActions = {
     } catch(e) { logError('dbActions.updateBubble', e); errorToast('save', e); return { ok: false, error: e }; }
   },
 
-  async transferBubble(bubbleId, newOwnerId) {
+  // ADR-009: ejerskab request-flow. created_by ændres ALDRIG før modtager accepterer (RPC håndhæver).
+  async requestOwnershipTransfer(bubbleId, newOwnerId) {
     if (!currentUser || !bubbleId || !newOwnerId) return { ok: false };
     try {
-      var { data, error } = await sb.from('bubbles').update({ created_by: newOwnerId }).eq('id', bubbleId).select();
+      var { data, error } = await sb.rpc('request_ownership_transfer', { p_bubble_id: bubbleId, p_to_user_id: newOwnerId });
       if (error) { errorToast('save', error); return { ok: false, error: error }; }
-      trackEvent('bubble_ownership_transferred', { bubble_id: bubbleId, new_owner: newOwnerId });
+      if (data && data.ok === false) return { ok: false, reason: data.error };
+      trackEvent('bubble_ownership_requested', { bubble_id: bubbleId, to_user: newOwnerId });
+      return { ok: true };
+    } catch(e) { logError('dbActions.requestOwnershipTransfer', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+  async withdrawOwnershipTransfer(bubbleId) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    try {
+      var { data, error } = await sb.rpc('withdraw_ownership_transfer', { p_bubble_id: bubbleId });
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      if (data && data.ok === false) return { ok: false, reason: data.error };
+      trackEvent('bubble_ownership_withdrawn', { bubble_id: bubbleId });
+      return { ok: true };
+    } catch(e) { logError('dbActions.withdrawOwnershipTransfer', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+  async acceptOwnershipTransfer(bubbleId) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    try {
+      var { data, error } = await sb.rpc('accept_ownership_transfer', { p_bubble_id: bubbleId });
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      if (data && data.ok === false) return { ok: false, reason: data.error };
+      trackEvent('bubble_ownership_accepted', { bubble_id: bubbleId });
       return { ok: true, data: data };
-    } catch(e) { logError('dbActions.transferBubble', e); errorToast('save', e); return { ok: false, error: e }; }
+    } catch(e) { logError('dbActions.acceptOwnershipTransfer', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+  async declineOwnershipTransfer(bubbleId) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    try {
+      var { data, error } = await sb.rpc('decline_ownership_transfer', { p_bubble_id: bubbleId });
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      if (data && data.ok === false) return { ok: false, reason: data.error };
+      trackEvent('bubble_ownership_declined', { bubble_id: bubbleId });
+      return { ok: true };
+    } catch(e) { logError('dbActions.declineOwnershipTransfer', e); errorToast('save', e); return { ok: false, error: e }; }
   },
 
   // ── Bubble message delete ──
@@ -1112,7 +1338,12 @@ var dbActions = {
         }
       }
       // Then mark invitation as accepted
-      await sb.from('bubble_invitations').update({ status: 'accepted' }).eq('id', inviteId);
+      var { error: statusErr } = await sb.from('bubble_invitations').update({ status: 'accepted' }).eq('id', inviteId);
+      if (statusErr) {
+        // Bruger ER joined (sikret ovenfor), men invitationen står stadig pending — ærlig delvis-success
+        logError('dbActions.acceptInvitation.status', statusErr, { invite_id: inviteId });
+        return { ok: true, warning: 'invite_still_pending' };
+      }
       return { ok: true };
     } catch(e) { logError('dbActions.acceptInvitation', e); errorToast('save', e); return { ok: false, error: e }; }
   },
@@ -1120,7 +1351,8 @@ var dbActions = {
   async declineInvitation(inviteId) {
     if (!currentUser || !inviteId) return { ok: false };
     try {
-      await sb.from('bubble_invitations').update({ status: 'declined' }).eq('id', inviteId);
+      var { error } = await sb.from('bubble_invitations').update({ status: 'declined' }).eq('id', inviteId);
+      if (error) { errorToast('save', error); return { ok: false, error: error }; }
       return { ok: true };
     } catch(e) { logError('dbActions.declineInvitation', e); return { ok: false, error: e }; }
   },

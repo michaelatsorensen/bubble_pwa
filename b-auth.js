@@ -13,14 +13,24 @@
 
 // Step 1: Ensure profile row exists (OAuth users may not have one)
 async function ensureProfileExists(session) {
-  var { data: existing } = await sb.from('profiles').select('id').eq('id', session.user.id).maybeSingle();
-  if (!existing) {
-    var meta = session.user.user_metadata || {};
-    await sb.from('profiles').upsert({
-      id: session.user.id,
-      name: meta.full_name || meta.name || session.user.email,
-      title: '', keywords: [], dynamic_keywords: [], bio: '', is_anon: false
-    });
+  try {
+    var { data: existing, error: selErr } = await sb.from('profiles').select('id').eq('id', session.user.id).maybeSingle();
+    // If the lookup itself failed, we cannot safely decide whether to create.
+    // Returning false lets the caller stop rather than proceed on unknown state.
+    if (selErr) { logError('ensureProfileExists:select', selErr); return false; }
+    if (!existing) {
+      var meta = session.user.user_metadata || {};
+      var { error: upErr } = await sb.from('profiles').upsert({
+        id: session.user.id,
+        name: meta.full_name || meta.name || session.user.email,
+        title: '', keywords: [], dynamic_keywords: [], bio: '', is_anon: false
+      });
+      if (upErr) { logError('ensureProfileExists:upsert', upErr); return false; }
+    }
+    return true;
+  } catch (e) {
+    logError('ensureProfileExists', e);
+    return false;
   }
 }
 
@@ -71,7 +81,7 @@ async function resolvePostAuthDestination() {
   }
 
   // Step 2: Deep-link flows → show confirmation modal
-  // v8.17.31: use flowGet (read-only) instead of consumeFlow.
+  // Ported from PROD v8.17.31 (Fix 5): use flowGet (read-only) instead of consumeFlow.
   // flowClearAll() below handles cleanup atomically. Previous code double-consumed
   // which could silently skip modal on race conditions (auth listener firing twice).
   var pendingContact = flowGet('pending_contact');
@@ -86,6 +96,18 @@ async function resolvePostAuthDestination() {
   }
 
   if (pendingJoin && isEventFlow) {
+    // Scan-mode events: show the attendee's own QR for the organizer to scan them in
+    // (reverse check-in) instead of the join modal. Fail-safe: any error falls through
+    // to the standard event modal below, so the common path is never affected.
+    try {
+      var _ebRes = await sb.from('bubbles').select('id, name, type, checkin_mode').eq('id', pendingJoin).maybeSingle();
+      if (_ebRes && _ebRes.data && _ebRes.data.checkin_mode === 'scan') {
+        _eventBubble = _ebRes.data;
+        consumeFlow('event_flow'); // clear event_flow, keep pending_join for the event-ready screen
+        showEventReadyQR();
+        return;
+      }
+    } catch (e) { /* fall through to the standard event modal */ }
     flowClearAll();
     goTo('screen-home');
     setTimeout(function() { showDeepLinkModal('event', pendingJoin); }, 400);
@@ -109,17 +131,44 @@ async function resolvePostAuthDestination() {
     return;
   }
 
-  // Step 4: Default
-  goTo('screen-home');
+  // Step 4: Default — Home.
+  // Boot-sti: hold brand-splash (#screen-loading) synlig mens Home henter ALT
+  // data, og skift foerst til Home naar det er klart. Undgaar at man ser Home
+  // loade i klumper ved app-start/hard-refresh. (Kun her - ikke ved navigation.)
   flowClearAll();
+  try {
+    if (typeof loadHome === 'function') { await loadHome(); _homeJustPreloaded = true; }
+  } catch (e) { logError('resolvePostAuth:preloadHome', e); }
+  goTo('screen-home');
+  // Radaren beregner avatar-positioner ud fra container-stoerrelsen. Under
+  // pre-loaden var Home skjult (offsetWidth=0) saa radaren blev warped. Nu hvor
+  // Home er synlig og har rigtige dimensioner: gen-render radaren korrekt.
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      try { if (typeof renderHomeDartboard === 'function') renderHomeDartboard(); } catch (e) { logError('resolvePostAuth:radarRerender', e); }
+    });
+  });
 }
 
 // Full orchestrator: single entry point after any successful auth
 // Steps 1-2 handled here, steps 3-6 delegated to resolvePostAuthDestination
 async function resolvePostAuth() {
+  // Password recovery in progress: the user MUST set a new password before any
+  // routing into the app. This guard closes ALL call paths (four callers), making
+  // the recovery flow race-independent of Supabase's auto code-exchange timing.
+  if (typeof _inPasswordRecovery !== 'undefined' && _inPasswordRecovery) return;
   // Ensure profile exists (covers guest flows where checkAuth was skipped)
   var { data: { session: _epSession } } = await sb.auth.getSession();
-  if (_epSession) await ensureProfileExists(_epSession);
+  if (_epSession) {
+    var _profileOk = await ensureProfileExists(_epSession);
+    if (!_profileOk) {
+      // Profile row could not be confirmed/created — do NOT proceed into a
+      // profileless session. Surface the error and return to auth for a retry.
+      showErrorToast(t('toast_generic_error'));
+      goTo('screen-auth');
+      return;
+    }
+  }
   await loadEssentials(); // Step 1: banned check inside loadCurrentProfile
   var needsOnboarding = await maybeShowOnboarding();
   if (needsOnboarding) return; // Step 2: onboarding calls resolvePostAuthDestination when done
@@ -134,6 +183,38 @@ async function checkAuth() {
   if (!initSupabase()) return;
   setupAuthListener();
   try {
+    // Password recovery link (reset email): the hash carries type=recovery.
+    // MUST be caught BEFORE the access_token handler below — otherwise the recovery
+    // link is treated as an OAuth login and resolvePostAuth() routes into the app,
+    // racing past (and overriding) the PASSWORD_RECOVERY recovery screen.
+    if (window.location.hash && window.location.hash.indexOf('type=recovery') !== -1) {
+      _inPasswordRecovery = true;
+      showPasswordRecoveryScreen();
+      // Let Supabase process the recovery token (establishes session + fires
+      // PASSWORD_RECOVERY) before stripping it from the URL. Do NOT route into the app.
+      setTimeout(function(){ try { window.history.replaceState({}, document.title, window.location.pathname); } catch(e){} }, 1000);
+      return;
+    }
+
+    // Newer Supabase recovery links use PKCE (?code=) with NO type=recovery in the
+    // hash, so the hash check above misses them -- the ?code= would then be exchanged
+    // as a normal login and route into the app, flashing the recovery modal. We tag
+    // the reset email's redirect with ?_recovery=1 and detect it here, BEFORE the
+    // PKCE exchange, so recovery links always land on the set-password screen.
+    var _recParams = new URLSearchParams(window.location.search);
+    if (_recParams.has('_recovery')) {
+      _inPasswordRecovery = true;
+      showPasswordRecoveryScreen();
+      // supabase-js v2 has detectSessionInUrl:true by default, so the client may
+      // already have auto-exchanged ?code= at init (and stripped it). Only exchange
+      // ourselves if the code is still present; otherwise the session already exists.
+      if (_recParams.has('code')) {
+        try { await sb.auth.exchangeCodeForSession(window.location.href); } catch(e) { logError('recovery_pkce', e); }
+      }
+      try { window.history.replaceState({}, document.title, window.location.pathname); } catch(e) {}
+      return;
+    }
+
     // Handle implicit flow (Google) — access_token in hash
     if (window.location.hash && window.location.hash.includes('access_token')) {
       document.getElementById('loading-msg').textContent = 'Login...';
@@ -143,11 +224,13 @@ async function checkAuth() {
 
     // Handle PKCE flow (LinkedIn, Apple) — code in query string
     var _pkceParams = new URLSearchParams(window.location.search);
+    var _pkceFailed = false;
     if (_pkceParams.has('code')) {
       document.getElementById('loading-msg').textContent = 'Logger ind...';
       try {
         await sb.auth.exchangeCodeForSession(window.location.href);
       } catch(e) {
+        _pkceFailed = true; // P1.2: surface failure to user instead of silent fall-through
         logError('pkce_exchange', e);
       }
       // Clean ?code= and any other OAuth params from URL
@@ -159,7 +242,15 @@ async function checkAuth() {
     var { data: { session } } = await sb.auth.getSession();
     if (session) {
       currentUser = session.user;
-      await ensureProfileExists(session);
+      // If the recovery link fired PASSWORD_RECOVERY while we were resolving the
+      // session, do NOT route into the app — the user must set a new password first.
+      if (_inPasswordRecovery) { return; }
+      var _authProfileOk = await ensureProfileExists(session);
+      if (!_authProfileOk) {
+        showErrorToast(t('toast_generic_error'));
+        goTo('screen-auth');
+        return;
+      }
       await resolvePostAuth();
     } else {
       // No session — redirect to landing (unless user came from landing via ?auth=1 or deep link)
@@ -168,6 +259,11 @@ async function checkAuth() {
         return;
       }
       goTo('screen-auth');
+      // P1.2: if an OAuth code was present but produced no session, the login failed.
+      // Tell the user instead of silently showing the login screen again.
+      if (_pkceFailed) {
+        setTimeout(function() { showErrorToast(t('toast_generic_error')); }, 300);
+      }
     }
   } catch(e) {
     var el = document.getElementById('loading-msg');
@@ -179,13 +275,29 @@ async function checkAuth() {
 function setupAuthListener() {
   sb.auth.onAuthStateChange((event, session) => {
     console.debug('[auth] state change:', event);
-    
+
+    // ── Password recovery: bruger klikkede reset-link i mail ──
+    // Supabase etablerer session + fyrer PASSWORD_RECOVERY. Vi MÅ fange den her,
+    // ellers falder den igennem til normal SIGNED_IN og lukker brugeren ind uden
+    // password-skift (bug: glemt-password-flow ændrer aldrig password).
+    if (event === 'PASSWORD_RECOVERY') {
+      currentUser = session ? session.user : currentUser;
+      _inPasswordRecovery = true;
+      // If boot navigation already won the race and routed into the app,
+      // reclaim the screen -- the user must set a new password first.
+      if (typeof navState !== 'undefined' && navState.screen && navState.screen !== 'screen-auth') {
+        goTo('screen-auth');
+      }
+      showPasswordRecoveryScreen();
+      return;
+    }
+
     if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
       // User signed out (possibly in another tab)
       bcUnsubscribeAll();
       rtUnsubscribeAll();
       resetAppState();
-      // v8.17.20: same guard as checkAuth — only redirect to landing if user
+      // v7.92: same guard as checkAuth — only redirect to landing if user
       // didn't come from there. Reload while logged out can fire SIGNED_OUT
       // or TOKEN_REFRESHED without session at boot, which previously caused
       // the auth-screen-reload-loop landing redirect.
@@ -196,18 +308,22 @@ function setupAuthListener() {
       }
       return;
     }
-    
+
     if (event === 'TOKEN_REFRESHED' && session) {
       // Token refreshed — update user reference
       currentUser = session.user;
       return;
     }
-    
-    // v8.17.31: handle SIGNED_IN explicitly (multi-tab consistency)
+
+    // Ported from PROD v8.17.31 (Fix 4: auth listener handlers).
+    // Handle SIGNED_IN explicitly (multi-tab consistency).
     // If user logs in via another tab, this fires here too — update reference.
     // We do NOT re-run resolvePostAuth() to avoid double-navigation;
     // checkAuth() handles initial routing.
     if (event === 'SIGNED_IN' && session) {
+      // Under password-recovery: SIGNED_IN fyrer også, men vi må IKKE rute ind i appen
+      // — brugeren skal først sætte nyt password. recovery-skærmen er allerede vist.
+      if (_inPasswordRecovery) { currentUser = session.user; return; }
       var wasLoggedIn = !!currentUser;
       currentUser = session.user;
       // If we weren't logged in before but now are (e.g. another tab signed us in),
@@ -217,14 +333,14 @@ function setupAuthListener() {
       }
       return;
     }
-    
-    // v8.17.31: handle USER_UPDATED (profile/email changed in another tab)
+
+    // Handle USER_UPDATED (profile/email changed in another tab)
     if (event === 'USER_UPDATED' && session) {
       currentUser = session.user;
       if (typeof loadCurrentProfile === 'function') loadCurrentProfile();
       return;
     }
-    
+
     // INITIAL_SESSION fires on subscription setup — we don't act on it
     // since checkAuth() already handled initial routing
   });
@@ -330,10 +446,10 @@ function updateAllAvatars() {
   var ini = (currentProfile?.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
   // Home avatar — escape URL to prevent XSS even from own profile data
   var homeAv = document.getElementById('home-avatar');
-  if (homeAv) { if (url) homeAv.innerHTML = '<img src="'+escHtml(url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else homeAv.textContent = ini; }
+  if (homeAv) { if (url) homeAv.innerHTML = '<img src="'+escHtml(url)+'" class="u-avatar-img">'; else homeAv.textContent = ini; }
   // Profile avatar
   var myAv = document.getElementById('my-avatar');
-  if (myAv) { if (url) myAv.innerHTML = '<img src="'+escHtml(url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else myAv.textContent = ini; }
+  if (myAv) { if (url) myAv.innerHTML = '<img src="'+escHtml(url)+'" class="u-avatar-img">'; else myAv.textContent = ini; }
 }
 
 // Full-view avatar overlay
@@ -362,8 +478,8 @@ function updateHomeAvatar() {
   var url = currentProfile.avatar_url;
   var homeAv = document.getElementById('home-avatar');
   var myAv = document.getElementById('my-avatar');
-  if (homeAv) { if (url) homeAv.innerHTML = '<img src="'+escHtml(url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else homeAv.textContent = ini; }
-  if (myAv) { if (url) myAv.innerHTML = '<img src="'+escHtml(url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; else myAv.textContent = ini; }
+  if (homeAv) { if (url) homeAv.innerHTML = '<img src="'+escHtml(url)+'" class="u-avatar-img">'; else homeAv.textContent = ini; }
+  if (myAv) { if (url) myAv.innerHTML = '<img src="'+escHtml(url)+'" class="u-avatar-img">'; else myAv.textContent = ini; }
 }
 
 // ── Auth lock: prevents double-tap on login/signup buttons ──
@@ -385,8 +501,9 @@ async function handleLogin() {
   _authLockSet();
   try {
     const email = document.getElementById('login-email').value.trim();
+    _authLastEmail = email; // preserve across a possible login-failed restore
     const pass = document.getElementById('login-password').value;
-    if (!email || !pass) { _authLockClear(); return showWarningToast('Udfyld email og adgangskode'); }
+    if (!email || !pass) { _authLockClear(); return showWarningToast(t('auth_fill_email_pw')); }
     showToast(t('misc_loading'));
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) {
@@ -395,11 +512,12 @@ async function handleLogin() {
       var errMsg = error.message || '';
       if (errMsg.includes('Invalid login') || errMsg.includes('invalid_credentials')) {
         var formArea = document.getElementById('auth-forms');
+        _snapshotAuthForms();
         if (formArea) {
           formArea.innerHTML =
             '<div style="text-align:center;padding:2rem 1rem">' +
               '<div style="font-size:2rem;margin-bottom:0.8rem">🔒</div>' +
-              '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">' + t('auth_login_failed_title') + '</div>' +
+              '<div class="u-sheet-title">' + t('auth_login_failed_title') + '</div>' +
               '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem">' + t('auth_login_failed_body', { email: escHtml(email) }) + '</div>' +
               '<button class="btn-primary" id="login-linkedin-btn" style="width:100%;margin-bottom:0.6rem">' +
                 '<svg style="width:1rem;height:1rem;vertical-align:middle;margin-right:0.4rem" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14m-.5 15.5v-5.3a3.26 3.26 0 00-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 011.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 001.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 00-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>' +
@@ -409,7 +527,7 @@ async function handleLogin() {
                 '<svg style="width:1rem;height:1rem;vertical-align:middle;margin-right:0.4rem" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>' +
                 t('auth_continue_google') +
               '</button>' +
-              '<button class="btn-secondary" onclick="goTo(\'screen-auth\')" style="width:100%">' + t('misc_back') + '</button>' +
+              '<button class="btn-secondary" onclick="restoreAuthForms()" style="width:100%">' + t('misc_back') + '</button>' +
             '</div>';
           document.getElementById('login-linkedin-btn').onclick = function() { handleLinkedInLogin(); };
           document.getElementById('login-google-btn').onclick = function() { handleGoogleLogin(); };
@@ -430,11 +548,13 @@ async function handleSignup() {
   try {
     const name  = document.getElementById('signup-name').value.trim();
     const email = document.getElementById('signup-email').value.trim();
+    const emailConfirm = document.getElementById('signup-email-confirm').value.trim();
     const pass  = document.getElementById('signup-password').value;
     const passConfirm = document.getElementById('signup-password-confirm').value;
-    if (!name || !email || !pass) { _authLockClear(); return showWarningToast('Udfyld alle felter'); }
+    if (!name || !email || !pass) { _authLockClear(); return showWarningToast(t('auth_fill_all')); }
+    if (email.toLowerCase() !== emailConfirm.toLowerCase()) { _authLockClear(); return showWarningToast(t('auth_email_mismatch')); }
     if (pass.length < 6) { _authLockClear(); return showWarningToast(t('toast_password_min')); }
-    if (pass !== passConfirm) { _authLockClear(); return showWarningToast('Adgangskoderne matcher ikke'); }
+    if (pass !== passConfirm) { _authLockClear(); return showWarningToast(t('recovery_mismatch')); }
     showToast('Opretter konto...');
     const { data, error } = await sb.auth.signUp({
       email,
@@ -451,15 +571,17 @@ async function handleSignup() {
       // Email already exists — likely registered via OAuth (LinkedIn/Google/Apple).
       // Vis vejledende besked i stedet for generisk toast.
       var formArea = document.getElementById('auth-forms');
+      _snapshotAuthForms();
       if (formArea) {
         formArea.innerHTML =
           '<div style="text-align:center;padding:2rem 1rem">' +
-            '<div style="font-size:2rem;margin-bottom:0.8rem">🔗</div>' +
-            '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">' + t('auth_email_exists_title') + '</div>' +
+            '<div style="font-size:2rem;margin-bottom:0.8rem">👤</div>' +
+            '<div class="u-sheet-title">' + t('auth_email_exists_title') + '</div>' +
             '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem">' +
               t('auth_email_exists_body', { email: escHtml(email) }) +
             '</div>' +
-            '<button class="btn-primary" id="existing-linkedin-btn" style="width:100%;margin-bottom:0.6rem">' +
+            '<button class="btn-primary" onclick="restoreAuthForms()" style="width:100%;margin-bottom:0.6rem">' + t('auth_go_to_login') + '</button>' +
+            '<button class="btn-secondary" id="existing-linkedin-btn" style="width:100%;margin-bottom:0.6rem">' +
               '<svg style="width:1rem;height:1rem;vertical-align:middle;margin-right:0.4rem" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14m-.5 15.5v-5.3a3.26 3.26 0 00-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 011.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 001.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 00-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>' +
               t('auth_continue_linkedin') +
             '</button>' +
@@ -467,7 +589,6 @@ async function handleSignup() {
               '<svg style="width:1rem;height:1rem;vertical-align:middle;margin-right:0.4rem" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>' +
               t('auth_continue_google') +
             '</button>' +
-            '<button class="btn-secondary" onclick="goTo(\'screen-auth\')" style="width:100%">' + t('misc_back') + '</button>' +
           '</div>';
         document.getElementById('existing-linkedin-btn').onclick = function() { handleLinkedInLogin(); };
         document.getElementById('existing-google-btn').onclick = function() { handleGoogleLogin(); };
@@ -480,29 +601,30 @@ async function handleSignup() {
     if (data.user && !data.session) {
       // Email confirmation required — show friendly message
       var formArea = document.getElementById('auth-forms');
+      _snapshotAuthForms();
       if (formArea) {
         formArea.innerHTML = '<div style="text-align:center;padding:2rem 1rem">' +
           '<div style="font-size:2rem;margin-bottom:0.8rem">📧</div>' +
-          '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">Tjek din email</div>' +
-          '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem">Vi har sendt en bekræftelsesmail til<br><strong style="color:var(--text)">' + escHtml(email) + '</strong><br><br>Klik på linket i mailen for at aktivere din konto. Tjek også spam-mappen.</div>' +
-          '<button class="btn-primary" id="confirm-retry-btn" style="width:100%;margin-bottom:0.5rem">Jeg har bekræftet — log ind</button>' +
-          '<button class="btn-secondary" onclick="goTo(\'screen-auth\')" style="width:100%">Tilbage til login</button>' +
+          '<div class="u-sheet-title">' + t('auth_check_email_title') + '</div>' +
+          '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem">' + t('auth_check_email_body', { email: escHtml(email) }) + '</div>' +
+          '<button class="btn-primary" id="confirm-retry-btn" style="width:100%;margin-bottom:0.5rem">' + t('auth_confirmed_login') + '</button>' +
+          '<button class="btn-secondary" onclick="restoreAuthForms()" style="width:100%">' + t('auth_back_to_login') + '</button>' +
           '</div>';
         document.getElementById('confirm-retry-btn').onclick = async function() {
-          this.textContent = 'Logger ind...';
+          this.textContent = t('auth_logging_in');
           this.disabled = true;
           try {
             var { data: d2, error: e2 } = await sb.auth.signInWithPassword({ email: email, password: pass });
             if (e2 || !d2.session) {
-              showWarningToast('Email ikke bekræftet endnu — prøv igen');
-              this.textContent = 'Jeg har bekræftet — log ind';
+              showWarningToast(t('auth_not_confirmed_yet'));
+              this.textContent = t('auth_confirmed_login');
               this.disabled = false;
               return;
             }
             currentUser = d2.user;
             await resolvePostAuth();
           } catch(err) {
-            this.textContent = 'Jeg har bekræftet — log ind';
+            this.textContent = t('auth_confirmed_login');
             this.disabled = false;
           }
         };
@@ -525,13 +647,13 @@ async function handleSignup() {
     }
 
     if (!profileCreated) {
-      showToast('Konto oprettet — udfyld profil under Rediger');
+      showToast(t('auth_account_created'));
     }
 
     await resolvePostAuth();
     // Only toast on home — new users go to onboarding where the screen is its own greeting
     if (navState.screen === 'screen-home') {
-      showSuccessToast('Velkommen til Bubble');
+      showSuccessToast(t('ob_welcome'));
     }
   } catch(e) { logError("handleSignup", e); errorToast("signup", e); }
   finally { _authLockClear(); }
@@ -563,17 +685,118 @@ async function handleLogout() {
   } catch(e) { logError("handleLogout", e); errorToast("load", e); }
 }
 
-async function handleForgotPassword() {
-  var email = document.getElementById('login-email').value.trim();
-  if (!email) return showWarningToast(t('toast_enter_email'));
+function handleForgotPassword() {
+  // Open the forgot-password overlay instead of sending immediately.
+  // Pre-fill from the login email field if the user already typed it.
+  var loginEmail = ((document.getElementById('login-email') || {}).value || '').trim();
+  var fe = document.getElementById('forgot-email');
+  if (fe) fe.value = loginEmail;
+  var inp = document.getElementById('fp-input'); if (inp) inp.style.display = 'block';
+  var sent = document.getElementById('fp-sent'); if (sent) sent.style.display = 'none';
+  var ov = document.getElementById('forgot-overlay'); if (ov) ov.classList.add('open');
+  if (fe) setTimeout(function(){ try { fe.focus(); } catch(e){} }, 120);
+}
+
+function closeForgotPassword() {
+  var ov = document.getElementById('forgot-overlay'); if (ov) ov.classList.remove('open');
+}
+
+async function submitForgotPassword() {
+  var fe = document.getElementById('forgot-email');
+  var email = fe ? fe.value.trim() : '';
+  if (!email || email.indexOf('@') === -1) return showWarningToast(t('toast_enter_email'));
+  var btn = document.getElementById('forgot-send-btn');
+  if (btn) btn.disabled = true;
   try {
-    showToast(t('toast_sending_reset'));
-    var { error } = await sb.auth.resetPasswordForEmail(email, {
-      redirectTo: getOAuthRedirectTo()
-    });
-    if (error) return errorToast('login', error);
-    showToast(t('toast_sending_reset'));
-  } catch(e) { logError('handleForgotPassword', e); errorToast('login', e); }
+    // NB: redirectTo must match Supabase's redirect allowlist — the ?_recovery=1
+    // marker (v10.12) broke sending because the modified URL was rejected. The
+    // race-independent recovery fix (resolvePostAuth guard + PASSWORD_RECOVERY
+    // screen reclaim) does not need a marker, so plain redirect is correct.
+    var { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: getOAuthRedirectTo() });
+    if (error) { if (btn) btn.disabled = false; return errorToast('login', error); }
+    // Switch to the sent-confirmation state
+    var se = document.getElementById('fp-sent-email'); if (se) se.textContent = email;
+    var inp = document.getElementById('fp-input'); if (inp) inp.style.display = 'none';
+    var sent = document.getElementById('fp-sent'); if (sent) sent.style.display = 'block';
+    if (btn) btn.disabled = false;
+  } catch(e) { if (btn) btn.disabled = false; logError('submitForgotPassword', e); errorToast('login', e); }
+}
+
+// ── Password recovery (efter reset-link i mail) ──
+var _inPasswordRecovery = false;
+
+function _recoveryContinue() {
+  _inPasswordRecovery = false;
+  if (typeof resolvePostAuth === 'function') { resolvePostAuth(); }
+  else if (typeof checkAuth === 'function') { checkAuth(); }
+}
+
+function showPasswordRecoveryScreen() {
+  try {
+    goTo('screen-auth');
+    // Skjul splash-heading-toggle og vis recovery, skjul login+signup
+    var login = document.getElementById('auth-login');
+    var signup = document.getElementById('auth-signup');
+    var recovery = document.getElementById('auth-recovery');
+    if (login) login.style.display = 'none';
+    if (signup) signup.style.display = 'none';
+    if (recovery) recovery.style.display = 'block';
+    // Skjul QR-context + tertiær-heading hvis synlige
+    var qrc = document.getElementById('auth-qr-context'); if (qrc) qrc.style.display = 'none';
+    var ah = document.getElementById('auth-heading'); if (ah) ah.style.display = 'none';
+    var p1 = document.getElementById('recovery-password'); if (p1) p1.value = '';
+    var p2 = document.getElementById('recovery-password-confirm'); if (p2) p2.value = '';
+    validateRecovery();
+  } catch(e) { logError('showPasswordRecoveryScreen', e); }
+}
+
+function validateRecovery() {
+  var p1 = (document.getElementById('recovery-password') || {}).value || '';
+  var p2 = (document.getElementById('recovery-password-confirm') || {}).value || '';
+  var err = document.getElementById('recovery-error');
+  var btn = document.getElementById('recovery-save-btn');
+  var valid = p1.length >= 6 && p1 === p2;
+  if (err) {
+    if (p2 && p1 !== p2) err.textContent = t('recovery_mismatch') || 'Adgangskoderne er ikke ens';
+    else if (p1 && p1.length < 6) err.textContent = t('recovery_too_short') || 'Mindst 6 tegn';
+    else err.textContent = '';
+  }
+  if (btn) btn.disabled = !valid;
+}
+
+async function handleSetNewPassword() {
+  var p1 = (document.getElementById('recovery-password') || {}).value || '';
+  var p2 = (document.getElementById('recovery-password-confirm') || {}).value || '';
+  if (p1.length < 6 || p1 !== p2) { validateRecovery(); return; }
+  var btn = document.getElementById('recovery-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = t('recovery_saving') || 'Gemmer...'; }
+  try {
+    var { error } = await sb.auth.updateUser({ password: p1 });
+    if (error) {
+      if (btn) { btn.disabled = false; btn.textContent = t('recovery_save') || 'Gem ny adgangskode'; }
+      var err = document.getElementById('recovery-error');
+      if (err) err.textContent = (error.message || t('misc_unknown'));
+      logError('handleSetNewPassword', error);
+      return;
+    }
+    // Success: show a closing confirmation with an explicit continue button instead
+    // of toast+auto-continue -- a password reset is a stress moment and deserves a
+    // moment of closure. The recovery flag stays ACTIVE until the user presses
+    // continue, so nothing can race into the app (leverages the resolvePostAuth guard).
+    var recovery = document.getElementById('auth-recovery');
+    if (recovery) {
+      recovery.innerHTML =
+        '<div style="text-align:center;padding:1.2rem 0.5rem">' +
+          '<div style="width:52px;height:52px;border-radius:50%;background:rgba(26,158,142,0.18);display:flex;align-items:center;justify-content:center;margin:0 auto 0.9rem"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>' +
+          '<div style="font-size:1.05rem;font-weight:800;color:rgba(255,255,255,0.95);margin-bottom:0.4rem">' + t('recovery_done') + '</div>' +
+          '<div style="font-size:0.82rem;color:rgba(255,255,255,0.65);line-height:1.55;margin-bottom:1.3rem">' + t('recovery_done_body') + '</div>' +
+          '<button class="btn-primary" onclick="_recoveryContinue()" style="width:100%">' + t('recovery_continue') + '</button>' +
+        '</div>';
+    }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = t('recovery_save') || 'Gem ny adgangskode'; }
+    logError('handleSetNewPassword', e); errorToast('save', e);
+  }
 }
 
 function switchToSignup() {
@@ -585,13 +808,37 @@ function switchToLogin() {
   document.getElementById('auth-login').style.display = 'block';
 }
 
+// Auth-forms restore: the login-failed / email-exists / confirm-email views overwrite
+// #auth-forms innerHTML. Their "back" buttons called goTo('screen-auth') which no-ops
+// (user is already on screen-auth) -> dead end. Save the pristine form once, restore on back.
+var _authFormsPristine = null;
+var _authLastEmail = null;
+function restoreAuthForms() {
+  var formArea = document.getElementById('auth-forms');
+  if (formArea && _authFormsPristine !== null) {
+    formArea.innerHTML = _authFormsPristine;
+    if (typeof translateStaticUI === 'function') { try { translateStaticUI(); } catch(e) {} }
+    // Restore the email they already typed — the password was wrong, not the email,
+    // so re-typing it is needless friction. Focus password for immediate retry.
+    if (_authLastEmail) {
+      var emEl = document.getElementById('login-email');
+      if (emEl) emEl.value = _authLastEmail;
+      var pwEl = document.getElementById('login-password');
+      if (pwEl) { try { pwEl.focus(); } catch(e) {} }
+    }
+    // Login form buttons use inline onclick (handleLogin etc.) so they survive the
+    // innerHTML restore automatically — no re-wiring needed.
+  }
+}
+function _snapshotAuthForms() {
+  var formArea = document.getElementById('auth-forms');
+  if (formArea && _authFormsPristine === null) _authFormsPristine = formArea.innerHTML;
+}
+
 function showAuthForms(qrContext) {
-  var splash = document.getElementById('auth-splash');
-  var interests = document.getElementById('auth-interests');
-  var forms = document.getElementById('auth-forms');
-  if (splash) { splash.style.transition = 'opacity 0.3s'; splash.style.opacity = '0'; setTimeout(function(){ splash.style.display = 'none'; }, 300); }
-  if (interests) { interests.style.display = 'none'; }
-  if (forms) { forms.style.display = 'block'; forms.style.opacity = '0'; setTimeout(function(){ forms.style.transition = 'opacity 0.3s'; forms.style.opacity = '1'; }, 50); }
+  // Auth screen is now single-pane (splash merged into forms in next/v7.86).
+  // This function only handles the QR-context card + heading toggle.
+  // Existing callers (event-flow, QR-flow) work unchanged.
 
   // QR context: show "X vil gerne connecte" card + contextual heading
   var ctxCard = document.getElementById('auth-qr-context');
@@ -602,20 +849,20 @@ function showAuthForms(qrContext) {
       var avEl = document.getElementById('auth-qr-avatar');
       if (avEl) {
         if (p.avatar_url) {
-          avEl.innerHTML = '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+          avEl.innerHTML = '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">';
         } else {
           avEl.textContent = (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
         }
       }
       var nameEl = document.getElementById('auth-qr-name');
-      if (nameEl) nameEl.textContent = p.name || 'Bubble-bruger';
+      if (nameEl) nameEl.textContent = p.name || t('default_username');
       ctxCard.style.display = 'block';
     }
     if (heading) {
       var titleEl = document.getElementById('auth-heading-title');
       var subEl = document.getElementById('auth-heading-sub');
-      if (titleEl) titleEl.textContent = 'Opret din profil';
-      if (subEl) subEl.textContent = 'Gem ' + (p.name ? p.name.split(' ')[0] : 'kontakten') + ' og opdag netværket';
+      if (titleEl) titleEl.textContent = t('auth_create_profile');
+      if (subEl) subEl.textContent = t('auth_save_discover', {name: (p.name ? p.name.split(' ')[0] : t('auth_the_contact'))});
       heading.style.display = 'block';
     }
   } else {
@@ -631,53 +878,34 @@ var _selectedInterests = (function() {
 
 function showTerms() {
   var { overlay, sheet } = bbDynOpen();
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.08);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
-    '<h2 style="font-size:1.2rem;font-weight:800;margin-bottom:0.8rem">Betingelser & Privatlivspolitik</h2>' +
-    '<div style="font-size:0.78rem;line-height:1.7;color:var(--text-secondary)">' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">1. Hvad er Bubble?</h3>' +
-    '<p>Bubble er en networking-platform i lukket beta udviklet i Sønderborg, Danmark. Appen forbinder mennesker baseret på professionelle interesser og nærhed.</p>' +
-    '<p style="margin-top:4px">Dataansvarlig: Michael Sørensen (projektets ejer og udvikler), Sønderborg. Kontakt: info@bubbleme.dk.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">2. Beta-forbehold</h3>' +
-    '<p>Bubble er i <strong>closed beta</strong>. Funktioner kan ændres uden varsel. Der kan forekomme fejl, nedetid og datatab. Vi giver ingen garantier for oppetid eller dataintegritet.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">3. Dine data (GDPR)</h3>' +
-    '<p>Vi indsamler de oplysninger du selv vælger at oprette eller dele i Bubble, herunder navn, email, titel, arbejdsplads, bio, tags, profilbillede, medlemskaber i bobler og gemte kontakter.</p>' +
-    '<p style="margin-top:4px">Vi behandler dine oplysninger for at levere Bubble. I visse tilfælde sker det på baggrund af dit samtykke eller vores legitime interesse i at drive og forbedre tjenesten.</p>' +
-    '<p style="margin-top:4px">Beskeder deles ikke med tredjepart, og vi sælger <strong>aldrig</strong> dine data. Vi bruger ikke dine oplysninger til reklameformål og videregiver dem ikke til tredjepart med henblik på markedsføring. Vi bestræber os på at opbevare data inden for EU/EØS; visse underleverandører kan dog behandle data uden for EU/EØS under passende garantier.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">4. Cookies og lokal lagring</h3>' +
-    '<p>Bubble bruger <strong>ingen tracking-cookies</strong> og ingen tredjeparts-analyse. Vi bruger kun nødvendig lokal lagring:</p>' +
-    '<p style="margin-top:4px">• <strong>Login-token</strong> — holder dig logget ind<br>' +
-    '• <strong>App-præferencer</strong> — husker dine valg<br>' +
-    '• <strong>Midlertidig navigationsstate</strong> — gemt lokalt i din browser, udløber automatisk efter kort tid</p>' +
-    '<p style="margin-top:4px">Ingen data deles med tredjepart. Ingen reklame- eller profileringscookies.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">5. Dine rettigheder</h3>' +
-    '<p>Du har ret til indsigt, berigtigelse, sletning, begrænsning, dataportabilitet og indsigelse. Du kan redigere din profil og blokere brugere i appen. Ønsker du dine data slettet, kan du kontakte os på info@bubbleme.dk.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">6. Adfærd</h3>' +
-    '<p>Chikane, spam, hadefuldt indhold eller upassende profilbilleder tolereres ikke og kan resultere i fjernelse fra platformen.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">7. Ansvarsfraskrivelse</h3>' +
-    '<p>Bubble leveres "as is" uden garanti. Vi er ikke ansvarlige for tab af data, handlinger af andre brugere eller resultat af forbindelser via platformen.</p>' +
-    '<h3 style="font-size:0.88rem;font-weight:700;color:var(--text);margin:1rem 0 0.4rem">8. Kontakt & klage</h3>' +
-    '<p>Kontakt os på <strong>info@bubbleme.dk</strong></p>' +
-    '<p style="margin-top:4px">Klage: <a href="https://www.datatilsynet.dk" target="_blank" rel="noopener" style="color:var(--accent)">datatilsynet.dk</a></p>' +
-    '<p style="margin-top:8px;font-size:0.68rem;color:var(--muted)">Sidst opdateret: 7. juni 2026 · Vilkår v1.1</p>' +
-    '</div>' +
-    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:1.2rem;padding:0.7rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Luk</button>';
+  var isEN = (typeof getLang === 'function' && getLang() === 'en');
+  var title = isEN ? 'Terms & Privacy Policy' : 'Betingelser & Privatlivspolitik';
+  var closeLabel = isEN ? 'Close' : 'Luk';
+  var body = isEN
+    ? (typeof TERMS_EN !== 'undefined' ? TERMS_EN : '')
+    : (typeof TERMS_DA !== 'undefined' ? TERMS_DA : '');
+  sheet.innerHTML = '<div class="u-sheet-grip-c" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
+    '<h2 style="font-size:1.2rem;font-weight:800;margin-bottom:0.8rem;color:rgba(255,255,255,0.95)">' + title + '</h2>' +
+    body +
+    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:1.2rem;padding:0.7rem;border-radius:12px;border:0.5px solid rgba(255,255,255,0.1);background:none;color:rgba(255,255,255,0.7);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">' + closeLabel + '</button>';
+  if (typeof tmsFillEmail === 'function') tmsFillEmail(sheet);
 }
 
 function openFeedback() {
   var { overlay, sheet } = bbDynOpen();
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.08);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
-    '<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem">Giv feedback</h2>' +
-    '<p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Vi er i beta — din feedback er guld værd og hjælper os med at bygge det bedste produkt.</p>' +
-    '<textarea id="feedback-text" placeholder="Hvad virker godt? Hvad kan gøres bedre? Har du oplevet fejl?" style="width:100%;height:120px;background:rgba(30,27,46,0.03);border:1px solid var(--glass-border);border-radius:12px;padding:0.7rem;font-family:Figtree,sans-serif;font-size:0.82rem;color:var(--text);resize:none;outline:none"></textarea>' +
-    '<button onclick="submitFeedback()" style="width:100%;margin-top:0.8rem;padding:0.7rem;border-radius:12px;border:none;background:var(--gradient-accent);color:white;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Send feedback →</button>' +
-    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:0.4rem;padding:0.5rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--muted);font-family:inherit;font-size:0.78rem;cursor:pointer">Annuller</button>';
+  sheet.innerHTML = '<div class="u-sheet-grip-c" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
+    '<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem;color:rgba(255,255,255,0.95)">Giv feedback</h2>' +
+    '<p style="font-size:0.78rem;color:rgba(255,255,255,0.5);margin-bottom:1rem">Vi er i beta — din feedback er guld værd og hjælper os med at bygge det bedste produkt.</p>' +
+    '<textarea id="feedback-text" placeholder="Hvad virker godt? Hvad kan gøres bedre? Har du oplevet fejl?" style="width:100%;height:120px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:0.7rem;font-family:Figtree,sans-serif;font-size:0.82rem;color:rgba(255,255,255,0.9);resize:none;outline:none"></textarea>' +
+    '<button onclick="submitFeedback()" style="width:100%;margin-top:0.8rem;padding:0.7rem;border-radius:12px;border:0.5px solid rgba(100,180,230,0.25);background:rgba(100,180,230,0.18);color:rgba(255,255,255,0.95);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer">Send feedback →</button>' +
+    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:0.4rem;padding:0.5rem;border-radius:12px;border:0.5px solid rgba(255,255,255,0.1);background:none;color:rgba(255,255,255,0.4);font-family:inherit;font-size:0.78rem;cursor:pointer">Annuller</button>';
 
   setTimeout(function(){ var ta = document.getElementById('feedback-text'); if(ta) ta.focus(); }, 300);
 }
 
 async function submitFeedback() {
   var text = document.getElementById('feedback-text')?.value?.trim();
-  if (!text) { showWarningToast('Skriv noget feedback først'); return; }
+  if (!text) { showWarningToast(t('auth_feedback_empty')); return; }
   try {
     var { error } = await sb.from('reports').insert({
       reporter_id: currentUser.id,
@@ -689,7 +917,7 @@ async function submitFeedback() {
     logError('USER_FEEDBACK', new Error('Feedback modtaget'), { text: text, user: currentUser.id, name: currentProfile?.name });
     var dyn = document.querySelector('.bb-dyn-overlay');
     if (dyn) bbDynClose(dyn);
-    showToast('Tak for din feedback! 💜');
+    showToast(t('auth_feedback_thanks'));
   } catch(e) { logError('submitFeedback', e); errorToast('send', e); }
 }
 
@@ -770,21 +998,18 @@ async function handleAppleLogin() {
 //  PERSONAL QR CODE
 // ══════════════════════════════════════════════════════════
 async function openMyQR() {
-  if (!currentUser || !currentProfile) { _renderToast('Log ind først', 'error'); return; }
+  if (!currentUser || !currentProfile) { _renderToast(t('auth_login_first'), 'error'); return; }
   
   // Generate short-lived token (10 min)
-  var token = crypto.randomUUID ? crypto.randomUUID().split('-')[0] : Math.random().toString(36).slice(2,10);
+  var token = crypto.randomUUID ? crypto.randomUUID().replace(/-/g,'') : (crypto.getRandomValues ? Array.prototype.map.call(crypto.getRandomValues(new Uint8Array(16)), function(b){return ('0'+b.toString(16)).slice(-2);}).join('') : (Date.now().toString(36)+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)).slice(0,32));
   var expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
   
-  try {
-    await sb.from('qr_tokens').insert({
-      token: token,
-      user_id: currentUser.id,
-      expires_at: expiresAt
-    });
-  } catch(e) {
-    logError('openMyQR:token', e);
-    // Fallback to static URL if token creation fails
+  // Insert via dbActions helper (checks { error } — a raw insert does not throw
+  // on DB/RLS failure, which previously left the QR showing a token that was
+  // never saved and could not be resolved by the scanner).
+  var qrResult = await dbActions.createQRToken(token, expiresAt);
+  if (!qrResult || !qrResult.ok) {
+    // Fallback to static profile URL (save-contact flow) — intended degradation
     token = null;
   }
   
@@ -797,12 +1022,12 @@ async function openMyQR() {
   
   var { overlay, sheet } = bbDynOpen();
   sheet.style.textAlign = 'center';
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.12);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
-    '<div style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem">Min QR-kode</div>' +
-    '<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem">Gyldig i 10 minutter · opdateres automatisk</div>' +
-    '<div id="my-qr-container" style="display:flex;justify-content:center;margin-bottom:1rem"></div>' +
-    '<div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.8rem">' + escHtml(currentProfile.name) + ' · ' + escHtml(currentProfile.title || '') + '</div>' +
-    '<button onclick="navigator.clipboard.writeText(\'' + shareUrl + '\');this.textContent=\'Kopieret! ✓\';setTimeout(()=>this.textContent=\'Del profil\',2000)" style="width:100%;padding:0.7rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer">Del profil</button>';
+  sheet.innerHTML = '<div class="u-sheet-grip-c" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
+    '<div style="font-size:1.1rem;font-weight:800;margin-bottom:0.3rem;color:rgba(255,255,255,0.95)">Min QR-kode</div>' +
+    '<div style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin-bottom:1rem">Gyldig i 10 minutter · opdateres automatisk</div>' +
+    '<div style="display:flex;justify-content:center;margin-bottom:1rem"><div id="my-qr-container" style="background:#fff;padding:16px;border-radius:14px;line-height:0"></div></div>' +
+    '<div style="font-size:0.65rem;color:rgba(255,255,255,0.55);margin-bottom:0.8rem">' + escHtml(currentProfile.name) + ' · ' + escHtml(currentProfile.title || '') + '</div>' +
+    '<button onclick="navigator.clipboard.writeText(\'' + shareUrl + '\');this.textContent=\'Kopieret! ✓\';setTimeout(()=>this.textContent=\'Del profil\',2000)" style="width:100%;padding:0.7rem;border-radius:12px;border:0.5px solid rgba(100,180,230,0.25);background:rgba(100,180,230,0.18);color:rgba(255,255,255,0.95);font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer">Del profil</button>';
   
   setTimeout(function() {
     var container = document.getElementById('my-qr-container');

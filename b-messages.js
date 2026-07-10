@@ -20,24 +20,20 @@ var unreadState = {
 
   // ── Render all badges ──
   render: function() {
-    // DM badge (messages nav tab)
-    var dmLabel = this.dm > 9 ? '9+' : (this.dm > 0 ? String(this.dm) : '');
+    // DM dot (messages nav tab — simple dot, no number)
     var self = this;
     document.querySelectorAll('.msg-unread-badge').forEach(function(b) {
-      if (self.dm > 0) { b.textContent = dmLabel; b.style.display = 'flex'; }
-      else { b.style.display = 'none'; }
+      b.style.display = self.dm > 0 ? 'block' : 'none';
     });
-    // Notification badge (topbar bell)
+    // Notification dot (topbar bell — simple dot, no number)
     var notifEl = document.getElementById('topbar-notif-badge');
     if (notifEl) {
-      if (this.notif > 0) { notifEl.textContent = this.notif > 9 ? '9+' : String(this.notif); notifEl.style.display = 'flex'; }
-      else { notifEl.style.display = 'none'; }
+      notifEl.style.display = this.notif > 0 ? 'block' : 'none';
     }
-    // Home nav dot (shows when not on home screen)
+    // Home nav dot (persistent until notifications cleared)
     var homeDot = document.getElementById('home-notif-dot');
     if (homeDot) {
-      var onHome = navState && navState.screen === 'screen-home';
-      homeDot.style.display = (this.notif > 0 && !onHome) ? 'block' : 'none';
+      homeDot.style.display = (this.notif > 0) ? 'block' : 'none';
     }
   },
 
@@ -65,7 +61,6 @@ var unreadState = {
 
 // ── Compat aliases — old callers keep working ──
 var _unreadCount = 0; // Legacy read (not authoritative — use unreadState.dm)
-function _unreadRender() { unreadState.render(); }
 async function _unreadRecount() { await unreadState.dmRecount(); }
 function unreadIncrement() { unreadState.dmIncrement(); }
 function unreadDecrement(n) { unreadState.dmDecrement(n); }
@@ -85,9 +80,18 @@ function convToggleSelectMode() {
   var selectBtn = document.getElementById('conv-select-btn');
   var list = document.getElementById('conversations-list');
 
+  // SVG icons for the toggle button
+  var SELECT_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>';
+  var CANCEL_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FCA5A5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
   if (convSelectMode) {
     if (toolbar) toolbar.style.display = 'flex';
-    if (selectBtn) { selectBtn.textContent = t('misc_cancel'); selectBtn.style.color = 'var(--accent2)'; }
+    if (selectBtn) {
+      selectBtn.innerHTML = CANCEL_ICON;
+      selectBtn.style.background = 'rgba(232,121,168,0.15)';
+      selectBtn.style.borderColor = 'rgba(232,121,168,0.3)';
+      selectBtn.title = t('misc_cancel');
+    }
     // Add checkboxes to conversation cards
     if (list) {
       list.querySelectorAll('.card[data-conv-id]').forEach(function(card) {
@@ -104,7 +108,12 @@ function convToggleSelectMode() {
     }
   } else {
     if (toolbar) toolbar.style.display = 'none';
-    if (selectBtn) { selectBtn.textContent = t('misc_select'); selectBtn.style.color = ''; }
+    if (selectBtn) {
+      selectBtn.innerHTML = SELECT_ICON;
+      selectBtn.style.background = 'rgba(255,255,255,0.1)';
+      selectBtn.style.borderColor = 'rgba(255,255,255,0.12)';
+      selectBtn.title = t('misc_select');
+    }
     if (list) list.querySelectorAll('.conv-check').forEach(function(el) { el.remove(); });
   }
   convUpdateSelectCount();
@@ -163,15 +172,22 @@ async function convDeleteSelected() {
 async function convConfirmDelete() {
   try {
     var ids = convSelectedIds.slice();
+    var succeeded = [];
+    var anyFailed = false;
     for (var i = 0; i < ids.length; i++) {
       var partnerId = ids[i];
-      // Delete both directions
-      await sb.from('messages').delete()
+      // Delete both directions. supabase-js returns { error } instead of throwing
+      // on DB/RLS failure, so an unchecked await would drop the conversation from
+      // the list even when a direction was rejected (half the thread would survive
+      // and reappear). Only treat a conversation as deleted if BOTH directions ok.
+      var { error: e1 } = await sb.from('messages').delete()
         .eq('sender_id', currentUser.id)
         .eq('receiver_id', partnerId);
-      await sb.from('messages').delete()
+      var { error: e2 } = await sb.from('messages').delete()
         .eq('sender_id', partnerId)
         .eq('receiver_id', currentUser.id);
+      if (e1 || e2) { logError('convConfirmDelete', e1 || e2); anyFailed = true; continue; }
+      succeeded.push(partnerId);
       // Notify receiver so their conversation list updates too
       try {
         await sb.channel('dm-notify-' + partnerId).send({
@@ -181,11 +197,14 @@ async function convConfirmDelete() {
       } catch(e) { /* silent — notification is best-effort */ }
     }
     var list = document.getElementById('conversations-list');
-    ids.forEach(function(id) {
+    succeeded.forEach(function(id) {
       var card = list ? list.querySelector('[data-conv-id="' + id + '"]') : null;
       if (card) { card.style.transition = 'opacity 0.2s'; card.style.opacity = '0'; setTimeout(function() { card.remove(); }, 200); }
     });
-    showToast(ids.length > 1 ? t('dm_conv_deleted_many', { n: ids.length }) : t('dm_conv_deleted_one', { n: ids.length }));
+    if (succeeded.length > 0) {
+      showToast(succeeded.length > 1 ? t('dm_conv_deleted_many', { n: succeeded.length }) : t('dm_conv_deleted_one', { n: succeeded.length }));
+    }
+    if (anyFailed) errorToast('delete', new Error('partial'));
     convToggleSelectMode();
     renderUnreadBadge();
   } catch(e) { logError('convConfirmDelete', e); errorToast('delete', e); }
@@ -204,10 +223,11 @@ async function sendMessage() {
   if (sendBtn) { sendBtn.disabled = true; }
   console.debug('[dm] sendMessage');
   try {
-    if (isBlocked(currentChatUser)) { _renderToast('Denne bruger er blokeret', 'error'); return; }
+    if (isBlocked(currentChatUser)) { _renderToast(t('msg_user_blocked'), 'error'); return; }
     const input = document.getElementById('chat-input');
     const content = filterChatContent(input.value.trim());
     if (!content) return;
+    if (tooLong(content, 'message')) return; // dmSending + button reset by finally block
 
     // Dedup guard: prevent identical message to same receiver within 3s (reconnect safety)
     if (!dmEditingId) {
@@ -254,7 +274,7 @@ async function sendMessage() {
       }).select().single();
 
       if (error) {
-        // Complete rollback on failure
+        // Complete rollback on failure — ported from PROD v8.17.31 (Fix 2).
         // 1. Remove optimistic DOM element
         var failEl = document.getElementById('dm-msg-' + tempId);
         if (failEl) failEl.remove();
@@ -275,10 +295,7 @@ async function sendMessage() {
           try { chatSubscription.send({ type: 'broadcast', event: 'new_message', payload: newMsg }); } catch(e) { logError("dm:new_message_broadcast", e); }
         }
         trackEvent('message_sent', { type: 'dm' });
-        // Push notification to recipient
-        var senderName = currentProfile?.name || 'Nogen';
-        var preview = content ? content.slice(0, 60) : '';
-        sendPush(currentChatUser, 'Ny besked', senderName + ': ' + preview, { type: 'new_message', sender_id: currentUser.id });
+        // Push håndteres nu af backend-trigger notify_new_message (ADR-006 trin 4)
       }
     }
   } catch(e) { logError("sendMessage", e); errorToast("send", e); }
@@ -292,14 +309,16 @@ async function sendDirectMessage(toId, content) {
       receiver_id: toId,
       content
     });
-    var senderName = currentProfile?.name || 'Nogen';
-    sendPush(toId, 'Ny besked', senderName + ': ' + (content ? content.slice(0, 60) : ''), { type: 'new_message', sender_id: currentUser.id });
+    // Push håndteres nu af backend-trigger notify_new_message (ADR-006 trin 4)
   } catch(e) { logError("sendDirectMessage", e); errorToast("send", e); }
 }
 
 function startChat() {
   if (!currentPerson) return;
-  openChat(currentPerson, 'screen-person');
+  var uid = currentPerson;
+  var origin = (typeof navState !== 'undefined' && navState.screen) ? navState.screen : 'screen-home';
+  if (typeof closePersonSheet === 'function') closePersonSheet();
+  openChat(uid, origin);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -334,7 +353,7 @@ async function dmHandleFile(input) {
 
     // Public URL — permanent, no expiry. Requires bubble-files bucket to be public in Supabase.
     const { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
-    if (!urlData?.publicUrl) { _renderToast('Kunne ikke generere fil-link', 'error'); input.value = ''; return; }
+    if (!urlData?.publicUrl) { _renderToast(t('msg_file_link_fail'), 'error'); input.value = ''; return; }
 
     const { data: newMsg, error } = await sb.from('messages').insert({
       sender_id: currentUser.id,
@@ -350,8 +369,7 @@ async function dmHandleFile(input) {
       const el = document.getElementById('chat-messages');
       dmReduceMsg(newMsg);
       showToast(t('toast_sent'));
-      var senderName = currentProfile?.name || 'Nogen';
-      sendPush(currentChatUser, 'Ny besked', senderName + ': Sendte en fil', { type: 'new_message', sender_id: currentUser.id });
+      // Push håndteres nu af backend-trigger notify_new_message (ADR-006 trin 4)
     }
     input.value = '';
   } catch(e) { logError("dmHandleFile", e); errorToast("upload", e); }

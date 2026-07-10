@@ -12,19 +12,22 @@
 // Previous behavior (v8.17.30 and earlier): skipWaiting + clients.claim on install,
 // causing potentially-disruptive updates mid-write/mid-flow.
 
-const CACHE_NAME = 'bubble-v8.17.31';
+const CACHE_NAME = 'bubble-v3-v3.114';
 const CACHE_URLS = [
   './', './index.html', './app.css',
   './bubble-icons.js',
   './tag-data.js',
-  './b-config.js', './b-i18n.js', './b-utils.js', './b-navigation.js',
-  './b-auth.js', './b-home.js', './b-bubbles.js',
+  './b-config.js', './b-i18n.js', './b-utils.js', './b-guides.js', './b-navigation.js',
+  './b-terms.js', './b-auth.js', './b-home.js', './b-bubbles.js',
   './b-profile.js', './b-radar.js', './b-messages.js',
   './b-realtime.js', './b-onboarding.js', './b-chat.js',
   './b-notifications.js', './b-live.js', './b-admin.js',
   './b-boot.js',
   './bubble-logo-topbar-v2.png',
-  './bubble-logo-splash.png'
+  './bubble-logo-splash.png',
+  './manifest.json',
+  './bubble-icon-152.png', './bubble-icon-167.png', './bubble-icon-180.png',
+  './bubble-icon-192.png', './bubble-icon-512.png', './bubble-favicon-32.png'
 ];
 
 self.addEventListener('install', function(event) {

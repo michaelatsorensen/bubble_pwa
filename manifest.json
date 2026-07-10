@@ -1,12 +1,12 @@
 {
   "name": "Bubble",
   "short_name": "Bubble",
-  "description": "Network Radar for Business",
+  "description": "Network radar for real-world meetings",
   "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FFFFFF",
-  "theme_color": "#FFFFFF",
+  "theme_color": "#170F34",
   "icons": [
     {
       "src": "bubble-icon-152.png",
@@ -20,7 +20,12 @@
     },
     {
       "src": "bubble-icon-180.png",
-      "sizes": "180x180 192x192",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "bubble-icon-192.png",
+      "sizes": "192x192",
       "type": "image/png"
     },
     {

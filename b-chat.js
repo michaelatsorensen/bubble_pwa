@@ -14,7 +14,8 @@
 var gifPickerMode = null; // 'bc' or 'dm'
 var _gifSearchTimer = null;
 
-// v8.17.31: register cleanup so logout/user-switch doesn't leak this module's state.
+// Ported from PROD v8.17.31 (Fix 6: registerState cleanup).
+// Register cleanup so logout/user-switch doesn't leak this module's state.
 // _profileCache is the most critical — it contains other users' profile data.
 registerState(function() {
   gifPickerMode = null;
@@ -30,6 +31,233 @@ registerState(function() {
   }
   if (typeof _bcPostsCache !== 'undefined') _bcPostsCache = null;
 });
+
+// ═══════════════════════════════════════════════════════════
+//  FLAT-LIST BUBBLE TREE RENDERER (prototype walk-algoritme)
+//  Erstatter nestede .bb-tree-branch/.bb-tree-leaves med prototypens
+//  flad liste + beregnede guide-linjer per raekke (marginLeft-indent).
+//  Genbruges af home-tree (loadMyNetworks) og chat-tree.
+//  nodes: [{id,name,type,parent_id,member_count,event_date,event_end_date,
+//           visibility,icon_url,_live,_unread,_star}]
+//  expandedIds: array af udfoldede node-ids
+// ═══════════════════════════════════════════════════════════
+function bbRenderTree(nodes, expandedIds, opts) {
+  opts = opts || {};
+  var fromScreen = opts.fromScreen || 'screen-bubbles';
+  var GAP = 9;
+  var LC = '1.5px solid rgba(255,255,255,0.16)';
+  var xOf = function(D) { return (D * 20 - 11) + 'px'; };
+  expandedIds = expandedIds || [];
+
+  var byId = {};
+  nodes.forEach(function(b) { byId[b.id] = b; });
+  var now = new Date();
+
+  var kids = {};
+  nodes.forEach(function(b) {
+    if (b.parent_id && byId[b.parent_id]) {
+      (kids[b.parent_id] = kids[b.parent_id] || []).push(b.id);
+    }
+  });
+  // Sortér hvert netvaerks children: sub-netvaerk -> kommende events (naermest dato) -> afsluttede events
+  function _isEv(id) { var n = byId[id]; return n && (n.type === 'event' || n.type === 'live'); }
+  function _isPastEv(id) { var n = byId[id]; return _isEv(id) && n.event_date && new Date(n.event_end_date || n.event_date) < now; }
+  function _evTime(id) { var n = byId[id]; return n && n.event_date ? new Date(n.event_date).getTime() : Infinity; }
+  Object.keys(kids).forEach(function(pid) {
+    kids[pid].sort(function(a, b) {
+      var aEv = _isEv(a), bEv = _isEv(b);
+      // Sub-netvaerk (ikke-event) foerst
+      if (!aEv && bEv) return -1;
+      if (aEv && !bEv) return 1;
+      if (!aEv && !bEv) return 0; // begge sub-netvaerk: bevar raekkefoelge
+      // Begge events: afsluttede sidst, ellers naermest dato foerst
+      var aPast = _isPastEv(a), bPast = _isPastEv(b);
+      if (aPast && !bPast) return 1;
+      if (!aPast && bPast) return -1;
+      return _evTime(a) - _evTime(b); // naermest dato foerst
+    });
+  });
+
+  var rows = [];
+
+  function walk(key, depth, ancHasNext, isLast) {
+    var b = byId[key];
+    if (!b) return;
+    var children = kids[key] || [];
+    var hasChildren = children.length > 0;
+    var isExp = expandedIds.indexOf(key) >= 0;
+    var isEvent = b.type === 'event' || b.type === 'live';
+    var isPast = isEvent && b.event_date && new Date(b.event_end_date || b.event_date) < now;
+
+    // ── Guide-linjer (prototype-algoritme) ──
+    var guides = [];
+    for (var j = 1; j < depth; j++) {
+      if (ancHasNext[j]) {
+        guides.push('position:absolute;left:' + xOf(j) + ';top:-' + GAP + 'px;bottom:0;width:0;border-left:' + LC + ';pointer-events:none');
+      }
+    }
+    if (depth > 0) {
+      if (isLast) {
+        guides.push('position:absolute;left:' + xOf(depth) + ';top:-' + GAP + 'px;bottom:50%;width:11px;border-left:' + LC + ';border-bottom:' + LC + ';border-bottom-left-radius:8px;pointer-events:none');
+      } else {
+        guides.push('position:absolute;left:' + xOf(depth) + ';top:-' + GAP + 'px;bottom:0;width:0;border-left:' + LC + ';pointer-events:none');
+        guides.push('position:absolute;left:' + xOf(depth) + ';top:50%;width:11px;height:0;border-top:' + LC + ';pointer-events:none');
+      }
+    }
+    var guidesHtml = guides.map(function(g) { return '<div style="' + g + '"></div>'; }).join('');
+
+    // ── Row-styling (varierer med depth) ──
+    var isRoot = depth === 0;
+    var bg = isRoot ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.035)';
+    var bd = isRoot ? '0.12' : '0.09';
+    var shadow = isRoot ? 'box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);' : '';
+    var radius = isRoot ? '18px' : '15px';
+    var pad = isRoot ? '13px 14px' : '11px 12px';
+    var iconSz = isRoot ? 44 : 38;
+    var iconR = isRoot ? 13 : 11;
+    var pastOp = isPast ? 'opacity:0.55;' : '';
+
+    // Icon
+    var iconBg = isEvent ? 'rgba(46,207,207,0.15)' : 'rgba(100,180,230,0.16)';
+    var iconBd = isEvent ? 'rgba(46,207,207,0.35)' : 'rgba(100,180,230,0.35)';
+    var iconCol = isEvent ? '#2ECFCF' : 'rgb(100,180,230)';
+    var iconInner;
+    if (b.icon_url) {
+      iconInner = '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:' + iconR + 'px">';
+    } else {
+      var isz = Math.round(iconSz * 0.42);
+      iconInner = isEvent
+        ? '<svg width="' + isz + '" height="' + isz + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'
+        : '<svg width="' + isz + '" height="' + isz + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6"/><circle cx="16" cy="13.5" r="4.5"/></svg>';
+    }
+
+    // Meta
+    var visH = (typeof visIcon === 'function') ? visIcon(b.visibility) : '';
+    var countLabel = isEvent ? ' tilmeldt' : ' medl.';
+    var dateStr = '';
+    if (isEvent && b.event_date) {
+      try { dateStr = new Date(b.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) + ' \u00B7 '; } catch(e) {}
+    }
+    var meta = dateStr + (b.member_count || 0) + countLabel;
+
+    // Badges
+    var liveBadge = b._live ? ' <span class="bb-pill bb-pill-live">LIVE</span>' : '';
+    var pastBadge = (isPast && typeof _evEndedBadge === 'function') ? _evEndedBadge(b) : '';
+    var unreadDot = b._unread ? '<span style="width:8px;height:8px;border-radius:50%;background:#E879A8;flex-shrink:0"></span>' : '';
+    var starH = (b._star && typeof bubbleStarRender === 'function' && bubbleStarRender(b.id)) ? '<span style="display:inline-flex;align-items:center;color:#F5C518;font-size:11px;letter-spacing:1px;flex-shrink:0;line-height:1">' + '\u2605'.repeat(bubbleStarGet(b.id)) + '</span>' : '';
+
+    // Chevron / toggle
+    var chevHtml;
+    if (hasChildren) {
+      chevHtml = '<div onclick="event.stopPropagation();bbTreeToggleFlat(\'' + key + '\')" style="width:22px;height:22px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.12);cursor:pointer"><div style="font-size:12px;color:rgba(255,255,255,0.75);transform:' + (isExp ? 'rotate(90deg)' : 'rotate(0deg)') + ';transition:transform 0.22s ease;line-height:1">\u203A</div></div>';
+    } else {
+      chevHtml = '<div style="width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:14px;line-height:1">\u203A</div>';
+    }
+
+    var rowHtml = '<div style="position:relative;min-width:0">' +
+      guidesHtml +
+      '<div style="' + pastOp + 'margin-left:' + (depth * 20) + 'px;width:calc(100% - ' + (depth * 20) + 'px);box-sizing:border-box;background:' + bg + ';border:0.5px solid rgba(255,255,255,' + bd + ');' + shadow + 'backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:' + radius + ';padding:' + pad + ';display:flex;align-items:center;gap:10px;overflow:hidden">' +
+        '<div onclick="openBubbleChat(\'' + key + '\',\'' + fromScreen + '\')" style="width:' + iconSz + 'px;height:' + iconSz + 'px;border-radius:' + iconR + 'px;background:' + iconBg + ';border:0.5px solid ' + iconBd + ';color:' + iconCol + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;overflow:hidden">' + iconInner + '</div>' +
+        '<div onclick="openBubbleChat(\'' + key + '\',\'' + fromScreen + '\')" style="flex:1 1 0;min-width:0;cursor:pointer;overflow:hidden">' +
+          '<div style="display:flex;align-items:center;gap:6px;min-width:0"><div style="font-size:' + (isRoot ? 14 : 13) + 'px;font-weight:' + (isRoot ? 700 : 600) + ';color:rgba(255,255,255,0.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">' + escHtml(b.name) + '</div>' + liveBadge + pastBadge + unreadDot + '</div>' +
+          '<div style="font-size:' + (isRoot ? 10.5 : 10) + 'px;color:rgba(255,255,255,0.5);margin-top:2px;display:flex;align-items:center;gap:3px">' + visH + '<span>' + meta + '</span></div>' +
+        '</div>' +
+        starH +
+        chevHtml +
+      '</div>' +
+    '</div>';
+
+    rows.push(rowHtml);
+
+    if (isExp) {
+      var childAnc = ancHasNext.slice();
+      childAnc[depth] = !isLast;
+      // Del children i aktive vs afsluttede events
+      var activeCh = children.filter(function(c) { return !_isPastEv(c); });
+      var pastEvs = children.filter(function(c) { return _isPastEv(c); });
+      var histId = 'hist-' + key;
+      var histExp = expandedIds.indexOf(histId) >= 0;
+      var hasHist = pastEvs.length > 0;
+      // Render aktive children (Historik-raekken taeller som sidste hvis den findes)
+      activeCh.forEach(function(c, ci) {
+        var isLastActive = (ci === activeCh.length - 1) && !hasHist;
+        walk(c, depth + 1, childAnc, isLastActive);
+      });
+      // Render Historik-accordion nederst (hvis der er afsluttede events)
+      if (hasHist) {
+        var histDepth = depth + 1;
+        var histGuides = [];
+        for (var hj = 1; hj < histDepth; hj++) {
+          if (childAnc[hj]) histGuides.push('position:absolute;left:' + xOf(hj) + ';top:-' + GAP + 'px;bottom:0;width:0;border-left:' + LC + ';pointer-events:none');
+        }
+        // Historik er sidste child -> albue
+        histGuides.push('position:absolute;left:' + xOf(histDepth) + ';top:-' + GAP + 'px;bottom:50%;width:11px;border-left:' + LC + ';border-bottom:' + LC + ';border-bottom-left-radius:8px;pointer-events:none');
+        var histGuidesHtml = histGuides.map(function(g) { return '<div style="' + g + '"></div>'; }).join('');
+        var histChev = '<div style="width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:12px;transform:' + (histExp ? 'rotate(90deg)' : 'rotate(0deg)') + ';transition:transform 0.22s ease;line-height:1">\u203A</div>';
+        rows.push('<div style="position:relative;min-width:0">' + histGuidesHtml +
+          '<div onclick="bbTreeToggleFlat(\'' + histId + '\')" style="box-sizing:border-box;margin-left:' + (histDepth * 20) + 'px;width:calc(100% - ' + (histDepth * 20) + 'px);display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:0.5px dashed rgba(255,255,255,0.13);border-radius:12px;cursor:pointer">' +
+            '<div style="width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);flex-shrink:0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>' +
+            '<div style="flex:1;min-width:0;font-size:11.5px;font-weight:600;color:rgba(255,255,255,0.55)">' + t('misc_past') + ' (' + pastEvs.length + ')</div>' +
+            histChev +
+          '</div>' +
+        '</div>');
+        // Udfoldede afsluttede events (dybere niveau, under Historik)
+        if (histExp) {
+          var pastAnc = childAnc.slice();
+          pastAnc[histDepth] = false; // Historik er sidste, saa ingen fortsaettende trunk
+          pastEvs.forEach(function(pe, pi) {
+            walk(pe, histDepth + 1, pastAnc, pi === pastEvs.length - 1);
+          });
+        }
+      }
+    }
+  }
+
+  var roots = nodes.filter(function(b) { return !b.parent_id || !byId[b.parent_id]; });
+  // Del roots i aktive vs afsluttede events (samme moenster som children).
+  // Vigtigt for chat-tree hvor boblens direkte events er roots.
+  // NB: roots er node-objekter, men _isPastEv forventer et id -> brug b.id.
+  var activeRoots = roots.filter(function(b) { return !_isPastEv(b.id); });
+  var pastRoots = roots.filter(function(b) { return _isPastEv(b.id); });
+  var rootHistId = 'hist-__roots__';
+  var rootHistExp = expandedIds.indexOf(rootHistId) >= 0;
+  var hasRootHist = pastRoots.length > 0;
+
+  activeRoots.forEach(function(b, ri) {
+    var isLastRoot = (ri === activeRoots.length - 1) && !hasRootHist;
+    walk(b.id, 0, [], isLastRoot);
+  });
+
+  // Historik-accordion for boblens direkte afsluttede events (depth 0)
+  if (hasRootHist) {
+    var rhChev = '<div style="width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:12px;transform:' + (rootHistExp ? 'rotate(90deg)' : 'rotate(0deg)') + ';transition:transform 0.22s ease;line-height:1">\u203A</div>';
+    rows.push('<div style="position:relative;min-width:0">' +
+      '<div onclick="bbTreeToggleFlat(\'' + rootHistId + '\')" style="box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:0.5px dashed rgba(255,255,255,0.13);border-radius:12px;cursor:pointer">' +
+        '<div style="width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);flex-shrink:0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>' +
+        '<div style="flex:1;min-width:0;font-size:11.5px;font-weight:600;color:rgba(255,255,255,0.55)">' + t('misc_past') + ' (' + pastRoots.length + ')</div>' +
+        rhChev +
+      '</div>' +
+    '</div>');
+    if (rootHistExp) {
+      pastRoots.forEach(function(pe, pi) {
+        walk(pe.id, 1, [false], pi === pastRoots.length - 1);
+      });
+    }
+  }
+
+  return '<div style="display:grid;grid-auto-rows:min-content;gap:9px;width:100%;max-width:100%;overflow:hidden">' + rows.join('') + '</div>';
+}
+
+// Toggle for flad tree: opdater expanded-state + re-render (guides skifter)
+var _bbFlatExpanded = [];
+function bbTreeToggleFlat(id) {
+  var i = _bbFlatExpanded.indexOf(id);
+  if (i >= 0) _bbFlatExpanded.splice(i, 1);
+  else _bbFlatExpanded.push(id);
+  // Re-render det aktive tree (home eller chat) via gemt callback
+  if (typeof _bbFlatRerender === 'function') _bbFlatRerender();
+}
+var _bbFlatRerender = null;
 
 function toggleGifPicker(mode) {
   var picker = document.getElementById('gif-picker');
@@ -71,7 +299,7 @@ async function loadTrendingGifs() {
     renderGifs(data.data || []);
   } catch(e) {
     logError('GIF trending error', e);
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">Kunne ikke hente GIFs.<br>Tjek din internetforbindelse.</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">' + t('chat_gif_load_fail') + '</div>';
   }
   } catch(e) { logError("loadTrendingGifs", e); }
 }
@@ -88,7 +316,7 @@ async function searchGifs(query) {
     renderGifs(data.data || []);
   } catch(e) {
     logError('GIF search error', e);
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">Søgning fejlede</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.75rem;color:var(--muted)">' + t('chat_search_failed') + '</div>';
   }
   } catch(e) { logError("searchGifs", e); }
 }
@@ -97,7 +325,7 @@ function renderGifs(results) {
   var grid = document.getElementById('gif-grid');
   if (!grid) return;
   if (results.length === 0) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">Ingen GIFs fundet</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;font-size:0.78rem;color:var(--muted)">' + t('chat_no_gifs') + '</div>';
     return;
   }
   window._gifResults = [];
@@ -119,7 +347,7 @@ async function selectGif(idx) {
   if (!gifUrl) { logError('selectGif', 'No GIF URL at index ' + idx); return; }
   try {
     if (mode === 'bc') {
-      if (!bcBubbleId) { logError('selectGif', 'No bcBubbleId'); _renderToast('Fejl: ingen aktiv boble', 'error'); return; }
+      if (!bcBubbleId) { logError('selectGif', 'No bcBubbleId'); _renderToast(t('chat_no_active_bubble'), 'error'); return; }
       var result = await dbActions.sendBubbleMessage(bcBubbleId, '', { gifUrl: gifUrl });
       if (result.ok && result.message) bcReduceMsg(result.message);
     } else if (mode === 'dm') {
@@ -171,12 +399,12 @@ function _bcShowSkeleton() {
   var skel = document.createElement('div');
   skel.id = 'bc-skeleton';
   skel.style.cssText = 'flex:1;display:flex;flex-direction:column;overflow:hidden;padding:0';
-  // Fake tab bar
+  // Fake tab bar (matcher pille-tabs: lyst glas, 99px radius)
   skel.innerHTML =
-    '<div style="display:flex;margin:0.4rem 1.1rem 0;background:#F4F3F9;border-radius:10px;padding:3px;gap:2px;border:1px solid var(--glass-border-subtle)">' +
-      '<div class="skel" style="flex:1;height:28px;border-radius:8px"></div>' +
-      '<div class="skel" style="flex:1;height:28px;border-radius:8px"></div>' +
-      '<div class="skel" style="flex:1;height:28px;border-radius:8px"></div>' +
+    '<div style="display:flex;margin:0.4rem 1.1rem 0;background:rgba(255,255,255,0.055);border-radius:99px;padding:3px;gap:2px;border:0.5px solid rgba(255,255,255,0.12)">' +
+      '<div class="skel" style="flex:1;height:30px;border-radius:99px"></div>' +
+      '<div class="skel" style="flex:1;height:30px;border-radius:99px"></div>' +
+      '<div class="skel" style="flex:1;height:30px;border-radius:99px"></div>' +
     '</div>' +
     // Fake action bar
     '<div style="display:flex;gap:0.4rem;padding:0.5rem 1.1rem">' +
@@ -234,17 +462,25 @@ async function openBubbleChat(bubbleId, fromScreen) {
   } else {
     _bcBackFn = function() { goTo(fromScreen || 'screen-home'); };
   }
-  // If member tapped ⓘ to view info temporarily, back returns to previous tab
-  // For non-members, info IS the landing tab — back should navigate away
+  // Back-regel (jun 2026): chat/medlemmer/opslag er "dybere" niveauer end Info.
+  // Tilbage fra en ikke-Info-fane → gå op til Info (boblens "hjem").
+  // Tilbage fra Info → forlad boblen. Bevarer "Info er default landing" + chat-fuldskærm.
   backBtn.onclick = function() {
+    if (typeof _bcActiveTab !== 'undefined' && _bcActiveTab !== 'info'
+        && document.getElementById('bc-tab-info')
+        && document.getElementById('bc-tab-info').style.display !== 'none') {
+      bcSwitchTab('info');
+      return;
+    }
     _bcBackFn();
   };
 
-  // Reset ALL visible state BEFORE showing screen — prevents previous bubble flashing
-  document.getElementById('bc-name').textContent = '';
-  document.getElementById('bc-members-count').textContent = '';
+  // Reset ALL visible state BEFORE showing screen — prevents previous bubble flashing.
+  // Vis skeleton-shimmer i topbar (navn/ikon) i stedet for tomt — foeles ikke tomt under load.
+  document.getElementById('bc-name').innerHTML = '<span class="skel" style="display:inline-block;width:140px;height:15px;border-radius:6px;vertical-align:middle"></span>';
+  document.getElementById('bc-members-count').innerHTML = '<span class="skel" style="display:inline-block;width:80px;height:11px;border-radius:5px;vertical-align:middle;margin-top:3px"></span>';
   var iconEl = document.getElementById('bc-topbar-icon');
-  if (iconEl) iconEl.innerHTML = '';
+  if (iconEl) iconEl.innerHTML = '<span class="skel" style="display:block;width:100%;height:100%;border-radius:inherit"></span>';
   var actionBtns = document.getElementById('bc-action-btns');
   if (actionBtns) { actionBtns.innerHTML = ''; actionBtns.style.display = 'none'; }
   // Clear old content from ALL panels (sub-loaders will repopulate)
@@ -326,7 +562,7 @@ async function bcLoadChatData(bubbleId) {
 // Phase 1: Fetch bubble, set bcBubbleData, render topbar
 async function bcLoadBubbleCore(bubbleId) {
   var { data: b, error: bErr } = await sb.from('bubbles').select('*').eq('id', bubbleId).maybeSingle();
-  if (!b || bErr) { _renderToast('Denne boble eksisterer ikke længere', 'error'); return null; }
+  if (!b || bErr) { _renderToast(t('chat_bubble_gone'), 'error'); return null; }
   bcBubbleData = b;
 
   // Topbar
@@ -334,25 +570,46 @@ async function bcLoadBubbleCore(bubbleId) {
   var isEvent = b.type === 'event' || b.type === 'live';
   var iconEl = document.getElementById('bc-topbar-icon');
   if (iconEl) {
-    iconEl.style.background = isEvent ? 'rgba(46,207,207,0.1)' : 'rgba(124,92,252,0.1)';
-    iconEl.innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:1.2rem;height:1.2rem;border-radius:4px;object-fit:cover">' : bubbleEmoji(b.type);
+    iconEl.style.background = isEvent ? 'rgba(46,207,207,0.22)' : 'rgba(100,180,230,0.22)';
+    iconEl.innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" class="u-thumb">' : bubbleEmoji(b.type);
   }
   document.getElementById('bc-name').textContent = b.name;
+  if (typeof _bcUpdateSaveBtn === 'function') _bcUpdateSaveBtn(bubbleId);
 
-  // Member count + parent ref in subtitle
-  var { count: memberCount } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bubbleId).or('status.is.null,status.neq.pending');
-  memberCount = memberCount || 0;
+  // Member count + parent ref in subtitle.
+  // Use denormalized bubbles.member_count so non-members of private bubbles
+  // see the count (the member LIST stays hidden by RLS). Fallback to the RLS
+  // count query if the column is not yet present.
+  var memberCount = (b && b.member_count != null) ? b.member_count : null;
+  if (memberCount == null) {
+    var _mcRes = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bubbleId).or('status.is.null,status.neq.pending');
+    memberCount = _mcRes.count || 0;
+  }
   var subText = memberCount + (isEvent ? ' ' + t('bb_participants') : ' ' + t('bb_members'));
   // Fetch parent name for child bubbles
   if (b.parent_bubble_id) {
     try {
       var { data: parentB } = await sb.from('bubbles').select('name').eq('id', b.parent_bubble_id).maybeSingle();
-      if (parentB) subText += ' · <span style="color:#534AB7">\u21B3 ' + escHtml(parentB.name) + '</span>';
+      if (parentB) subText += ' · <span style="color:var(--isbla)">\u21B3 ' + escHtml(parentB.name) + '</span>';
     } catch(e) {}
   }
   document.getElementById('bc-members-count').innerHTML = subText;
 
   return b;
+}
+
+// Topbar save-for-later bookmark — reflects shared saved_bubbles state for the open bubble
+async function _bcUpdateSaveBtn(bubbleId) {
+  var btn = document.getElementById('bc-save-btn');
+  if (!btn) return;
+  if (!currentUser || !bubbleId) { btn.style.display = 'none'; return; }
+  await getSavedBubbleIds();
+  var saved = isBubbleSaved(bubbleId);
+  btn.dataset.id = bubbleId;
+  btn.dataset.bookmarkId = bubbleId;
+  btn.title = saved ? t('saved_remove') : t('saved_add');
+  btn.innerHTML = bookmarkIcon(saved);
+  btn.style.display = 'flex';
 }
 
 // Phase 2: Show/hide tabs based on bubble type + children
@@ -362,7 +619,7 @@ async function bcConfigureTabs(b, bubbleId) {
     var tabMembers = document.getElementById('bc-tab-members');
     var tabPosts = document.getElementById('bc-tab-posts');
 
-    if (tabMembers) tabMembers.textContent = isEvent ? 'Deltagere' : 'Medlemmer';
+    if (tabMembers) tabMembers.textContent = isEvent ? t('bc_attendees') : t('bc_members');
     if (tabPosts) tabPosts.style.display = '';
   } catch(e) { logError('bcConfigureTabs', e); }
 }
@@ -429,7 +686,7 @@ function _bcShowEventGreeting() {
 
   var banner = document.createElement('div');
   banner.id = 'bc-event-greeting';
-  banner.style.cssText = 'padding:0.6rem 1rem;margin:0.5rem 1.1rem 0;border-radius:10px;background:rgba(26,158,142,0.08);border:1px solid rgba(26,158,142,0.18);font-size:0.8rem;color:#085041;font-weight:600;display:flex;align-items:center;gap:0.5rem;cursor:pointer;animation:fadeSlideUp 0.3s ease';
+  banner.style.cssText = 'padding:0.6rem 1rem;margin:0.5rem 1.1rem 0;border-radius:10px;background:rgba(26,158,142,0.08);border:1px solid rgba(26,158,142,0.18);font-size:0.8rem;color:#5FE0CC;font-weight:600;display:flex;align-items:center;gap:0.5rem;cursor:pointer;animation:fadeSlideUp 0.3s ease';
   banner.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
     '<span>' + t('event_greeting', { name: escHtml(eventName) }) + '</span>';
   banner.onclick = function() { banner.remove(); };
@@ -509,7 +766,7 @@ function bcRenderPendingBanner(isPending) {
     if (anchor) {
       var pb = document.createElement('div');
       pb.id = 'bc-pending-banner';
-      pb.style.cssText = 'display:none;padding:0.55rem 1rem;margin:0.4rem 1.1rem 0;border-radius:10px;background:rgba(249,177,55,0.08);border:1px solid rgba(249,177,55,0.2);font-size:0.75rem;color:#854F0B;font-weight:600';
+      pb.style.cssText = 'display:none;padding:0.55rem 1rem;margin:0.4rem 1.1rem 0;border-radius:10px;background:rgba(249,177,55,0.08);border:1px solid rgba(249,177,55,0.2);font-size:0.75rem;color:#F5C877;font-weight:600';
       anchor.insertAdjacentElement('afterend', pb);
       pendingBanner = pb;
     }
@@ -521,7 +778,7 @@ function bcRenderPendingBanner(isPending) {
       pendingBanner.style.justifyContent = 'space-between';
       pendingBanner.style.gap = '0.5rem';
       pendingBanner.innerHTML = '<div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#F59E0B;animation:livePulse 1.5s infinite;flex-shrink:0"></span> Afventer godkendelse</div>' +
-        '<button onclick="bcCancelPending()" style="font-size:0.65rem;padding:3px 10px;border-radius:6px;border:1px solid rgba(133,79,11,0.2);background:none;color:#854F0B;cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0">Annuller</button>';
+        '<button onclick="bcCancelPending()" style="font-size:0.65rem;padding:3px 10px;border-radius:6px;border:1px solid rgba(245,200,119,0.3);background:none;color:#F5C877;cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0">Annuller</button>';
     } else {
       pendingBanner.style.display = 'none';
     }
@@ -536,7 +793,7 @@ async function bcCancelPending() {
     bcBubbleData._isMember = false;
     bcRenderPendingBanner(false);
     bcRenderActions(bcBubbleData, null, false, false);
-    showToast('Anmodning annulleret');
+    showToast(t('chat_request_cancelled'));
   } catch(e) { logError('bcCancelPending', e); errorToast('delete', e); }
 }
 
@@ -588,6 +845,10 @@ async function bcRefreshMembership() {
 }
 
 // ── Render action buttons based on membership state ──
+function bcHiddenShareInfo() {
+  showWarningToast(t('bb_hidden_share_blocked'));
+}
+
 function bcRenderActions(b, myMembership, canEdit, isPending) {
   // Remove skeleton atomically as real UI appears (no-op if already removed)
   _bcHideSkeleton();
@@ -615,16 +876,25 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
       if (_evEnd < new Date()) _scannerVisible = false;
     }
     actionArea.innerHTML =
-      (canEdit ? `<button class="chat-topbar-back" data-action="openEditBubble" data-id="${b.id}" title="Rediger"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg></button>` : '') +
+      (canEdit ? `<button class="chat-topbar-back" data-action="openEditBubble" data-id="${b.id}" title="${t('bb_edit')}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg></button>` : '') +
       (_scannerVisible ? `<button class="chat-topbar-back" onclick="openBubbleScannerFromInfo('${b.id}')" title="Scanner" style="color:#1A9E8E"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7V2h5M17 2h5v5M22 17v5h-5M7 22H2v-5"/><line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2 2"/></svg></button>` : '');
     actionArea.style.display = canEdit ? 'flex' : 'none';
     if (actionBar) {
       var upvoted = myUpvotes[b.id];
+      var hiddenNonEvent = (b.visibility === 'hidden') && b.type !== 'event' && b.type !== 'live';
+      var _lockSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>';
+      var _strikeSvg = '<svg class="bc-strike" preserveAspectRatio="none" viewBox="0 0 100 40"><line x1="0" y1="0" x2="100" y2="40" stroke="rgba(235,120,120,0.55)" stroke-width="1"/></svg>';
+      var delBtn = hiddenNonEvent
+        ? `<button class="bc-bar-btn locked" onclick="bcHiddenShareInfo()">${_lockSvg} Del${_strikeSvg}</button>`
+        : `<button class="bc-bar-btn" onclick="shareBubbleLink('${b.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Del</button>`;
+      var qrBtn = hiddenNonEvent
+        ? `<button class="bc-bar-btn locked" onclick="bcHiddenShareInfo()">${_lockSvg} QR${_strikeSvg}</button>`
+        : `<button class="bc-bar-btn" data-action="openQRModal" data-id="${b.id}">${icon('qrcode')} QR</button>`;
       actionBar.innerHTML =
         `<button class="bc-bar-btn" onclick="openInviteModal('${b.id}')">${icon('user-plus')} Invitér</button>` +
-        `<button class="bc-bar-btn" onclick="shareBubbleLink('${b.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Del</button>` +
+        delBtn +
         `<button class="bc-bar-btn${upvoted ? ' active' : ''}" id="bc-upvote-bar-btn" onclick="toggleBubbleUpvote('${b.id}')">${upvoted ? icon('checkCircle') : icon('rocket')} ${upvoted ? 'Anbefalet' : 'Anbefal'}</button>` +
-        `<button class="bc-bar-btn" data-action="openQRModal" data-id="${b.id}">${icon('qrcode')} QR</button>`;
+        qrBtn;
       actionBar.style.display = 'flex';
     }
   } else {
@@ -639,7 +909,7 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
     if (isPending) {
       actionArea.innerHTML = '';
     } else if (b.visibility === 'hidden') {
-      actionArea.innerHTML = `<span style="font-size:0.75rem;color:var(--muted)">${icon("eye")} Kun via invitation</span>`;
+      actionArea.innerHTML = `<span style="font-size:0.75rem;color:var(--muted)">${icon("eye")} ${t('bb_invite_only')}</span>`;
     } else if (b.visibility === 'private') {
       actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="requestJoin" data-id="${b.id}">${icon("lock")} Anmod</button>`;
     } else {
@@ -657,20 +927,34 @@ function bcSubscribeRealtime() {
   if (!currentUser || !bcBubbleId) { console.warn('bcSubscribeRealtime: missing user or bubbleId'); return; }
   if (bcSubscription) bcSubscription.unsubscribe();
   bcSubscription = sb.channel('bc-' + bcBubbleId)
+    .on('broadcast', { event: 'checkin' }, function() {
+      // Someone checked in/out. postgres_changes on bubble_members can be blocked
+      // by RLS for other members, so their check-in is invisible without this
+      // Broadcast (which bypasses RLS). Refresh the member list, counts, and the
+      // live status/radar so every device reflects the change immediately.
+      if (typeof bcLoadMembers === 'function') bcLoadMembers();
+      if (typeof bcLoadBubbleInfo === 'function') bcLoadBubbleInfo();
+      if (typeof _bcActiveTab !== 'undefined' && _bcActiveTab === 'info' && typeof bcLoadInfo === 'function') bcLoadInfo();
+      if (typeof loadLiveBubbleStatus === 'function') loadLiveBubbleStatus();
+    })
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_messages', filter:`bubble_id=eq.${bcBubbleId}`},
       async (payload) => {
         const m = payload.new;
         if (m.user_id === currentUser.id) return;
         m.profiles = await getCachedProfile(m.user_id);
         const panel = document.getElementById('bc-panel-chat');
-        if (panel.style.display !== 'none') {
+        // Panel/badge may be absent if the user navigated away between the
+        // event firing and this async handler running — guard both.
+        if (panel && panel.style.display !== 'none') {
           bcReduceMsg(m);
         } else {
-          // Chat tab not visible — increment unread badge
+          // Chat tab not visible (or panel gone) — increment unread badge if present
           if (!document.querySelector('[data-bc-msg-id="' + m.id + '"]')) {
             const badge = document.getElementById('bc-unread-badge');
-            badge.textContent = parseInt(badge.textContent||0) + 1;
-            badge.style.display = 'inline-flex';
+            if (badge) {
+              badge.textContent = parseInt(badge.textContent||0) + 1;
+              badge.style.display = 'inline-flex';
+            }
           }
         }
       })
@@ -794,13 +1078,16 @@ async function bcLoadBubbleInfo() {
     var iconEl = document.getElementById('bc-topbar-icon');
     if (iconEl) {
       var isEv = b.type === 'event' || b.type === 'live';
-      iconEl.style.background = isEv ? 'rgba(46,207,207,0.1)' : 'rgba(124,92,252,0.1)';
-      iconEl.innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" style="width:1.2rem;height:1.2rem;border-radius:4px;object-fit:cover">' : bubbleEmoji(b.type);
+      iconEl.style.background = isEv ? 'rgba(46,207,207,0.22)' : 'rgba(100,180,230,0.22)';
+      iconEl.innerHTML = b.icon_url ? '<img src="' + escHtml(b.icon_url) + '" class="u-thumb">' : bubbleEmoji(b.type);
     }
     document.getElementById('bc-name').textContent = b.name;
 
-    var { count: memberCount2 } = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bcBubbleId).or('status.is.null,status.neq.pending');
-    memberCount2 = memberCount2 || 0;
+    var memberCount2 = (b && b.member_count != null) ? b.member_count : null;
+    if (memberCount2 == null) {
+      var _mc2Res = await sb.from('bubble_members').select('*',{count:'exact',head:true}).eq('bubble_id', bcBubbleId).or('status.is.null,status.neq.pending');
+      memberCount2 = _mc2Res.count || 0;
+    }
     var isEvent = b.type === 'event' || b.type === 'live';
     var statusText = memberCount2 + (isEvent ? ' ' + t('bb_participants') : ' ' + t('bb_members'));
 
@@ -816,7 +1103,7 @@ async function bcLoadBubbleInfo() {
         var mm = expiry.getMinutes().toString().padStart(2,'0');
         countEl.innerHTML = statusText + ' · <span style="color:#1A9E8E">LIVE</span> <span style="opacity:0.6">udl. ' + hh + ':' + mm + '</span>';
       } else if (myMFull) {
-        countEl.textContent = statusText + ' · Medlem ✓';
+        countEl.textContent = statusText + ' · ' + t('bi_member_check');
       } else {
         countEl.textContent = statusText;
       }
@@ -857,6 +1144,8 @@ function bcSwitchTab(tab) {
     }
     if (tabBtn) tabBtn.classList.toggle('active', t === tab);
   });
+  var _bcScreen = document.getElementById('screen-bubble-chat');
+  if (_bcScreen) _bcScreen.classList.toggle('bc-fullscreen-chat', tab === 'chat');
   if (tab === 'chat') {
     const badge = document.getElementById('bc-unread-badge');
     if (badge) badge.style.display = 'none';
@@ -891,10 +1180,10 @@ async function bcLoadEvents() {
       var canEdit = bcBubbleData?._canEdit;
       list.innerHTML = '<div class="empty-state">' +
         '<div class="empty-icon">' + icon('bubble') + '</div>' +
-        '<div class="empty-text">Ingen tilknyttede endnu</div>' +
+        '<div class="empty-text">' + t('chat_none_linked') + '</div>' +
         (canEdit ? '<div class="empty-cta">' +
-          '<button class="btn-primary" onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="font-size:0.82rem;padding:0.6rem 1.2rem;margin-bottom:0.4rem">' + icon('calendar') + ' Opret event</button>' +
-          '<button class="btn-secondary" onclick="openCreateSubBubble(\'' + bcBubbleId + '\')" style="font-size:0.78rem;padding:0.5rem 1rem">' + icon('bubble') + ' Opret sub-boble</button>' +
+          '<button class="btn-primary" onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="font-size:0.82rem;padding:0.6rem 1.2rem;margin-bottom:0.4rem">' + icon('calendar') + ' ' + t('bb_create_event') + '</button>' +
+          '<button class="btn-secondary" onclick="openCreateSubBubble(\'' + bcBubbleId + '\')" style="font-size:0.78rem;padding:0.5rem 1rem">' + icon('bubble') + ' ' + t('chat_create_subbubble') + '</button>' +
           '</div>' : '') +
         '</div>';
       return;
@@ -905,7 +1194,7 @@ async function bcLoadEvents() {
     var memberMap = await fetchMemberAvatarsForBubbles(childIds, 4);
 
     var html = children.map(function(ch) {
-      var mc = ch.bubble_members?.[0]?.count || 0;
+      var mc = ch.member_count ?? ch.bubble_members?.[0]?.count ?? 0;
       var isEvent = ch.type === 'event' || ch.type === 'live';
       var avStack = renderAvatarStack(memberMap[ch.id] || [], mc);
 
@@ -920,24 +1209,24 @@ async function bcLoadEvents() {
           : new Date(ch.created_at).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' });
         var badge = isPast
           ? '<span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(30,27,46,0.06);color:var(--muted)">Afsluttet</span>'
-          : '<span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(46,207,207,0.1);color:#0F6E56">Kommende</span>';
+          : '<span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(46,207,207,0.1);color:#5FE0CC">Kommende</span>';
         return '<div class="card" style="padding:0.75rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')">' +
-          '<div style="display:flex;align-items:center;gap:0.6rem">' +
+          '<div class="u-row-gap">' +
           '<div style="width:38px;height:38px;border-radius:10px;background:' + (isPast ? 'rgba(30,27,46,0.04)' : 'rgba(46,207,207,0.08)') + ';display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0">' + icon('calendar') + '</div>' +
           '<div style="flex:1;min-width:0">' +
-          '<div style="display:flex;align-items:center;gap:0.4rem"><span class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(ch.name) + '</span>' + badge + '</div>' +
-          '<div class="fs-072 text-muted">' + dateStr + ' · ' + mc + ' deltager' + (mc !== 1 ? 'e' : '') + '</div>' +
+          '<div style="display:flex;align-items:center;gap:0.4rem"><span class="fw-600 fs-085 u-ellipsis">' + escHtml(ch.name) + '</span>' + badge + '</div>' +
+          '<div class="fs-072 text-muted">' + dateStr + ' · ' + mc + ' ' + (mc === 1 ? t('bc_participant_one') : t('bb_participants')) + '</div>' +
           avStack +
           '</div>' +
           '<div style="font-size:0.88rem;color:var(--muted)">›</div></div></div>';
       } else {
         // Sub-bubble (network type)
         return '<div class="card" style="padding:0.75rem 0.9rem;margin-bottom:0.4rem;cursor:pointer" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')">' +
-          '<div style="display:flex;align-items:center;gap:0.6rem">' +
-          '<div style="width:38px;height:38px;border-radius:10px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;overflow:hidden">' + (ch.icon_url ? '<img src="' + escHtml(ch.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : bubbleEmoji(ch.type)) + '</div>' +
+          '<div class="u-row-gap">' +
+          '<div style="width:38px;height:38px;border-radius:10px;background:rgba(100,180,230,0.22);display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;overflow:hidden;color:rgb(100,180,230)">' + (ch.icon_url ? '<img src="' + escHtml(ch.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px">' : bubbleEmoji(ch.type)) + '</div>' +
           '<div style="flex:1;min-width:0">' +
-          '<div class="fw-600 fs-085" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(ch.name) + '</div>' +
-          '<div class="fs-072 text-muted">' + typeLabel(ch.type) + ' · ' + mc + ' medlem' + (mc !== 1 ? 'mer' : '') + '</div>' +
+          '<div class="fw-600 fs-085 u-ellipsis">' + escHtml(ch.name) + '</div>' +
+          '<div class="fs-072 text-muted">' + typeLabel(ch.type) + ' · ' + mc + ' ' + (mc === 1 ? t('bb_member') : t('bc_members_lc')) + '</div>' +
           avStack +
           '</div>' +
           '<div style="font-size:0.88rem;color:var(--muted)">›</div></div></div>';
@@ -946,8 +1235,8 @@ async function bcLoadEvents() {
     // Add create buttons for owners
     if (bcBubbleData?._canEdit) {
       html += '<div style="display:flex;gap:0.4rem;margin-top:0.8rem">' +
-        '<button onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('calendar') + ' Event</button>' +
-        '<button onclick="openCreateSubBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('bubble') + ' Sub-boble</button>' +
+        '<button onclick="openCreateEventFromBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#5FE0CC;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('calendar') + ' Event</button>' +
+        '<button onclick="openCreateSubBubble(\'' + bcBubbleId + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(100,180,230,0.15);border:0.5px solid rgba(100,180,230,0.25);color:rgb(100,180,230);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem">' + icon('bubble') + ' ' + t('bb_create_sub') + '</button>' +
         '</div>';
     }
     list.innerHTML = html;
@@ -970,14 +1259,20 @@ async function bcLoadMessages() {
       .order('created_at', {ascending:true})
       .limit(50);
 
-    if (msgErr) console.error('bcLoadMessages error:', msgErr);
+    if (msgErr) {
+      logError('bcLoadMessages', msgErr);
+      // Distinguish load failure from a genuinely empty chat — showing
+      // "start the conversation" on a fetch error makes an active chat look wiped.
+      showRetryState('bc-messages', 'bcLoadMessages', t('chat_load_fail'));
+      return;
+    }
 
     if (!msgs || msgs.length === 0) {
-      var bName = bcBubbleData?.name || 'boblen';
+      var bName = bcBubbleData?.name || t('chat_the_bubble');
       el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;padding:3rem 1.5rem 1rem;text-align:center">' +
-        '<div style="width:48px;height:48px;border-radius:14px;background:rgba(124,92,252,0.08);display:flex;align-items:center;justify-content:center;margin-bottom:0.6rem">' + icon('chat') + '</div>' +
-        '<div style="font-size:0.88rem;font-weight:700">Start samtalen</div>' +
-        '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.2rem">Skriv den første besked i ' + escHtml(bName) + '</div>' +
+        '<div style="width:48px;height:48px;border-radius:14px;background:rgba(100,180,230,0.15);display:flex;align-items:center;justify-content:center;margin-bottom:0.6rem;color:rgb(100,180,230)">' + icon('chat') + '</div>' +
+        '<div style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.9)">' + t('chat_start_convo') + '</div>' +
+        '<div style="font-size:0.72rem;color:rgba(255,255,255,0.5);margin-top:0.2rem">' + t('chat_write_first', {bubble: escHtml(bName)}) + '</div>' +
         '</div>';
       return;
     }
@@ -1081,7 +1376,7 @@ function bcRenderMsg(m) {
   var nameHtml = escHtml(name);
   var safeTitle = escHtml(p.title||'');
   var bcAvUrl = isMe ? currentProfile?.avatar_url : (p.avatar_url || null);
-  var bcAvInner = bcAvUrl ? '<img src="' + bcAvUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : initials;
+  var bcAvInner = bcAvUrl ? '<img src="' + bcAvUrl + '" class="u-avatar-img">' : initials;
   var avatarColor = 'linear-gradient(135deg,#CECBF6,#AFA9EC)';
   var avatarStyle = isMe ? 'display:none' : ('background:' + avatarColor + ';overflow:hidden' + (showAvatar ? ';cursor:pointer' : ';visibility:hidden'));
   var avatarClick = showAvatar ? " onclick=\"bcOpenPerson('" + m.user_id + "','" + nameHtml + "','" + safeTitle + "','" + avatarColor + "')\"" : '';
@@ -1132,7 +1427,7 @@ async function bcToggleChatLock(bubbleId, locked) {
   if (!result.ok) {
     // Column may not exist if migration hasn't been run
     if (result.error && String(result.error.message || '').includes('chat_locked')) {
-      showWarningToast('Chat-lås kræver database-migration');
+      showWarningToast(t('chat_lock_migration'));
       return;
     }
     return;
@@ -1163,7 +1458,7 @@ function bcUpdateChatLockUI() {
     if (!lockBanner) {
       lockBanner = document.createElement('div');
       lockBanner.id = 'bc-chat-lock-banner';
-      lockBanner.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 16px;background:rgba(245,158,11,0.06);border-top:1px solid rgba(245,158,11,0.15);color:#78350F;font-size:0.75rem;font-weight:600';
+      lockBanner.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 16px;background:rgba(245,158,11,0.06);border-top:1px solid rgba(245,158,11,0.15);color:#F5C877;font-size:0.75rem;font-weight:600';
       lockBanner.innerHTML = '<span style="font-size:13px;display:flex">' + ico('lock') + '</span> ' + t('bc_chat_locked');
       var panel = document.getElementById('bc-panel-chat');
       if (panel) panel.appendChild(lockBanner);
@@ -1192,6 +1487,7 @@ async function bcSendMessage() {
     const inp = document.getElementById('bc-input');
     const text = filterChatContent(inp.value.trim());
     if (!text) { bcSending = false; if (sendBtn) { sendBtn.disabled = false; } return; }
+    if (tooLong(text, 'message')) { bcSending = false; if (sendBtn) { sendBtn.disabled = false; } return; }
 
     if (bcEditingId) {
       // Save edit to history first (log on failure but don't block edit)
@@ -1244,14 +1540,14 @@ async function bcHandleFile(input) {
   try {
     const file = input.files[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) { showWarningToast('Maks 10MB per fil'); return; }
+    if (file.size > 10 * 1024 * 1024) { showWarningToast(t('chat_max_file')); return; }
 
     // File type allowlist — block HTML/SVG/JS to prevent stored XSS
     var blockedTypes = ['text/html','application/xhtml+xml','image/svg+xml','application/javascript','text/javascript','application/x-httpd-php'];
     var blockedExts = ['html','htm','svg','js','php','exe','bat','cmd','sh','ps1'];
     var ext = (file.name || '').split('.').pop().toLowerCase();
     if (blockedTypes.indexOf(file.type) >= 0 || blockedExts.indexOf(ext) >= 0) {
-      showWarningToast('Filtypen er ikke tilladt');
+      showWarningToast(t('chat_filetype_blocked'));
       input.value = '';
       return;
     }
@@ -1379,7 +1675,7 @@ async function bcDeleteConfirm(msgId) {
   if (result.ok) {
     var el = document.getElementById('bc-msg-' + msgId);
     if (el) { el.style.transition = 'opacity 0.2s'; el.style.opacity = '0'; setTimeout(function(){ el.remove(); }, 200); }
-    showToast('Besked slettet');
+    showToast(t('chat_msg_deleted'));
   }
 }
 
@@ -1475,7 +1771,7 @@ async function bcDeleteMessage() {
   var result = await dbActions.deleteBubbleMessage(bcCurrentMsgId);
   if (result.ok) {
     document.getElementById('bc-msg-' + bcCurrentMsgId)?.remove();
-    showToast('Besked slettet');
+    showToast(t('chat_msg_deleted'));
   }
 }
 
@@ -1521,7 +1817,10 @@ async function bcLoadMembers() {
       .order('joined_at', {ascending:true});
 
     if (!members || members.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('users') + '</div><div class="empty-text">'+t('bc_no_members')+'</div></div>';
+      // If the count says there ARE members but the list is empty, they're hidden by RLS
+      // (non-member of a private/hidden bubble) — say so instead of "no members".
+      var _membersHidden = bcBubbleData && (bcBubbleData.member_count || 0) > 0;
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('users') + '</div><div class="empty-text">' + (_membersHidden ? t('bc_members_hidden') : t('bc_no_members')) + '</div></div>';
       return;
     }
 
@@ -1530,15 +1829,15 @@ async function bcLoadMembers() {
     if (!isMember) {
       var activeCount = members.filter(function(m) { return m.status !== 'pending'; }).length;
       var isEvent = bcBubbleData?.type === 'event' || bcBubbleData?.type === 'live';
-      var memberLabel = isEvent ? 'deltagere' : 'medlemmer';
+      var memberLabel = isEvent ? t('bb_participants') : t('bc_members_lc');
       var vis = bcBubbleData?.visibility || 'public';
       var joinBtn = '';
       if (vis === 'hidden') {
-        joinBtn = '<div style="font-size:0.78rem;color:var(--muted);margin-top:0.3rem">' + icon('eye') + ' Kun via invitation</div>';
+        joinBtn = '<div style="font-size:0.78rem;color:var(--muted);margin-top:0.3rem">' + icon('eye') + ' ' + t('bb_invite_only') + '</div>';
       } else if (vis === 'private') {
-        joinBtn = '<button class="btn-primary" data-action="requestJoin" data-id="' + bcBubbleId + '" style="font-size:0.8rem;padding:0.5rem 1.4rem;margin-top:0.5rem">' + icon('lock') + ' Anmod om medlemskab</button>';
+        joinBtn = '<button class="bb-cta-anmod" data-action="requestJoin" data-id="' + bcBubbleId + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' + t('chat_request_membership') + '</button>';
       } else {
-        joinBtn = '<button class="btn-primary" onclick="joinBubble(\'' + bcBubbleId + '\')" style="font-size:0.8rem;padding:0.5rem 1.4rem;margin-top:0.5rem">Bliv medlem</button>';
+        joinBtn = '<button class="bb-cta-join" onclick="joinBubble(\'' + bcBubbleId + '\')" style="margin-top:0.5rem">' + t('chat_become_member') + '</button>';
       }
       list.innerHTML = '<div style="text-align:center;padding:2.5rem 1rem">' +
         '<div style="font-size:2.2rem;font-weight:700;color:var(--text-primary);margin-bottom:0.15rem">' + activeCount + '</div>' +
@@ -1551,7 +1850,7 @@ async function bcLoadMembers() {
 
     // Hent profiler separat
     const userIds = members.map(m => m.user_id);
-    const { data: profiles } = await sb.from('profiles').select('id, name, title, workplace, avatar_url').in('id', userIds);
+    const { data: profiles } = await sb.from('profiles').select('id, name, title, workplace, avatar_url, keywords, lifestage, dynamic_keywords, bio, linkedin, is_anon').in('id', userIds);
     const profileMap = {};
     (profiles || []).forEach(p => profileMap[p.id] = p);
 
@@ -1562,7 +1861,17 @@ async function bcLoadMembers() {
         new Date(m.checked_in_at).getTime() > (now - LIVE_EXPIRE_HOURS * 3600000);
     });
 
-    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
+    // ── Relevance score vs me — pilot-scale client-side ranking.
+    //    Server-side ranking + pagination deferred until large bubbles need it.
+    var _myKwL = (currentProfile && currentProfile.keywords ? currentProfile.keywords : []).map(function(k) { return String(k).toLowerCase(); });
+    members.forEach(function(m) {
+      var pp = profileMap[m.user_id];
+      if (!pp || m.user_id === currentUser.id) { m._score = -1; m._shared = []; return; }
+      m._score = calcMatchScore(currentProfile || {}, pp, 0);
+      m._shared = (pp.keywords || []).filter(function(k) { return _myKwL.indexOf(String(k).toLowerCase()) >= 0; }).slice(0, 3);
+    });
+
+    const colors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,rgb(100,180,230))','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)','linear-gradient(135deg,#1A9E8E,#10B981)','linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#3B82F6,#6366F1)','linear-gradient(135deg,#EF4444,#F97316)','linear-gradient(135deg,#06B6D4,#0EA5E9)','linear-gradient(135deg,#D946EF,#C026D3)'];
     const ownerId = bcBubbleData?.created_by;
     const isOwner = currentUser && ownerId === currentUser.id;
 
@@ -1576,7 +1885,7 @@ async function bcLoadMembers() {
       if (b.user_id === ownerId) return 1;
       if (a._isLive && !b._isLive) return -1;
       if (!a._isLive && b._isLive) return 1;
-      return 0;
+      return (b._score || 0) - (a._score || 0);
     });
 
     const liveCount = activeMembers.filter(m => m._isLive).length;
@@ -1597,13 +1906,13 @@ async function bcLoadMembers() {
           html += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;margin-bottom:0.6rem;border-radius:10px;background:rgba(46,207,207,0.08);border:1px solid rgba(46,207,207,0.2)">' +
             '<span class="live-dot"></span>' +
             '<span style="font-size:0.78rem;font-weight:700;color:var(--accent3)">Du er live</span>' +
-            '<span style="font-size:0.72rem;color:var(--muted);margin-left:auto">' + liveCount + ' til stede</span>' +
+            '<span style="font-size:0.72rem;color:var(--muted);margin-left:auto">' + liveCount + ' ' + t('chat_present') + '</span>' +
           '</div>';
         } else {
           html += '<div style="text-align:center;padding:0.5rem 0.75rem;margin-bottom:0.6rem">' +
             '<button onclick="bcManualCheckIn()" style="width:100%;padding:0.55rem;border-radius:10px;font-size:0.8rem;font-weight:700;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,var(--accent3),#22B8CF);color:white;border:none;display:flex;align-items:center;justify-content:center;gap:0.4rem">' +
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
-            'Check ind</button>' +
+            t('chat_check_in') + '</button>' +
           '</div>';
         }
       }
@@ -1611,11 +1920,11 @@ async function bcLoadMembers() {
 
     // Pending requests section (only visible to owner/admin)
     if (pendingMembers.length > 0 && (isOwner || bcBubbleData?._isAdmin)) {
-      html += '<div class="chat-section-label" style="color:#BA7517">Afventer godkendelse \u00B7 ' + pendingMembers.length + '</div>';
+      html += '<div class="chat-section-label" style="color:#BA7517">' + t('bc_pending_approval') + ' \u00B7 ' + pendingMembers.length + '</div>';
       pendingMembers.forEach(function(m) {
         var p = profileMap[m.user_id] || {};
         var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-        var avHtml = p.avatar_url ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : ini;
+        var avHtml = p.avatar_url ? '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">' : ini;
         html += '<div class="chat-member-row" style="background:rgba(249,177,55,0.04);border:1px solid rgba(249,177,55,0.15);border-radius:12px;margin-bottom:6px;padding:0.65rem 0.75rem">' +
           '<div class="chat-member-avatar" style="background:linear-gradient(135deg,#F59E0B,#EAB308);overflow:hidden">' + avHtml + '</div>' +
           '<div style="flex:1;min-width:0">' +
@@ -1641,10 +1950,10 @@ async function bcLoadMembers() {
       let section = isOwnerRow ? 'owner' : (m._isLive ? 'live' : 'members');
       if (section !== prevSection) {
         if (section === 'owner') html += `<div class="chat-section-label">${isEvent ? t('misc_organizer') : t('misc_owner')}</div>`;
-        else if (section === 'live') html += `<div class="chat-section-label" style="margin-top:0.8rem">${isEvent ? 'Til stede nu' : 'Her lige nu'} · ${liveCount}</div>`;
+        else if (section === 'live') html += `<div class="chat-section-label" style="margin-top:0.8rem">${isEvent ? t('chat_present_now') : t('chat_here_now')} · ${liveCount}</div>`;
         else {
           var restCount = activeMembers.length - liveCount - (ownerId ? 1 : 0);
-          html += `<div class="chat-section-label" style="margin-top:0.8rem">${isEvent ? 'Deltagere' : 'Medlemmer'} · ${restCount}</div>`;
+          html += `<div class="chat-section-label" style="margin-top:0.8rem">${isEvent ? t('bc_attendees') : t('bc_members')} · ${restCount}</div>`;
         }
         prevSection = section;
       }
@@ -1662,13 +1971,28 @@ async function bcLoadMembers() {
       var roleLabel = isEvent ? t('misc_organizer') : t('misc_owner');
 
       var avatarInner = (p.avatar_url && !p.is_anon)
-        ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        ? '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">'
         : initials;
+
+      // Relevance signals — dark-context colors (matchBadgeHtml is light-mode, invisible here)
+      var _isSelf = m.user_id === currentUser.id;
+      var _sharedChips = (m._shared && m._shared.length)
+        ? '<div style="display:flex;gap:0.2rem;margin-top:0.2rem;flex-wrap:wrap">' + m._shared.map(function(tg) { return '<span style="font-size:0.55rem;padding:0.1rem 0.4rem;background:rgba(100,180,230,0.16);color:#CFE6F7;border-radius:99px">' + escHtml(tg) + '</span>'; }).join('') + '</div>'
+        : '';
+      var _matchBadge = '';
+      if (!isOwnerRow && !_isSelf && (m._score || 0) >= 40) {
+        var _mCol = (m._score >= 60) ? '#34D399' : '#7DBEE8';
+        var _mBg = (m._score >= 60) ? 'rgba(26,158,142,0.18)' : 'rgba(251,191,36,0.2)';
+        _matchBadge = '<span style="font-size:0.58rem;font-weight:700;color:' + _mCol + ';background:' + _mBg + ';padding:0.18rem 0.5rem;border-radius:99px;white-space:nowrap">' + matchLabel(m._score).text + '</span>';
+      }
+      var _rightSide = isOwnerRow
+        ? '<span class="chat-member-role">' + roleLabel + '</span>'
+        : '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:auto">' + _matchBadge + ((isOwner && !isOwnerRow) ? '<button class="bc-kick-btn" onclick="event.stopPropagation();bcShowKickConfirm(this,\'' + m.user_id + '\',\'' + escHtml(p.name||t('misc_unknown')).replace(/'/g,'') + '\')" title="' + t('chat_remove_from_bubble') + '">' + icon('x') + '</button>' : '') + '</div>';
 
       html += `<div class="chat-member-row" data-member-uid="${m.user_id}" onclick="bcOpenPerson('${m.user_id}','${escHtml(p.name||'')}','${escHtml(p.title||'')}','${color}')">
         <div class="chat-member-avatar" style="background:${color};overflow:hidden">${avatarInner}${m._isLive ? '<span class="live-dot"></span>' : ''}</div>
-        <div style="flex:1;min-width:0"><div class="chat-member-name">${escHtml(p.name||t('misc_unknown'))} ${liveBadge}</div><div class="chat-member-status">${statusText}</div></div>
-        ${isOwnerRow ? '<span class="chat-member-role">' + roleLabel + '</span>' : (isOwner && !isOwnerRow ? '<button class="bc-kick-btn" onclick="event.stopPropagation();bcShowKickConfirm(this,\'' + m.user_id + '\',\'' + escHtml(p.name||t('misc_unknown')).replace(/'/g,'') + '\')" title="Fjern fra boble">' + icon('x') + '</button>' : '')}
+        <div style="flex:1;min-width:0"><div class="chat-member-name">${escHtml(p.name||t('misc_unknown'))} ${liveBadge}</div><div class="chat-member-status">${statusText}</div>${_sharedChips}</div>
+        ${_rightSide}
       </div>`;
     });
     // Add search field when 5+ members
@@ -1698,7 +2022,7 @@ async function bcConfirmKick(userId, userName) {
     var { error } = await sb.from('bubble_members').delete()
       .eq('bubble_id', bcBubbleId).eq('user_id', userId);
     if (error) throw error;
-    showToast(userName + ' er fjernet fra boblen');
+    showToast(t('chat_removed_from_bubble', {name: userName}));
     bcLoadMembers();
     bcLoadBubbleInfo();
   } catch(e) { logError('bcConfirmKick', e, { bubbleId: bcBubbleId, userId: userId }); errorToast('save', e); }
@@ -1721,7 +2045,7 @@ async function bcApproveMember(userId) {
       await ch.send({ type: 'broadcast', event: 'approved', payload: { bubbleName: bubbleName, bubbleId: bcBubbleId } });
       setTimeout(function() { ch.unsubscribe(); }, 2000);
       // Push notification to approved user
-      sendPush(userId, 'Du er godkendt!', 'Du er nu medlem af ' + bubbleName, { type: 'approved', bubble_id: bcBubbleId });
+      sendPush(userId, t('chat_approved_title'), t('chat_now_member_body', {bubble: bubbleName}), { type: 'approved', bubble_id: bcBubbleId });
     } catch(e2) { console.debug('[approve] broadcast error:', e2); }
   } catch(e) { logError('bcApproveMember', e); errorToast('save', e); }
 }
@@ -1761,24 +2085,29 @@ async function bcLoadInfo() {
     const isBubbleAdmin = bcBubbleData._isAdmin || false;
     const canEdit = isOwner || isBubbleAdmin;
     const isEvent = b.type === 'event' || b.type === 'live';
-    const memberLabel = isEvent ? 'deltagere' : 'medlemmer';
+    const memberLabel = isEvent ? t('bb_participants') : t('bc_members_lc');
 
-    // Member count
-    var { count: mc } = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', b.id).or('status.is.null,status.neq.pending');
-    mc = mc || 0;
+    // Member count from denormalized bubbles.member_count (visible to non-members).
+    var mc = (b && b.member_count != null) ? b.member_count : null;
+    if (mc == null) {
+      var _mcR = await sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('bubble_id', b.id).or('status.is.null,status.neq.pending');
+      mc = _mcR.count || 0;
+    }
 
     // Tags
     var tagsHtml = (b.keywords || []).map(function(k) {
-      var col = isEvent ? 'rgba(46,207,207,0.07)' : 'rgba(124,92,252,0.07)';
-      var txt = isEvent ? '#0F6E56' : '#534AB7';
-      return '<span style="font-size:0.68rem;padding:0.2rem 0.55rem;border-radius:99px;background:' + col + ';color:' + txt + ';font-weight:500">' + escHtml(k) + '</span>';
+      var col = isEvent ? 'rgba(46,207,207,0.18)' : 'rgba(100,180,230,0.18)';
+      // Readable text on light glass per DESIGN-GUIDE (was light blue/green = low contrast)
+      var txt = isEvent ? '#0F6E56' : 'rgb(46,110,160)';
+      var bord = isEvent ? 'rgba(46,207,207,0.35)' : 'rgba(100,180,230,0.35)';
+      return '<span style="font-size:0.68rem;padding:0.2rem 0.55rem;border-radius:99px;background:' + col + ';color:' + txt + ';border:0.5px solid ' + bord + ';font-weight:600">' + escHtml(k) + '</span>';
     }).join('');
 
     // Color theming
-    var accentBg = isEvent ? 'rgba(46,207,207,' : 'rgba(124,92,252,';
-    var accentTxt = isEvent ? '#085041' : '#534AB7';
-    var accentStroke = isEvent ? '#2ECFCF' : '#7C5CFC';
-    var iconBg = isEvent ? 'rgba(46,207,207,0.1)' : 'rgba(124,92,252,0.1)';
+    var accentBg = isEvent ? 'rgba(46,207,207,' : 'rgba(100,180,230,';
+    var accentTxt = isEvent ? '#34D399' : 'rgb(140,200,235)';
+    var accentStroke = isEvent ? '#34D399' : 'rgb(100,180,230)';
+    var iconBg = isEvent ? 'rgba(46,207,207,0.22)' : 'rgba(100,180,230,0.22)';
     var heroIcon = b.icon_url
       ? '<img src="' + escHtml(b.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:15px">'
       : (isEvent ? icon('calendar') : ico('bubble'));
@@ -1789,10 +2118,10 @@ async function bcLoadInfo() {
       try {
         var { data: parent } = await sb.from('bubbles').select('id,name').eq('id', b.parent_bubble_id).maybeSingle();
         if (parent) {
-          parentHtml = '<div onclick="openBubble(\'' + parent.id + '\')" style="display:flex;align-items:center;gap:0.55rem;padding:0.55rem 0.7rem;border-radius:12px;background:rgba(124,92,252,0.04);border:1px solid rgba(124,92,252,0.1);margin-bottom:0.9rem;cursor:pointer">' +
-            '<div style="width:24px;height:24px;border-radius:7px;background:rgba(124,92,252,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px">' + ico('bubble') + '</div>' +
-            '<div style="flex:1"><div style="font-size:0.68rem;color:var(--muted)">Del af</div><div style="font-size:0.78rem;font-weight:600;color:#534AB7">' + escHtml(parent.name) + '</div></div>' +
-            '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+          parentHtml = '<div onclick="openBubble(\'' + parent.id + '\')" class="parent-link" style="margin-bottom:0.9rem">' +
+            '<div style="width:24px;height:24px;border-radius:7px;background:rgba(100,180,230,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;color:rgb(100,180,230)">' + ico('bubble') + '</div>' +
+            '<div style="flex:1"><div class="parent-link-label">' + t('bc_part_of') + '</div><div class="parent-link-name">' + escHtml(parent.name) + '</div></div>' +
+            '<div class="parent-link-chev">›</div></div>';
         }
       } catch(e) { /* silent */ }
     }
@@ -1802,7 +2131,7 @@ async function bcLoadInfo() {
     if (!isEvent) {
       try {
         var { data: childBubbles } = await sb.from('bubbles')
-          .select('id, name, type, created_at, event_date, event_end_date, visibility, icon_url, agenda, bubble_members(count)')
+          .select('id, name, type, created_at, event_date, event_end_date, visibility, icon_url, agenda, member_count, bubble_members(count)')
           .eq('parent_bubble_id', b.id)
           .order('event_date', { ascending: true, nullsFirst: false })
           .limit(20);
@@ -1821,7 +2150,7 @@ async function bcLoadInfo() {
           var childNetIds = childNets.map(function(cn) { return cn.id; });
           if (childNetIds.length > 0) {
             var { data: grandchildren } = await sb.from('bubbles')
-              .select('id, name, type, event_date, event_end_date, visibility, parent_bubble_id, icon_url, agenda, bubble_members(count)')
+              .select('id, name, type, event_date, event_end_date, visibility, parent_bubble_id, icon_url, agenda, member_count, bubble_members(count)')
               .in('parent_bubble_id', childNetIds)
               .order('event_date', { ascending: true, nullsFirst: false });
             (grandchildren || []).forEach(function(gc) {
@@ -1830,105 +2159,57 @@ async function bcLoadInfo() {
             });
           }
 
-          var childCards = '';
-
-          // Sub-networks with fold-out (same tree structure as home screen)
+          // ═══ FLAD TREE (bbRenderTree - samme som home-tree) ═══
+          // Boblens children bliver top-niveau noder (boblen selv vises ikke).
+          // Grandchildren refererer deres sub-netvaerk via parent_id.
+          var _ctNodes = [];
+          var _ctLiveId = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble) ? currentLiveBubble.bubble_id : null;
+          function _ctPush(node, parentId) {
+            var isEv = node.type === 'event' || node.type === 'live';
+            _ctNodes.push({
+              id: node.id, name: node.name, type: node.type,
+              parent_id: parentId || null,
+              member_count: node.member_count ?? node.bubble_members?.[0]?.count ?? 0,
+              event_date: node.event_date || null,
+              event_end_date: node.event_end_date || null,
+              visibility: node.visibility,
+              icon_url: node.icon_url || null,
+              _live: (node.id === _ctLiveId),
+              _unread: !!_bubbleUnreadSet[node.id],
+              _star: false
+            });
+          }
+          // Sub-netvaerk (med deres grandchildren) foerst, saa direkte events
           childNets.forEach(function(cn) {
-            var cnMc = cn.bubble_members?.[0]?.count || 0;
-            var cnGc = gcMap[cn.id] || [];
-            var cnEvents = cnGc.filter(function(g) { return g.type === 'event' || g.type === 'live'; });
-            var cnNets = cnGc.filter(function(g) { return g.type !== 'event' && g.type !== 'live'; });
-            var cnAccId = 'bci-' + cn.id.slice(0, 8);
-            var hasChildren = cnEvents.length > 0 || cnNets.length > 0;
-
-            childCards += '<div class="bb-tree-branch">';
-            childCards += '<div class="bb-tree-net">';
-            childCards += '<div class="bb-tree-net-ico">' + (cn.icon_url ? '<img src="' + escHtml(cn.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px">' : _netIco) + '</div>';
-            childCards += '<div class="bb-tree-body" onclick="openBubbleChat(\'' + cn.id + '\',\'screen-bubble-chat\')">';
-            childCards += '<div style="font-size:0.75rem;font-weight:600">' + escHtml(cn.name) + '</div>';
-            childCards += '<div style="font-size:0.58rem;color:var(--muted);display:flex;align-items:center;gap:3px">' + visIcon(cn.visibility) + cnMc + ' medl.' + (cnGc.length > 0 ? ' \u00B7 ' + cnGc.length + ' events' : '') + '</div>';
-            childCards += '</div>';
-            if (hasChildren) {
-              childCards += '<button class="bb-tree-toggle" id="tog-' + cnAccId + '" onclick="event.stopPropagation();bbTreeToggle(\'' + cnAccId + '\')" style="width:24px;height:24px">' + _chevSm + '</button>';
-            }
-            childCards += '</div>';
-
-            if (hasChildren) {
-              childCards += '<div class="bb-tree-leaves collapsed" id="trunk-' + cnAccId + '">';
-              cnGc.forEach(function(ev) {
-                var isPast = ev.event_date && new Date(ev.event_end_date || ev.event_date) < now;
-                var evMc = ev.bubble_members?.[0]?.count || 0;
-                var dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) : '';
-                var isEvt = ev.type === 'event' || ev.type === 'live';
-                if (isEvt) {
-                  var gcEvLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ev.id);
-                  childCards += '<div class="bb-tree-leaf"><div class="bb-tree-evt" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubble-chat\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
-                  childCards += '<div class="bb-tree-evt-ico">' + (ev.icon_url ? '<img src="' + escHtml(ev.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px">' : _calIco) + '</div>';
-                  childCards += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + (gcEvLive ? ' <span class="live-badge-mini">LIVE</span>' : '') + '</div>';
-                  childCards += '<div style="font-size:0.55rem;color:var(--muted)">' + dateStr + (evMc > 0 ? ' \u00B7 ' + evMc + ' tilmeldt' : '') + '</div></div>';
-                  childCards += '<div class="bb-tree-go">\u203A</div>';
-                  childCards += '</div></div>';
-                } else {
-                  childCards += '<div class="bb-tree-leaf"><div class="bb-tree-net" onclick="event.stopPropagation();openBubbleChat(\'' + ev.id + '\',\'screen-bubble-chat\')">';
-                  childCards += '<div class="bb-tree-net-ico">' + (cn.icon_url ? '<img src="' + escHtml(cn.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px">' : _netIco) + '</div>';
-                  childCards += '<div style="flex:1;min-width:0"><div style="font-size:0.7rem;font-weight:600">' + escHtml(ev.name) + '</div>';
-                  childCards += '<div style="font-size:0.55rem;color:var(--muted)">' + visIcon(ev.visibility) + evMc + ' medl.</div></div>';
-                  childCards += '<div class="bb-tree-go">\u203A</div>';
-                  childCards += '</div></div>';
-                }
-              });
-              if (canEdit) {
-                childCards += '<div class="bb-tree-add" onclick="openCreateEventFromBubble(\'' + cn.id + '\')">' + _addIco + ' Opret event</div>';
-              }
-              childCards += '</div>';
-            }
-            childCards += '</div>';
+            _ctPush(cn, null);
+            (gcMap[cn.id] || []).forEach(function(gc) { _ctPush(gc, cn.id); });
           });
-
-          // Direct child events
-          childEvents.forEach(function(ch) {
-            var chMc = ch.bubble_members?.[0]?.count || 0;
-            var isPast = ch.event_date && new Date(ch.event_end_date || ch.event_date) < now;
-            var dateStr = ch.event_date
-              ? new Date(ch.event_date).toLocaleDateString(_locale(), { weekday: 'short', day: 'numeric', month: 'short' }) +
-                (new Date(ch.event_date).getHours() > 0 ? (_lang === 'da' ? ' kl. ' : ' at ') + new Date(ch.event_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) +
-                  (ch.event_end_date ? ' – ' + new Date(ch.event_end_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '')
-                : '')
-              : '';
-            var chEvLive = (typeof currentLiveBubble !== 'undefined' && currentLiveBubble && currentLiveBubble.bubble_id === ch.id);
-            var _agId = 'bc-agenda-' + ch.id;
-            childCards += '<div class="bb-tree-branch">';
-            childCards += '<div class="bb-tree-evt" onclick="openBubbleChat(\'' + ch.id + '\',\'screen-bubble-chat\')" style="' + (isPast ? 'opacity:0.5' : '') + '">';
-            childCards += '<div class="bb-tree-evt-ico">' + (ch.icon_url ? '<img src="' + escHtml(ch.icon_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px">' : _calIco) + '</div>';
-            childCards += '<div style="flex:1;min-width:0"><div style="font-size:0.75rem;font-weight:600">' + escHtml(ch.name) + (chEvLive ? ' <span class="live-badge-mini">LIVE</span>' : '') + '</div>';
-            childCards += '<div style="font-size:0.58rem;color:var(--muted)">' + visIcon(ch.visibility) + dateStr + ' \u00B7 ' + chMc + ' tilmeldt</div></div>';
-            if (ch.agenda) {
-              childCards += '<div onclick="event.stopPropagation();var p=document.getElementById(\'' + _agId + '\');var v=p.style.display===\'none\';p.style.display=v?\'block\':\'none\';this.style.transform=v?\'rotate(90deg)\':\'rotate(0)\'" style="cursor:pointer;color:var(--muted);transition:transform 0.2s;padding:4px">' + _chevSm + '</div>';
-            } else {
-              childCards += '<div class="bb-tree-go">\u203A</div>';
-            }
-            childCards += '</div>';
-            if (ch.agenda) {
-              childCards += '<div id="' + _agId + '" style="display:none;padding:0.4rem 0.6rem 0.5rem 2.2rem;font-size:0.7rem;color:var(--text-secondary);line-height:1.5;white-space:pre-line;background:rgba(46,207,207,0.03);border-radius:0 0 8px 8px;margin-top:-2px;border-top:0.5px solid rgba(46,207,207,0.1)">' + escHtml(ch.agenda) + '</div>';
-            }
-            childCards += '</div>';
-          });
-
+          childEvents.forEach(function(ev) { _ctPush(ev, null); });
+          // Chat-tree bruger det delte _bbFlatExpanded (som bbTreeToggleFlat opdaterer).
+          // Start foldet sammen hver gang boblen aabnes.
+          _bbFlatExpanded = [];
+          var childCards = bbRenderTree(_ctNodes, _bbFlatExpanded, { fromScreen: 'screen-bubble-chat' });
+          // Re-render callback for toggle (guides skifter ved udfold). Peger paa chat-tree
+          // saa laenge man er i boblen; home-tree saetter sin egen naar man gaar tilbage.
+          _bbFlatRerender = function() {
+            var _bcInfoPanel = document.getElementById('bc-info-tree');
+            if (_bcInfoPanel) _bcInfoPanel.innerHTML = bbRenderTree(_ctNodes, _bbFlatExpanded, { fromScreen: 'screen-bubble-chat' });
+          };
           eventsHtml = '<div style="margin-bottom:0.9rem">' +
-            '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">' +
-            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em">' + t('bi_network_events') + '</div>' +
-            '<div style="font-size:0.68rem;color:#0F6E56;font-weight:600">' + childBubbles.length + '</div></div>' +
-            '<div style="display:flex;flex-direction:column;gap:0.15rem">' + childCards + '</div>' +
+            '<div class="bb-section-header" style="display:flex;align-items:center;justify-content:space-between">' +
+            '<span>' + t('bi_network_events') + '</span>' +
+            '<span class="bb-section-count">' + childBubbles.length + '</span></div>' +
+            '<div id="bc-info-tree">' + childCards + '</div>' +
             (canEdit ? '<div style="display:flex;gap:0.4rem;margin-top:0.8rem">' +
-              '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('calendar') + ' Event</button>' +
-              '<button onclick="openCreateSubBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('bubble') + ' Sub-boble</button></div>' : '') +
+              '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" class="bb-cta-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Event</button>' +
+              '<button onclick="openCreateSubBubble(\'' + b.id + '\')" class="bb-cta-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6"/><circle cx="16" cy="13.5" r="4.5"/></svg>' + t('bb_create_sub') + '</button></div>' : '') +
             '</div>';
         } else if (canEdit) {
           eventsHtml = '<div style="margin-bottom:0.9rem">' +
-            '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">' + t('bi_network_events') + '</div>' +
+            '<div class="bb-section-header">' + t('bi_network_events') + '</div>' +
             '<div style="display:flex;gap:0.4rem">' +
-            '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);color:#085041;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('calendar') + ' Event</button>' +
-            '<button onclick="openCreateSubBubble(\'' + b.id + '\')" style="flex:1;padding:0.6rem;border-radius:12px;background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);color:#534AB7;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:0.35rem"> + ' + icon('bubble') + ' Sub-boble</button></div></div>';
+            '<button onclick="openCreateEventFromBubble(\'' + b.id + '\')" class="bb-cta-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Event</button>' +
+            '<button onclick="openCreateSubBubble(\'' + b.id + '\')" class="bb-cta-create"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9.5" cy="9.5" r="6"/><circle cx="16" cy="13.5" r="4.5"/></svg>' + t('bb_create_sub') + '</button></div></div>';
         }
       } catch(e) { logError('bcLoadInfo:children', e); }
     }
@@ -1963,12 +2244,12 @@ async function bcLoadInfo() {
         }
 
         var childCount = allBubbleIds.length - 1;
-        statsHtml = '<div style="margin-bottom:0.9rem">' +
-          '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.4rem">' + t('bi_statistics') + '</div>' +
+        statsHtml = '<div class="section-card">' +
+          '<div class="section-card-title">' + t('bi_statistics') + '</div>' +
           '<div class="dash-pair"><div class="dash-row">' +
-            oCard('o-mem-' + b.id, 'users', 'rgba(124,92,252,0.08)', 'var(--accent)', memTotalCount, t('bi_members_label'), memNewCount, 'accent') +
+            oCard('o-mem-' + b.id, 'users', 'rgba(100,180,230,0.08)', 'var(--accent)', memTotalCount, t('bi_members_label'), memNewCount, 'accent') +
             oCard('o-msg-' + b.id, 'chat', 'rgba(232,121,168,0.08)', 'var(--pink)', msgTotal.count || 0, t('bi_messages_label'), msgNew.count, 'pink') +
-          '</div><div class="dash-tray" id="dtray-o1-' + b.id.slice(0,8) + '"><div class="dash-tray-collapse"><div class="dash-tray-inner" id="dti-o1"><div style="font-size:0.72rem;font-weight:700" id="dtitle-o1"></div><div style="font-size:0.55rem;color:var(--muted)" id="dsub-o1"></div><div class="dash-chart-wrap"><canvas id="dcv-o1"></canvas></div></div></div></div></div>' +
+          '</div><div class="dash-tray" id="dtray-o1-' + b.id.slice(0,8) + '"><div class="dash-tray-collapse"><div class="dash-tray-inner" id="dti-o1"><div style="font-size:0.72rem;font-weight:700" id="dtitle-o1"></div><div style="font-size:0.55rem;color:rgba(255,255,255,0.55)" id="dsub-o1"></div><div class="dash-chart-wrap"><canvas id="dcv-o1"></canvas></div></div></div></div></div>' +
           '</div>';
       } catch(e) { logError('bcLoadInfo:stats', e); }
     }
@@ -1980,22 +2261,22 @@ async function bcLoadInfo() {
       // Shared: admins
       if (isOwner) {
         adminItems += '<div onclick="openAdminDesignation(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
-          '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('users') + '</span>' +
-          '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">' + t('bi_designate_admins') + '</div>' +
-          '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>' +
+          '<span class="u-icon15">' + icon('users') + '</span>' +
+          '<div style="flex:1;font-size:0.8rem;color:rgba(255,255,255,0.85)">' + t('bi_designate_admins') + '</div>' +
+          '<div class="u-meta-sm">›</div></div>' +
           '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>';
       }
       // Shared: download list
       adminItems += '<div onclick="downloadMembersPdf(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
-        '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('file') + '</span>' +
-        '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">Download ' + memberLabel + 'liste</div>' +
-        '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+        '<span class="u-icon15">' + icon('file') + '</span>' +
+        '<div style="flex:1;font-size:0.8rem;color:rgba(255,255,255,0.85)">Download ' + memberLabel + 'liste</div>' +
+        '<div class="u-meta-sm">›</div></div>';
       // Shared: chat lock toggle
       var chatLocked = b.chat_locked || false;
       adminItems += '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>' +
         '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem">' +
-        '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('lock') + '</span>' +
-        '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">' + t('bi_lock_chat') + '</div>' +
+        '<span class="u-icon15">' + icon('lock') + '</span>' +
+        '<div style="flex:1;font-size:0.8rem;color:rgba(255,255,255,0.85)">' + t('bi_lock_chat') + '</div>' +
         '<label style="position:relative;width:36px;height:20px;flex-shrink:0;cursor:pointer">' +
         '<input type="checkbox" ' + (chatLocked ? 'checked' : '') + ' onchange="bcToggleChatLock(\'' + b.id + '\',this.checked)" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;margin:0">' +
         '<div style="position:absolute;inset:0;border-radius:10px;transition:background 0.2s;background:' + (chatLocked ? 'var(--accent)' : 'var(--border)') + '"></div>' +
@@ -2005,21 +2286,21 @@ async function bcLoadInfo() {
       if (isEvent) {
         adminItems += '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>' +
           '<div onclick="generateEventReport(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
-          '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('file') + '</span>' +
-          '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">' + t('bi_event_report') + '</div>' +
-          '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+          '<span class="u-icon15">' + icon('file') + '</span>' +
+          '<div style="flex:1;font-size:0.8rem;color:rgba(255,255,255,0.85)">' + t('bi_event_report') + '</div>' +
+          '<div class="u-meta-sm">›</div></div>';
       }
       // Owner: transfer
       if (isOwner) {
         adminItems += '<div style="height:1px;background:var(--glass-border-subtle);margin:0 0.75rem"></div>' +
           '<div onclick="openTransferOwnership(\'' + b.id + '\')" style="display:flex;align-items:center;gap:0.6rem;padding:0.65rem 0.75rem;cursor:pointer">' +
-          '<span style="width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--muted)">' + icon('crown') + '</span>' +
-          '<div style="flex:1;font-size:0.8rem;color:var(--text-secondary)">' + t('bi_transfer_ownership') + '</div>' +
-          '<div style="font-size:0.88rem;color:var(--muted)">›</div></div>';
+          '<span class="u-icon15">' + icon('crown') + '</span>' +
+          '<div style="flex:1;font-size:0.8rem;color:rgba(255,255,255,0.85)">' + t('bi_transfer_ownership') + '</div>' +
+          '<div class="u-meta-sm">›</div></div>';
       }
-      adminHtml = '<div style="margin-bottom:0.9rem">' +
-        '<div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">' + (isEvent ? t('bi_event_admin') : t('bi_administration')) + '</div>' +
-        '<div style="border-radius:12px;border:1px solid var(--glass-border-subtle);overflow:hidden">' + adminItems + '</div></div>';
+      adminHtml = '<div class="section-card">' +
+        '<div class="section-card-title">' + (isEvent ? t('bi_event_admin') : t('bi_administration')) + '</div>' +
+        '<div style="border-radius:8px;border:0.5px solid var(--border-1);overflow:hidden">' + adminItems + '</div></div>';
     }
 
     // ── Bottom actions: member-aware ──
@@ -2041,12 +2322,12 @@ async function bcLoadInfo() {
 
       var checkoutBtn = '';
       if (isEvent && myCheckinLive) {
-        checkoutBtn = '<button onclick="bcCheckout()" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.2);color:#085041;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + t('bi_checkout') + '</button>';
+        checkoutBtn = '<button onclick="bcCheckout()" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(46,207,207,0.18);border:0.5px solid rgba(46,207,207,0.35);color:#5FE0CC;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + t('bi_checkout') + '</button>';
       }
-      bottomHtml = '<div style="display:flex;flex-direction:column;gap:0.4rem;border-top:1px solid var(--glass-border-subtle);padding-top:0.8rem">' +
+      bottomHtml = '<div style="display:flex;flex-direction:column;gap:0.4rem;border-top:0.5px solid rgba(20,22,28,0.08);padding-top:0.8rem">' +
         checkoutBtn +
-        '<button data-action="leaveBubble" data-id="' + b.id + '" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.1);color:#A32D2D;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_leave_event') : t('bb_leave_bubble')) + '</button>' +
-        (isOwner ? '<button onclick="confirmPopBubble(\'' + b.id + '\')" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.1);color:#791F1F;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_delete_event') : t('bb_delete_bubble')) + '</button>' : '') +
+        '<button data-action="leaveBubble" data-id="' + b.id + '" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(230,150,60,0.10);border:0.5px solid rgba(230,150,60,0.28);color:rgba(235,170,90,0.9);font-size:0.8rem;font-weight:600;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_leave_event') : t('bb_leave_bubble')) + '</button>' +
+        (isOwner ? '<button onclick="confirmPopBubble(\'' + b.id + '\')" style="width:100%;padding:0.65rem;border-radius:12px;background:rgba(220,60,60,0.9);border:none;color:#fff;font-size:0.8rem;font-weight:700;cursor:pointer;font-family:var(--font)">' + (isEvent ? t('bb_delete_event') : t('bb_delete_bubble')) + '</button>' : '') +
         '</div>';
     } else if (bcBubbleData._isPending) {
       bottomHtml = ''; // Banner at top (bcLoadMembership) already shows pending state
@@ -2060,22 +2341,63 @@ async function bcLoadInfo() {
     var topJoinHtml = '';
     if (!bcBubbleData._isMember && !bcBubbleData._isPending) {
       if (b.visibility === 'hidden') {
-        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem;font-size:0.78rem;color:var(--muted)">' + icon('eye') + ' Kun via invitation</div>';
+        topJoinHtml = '<div class="text-on-light-muted" style="text-align:center;padding:0.5rem 0 0.8rem;font-size:0.78rem">' + icon('eye') + ' ' + t('bb_invite_only') + '</div>';
       } else if (b.visibility === 'private') {
-        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem"><button class="btn-primary" data-action="requestJoin" data-id="' + b.id + '" style="font-size:0.8rem;padding:0.5rem 1.4rem">' + icon('lock') + ' Anmod om medlemskab</button></div>';
+        topJoinHtml = '<div style="padding:0.5rem 0 0.8rem"><button class="bb-cta-anmod" data-action="requestJoin" data-id="' + b.id + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' + t('chat_request_membership') + '</button></div>';
       } else {
-        topJoinHtml = '<div style="text-align:center;padding:0.5rem 0 0.8rem"><button class="btn-primary" onclick="joinBubble(\'' + b.id + '\')" style="font-size:0.8rem;padding:0.5rem 1.4rem">Bliv medlem</button></div>';
+        topJoinHtml = '<div style="padding:0.5rem 0 0.8rem"><button class="bb-cta-join" onclick="joinBubble(\'' + b.id + '\')">' + t('chat_become_member') + '</button></div>';
       }
     } else if (bcBubbleData._isPending) {
       topJoinHtml = ''; // Banner at top already handles pending state
     }
 
+    // ── ADR-009: ejerskab request-flow banner ──
+    var ownerBanner = '';
+    if (b.pending_owner_id) {
+      var amRecipient = currentUser && b.pending_owner_id === currentUser.id;
+      var amSender = isOwner; // ejer = afsender (created_by uændret mens pending)
+      if (amRecipient) {
+        ownerBanner =
+          '<div style="background:var(--cta-bg);border:1px solid var(--cta-border);border-radius:14px;padding:0.85rem 0.9rem;margin-bottom:0.8rem">' +
+            '<div class="text-on-light" style="font-size:0.82rem;font-weight:700;margin-bottom:0.2rem">' + t('ownreq_recipient_title') + '</div>' +
+            '<div class="text-on-light-muted" style="font-size:0.72rem;margin-bottom:0.7rem">' + t('ownreq_recipient_body', {bubble: escHtml(b.name)}) + '</div>' +
+            '<div style="display:flex;gap:0.5rem">' +
+              '<button style="flex:1;padding:0.55rem;border-radius:11px;background:var(--cta-bg);color:var(--cta-text);border:1px solid var(--cta-border);font-family:inherit;font-weight:700;font-size:0.78rem;cursor:pointer" onclick="acceptOwnership(\'' + b.id + '\')">' + t('ownreq_accept') + '</button>' +
+              '<button style="flex:1;padding:0.55rem;border-radius:11px;background:none;color:var(--text-secondary);border:1px solid var(--glass-border);font-family:inherit;font-weight:600;font-size:0.78rem;cursor:pointer" onclick="declineOwnership(\'' + b.id + '\')">' + t('ownreq_decline') + '</button>' +
+            '</div>' +
+          '</div>';
+      } else if (amSender) {
+        ownerBanner =
+          '<div style="background:rgba(150,148,140,0.1);border:1px solid var(--glass-border);border-radius:14px;padding:0.85rem 0.9rem;margin-bottom:0.8rem">' +
+            '<div class="text-on-light" style="font-size:0.82rem;font-weight:700;margin-bottom:0.2rem">' + t('ownreq_sender_title') + '</div>' +
+            '<div class="text-on-light-muted" style="font-size:0.72rem;margin-bottom:0.7rem">' + t('ownreq_sender_body') + '</div>' +
+            '<button style="width:100%;padding:0.55rem;border-radius:11px;background:none;color:var(--text-secondary);border:1px solid var(--glass-border);font-family:inherit;font-weight:600;font-size:0.78rem;cursor:pointer" onclick="withdrawOwnership(\'' + b.id + '\')">' + t('ownreq_withdraw') + '</button>' +
+          '</div>';
+      }
+    }
+
+    var _isMemberBadge = bcBubbleData._isMember;
+    var _bStars = (!isEvent && typeof bubbleStarGet === 'function') ? bubbleStarGet(b.id) : 0;
+    var _heroCheck = _isMemberBadge ? '<div style="position:absolute;top:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#1A9E8E;display:flex;align-items:center;justify-content:center;border:2.5px solid var(--bg)"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>' : '';
+    var _heroStars = '<span id="bubble-info-star-badge">' + ((!isEvent && _bStars > 0) ? bubbleStarRender(b.id) : '') + '</span>';
+
     list.innerHTML =
+      ownerBanner +
       parentHtml +
       '<div style="text-align:center;padding:0.25rem 0 1rem">' +
-        '<div style="width:52px;height:52px;border-radius:15px;background:' + (b.icon_url ? 'transparent' : iconBg) + ';display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;color:' + accentStroke + ';font-size:24px;position:relative"><div style="width:100%;height:100%;border-radius:15px;overflow:hidden;display:flex;align-items:center;justify-content:center">' + heroIcon + '</div>' + (bcBubbleData._isMember ? '<div style="position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#1A9E8E;display:flex;align-items:center;justify-content:center;border:2.5px solid var(--bg)"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>' : '') + '</div>' +
-        '<div style="font-size:1rem;font-weight:800;color:var(--text)">' + escHtml(b.name) + '</div>' +
-        '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.15rem">' + typeLabel(b.type) + (b.location ? ' · ' + escHtml(b.location) : '') + ' · ' + mc + ' ' + memberLabel + (bcBubbleData._isMember ? ' · <span style="color:#1A9E8E;font-weight:600"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="3" stroke-linecap="round" style="vertical-align:-1px"><polyline points="20 6 9 17 4 12"/></svg> ' + (isEvent ? t('dl_attending') : t('dl_member')) + '</span>' : '') + '</div>' +
+        '<div style="width:52px;height:52px;border-radius:15px;background:' + (b.icon_url ? 'transparent' : iconBg) + ';display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem;color:' + accentStroke + ';font-size:24px;position:relative"><div style="width:100%;height:100%;border-radius:15px;overflow:hidden;display:flex;align-items:center;justify-content:center">' + heroIcon + '</div>' + _heroCheck + _heroStars + '</div>' +
+        '<div class="text-on-light" style="font-size:1rem;font-weight:800">' + escHtml(b.name) + '</div>' +
+        '<div class="text-on-light-muted" style="font-size:0.75rem;margin-top:0.15rem">' + typeLabel(b.type) + (b.location ? ' · ' + escHtml(b.location) : '') + ' · ' + mc + ' ' + memberLabel + (bcBubbleData._isMember ? ' · <span style="color:#1A9E8E;font-weight:600"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="3" stroke-linecap="round" style="vertical-align:-1px"><polyline points="20 6 9 17 4 12"/></svg> ' + (isEvent ? t('dl_attending') : t('dl_member')) + '</span>' : '') + '</div>' +
+        (!isEvent && bcBubbleData._isMember ? (function() {
+          var r = bubbleStarGet(b.id);
+          var starsInner = [1,2,3].map(function(n) {
+            return '<div class="ps-star ' + (n <= r ? 'filled' : 'empty') + '" onclick="bubbleSetStar(\'' + b.id + '\',' + n + ')">\u2605</div>';
+          }).join('');
+          return '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:0.35rem;margin-top:0.7rem;padding:0.6rem 1rem;background:rgba(20,22,28,0.04);border-radius:12px">' +
+            '<div class="text-on-light-muted" style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em">' + t('pf_your_rating') + '</div>' +
+            '<div id="bubble-star-rating" class="ps-stars">' + starsInner + '</div>' +
+          '</div>';
+        })() : '') +
         (isEvent && b.event_date ? (function() {
           var evD = new Date(b.event_date);
           var evPast = new Date(b.event_end_date || b.event_date) < new Date();
@@ -2085,28 +2407,28 @@ async function bcLoadInfo() {
             ? (_lang === 'da' ? 'slutter kl. ' : 'ends at ') + new Date(b.event_end_date).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' })
             : '';
           var evBadge = evPast
-            ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(30,27,46,0.08);color:var(--muted);font-weight:600">Afsluttet</span>'
+            ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);font-weight:600;border:0.5px solid rgba(255,255,255,0.12)">Afsluttet</span>'
             : (evD <= new Date()
-              ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(46,207,207,0.2);color:#085041;font-weight:600">I gang</span>'
-              : '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(124,92,252,0.1);color:#534AB7;font-weight:600">' + t('bb_coming') + '</span>');
-          return '<div style="background:rgba(46,207,207,0.08);border:0.5px solid rgba(46,207,207,0.25);border-radius:10px;padding:8px 12px;margin-top:0.6rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem">' +
+              ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(46,207,207,0.22);color:#5FE0CC;font-weight:600;border:0.5px solid rgba(46,207,207,0.4)">I gang</span>'
+              : '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(100,180,230,0.18);color:#A9D9F5;font-weight:600;border:0.5px solid rgba(100,180,230,0.35)">' + t('bb_coming') + '</span>');
+          return '<div style="background:rgba(46,207,207,0.12);border:0.5px solid rgba(46,207,207,0.28);border-radius:10px;padding:8px 12px;margin-top:0.6rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem">' +
             '<div style="text-align:left">' +
-              '<div style="font-size:0.8rem;font-weight:700;color:#085041">' + evDateStr + '</div>' +
-              (evEndStr ? '<div style="font-size:0.68rem;color:#0F6E56;margin-top:1px">' + evEndStr + '</div>' : '') +
+              '<div style="font-size:0.8rem;font-weight:700;color:#5FE0CC">' + evDateStr + '</div>' +
+              (evEndStr ? '<div style="font-size:0.68rem;color:rgba(95,224,204,0.75);margin-top:1px">' + evEndStr + '</div>' : '') +
             '</div>' +
             evBadge +
           '</div>';
         })() : '') +
-        (b.description ? '<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;line-height:1.6;text-align:left;padding:0.7rem 0.85rem;border-radius:10px;background:rgba(30,27,46,0.03);border:0.5px solid rgba(216,213,228,0.5);white-space:pre-line">' + escHtml(b.description) + '</div>' : '') +
-        (b.external_url ? '<a href="' + escHtml(b.external_url) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;padding:0.6rem 0.85rem;border-radius:10px;background:rgba(124,92,252,0.05);border:0.5px solid rgba(124,92,252,0.15);text-decoration:none;cursor:pointer">' +
-          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="2" stroke-linecap="round" style="flex-shrink:0"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
-          '<div style="flex:1;min-width:0"><div style="font-size:0.68rem;color:var(--muted);margin-bottom:1px">' + t('bi_link_label') + '</div>' +
-          '<div style="font-size:0.78rem;font-weight:600;color:#534AB7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(b.external_url.replace(/^https?:\/\//, '')) + '</div></div>' +
-          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0"><path d="M9 6l6 6-6 6"/></svg>' +
+        (b.description ? '<div class="glass-dark" style="font-size:0.8rem;margin-top:0.5rem;line-height:1.6;text-align:left;padding:0.75rem 0.9rem;border-radius:12px;white-space:pre-line">' + escHtml(b.description) + '</div>' : '') +
+        (b.external_url ? '<a href="' + escHtml(b.external_url) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;padding:0.6rem 0.85rem;border-radius:10px;background:rgba(100,180,230,0.12);border:0.5px solid rgba(100,180,230,0.25);text-decoration:none;cursor:pointer">' +
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(100,180,230)" stroke-width="2" stroke-linecap="round" style="flex-shrink:0"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
+          '<div style="flex:1;min-width:0"><div class="text-on-light-muted" style="font-size:0.68rem;margin-bottom:1px">' + t('bi_link_label') + '</div>' +
+          '<div style="font-size:0.78rem;font-weight:600;color:rgb(80,150,200);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(b.external_url.replace(/^https?:\/\//, '')) + '</div></div>' +
+          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#56536E" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0"><path d="M9 6l6 6-6 6"/></svg>' +
         '</a>' : '') +
-        (b.agenda ? '<div style="margin-top:0.7rem;padding:0.7rem 0.85rem;border-radius:10px;background:rgba(46,207,207,0.06);border:0.5px solid rgba(46,207,207,0.2);text-align:left">' +
-          '<div style="font-size:0.68rem;font-weight:700;color:#0F6E56;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.35rem">' + icon('calendar') + ' ' + t('bi_agenda') + '</div>' +
-          '<div style="font-size:0.78rem;color:var(--text);line-height:1.6;white-space:pre-line">' + escHtml(b.agenda) + '</div>' +
+        (b.agenda ? '<div class="glass-dark" style="margin-top:0.7rem;padding:0.75rem 0.9rem;border-radius:12px;text-align:left">' +
+          '<div style="font-size:0.68rem;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.35rem">' + icon('calendar') + ' ' + t('bi_agenda') + '</div>' +
+          '<div style="font-size:0.78rem;color:rgba(255,255,255,0.9);line-height:1.6;white-space:pre-line">' + escHtml(b.agenda) + '</div>' +
         '</div>' : '') +
         (tagsHtml ? '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.5rem;justify-content:center">' + tagsHtml + '</div>' : '') +
       '</div>' +
@@ -2186,8 +2508,8 @@ async function bcLoadPosts() {
     if (_bcPostsCache.length === 0) {
       list.innerHTML = '<div class="empty-state" style="margin-top:2rem">' +
         '<div class="empty-icon">' + icon('file') + '</div>' +
-        '<div class="empty-text">Ingen opslag endnu' +
-        (canPost ? '<br><span style="font-size:0.72rem;color:var(--accent);cursor:pointer" onclick="bcOpenCreatePost()">Opret det første opslag →</span>' : '<br><span style="font-size:0.72rem">Administratorer kan dele nyheder og opdateringer her</span>') +
+        '<div class="empty-text">' + t('chat_no_posts') +
+        (canPost ? '<br><span style="font-size:0.72rem;color:rgb(100,180,230);cursor:pointer" onclick="bcOpenCreatePost()">' + t('chat_create_first_post') + '</span>' : '<br><span style="font-size:0.72rem">' + t('chat_admins_share') + '</span>') +
         '</div></div>';
       return;
     }
@@ -2267,7 +2589,7 @@ function bcRenderPostCard(post, author, event) {
     '</div>' +
     '<div class="bp-title">' + escHtml(post.title) + '</div>' +
     '<div class="bp-preview">' + preview + '</div>' +
-    (hasMore ? '<div class="bp-readmore">Læs mere ›</div>' : '') +
+    (hasMore ? '<div class="bp-readmore">' + t('chat_read_more') + '</div>' : '') +
     eventChip +
     likeHtml +
     '</div>';
@@ -2292,7 +2614,7 @@ function bcExpandPost(postId) {
   if (post.event_id) {
     eventCard = '<div onclick="openBubbleChat(\'' + post.event_id + '\',\'screen-bubble-chat\')" style="padding:0.6rem 0.8rem;border-radius:12px;background:rgba(46,207,207,0.05);border:1px solid rgba(46,207,207,0.15);display:flex;align-items:center;gap:0.5rem;margin-top:1rem;cursor:pointer">' +
       '<div style="width:32px;height:32px;border-radius:10px;background:rgba(46,207,207,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green);font-size:16px">' + ico('calendar') + '</div>' +
-      '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:700;color:var(--green)" id="bp-expand-event-name">Henter event...</div></div>' +
+      '<div style="flex:1;min-width:0"><div style="font-size:0.78rem;font-weight:700;color:var(--green)" id="bp-expand-event-name">' + t('chat_loading_event') + '</div></div>' +
       '<div style="font-size:0.88rem;color:var(--green)">›</div></div>';
   }
 
@@ -2306,17 +2628,17 @@ function bcExpandPost(postId) {
   }
 
   var { overlay, sheet } = bbDynOpen();
-  sheet.innerHTML = '<div style="width:36px;height:4px;border-radius:99px;background:rgba(30,27,46,0.08);margin:0 auto 1rem;cursor:pointer" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
+  sheet.innerHTML = '<div class="u-sheet-grip-c" onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))"></div>' +
     '<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem">' + avatarHtml +
-    '<div><div style="font-size:0.88rem;font-weight:700">' + name + '</div>' +
-    '<div style="font-size:0.65rem;color:var(--muted)">' + timeAgo(post.created_at) + '</div></div></div>' +
-    '<div style="font-size:1.05rem;font-weight:800;margin-bottom:0.6rem">' + escHtml(post.title) + '</div>' +
-    '<div style="font-size:0.88rem;color:var(--text-secondary);line-height:1.65">' + contentHtml + '</div>' +
+    '<div><div style="font-size:0.88rem;font-weight:700;color:rgba(255,255,255,0.95)">' + name + '</div>' +
+    '<div style="font-size:0.65rem;color:rgba(255,255,255,0.45)">' + timeAgo(post.created_at) + '</div></div></div>' +
+    '<div style="font-size:1.05rem;font-weight:800;margin-bottom:0.6rem;color:rgba(255,255,255,0.95)">' + escHtml(post.title) + '</div>' +
+    '<div style="font-size:0.88rem;color:rgba(255,255,255,0.7);line-height:1.65">' + contentHtml + '</div>' +
     eventCard +
-    '<div class="bp-like-row" style="margin-top:1rem;padding-top:0.6rem;border-top:0.5px solid rgba(30,27,46,0.06)">' +
+    '<div class="bp-like-row" style="margin-top:1rem;padding-top:0.6rem;border-top:0.5px solid rgba(255,255,255,0.08)">' +
     '<button class="bp-like-btn' + (expandLiked ? ' liked' : '') + '" id="bp-expand-like-' + post.id + '" onclick="bcTogglePostLike(\'' + post.id + '\')">' + (expandLiked ? '❤️' : '🤍') + '</button>' +
     '<span class="bp-like-count" id="bp-expand-like-count-' + post.id + '">' + (expandLikeCount > 0 ? expandLikeCount : '') + '</span></div>' +
-    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:0.8rem;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer">Luk</button>' +
+    '<button onclick="bbDynClose(this.closest(\'.bb-dyn-overlay\'))" style="width:100%;margin-top:0.8rem;padding:0.65rem;border-radius:12px;border:0.5px solid rgba(255,255,255,0.1);background:none;color:rgba(255,255,255,0.55);font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer">' + t('misc_close') + '</button>' +
     deleteBtn;
 
   // Fetch event name async if linked
@@ -2336,7 +2658,7 @@ async function bcOpenCreatePost() {
 
   // Build event picker: list child events of this bubble
   var picker = document.getElementById('bp-event-picker');
-  picker.innerHTML = '<div style="font-size:0.72rem;color:var(--muted)">Henter events...</div>';
+  picker.innerHTML = '<div style="font-size:0.72rem;color:var(--muted)">' + t('chat_loading_events') + '</div>';
 
   openModal('sheet-create-post');
 
@@ -2349,19 +2671,19 @@ async function bcOpenCreatePost() {
       .limit(10);
 
     if (!events || events.length === 0) {
-      picker.innerHTML = '<div style="padding:0.5rem 0.6rem;border-radius:8px;border:1px dashed var(--glass-border);font-size:0.72rem;color:var(--muted);text-align:center">Ingen events at linke til</div>';
+      picker.innerHTML = '<div style="padding:0.5rem 0.6rem;border-radius:8px;border:1px dashed var(--glass-border);font-size:0.72rem;color:var(--muted);text-align:center">' + t('chat_no_events_link') + '</div>';
     } else {
       picker.innerHTML = events.map(function(ev) {
         return '<label style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.6rem;border-radius:10px;border:1px solid var(--glass-border-subtle);margin-bottom:0.3rem;cursor:pointer;transition:border-color 0.15s" onclick="bcSelectPostEvent(this,\'' + ev.id + '\')">' +
           '<input type="radio" name="bp-event" value="' + ev.id + '" style="display:none">' +
           '<div style="width:24px;height:24px;border-radius:8px;background:rgba(46,207,207,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green);font-size:0.7rem">' + ico('calendar') + '</div>' +
           '<div style="flex:1;font-size:0.78rem;font-weight:600;color:var(--text)">' + escHtml(ev.name) + '</div>' +
-          '<div class="bp-radio-dot" style="width:16px;height:16px;border-radius:50%;border:2px solid var(--glass-border);flex-shrink:0;transition:all 0.15s"></div>' +
+          '<div class="bp-radio-dot" style="width:16px;height:16px;border-radius:50%;border:2px solid var(--glass-border);flex-shrink:0;transition:background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s, opacity 0.15s, box-shadow 0.15s"></div>' +
           '</label>';
       }).join('');
     }
   } catch(e) {
-    picker.innerHTML = '<div style="font-size:0.72rem;color:var(--accent2)">Kunne ikke hente events</div>';
+    picker.innerHTML = '<div style="font-size:0.72rem;color:var(--accent2)">' + t('home_load_events_fail') + '</div>';
   }
 }
 
@@ -2395,7 +2717,7 @@ async function bcSubmitPost() {
   if (_postSubmitLock) return;
   var title = document.getElementById('bp-title').value.trim();
   var content = document.getElementById('bp-content').value.trim();
-  if (!title) { showWarningToast('Titel er påkrævet'); return; }
+  if (!title) { showWarningToast(t('chat_title_required')); return; }
 
   _postSubmitLock = true;
   var picker = document.getElementById('bp-event-picker');
@@ -2405,7 +2727,7 @@ async function bcSubmitPost() {
   var result = await dbActions.createPost(bcBubbleId, title, content || null, selectedEvent);
   if (result.ok) {
     closeModal('sheet-create-post');
-    showSuccessToast('Opslag publiceret');
+    showSuccessToast(t('chat_post_published'));
     bcLoadPosts();
   } else {
     logError('bcSubmitPost', result.error);
@@ -2434,7 +2756,7 @@ async function bcConfirmDeletePost(postId) {
   if (result.ok) {
     var overlay = document.querySelector('.bb-dyn-overlay');
     if (overlay) bbDynClose(overlay);
-    showSuccessToast('Opslag slettet');
+    showSuccessToast(t('chat_post_deleted'));
     bcLoadPosts();
   }
 }

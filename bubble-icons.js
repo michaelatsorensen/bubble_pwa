@@ -9,6 +9,8 @@ const _s = 'xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox=
 
 const ICONS = {
   bubble: `<svg ${_s}><circle cx="9.5" cy="9.5" r="6" opacity="0.85"/><circle cx="16" cy="13.5" r="4.5" opacity="0.6"/><circle cx="8" cy="16" r="3" opacity="0.45"/></svg>`,
+  history: `<svg ${_s}><path d="M3 12a9 9 0 109-9 9 9 0 00-7.5 4"/><path d="M4 3v4h4"/><path d="M12 8v4l3 2"/></svg>`,
+  'chevron-down': `<svg ${_s}><path d="M6 9l6 6 6-6"/></svg>`,
   home: `<svg ${_s}><path d="M4 11.4L12 4l8 7.4"/><path d="M6 10v8.5a1 1 0 001 1h3v-4.5a2 2 0 014 0v4.5h3a1 1 0 001-1V10"/></svg>`,
   search: `<svg ${_s}><circle cx="11" cy="11" r="6"/><path d="M16.5 16.5L21 21"/></svg>`,
   chat: `<svg ${_s}><path d="M21 12c0 4.4-4 8-9 8a10.2 10.2 0 01-3.8-.7L3 21l1.9-3.7A7.8 7.8 0 013 12c0-4.4 4-8 9-8s9 3.6 9 8z"/><circle cx="9" cy="12" r=".75" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r=".75" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".75" fill="currentColor" stroke="none"/></svg>`,
@@ -19,7 +21,7 @@ const ICONS = {
   cpu: `<svg ${_s}><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9.5 2.5v4M14.5 2.5v4M9.5 17.5v4M14.5 17.5v4M2.5 9.5h4M2.5 14.5h4M17.5 9.5h4M17.5 14.5h4"/></svg>`,
   building: `<svg ${_s}><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/><path d="M10 21v-3h4v3"/></svg>`,
   coffee: `<svg ${_s}><path d="M17 8h1.5a2.5 2.5 0 010 5H17"/><path d="M5 8h12v8a4 4 0 01-4 4H9a4 4 0 01-4-4V8z"/><path d="M8 2v3M11 2v3M14 2v3"/></svg>`,
-  bookmark: `<svg ${_s}><path d="M6 4a1.5 1.5 0 011.5-1.5h9A1.5 1.5 0 0118 4v17l-6-3.5L6 21V4z"/></svg>`,
+  bookmark: `<svg ${_s}><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>`,
   bookmarkFill: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4a1.5 1.5 0 011.5-1.5h9A1.5 1.5 0 0118 4v17l-6-3.5L6 21V4z"/></svg>`,
   edit: `<svg ${_s}><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg>`,
   clip: `<svg ${_s}><path d="M21.4 11.1l-9.2 9.2a5.5 5.5 0 01-7.8-7.8l9.2-9.2a3.7 3.7 0 015.2 5.2l-9.2 9.2a1.8 1.8 0 01-2.6-2.6l8.5-8.4"/></svg>`,

@@ -20,7 +20,8 @@ var _rtReconnectMax = 10;
 var _rtChannelStates = {};
 var _rtSuppressed = false;
 
-// v8.17.31: cleanup on logout — clear timers and reconnect state
+// Ported from PROD v8.17.31 (Fix 6: registerState cleanup).
+// Clear timers and reconnect state on logout
 registerState(function() {
   _rtState = 'connected';
   if (_rtReconnectTimer) { clearTimeout(_rtReconnectTimer); _rtReconnectTimer = null; }
@@ -77,7 +78,7 @@ function _rtEvalState() {
         if (typeof loadChatMessages === 'function') loadChatMessages(currentChatUser);
       }
       if (_activeScreen === 'screen-bubble-chat' && typeof bcBubbleId !== 'undefined' && bcBubbleId) {
-        if (typeof bcLoadChat === 'function') bcLoadChat();
+        if (typeof bcLoadMessages === 'function') bcLoadMessages();
       }
       // Refresh notifications screen if active
       if (_activeScreen === 'screen-notifications' && typeof loadNotifications === 'function') {
@@ -152,22 +153,22 @@ function _showOfflineModal() {
   if (existing) existing.remove();
   var ov = document.createElement('div');
   ov.id = 'offline-modal-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(30,27,46,0.4);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 4rem) 1.5rem 0;animation:fadeSlideUp 0.3s ease';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(30,27,46,0.4);display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 4rem) 1.5rem 0;animation:fadeSlideUp 0.3s ease';
   ov.innerHTML =
-    '<div style="background:#FAEEDA;border:1.5px solid rgba(239,159,39,0.35);border-radius:16px;padding:1.5rem 1.25rem;text-align:center;max-width:320px;width:100%">' +
+    '<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:16px;padding:1.5rem 1.25rem;text-align:center;max-width:320px;width:100%">' +
       '<style>@keyframes _obBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}@keyframes _obPulse{0%,100%{opacity:.4}50%{opacity:1}}</style>' +
       '<div style="display:flex;justify-content:center;gap:8px;margin-bottom:14px">' +
         '<div style="width:10px;height:10px;border-radius:50%;background:#2ECFCF;animation:_obBob 1.4s ease-in-out infinite"></div>' +
-        '<div style="width:10px;height:10px;border-radius:50%;background:#7C5CFC;animation:_obBob 1.4s ease-in-out infinite 0.15s"></div>' +
+        '<div style="width:10px;height:10px;border-radius:50%;background:rgb(100,180,230);animation:_obBob 1.4s ease-in-out infinite 0.15s"></div>' +
         '<div style="width:10px;height:10px;border-radius:50%;background:#E879A8;animation:_obBob 1.4s ease-in-out infinite 0.3s"></div>' +
       '</div>' +
-      '<div style="font-size:0.88rem;font-weight:700;color:#412402;margin-bottom:6px">' + t('offline_title') +
+      '<div style="font-size:0.88rem;font-weight:700;color:#FCD34D;margin-bottom:6px">' + t('offline_title') +
         '<span style="display:inline-block;animation:_obPulse 1.2s ease-in-out infinite">.</span>' +
         '<span style="display:inline-block;animation:_obPulse 1.2s ease-in-out infinite 0.2s">.</span>' +
         '<span style="display:inline-block;animation:_obPulse 1.2s ease-in-out infinite 0.4s">.</span>' +
       '</div>' +
-      '<div style="font-size:0.72rem;color:#854F0B;line-height:1.4;margin-bottom:16px">' + t('offline_body') + '</div>' +
-      '<button onclick="_retryConnection()" style="background:#EF9F27;color:#412402;border:none;border-radius:8px;padding:8px 24px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit">' + t('offline_retry') + '</button>' +
+      '<div style="font-size:0.72rem;color:#F5C877;line-height:1.4;margin-bottom:16px">' + t('offline_body') + '</div>' +
+      '<button onclick="_retryConnection()" style="background:#EF9F27;color:#FCD34D;border:none;border-radius:8px;padding:8px 24px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit">' + t('offline_retry') + '</button>' +
     '</div>';
   document.body.appendChild(ov);
 }
@@ -632,16 +633,16 @@ function initGlobalRealtime() {
         if (existing) existing.remove();
         var ov = document.createElement('div');
         ov.id = 'checkin-confirm-overlay';
-        ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.3s ease';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(30,27,46,0.45);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeSlideUp 0.3s ease';
         ov.innerHTML =
-          '<div style="background:#FFFFFF;border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
+          '<div style="background:var(--n1-sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem 1.5rem 1.5rem;width:100%;max-width:320px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.15)">' +
             '<div style="width:56px;height:56px;border-radius:50%;background:rgba(26,158,142,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">' +
               '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1A9E8E" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
             '</div>' +
             '<div style="font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:0.3rem">' + t('modal_approved_title') + '</div>' +
             '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.25rem">' + escHtml(bName) + '</div>' +
-            (bId ? '<button id="approved-goto-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,#7C5CFC,#6366F1);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + t('modal_goto_bubble') + '</button>' : '') +
-            '<button id="approved-ok-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(124,92,252,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_ok') + '</button>' +
+            (bId ? '<button id="approved-goto-btn" style="width:100%;padding:0.8rem;border-radius:12px;border:none;background:linear-gradient(135deg,rgb(100,180,230),#6366F1);color:white;font-size:0.92rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:0.5rem">' + t('modal_goto_bubble') + '</button>' : '') +
+            '<button id="approved-ok-btn" style="width:100%;padding:0.7rem;border-radius:12px;border:1px solid rgba(100,180,230,0.12);background:none;color:var(--muted);font-size:0.8rem;font-weight:600;font-family:inherit;cursor:pointer">' + t('modal_ok') + '</button>' +
           '</div>';
         document.body.appendChild(ov);
         var gotoBtn = document.getElementById('approved-goto-btn');
@@ -695,13 +696,23 @@ function initGlobalRealtime() {
 
 
 var _messagesLoading = false;
-async function loadMessages() {
+var _lmLastLoadedAt = 0; // tidsstempel for seneste faerdige loadMessages (dobbelt-load-guard)
+async function loadMessages(opts) {
   if (_messagesLoading) return;
+  // Undgaa dobbelt-load: hvis en indlaesning netop er startet/faerdig (fx boot-preload
+  // OG nav-hook fyrer taet efter hinanden), spring redundant kald over.
+  // force:true omgaar dette. Saet stempel FOER async-fetch saa naeste kald blokeres straks.
+  opts = opts || {};
+  var _now = Date.now();
+  if (!opts.force && _lmLastLoadedAt && (_now - _lmLastLoadedAt) < 3000) {
+    return;
+  }
+  _lmLastLoadedAt = _now;   // stempel med det samme (blokerer parallelle/hurtige gentagne kald)
   _messagesLoading = true;
   try {
     var myNav = _navVersion;
     const list = document.getElementById('conversations-list');
-    if (!list) { _messagesLoading = false; return; }
+    if (!list) { _messagesLoading = false; _lmLastLoadedAt = 0; return; }
     list.innerHTML = skelCards(5);
 
     const { data: convs } = await sb.from('messages')
@@ -713,7 +724,7 @@ async function loadMessages() {
     if (_navVersion !== myNav) return;
 
     if (!convs || convs.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">'+t('dm_no_conversations')+'<br><span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400">'+t('dm_no_conversations_desc')+'</span></div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-home\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">'+t('dm_go_to_radar')+'</button></div></div>';
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('chat') + '</div><div class="empty-text">'+t('dm_no_conversations')+'<br><span style="font-size:0.72rem;color:var(--text-on-light-muted);font-weight:400">'+t('dm_no_conversations_desc')+'</span></div><div style="margin-top:1rem"><button class="btn-primary" onclick="goTo(\'screen-home\')" style="font-size:0.82rem;padding:0.6rem 1.5rem">'+t('dm_go_to_radar')+'</button></div></div>';
       return;
     }
 
@@ -739,7 +750,7 @@ async function loadMessages() {
       const isUnread = lastMsg.receiver_id === currentUser.id && !lastMsg.read_at;
       const isMine = lastMsg.sender_id === currentUser.id;
       const previewText = lastMsg.file_url ? t('dm_attachment_img') : escHtml((lastMsg.content||'').slice(0,50));
-      const preview = isMine ? '<span style="color:var(--muted)">' + t('dm_you_prefix') + '</span> ' + previewText : previewText;
+      const preview = isMine ? '<span style="color:rgba(255,255,255,0.55)">' + t('dm_you_prefix') + '</span> ' + previewText : previewText;
       const time = timeAgo(lastMsg.created_at);
       const isOnline = p.updated_at && (Date.now() - new Date(p.updated_at).getTime()) < 300000;
       const isPartnerLive = appMode.checkedInIds.indexOf(partnerId) >= 0;
@@ -747,12 +758,12 @@ async function loadMessages() {
       const liveBadge = isPartnerLive ? ' <span class="live-badge-mini">LIVE</span>' : '';
       const convAvatar = '<div class="conv-avatar-wrap">' + (p.avatar_url ?
         '<div class="avatar" style="width:44px;height:44px;overflow:hidden;border-radius:50%"><img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover"></div>' :
-        '<div class="avatar" style="background:linear-gradient(135deg,#6366F1,#7C5CFC);width:44px;height:44px">'+initials+'</div>') + onlineDot + '</div>';
+        '<div class="avatar" style="background:linear-gradient(135deg,#6366F1,rgb(100,180,230));width:44px;height:44px">'+initials+'</div>') + onlineDot + '</div>';
       return '<div class="card conv-card' + (isUnread ? ' unread' : '') + '" data-action="openChat" data-id="' + partnerId + '" data-from="screen-messages" data-conv-id="' + partnerId + '">' +
         '<div class="flex-row-center" style="gap:0.75rem">' + convAvatar +
         '<div style="flex:1;min-width:0">' +
         '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:0.5rem">' +
-        '<div class="conv-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(p.name||t('misc_unknown')) + liveBadge + '</div>' +
+        '<div class="conv-name u-ellipsis">' + escHtml(p.name||t('misc_unknown')) + liveBadge + '</div>' +
         '<div class="conv-time">' + time + '</div></div>' +
         '<div class="conv-preview" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.75rem;margin-top:0.1rem">' + preview + '</div>' +
         '</div>' + (isUnread ? '<div class="conv-unread-dot"></div>' : '') +
@@ -788,7 +799,7 @@ async function openChat(userId, fromScreen) {
     if (chatInput) chatInput.placeholder = t('dm_write_to', { name: currentChatName.split(' ')[0] || '' });
     var dmAvatar = document.getElementById('dm-topbar-avatar');
     if (dmAvatar) {
-      if (p?.avatar_url) { dmAvatar.innerHTML = '<img src="'+escHtml(p.avatar_url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+      if (p?.avatar_url) { dmAvatar.innerHTML = '<img src="'+escHtml(p.avatar_url)+'" class="u-avatar-img">'; }
       else { dmAvatar.textContent = (currentChatName).split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); }
     }
     const backBtn = document.getElementById('dm-back-btn');
@@ -833,6 +844,9 @@ function dmReduceMsg(msg, opts) {
       pendingEl.classList.remove('msg-pending');
       pendingEl.setAttribute('oncontextmenu', "if(!window.getSelection().toString()){event.preventDefault();dmLongPress('" + msg.id + "',true)}");
       pendingEl.setAttribute('ontouchstart', "dmTouchStart(event,'" + msg.id + "',true)");
+      pendingEl.setAttribute('ontouchend', 'dmTouchEnd()');
+      pendingEl.setAttribute('ontouchmove', 'dmTouchEnd()');
+      pendingEl.setAttribute('onselectstart', 'dmTouchEnd()');
       var bubble = pendingEl.querySelector('.msg-bubble');
       if (bubble) bubble.id = 'dm-bubble-' + msg.id;
     }
@@ -961,7 +975,7 @@ function dmRenderMsg(m) {
   let avatarInner = '';
   if (!sent && showAvatar) {
     if (theirAvUrl) {
-      avatarInner = '<img src="' + theirAvUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      avatarInner = '<img src="' + theirAvUrl + '" class="u-avatar-img">';
     } else {
       avatarInner = (currentChatName||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
     }
@@ -973,7 +987,7 @@ function dmRenderMsg(m) {
   var rowClass = 'msg-row msg-' + gp + (sent ? ' me' : '');
   var msgTs = new Date(m.created_at).getTime();
 
-  return '<div class="' + rowClass + '" id="dm-msg-' + m.id + '" data-msg-id="' + m.id + '" data-ts="' + msgTs + '" oncontextmenu="if(!window.getSelection().toString()){event.preventDefault();dmLongPress(\'' + m.id + '\',' + sent + ')}" ontouchstart="dmTouchStart(event,\'' + m.id + '\',' + sent + ')" ontouchend="dmTouchEnd()" ontouchmove="dmTouchEnd()">' +
+  return '<div class="' + rowClass + '" id="dm-msg-' + m.id + '" data-msg-id="' + m.id + '" data-ts="' + msgTs + '" oncontextmenu="if(!window.getSelection().toString()){event.preventDefault();dmLongPress(\'' + m.id + '\',' + sent + ')}" ontouchstart="dmTouchStart(event,\'' + m.id + '\',' + sent + ')" ontouchend="dmTouchEnd()" ontouchmove="dmTouchEnd()" onselectstart="dmTouchEnd()">' +
     '<div class="msg-avatar"' + avatarClick + ' style="' + avatarStyle + '">' + avatarInner + '</div>' +
     '<div class="msg-body">' +
     '<div class="msg-content">' + bubble + '</div>' +
@@ -1021,11 +1035,11 @@ async function loadChatMessages() {
       var partnerAvatar = window._chatPartnerAvatar;
       var partnerInit = partnerName.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
       var avHtml = partnerAvatar
-        ? '<img src="' + escHtml(partnerAvatar) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        ? '<img src="' + escHtml(partnerAvatar) + '" class="u-avatar-img">'
         : partnerInit;
       el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;padding:3rem 1.5rem 1rem;text-align:center">' +
-        '<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#7C5CFC);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:white;overflow:hidden">' + avHtml + '</div>' +
-        '<div style="font-size:0.92rem;font-weight:700;margin-top:0.6rem">' + escHtml(partnerName) + '</div>' +
+        '<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#6366F1,rgb(100,180,230));display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:white;overflow:hidden">' + avHtml + '</div>' +
+        '<div style="font-size:0.92rem;font-weight:700;margin-top:0.6rem;color:rgba(255,255,255,0.95)">' + escHtml(partnerName) + '</div>' +
         '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.2rem">'+t('dm_write_first')+'</div>' +
         '</div>';
       return;
@@ -1078,14 +1092,13 @@ function dmTouchStart(event, msgId, isSent) {
   var sel = window.getSelection();
   if (sel && !sel.isCollapsed) return;
 
-  // Active monitor: cancel timer if iOS starts a selection during the long-press window.
-  // Polling is cheap and catches the case where selectstart event fires too late
-  // or doesn't propagate to our handler.
+  // Active monitor: if iOS starts a selection during the long-press window,
+  // clear it immediately so it cannot compete with the apps own menu.
+  // (Previously this aborted our menu and let native win - now app menu wins.)
   _dmLongPressSelMon = setInterval(function() {
     var s = window.getSelection();
     if (s && (s.toString() || !s.isCollapsed)) {
-      // iOS started selecting — abort our menu so we don't collide
-      dmTouchEnd();
+      if (s.removeAllRanges) s.removeAllRanges();
     }
   }, 50);
 
@@ -1101,10 +1114,12 @@ function dmTouchEnd() {
 }
 
 function dmLongPress(msgId, isSent) {
-  // Check both selection text AND collapsed state — iOS may have started selection
-  // even if the resulting string is briefly empty mid-gesture
+  // Ryd enhver selektion iOS maatte have startet - appens menu er nu det eneste
+  // system, saa vi lader ikke native selektion overtage (undgaar konflikt).
   var sel = window.getSelection();
-  if (sel && (sel.toString() || !sel.isCollapsed)) return; // Let native text selection work
+  if (sel && (sel.toString() || !sel.isCollapsed)) {
+    if (sel.removeAllRanges) sel.removeAllRanges();
+  }
   _dmLongPressId = msgId;
   if (navigator.vibrate) navigator.vibrate(10);
 
@@ -1173,7 +1188,11 @@ function dmStartEdit(msgId) {
 
 async function dmDeleteMsg(msgId) {
   try {
-    await sb.from('messages').delete().eq('id', msgId);
+    // supabase-js returns { error } rather than throwing on DB/RLS failure, so a
+    // raw await would remove the message from the DOM even when the delete was
+    // rejected -- it would reappear on next load. Check error before touching UI.
+    var { error } = await sb.from('messages').delete().eq('id', msgId);
+    if (error) { logError('dmDeleteMsg', error); errorToast('delete', error); return; }
     var el = document.getElementById('dm-msg-' + msgId);
     if (el) { el.style.transition = 'opacity 0.2s'; el.style.opacity = '0'; setTimeout(function() { el.remove(); }, 200); }
     showToast('Besked slettet');

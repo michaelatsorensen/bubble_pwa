@@ -11,9 +11,9 @@
 //  Auto-split from app.js · v3.7.0
 // ══════════════════════════════════════════════════════════
 
-// v8.17.31: GDPR-CRITICAL cleanup on logout.
-// Consent state MUST NOT leak between users on shared device — user B must not
-// inherit user A's consent decision. Same for re-running onboarding state.
+// Ported from PROD v8.17.31 (Fix 6: registerState cleanup).
+// GDPR-CRITICAL: Consent state MUST NOT leak between users on shared device —
+// user B must not inherit user A's consent decision.
 registerState(function() {
   if (typeof _reRunningOnboarding !== 'undefined') _reRunningOnboarding = false;
   if (typeof _miniObConsentGiven !== 'undefined') _miniObConsentGiven = false;
@@ -128,20 +128,18 @@ async function maybeShowOnboarding() {
       } catch(e) {}
     }
 
-    // Auto-fill from OAuth if user is missing name/workplace
+    // Auto-fill from OAuth if user is missing name/workplace.
+    // Only mirror to local state + mark satisfied if the write actually succeeded,
+    // otherwise onboarding still asks for the field (no state/DB divergence).
     if (!hasName && autoName) {
-      try {
-        await sb.from('profiles').update({ name: autoName }).eq('id', currentUser.id);
-        if (currentProfile) currentProfile.name = autoName;
-        hasName = true;
-      } catch(e) {}
+      var { error: nameErr } = await sb.from('profiles').update({ name: autoName }).eq('id', currentUser.id);
+      if (nameErr) { logError('onboarding:autofill-name', nameErr); }
+      else { if (currentProfile) currentProfile.name = autoName; hasName = true; }
     }
     if (!hasWorkplace && autoWorkplace) {
-      try {
-        await sb.from('profiles').update({ workplace: autoWorkplace }).eq('id', currentUser.id);
-        if (currentProfile) currentProfile.workplace = autoWorkplace;
-        hasWorkplace = true;
-      } catch(e) {}
+      var { error: wpErr } = await sb.from('profiles').update({ workplace: autoWorkplace }).eq('id', currentUser.id);
+      if (wpErr) { logError('onboarding:autofill-workplace', wpErr); }
+      else { if (currentProfile) currentProfile.workplace = autoWorkplace; hasWorkplace = true; }
     }
 
     if (hasName && hasWorkplace) return false; // OAuth provided enough
@@ -165,7 +163,7 @@ function reRunOnboarding() {
   if (workEl && currentProfile?.workplace) workEl.value = currentProfile.workplace;
   // Update button for re-run context
   var btn = document.getElementById('ob-save-btn');
-  if (btn) { btn.textContent = 'Gem ændringer'; btn.disabled = false; }
+  if (btn) { btn.textContent = t('misc_save_changes'); btn.disabled = false; }
   obCheckProgress();
   var obScroll = document.getElementById('ob-scroll');
   if (obScroll) obScroll.style.visibility = 'visible';
@@ -179,9 +177,9 @@ function _showMinimalOnboarding(hasName, hasWorkplace, autoName) {
   if (existing) existing.remove();
 
   var contextLabel = '';
-  if (flowGet('event_flow')) contextLabel = 'Næsten klar — udfyld dit navn så andre kan finde dig';
-  else if (flowGet('pending_contact')) contextLabel = 'Ét felt og du kan se kontakten';
-  else if (flowGet('pending_join')) contextLabel = 'Ét felt og du er med i netværket';
+  if (flowGet('event_flow')) contextLabel = t('ob_ctx_event');
+  else if (flowGet('pending_contact')) contextLabel = t('ob_ctx_contact');
+  else if (flowGet('pending_join')) contextLabel = t('ob_ctx_join');
   else contextLabel = t('ob_almost_ready');
 
   var nameVal = autoName || currentProfile?.name || '';
@@ -195,15 +193,15 @@ function _showMinimalOnboarding(hasName, hasWorkplace, autoName) {
     '<div style="flex:1;display:flex;flex-direction:column;justify-content:center;max-width:400px;width:100%;margin:0 auto">' +
       '<div style="text-align:center;margin-bottom:0.3rem"><img src="bubble-logo-splash.png" alt="bubble" style="height:20px;width:auto"></div>' +
       '<div style="font-size:1.3rem;font-weight:800;text-align:center;margin-bottom:0.15rem">' + escHtml(contextLabel) + '</div>' +
-      '<div style="font-size:0.82rem;color:var(--text-secondary);text-align:center;margin-bottom:1.5rem">Du kan udfylde resten inde i appen</div>' +
-      (!hasName ? '<div class="input-group"><div class="input-label">Navn *</div><input class="input" id="mini-ob-name" maxlength="60" placeholder="" data-t-placeholder="ob_name_ph" value="' + escHtml(nameVal) + '" oninput="_miniObCheck()"></div>' : '') +
-      (!hasWorkplace ? '<div class="input-group"><div class="input-label">Arbejdsplads *</div><input class="input" id="mini-ob-workplace" maxlength="80" placeholder="" data-t-placeholder="ob_workplace_ph" value="' + escHtml(wpVal) + '" oninput="_miniObCheck()"></div>' : '') +
+      '<div style="font-size:0.82rem;color:var(--text-secondary);text-align:center;margin-bottom:1.5rem">' + t('ob_fill_rest') + '</div>' +
+      (!hasName ? '<div class="input-group"><div class="input-label">' + t('ob_name_label') + '</div><input class="input" id="mini-ob-name" maxlength="60" placeholder="" data-t-placeholder="ob_name_ph" value="' + escHtml(nameVal) + '" oninput="_miniObCheck()"></div>' : '') +
+      (!hasWorkplace ? '<div class="input-group"><div class="input-label">' + t('ob_workplace_label') + '</div><input class="input" id="mini-ob-workplace" maxlength="80" placeholder="" data-t-placeholder="ob_workplace_ph" value="' + escHtml(wpVal) + '" oninput="_miniObCheck()"></div>' : '') +
       '<label style="display:flex;align-items:flex-start;gap:0.5rem;margin:0.6rem 0;cursor:pointer" onclick="_miniObToggleConsent()">' +
-        '<div id="mini-ob-consent" style="width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s;margin-top:1px"></div>' +
-        '<span style="font-size:0.72rem;color:var(--text-secondary);line-height:1.4">Jeg accepterer Bubble\'s <a href="#" onclick="event.stopPropagation();showTerms()">betingelser</a> og <a href="#" onclick="event.stopPropagation();showTerms()">privatlivspolitik</a></span>' +
+        '<div id="mini-ob-consent" style="width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s, opacity 0.15s, box-shadow 0.15s;margin-top:1px"></div>' +
+        '<span style="font-size:0.72rem;color:var(--text-secondary);line-height:1.4">' + t('ob_consent_full') + '</span>' +
       '</label>' +
-      '<button class="btn-primary" id="mini-ob-save" onclick="_miniObSave()" style="margin-top:0.8rem" disabled>' + (flowGet('event_flow') ? 'Gå til event →' : 'Fortsæt') + '</button>' +
-      '<div style="text-align:center;font-size:0.72rem;color:var(--muted);margin-top:0.5rem">Du kan tilføje interesser, titel og mere bagefter</div>' +
+      '<button class="btn-primary" id="mini-ob-save" onclick="_miniObSave()" style="margin-top:0.8rem" disabled>' + (flowGet('event_flow') ? t('ob_event_continue') : t('ob_continue')) + '</button>' +
+      '<div style="text-align:center;font-size:0.72rem;color:var(--muted);margin-top:0.5rem">' + t('ob_add_later') + '</div>' +
     '</div>' +
     '<div style="min-height:350px;flex-shrink:0"></div>';
 
@@ -234,7 +232,8 @@ function _miniObCheck() {
   var name = nameEl ? nameEl.value.trim() : (currentProfile?.name || '');
   var wp = wpEl ? wpEl.value.trim() : (currentProfile?.workplace || '');
   var btn = document.getElementById('mini-ob-save');
-  if (btn) btn.disabled = !(name && wp && _miniObConsentGiven);
+  var ready = !!(name && wp && _miniObConsentGiven);
+  if (btn) { btn.disabled = !ready; btn.classList.toggle('is-ready', ready); }
 }
 
 async function _miniObSave() {
@@ -246,14 +245,15 @@ async function _miniObSave() {
   if (!_miniObConsentGiven) return showWarningToast(t('val_accept_terms'));
 
   var btn = document.getElementById('mini-ob-save');
-  if (btn) { btn.textContent = t('ui_saving'); btn.disabled = true; }
+  if (btn) { btn.textContent = t('ui_saving'); btn.disabled = true; btn.classList.remove('is-ready'); }
 
   try {
-    var update = { terms_accepted_at: new Date().toISOString() };
+    var update = { id: currentUser.id };
+    if (!currentProfile?.terms_accepted_at) update.terms_accepted_at = new Date().toISOString();
     if (nameEl) update.name = name;
     if (wpEl) update.workplace = wp;
-    var { error } = await sb.from('profiles').update(update).eq('id', currentUser.id);
-    if (error) { errorToast('save', error); if (btn) { btn.textContent = 'Fortsæt'; btn.disabled = false; } return; }
+    var { error } = await sb.from('profiles').upsert(update);
+    if (error) { errorToast('save', error); if (btn) { btn.textContent = t('ob_continue'); } _miniObCheck(); return; }
     await loadCurrentProfile();
 
     // Remove overlay
@@ -266,7 +266,7 @@ async function _miniObSave() {
   } catch(e) {
     logError('miniObSave', e);
     errorToast('save', e);
-    if (btn) { btn.textContent = 'Fortsæt'; btn.disabled = false; }
+    if (btn) { btn.textContent = t('ob_continue'); } _miniObCheck();
   }
 }
 
@@ -304,7 +304,7 @@ async function skipOnboarding() {
   if (!name && currentProfile?.name) name = currentProfile.name;
   if (!name && currentUser?.email) name = currentUser.email.split('@')[0];
   var workplace = (document.getElementById('ob-workplace')?.value || '').trim();
-  if (!name) { showWarningToast('Skriv dit navn først'); return; }
+  if (!name) { showWarningToast(t('ob_enter_name')); return; }
   if (!workplace) { showWarningToast(t('val_add_workplace')); return; }
 
   try {
@@ -335,17 +335,17 @@ function abortOnboarding() {
     if (_reRunningOnboarding) {
       // Existing user — just go back, no logout
       s.innerHTML =
-        '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">Afbryd opsætning?</div>' +
-        '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">Dine ændringer gemmes ikke. Du vender tilbage til din profil.</div>' +
-        '<button onclick="cancelReRunOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid rgba(124,92,252,0.2);background:rgba(124,92,252,0.08);color:var(--accent);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.4rem">Tilbage til profil</button>' +
-        '<button onclick="cancelAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Fortsæt opsætning</button>';
+        '<div class="u-sheet-title">' + t('ob_abort_title') + '</div>' +
+        '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">' + t('ob_abort_body_rerun') + '</div>' +
+        '<button onclick="cancelReRunOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid rgba(100,180,230,0.2);background:rgba(100,180,230,0.08);color:var(--accent);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.4rem">' + t('ob_abort_back_profile') + '</button>' +
+        '<button onclick="cancelAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">' + t('ob_abort_continue') + '</button>';
     } else {
       // First-time user — original behavior
       s.innerHTML =
-        '<div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:0.5rem">Afbryd opsætning?</div>' +
-        '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">Alt du har udfyldt nulstilles og du vender tilbage til login-skærmen.</div>' +
-        '<button onclick="confirmAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid rgba(26,122,138,0.3);background:rgba(26,122,138,0.1);color:var(--accent2);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.4rem">Ja, afbryd og nulstil</button>' +
-        '<button onclick="cancelAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Fortsæt opsætning</button>';
+        '<div class="u-sheet-title">' + t('ob_abort_title') + '</div>' +
+        '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem">' + t('ob_abort_body_new') + '</div>' +
+        '<button onclick="confirmAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid rgba(26,122,138,0.3);background:rgba(26,122,138,0.1);color:var(--accent2);font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:0.4rem">' + t('ob_abort_confirm') + '</button>' +
+        '<button onclick="cancelAbortOnboarding()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid var(--glass-border);background:none;color:var(--text-secondary);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">' + t('ob_abort_continue') + '</button>';
     }
     return;
   }
@@ -383,7 +383,6 @@ async function confirmAbortOnboarding() {
     currentUser = null;
     currentProfile = null;
     goTo('screen-auth');
-    showWarningToast(t('toast_generic_error'));
   } catch(e) { logError('abortOnboarding', e); goTo('screen-auth'); }
   } catch(e) { logError("confirmAbortOnboarding", e); }
 }
@@ -546,14 +545,14 @@ function epTagSearch(q) {
   if (!q || q.length < 1) { el.style.display = 'none'; return; }
   var results = searchTags(q).filter(function(t) { return epSelectedTags.indexOf(t.label) < 0; });
   if (results.length === 0 && q.trim().length > 1) {
-    el.innerHTML = '<div class="tag-sug-item custom" onclick="epAddTag(\'' + escHtml(q.trim()) + '\',\'custom\')">' +
+    el.innerHTML = '<div class="tag-sug-item custom" onclick="epAddCustomFromSearch()">' +
       '<span class="tag-sug-label">+ "' + escHtml(q.trim()) + '" (nyt tag)</span></div>';
     el.style.display = 'block'; return;
   }
   if (results.length === 0) { el.style.display = 'none'; return; }
   el.innerHTML = results.map(function(t) {
     var catInfo = TAG_CATEGORIES[t.category] || {};
-    return '<div class="tag-sug-item" onclick="epAddTag(\'' + escHtml(t.label).replace(/'/g,"\\'") + '\',\'' + t.category + '\')">' +
+    return '<div class="tag-sug-item" data-label="' + escHtml(t.label) + '" data-cat="' + escHtml(t.category) + '" onclick="epAddTag(this.dataset.label,this.dataset.cat)">' +
       '<span class="tag-sug-dot" style="background:' + (catInfo.color || 'var(--accent)') + '"></span>' +
       '<span class="tag-sug-label">' + escHtml(t.label) + '</span>' +
       '<span class="tag-sug-cat">' + (catInfo.label || t.category) + '</span></div>';
@@ -589,13 +588,13 @@ function epRenderSelectedTags() {
   var el = document.getElementById('ep-tag-selected');
   if (!el) return;
   if (epSelectedTags.length === 0) { el.innerHTML = ''; return; }
-  el.innerHTML = epSelectedTags.map(function(t) {
+  el.innerHTML = epSelectedTags.map(function(t, idx) {
     var cat = getTagCategory(t);
     var color = TAG_CATEGORIES[cat]?.color || 'var(--accent)';
     return '<span class="tag-chip" style="border-color:' + color + '40;background:' + color + '15">' +
       '<span class="tag-chip-dot" style="background:' + color + '"></span>' +
       escHtml(t) +
-      '<span class="tag-chip-x" onclick="epRemoveTag(\'' + escHtml(t).replace(/'/g,"\\'") + '\')">×</span></span>';
+      '<span class="tag-chip-x" onclick="epRemoveTagIdx(' + idx + ')">×</span></span>';
   }).join('');
 }
 var _epExpandedCats = {};
@@ -675,7 +674,7 @@ function epRenderCategories() {
       '<span class="tag-cat-dot" style="background:' + info.color + '"></span>' +
       '<span class="tag-cat-title">' + info.label + '</span>' +
       '</div>' +
-      '<div class="ob-tag-section-label recommended">For dig</div>' +
+      '<div class="ob-tag-section-label recommended">'+t('ob_for_you')+'</div>' +
       '<div class="ob-cat-tags">' +
       recommended.map(function(t) {
         var sel = epSelectedTags.indexOf(t) >= 0;
@@ -696,7 +695,7 @@ function epRenderCategories() {
       }).join('') +
       '</div>' +
       (otherTags.length > 8 ? '<button type="button" class="ob-show-more" onclick="epToggleExpand(\'' + cat + '\')" style="color:' + info.color + '">' +
-        (expanded ? '− Vis færre' : '+ Vis alle ' + otherTags.length + ' andre') + '</button>' : '') : '') +
+        (expanded ? t('ob_show_fewer') : t('ob_show_all', {n: otherTags.length})) + '</button>' : '') : '') +
       '<div class="ob-cat-custom"><div class="ob-cat-custom-row">' +
       '<input class="ob-cat-custom-input" placeholder="" data-t-placeholder="ob_custom_tag_ph" ' +
       'onkeydown="epCustomTag(event,\'' + cat + '\',this)" data-cat="' + cat + '">' +
@@ -720,14 +719,14 @@ function epCustomTag(event, cat, input) {
   var val = input.value.trim();
   if (!val || val.length < 2 || val.length > 40) { input.value = ''; return; }
   var lower = val.toLowerCase();
-  if (OB_BLOCKED_WORDS.some(function(w) { return lower.includes(w); })) { showWarningToast('Det tag er ikke tilladt'); input.value = ''; return; }
+  if (OB_BLOCKED_WORDS.some(function(w) { return lower.includes(w); })) { showWarningToast(t('ob_tag_blocked')); input.value = ''; return; }
   var exists = ALL_TAGS.find(function(t) { return t.label.toLowerCase() === lower; });
   if (exists) { epAddTag(exists.label, exists.category); input.value = ''; epRenderCategories(); return; }
   var formatted = val.charAt(0).toUpperCase() + val.slice(1);
   epAddTag(formatted, cat);
   input.value = '';
   epRenderCategories();
-  showToast('Tag tilføjet til din profil');
+  showToast(t('ob_tag_added'));
   if (typeof sb !== 'undefined' && currentUser) {
     sb.from('custom_tags').select('id,usage_count').eq('label', formatted).maybeSingle()
       .then(function(res) {
@@ -747,17 +746,16 @@ async function saveOnboarding() {
     var isEventFlow = !!flowGet('event_flow');
     var btn = document.getElementById('ob-save-btn');
     if (btn) { btn.textContent = t('ui_saving'); btn.disabled = true; }
-    const { error } = await sb.from('profiles').upsert({
-      id: currentUser.id, name, workplace, is_anon: false,
-      terms_accepted_at: new Date().toISOString()
-    });
+    var obUpdate = { id: currentUser.id, name, workplace, is_anon: false };
+    if (!currentProfile?.terms_accepted_at) obUpdate.terms_accepted_at = new Date().toISOString();
+    const { error } = await sb.from('profiles').upsert(obUpdate);
     if (error) {
       if (btn) { btn.textContent = isEventFlow ? t('ob_goto_event') : t('ob_get_started'); btn.disabled = false; }
       return errorToast('save', error);
     }
     await loadCurrentProfile();
     localStorage.setItem('bubble_welcomed', '1');
-    showSuccessToast('Velkommen til Bubble!');
+    showSuccessToast(t('ob_welcome'));
     trackEvent('onboarding_complete', { rerun: _reRunningOnboarding });
     var wasRerun = _reRunningOnboarding;
     _reRunningOnboarding = false;
@@ -879,6 +877,59 @@ var ET_LS = [
   {id:'other',icon:'smile',label:'Andet'},
 ];
 
+var ET_GRP = {
+  'Teknologi & digitalt':'et_grp_01',
+  'Energi & klima':'et_grp_02',
+  'Sundhed & life science':'et_grp_03',
+  'Fødevarer & bioressourcer':'et_grp_04',
+  'Produktion & industri':'et_grp_05',
+  'Byggeri & anlæg':'et_grp_06',
+  'Finans & forsikring':'et_grp_07',
+  'Handel & service':'et_grp_08',
+  'Kreativitet & medier':'et_grp_09',
+  'Myndigheder':'et_grp_10',
+  'Erhvervsfremme':'et_grp_11',
+  'Uddannelse & forskning':'et_grp_12',
+  'Civilsamfund & NGO':'et_grp_13',
+  'Ledelse & direktion':'et_grp_14',
+  'Teknologi & produkt':'et_grp_15',
+  'Design & kreativitet':'et_grp_16',
+  'Projektledelse & drift':'et_grp_17',
+  'Salg, marketing & komm.':'et_grp_18',
+  'Økonomi, jura & HR':'et_grp_19',
+  'Rådgivning & analyse':'et_grp_20',
+  'Investering':'et_grp_21',
+  'Iværksætteri':'et_grp_22',
+  'Sundhed & omsorg':'et_grp_23',
+  'Offentlig forvaltning':'et_grp_24',
+  'Håndværk & industri':'et_grp_25',
+  'Service & detail':'et_grp_26',
+  'Frivillig & community':'et_grp_27',
+  'Teknologi & data':'et_grp_28',
+  'Marketing & vækst':'et_grp_29',
+  'Salg & forretning':'et_grp_30',
+  'Økonomi & fundraising':'et_grp_31',
+  'People & organisation':'et_grp_32',
+  'Drift & supply chain':'et_grp_33',
+  'Kommunikation & brand':'et_grp_34',
+  'Jura & compliance':'et_grp_35',
+  'Innovation & research':'et_grp_36',
+  'Bæredygtighed':'et_grp_37',
+  'Bygge & anlæg':'et_grp_38',
+  'Sundhed & klinik':'et_grp_39',
+  'Undervisning':'et_grp_40',
+  'Klima & bæredygtighed':'et_grp_41',
+  'Arbejdsliv & ledelse':'et_grp_42',
+  'Iværksætteri & investering':'et_grp_43',
+  'Community & netværk':'et_grp_44',
+  'Personlig udvikling':'et_grp_45',
+  'Metoder & frameworks':'et_grp_46',
+  'Innovation & transformation':'et_grp_47',
+  'Diversitet & inklusion':'et_grp_48',
+  'Viden & læring':'et_grp_49',
+  'Sektorspecifikt':'et_grp_50',
+};
+
 function etInit() {
   etSelected = new Map();
   etCustom = {};
@@ -923,42 +974,43 @@ function etCountSec(id){ var n=0; etSelected.forEach(function(v){ if(v.sec===id)
 function etBuildBody(s) {
   var h = '';
   s.groups.forEach(function(g){
-    h += '<div><div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:0.25rem 0 0.1rem">' + g.label + '</div><div style="display:flex;flex-wrap:wrap;gap:0.3rem">';
+    h += '<div><div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.5);padding:0.25rem 0 0.1rem">' + (ET_GRP[g.label] ? t(ET_GRP[g.label]) : g.label) + '</div><div style="display:flex;flex-wrap:wrap;gap:0.3rem">';
     g.tags.forEach(function(tag){
       var isSel = etSelected.has(tag);
-      var style = isSel ? 'background:'+s.color+';border-color:'+s.color+';color:white' : 'background:'+s.bg+';border-color:'+s.bg+';color:'+s.color;
-      h += '<span style="padding:0.27rem 0.65rem;border-radius:99px;font-size:0.7rem;font-weight:500;cursor:pointer;border:1.5px solid;transition:all .13s;'+style+'" onclick="etTgl(\''+etEsc(tag)+'\',\''+s.id+'\')">' + tag + '</span>';
+      var style = isSel ? 'background:'+s.color+';border-color:'+s.color+';color:white' : 'background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.85)';
+      h += '<span style="padding:0.27rem 0.65rem;border-radius:99px;font-size:0.7rem;font-weight:500;cursor:pointer;border:1.5px solid;transition:background .13s, border-color .13s, color .13s, transform .13s, opacity .13s, box-shadow .13s;'+style+'" data-tag="' + escHtml(tag) + '" data-sec="' + escHtml(s.id) + '" onclick="etTgl(this.dataset.tag,this.dataset.sec)">' + escHtml(tag) + '</span>';
     });
     h += '</div></div>';
   });
   // Custom tags
-  h += '<div style="margin-top:0.4rem;padding-top:0.5rem;border-top:1.5px dashed var(--glass-border)">';
+  h += '<div style="margin-top:0.4rem;padding-top:0.5rem;border-top:1px dashed rgba(255,255,255,0.08)">';
   var ct = etCustom[s.id] || [];
   if (ct.length > 0) {
     h += '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.35rem">';
-    ct.forEach(function(tag){
+    ct.forEach(function(tag, idx){
       var isSel = etSelected.has(tag);
-      var bg = isSel ? s.color : s.bg; var col = isSel ? 'white' : s.color;
-      h += '<span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.25rem 0.55rem;border-radius:99px;font-size:0.68rem;font-weight:600;border:1.5px dashed '+s.color+'40;background:'+bg+';color:'+col+';cursor:pointer" onclick="etTgl(\''+etEsc(tag)+'\',\''+s.id+'\')">' +
-        tag + '<span style="opacity:0.55;font-size:0.65rem" onclick="event.stopPropagation();etRmCustom(\''+etEsc(tag)+'\',\''+s.id+'\')">×</span></span>';
+      var bg = isSel ? s.color : 'rgba(255,255,255,0.06)'; var col = isSel ? 'white' : 'rgba(255,255,255,0.85)';
+      h += '<span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.25rem 0.55rem;border-radius:99px;font-size:0.68rem;font-weight:600;border:0.5px solid '+(isSel?s.color:'rgba(255,255,255,0.12)')+';background:'+bg+';color:'+col+';cursor:pointer" onclick="etTglIdx('+idx+',\''+s.id+'\')">' +
+        escHtml(tag) + '<span style="opacity:0.55;font-size:0.65rem" onclick="event.stopPropagation();etRmCustomIdx('+idx+',\''+s.id+'\')">×</span></span>';
     });
     h += '</div>';
   }
   if (!etInputVis[s.id]) {
-    h += '<button style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.3rem 0.75rem;border-radius:99px;font-size:0.7rem;font-weight:600;cursor:pointer;border:1.5px dashed '+s.color+'40;color:'+s.color+';background:transparent;font-family:inherit" onclick="etShowIn(\''+s.id+'\')"><span style="font-size:0.9rem;line-height:1">+</span> Tilføj eget tag</button>';
+    h += '<button style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.3rem 0.75rem;border-radius:99px;font-size:0.7rem;font-weight:600;cursor:pointer;border:1.5px dashed rgba(100,180,230,0.4);color:rgba(100,180,230,0.9);background:transparent;font-family:inherit" onclick="etShowIn(\''+s.id+'\')"><span style="font-size:0.9rem;line-height:1">+</span> '+t('ob_add_own_tag')+'</button>';
   } else {
     h += '<div style="display:flex;gap:0.35rem;align-items:center;margin-top:0.4rem">' +
-      '<input id="etci-'+s.id+'" style="flex:1;padding:0.35rem 0.65rem;border-radius:99px;font-size:0.72rem;font-family:inherit;border:1.5px solid var(--glass-border);background:var(--bg);outline:none;color:var(--text);min-width:0" placeholder="Skriv dit tag..." maxlength="40" oninput="etCiChk(\''+s.id+'\')" onkeydown="etCiKey(event,\''+s.id+'\')">' +
-      '<button id="etci-btn-'+s.id+'" disabled style="padding:0.35rem 0.75rem;border-radius:99px;font-size:0.7rem;font-weight:700;font-family:inherit;border:none;background:'+s.color+';color:white;cursor:pointer;opacity:0.35" onclick="etConfirmC(\''+s.id+'\')">Tilføj</button>' +
-      '<button style="padding:0.35rem 0.6rem;border-radius:99px;font-size:0.7rem;font-weight:600;font-family:inherit;border:1px solid var(--glass-border);background:var(--bg);cursor:pointer;color:var(--muted)" onclick="etHideIn(\''+s.id+'\')">×</button>' +
+      '<input id="etci-'+s.id+'" style="flex:1;padding:0.35rem 0.65rem;border-radius:99px;font-size:0.72rem;font-family:inherit;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.075);outline:none;color:rgba(255,255,255,0.9);min-width:0" placeholder="'+t('ob_tag_placeholder')+'" maxlength="40" oninput="etCiChk(\''+s.id+'\')" onkeydown="etCiKey(event,\''+s.id+'\')">' +
+      '<button id="etci-btn-'+s.id+'" disabled style="padding:0.35rem 0.75rem;border-radius:99px;font-size:0.7rem;font-weight:700;font-family:inherit;border:none;background:'+s.color+';color:white;cursor:pointer;opacity:0.35" onclick="etConfirmC(\''+s.id+'\')">'+t('misc_add')+'</button>' +
+      '<button style="padding:0.35rem 0.6rem;border-radius:99px;font-size:0.7rem;font-weight:600;font-family:inherit;border:0.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.075);cursor:pointer;color:rgba(255,255,255,0.4)" onclick="etHideIn(\''+s.id+'\')">×</button>' +
     '</div>';
   }
   h += '</div>';
   // Done row
   var n = etCountSec(s.id);
+  var hasSelected = n > 0;
   h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0 0.8rem;margin-top:0.1rem">' +
-    '<div style="font-size:0.7rem;font-weight:600;color:'+s.color+'">'+n+' valgt</div>' +
-    '<button style="padding:0.38rem 1rem;border-radius:99px;font-size:0.72rem;font-weight:700;font-family:inherit;border:none;cursor:pointer;background:'+s.bg+';color:'+s.color+'" onclick="etCloseSec(\''+s.id+'\')">Gem &amp; luk ✓</button>' +
+    '<div style="font-size:0.72rem;font-weight:600;color:'+(hasSelected?'rgb(100,180,230)':'rgba(255,255,255,0.55)')+'">'+n+' '+t('ob_selected')+'</div>' +
+    '<button style="padding:0.38rem 1rem;border-radius:99px;font-size:0.72rem;font-weight:700;font-family:inherit;border:0.5px solid rgba(100,180,230,0.25);cursor:pointer;background:rgba(100,180,230,0.18);color:rgba(255,255,255,0.95)" onclick="etCloseSec(\''+s.id+'\')">'+t('ob_save_close')+'</button>' +
   '</div>';
   return h;
 }
@@ -968,16 +1020,16 @@ function etBuild() {
   list.innerHTML = '';
   ET_SECTIONS.forEach(function(s){
     var div = document.createElement('div');
-    div.style.cssText = 'background:var(--bg);border:1px solid var(--glass-border-subtle);border-radius:13px;margin-bottom:0.35rem' + (etOpenSec===s.id?';border-color:rgba(124,92,252,0.18);box-shadow:0 2px 10px rgba(30,27,46,0.06)':'');
+    div.style.cssText = 'background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.06);border-radius:13px;margin-bottom:0.35rem' + (etOpenSec===s.id?';border-color:rgba(100,180,230,0.25);box-shadow:none':'');
     div.id = _etPrefix + 'et-acc-' + s.id;
     var n = etCountSec(s.id);
-    var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.bg+';color:'+s.color+'">'+n+'</span>' : '';
+    var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.color+'33"><span style="color:'+s.color+';filter:brightness(1.85) saturate(1.15)">'+n+'</span></span>' : '';
     div.innerHTML =
       '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.75rem 0.85rem;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" onclick="etToggle(\''+s.id+'\')">' +
-        '<div style="width:32px;height:32px;border-radius:9px;background:'+s.bg+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+'">' + etIco(s.icon) + '</span></div>' +
-        '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700">'+s.label+'</div><div style="font-size:0.6rem;color:var(--muted);margin-top:1px">'+s.desc+'</div></div>' +
+        '<div style="width:32px;height:32px;border-radius:9px;background:'+s.color+'33;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+';filter:brightness(1.6) saturate(1.1)">' + etIco(s.icon) + '</span></div>' +
+        '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700;color:rgba(255,255,255,0.95)">'+t('et_sec_'+s.id+'_label')+'</div><div style="font-size:0.62rem;color:rgba(255,255,255,0.55);margin-top:1px">'+t('et_sec_'+s.id+'_desc')+'</div></div>' +
         badgeHtml +
-        '<div style="color:var(--muted);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===s.id?'transform:rotate(180deg)':'')+'">▼</div>' +
+        '<div style="color:rgba(255,255,255,0.55);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===s.id?'transform:rotate(180deg)':'')+'">▼</div>' +
       '</div>' +
       (etOpenSec===s.id ? '<div style="padding:0 0.75rem;display:flex;flex-direction:column;gap:0.45rem">'+etBuildBody(s)+'</div>' : '');
     list.appendChild(div);
@@ -987,11 +1039,11 @@ function etBuild() {
   lsEl.innerHTML = ET_LS.map(function(ls){
     var isSel = etLifestage === ls.id;
     var style = isSel
-      ? 'background:rgba(245,158,11,0.12);border:2px solid #F59E0B;color:#B45309;font-weight:700'
-      : 'background:var(--bg);border:1.5px solid var(--glass-border);color:var(--muted);font-weight:500';
+      ? 'background:rgba(245,158,11,0.15);border:2px solid #F59E0B;color:#F59E0B;font-weight:700'
+      : 'background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.4);font-weight:500';
     return '<span style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.7rem;border-radius:99px;font-size:0.68rem;cursor:pointer;font-family:inherit;'+style+'" onclick="etSelectLifestage(\''+ls.id+'\')">' +
       '<span style="display:flex;align-items:center;width:14px;height:14px;flex-shrink:0">' + etIco(ls.icon) + '</span>' +
-      ls.label + '</span>';
+      t('et_ls_' + ls.id) + '</span>';
   }).join('');
 }
 
@@ -1000,16 +1052,16 @@ function etRebuildSec(id){
   var el = _etEl('et-acc-'+id);
   if (!el) return;
   var n = etCountSec(id);
-  var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.bg+';color:'+s.color+'">'+n+'</span>' : '';
+  var badgeHtml = n > 0 ? '<span style="font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:99px;background:'+s.color+'33"><span style="color:'+s.color+';filter:brightness(1.85) saturate(1.15)">'+n+'</span></span>' : '';
   el.innerHTML =
     '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.75rem 0.85rem;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" onclick="etToggle(\''+s.id+'\')">' +
-      '<div style="width:32px;height:32px;border-radius:9px;background:'+s.bg+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+'">' + etIco(s.icon) + '</span></div>' +
-      '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700">'+s.label+'</div><div style="font-size:0.6rem;color:var(--muted);margin-top:1px">'+s.desc+'</div></div>' +
+      '<div style="width:32px;height:32px;border-radius:9px;background:'+s.color+'18;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="display:flex;align-items:center;width:16px;height:16px;color:'+s.color+'">' + etIco(s.icon) + '</span></div>' +
+      '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:700;color:rgba(255,255,255,0.9)">'+t('et_sec_'+s.id+'_label')+'</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.35);margin-top:1px">'+t('et_sec_'+s.id+'_desc')+'</div></div>' +
       badgeHtml +
-      '<div style="color:var(--muted);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===id?'transform:rotate(180deg)':'')+'">▼</div>' +
+      '<div style="color:rgba(255,255,255,0.55);font-size:0.7rem;transition:transform .22s;'+(etOpenSec===id?'transform:rotate(180deg)':'')+'">▼</div>' +
     '</div>' +
     (etOpenSec===id ? '<div style="padding:0 0.75rem;display:flex;flex-direction:column;gap:0.45rem">'+etBuildBody(s)+'</div>' : '');
-  el.style.cssText = 'background:var(--bg);border:1px solid var(--glass-border-subtle);border-radius:13px;margin-bottom:0.35rem' + (etOpenSec===id?';border-color:rgba(124,92,252,0.18);box-shadow:0 2px 10px rgba(30,27,46,0.06)':'');
+  el.style.cssText = 'background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.06);border-radius:13px;margin-bottom:0.35rem' + (etOpenSec===id?';border-color:rgba(100,180,230,0.25);box-shadow:none':'');
 }
 
 function etToggle(id) {
@@ -1074,7 +1126,7 @@ function etSelectLifestage(stage){
 function etUpdateUI(){
   var n=etSelected.size;
   var bar=_etEl('et-prog-bar'); if(bar)bar.style.width=Math.min(n/10*100,100)+'%';
-  var lbl=_etEl('et-prog-lbl'); if(lbl)lbl.textContent=n+' valgt';
+  var lbl=_etEl('et-prog-lbl'); if(lbl)lbl.textContent=n+' '+t('et_selected');
 
   // ── Tray preview (first 3 + count) ──
   var preview=_etEl('et-tray-preview');
@@ -1084,8 +1136,8 @@ function etUpdateUI(){
     var rest=all.length-3;
     preview.innerHTML=shown.map(function(e){
       var v=e[1];
-      return '<span style="padding:0.18rem 0.5rem;border-radius:99px;font-size:0.62rem;font-weight:600;background:'+v.bg+';color:'+v.color+';border:0.5px solid '+v.color+'30;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px">'+escHtml(e[0])+'</span>';
-    }).join('')+(rest>0?'<span style="font-size:0.62rem;font-weight:600;color:var(--muted);white-space:nowrap">+'+rest+' mere</span>':'');
+      return '<span style="padding:0.18rem 0.5rem;border-radius:99px;font-size:0.62rem;font-weight:600;background:rgba(255,255,255,0.075);color:rgba(255,255,255,0.7);border:0.5px solid rgba(255,255,255,0.12);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px">'+escHtml(e[0])+'</span>';
+    }).join('')+(rest>0?'<span style="font-size:0.62rem;font-weight:600;color:rgba(255,255,255,0.3);white-space:nowrap">+'+rest+' '+t('et_more')+'</span>':'');
   }
 
   // ── Tray btn: hide if 0 tags ──
@@ -1097,9 +1149,9 @@ function etUpdateUI(){
   if(drawer&&drawer.style.display!=='none'){
     drawer.innerHTML=Array.from(etSelected.entries()).map(function(e){
       var tg=e[0],v=e[1];
-      return '<span style="display:inline-flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem 0.2rem 0.55rem;border-radius:99px;font-size:0.65rem;font-weight:600;background:'+v.bg+';color:'+v.color+';border:0.5px solid '+v.color+'30">' +
+      return '<span style="display:inline-flex;align-items:center;gap:0.2rem;padding:0.2rem 0.5rem 0.2rem 0.55rem;border-radius:99px;font-size:0.65rem;font-weight:600;background:rgba(255,255,255,0.075);color:rgba(255,255,255,0.7);border:0.5px solid rgba(255,255,255,0.12)">' +
         escHtml(tg)+
-        '<span onclick="etRemoveTag(\''+etEsc(tg)+'\')" style="cursor:pointer;opacity:0.45;font-size:0.65rem;margin-left:1px;line-height:1">×</span></span>';
+        '<span data-tag="' + escHtml(tg) + '" onclick="etRemoveTag(this.dataset.tag)" style="cursor:pointer;opacity:0.45;font-size:0.65rem;margin-left:1px;line-height:1">×</span></span>';
     }).join('');
   }
 
@@ -1115,7 +1167,7 @@ function etToggleTray(){
   if(!drawer)return;
   var open=drawer.style.display!=='none';
   drawer.style.display=open?'none':'flex';
-  if(btn)btn.textContent=open?'Se alle':'Luk';
+  if(btn)btn.textContent=open?t('ps_see_all'):t('misc_close');
   if(chev)chev.style.transform=open?'':'rotate(180deg)';
   if(!open)etUpdateUI(); // re-render drawer contents
 }
@@ -1136,3 +1188,11 @@ async function etRemoveTag(tag){
 
 function etGetSelectedTags(){ return Array.from(etSelected.keys()); }
 function etGetLifestage(){ return etLifestage; }
+
+// ── Safe index-based handlers for user-controlled tags (XSS-hardening v9.44) ──
+// No user-controlled string ever enters an inline onclick / HTML context: handlers
+// receive a numeric index + static section id and look up the value from module state.
+function etTglIdx(idx, secId){ var t=(etCustom[secId]||[])[idx]; if(t!=null) etTgl(t, secId); }
+function etRmCustomIdx(idx, secId){ var t=(etCustom[secId]||[])[idx]; if(t!=null) etRmCustom(t, secId); }
+function epRemoveTagIdx(idx){ var t=epSelectedTags[idx]; if(t!=null) epRemoveTag(t); }
+function epAddCustomFromSearch(){ var input=document.getElementById('ep-tag-search'); var v=input?input.value.trim():''; if(v) epAddTag(v, 'custom'); }

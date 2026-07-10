@@ -80,6 +80,7 @@ document.addEventListener('click', (e) => {
     case 'leaveBubble': leaveBubble(id, el); break;
     case 'openEditBubble': openEditBubble(id); break;
     case 'openBubbleChat': openBubbleChat(id, from); break;
+    case 'toggleSaveBubble': toggleSaveBubble(id, el); break;
   }
 });
 
@@ -222,12 +223,9 @@ async function checkQRAnonPreview() {
     // Resolve QR token → profile ID
     if (qrToken && !profileId) {
       try {
-        var { data: tokenData } = await sb.from('qr_tokens')
-          .select('user_id, expires_at')
-          .eq('token', qrToken)
-          .maybeSingle();
+        var tokenData = await resolveQrToken(qrToken);
         if (tokenData) {
-          if (new Date(tokenData.expires_at) > new Date()) {
+          if (!tokenData.expired) {
             profileId = tokenData.user_id;
           } else {
             // Token expired — clean URL and show toast
@@ -275,10 +273,8 @@ async function loadQRProfilePreview(userId, bubbleId) {
     if (!sb) initSupabase();
     
     if (userId) {
-      var { data: profile } = await sb.from('profiles')
-        .select('id,name,title,keywords,avatar_url,workplace')
-        .eq('id', userId)
-        .maybeSingle();
+      var _pv = ((await sb.rpc('get_profile_preview', { p_user_id: userId, p_bubble_id: bubbleId || null })).data) || {};
+      var profile = _pv.profile;
       
       if (profile) {
         // Store for contextual auth
@@ -299,26 +295,20 @@ async function loadQRProfilePreview(userId, bubbleId) {
         }
         if (tagsEl) {
           tagsEl.innerHTML = (profile.keywords || []).slice(0, 5).map(function(t) {
-            return '<span style="font-size:0.68rem;padding:0.2rem 0.55rem;border-radius:99px;background:rgba(124,92,252,0.07);color:#534AB7;font-weight:500">' + escHtml(t) + '</span>';
+            return '<span style="font-size:0.68rem;padding:0.2rem 0.55rem;border-radius:99px;background:rgba(100,180,230,0.07);color:#534AB7;font-weight:500">' + escHtml(t) + '</span>';
           }).join('');
         }
         if (avatarEl) {
           if (profile.avatar_url) {
-            avatarEl.innerHTML = '<img src="' + escHtml(profile.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+            avatarEl.innerHTML = '<img src="' + escHtml(profile.avatar_url) + '" class="u-avatar-img">';
           } else {
             avatarEl.textContent = (profile.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
           }
         }
         
-        // ── Stats: network count + bubble count (parallel) ──
-        var [netRes, membRes] = await Promise.all([
-          sb.from('saved_contacts').select('*', { count: 'exact', head: true })
-            .or('user_id.eq.' + userId + ',contact_id.eq.' + userId),
-          sb.from('bubble_members').select('bubble_id, bubbles(id,name,type)')
-            .eq('user_id', userId).limit(8)
-        ]);
-        var netCount = netRes.count || 0;
-        var memberships = membRes.data || [];
+        // ── Stats: network count + bubbles (from preview RPC) ──
+        var netCount = _pv.contact_count || 0;
+        var memberships = (_pv.bubbles || []).map(function(b) { return { bubbles: b, bubble_id: b.id }; });
         
         var netEl = document.getElementById('qr-preview-network-count');
         if (netEl) netEl.textContent = netCount;
@@ -331,8 +321,8 @@ async function loadQRProfilePreview(userId, bubbleId) {
           bubblesEl.innerHTML = memberships.map(function(m) {
             var b = m.bubbles || {};
             var isEvent = b.type === 'event' || b.type === 'live';
-            var col = isEvent ? 'rgba(46,207,207,' : 'rgba(124,92,252,';
-            var dotCol = isEvent ? '#2ECFCF' : '#7C5CFC';
+            var col = isEvent ? 'rgba(46,207,207,' : 'rgba(100,180,230,';
+            var dotCol = isEvent ? '#2ECFCF' : 'rgb(100,180,230)';
             var txtCol = isEvent ? '#0F6E56' : '#534AB7';
             return '<div style="display:flex;align-items:center;gap:0.3rem;padding:0.35rem 0.65rem;border-radius:10px;background:' + col + '0.06);border:1px solid ' + col + '0.12);flex-shrink:0">' +
               '<div style="width:6px;height:6px;border-radius:50%;background:' + dotCol + '"></div>' +
@@ -343,46 +333,28 @@ async function loadQRProfilePreview(userId, bubbleId) {
         // ── Network contacts (real profiles from shared bubbles) ──
         var labelEl = document.getElementById('qr-preview-context-label');
         if (labelEl && profile.name) {
-          labelEl.textContent = 'Folk i ' + profile.name.split(' ')[0] + 's netværk';
+          labelEl.textContent = t('qr_people_network', {name: profile.name.split(' ')[0]});
         }
         var listEl = document.getElementById('qr-preview-network-list');
         var moreEl = document.getElementById('qr-preview-more-label');
         if (listEl) {
-          // Get contacts of this user
-          var { data: contacts } = await sb.from('saved_contacts')
-            .select('contact_id, profiles:contact_id(id,name,title,keywords,avatar_url)')
-            .eq('user_id', userId).limit(5);
-          // Fallback: bubble co-members
-          if (!contacts || contacts.length === 0) {
-            var bubbleIds = memberships.map(function(m) { return m.bubble_id; });
-            if (bubbleIds.length > 0) {
-              var { data: coMembers } = await sb.from('bubble_members')
-                .select('user_id, profiles:user_id(id,name,title,keywords,avatar_url)')
-                .in('bubble_id', bubbleIds).neq('user_id', userId).limit(8);
-              // Deduplicate
-              var seen = {};
-              contacts = (coMembers || []).filter(function(m) {
-                if (!m.profiles || seen[m.user_id]) return false;
-                seen[m.user_id] = true;
-                return true;
-              }).slice(0, 5).map(function(m) { return { profiles: m.profiles }; });
-            }
-          }
+          // Network from preview RPC (contacts, safe fields only)
+          var contacts = (_pv.network || []).slice(0, 5).map(function(p) { return { profiles: p }; });
           
           var colors = [
             'linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#8B5CF6,#A855F7)',
             'linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#1A9E8E,#10B981)',
-            'linear-gradient(135deg,#6366F1,#7C5CFC)'
+            'linear-gradient(135deg,#6366F1,rgb(100,180,230))'
           ];
           if (contacts && contacts.length > 0) {
             listEl.innerHTML = contacts.map(function(c, i) {
               var p = c.profiles || {};
               var ini = (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
               var avHtml = p.avatar_url
-                ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+                ? '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">'
                 : ini;
               var tags = (p.keywords || []).slice(0, 2).map(function(t) {
-                return '<span style="font-size:0.55rem;padding:0.1rem 0.35rem;border-radius:6px;background:rgba(124,92,252,0.07);color:#534AB7">' + escHtml(t) + '</span>';
+                return '<span style="font-size:0.55rem;padding:0.1rem 0.35rem;border-radius:6px;background:rgba(100,180,230,0.07);color:#534AB7">' + escHtml(t) + '</span>';
               }).join('');
               return '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.6rem 0.7rem;border-radius:12px;background:rgba(30,27,46,0.02);border:1px solid var(--glass-border-subtle)">' +
                 '<div style="width:38px;height:38px;border-radius:50%;background:' + colors[i % colors.length] + ';display:flex;align-items:center;justify-content:center;color:white;font-size:0.72rem;font-weight:700;flex-shrink:0;overflow:hidden">' + avHtml + '</div>' +
@@ -402,9 +374,10 @@ async function loadQRProfilePreview(userId, bubbleId) {
       }
       goTo('screen-qr-preview');
     } else {
-      // Bubble join without profile - show teaser with real profiles
-      goTo('screen-qr-teaser');
-      loadTeaserProfiles(bubbleId);
+      // Bubble join — route by bubble TYPE: events get the event-landing, networks the teaser
+      var { data: _jb } = await sb.from('bubbles').select('id, name, type, location').eq('id', bubbleId).maybeSingle();
+      if (_jb) { _routeBubblePreScreen(_jb); }
+      else { goTo('screen-qr-teaser'); loadTeaserProfiles(bubbleId); }
     }
     window.history.replaceState({}, document.title, window.location.pathname);
   } catch(e) {
@@ -432,29 +405,17 @@ async function loadTeaserProfiles(bubbleId) {
     var colors = [
       'linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#E879A8,#EC4899)',
       'linear-gradient(135deg,#8B5CF6,#A855F7)','linear-gradient(135deg,#1A9E8E,#10B981)',
-      'linear-gradient(135deg,#6366F1,#7C5CFC)'
+      'linear-gradient(135deg,#6366F1,rgb(100,180,230))'
     ];
 
-    // Try bubble members first
-    if (bubbleId) {
-      var { data: members } = await sb.from('bubble_members')
-        .select('user_id, profiles:user_id(id,name,title,workplace,avatar_url)')
-        .eq('bubble_id', bubbleId).limit(5);
-      profiles = (members || []).map(function(m) { return m.profiles; }).filter(Boolean);
-    }
+    var _tz = ((await sb.rpc('get_bubble_teaser', { p_bubble_id: bubbleId || null })).data) || {};
+    // Bubble members first
+    profiles = (_tz.members || []).filter(Boolean);
 
-    // Fallback: recent active profiles with title
+    // Fallback: recent active profiles
     if (profiles.length < 3) {
-      var { data: recent } = await sb.from('profiles')
-        .select('id,name,title,workplace,avatar_url')
-        .not('name', 'is', null)
-        .not('title', 'is', null)
-        .eq('banned', false)
-        .eq('is_anon', false)
-        .order('created_at', { ascending: false })
-        .limit(6);
       var existingIds = profiles.map(function(p) { return p.id; });
-      (recent || []).forEach(function(p) {
+      (_tz.recent || []).forEach(function(p) {
         if (profiles.length < 5 && existingIds.indexOf(p.id) < 0 && p.name && p.title) {
           profiles.push(p);
         }
@@ -467,16 +428,16 @@ async function loadTeaserProfiles(bubbleId) {
     }
 
     var countEl = document.getElementById('qr-teaser-count');
-    if (countEl) countEl.textContent = profiles.length + ' professionelle i dit område';
+    if (countEl) countEl.textContent = t('home_pros_count', {count: profiles.length});
 
     el.innerHTML = profiles.map(function(p, i) {
       var ini = (p.name || '?').split(' ').map(function(w){return w[0]}).join('').slice(0,2).toUpperCase();
       var subtitle = [p.title, p.workplace].filter(Boolean).join(' \u00B7 ');
       var avHtml = p.avatar_url
-        ? '<img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        ? '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">'
         : ini;
       var fade = i >= 3 ? 'opacity:' + (0.6 - (i - 3) * 0.2) : '';
-      return '<div class="card" style="margin:0 1.2rem;' + fade + '"><div style="display:flex;align-items:center;gap:0.6rem">' +
+      return '<div class="card" style="margin:0 1.2rem;' + fade + '"><div class="u-row-gap">' +
         '<div class="avatar" style="width:36px;height:36px;background:' + colors[i % colors.length] + ';overflow:hidden">' + avHtml + '</div>' +
         '<div><div style="font-size:0.82rem;font-weight:600">' + escHtml(p.name) + '</div>' +
         '<div style="font-size:0.68rem;color:var(--text-secondary)">' + escHtml(subtitle) + '</div></div></div></div>';
@@ -493,9 +454,7 @@ async function loadTeaserProfiles(bubbleId) {
 async function loadSocialProofScreen() {
   try {
     if (!sb) initSupabase();
-    var { count } = await sb.from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .neq('banned', true);
+    var count = (((await sb.rpc('get_teaser_stats')).data) || {}).profile_count || 0;
     var el = document.getElementById('sp-total-count');
     if (el) el.textContent = count || 0;
     
@@ -545,6 +504,27 @@ async function checkPendingContact() {
 // ══════════════════════════════════════════════════════════
 var _eventBubble = null;
 
+// Route a not-logged-in user to the correct pre-auth screen by bubble TYPE
+// (not by delivery method): events/live → event-landing + event_flow, networks → teaser.
+// Shared by both the ?event link path and the ?join QR path so the pre-screen is
+// consistent regardless of how the bubble was opened.
+function _routeBubblePreScreen(bubble) {
+  flowSet('pending_join', bubble.id);
+  if (bubble.type === 'event' || bubble.type === 'live') {
+    _eventBubble = bubble;
+    flowSet('event_flow', 'true');
+    var nameEl = document.getElementById('guest-event-name');
+    var metaEl = document.getElementById('guest-event-meta');
+    if (nameEl) nameEl.textContent = bubble.name;
+    if (metaEl) metaEl.textContent = (bubble.location ? bubble.location + ' · ' : '') + 'Live Event';
+    loadEventSocialProof(bubble.id);
+    goTo('screen-guest-checkin');
+  } else {
+    loadTeaserProfiles(bubble.id);
+    goTo('screen-qr-teaser');
+  }
+}
+
 async function checkGuestEventRoute() {
   try {
     var params = new URLSearchParams(window.location.search);
@@ -553,6 +533,7 @@ async function checkGuestEventRoute() {
     
     // Validate before query — prevents string concat injection in .or() clause below.
     // Either valid UUID or short alphanumeric join_code (4-32 chars).
+    // Ported from PROD v8.17.31 (Fix 1: UUID validation).
     if (!isUuid(eventId) && !/^[a-zA-Z0-9_-]{4,32}$/.test(eventId)) {
       _renderToast('Ugyldigt event-link', 'error');
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -562,7 +543,20 @@ async function checkGuestEventRoute() {
     // Already logged in → join + handle check-in
     var { data: { session } } = await sb.auth.getSession();
     if (session) {
-      flowSet('pending_join', eventId);
+      // P0.1 fix: resolve join_code → bubble.id BEFORE storing. pending_join is
+      // consumed by showDeepLinkModal/checkPendingJoin via .eq('id', …), so a raw
+      // join_code (non-UUID) would later yield "Event ikke fundet". Mirror the
+      // logged-out resolution so the invariant holds: pending_join is always a bubble.id.
+      var _resolvedId = eventId;
+      try {
+        var { data: _lb } = await sb.from('bubbles')
+          .select('id')
+          .or('id.eq.' + eventId + ',join_code.eq.' + eventId)
+          .limit(1)
+          .maybeSingle();
+        if (_lb && _lb.id) _resolvedId = _lb.id;
+      } catch(e) { /* fall back to raw eventId (UUID links still work) */ }
+      flowSet('pending_join', _resolvedId);
       flowSet('event_flow', 'true');
       // Clean URL to prevent re-entry on refresh
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -588,20 +582,8 @@ async function checkGuestEventRoute() {
     
     if (!bubble) { _renderToast('Event ikke fundet', 'error'); return false; }
     
-    _eventBubble = bubble;
-    flowSet('pending_join', bubble.id);
-    flowSet('event_flow', 'true');
-    
-    // Populate teaser screen
-    var nameEl = document.getElementById('guest-event-name');
-    var metaEl = document.getElementById('guest-event-meta');
-    if (nameEl) nameEl.textContent = bubble.name;
-    if (metaEl) metaEl.textContent = (bubble.location ? bubble.location + ' · ' : '') + (bubble.type === 'event' || bubble.type === 'live' ? 'Live Event' : 'Netværk');
-    
-    // Load social proof: attendee count + blurred profiles
-    loadEventSocialProof(bubble.id);
-    
-    goTo('screen-guest-checkin');
+    // Route by bubble TYPE (events/live → event-landing, networks → teaser) — same as the QR path
+    _routeBubblePreScreen(bubble);
     window.history.replaceState({}, document.title, window.location.pathname);
     return true;
   } catch(e) {
@@ -612,58 +594,72 @@ async function checkGuestEventRoute() {
 
 async function loadEventSocialProof(bubbleId) {
   try {
-    var { count } = await sb.from('bubble_members')
-      .select('*', { count: 'exact', head: true })
-      .eq('bubble_id', bubbleId);
-    
+    var _tz = ((await sb.rpc('get_bubble_teaser', { p_bubble_id: bubbleId })).data) || {};
+    var count = _tz.member_count || 0;
+
     var countEl = document.getElementById('event-attendee-count');
     if (countEl && count > 0) {
       countEl.textContent = count + ' deltager' + (count !== 1 ? 'e' : '') + ' er allerede her';
     } else if (countEl) {
       countEl.textContent = t('home_first_here');
     }
-    
-    // Load blurred profile cards (max 4)
+
+    var container = document.getElementById('event-blurred-profiles');
+    if (!container) return;
+
+    var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,rgb(100,180,230))','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)'];
+
+    // Render one social-proof card. badge = optional label (e.g. VAERT).
+    function _spCard(p, idx, badge) {
+      var ini = (p.name || '?').split(' ').map(function(w){ return w[0]; }).join('').slice(0,2).toUpperCase();
+      var tags = (p.keywords || []).slice(0,2).map(function(k) { return '<span style="font-size:0.58rem;padding:0.1rem 0.4rem;background:rgba(100,180,230,0.06);color:var(--accent);border-radius:99px">' + escHtml(k) + '</span>'; }).join('');
+      var badgeHtml = badge ? '<span style="font-size:0.52rem;font-weight:700;letter-spacing:0.03em;color:#2c7fb8;background:rgba(100,180,230,0.15);border-radius:5px;padding:0.05rem 0.35rem;margin-left:0.35rem;vertical-align:middle">' + badge + '</span>' : '';
+      return '<div style="background:rgba(255,255,255,0.075);border:0.5px solid rgba(255,255,255,0.12);border-radius:var(--radius);padding:0.7rem 0.9rem;display:flex;align-items:center;gap:0.6rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
+        '<div style="width:36px;height:36px;border-radius:50%;background:' + avColors[idx % avColors.length] + ';display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>' +
+        '<div style="flex:1;min-width:0"><div style="font-size:0.8rem;font-weight:600;color:var(--text)">' + escHtml(p.name || 'Deltager') + badgeHtml + '</div>' +
+        '<div style="font-size:0.68rem;color:var(--text-secondary)">' + escHtml(p.title || '') + (p.workplace ? ' \u00B7 ' + escHtml(p.workplace) : '') + '</div>' +
+        (tags ? '<div style="display:flex;gap:0.2rem;margin-top:0.2rem">' + tags + '</div>' : '') +
+        '</div></div>';
+    }
+    function _spLabel(txt) {
+      return '<div style="font-size:0.6rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--muted);padding:0.5rem 0.1rem 0.3rem">' + txt + '</div>';
+    }
+
+    var html = '';
+    var shownIds = [];
+
     if (count > 0) {
-      var { data: members } = await sb.from('bubble_members')
-        .select('profiles(name, title, workplace, keywords)')
-        .eq('bubble_id', bubbleId)
-        .limit(4);
-      
-      var container = document.getElementById('event-blurred-profiles');
-      if (container && members) {
-        var avColors = ['linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#6366F1,#7C5CFC)','linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#F59E0B,#EAB308)'];
-        container.innerHTML = members.map(function(m, i) {
-          var p = m.profiles || {};
-          var ini = (p.name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-          var tags = (p.keywords || []).slice(0,2).map(function(k) { return '<span style="font-size:0.58rem;padding:0.1rem 0.4rem;background:rgba(124,92,252,0.06);color:var(--accent);border-radius:99px">' + escHtml(k) + '</span>'; }).join('');
-          return '<div style="background:#FFFFFF;border:1px solid var(--glass-border-subtle);border-radius:var(--radius);padding:0.7rem 0.9rem;display:flex;align-items:center;gap:0.6rem;box-shadow:0 1px 3px rgba(30,27,46,0.06)">' +
-            '<div style="width:36px;height:36px;border-radius:50%;background:' + avColors[i] + ';display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;color:white;flex-shrink:0">' + ini + '</div>' +
-            '<div style="flex:1;min-width:0"><div style="font-size:0.8rem;font-weight:600;color:var(--text)">' + escHtml(p.name || 'Deltager') + '</div>' +
-            '<div style="font-size:0.68rem;color:var(--text-secondary)">' + escHtml(p.title || '') + (p.workplace ? ' · ' + escHtml(p.workplace) : '') + '</div>' +
-            (tags ? '<div style="display:flex;gap:0.2rem;margin-top:0.2rem">' + tags + '</div>' : '') +
-            '</div></div>';
-        }).join('') +
-        (count > 4 ? '<div style="text-align:center;font-size:0.72rem;color:var(--accent);font-weight:600;padding:0.4rem 0">+ ' + (count - 4) + ' flere deltagere</div>' : '');
+      // Real attendees
+      var members = (_tz.members || []).slice(0, 4).map(function(m) { return { profiles: m }; });
+      (members || []).forEach(function(m) {
+        var p = m.profiles || {};
+        if (p.name) { html += _spCard(p, shownIds.length, null); shownIds.push(p.id); }
+      });
+      if (count > 4) html += '<div style="text-align:center;font-size:0.72rem;color:var(--accent);font-weight:600;padding:0.4rem 0">+ ' + (count - 4) + ' flere deltagere</div>';
+    } else {
+      // Empty event - anchor with the host/organizer (there is always a creator)
+      var host = _tz.host;
+      if (host && host.name) { html += _spCard(host, 0, 'V\u00C6RT'); shownIds.push(host.id); }
+    }
+
+    // Never empty: top up with nearby professionals - honestly labelled, NOT as "deltagere"
+    if (shownIds.length < 3) {
+      var recent = _tz.recent || [];
+      var near = (recent || []).filter(function(p) { return p.name && p.title && shownIds.indexOf(p.id) < 0; });
+      if (near.length) {
+        html += _spLabel(t('home_more_pros'));
+        near.forEach(function(p) {
+          if (shownIds.length < 4) { html += _spCard(p, shownIds.length, null); shownIds.push(p.id); }
+        });
       }
     }
+
+    container.innerHTML = html;
   } catch(e) { logError('loadEventSocialProof', e); }
 }
 
 // ── Event signup actions ──
-function eventSignupGoogle() {
-  flowSet('event_flow', 'true');
-  goTo('screen-auth');
-  showAuthForms();
-  setTimeout(function() { handleGoogleLogin(); }, 200);
-}
 
-function eventSignupLinkedIn() {
-  flowSet('event_flow', 'true');
-  goTo('screen-auth');
-  showAuthForms();
-  setTimeout(function() { handleLinkedInLogin(); }, 200);
-}
 
 function eventSignupEmail() {
   flowSet('event_flow', 'true');
@@ -691,10 +687,10 @@ async function showEventReadyQR() {
     if (roleEl) roleEl.textContent = (currentProfile.title || '') + (currentProfile.workplace ? ' · ' + currentProfile.workplace : '');
     
     var metaEl = document.getElementById('event-ready-meta');
-    if (metaEl && _eventBubble) metaEl.textContent = 'Vis din QR-kode til arrangøren ved ' + _eventBubble.name;
+    if (metaEl && _eventBubble) metaEl.textContent = t('qr_show_qr_at', {event: _eventBubble.name});
     
     // Generate rotating QR token (10 min)
-    var token = crypto.randomUUID ? crypto.randomUUID().split('-')[0] : Math.random().toString(36).slice(2,10);
+    var token = crypto.randomUUID ? crypto.randomUUID().replace(/-/g,'') : (crypto.getRandomValues ? Array.prototype.map.call(crypto.getRandomValues(new Uint8Array(16)), function(b){return ('0'+b.toString(16)).slice(-2);}).join('') : (Date.now().toString(36)+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)).slice(0,32));
     var expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     var qrResult = await dbActions.createQRToken(token, expiresAt);
     if (!qrResult.ok) token = null;
@@ -744,7 +740,7 @@ if ('serviceWorker' in navigator) {
 
     // Ny app-version tilgængelig
     if (msg.type === 'SW_UPDATED') {
-      showUpdateBanner();
+      handleUpdateAvailable();
       return;
     }
 
@@ -752,7 +748,7 @@ if ('serviceWorker' in navigator) {
     if (msg.type === 'SW_VERSION') {
       var expected = 'bubble-' + BUILD_VERSION;
       if (msg.version && msg.version !== expected) {
-        showUpdateBanner();
+        handleUpdateAvailable();
       }
       return;
     }
@@ -778,9 +774,10 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.ready.then(function(reg) {
     reg.update(); // Trigger SW update check
 
-    // v8.17.31: detect waiting SW at boot (in case SW_UPDATED postMessage missed)
+    // Ported from PROD v8.17.31 (Fix 7): detect waiting SW at boot
+    // (in case SW_UPDATED postMessage missed)
     if (reg.waiting && navigator.serviceWorker.controller) {
-      showUpdateBanner();
+      handleUpdateAvailable();
     }
     // Listen for new SW becoming waiting AFTER boot (deploy happens mid-session)
     reg.addEventListener('updatefound', function() {
@@ -789,7 +786,7 @@ if ('serviceWorker' in navigator) {
       newSW.addEventListener('statechange', function() {
         if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
           // New SW installed but not yet active — show banner
-          showUpdateBanner();
+          handleUpdateAvailable();
         }
       });
     });
@@ -801,7 +798,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// v8.17.31: SW update orchestration
+// Ported from PROD v8.17.31 (Fix 7): SW update orchestration
 // 1. acceptUpdate() — called when user clicks "Opdatér" in banner
 // 2. controllerchange listener — reloads after new SW takes control
 // 3. updatefound listener — detects waiting SW that wasn't yet announced
@@ -834,29 +831,44 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// Naar en ny service worker er klar: auto-opdater (dev) ELLER vis banner (prod).
+// Styret af AUTO_UPDATE i b-config.js.
+function handleUpdateAvailable() {
+  if (typeof AUTO_UPDATE !== 'undefined' && AUTO_UPDATE) {
+    // Udviklingsfase: aktiver ny SW straks + reload (deploys slaar igennem med det samme)
+    acceptUpdate();
+  } else {
+    // Produktion/pilot: vent paa brugeren via banner (de vaelger selv hvornaar de opdaterer)
+    showUpdateBanner();
+  }
+}
+
 function showUpdateBanner() {
   if (document.getElementById('update-banner')) return;
   var banner = document.createElement('div');
   banner.id = 'update-banner';
   banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;'
     + 'padding-top:env(safe-area-inset-top,0px);'
-    + 'background:rgba(255,255,255,0.96);'
-    + 'backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);'
-    + 'border-bottom:1px solid rgba(124,92,252,0.25);'
-    + 'box-shadow:0 4px 24px rgba(30,27,46,0.12);';
+    + 'background:rgba(20,22,28,0.94);'
+    + 'backdrop-filter:blur(24px) saturate(1.2);-webkit-backdrop-filter:blur(24px) saturate(1.2);'
+    + 'border-bottom:2px solid rgba(245,190,90,0.7);'
+    + 'border-bottom-left-radius:18px;border-bottom-right-radius:18px;'
+    + 'box-shadow:0 4px 24px rgba(0,0,0,0.4),0 3px 20px rgba(245,190,90,0.28);';
   banner.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;'
-    + 'padding:0.55rem 1rem;gap:0.75rem;font-family:inherit">'
-    + '<div style="display:flex;align-items:center;gap:0.5rem;min-width:0">'
-    + '<div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.75rem">✦</div>'
-    + '<span style="font-size:0.78rem;font-weight:600;color:var(--text)">Ny version klar</span>'
+    + 'padding:0.7rem 1rem;gap:0.75rem;font-family:inherit">'
+    + '<div style="display:flex;align-items:center;gap:0.6rem;min-width:0">'
+    + '<div style="width:30px;height:30px;border-radius:9px;background:rgba(245,190,90,0.18);border:0.5px solid rgba(245,190,90,0.4);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#F5C877">'
+    + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6M3 12a9 9 0 0115-6.7L21 8M3 22v-6h6M21 12a9 9 0 01-15 6.7L3 16"/></svg>'
+    + '</div>'
+    + '<span style="font-size:0.76rem;font-weight:600;color:rgba(255,255,255,0.92);line-height:1.35">' + t('update_banner_text') + '</span>'
     + '</div>'
     + '<div style="display:flex;gap:0.4rem;flex-shrink:0">'
-    + '<button onclick="acceptUpdate()" style="background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;'
-    + 'color:#fff;padding:0.35rem 0.85rem;border-radius:99px;font-weight:700;font-size:0.72rem;'
-    + 'font-family:inherit;cursor:pointer;white-space:nowrap">Opdatér</button>'
-    + '<button onclick="this.closest(\'#update-banner\').remove()" style="background:none;border:1px solid var(--glass-border);'
-    + 'color:var(--muted);padding:0.35rem 0.6rem;border-radius:99px;font-size:0.72rem;'
-    + 'font-family:inherit;cursor:pointer">Senere</button>'
+    + '<button onclick="acceptUpdate()" style="background:rgba(100,180,230,0.18);border:0.5px solid rgba(100,180,230,0.35);'
+    + 'color:#CFE6F7;padding:0.4rem 0.9rem;border-radius:99px;font-weight:700;font-size:0.72rem;'
+    + 'font-family:inherit;cursor:pointer;white-space:nowrap">' + t('update_banner_btn') + '</button>'
+    + '<button onclick="this.closest(\'#update-banner\').remove()" style="background:none;border:0.5px solid rgba(255,255,255,0.14);'
+    + 'color:rgba(255,255,255,0.5);padding:0.4rem 0.65rem;border-radius:99px;font-size:0.72rem;'
+    + 'font-family:inherit;cursor:pointer;white-space:nowrap">' + t('update_banner_later') + '</button>'
     + '</div></div>';
   document.body.prepend(banner);
 }
@@ -934,7 +946,7 @@ window.addEventListener('load', async () => {
   await checkAuth();
   // Note: ?join= is captured during initial auth flow and handled inside
   // resolvePostAuthDestination() via showDeepLinkModal() (b-auth.js).
-  // Legacy checkQRJoin() in b-bubbles.js is deprecated as of v8.17.22 —
+  // Legacy checkQRJoin() in b-bubbles.js is deprecated as of v8.20 —
   // see DEPRECATED comment there.
   if (currentUser) {
     // Realtime, badges, preload, pending actions already initialized by resolvePostAuth
@@ -1013,19 +1025,35 @@ async function flushAnalytics() {
 }
 
 // O2: Flush on visibility change (more reliable than beforeunload)
+var _lastBgAt = 0; // P0.4: track background duration to detect likely socket death
 document.addEventListener('visibilitychange', function() {
   if (document.hidden) {
+    _lastBgAt = Date.now();
     // App backgrounded → flush analytics
     if (_analyticsQueue.length > 0) flushAnalytics().catch(function() {});
   } else {
     // App returned to foreground → refresh stale data
     if (!currentUser) return;
+
+    // P0.4: iOS silently kills WebSockets in the background WITHOUT firing
+    // offline/CHANNEL_ERROR, so _rtState can wrongly read 'connected'. If we were
+    // backgrounded long enough that the socket likely died, force a reconnect.
+    // rtReconnect() also re-subscribes the open DM/bubble chat realtime.
+    var _bgMs = _lastBgAt ? (Date.now() - _lastBgAt) : 0;
+    if (_bgMs > 8000 && typeof rtReconnect === 'function') {
+      _rtReconnectAttempt = 0;
+      rtReconnect();
+    }
+
     _unreadRecount();
     updateTopbarNotifBadge();
-    // Refresh active screen data
+    // Refresh active screen data — now includes chat screens (P0.4): reconnect only
+    // re-subscribes; it doesn't backfill messages missed while backgrounded.
     if (_activeScreen === 'screen-messages') loadMessages();
     else if (_activeScreen === 'screen-home') { loadHome(); }
     else if (_activeScreen === 'screen-notifications') loadNotifications();
+    else if (_activeScreen === 'screen-bubble-chat' && typeof bcBubbleId !== 'undefined' && bcBubbleId && typeof bcLoadMessages === 'function') bcLoadMessages();
+    else if (_activeScreen === 'screen-chat' && typeof currentChatUser !== 'undefined' && currentChatUser && typeof loadChatMessages === 'function') loadChatMessages();
   }
 });
 
