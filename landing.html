@@ -23,7 +23,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0E141C; --bg-2:#0B1017;
+    --bg:#05080C; --bg-2:#0B1017;
     --ink:rgba(207,230,247,0.95); --ink-2:rgba(207,230,247,0.80);
     --ink-3:rgba(207,230,247,0.62); --ink-4:rgba(207,230,247,0.42);
     --ink-head:#EAF2FB;
@@ -38,16 +38,17 @@
     --gap-card:1rem;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth;background:#0B1017}
+  html{scroll-behavior:smooth;background:#05080C}
+  .bg-orbs{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
   body{
     font-family:'Figtree',system-ui,-apple-system,sans-serif;
     background:
-      radial-gradient(1200px 720px at 50% -12%, rgba(var(--ice),0.12), transparent 60%),
-      radial-gradient(900px 600px at 88% 32%, rgba(232,121,168,0.06), transparent 55%),
+      radial-gradient(ellipse 90% 45% at 22% 4%, rgba(100,140,190,0.28), transparent 60%),
+      radial-gradient(ellipse 80% 55% at 88% 42%, rgba(90,200,175,0.14), transparent 65%),
       linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%);
     background-attachment:fixed;
     color:var(--ink); line-height:1.6; -webkit-font-smoothing:antialiased;
-    min-height:100vh; overflow-x:hidden;
+    min-height:100vh;
   }
   .wrap{max-width:var(--max-w);margin:0 auto;padding:0 1.5rem}
   a{color:inherit}
@@ -59,7 +60,7 @@
   .lang button.on{color:var(--ink);background:rgba(var(--ice),0.18)}
 
   /* nav */
-  nav{position:sticky;top:0;z-index:40;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(14,20,28,0.55);border-bottom:0.5px solid var(--line)}
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2);background:rgba(5,8,12,0.72);border-bottom:0.5px solid var(--line)}
   .nav-in{max-width:calc(var(--measure) + 3rem);margin:0 auto;padding:0.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
   .mark{width:98px;height:26px;background:var(--wm) left center/contain no-repeat;font-size:0}
   .nav-cta{font-size:0.86rem;font-weight:700;text-decoration:none;color:#F0F7FF;background:rgba(var(--ice),0.24);border:0.5px solid rgba(var(--ice),0.42);height:36px;display:inline-flex;align-items:center;padding:0 1rem;border-radius:11px;transition:background .2s}
@@ -90,11 +91,11 @@
   .phone-header{padding:2.3rem 1.1rem 0.7rem;text-align:left}
   .phone-header .pm{display:inline-block;width:56px;height:15px;background:var(--wm) center/contain no-repeat;font-size:0}
   .phone-radar{flex:1;display:flex;align-items:center;justify-content:center;padding:0.5rem}
-  .pr-svg{width:200px;height:200px;overflow:visible}
+  .pr-svg{width:224px;height:224px;overflow:visible}
   .ring{fill:none;stroke:rgba(255,255,255,0.10);stroke-width:1}
   .sweep{transform-origin:100px 100px;animation:spin 7s linear infinite}
   .pulse{transform-origin:center;animation:pulse 3.2s ease-in-out infinite}
-  .pulse.b{animation-delay:1s}.pulse.c{animation-delay:2s}
+  .pulse.b{animation-delay:1s}.pulse.c{animation-delay:2s}.pulse.d{animation-delay:1.5s}
   .pr-link{stroke:rgba(var(--ice),0.30);stroke-width:1;stroke-dasharray:2 4}
   .pr-init{font:700 8px Figtree,sans-serif;fill:#fff}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -111,6 +112,7 @@
 
   /* ── UNIFORM SECTION SYSTEM ── */
   .section{padding-top:var(--pad-sec);padding-bottom:var(--pad-sec)}
+  .hero, .section, footer, main, header { position:relative; z-index:1 }
   .section-alt{background:rgba(255,255,255,0.018);border-top:0.5px solid var(--line);border-bottom:0.5px solid var(--line)}
   .shead{text-align:center;max-width:var(--measure);margin:0 auto var(--gap-head)}
   .shead .label{font-size:0.74rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(var(--ice),0.8);margin-bottom:0.6rem}
@@ -124,6 +126,36 @@
   .step-num.ok{background:rgba(26,158,142,0.26);color:#5FE0CE}
   .step-title{font-weight:700;font-size:1rem;margin-bottom:0.2rem}
   .step-desc{font-size:0.9rem;color:var(--ink-2)}
+  .hub-grid{display:grid;grid-template-columns:1fr 1fr;gap:2.4rem;align-items:center;max-width:var(--measure);margin:0 auto;background:var(--glass);border:0.5px solid var(--line);border-radius:22px;padding:2rem;background-image:radial-gradient(circle at 15% 25%, rgba(100,180,230,0.08), transparent 55%);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .hub-h2{font-size:1.7rem;font-weight:900;letter-spacing:-0.02em;line-height:1.1;margin:0.5rem 0 0.9rem}
+  .hub-lead{font-size:0.95rem;color:var(--ink-2);line-height:1.6;margin-bottom:1.3rem}
+  .hub-points{display:flex;flex-direction:column;gap:0.75rem}
+  .hub-point{display:flex;align-items:center;gap:0.65rem;font-size:0.86rem;color:var(--ink-2)}
+  .hub-ico{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .hub-tree{background:#0A0F16;border:0.5px solid var(--line);border-radius:18px;padding:1.1rem;max-width:280px;margin:0 auto;width:100%}
+  .hub-tree-title{font-size:0.8rem;font-weight:800;color:var(--ink);margin-bottom:0.9rem}
+  .ht-net{display:flex;align-items:center;gap:0.55rem}
+  .ht-net-2{margin-top:0.9rem;padding-top:0.75rem;border-top:0.5px solid rgba(255,255,255,0.08)}
+  .ht-net-ico{width:30px;height:30px;border-radius:9px;flex-shrink:0}
+  .ht-net-name{font-size:0.78rem;font-weight:700;color:var(--ink)}
+  .ht-net-meta{font-size:0.6rem;color:var(--ink-4)}
+  .ht-branch{margin-left:15px;padding-left:13px;border-left:1px solid rgba(255,255,255,0.1)}
+  .ht-sub{display:flex;align-items:center;gap:0.5rem;margin:0.6rem 0 0.3rem}
+  .ht-sub-ico{width:22px;height:22px;border-radius:7px;flex-shrink:0}
+  .ht-sub-name{font-size:0.72rem;font-weight:700;color:var(--ink)}
+  .ht-evt-wrap{margin-left:11px;padding-left:11px;border-left:1px solid rgba(255,255,255,0.08)}
+  .ht-evt{display:flex;align-items:center;gap:0.45rem;margin:0.35rem 0;font-size:0.66rem;color:var(--ink-3)}
+  .ht-evt-dot{width:6px;height:6px;border-radius:50%;background:#5FE0CE;flex-shrink:0}
+  @media(max-width:720px){.hub-grid{grid-template-columns:1fr;gap:1.6rem}.hub-h2{font-size:1.5rem}}
+  .radar-grid{display:grid;grid-template-columns:1fr 1fr;gap:2.4rem;align-items:center;max-width:var(--measure);margin:0 auto;background:var(--glass);border:0.5px solid var(--line);border-radius:22px;padding:2rem;background-image:radial-gradient(circle at 82% 28%, rgba(90,200,175,0.08), transparent 58%);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .radar-h2{font-size:1.7rem;font-weight:900;letter-spacing:-0.02em;line-height:1.1;margin:0.5rem 0 0.9rem}
+  .radar-lead{font-size:0.95rem;color:var(--ink-2);line-height:1.6;margin-bottom:1.3rem}
+  .radar-points{display:flex;flex-direction:column;gap:0.75rem}
+  .radar-point{display:flex;align-items:center;gap:0.65rem;font-size:0.86rem;color:var(--ink-2)}
+  .radar-ico{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .radar-visual{display:flex;justify-content:center;align-items:center}
+  .rx-svg{width:220px;height:220px;overflow:visible}
+  @media(max-width:720px){.radar-grid{grid-template-columns:1fr;gap:1.6rem}.radar-h2{font-size:1.5rem}.radar-visual{order:-1}}
 
   /* cards — centered grid */
   .cards{display:grid;gap:var(--gap-card);margin:0 auto}
@@ -212,6 +244,12 @@
 <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
 </head>
 <body>
+<div class="bg-orbs" aria-hidden="true">
+  <div style="position:fixed;top:-80px;left:-120px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle at 38% 32%, rgba(150,205,250,0.20), rgba(70,120,180,0.06) 60%, transparent 74%);filter:blur(12px);pointer-events:none;z-index:0"></div>
+  <div style="position:fixed;top:38%;right:-160px;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle at 42% 36%, rgba(100,150,210,0.15), rgba(60,100,160,0.05) 60%, transparent 74%);filter:blur(16px);pointer-events:none;z-index:0"></div>
+  <div style="position:fixed;top:66%;left:8%;width:460px;height:460px;border-radius:50%;background:radial-gradient(circle at 45% 40%, rgba(90,200,175,0.10), transparent 70%);filter:blur(18px);pointer-events:none;z-index:0"></div>
+  <div style="position:fixed;top:88%;right:6%;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle at 40% 38%, rgba(120,160,220,0.12), transparent 72%);filter:blur(18px);pointer-events:none;z-index:0"></div>
+</div>
 
 <nav>
   <div class="nav-in">
@@ -232,12 +270,12 @@
     <div>
       <div class="eyebrow" data-i="eyebrow">Netværksradar for virkelige møder</div>
       <h1><span data-i="h1a">De rigtige mennesker er </span><span class="accent" data-i="h1b">allerede omkring dig</span><span data-i="h1c">.</span></h1>
-      <p class="hero-sub" data-i="hero_sub">Bubble hjælper dig med at finde relevante personer i dine events, netværk og fællesskaber — og viser hvorfor det giver mening at tage samtalen.</p>
+      <p class="hero-sub" data-i="hero_sub">Bubble hjælper dig med at finde relevante personer i dine events, netværk og fællesskaber, og viser hvorfor det giver mening at tage samtalen.</p>
       <div class="hero-actions">
         <a class="btn-primary" href="./?auth=1" data-i="cta_start">Prøv betaen →</a>
         <a class="btn-secondary" href="#how" data-i="cta_how">Se hvordan det virker</a>
       </div>
-      <p class="hero-note" data-i="hero_note">Tidlig beta · Gratis · Reklamefri</p>
+      <p class="hero-note" data-i="hero_note">Tidlig beta · Ingen reklamer</p>
     </div>
     <div class="hero-phone">
       <div class="phone-frame">
@@ -248,11 +286,12 @@
             <svg class="pr-svg" viewBox="0 0 200 200" role="img" aria-label="Radar">
               <circle class="ring" cx="100" cy="100" r="28"/><circle class="ring" cx="100" cy="100" r="52"/><circle class="ring" cx="100" cy="100" r="76"/><circle class="ring" cx="100" cy="100" r="96"/>
               <g class="sweep"><defs><linearGradient id="sw" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="rgba(100,180,230,0)"/><stop offset="100%" stop-color="rgba(100,180,230,0.16)"/></linearGradient></defs><path d="M100 100 L100 4 A96 96 0 0 1 188 70 Z" fill="url(#sw)"/></g>
-              <line class="pr-link" x1="100" y1="100" x2="146" y2="62"/><line class="pr-link" x1="100" y1="100" x2="58" y2="138"/><line class="pr-link" x1="100" y1="100" x2="140" y2="140"/>
+              <line class="pr-link" x1="100" y1="100" x2="146" y2="62"/><line class="pr-link" x1="100" y1="100" x2="58" y2="138"/><line class="pr-link" x1="100" y1="100" x2="140" y2="140"/><line class="pr-link" x1="100" y1="100" x2="62" y2="64"/>
               <g class="pulse"><circle cx="146" cy="62" r="11" fill="#9FCFF2"/><text class="pr-init" x="146" y="65" text-anchor="middle" fill="#0E141C">MK</text></g>
               <g class="pulse b"><circle cx="58" cy="138" r="10" fill="#1A9E8E"/><text class="pr-init" x="58" y="141" text-anchor="middle">SL</text></g>
               <g class="pulse c"><circle cx="140" cy="140" r="9.5" fill="#E879A8"/><text class="pr-init" x="140" y="143" text-anchor="middle">JH</text></g>
-              <circle cx="64" cy="66" r="5" fill="rgba(255,255,255,0.3)"/><circle cx="150" cy="110" r="4" fill="rgba(255,255,255,0.25)"/>
+              <g class="pulse d"><circle cx="62" cy="64" r="9" fill="#AFA9EC"/><text class="pr-init" x="62" y="67" text-anchor="middle">NP</text></g>
+              <circle cx="150" cy="110" r="4" fill="rgba(255,255,255,0.25)"/>
               <circle cx="100" cy="100" r="9" fill="rgba(100,180,230,0.95)"/><circle cx="100" cy="100" r="14" fill="none" stroke="rgba(100,180,230,0.4)"/>
             </svg>
           </div>
@@ -275,6 +314,20 @@
   </section>
 </div>
 
+<!-- WHERE BUBBLE FITS -->
+<div class="wrap section">
+  <div class="shead reveal">
+    <div class="label" data-i="feat_label">Hvor Bubble giver mening</div>
+    <h2 data-i="feat_title">Skabt til virkelige møder, ikke bare forbindelser</h2>
+  </div>
+  <div class="cards two">
+    <div class="card reveal"><div class="ico i1"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><h3 data-i="f1n">Konferencer & events</h3><p data-i="f1d">Se hvem der er til stede, hvem du bør møde, og fortsæt dialogen efter eventet.</p></div>
+    <div class="card reveal"><div class="ico i2"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-3.5-3.5-6.5-7-6.5-10.5a6.5 6.5 0 0113 0c0 3.5-3 7-6.5 10.5z"/><circle cx="12" cy="11" r="2.5"/></svg></div><h3 data-i="f2n">Faglige netværk</h3><p data-i="f2d">Find relevante mennesker i dine faglige fællesskaber, uden at starte fra nul.</p></div>
+    <div class="card reveal"><div class="ico i3"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3.5 19.5a5.5 5.5 0 0111 0"/><circle cx="17" cy="9.5" r="2.5"/><path d="M21 19.5a4 4 0 00-4.5-4"/></svg></div><h3 data-i="f3n">Communities & faggrupper</h3><p data-i="f3d">Saml medlemmer, opslag, chat og events i ét levende digitalt rum.</p></div>
+    <div class="card reveal"><div class="ico i4"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7V2h5M17 2h5v5M22 17v5h-5M7 22H2v-5"/><line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2 2"/></svg></div><h3 data-i="f4n">Spontane forbindelser</h3><p data-i="f4d">Del din profil med ét scan og gem kontakten, når timingen er rigtig.</p></div>
+  </div>
+</div>
+
 <!-- HOW IT WORKS -->
 <div class="section-alt" id="how">
   <div class="wrap section">
@@ -283,24 +336,87 @@
       <h2 data-i="how_title">Tre skridt. Under ét minut.</h2>
     </div>
     <div class="steps">
-      <div class="step reveal"><div class="step-num">1</div><div><div class="step-title" data-i="s1t">Fortæl hvem du er</div><div class="step-desc" data-i="s1d">Interesser, rolle og hvad du leder efter.</div></div></div>
-      <div class="step reveal"><div class="step-num">2</div><div><div class="step-title" data-i="s2t">Se hvem du bør møde</div><div class="step-desc" data-i="s2d">Se rummet, ikke en liste — radaren viser hvem der er relevante, og hvorfor.</div></div></div>
+      <div class="step reveal"><div class="step-num">1</div><div><div class="step-title" data-i="s1t">Fortæl hvem du er</div><div class="step-desc" data-i="s1d">Arbejdsplads, rolle, interesser og hvad du leder efter.</div></div></div>
+      <div class="step reveal"><div class="step-num">2</div><div><div class="step-title" data-i="s2t">Se hvem du bør møde</div><div class="step-desc" data-i="s2d">Radaren viser hvem der er relevante for dig, og hvorfor.</div></div></div>
       <div class="step reveal"><div class="step-num ok">3</div><div><div class="step-title" data-i="s3t">Connect i det rigtige øjeblik</div><div class="step-desc" data-i="s3d">Skriv direkte, mød op, eller gem kontakten til senere.</div></div></div>
     </div>
   </div>
 </div>
 
-<!-- WHERE BUBBLE FITS -->
+<!-- RADAR EXPLAINER -->
 <div class="wrap section">
-  <div class="shead reveal">
-    <div class="label" data-i="feat_label">Hvor Bubble giver mening</div>
-    <h2 data-i="feat_title">Skabt til virkelige møder — ikke bare forbindelser</h2>
+  <div class="radar-grid reveal">
+    <div class="radar-copy">
+      <div class="label" data-i="rx_label">Radaren</div>
+      <h2 class="radar-h2" data-i="rx_title">Se rummet, ikke en liste</h2>
+      <p class="radar-lead" data-i="rx_lead">Du er i midten. Jo tættere en person er, jo stærkere er jeres match, bygget på fælles interesser og formål, ikke tilfældigheder. Og hvert match har en grund, så du ved hvem der er værd at connecte med.</p>
+      <div class="radar-points">
+        <div class="radar-point"><span class="radar-ico" style="color:#9FCFF2;background:rgba(100,180,230,0.14)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.5"/></svg></span><span data-i="rx_p1">Nærmest midten = stærkeste match</span></div>
+        <div class="radar-point"><span class="radar-ico" style="color:#5FE0CE;background:rgba(46,158,142,0.14)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.5 5 5.5.8-4 3.9.9 5.5L12 20l-4.9 2.6.9-5.5-4-3.9 5.5-.8z"/></svg></span><span data-i="rx_p2">Matchet på faglighed, formål, interesser og fælles netværk</span></div>
+        <div class="radar-point"><span class="radar-ico" style="color:#ED93B1;background:rgba(232,121,168,0.14)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></span><span data-i="rx_p3">Gem dem du vil connecte med til senere</span></div>
+      </div>
+    </div>
+    <div class="radar-visual">
+      <svg class="rx-svg" viewBox="0 0 200 200" role="img" aria-label="Radar">
+        <circle class="ring" cx="100" cy="100" r="28"/><circle class="ring" cx="100" cy="100" r="52"/><circle class="ring" cx="100" cy="100" r="76"/><circle class="ring" cx="100" cy="100" r="96"/>
+        <g class="sweep"><path d="M100 100 L100 4 A96 96 0 0 1 188 70 Z" fill="url(#sw)"/></g>
+        <line class="pr-link" x1="100" y1="100" x2="132" y2="76"/><line class="pr-link" x1="100" y1="100" x2="70" y2="128"/><line class="pr-link" x1="100" y1="100" x2="150" y2="140"/>
+        <circle cx="62" cy="58" r="7" fill="rgba(159,207,242,0.4)"/>
+        <circle cx="46" cy="112" r="6.5" fill="rgba(90,200,175,0.34)"/>
+        <circle cx="168" cy="116" r="7" fill="rgba(175,169,236,0.34)"/>
+        <circle cx="120" cy="164" r="6" fill="rgba(255,255,255,0.22)"/>
+        <g class="pulse"><circle cx="132" cy="76" r="11" fill="#9FCFF2"/><text class="pr-init" x="132" y="79" text-anchor="middle" fill="#0E141C">MK</text></g>
+        <g class="pulse b"><circle cx="70" cy="128" r="10" fill="#1A9E8E"/><text class="pr-init" x="70" y="131" text-anchor="middle">SL</text></g>
+        <g class="pulse c"><circle cx="150" cy="140" r="9" fill="#E879A8"/><text class="pr-init" x="150" y="143" text-anchor="middle">JH</text></g>
+        <circle cx="100" cy="100" r="9" fill="rgba(100,180,230,0.95)"/><circle cx="100" cy="100" r="14" fill="none" stroke="rgba(100,180,230,0.4)"/>
+        <text class="pr-init" x="100" y="125" text-anchor="middle" fill="rgba(207,230,247,0.7)" data-i="rx_you">DIG</text>
+      </svg>
+    </div>
   </div>
-  <div class="cards two">
-    <div class="card reveal"><div class="ico i1"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><h3 data-i="f1n">Konferencer & events</h3><p data-i="f1d">Se hvem der er til stede, hvem du bør møde, og fortsæt dialogen efter eventet.</p></div>
-    <div class="card reveal"><div class="ico i2"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-3.5-3.5-6.5-7-6.5-10.5a6.5 6.5 0 0113 0c0 3.5-3 7-6.5 10.5z"/><circle cx="12" cy="11" r="2.5"/></svg></div><h3 data-i="f2n">Faglige netværk</h3><p data-i="f2d">Find relevante mennesker i dine faglige fællesskaber — uden at starte fra nul.</p></div>
-    <div class="card reveal"><div class="ico i3"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3.5 19.5a5.5 5.5 0 0111 0"/><circle cx="17" cy="9.5" r="2.5"/><path d="M21 19.5a4 4 0 00-4.5-4"/></svg></div><h3 data-i="f3n">Communities & faggrupper</h3><p data-i="f3d">Saml medlemmer, opslag, chat og events i ét levende digitalt rum.</p></div>
-    <div class="card reveal"><div class="ico i4"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7V2h5M17 2h5v5M22 17v5h-5M7 22H2v-5"/><line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2 2"/></svg></div><h3 data-i="f4n">Spontane forbindelser</h3><p data-i="f4d">Del din profil med ét scan og gem kontakten, når timingen er rigtig.</p></div>
+</div>
+
+<!-- HUB: DINE NETVÆRK OG EVENTS -->
+<div class="wrap section">
+  <div class="hub-grid reveal">
+    <div class="hub-copy">
+      <div class="label" data-i="hub_label">Dit netværk, samlet</div>
+      <h2 class="hub-h2" data-i="hub_title">Alle dine netværk og events. Ét sted.</h2>
+      <p class="hub-lead" data-i="hub_lead">Slut med at flimre mellem hjemmesider og undersider for at finde det næste event. Opret eller følg de fællesskaber du interesserer dig for, med deres faggrupper og events samlet i ét træ.</p>
+      <div class="hub-points">
+        <div class="hub-point"><span class="hub-ico" style="color:#9FCFF2;background:rgba(100,180,230,0.14)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><circle cx="9" cy="9" r="2"/><circle cx="15" cy="15" r="2"/><path d="M9 11v2a2 2 0 002 2h2"/></svg></span><span data-i="hub_p1">Netværk, faggrupper og events i ét træ</span></div>
+        <div class="hub-point"><span class="hub-ico" style="color:#5FE0CE;background:rgba(46,158,142,0.14)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span data-i="hub_p2">Alle kommende events, samlet</span></div>
+        <div class="hub-point"><span class="hub-ico" style="color:#AFA9EC;background:rgba(175,169,236,0.14)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg></span><span data-i="hub_p3">Hold styr på dine netværk og deres aktivitet</span></div>
+      </div>
+    </div>
+    <div class="hub-visual">
+      <div class="hub-tree">
+        <div class="hub-tree-title" data-i="hub_tree_title">Dine netværk</div>
+        <div class="ht-net">
+          <div class="ht-net-ico" style="background:linear-gradient(135deg,#9FCFF2,#6C6CF0)"></div>
+          <div class="ht-net-txt"><div class="ht-net-name">Dit erhvervsnetværk</div><div class="ht-net-meta" data-i="hub_ex_meta1">2 faggrupper · 3 events</div></div>
+        </div>
+        <div class="ht-branch">
+          <div class="ht-sub">
+            <div class="ht-sub-ico" style="background:linear-gradient(135deg,#5DCAA5,#1A9E8E)"></div>
+            <div class="ht-sub-name" data-i="hub_ex_grp1">Faggruppe: Tech</div>
+          </div>
+          <div class="ht-evt-wrap">
+            <div class="ht-evt"><span class="ht-evt-dot"></span><span data-i="hub_ex_evt1">Fyraftensmøde · 14. jul</span></div>
+          </div>
+          <div class="ht-sub">
+            <div class="ht-sub-ico" style="background:linear-gradient(135deg,#AFA9EC,#7F77DD)"></div>
+            <div class="ht-sub-name" data-i="hub_ex_grp2">Faggruppe: Design</div>
+          </div>
+          <div class="ht-evt-wrap">
+            <div class="ht-evt"><span class="ht-evt-dot"></span><span data-i="hub_ex_evt2">Workshop · 20. jul</span></div>
+          </div>
+        </div>
+        <div class="ht-net ht-net-2">
+          <div class="ht-net-ico" style="background:linear-gradient(135deg,#F0997B,#D85A30)"></div>
+          <div class="ht-net-txt"><div class="ht-net-name">Din forening</div><div class="ht-net-meta" data-i="hub_ex_meta2">1 event</div></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -310,11 +426,11 @@
     <div class="shead reveal">
       <div class="label" data-i="cb_label">Opret en Bubble</div>
       <h2 data-i="cb_title">Gør dit event eller community levende</h2>
-      <p class="lead" data-i="cb_lead">En Bubble er et digitalt mødested for et fysisk eller fagligt fællesskab — fx et event, et netværk, en virksomhed, en forening eller en faggruppe.</p>
+      <p class="lead" data-i="cb_lead">En Bubble er et digitalt mødested for et fysisk eller fagligt fællesskab, fx et event, et netværk, en virksomhed, en forening eller en faggruppe.</p>
     </div>
     <div class="cards three">
-      <div class="card reveal"><div class="ico i1"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></div><h3 data-i="cb1n">Opret rummet</h3><p data-i="cb1d">Til dit event, netværk eller community.</p></div>
-      <div class="card reveal"><div class="ico i2"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="3.5" height="3.5"/><path d="M20 14h-2.5v3M14 20h3v-3M20 20h-3"/></svg></div><h3 data-i="cb2n">Invitér med QR eller link</h3><p data-i="cb2d">Deltagere kommer ind uden app-download.</p></div>
+      <div class="card reveal"><div class="ico i1"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></div><h3 data-i="cb1n">Opret boblen</h3><p data-i="cb1d">Til dit event, netværk eller community.</p></div>
+      <div class="card reveal"><div class="ico i2"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="3.5" height="3.5"/><path d="M20 14h-2.5v3M14 20h3v-3M20 20h-3"/></svg></div><h3 data-i="cb2n">Invitér med QR eller link</h3><p data-i="cb2d">Nemt at dele, nemt at være med.</p></div>
       <div class="card reveal"><div class="ico i3"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg></div><h3 data-i="cb3n">Lad relationerne fortsætte</h3><p data-i="cb3d">Medlemmer kan finde hinanden, chatte, dele opslag og gemme kontakter.</p></div>
     </div>
   </div>
@@ -325,7 +441,7 @@
   <div class="band reveal">
     <div class="label" data-i="beta_label">Tidlig beta</div>
     <h2 data-i="beta_title">Vi bygger Bubble sammen med dig</h2>
-    <p class="quote" data-i="beta_text">Bubble bliver lige nu testet i udvalgte netværk, events og fællesskaber. Vi bygger det tæt sammen med de første brugere — og justerer løbende på baggrund af deres feedback.</p>
+    <p class="quote" data-i="beta_text">Bubble bliver lige nu testet i udvalgte netværk, events og fællesskaber. Vi bygger det tæt sammen med de første brugere, og justerer løbende på baggrund af deres feedback.</p>
   </div>
 </div>
 
@@ -335,7 +451,7 @@
     <div class="shead reveal">
       <div class="label" data-i="ig_label">Tilføj til hjemmeskærm</div>
       <h2 data-i="ig_title">Brug Bubble som en app</h2>
-      <p class="lead" data-i="ig_lead">Bubble kører direkte i browseren — ingen App Store. Tilføj den til hjemmeskærmen, hvis du vil have den fulde app-oplevelse.</p>
+      <p class="lead" data-i="ig_lead">Bubble kører direkte i browseren, så du kan komme i gang med det samme. Tilføj den til hjemmeskærmen for den fulde app-oplevelse.</p>
     </div>
     <div class="ig-tabs reveal">
       <button class="ig-tab on" id="tab-iphone" onclick="showGuide('iphone')" data-i="ig_iphone">iPhone / Safari</button>
@@ -346,13 +462,13 @@
         <div class="step reveal"><div class="step-num">1</div><div><div class="step-title" data-i="ip1t">Åbn Bubble i Safari</div><div class="step-desc" data-i="ip1d">Tryk "Åbn Bubble" øverst og åbn appen i Safari på din iPhone.</div></div></div>
         <div class="step reveal"><div class="step-num">2</div><div><div class="step-title" data-i="ip2t">Tryk på del-ikonet</div><div class="step-desc" data-i="ip2d">Tryk på del-knappen i bunden af Safari.</div></div></div>
         <div class="step reveal"><div class="step-num">3</div><div><div class="step-title" data-i="ip3t">Vælg "Føj til hjemmeskærm"</div><div class="step-desc" data-i="ip3d">Scroll ned i menuen og tryk "Føj til hjemmeskærm", derefter "Tilføj".</div></div></div>
-        <div class="step reveal"><div class="step-num ok">✓</div><div><div class="step-title" data-i="ipdt">Færdig!</div><div class="step-desc" data-i="ipdd">Bubble ligger nu på din hjemmeskærm som en rigtig app — uden browser-bar.</div></div></div>
+        <div class="step reveal"><div class="step-num ok">✓</div><div><div class="step-title" data-i="ipdt">Færdig!</div><div class="step-desc" data-i="ipdd">Bubble ligger nu på din hjemmeskærm som en rigtig app, uden browser-bar.</div></div></div>
       </div>
       <div id="guide-android" class="steps" style="display:none">
         <div class="step reveal"><div class="step-num">1</div><div><div class="step-title" data-i="an1t">Åbn Bubble i Chrome</div><div class="step-desc" data-i="an1d">Tryk "Åbn Bubble" øverst og åbn appen i Chrome på din Android.</div></div></div>
         <div class="step reveal"><div class="step-num">2</div><div><div class="step-title" data-i="an2t">Tryk på menuen ⋮</div><div class="step-desc" data-i="an2d">Tryk på de tre prikker i øverste højre hjørne af Chrome.</div></div></div>
         <div class="step reveal"><div class="step-num">3</div><div><div class="step-title" data-i="an3t">Vælg "Føj til startskærm"</div><div class="step-desc" data-i="an3d">Tryk "Føj til startskærm" eller "Installer app" og bekræft.</div></div></div>
-        <div class="step reveal"><div class="step-num ok">✓</div><div><div class="step-title" data-i="andt">Færdig!</div><div class="step-desc" data-i="andd">Bubble ligger nu på din startskærm som en rigtig app — i fuld skærm.</div></div></div>
+        <div class="step reveal"><div class="step-num ok">✓</div><div><div class="step-title" data-i="andt">Færdig!</div><div class="step-desc" data-i="andd">Bubble ligger nu på din startskærm som en rigtig app, i fuld skærm.</div></div></div>
       </div>
     </div>
   </div>
@@ -362,9 +478,9 @@
 <div class="wrap">
   <section class="cta-final">
     <h2 class="reveal" data-i="final_title">Klar til at møde de rigtige mennesker omkring dig?</h2>
-    <p class="sub reveal" data-i="final_sub">Gratis · Ingen reklamer · Bygget i Sønderborg</p>
+    <p class="sub reveal" data-i="final_sub">Ingen reklamer · Bygget i Sønderborg</p>
     <a class="btn-primary reveal" href="./?auth=1" data-i="final_cta">Opret din profil →</a>
-    <p class="note reveal" data-i="final_note">Virker på alle enheder · Ingen download krævet</p>
+    <p class="note reveal" data-i="final_note">Virker på alle enheder · Klar på få sekunder</p>
   </section>
 </div>
 
@@ -373,12 +489,12 @@
   <div class="wrap">
     <div class="foot-top">
       <div class="q" data-i="foot_q">Synes du Bubble lyder spændende?</div>
-      <div class="s" data-i="foot_s">Skriv til os — vi vil gerne høre fra dig.</div>
+      <div class="s" data-i="foot_s">Skriv til os, vi vil gerne høre fra dig.</div>
       <a class="foot-email" href="#" onclick="window.location='mai'+'lto:in'+'fo@bubb'+'leme.dk';return false">info@bubbleme.dk</a>
     </div>
     <div class="foot-mark">Bubble</div>
     <div class="foot-meta">
-      <span class="adfree" data-i="foot_adfree">Reklamefri</span>
+      <span class="adfree" data-i="foot_adfree">Ingen reklamer</span>
       <span class="fdot"></span><span data-i="foot_made">Bygget i Sønderborg</span>
       <span class="fdot"></span>
       <a href="#" id="terms-toggle" data-i="foot_terms" aria-expanded="false" onclick="toggleTerms(event)">Betingelser & Privatlivspolitik</a>
@@ -407,87 +523,101 @@
   </div>
 </div>
 
-<script src="b-terms.js?v=30139"></script>
+<script src="b-terms.js?v=30140"></script>
 <script>
   var I = {
     da:{
       nav_cta:"Åbn Bubble", eyebrow:"Netværksradar for virkelige møder",
       h1a:"De rigtige mennesker er ", h1b:"allerede omkring dig", h1c:".",
-      hero_sub:"Bubble hjælper dig med at finde relevante personer i dine events, netværk og fællesskaber — og viser hvorfor det giver mening at tage samtalen.",
+      hero_sub:"Bubble hjælper dig med at finde relevante personer i dine events, netværk og fællesskaber, og viser hvorfor det giver mening at tage samtalen.",
       cta_start:"Prøv betaen →", cta_how:"Se hvordan det virker",
-      hero_note:"Tidlig beta · Gratis · Reklamefri",
+      hero_note:"Tidlig beta · Ingen reklamer",
       ph_match:"Match", ph_meta:"Afdelingschef · Nordbjerg Group", ph_home:"Hjem", ph_bubbles:"Bobler", ph_messages:"Beskeder", ph_profile:"Profil",
       how_label:"Sådan virker det", how_title:"Tre skridt. Under ét minut.",
-      s1t:"Fortæl hvem du er", s1d:"Interesser, rolle og hvad du leder efter.",
-      s2t:"Se hvem du bør møde", s2d:"Se rummet, ikke en liste — radaren viser hvem der er relevante, og hvorfor.",
+      s1t:"Fortæl hvem du er", s1d:"Arbejdsplads, rolle, interesser og hvad du leder efter.",
+      s2t:"Se hvem du bør møde", s2d:"Radaren viser hvem der er relevante for dig, og hvorfor.",
       s3t:"Connect i det rigtige øjeblik", s3d:"Skriv direkte, mød op, eller gem kontakten til senere.",
-      feat_label:"Hvor Bubble giver mening", feat_title:"Skabt til virkelige møder — ikke bare forbindelser",
+      hub_label:"Dit netværk, samlet", hub_title:"Alle dine netværk og events. Ét sted.",
+      hub_lead:"Slut med at flimre mellem hjemmesider og undersider for at finde det næste event. Opret eller følg de fællesskaber du interesserer dig for, med deres faggrupper og events samlet i ét træ.",
+      hub_p1:"Netværk, faggrupper og events i ét træ", hub_p2:"Alle kommende events, samlet", hub_p3:"Hold styr på dine netværk og deres aktivitet",
+      hub_tree_title:"Dine netværk", hub_ex_meta1:"2 faggrupper · 3 events", hub_ex_grp1:"Faggruppe: Tech", hub_ex_evt1:"Fyraftensmøde · 14. jul", hub_ex_grp2:"Faggruppe: Design", hub_ex_evt2:"Workshop · 20. jul", hub_ex_meta2:"1 event",
+      rx_label:"Radaren", rx_title:"Se rummet, ikke en liste", rx_you:"DIG",
+      rx_lead:"Du er i midten. Jo tættere en person er, jo stærkere er jeres match, bygget på fælles interesser og formål, ikke tilfældigheder. Og hvert match har en grund, så du ved hvem der er værd at connecte med.",
+      rx_p1:"Nærmest midten = stærkeste match", rx_p2:"Matchet på faglighed, formål, interesser og fælles netværk", rx_p3:"Gem dem du vil connecte med til senere",
+      feat_label:"Hvor Bubble giver mening", feat_title:"Skabt til virkelige møder, ikke bare forbindelser",
       f1n:"Konferencer & events", f1d:"Se hvem der er til stede, hvem du bør møde, og fortsæt dialogen efter eventet.",
-      f2n:"Faglige netværk", f2d:"Find relevante mennesker i dine faglige fællesskaber — uden at starte fra nul.",
+      f2n:"Faglige netværk", f2d:"Find relevante mennesker i dine faglige fællesskaber, uden at starte fra nul.",
       f3n:"Communities & faggrupper", f3d:"Saml medlemmer, opslag, chat og events i ét levende digitalt rum.",
       f4n:"Spontane forbindelser", f4d:"Del din profil med ét scan og gem kontakten, når timingen er rigtig.",
       cb_label:"Opret en Bubble", cb_title:"Gør dit event eller community levende",
-      cb_lead:"En Bubble er et digitalt mødested for et fysisk eller fagligt fællesskab — fx et event, et netværk, en virksomhed, en forening eller en faggruppe.",
-      cb1n:"Opret rummet", cb1d:"Til dit event, netværk eller community.",
-      cb2n:"Invitér med QR eller link", cb2d:"Deltagere kommer ind uden app-download.",
+      cb_lead:"En Bubble er et digitalt mødested for et fysisk eller fagligt fællesskab, fx et event, et netværk, en virksomhed, en forening eller en faggruppe.",
+      cb1n:"Opret boblen", cb1d:"Til dit event, netværk eller community.",
+      cb2n:"Invitér med QR eller link", cb2d:"Nemt at dele, nemt at være med.",
       cb3n:"Lad relationerne fortsætte", cb3d:"Medlemmer kan finde hinanden, chatte, dele opslag og gemme kontakter.",
       beta_label:"Tidlig beta", beta_title:"Vi bygger Bubble sammen med dig",
-      beta_text:"Bubble bliver lige nu testet i udvalgte netværk, events og fællesskaber. Vi bygger det tæt sammen med de første brugere — og justerer løbende på baggrund af deres feedback.",
+      beta_text:"Bubble bliver lige nu testet i udvalgte netværk, events og fællesskaber. Vi bygger det tæt sammen med de første brugere, og justerer løbende på baggrund af deres feedback.",
       ig_label:"Tilføj til hjemmeskærm", ig_title:"Brug Bubble som en app",
-      ig_lead:"Bubble kører direkte i browseren — ingen App Store. Tilføj den til hjemmeskærmen, hvis du vil have den fulde app-oplevelse.",
+      ig_lead:"Bubble kører direkte i browseren, så du kan komme i gang med det samme. Tilføj den til hjemmeskærmen for den fulde app-oplevelse.",
       ig_iphone:"iPhone / Safari", ig_android:"Android / Chrome",
       ip1t:"Åbn Bubble i Safari", ip1d:"Tryk \"Åbn Bubble\" øverst og åbn appen i Safari på din iPhone.",
       ip2t:"Tryk på del-ikonet", ip2d:"Tryk på del-knappen i bunden af Safari.",
       ip3t:"Vælg \"Føj til hjemmeskærm\"", ip3d:"Scroll ned i menuen og tryk \"Føj til hjemmeskærm\", derefter \"Tilføj\".",
-      ipdt:"Færdig!", ipdd:"Bubble ligger nu på din hjemmeskærm som en rigtig app — uden browser-bar.",
+      ipdt:"Færdig!", ipdd:"Bubble ligger nu på din hjemmeskærm som en rigtig app, uden browser-bar.",
       an1t:"Åbn Bubble i Chrome", an1d:"Tryk \"Åbn Bubble\" øverst og åbn appen i Chrome på din Android.",
       an2t:"Tryk på menuen ⋮", an2d:"Tryk på de tre prikker i øverste højre hjørne af Chrome.",
       an3t:"Vælg \"Føj til startskærm\"", an3d:"Tryk \"Føj til startskærm\" eller \"Installer app\" og bekræft.",
-      andt:"Færdig!", andd:"Bubble ligger nu på din startskærm som en rigtig app — i fuld skærm.",
-      final_title:"Klar til at møde de rigtige mennesker omkring dig?", final_sub:"Gratis · Ingen reklamer · Bygget i Sønderborg",
-      final_cta:"Opret din profil →", final_note:"Virker på alle enheder · Ingen download krævet",
-      foot_q:"Synes du Bubble lyder spændende?", foot_s:"Skriv til os — vi vil gerne høre fra dig.",
-      foot_adfree:"Reklamefri", foot_made:"Bygget i Sønderborg", foot_terms:"Betingelser & Privatlivspolitik",
+      andt:"Færdig!", andd:"Bubble ligger nu på din startskærm som en rigtig app, i fuld skærm.",
+      final_title:"Klar til at møde de rigtige mennesker omkring dig?", final_sub:"Ingen reklamer · Bygget i Sønderborg",
+      final_cta:"Opret din profil →", final_note:"Virker på alle enheder · Klar på få sekunder",
+      foot_q:"Synes du Bubble lyder spændende?", foot_s:"Skriv til os, vi vil gerne høre fra dig.",
+      foot_adfree:"Ingen reklamer", foot_made:"Bygget i Sønderborg", foot_terms:"Betingelser & Privatlivspolitik",
       ck_txt:"Bubble bruger kun nødvendig lokal lagring til login og app-funktion. Ingen tracking, ingen reklamer.", ck_ok:"Forstået"
     },
     en:{
       nav_cta:"Open Bubble", eyebrow:"Network radar for real-world meetings",
       h1a:"The right people are ", h1b:"already around you", h1c:".",
-      hero_sub:"Bubble helps you discover relevant people in your events, networks, and communities — and shows why the conversation is worth having.",
+      hero_sub:"Bubble helps you discover relevant people in your events, networks, and communities, and shows why the conversation is worth having.",
       cta_start:"Try the beta →", cta_how:"See how it works",
-      hero_note:"Early beta · Free · Ad-free",
+      hero_note:"Early beta · No ads",
       ph_match:"Match", ph_meta:"Director · Nordbjerg Group", ph_home:"Home", ph_bubbles:"Bubbles", ph_messages:"Messages", ph_profile:"Profile",
       how_label:"How it works", how_title:"Three steps. Under a minute.",
-      s1t:"Tell us who you are", s1d:"Interests, role, and what you're looking for.",
-      s2t:"See who you should meet", s2d:"See the room, not a list — the radar shows who's relevant, and why.",
+      s1t:"Tell us who you are", s1d:"Workplace, role, interests, and what you're looking for.",
+      s2t:"See who you should meet", s2d:"The radar shows who's relevant to you, and why.",
       s3t:"Connect at the right moment", s3d:"Message directly, meet up, or save the contact for later.",
-      feat_label:"Where Bubble fits", feat_title:"Built for real meetings — not just connections",
+      hub_label:"Your network, gathered", hub_title:"All your networks and events. One place.",
+      hub_lead:"No more jumping between websites and subpages to find the next event. Create or follow the communities you care about, with their groups and events gathered in one tree.",
+      hub_p1:"Networks, groups and events in one tree", hub_p2:"All upcoming events, gathered", hub_p3:"Keep track of your networks and their activity",
+      hub_tree_title:"Your networks", hub_ex_meta1:"2 groups · 3 events", hub_ex_grp1:"Group: Tech", hub_ex_evt1:"After-work meetup · Jul 14", hub_ex_grp2:"Group: Design", hub_ex_evt2:"Workshop · Jul 20", hub_ex_meta2:"1 event",
+      rx_label:"The radar", rx_title:"See the room, not a list", rx_you:"YOU",
+      rx_lead:"You're at the centre. The closer a person is, the stronger your match, built on shared interests and purpose, not chance. And every match has a reason, so you know who's worth connecting with.",
+      rx_p1:"Closest to the centre = strongest match", rx_p2:"Matched on expertise, purpose, interests and shared networks", rx_p3:"Save the ones you want to connect with for later",
+      feat_label:"Where Bubble fits", feat_title:"Built for real meetings, not just connections",
       f1n:"Conferences & events", f1d:"See who's present, who you should meet, and keep the conversation going after the event.",
-      f2n:"Professional networks", f2d:"Find relevant people in your professional communities — without starting from scratch.",
+      f2n:"Professional networks", f2d:"Find relevant people in your professional communities, without starting from scratch.",
       f3n:"Communities & professional groups", f3d:"Gather members, posts, chat, and events in one living digital space.",
       f4n:"Spontaneous connections", f4d:"Share your profile with a single scan and save the contact when the timing's right.",
       cb_label:"Create a Bubble", cb_title:"Bring your event or community to life",
-      cb_lead:"A Bubble is a digital meeting place for a physical or professional community — for example an event, a network, a company, an association, or a professional group.",
-      cb1n:"Create the space", cb1d:"For your event, network, or community.",
-      cb2n:"Invite with QR or link", cb2d:"People join with no app download.",
+      cb_lead:"A Bubble is a digital meeting place for a physical or professional community, for example an event, a network, a company, an association, or a professional group.",
+      cb1n:"Create the bubble", cb1d:"For your event, network, or community.",
+      cb2n:"Invite with QR or link", cb2d:"Easy to share, easy to join.",
       cb3n:"Let relationships continue", cb3d:"Members can find each other, chat, share posts, and save contacts.",
       beta_label:"Early beta", beta_title:"We're building Bubble together with you",
-      beta_text:"Bubble is currently being tested in selected networks, events, and communities. We're building it closely with our first users — and adjusting continuously based on their feedback.",
+      beta_text:"Bubble is currently being tested in selected networks, events, and communities. We're building it closely with our first users, and adjusting continuously based on their feedback.",
       ig_label:"Add to home screen", ig_title:"Use Bubble like an app",
-      ig_lead:"Bubble runs right in your browser — no App Store. Add it to your home screen if you want the full app experience.",
+      ig_lead:"Bubble runs right in your browser, so you can get started instantly. Add it to your home screen for the full app experience.",
       ig_iphone:"iPhone / Safari", ig_android:"Android / Chrome",
       ip1t:"Open Bubble in Safari", ip1d:"Tap \"Open Bubble\" above and open the app in Safari on your iPhone.",
       ip2t:"Tap the share icon", ip2d:"Tap the share button at the bottom of Safari.",
       ip3t:"Choose \"Add to Home Screen\"", ip3d:"Scroll down the menu and tap \"Add to Home Screen\", then \"Add\".",
-      ipdt:"Done!", ipdd:"Bubble now lives on your home screen as a real app — no browser bar.",
+      ipdt:"Done!", ipdd:"Bubble now lives on your home screen as a real app, no browser bar.",
       an1t:"Open Bubble in Chrome", an1d:"Tap \"Open Bubble\" above and open the app in Chrome on your Android.",
       an2t:"Tap the menu ⋮", an2d:"Tap the three dots in the top-right corner of Chrome.",
       an3t:"Choose \"Add to Home screen\"", an3d:"Tap \"Add to Home screen\" or \"Install app\" and confirm.",
-      andt:"Done!", andd:"Bubble now lives on your home screen as a real app — full screen.",
-      final_title:"Ready to meet the right people around you?", final_sub:"Free · No ads · Built in Sønderborg",
-      final_cta:"Create your profile →", final_note:"Works on every device · No download required",
-      foot_q:"Does Bubble sound interesting?", foot_s:"Write to us — we'd love to hear from you.",
-      foot_adfree:"Ad-free", foot_made:"Built in Sønderborg", foot_terms:"Terms & Privacy Policy",
+      andt:"Done!", andd:"Bubble now lives on your home screen as a real app, full screen.",
+      final_title:"Ready to meet the right people around you?", final_sub:"No ads · Built in Sønderborg",
+      final_cta:"Create your profile →", final_note:"Works on every device · Ready in seconds",
+      foot_q:"Does Bubble sound interesting?", foot_s:"Write to us, we'd love to hear from you.",
+      foot_adfree:"No ads", foot_made:"Built in Sønderborg", foot_terms:"Terms & Privacy Policy",
       ck_txt:"Bubble uses only essential local storage for login and app function. No tracking, no ads.", ck_ok:"Got it"
     }
   };
