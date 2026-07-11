@@ -1110,7 +1110,7 @@ function dmOpenActions(msgId, isSent) {
     onReply: function() {
       var bubble = document.getElementById('dm-bubble-' + msgId);
       var text = bubble ? bubble.textContent : '';
-      var name = sent ? (currentProfile?.name || 'Dig') : (currentChatName || 'Den anden');
+      var name = isSent ? (currentProfile?.name || 'Dig') : (currentChatName || 'Den anden');
       startReply('dm', msgId, name, text);
     },
     onCopy: function() {
