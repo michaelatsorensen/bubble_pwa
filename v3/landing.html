@@ -24,10 +24,11 @@
 <style>
   :root{
     --bg:#0E141C; --bg-2:#0B1017;
-    --ink:rgba(207,230,247,0.95); --ink-2:rgba(207,230,247,0.70);
-    --ink-3:rgba(207,230,247,0.50); --ink-4:rgba(207,230,247,0.40);
+    --ink:rgba(207,230,247,0.95); --ink-2:rgba(207,230,247,0.80);
+    --ink-3:rgba(207,230,247,0.62); --ink-4:rgba(207,230,247,0.42);
+    --ink-head:#EAF2FB;
     --ice:100,180,230; --teal:#1A9E8E; --pink:#E879A8;
-    --line:rgba(255,255,255,0.08); --glass:rgba(255,255,255,0.045); --glass-2:rgba(255,255,255,0.06);
+    --line:rgba(255,255,255,0.14); --glass:rgba(255,255,255,0.06); --glass-2:rgba(255,255,255,0.075);
     --max-w:1040px;
     --wm:url(data:image/png;base64,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);
     /* uniform rhythm */
@@ -61,12 +62,12 @@
   nav{position:sticky;top:0;z-index:40;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(14,20,28,0.55);border-bottom:0.5px solid var(--line)}
   .nav-in{max-width:calc(var(--measure) + 3rem);margin:0 auto;padding:0.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
   .mark{width:98px;height:26px;background:var(--wm) left center/contain no-repeat;font-size:0}
-  .nav-cta{font-size:0.86rem;font-weight:700;text-decoration:none;color:var(--ink);background:rgba(var(--ice),0.18);border:0.5px solid rgba(var(--ice),0.30);height:36px;display:inline-flex;align-items:center;padding:0 1rem;border-radius:11px;transition:background .2s}
+  .nav-cta{font-size:0.86rem;font-weight:700;text-decoration:none;color:#F0F7FF;background:rgba(var(--ice),0.24);border:0.5px solid rgba(var(--ice),0.42);height:36px;display:inline-flex;align-items:center;padding:0 1rem;border-radius:11px;transition:background .2s}
   .nav-cta:hover{background:rgba(var(--ice),0.26)}
 
   /* buttons */
-  .btn-primary{font-family:inherit;font-size:0.95rem;font-weight:700;text-decoration:none;color:var(--ink);background:rgba(var(--ice),0.18);border:0.5px solid rgba(var(--ice),0.30);box-shadow:0 6px 26px rgba(var(--ice),0.16);padding:0.85rem 1.5rem;border-radius:14px;cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem;transition:transform .15s,box-shadow .25s,background .2s;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-  .btn-primary:hover{transform:translateY(-2px);background:rgba(var(--ice),0.26);box-shadow:0 10px 34px rgba(var(--ice),0.24)}
+  .btn-primary{font-family:inherit;font-size:0.95rem;font-weight:700;text-decoration:none;color:#F0F7FF;background:rgba(var(--ice),0.24);border:0.5px solid rgba(var(--ice),0.42);box-shadow:0 6px 26px rgba(var(--ice),0.22);padding:0.85rem 1.5rem;border-radius:14px;cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem;transition:transform .15s,box-shadow .25s,background .2s;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  .btn-primary:hover{transform:translateY(-2px);background:rgba(var(--ice),0.32);box-shadow:0 10px 34px rgba(var(--ice),0.30)}
   .btn-primary:focus-visible{outline:2px solid rgba(var(--ice),0.7);outline-offset:3px}
   .btn-secondary{font-family:inherit;font-size:0.95rem;font-weight:600;text-decoration:none;color:var(--ink-2);background:var(--glass);border:0.5px solid var(--line);padding:0.85rem 1.4rem;border-radius:14px;cursor:pointer;display:inline-flex;align-items:center;transition:color .2s,border-color .2s}
   .btn-secondary:hover{color:var(--ink);border-color:rgba(255,255,255,0.18)}
@@ -75,15 +76,15 @@
   /* ── HERO (the one side-by-side moment) ── */
   .hero{display:grid;grid-template-columns:1fr auto;gap:3rem;align-items:center;max-width:var(--measure);margin:0 auto;padding:clamp(2.5rem,7vw,4.5rem) 0 var(--pad-sec)}
   .eyebrow{font-size:0.74rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(var(--ice),0.85);margin-bottom:1rem}
-  h1{font-size:clamp(2.1rem,5vw,3.3rem);font-weight:800;line-height:1.05;letter-spacing:-0.03em;margin-bottom:1.1rem}
-  h1 .accent{background:linear-gradient(100deg,#9FCFF2,var(--teal));-webkit-background-clip:text;background-clip:text;color:transparent}
+  h1{font-size:clamp(2.1rem,5vw,3.3rem);font-weight:800;line-height:1.05;letter-spacing:-0.03em;margin-bottom:1.1rem;color:var(--ink-head)}
+  h1 .accent{background:linear-gradient(100deg,#B8DEFB,#2DBBA8);-webkit-background-clip:text;background-clip:text;color:transparent}
   .hero-sub{font-size:clamp(1rem,1.6vw,1.15rem);color:var(--ink-2);max-width:30rem;margin-bottom:1.7rem}
   .hero-actions{display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap}
   .hero-note{margin-top:1rem;font-size:0.82rem;color:var(--ink-3)}
 
   /* phone */
   .hero-phone{display:flex;justify-content:flex-end}
-  .phone-frame{width:286px;background:#0A0F16;border-radius:42px;padding:10px;border:1px solid rgba(255,255,255,0.10);box-shadow:0 30px 80px rgba(0,0,0,0.5),0 0 60px rgba(var(--ice),0.10);position:relative}
+  .phone-frame{width:286px;background:#0A0F16;border-radius:42px;padding:10px;border:1px solid rgba(255,255,255,0.16);box-shadow:0 30px 80px rgba(0,0,0,0.5),0 0 60px rgba(var(--ice),0.10);position:relative}
   .phone-notch{position:absolute;top:18px;left:50%;transform:translateX(-50%);width:90px;height:22px;background:#0A0F16;border-radius:99px;z-index:3}
   .phone-screen{background:linear-gradient(180deg,#0E141C,#0B1017);border-radius:33px;overflow:hidden;height:540px;display:flex;flex-direction:column}
   .phone-header{padding:2.3rem 1.1rem 0.7rem;text-align:left}
@@ -103,7 +104,7 @@
   .pc-name{font-weight:700;font-size:0.8rem}
   .pc-badge{font-size:0.56rem;font-weight:700;color:var(--teal);background:rgba(26,158,142,0.14);padding:1px 5px;border-radius:4px}
   .pc-meta{font-size:0.66rem;color:var(--ink-3);margin-top:1px}
-  .phone-nav{display:flex;justify-content:space-around;margin:0 1rem 0.9rem;padding:0.55rem 0.45rem;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);border-radius:18px;box-shadow:inset 0 0.5px 0 rgba(255,255,255,0.08),0 10px 24px rgba(0,0,0,0.35);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .phone-nav{display:flex;justify-content:space-around;margin:0 1rem 0.9rem;padding:0.55rem 0.45rem;background:rgba(255,255,255,0.075);border:0.5px solid rgba(255,255,255,0.16);border-radius:18px;box-shadow:inset 0 0.5px 0 rgba(255,255,255,0.08),0 10px 24px rgba(0,0,0,0.35);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
   .pn-item{font-size:0.6rem;color:var(--ink-4);display:flex;flex-direction:column;align-items:center;gap:3px}
   .pn-item.on{color:rgba(var(--ice),0.95)}
   .pn-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
@@ -113,7 +114,7 @@
   .section-alt{background:rgba(255,255,255,0.018);border-top:0.5px solid var(--line);border-bottom:0.5px solid var(--line)}
   .shead{text-align:center;max-width:var(--measure);margin:0 auto var(--gap-head)}
   .shead .label{font-size:0.74rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(var(--ice),0.8);margin-bottom:0.6rem}
-  .shead h2{font-size:clamp(1.5rem,3vw,2.05rem);font-weight:800;letter-spacing:-0.02em;line-height:1.14}
+  .shead h2{font-size:clamp(1.5rem,3vw,2.05rem);font-weight:800;letter-spacing:-0.02em;line-height:1.14;color:var(--ink-head)}
   .shead .lead{font-size:1rem;color:var(--ink-2);margin-top:0.9rem;line-height:1.6}
 
   /* steps — centered column */
@@ -137,7 +138,7 @@
   /* beta band */
   .band{margin:0 auto;max-width:var(--measure);padding:clamp(2rem,4vw,2.8rem);background:linear-gradient(135deg,rgba(var(--ice),0.10),rgba(26,158,142,0.06));border:0.5px solid var(--line);border-radius:24px;text-align:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
   .band .label{font-size:0.74rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(var(--ice),0.8);margin-bottom:0.6rem}
-  .band h2{font-size:clamp(1.4rem,2.8vw,1.85rem);font-weight:800;letter-spacing:-0.02em;margin-bottom:1rem}
+  .band h2{font-size:clamp(1.4rem,2.8vw,1.85rem);font-weight:800;letter-spacing:-0.02em;margin-bottom:1rem;color:var(--ink-head)}
   .band .quote{font-size:1rem;color:var(--ink-2);max-width:32rem;margin:0 auto;line-height:1.6}
 
   /* install guide — centered */
@@ -148,7 +149,7 @@
 
   /* final cta */
   .cta-final{text-align:center;padding:var(--pad-sec) 0}
-  .cta-final h2{font-size:clamp(1.6rem,3.2vw,2.2rem);font-weight:800;letter-spacing:-0.02em;margin-bottom:0.8rem;max-width:30rem;margin-left:auto;margin-right:auto}
+  .cta-final h2{font-size:clamp(1.6rem,3.2vw,2.2rem);font-weight:800;letter-spacing:-0.02em;margin-bottom:0.8rem;max-width:30rem;margin-left:auto;margin-right:auto;color:var(--ink-head)}
   .cta-final .sub{font-size:1rem;color:var(--ink-2);margin-bottom:1.8rem}
   .cta-final .note{margin-top:1.2rem;font-size:0.84rem;color:var(--ink-3)}
 
@@ -263,9 +264,9 @@
             </div>
           </div>
           <div class="phone-nav">
-            <div class="pn-item"><div class="pn-dot"></div><span data-i="ph_home">Hjem</span></div>
-            <div class="pn-item on"><div class="pn-dot"></div>Radar</div>
-            <div class="pn-item"><div class="pn-dot"></div>Chat</div>
+            <div class="pn-item on"><div class="pn-dot"></div><span data-i="ph_home">Hjem</span></div>
+            <div class="pn-item"><div class="pn-dot"></div><span data-i="ph_bubbles">Bobler</span></div>
+            <div class="pn-item"><div class="pn-dot"></div><span data-i="ph_messages">Beskeder</span></div>
             <div class="pn-item"><div class="pn-dot"></div><span data-i="ph_profile">Profil</span></div>
           </div>
         </div>
@@ -406,7 +407,7 @@
   </div>
 </div>
 
-<script src="b-terms.js?v=30133"></script>
+<script src="b-terms.js?v=30134"></script>
 <script>
   var I = {
     da:{
@@ -415,7 +416,7 @@
       hero_sub:"Bubble hjælper dig med at finde relevante personer i dine events, netværk og fællesskaber — og viser hvorfor det giver mening at tage samtalen.",
       cta_start:"Prøv betaen →", cta_how:"Se hvordan det virker",
       hero_note:"Tidlig beta · Gratis · Reklamefri",
-      ph_match:"Match", ph_meta:"Afdelingschef · Nordbjerg Group", ph_home:"Hjem", ph_profile:"Profil",
+      ph_match:"Match", ph_meta:"Afdelingschef · Nordbjerg Group", ph_home:"Hjem", ph_bubbles:"Bobler", ph_messages:"Beskeder", ph_profile:"Profil",
       how_label:"Sådan virker det", how_title:"Tre skridt. Under ét minut.",
       s1t:"Fortæl hvem du er", s1d:"Interesser, rolle og hvad du leder efter.",
       s2t:"Se hvem du bør møde", s2d:"Radaren viser hvem der er relevante — og hvorfor.",
@@ -455,7 +456,7 @@
       hero_sub:"Bubble helps you discover relevant people in your events, networks, and communities — and shows why the conversation is worth having.",
       cta_start:"Try the beta →", cta_how:"See how it works",
       hero_note:"Early beta · Free · Ad-free",
-      ph_match:"Match", ph_meta:"Director · Nordbjerg Group", ph_home:"Home", ph_profile:"Profile",
+      ph_match:"Match", ph_meta:"Director · Nordbjerg Group", ph_home:"Home", ph_bubbles:"Bubbles", ph_messages:"Messages", ph_profile:"Profile",
       how_label:"How it works", how_title:"Three steps. Under a minute.",
       s1t:"Tell us who you are", s1d:"Interests, role, and what you're looking for.",
       s2t:"See who you should meet", s2d:"The radar shows who's relevant — and why.",
