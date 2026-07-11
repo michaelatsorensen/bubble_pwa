@@ -1060,11 +1060,10 @@ async function loadChatMessages() {
     var lastDateKey = '';
     sorted.forEach(function(m) {
       var d = new Date(m.created_at);
-      // Date separator: only when DAY changes
+      // Date separator: only when DAY changes (DELT label via chatDateLabel: I dag/I gaar/ugedag/dato)
       var dateKey = d.toLocaleDateString(_locale());
       if (dateKey !== lastDateKey) {
-        var dateLabel = d.toLocaleDateString(_locale(), {weekday:'short', day:'numeric', month:'short'});
-        html += '<div class="chat-date-sep">' + dateLabel + '</div>';
+        html += '<div class="chat-date-sep">' + chatDateLabel(d) + '</div>';
         lastDateKey = dateKey;
       }
       // Time separator: 5+ min gap (but not right after a date sep)

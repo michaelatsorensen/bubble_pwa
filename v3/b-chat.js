@@ -1291,13 +1291,13 @@ async function bcLoadMessages() {
 
     msgs.forEach(m => {
       m.profiles = profileMap[m.user_id] || { name: '?' };
-      const d = new Date(m.created_at).toLocaleDateString(_locale(), {weekday:'short', day:'numeric', month:'short'});
-      if (d !== lastDate) {
+      const dKey = new Date(m.created_at).toLocaleDateString(_locale());
+      if (dKey !== lastDate) {
         const sep = document.createElement('div');
         sep.className = 'chat-date-sep';
-        sep.textContent = d;
+        sep.textContent = chatDateLabel(m.created_at);
         el.appendChild(sep);
-        lastDate = d;
+        lastDate = dKey;
       }
       // Time separator between groups with 5+ min gap
       if (m._showTimeSep) {
@@ -1628,8 +1628,8 @@ function bcLongPress(msgId, isMe) {
     if (emoji === '+') { btn.style.fontSize = '14px'; btn.style.color = 'var(--muted)'; }
     btn.onclick = function(e) {
       e.stopPropagation();
-      if (emoji !== '+') bcReact(msgId, emoji);
-      overlay.remove();
+      if (emoji !== '+') { bcToggleReaction(msgId, emoji); overlay.remove(); }
+      else { overlay.remove(); openEmojiSheet(function(sel) { bcToggleReaction(msgId, sel); }); }
     };
     reactions.appendChild(btn);
   });

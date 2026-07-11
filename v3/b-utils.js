@@ -692,6 +692,142 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString('da-DK', { day:'numeric', month:'short' });
 }
 
+// ── Chat dato-separator label (DELT: bruges af BAADE DM og boble-chat) ──
+// iMessage/Messenger-konvention: "I dag" / "I gaar" / ellers dato.
+// EEN funktion, to callers - saa DM og boble aldrig driver fra hinanden.
+function chatDateLabel(date) {
+  var d = (date instanceof Date) ? date : new Date(date);
+  var now = new Date();
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var thatDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  var diffDays = Math.round((today - thatDay) / 86400000);
+  if (diffDays === 0) return t('chat_today');
+  if (diffDays === 1) return t('chat_yesterday');
+  // Inden for en uge: ugedag ("mandag"); aeldre: fuld dato
+  if (diffDays < 7) return d.toLocaleDateString(_locale(), { weekday:'long' });
+  return d.toLocaleDateString(_locale(), { weekday:'short', day:'numeric', month:'short' });
+}
+
+// ── Emoji-sheet (DELT: boble-reaktioner nu, DM-reaktioner senere - EEN picker) ──
+// Aabnes via openEmojiSheet(onSelect). Strandglas: bruger --sheet-border/--sheet-shadow tokens.
+var EMOJI_CATS = [
+  { icon:'\uD83D\uDE00', labelKey:'emoji_cat_smileys', emojis:['\uD83D\uDE00','\uD83D\uDE04','\uD83D\uDE01','\uD83D\uDE06','\uD83D\uDE05','\uD83D\uDE02','\uD83E\uDD23','\uD83D\uDE0A','\uD83D\uDE07','\uD83D\uDE09','\uD83D\uDE0D','\uD83E\uDD70','\uD83D\uDE18','\uD83D\uDE0B','\uD83D\uDE1C','\uD83E\uDD2A','\uD83E\uDD14','\uD83E\uDD28','\uD83D\uDE10','\uD83D\uDE44','\uD83D\uDE0F','\uD83D\uDE2E','\uD83D\uDE32','\uD83D\uDE33','\uD83E\uDD7A','\uD83D\uDE22','\uD83D\uDE2D','\uD83D\uDE24','\uD83D\uDE20','\uD83E\uDD2F','\uD83D\uDE34','\uD83E\uDD71','\uD83D\uDE0E','\uD83E\uDD13','\uD83E\uDD73','\uD83D\uDE37'] },
+  { icon:'\uD83D\uDC4B', labelKey:'emoji_cat_gestures', emojis:['\uD83D\uDC4D','\uD83D\uDC4E','\uD83D\uDC4F','\uD83D\uDE4C','\uD83E\uDD1D','\uD83D\uDCAA','\uD83D\uDE4F','\uD83D\uDC40','\u270C\uFE0F','\uD83E\uDD1E','\uD83D\uDC4C','\uD83E\uDEF6','\u270B','\uD83D\uDC4B','\uD83E\uDD19','\uD83E\uDD1F','\u261D\uFE0F','\uD83D\uDC46','\uD83D\uDC47'] },
+  { icon:'\u2764\uFE0F', labelKey:'emoji_cat_hearts', emojis:['\u2764\uFE0F','\uD83E\uDDE1','\uD83D\uDC9B','\uD83D\uDC9A','\uD83D\uDC99','\uD83D\uDC9C','\uD83D\uDDA4','\uD83E\uDD0D','\uD83D\uDC94','\u2763\uFE0F','\uD83D\uDC95','\uD83D\uDC9E','\uD83D\uDC93','\uD83D\uDC97','\uD83D\uDC96','\uD83D\uDC98','\uD83D\uDC9D'] },
+  { icon:'\u2728', labelKey:'emoji_cat_symbols', emojis:['\uD83D\uDD25','\u2728','\u2B50\uFE0F','\uD83D\uDCAB','\uD83D\uDCA5','\uD83D\uDCAF','\uD83C\uDF89','\uD83C\uDF8A','\uD83C\uDF88','\uD83C\uDFC6','\uD83E\uDD47','\uD83D\uDE80','\uD83D\uDCA1','\uD83D\uDCCC','\u2705','\u274C','\u26A1\uFE0F','\uD83C\uDF1F','\uD83D\uDCAA','\uD83D\uDC4A'] },
+  { icon:'\uD83C\uDF55', labelKey:'emoji_cat_food', emojis:['\uD83C\uDF55','\uD83C\uDF54','\uD83C\uDF2E','\uD83C\uDF70','\u2615\uFE0F','\uD83C\uDF7A','\uD83E\uDD42','\uD83C\uDF7E','\uD83C\uDF08','\u2600\uFE0F','\uD83C\uDF19','\uD83C\uDF38','\uD83C\uDF3A','\uD83C\uDF34','\u26C4\uFE0F','\uD83C\uDF0A'] }
+];
+// Let soegning: DA+EN keywords for de mest soegte (holdt kompakt med vilje)
+var EMOJI_KEYWORDS = {
+  '\uD83D\uDE02':'griner laugh lol sjov funny', '\u2764\uFE0F':'hjerte heart elsker love', '\uD83D\uDC4D':'tommel thumbs op up ja yes',
+  '\uD83D\uDD25':'ild fire fedt hot', '\uD83C\uDF89':'fest party tillykke congrats', '\uD83D\uDC4F':'klap clap applaus',
+  '\uD83D\uDE4C':'hurra hands fejre celebrate', '\uD83D\uDE0D':'forelsket love eyes vild', '\uD83E\uDD14':'taenker think hmm',
+  '\uD83D\uDE22':'ked sad graeder cry', '\uD83D\uDE2D':'graeder cry sob', '\uD83D\uDCAA':'staerk strong muskel muscle',
+  '\uD83D\uDE4F':'tak thanks bede pray', '\uD83D\uDE80':'raket rocket afsted launch', '\uD83D\uDCA1':'ide idea lys light',
+  '\u2705':'flueben check done faerdig', '\uD83E\uDD1D':'haandtryk handshake aftale deal', '\uD83D\uDC40':'oejne eyes kigger ser',
+  '\uD83D\uDE05':'sved sweat phew naesten', '\uD83E\uDD23':'griner rofl vild grin', '\uD83D\uDE0E':'sej cool solbriller',
+  '\uD83E\uDD73':'fest party fejrer hat', '\u2615\uFE0F':'kaffe coffee', '\uD83C\uDF7A':'oel beer skaal cheers',
+  '\uD83E\uDD42':'skaal cheers champagne fejre', '\uD83D\uDCAF':'hundrede perfekt 100', '\u26A1\uFE0F':'lyn energi fast hurtig',
+  '\uD83C\uDFC6':'pokal trophy vinder win', '\uD83D\uDE34':'soever sleep traet tired', '\uD83E\uDD2F':'mind blown vildt wow'
+};
+
+function _emojiRecent() {
+  try { var r = JSON.parse(localStorage.getItem('bb_emoji_recent') || '[]'); return Array.isArray(r) ? r : []; } catch(e) { return []; }
+}
+function _emojiTrackUse(emoji) {
+  try {
+    var r = _emojiRecent().filter(function(e) { return e !== emoji; });
+    r.unshift(emoji);
+    localStorage.setItem('bb_emoji_recent', JSON.stringify(r.slice(0, 14)));
+  } catch(e) {}
+}
+
+function openEmojiSheet(onSelect) {
+  // Overlay (tap udenfor = luk)
+  var overlay = document.createElement('div');
+  overlay.className = 'emoji-sheet-overlay';
+  overlay.onclick = function(e) { if (e.target === overlay) closeSheet(); };
+
+  var sheet = document.createElement('div');
+  sheet.className = 'emoji-sheet';
+
+  function closeSheet() {
+    sheet.classList.remove('open');
+    setTimeout(function() { overlay.remove(); }, 300);
+  }
+
+  function pick(emoji) {
+    _emojiTrackUse(emoji);
+    closeSheet();
+    if (typeof onSelect === 'function') onSelect(emoji);
+  }
+
+  function gridHtml(emojis) {
+    return emojis.map(function(e) {
+      return '<button class="emoji-btn" data-emoji="' + e + '">' + e + '</button>';
+    }).join('');
+  }
+
+  function renderBody(filter) {
+    var html = '';
+    if (!filter) {
+      var recent = _emojiRecent();
+      if (recent.length) {
+        html += '<div class="emoji-cat-label">' + t('emoji_recent') + '</div><div class="emoji-grid">' + gridHtml(recent) + '</div>';
+      }
+      EMOJI_CATS.forEach(function(cat, i) {
+        html += '<div class="emoji-cat-label" id="emoji-cat-' + i + '">' + t(cat.labelKey) + '</div><div class="emoji-grid">' + gridHtml(cat.emojis) + '</div>';
+      });
+    } else {
+      var f = filter.toLowerCase();
+      var hits = [];
+      // Soeg i keyword-map + medtag alle emojis hvis keyword matcher
+      Object.keys(EMOJI_KEYWORDS).forEach(function(e) {
+        if (EMOJI_KEYWORDS[e].indexOf(f) !== -1) hits.push(e);
+      });
+      html = hits.length
+        ? '<div class="emoji-grid">' + gridHtml(hits) + '</div>'
+        : '<div class="emoji-empty">' + t('emoji_no_results') + '</div>';
+    }
+    scrollEl.innerHTML = html;
+  }
+
+  sheet.innerHTML = '<div class="emoji-grip"></div>'
+    + '<input class="emoji-search" type="text" placeholder="\uD83D\uDD0D ' + t('emoji_search_ph') + '" autocomplete="off">'
+    + '<div class="emoji-scroll"></div>'
+    + '<div class="emoji-cat-tabs">'
+    + EMOJI_CATS.map(function(cat, i) { return '<span data-cat="' + i + '"' + (i === 0 ? ' class="active"' : '') + '>' + cat.icon + '</span>'; }).join('')
+    + '</div>';
+
+  var scrollEl = sheet.querySelector('.emoji-scroll');
+  renderBody('');
+
+  // Emoji-klik (delegeret)
+  scrollEl.addEventListener('click', function(e) {
+    var b = e.target.closest('.emoji-btn');
+    if (b) pick(b.getAttribute('data-emoji'));
+  });
+
+  // Soegning
+  var searchEl = sheet.querySelector('.emoji-search');
+  searchEl.addEventListener('input', function() { renderBody(searchEl.value.trim()); });
+
+  // Kategori-faner: scroll til kategori
+  sheet.querySelector('.emoji-cat-tabs').addEventListener('click', function(e) {
+    var tab = e.target.closest('span[data-cat]');
+    if (!tab) return;
+    sheet.querySelectorAll('.emoji-cat-tabs span').forEach(function(s) { s.classList.remove('active'); });
+    tab.classList.add('active');
+    searchEl.value = ''; renderBody('');
+    var target = document.getElementById('emoji-cat-' + tab.getAttribute('data-cat'));
+    if (target) scrollEl.scrollTop = target.offsetTop - scrollEl.offsetTop;
+  });
+
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+  requestAnimationFrame(function() { requestAnimationFrame(function() { sheet.classList.add('open'); }); });
+}
+
 // ── Enhanced success toast with check animation ──
 // showSuccessToast now defined in toast system v2 above
 

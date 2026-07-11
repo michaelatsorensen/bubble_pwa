@@ -1716,6 +1716,22 @@ a.person-action-btn { text-decoration:none; }
 .dm-ctx-menu button:active { background:rgba(255,255,255,0.06); }
 .dm-ctx-menu button.danger { color:#EF4444; }
 .dm-ctx-reactions { background:rgba(20,22,28,0.92); border-radius:24px; padding:4px 6px; display:flex; gap:2px; border:0.5px solid rgba(255,255,255,0.1); }
+/* ── Emoji-sheet (DELT picker: boble + DM) - bruger sheet-tokens ── */
+.emoji-sheet-overlay { position:fixed; inset:0; z-index:1200; background:rgba(0,0,0,0.35); }
+.emoji-sheet { position:absolute; bottom:0; left:0; right:0; max-height:62vh; display:flex; flex-direction:column; background:rgba(20,22,28,0.94); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); border-top:var(--sheet-border); box-shadow:var(--sheet-shadow); border-radius:var(--sheet-radius) var(--sheet-radius) 0 0; padding:8px 14px calc(14px + env(safe-area-inset-bottom,0px)); transform:translateY(100%); transition:transform var(--sheet-dur) var(--sheet-ease); }
+.emoji-sheet.open { transform:translateY(0); }
+.emoji-grip { width:36px; height:4px; border-radius:99px; background:rgba(255,255,255,0.15); margin:2px auto 10px; flex-shrink:0; }
+.emoji-search { background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.1); border-radius:12px; padding:8px 12px; color:rgba(255,255,255,0.9); font-size:0.85rem; font-family:inherit; margin-bottom:8px; flex-shrink:0; outline:none; }
+.emoji-search::placeholder { color:rgba(255,255,255,0.35); }
+.emoji-scroll { overflow-y:auto; -webkit-overflow-scrolling:touch; flex:1; overscroll-behavior:contain; }
+.emoji-cat-label { font-size:0.62rem; font-weight:700; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:0.05em; margin:8px 0 4px; }
+.emoji-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; }
+.emoji-btn { background:none; border:none; font-size:23px; padding:6px 2px; cursor:pointer; border-radius:10px; font-family:inherit; }
+.emoji-btn:active { background:rgba(100,180,230,0.18); }
+.emoji-empty { text-align:center; color:rgba(255,255,255,0.4); font-size:0.8rem; padding:1.5rem 0; }
+.emoji-cat-tabs { display:flex; justify-content:space-around; border-top:0.5px solid rgba(255,255,255,0.1); padding-top:9px; margin-top:8px; flex-shrink:0; }
+.emoji-cat-tabs span { font-size:17px; opacity:0.4; padding:2px 8px; cursor:pointer; border-radius:8px; }
+.emoji-cat-tabs span.active { opacity:1; background:rgba(100,180,230,0.18); }
 .dm-ctx-reactions button { width:36px; height:36px; border-radius:50%; border:none; background:transparent; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
 .dm-ctx-reactions button:active { background:rgba(255,255,255,0.08); }
 
