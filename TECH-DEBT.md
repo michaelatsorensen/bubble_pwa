@@ -161,3 +161,73 @@ ORDER BY risiko, tabel;
 ```
 
 *Sidst opdateret: 19. juni 2026*
+
+---
+
+## Ekstern v3.131-review + self-audit (11. juli 2026)
+
+Grundigt eksternt review af v3.131 gav NO-GO til HoS-pilot i nuvaerende form. Self-audit
+mod faktisk kode (v3.135) + live Supabase bekraeftede/afkraeftede punkterne. Kernefund:
+reviewets metode ("kan ikke se forsvaret i git-buildet") overvurderede systematisk
+risiko, fordi de reelle sikkerhedsgraenser lever i Supabase, ikke i repo.
+
+### VERIFICERET SIKKER — kritisk punkt allerede lukket
+- **Privilegie-eskalering (reviewets skarpeste P0-9):** IKKE et hul. `profiles` UPDATE-policy
+  tillader en bruger at forsoege at aendre egen raekke, MEN triggeren `trg_protect_profile_privs`
+  (funktion `protect_profile_privs`) tvinger `role` + `banned` tilbage til gamle vaerdier for
+  ikke-admins. `is_admin()` afgor status fra DB (umulig at narre fra klient), SECURITY DEFINER.
+  En pilotbruger kan IKKE goere sig selv til admin eller af-banne sig selv. Kaeden holder.
+
+### FIKSET i denne runde
+- **Bubble-chat hentede aeldste 50 (P0-7):** FIKSET v3.136. Hentede `ascending:true limit 50`
+  = aabnede paa de aeldste 50 = frossen-udseende chat i aktive events. Nu nyeste 50 desc +
+  reverse til kronologisk, samme moenster som DM-load. (DM var allerede korrekt; posts-feed
+  er bevidst desc — ikke en bug.)
+
+### BACKLOG — reelt men ikke kritisk (pilotvaern nu, ordentligt post-pilot)
+- **Push-autorisationshul (P0-3) — P2:** `send-push` deployet med `--no-verify-jwt` = hele
+  internettet kan sende push til en bruger hvis de kender UUID'et. IKKE databrud — kan kun
+  SENDE en notifikation (spam/phishing-tekst), ikke laese/aendre/eskalere. **Kompleksitet:**
+  3 DB-triggers (`notify_new_message`, `notify_bubble_invite`, `notify_contact_saved`) kalder
+  funktionen via `net.http_post` UDEN auth-header — saa flaget kan ikke bare fjernes uden at
+  braekke alle notifikationer (tavst, pga `EXCEPTION WHEN OTHERS`). **Fuld fix (Ring 2):** 3
+  koordinerede skridt — (1) giv triggere shared-secret header, (2) deploy haerdet index.ts der
+  accepterer BAADE JWT og trigger-secret + server-genereret tekst + caller-relation-check, (3)
+  redeploy uden flaget. Haerdet `index.ts` allerede skrevet (edge_prep). **Pilotvaern:** slaa 4
+  frontend-sendPush-kald fra (join_request/approved/checkin) — fjerner frontend-vektor, aabne-
+  internet-hul bestaar. Acceptabel risiko for kontrolleret HoS-pilot.
+- **Private filer offentlige (P0-4) — P2, foer bredere vaekst:** DM + bubble-chat filer bruger
+  permanent `getPublicUrl()`. Reelt databrud-potentiale (private samtaler/filer laekker via URL
+  efter forladt boble/slettet besked/slettet konto). Avatar/ikon-brug er legitimt offentlig.
+  **Pilotvaern:** slaa attachments fra. **Fix (Ring 2):** privat bucket + object path + kortlivede
+  signed URLs efter medlemskabs/DM-check. Cross-ref memory "File URL-strategi uafklaret".
+- **external_url uvalideret (P0-6) — P3:** bubble `external_url` saettes direkte i href;
+  escHtml beskytter markup men ikke protokol → `javascript:` passerer. Fix: whitelist kun
+  `https:` klient+server. Hurtig frontend-fix.
+- **QR .or()-injection i b-live.js (P0 fejlliste) — P3:** `joinCode` koncateneres direkte i
+  `.or('join_code.eq.' + joinCode + ...)` uden validering. b-boot.js validerer ALLEREDE samme
+  moenster (linje 539) — kopiér validerings-guard til b-live.js:681.
+- **Consent-timestamp ikke entydig (P0-10) — P2:** email-signup stempler `terms_accepted_at`
+  foer checkbox; OAuth-brugere m. fuldt navn+arbejdsplads springer onboarding-checkbox over. Gem
+  terms/privacy-version + method, gate paa version ikke blot timestamp-eksistens. Post-pilot.
+- **Ingen kill switches / allowlist (P0-1/P0-2) — P2:** ingen runtime-flags (registrering,
+  push, uploads, maintenance) + ingen verificerbar server-side pilotadgang i build. Minimum foer
+  bredere vaekst: allowlist + ét flag (registrering til/fra). Kontrolleret HoS-pilot kan koere
+  uden, men aldrig ukontrolleret invitationsvaekst.
+
+### BACKLOG — konkrete fejl (P3, oprydningsrunde)
+- Admin ban/unban viser succes selv ved Supabase-fejl (ingen throw) — b-admin.js.
+- `popBubble` ikke-transaktionel delete-kaede, ejerskabscheck kun paa hoved-boble (boern slettes
+  foer ejer-verifikation). Byd RPC med transaktion post-pilot.
+- Read-receipt broadcaster selv hvis `read_at`-write fejlede.
+- Invitations (b-profile.js-sti) insert uden fejlcheck.
+- 2 lilla-rester (`#6366F1`) i DM-empty-state + approved-modal + manifest theme-color er nu
+  DOBBELT forkert efter midnight-retrofit (lilla #170F34 + hvid bg #FFFFFF). Ret ved designrunde.
+- Skaleringslofter (alle P2, post-pilot): radar 200-profil-cap uden stabil sort, samtaleliste
+  200-besked-afledning, DM 100-besked ingen aeldre-navigation, storage-cleanup 100-fil-cap.
+
+### Skaleringsberedskab — Ring 2 foer NAESTE pilot (ikke HoS)
+Server-side/pagineret profmatch, quotas/rate-limits, RPC-baseret invitation/join/checkin,
+private realtime channels, storage lifecycle, incident playbook. Se reviewets Ring 2/3.
+
+*Self-audit gennemfoert 11. juli 2026. Kritisk punkt (privilegie-eskalering) verificeret sikker.*

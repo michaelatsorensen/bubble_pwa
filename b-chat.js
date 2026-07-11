@@ -1302,12 +1302,16 @@ async function bcLoadMessages() {
     const el = document.getElementById('bc-messages');
     el.innerHTML = skelMessages(6);
 
-    // Hent beskeder uden profiles join — henter profiler separat
-    const { data: msgs, error: msgErr } = await sb.from('bubble_messages')
+    // Hent beskeder uden profiles join — henter profiler separat.
+    // Hent NYESTE 50 (descending) og vend derefter til kronologisk (ascending)
+    // før rendering — ellers ville en boble med >50 beskeder åbne på de ÆLDSTE 50
+    // og se frossen ud. Samme mønster som DM-load i loadChatMessages().
+    const { data: msgsDesc, error: msgErr } = await sb.from('bubble_messages')
       .select('id, bubble_id, user_id, content, file_url, file_name, file_size, file_type, edited, created_at')
       .eq('bubble_id', bcBubbleId)
-      .order('created_at', {ascending:true})
+      .order('created_at', {ascending:false})
       .limit(50);
+    const msgs = (msgsDesc || []).reverse();
 
     if (msgErr) {
       logError('bcLoadMessages', msgErr);
