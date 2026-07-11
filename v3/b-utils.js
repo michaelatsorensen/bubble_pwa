@@ -800,7 +800,26 @@ function openMsgActions(opts) {
 
   overlay.appendChild(sheet);
   document.body.appendChild(overlay);
-  if (focusClone) document.body.appendChild(focusClone); // over overlayet (z-index 1201)
+  if (focusClone) {
+    document.body.appendChild(focusClone); // over overlayet (z-index 1201)
+    // Hvis beskeden ligger saa lavt at sheeten daekker den, skub klonen op saa
+    // den forbliver synlig lige over sheeten (med lille luft). Maal sheetens
+    // hoejde efter den er i DOM (transform paavirker ikke offsetHeight).
+    var sheetH = sheet.offsetHeight;
+    var vh = window.innerHeight;
+    var cloneRect = focusClone.getBoundingClientRect();
+    var gap = 12;
+    var maxBottom = vh - sheetH - gap; // klonens bund maa ikke gaa under dette
+    if (cloneRect.bottom > maxBottom) {
+      var shiftedTop = Math.max(70, maxBottom - cloneRect.height); // ikke under topbar
+      // Tilfoej top-transition FOERST, skub saa paa naeste frame, saa den glider
+      // blidt op fra sin oprindelige position (i stedet for at hoppe).
+      focusClone.style.transition = 'opacity 0.22s ease, top 0.3s cubic-bezier(0.22, 1, 0.36, 1)';
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() { focusClone.style.top = shiftedTop + 'px'; });
+      });
+    }
+  }
   requestAnimationFrame(function() { requestAnimationFrame(function() { sheet.classList.add('open'); }); });
 }
 
