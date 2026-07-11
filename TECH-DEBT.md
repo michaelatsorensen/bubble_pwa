@@ -212,7 +212,9 @@ risiko, fordi de reelle sikkerhedsgraenser lever i Supabase, ikke i repo.
   **STATUS 11. juli 2026:**
   - DM-fil-upload SLUKKET (b-messages.js dmHandleFile tidlig afvisning + knap skjult i
     index.html). Mest foelsomme vektor (privat 1-til-1) lukket paa begge lag. GIF i DM
-    uaendret (Giphy-URL, ingen upload).
+    uaendret (Giphy-URL, ingen upload). BEMAERK: kun frontend-slukket for pilot —
+    backend storage-policy paa dm/-sti bevidst UDSKUDT og samlet med boble-migrering
+    i Ring 2 (Michaels beslutning: laas hele fil-laget samlet, ikke én sti ad gangen).
   - Boble-fil-upload BEVIDST UDSKUDT / accepteret pilotrisiko. Nye boble-filer faar
     fortsat permanent getPublicUrl. Michaels beslutning: boblerne er smaa/personlige,
     kontrolleret pilot, kendte deltagere. MAA IKKE beskrives som "lukket" over for
