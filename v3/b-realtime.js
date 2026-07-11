@@ -1092,7 +1092,7 @@ function dmOpenActions(msgId, isSent) {
       if (bubble) { navigator.clipboard.writeText(bubble.textContent).then(function() { showToast(t('misc_copied')); }); }
     },
     onEdit: isSent ? function() { dmStartEdit(msgId); } : null,
-    onDelete: function() { dmDeleteMsg(msgId); }
+    onDelete: isSent ? function() { dmDeleteMsg(msgId); } : null
   });
 }
 
