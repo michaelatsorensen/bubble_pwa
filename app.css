@@ -1230,7 +1230,7 @@ input[type="date"].input, input[type="time"].input { min-width:0; box-sizing:bor
   color: rgba(255,255,255,0.95);
 }
 #screen-auth .auth-card .input::placeholder {
-  color: rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.55);
 }
 #screen-auth .auth-card .input:focus {
   border-color: rgba(100,180,230,0.4);
@@ -2473,7 +2473,7 @@ a.person-action-btn { text-decoration:none; }
 
 /* Dark onboarding inputs */
 .ob-dark-input { background:rgba(255,255,255,0.06) !important; border:0.5px solid rgba(255,255,255,0.1) !important; color:rgba(255,255,255,0.9) !important; box-shadow:none !important; }
-.ob-dark-input::placeholder { color:rgba(255,255,255,0.25) !important; }
+.ob-dark-input::placeholder { color:rgba(255,255,255,0.5) !important; }
 .ob-dark-input:focus { border-color:rgba(100,180,230,0.3) !important; box-shadow:0 0 0 3px rgba(100,180,230,0.08) !important; }
 #screen-onboarding .ob-consent-check.checked { background:rgba(100,180,230,0.5); border-color:rgba(100,180,230,0.5); }
 .ob-consent-check.checked::after { content:''; display:block; width:5px; height:10px; border:solid white; border-width:0 2px 2px 0; transform:rotate(45deg); margin-bottom:2px; }
