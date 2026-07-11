@@ -375,6 +375,8 @@ let bcMsgHistories = {};
 let bcSubscription = null;
 let bcBubbleData = null;
 var _bcLivePollTimer = null;
+var _bcTypingTimer = null;
+var _bcBroadcastTypingTimer = null;
 
 // ── REALTIME CLEANUP HELPER ──
 // v5.2: chat only cleans up its own subscriptions.
@@ -382,9 +384,53 @@ var _bcLivePollTimer = null;
 function bcUnsubscribe() {
   if (bcSubscription) { bcSubscription.unsubscribe(); bcSubscription = null; }
   if (_bcLivePollTimer) { clearInterval(_bcLivePollTimer); _bcLivePollTimer = null; }
+  if (typeof bcHideTyping === 'function') bcHideTyping();
+  if (_bcBroadcastTypingTimer) { clearTimeout(_bcBroadcastTypingTimer); _bcBroadcastTypingTimer = null; }
 }
 function dmUnsubscribe() {
   if (chatSubscription) { chatSubscription.unsubscribe(); chatSubscription = null; }
+}
+
+// ── Boble typing-indikator (spejler DM's dmShowTyping/dmOnInput - EET system) ──
+function bcOnInput() {
+  if (!bcSubscription) return;
+  clearTimeout(_bcBroadcastTypingTimer);
+  _bcBroadcastTypingTimer = setTimeout(function() {
+    try {
+      bcSubscription.send({ type: 'broadcast', event: 'typing',
+        payload: { userId: currentUser.id, name: currentProfile?.name || 'Nogen' } });
+    } catch(e) { if (window._debugRt) console.warn('bc typing broadcast:', e); }
+  }, 300);
+}
+
+function bcShowTyping(name) {
+  var el = document.getElementById('bc-typing-indicator');
+  if (!el) return;
+  // Navne-label (gruppe-kontekst: vis hvem der skriver)
+  var nameEl = document.getElementById('bc-typing-name');
+  if (nameEl) nameEl.textContent = name || '';
+  // Initials-avatar (samme moenster som DM's fallback)
+  var avEl = document.getElementById('bc-typing-avatar');
+  if (avEl) {
+    var init = (name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    avEl.textContent = init;
+    avEl.style.cssText = 'width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#CECBF6,#AFA9EC);display:flex;align-items:center;justify-content:center;font-size:0.45rem;font-weight:800;color:white';
+  }
+  el.style.display = 'block';
+  // Auto-scroll saa indikatoren ses (kun hvis brugeren allerede er naer bunden)
+  var chatScroll = document.getElementById('bc-messages');
+  if (chatScroll) {
+    var isNearBottom = chatScroll.scrollHeight - chatScroll.scrollTop - chatScroll.clientHeight < 80;
+    if (isNearBottom) setTimeout(function() { chatScroll.scrollTop = chatScroll.scrollHeight; }, 50);
+  }
+  clearTimeout(_bcTypingTimer);
+  _bcTypingTimer = setTimeout(function() { if (el) el.style.display = 'none'; }, 3000);
+}
+
+function bcHideTyping() {
+  clearTimeout(_bcTypingTimer);
+  var el = document.getElementById('bc-typing-indicator');
+  if (el) el.style.display = 'none';
 }
 function bcUnsubscribeAll() {
   bcUnsubscribe();
@@ -937,10 +983,17 @@ function bcSubscribeRealtime() {
       if (typeof _bcActiveTab !== 'undefined' && _bcActiveTab === 'info' && typeof bcLoadInfo === 'function') bcLoadInfo();
       if (typeof loadLiveBubbleStatus === 'function') loadLiveBubbleStatus();
     })
+    // Typing indicator (spejler DM's typing-listener)
+    .on('broadcast', { event: 'typing' }, function(payload) {
+      var p = payload.payload;
+      if (!p || p.userId === currentUser.id) return;
+      bcShowTyping(p.name || 'Nogen');
+    })
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'bubble_messages', filter:`bubble_id=eq.${bcBubbleId}`},
       async (payload) => {
         const m = payload.new;
         if (m.user_id === currentUser.id) return;
+        bcHideTyping(); // besked landet = de skriver ikke laengere
         m.profiles = await getCachedProfile(m.user_id);
         const panel = document.getElementById('bc-panel-chat');
         // Panel/badge may be absent if the user navigated away between the
