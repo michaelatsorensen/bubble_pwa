@@ -708,6 +708,74 @@ function chatDateLabel(date) {
   return d.toLocaleDateString(_locale(), { weekday:'short', day:'numeric', month:'short' });
 }
 
+// ── Besked-handlings-sheet (DELT: DM + boble, erstatter long-press) ──
+// Aabnes via tap paa handlingsknap (...). Ren tap = 100% paalidelig paa iOS,
+// ingen kamp med native tekstmarkering. opts: { canEdit, canReact,
+//   onCopy, onEdit, onDelete, onReact(emoji) }.
+function openMsgActions(opts) {
+  opts = opts || {};
+  var overlay = document.createElement('div');
+  overlay.className = 'emoji-sheet-overlay';
+  overlay.onclick = function(e) { if (e.target === overlay) close(); };
+
+  var sheet = document.createElement('div');
+  sheet.className = 'msg-actions-sheet';
+
+  function close() {
+    sheet.classList.remove('open');
+    setTimeout(function() { overlay.remove(); }, 300);
+  }
+
+  var html = '<div class="emoji-grip"></div>';
+
+  // Reaktions-raekke oeverst (kun hvis reaktioner er tilladt)
+  if (opts.canReact) {
+    var quick = ['\u2764\uFE0F', '\uD83D\uDC4D', '\uD83D\uDE02', '\uD83D\uDE2E', '\uD83D\uDD25'];
+    html += '<div class="msg-act-reactions">'
+      + quick.map(function(e) { return '<button class="msg-act-rx" data-emoji="' + e + '">' + e + '</button>'; }).join('')
+      + '<button class="msg-act-rx more" data-more="1">+</button>'
+      + '</div>';
+  }
+
+  // Handlinger
+  var copyIco = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>';
+  var editIco = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg>';
+  var delIco = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>';
+  html += '<div class="msg-act-list">';
+  if (opts.onCopy) html += '<button class="msg-act-item" data-act="copy">' + copyIco + '<span>' + t('misc_copy') + '</span></button>';
+  if (opts.canEdit && opts.onEdit) html += '<button class="msg-act-item" data-act="edit">' + editIco + '<span>' + t('misc_edit') + '</span></button>';
+  if (opts.onDelete) html += '<button class="msg-act-item danger" data-act="delete">' + delIco + '<span>' + t('misc_delete') + '</span></button>';
+  html += '</div>';
+
+  sheet.innerHTML = html;
+
+  sheet.addEventListener('click', function(e) {
+    var rx = e.target.closest('.msg-act-rx');
+    if (rx) {
+      if (rx.getAttribute('data-more')) {
+        close();
+        if (typeof openEmojiSheet === 'function') openEmojiSheet(function(sel) { if (opts.onReact) opts.onReact(sel); });
+      } else {
+        var em = rx.getAttribute('data-emoji');
+        close();
+        if (opts.onReact) opts.onReact(em);
+      }
+      return;
+    }
+    var item = e.target.closest('.msg-act-item');
+    if (!item) return;
+    var act = item.getAttribute('data-act');
+    close();
+    if (act === 'copy' && opts.onCopy) opts.onCopy();
+    else if (act === 'edit' && opts.onEdit) opts.onEdit();
+    else if (act === 'delete' && opts.onDelete) opts.onDelete();
+  });
+
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+  requestAnimationFrame(function() { requestAnimationFrame(function() { sheet.classList.add('open'); }); });
+}
+
 // ── Emoji-sheet (DELT: boble-reaktioner nu, DM-reaktioner senere - EEN picker) ──
 // Aabnes via openEmojiSheet(onSelect). Strandglas: bruger --sheet-border/--sheet-shadow tokens.
 var EMOJI_CATS = [

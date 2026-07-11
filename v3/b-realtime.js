@@ -842,11 +842,8 @@ function dmReduceMsg(msg, opts) {
       pendingEl.id = 'dm-msg-' + msg.id;
       pendingEl.setAttribute('data-msg-id', msg.id);
       pendingEl.classList.remove('msg-pending');
-      pendingEl.setAttribute('oncontextmenu', "if(!window.getSelection().toString()){event.preventDefault();dmLongPress('" + msg.id + "',true)}");
-      pendingEl.setAttribute('ontouchstart', "dmTouchStart(event,'" + msg.id + "',true)");
-      pendingEl.setAttribute('ontouchend', 'dmTouchEnd()');
-      pendingEl.setAttribute('ontouchmove', 'dmTouchEnd()');
-      pendingEl.setAttribute('onselectstart', 'dmTouchEnd()');
+      var actBtn = pendingEl.querySelector('.msg-act-btn');
+      if (actBtn) actBtn.setAttribute('onclick', "dmOpenActions('" + msg.id + "',true)");
       var bubble = pendingEl.querySelector('.msg-bubble');
       if (bubble) bubble.id = 'dm-bubble-' + msg.id;
     }
@@ -987,10 +984,12 @@ function dmRenderMsg(m) {
   var rowClass = 'msg-row msg-' + gp + (sent ? ' me' : '');
   var msgTs = new Date(m.created_at).getTime();
 
-  return '<div class="' + rowClass + '" id="dm-msg-' + m.id + '" data-msg-id="' + m.id + '" data-ts="' + msgTs + '" oncontextmenu="if(!window.getSelection().toString()){event.preventDefault();dmLongPress(\'' + m.id + '\',' + sent + ')}" ontouchstart="dmTouchStart(event,\'' + m.id + '\',' + sent + ')" ontouchend="dmTouchEnd()" ontouchmove="dmTouchEnd()" onselectstart="dmTouchEnd()">' +
+  return '<div class="' + rowClass + '" id="dm-msg-' + m.id + '" data-msg-id="' + m.id + '" data-ts="' + msgTs + '">' +
     '<div class="msg-avatar"' + avatarClick + ' style="' + avatarStyle + '">' + avatarInner + '</div>' +
     '<div class="msg-body">' +
-    '<div class="msg-content">' + bubble + '</div>' +
+    '<div class="msg-content">' + bubble +
+    '<button class="msg-act-btn" onclick="dmOpenActions(\'' + m.id + '\',' + sent + ')" aria-label="' + t('misc_actions') + '">\u22EF</button>' +
+    '</div>' +
     timeHtml + receipt +
     '</div>' +
   '</div>';
@@ -1081,98 +1080,19 @@ async function loadChatMessages() {
 // ── DM Realtime: Broadcast for instant delivery + typing indicator ──
 var _dmTypingTimer = null;
 
-// ── Long-press context menu for DM messages ──
-var _dmLongPressTimer = null;
-var _dmLongPressId = null;
-var _dmLongPressSelMon = null;
-
-function dmTouchStart(event, msgId, isSent) {
-  // If user is interacting with text selection (e.g. tapping inside selected range), don't fire
-  var sel = window.getSelection();
-  if (sel && !sel.isCollapsed) return;
-
-  // Active monitor: if iOS starts a selection during the long-press window,
-  // clear it immediately so it cannot compete with the apps own menu.
-  // (Previously this aborted our menu and let native win - now app menu wins.)
-  _dmLongPressSelMon = setInterval(function() {
-    var s = window.getSelection();
-    if (s && (s.toString() || !s.isCollapsed)) {
-      if (s.removeAllRanges) s.removeAllRanges();
-    }
-  }, 50);
-
-  // 400ms beats iOS native text-selection threshold (~600-700ms)
-  _dmLongPressTimer = setTimeout(function() {
-    dmLongPress(msgId, isSent);
-  }, 400);
-}
-
-function dmTouchEnd() {
-  if (_dmLongPressTimer) { clearTimeout(_dmLongPressTimer); _dmLongPressTimer = null; }
-  if (_dmLongPressSelMon) { clearInterval(_dmLongPressSelMon); _dmLongPressSelMon = null; }
-}
-
-function dmLongPress(msgId, isSent) {
-  // Ryd enhver selektion iOS maatte have startet - appens menu er nu det eneste
-  // system, saa vi lader ikke native selektion overtage (undgaar konflikt).
-  var sel = window.getSelection();
-  if (sel && (sel.toString() || !sel.isCollapsed)) {
-    if (sel.removeAllRanges) sel.removeAllRanges();
-  }
-  _dmLongPressId = msgId;
-  if (navigator.vibrate) navigator.vibrate(10);
-
-  // Get message element position
-  var msgEl = document.getElementById('dm-msg-' + msgId);
-  if (!msgEl) return;
-
-  var overlay = document.createElement('div');
-  overlay.className = 'dm-ctx-overlay';
-  overlay.onclick = function() { overlay.remove(); };
-
-  var container = document.createElement('div');
-  container.style.cssText = 'position:absolute;display:flex;flex-direction:column;align-items:' + (isSent ? 'flex-end' : 'flex-start') + ';padding:0 1rem;';
-
-  // Position near the message
-  var rect = msgEl.getBoundingClientRect();
-  container.style.top = Math.max(60, rect.top - 50) + 'px';
-  container.style.left = '0';
-  container.style.right = '0';
-
-  // Context menu
-  var menu = document.createElement('div');
-  menu.className = 'dm-ctx-menu';
-
-  var copyBtn = document.createElement('button');
-  copyBtn.textContent = t('misc_copy');
-  copyBtn.onclick = function(e) {
-    e.stopPropagation();
-    var bubble = document.getElementById('dm-bubble-' + msgId);
-    if (bubble) { navigator.clipboard.writeText(bubble.textContent).then(function() { showToast(t('misc_copied')); }); }
-    overlay.remove();
-  };
-  menu.appendChild(copyBtn);
-
-  if (isSent) {
-    var editBtn = document.createElement('button');
-    editBtn.textContent = t('misc_edit');
-    editBtn.onclick = function(e) { e.stopPropagation(); overlay.remove(); dmStartEdit(msgId); };
-    menu.appendChild(editBtn);
-  }
-
-  var delBtn = document.createElement('button');
-  delBtn.className = 'danger';
-  delBtn.textContent = t('misc_delete');
-  delBtn.onclick = function(e) {
-    e.stopPropagation();
-    overlay.remove();
-    dmDeleteMsg(msgId);
-  };
-  menu.appendChild(delBtn);
-
-  container.appendChild(menu);
-  overlay.appendChild(container);
-  document.body.appendChild(overlay);
+// ── Besked-handlinger via tap (erstatter long-press - paalidelig paa iOS) ──
+function dmOpenActions(msgId, isSent) {
+  if (navigator.vibrate) navigator.vibrate(8);
+  openMsgActions({
+    canEdit: isSent,
+    canReact: false, // DM-reaktioner endnu ikke bygget (#5) - aktiveres der
+    onCopy: function() {
+      var bubble = document.getElementById('dm-bubble-' + msgId);
+      if (bubble) { navigator.clipboard.writeText(bubble.textContent).then(function() { showToast(t('misc_copied')); }); }
+    },
+    onEdit: isSent ? function() { dmStartEdit(msgId); } : null,
+    onDelete: function() { dmDeleteMsg(msgId); }
+  });
 }
 
 function dmStartEdit(msgId) {

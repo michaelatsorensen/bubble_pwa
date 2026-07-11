@@ -26,9 +26,6 @@ registerState(function() {
   if (typeof _bcActiveTab !== 'undefined') _bcActiveTab = 'info';
   if (typeof _bcPrevTab !== 'undefined') _bcPrevTab = null;
   if (typeof _profileCache !== 'undefined') _profileCache = {};
-  if (typeof _bcLongPressTimer !== 'undefined' && _bcLongPressTimer) {
-    clearTimeout(_bcLongPressTimer); _bcLongPressTimer = null;
-  }
   if (typeof _bcPostsCache !== 'undefined') _bcPostsCache = null;
 });
 
@@ -1400,10 +1397,6 @@ function bcRenderMsg(m) {
   row.className = 'msg-row msg-' + gp + (isMe ? ' me' : '');
   row.id = 'bc-msg-' + m.id;
   row.setAttribute('data-bc-msg-id', m.id);
-  row.setAttribute('oncontextmenu', "if(!window.getSelection().toString()){event.preventDefault();bcLongPress('" + m.id + "'," + isMe + ")}");
-  row.setAttribute('ontouchstart', "bcTouchStart(event,'" + m.id + "'," + isMe + ")");
-  row.setAttribute('ontouchend', 'bcTouchEnd()');
-  row.setAttribute('ontouchmove', 'bcTouchEnd()');
 
   let bubble = '';
   if (m.file_url) {
@@ -1448,7 +1441,9 @@ function bcRenderMsg(m) {
     '<div class="msg-avatar"' + avatarClick + ' style="' + avatarStyle + '">' + bcAvInner + '</div>' +
     '<div class="msg-body">' +
       nameRow +
-      '<div class="msg-content">' + bubble + '</div>' +
+      '<div class="msg-content">' + bubble +
+        '<button class="msg-act-btn" onclick="bcOpenActions(\'' + m.id + '\',' + isMe + ')" aria-label="' + t('misc_actions') + '">\u22EF</button>' +
+      '</div>' +
       '<div class="msg-reactions" id="bc-reactions-' + m.id + '"></div>' +
       timeHtml +
     '</div>';
@@ -1644,71 +1639,20 @@ async function bcHandleFile(input) {
   } catch(e) { logError("bcHandleFile", e); errorToast("upload", e); }
 }
 
-// ── BC Long-press context menu (matches DM pattern) ──
-var _bcLongPressTimer = null;
-
-function bcTouchStart(event, msgId, isMe) {
-  _bcLongPressTimer = setTimeout(function() { bcLongPress(msgId, isMe); }, 500);
-}
-
-function bcTouchEnd() {
-  if (_bcLongPressTimer) { clearTimeout(_bcLongPressTimer); _bcLongPressTimer = null; }
-}
-
-function bcLongPress(msgId, isMe) {
-  if (window.getSelection().toString()) return; // Let native text selection work
-  if (navigator.vibrate) navigator.vibrate(10);
-  var msgEl = document.getElementById('bc-msg-' + msgId);
-  if (!msgEl) return;
-
-  var overlay = document.createElement('div');
-  overlay.className = 'dm-ctx-overlay';
-  overlay.onclick = function() { overlay.remove(); };
-
-  var container = document.createElement('div');
-  container.style.cssText = 'position:absolute;display:flex;flex-direction:column;align-items:' + (isMe ? 'flex-end' : 'flex-start') + ';padding:0 1rem;';
-  var rect = msgEl.getBoundingClientRect();
-  container.style.top = Math.max(60, rect.top - 50) + 'px';
-  container.style.left = '0';
-  container.style.right = '0';
-
-  // Reaction bar
-  var reactions = document.createElement('div');
-  reactions.className = 'dm-ctx-reactions';
-  ['\u2764\uFE0F', '\uD83D\uDC4D', '\uD83D\uDE02', '\uD83D\uDE2E', '\uD83D\uDD25', '+'].forEach(function(emoji) {
-    var btn = document.createElement('button');
-    btn.textContent = emoji;
-    if (emoji === '+') { btn.style.fontSize = '14px'; btn.style.color = 'var(--muted)'; }
-    btn.onclick = function(e) {
-      e.stopPropagation();
-      if (emoji !== '+') { bcToggleReaction(msgId, emoji); overlay.remove(); }
-      else { overlay.remove(); openEmojiSheet(function(sel) { bcToggleReaction(msgId, sel); }); }
-    };
-    reactions.appendChild(btn);
+// ── Besked-handlinger via tap (erstatter long-press - paalidelig paa iOS) ──
+function bcOpenActions(msgId, isMe) {
+  if (navigator.vibrate) navigator.vibrate(8);
+  openMsgActions({
+    canEdit: isMe,
+    canReact: true, // boble HAR reaktioner (bubble_message_reactions)
+    onReact: function(emoji) { bcToggleReaction(msgId, emoji); },
+    onCopy: function() {
+      var b = document.getElementById('bc-bubble-' + msgId);
+      if (b) navigator.clipboard.writeText(b.textContent).then(function(){ showToast(t('misc_copied')); });
+    },
+    onEdit: isMe ? function() { bcEditStart(msgId); } : null,
+    onDelete: isMe ? function() { bcDeleteConfirm(msgId); } : null
   });
-  container.appendChild(reactions);
-
-  // Context menu
-  var menu = document.createElement('div');
-  menu.className = 'dm-ctx-menu';
-  var copyBtn = document.createElement('button');
-  copyBtn.textContent = t('misc_copy');
-  copyBtn.onclick = function(e) { e.stopPropagation(); var b = document.getElementById('bc-bubble-' + msgId); if (b) navigator.clipboard.writeText(b.textContent).then(function(){ showToast(t('misc_copied')); }); overlay.remove(); };
-  menu.appendChild(copyBtn);
-  if (isMe) {
-    var editBtn = document.createElement('button');
-    editBtn.textContent = t('misc_edit');
-    editBtn.onclick = function(e) { e.stopPropagation(); overlay.remove(); bcEditStart(msgId); };
-    menu.appendChild(editBtn);
-    var delBtn = document.createElement('button');
-    delBtn.className = 'danger';
-    delBtn.textContent = t('misc_delete');
-    delBtn.onclick = function(e) { e.stopPropagation(); overlay.remove(); bcDeleteConfirm(msgId); };
-    menu.appendChild(delBtn);
-  }
-  container.appendChild(menu);
-  overlay.appendChild(container);
-  document.body.appendChild(overlay);
 }
 
 function bcEditStart(msgId) {
