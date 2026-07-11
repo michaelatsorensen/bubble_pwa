@@ -1384,10 +1384,14 @@ function bcReduceMsg(msg) {
   return true;
 }
 
+// Cache af boble-beskeder (id -> {name, text}) saa svar kan finde citeret besked.
+var bcMsgCache = {};
 function bcRenderMsg(m) {
   const isMe = m.user_id === currentUser.id;
   const p = m.profiles || {};
   const name = p.name || '?';
+  // Gem i cache saa senere svar kan citere denne besked
+  if (m.id && m.content) bcMsgCache[m.id] = { name: name, text: m.content };
   const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   const gp = m._gp || 'single';
   const showAvatar = !isMe && (gp === 'tail' || gp === 'single');
@@ -1413,10 +1417,16 @@ function bcRenderMsg(m) {
   } else {
     var content = m.content || '';
     var edited = m.edited ? ' <span class="msg-edited" onclick="bcShowHistory(\'' + m.id + '\')">' + t('misc_edited') + '</span>' : '';
-    if (isEmojiOnly(content)) {
+    // Citat hvis svar (reply_to): fra _replyMeta (optimistisk) eller bcMsgCache
+    var bcQuoteHtml = '';
+    if (m.reply_to) {
+      var bqm = m._replyMeta || (typeof bcMsgCache !== 'undefined' ? bcMsgCache[m.reply_to] : null);
+      if (bqm) bcQuoteHtml = buildQuoteHtml(bqm.name, bqm.text);
+    }
+    if (isEmojiOnly(content) && !bcQuoteHtml) {
       bubble = '<div class="msg-emoji" id="bc-bubble-' + m.id + '">' + escHtml(content) + '</div>';
     } else {
-      bubble = '<div class="msg-bubble' + (isMe ? ' sent' : '') + '" id="bc-bubble-' + m.id + '">' + linkify(escHtml(filterChatContent(content))) + edited + '</div>';
+      bubble = '<div class="msg-bubble' + (isMe ? ' sent' : '') + '" id="bc-bubble-' + m.id + '">' + bcQuoteHtml + linkify(escHtml(filterChatContent(content))) + edited + '</div>';
     }
   }
 
@@ -1570,12 +1580,16 @@ async function bcSendMessage() {
       inp.value = '';
       inp.blur();
 
-      var sendResult = await dbActions.sendBubbleMessage(bcBubbleId, text);
+      var _bcReplyTo = replyState.bc ? replyState.bc.id : null;
+      var _bcReplyMeta = replyState.bc ? { name: replyState.bc.name, text: replyState.bc.text } : null;
+      if (replyState.bc) cancelReply('bc'); // ryd svar-bjaelken
+      var sendResult = await dbActions.sendBubbleMessage(bcBubbleId, text, { replyTo: _bcReplyTo });
       if (!sendResult.ok) {
         inp.value = text;
         return;
       }
       if (sendResult.message) {
+        if (_bcReplyMeta) sendResult.message._replyMeta = _bcReplyMeta;
         bcReduceMsg(sendResult.message);
         trackEvent('bubble_chat_msg_sent', { bubble_id: bcBubbleId });
       }
@@ -1649,6 +1663,15 @@ function bcOpenActions(msgId, isMe) {
     canEdit: editable,
     canReact: true, // boble HAR reaktioner (bubble_message_reactions)
     onReact: function(emoji) { bcToggleReaction(msgId, emoji); },
+    onReply: function() {
+      var b = document.getElementById('bc-bubble-' + msgId);
+      var text = b ? b.textContent : '';
+      // Find afsender-navn fra besked-rowens sender-label eller cache
+      var row = document.getElementById('bc-msg-' + msgId);
+      var nameEl = row ? row.querySelector('.msg-sender-name') : null;
+      var name = nameEl ? nameEl.textContent : (isMe ? (currentProfile?.name || 'Dig') : '?');
+      startReply('bc', msgId, name, text);
+    },
     onCopy: function() {
       var b = document.getElementById('bc-bubble-' + msgId);
       if (b) navigator.clipboard.writeText(b.textContent).then(function(){ showToast(t('misc_copied')); });

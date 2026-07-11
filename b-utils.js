@@ -708,6 +708,48 @@ function chatDateLabel(date) {
   return d.toLocaleDateString(_locale(), { weekday:'short', day:'numeric', month:'short' });
 }
 
+// ── Svar/citat (DELT: DM + boble - ét system) ──
+// replyState holder den besked man er ved at svare paa (pr. kontekst).
+// buildQuoteHtml renderer citat-boblen (Messenger-stil: indlejret boble),
+// brugt BAADE i composer-preview og i den faerdige besked i traaden.
+var replyState = { dm: null, bc: null }; // hver: { id, name, text } eller null
+
+function buildQuoteHtml(name, text) {
+  // Indlejret citat-boble (variant C). Escapes indhold, trunkeres via CSS.
+  return '<div class="msg-quote-inner">' +
+    '<div class="mq-name">' + escHtml(name || '?') + '</div>' +
+    '<div class="mq-text">' + escHtml(text || '') + '</div>' +
+    '</div>';
+}
+
+// Render reply-preview i composeren (samme citat-boble som i traaden).
+// ctx = 'dm' eller 'bc'. onCancel-knap rydder replyState.
+function renderReplyPreview(ctx) {
+  var el = document.getElementById(ctx + '-reply-preview');
+  if (!el) return;
+  var st = replyState[ctx];
+  if (!st) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="reply-preview-label">' + t('reply_replying_to') + '</div>' +
+    '<div class="reply-preview-row">' +
+      '<div class="reply-preview-bubble">' + buildQuoteHtml(st.name, st.text) + '</div>' +
+      '<button class="reply-preview-close" onclick="cancelReply(\'' + ctx + '\')" aria-label="' + t('misc_cancel') + '">\u2715</button>' +
+    '</div>';
+  el.style.display = 'block';
+}
+
+function startReply(ctx, msgId, name, text) {
+  replyState[ctx] = { id: msgId, name: name, text: text };
+  renderReplyPreview(ctx);
+  // Fokusér composeren
+  var input = document.getElementById(ctx === 'dm' ? 'chat-input' : 'bc-input');
+  if (input) input.focus();
+}
+
+function cancelReply(ctx) {
+  replyState[ctx] = null;
+  renderReplyPreview(ctx);
+}
+
 // ── Redigerings-vindue (DELT: DM + boble) ──
 // Man kan kun redigere sine egne beskeder i 30 min (iMessage-lignende).
 // Efter det er beskeden laast - forhindrer at gamle beskeder aendres.
@@ -779,10 +821,12 @@ function openMsgActions(opts) {
   }
 
   // Handlinger
+  var replyIco = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 17l-5-5 5-5"/><path d="M4 12h11a4 4 0 014 4v2"/></svg>';
   var copyIco = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>';
   var editIco = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg>';
   var delIco = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>';
   html += '<div class="msg-act-list">';
+  if (opts.onReply) html += '<button class="msg-act-item" data-act="reply">' + replyIco + '<span>' + t('reply_action') + '</span></button>';
   if (opts.onCopy) html += '<button class="msg-act-item" data-act="copy">' + copyIco + '<span>' + t('misc_copy') + '</span></button>';
   if (opts.canEdit && opts.onEdit) html += '<button class="msg-act-item" data-act="edit">' + editIco + '<span>' + t('misc_edit') + '</span></button>';
   if (opts.onDelete) html += '<button class="msg-act-item danger" data-act="delete">' + delIco + '<span>' + t('misc_delete') + '</span></button>';
@@ -807,7 +851,8 @@ function openMsgActions(opts) {
     if (!item) return;
     var act = item.getAttribute('data-act');
     close();
-    if (act === 'copy' && opts.onCopy) opts.onCopy();
+    if (act === 'reply' && opts.onReply) opts.onReply();
+    else if (act === 'copy' && opts.onCopy) opts.onCopy();
     else if (act === 'edit' && opts.onEdit) opts.onEdit();
     else if (act === 'delete' && opts.onDelete) opts.onDelete();
   });
@@ -1325,7 +1370,8 @@ var dbActions = {
         file_url: opts.fileUrl || opts.gifUrl || null,
         gif_url: opts.gifUrl || null,
         file_name: opts.fileName || (opts.gifUrl ? 'gif.gif' : null),
-        file_type: opts.fileType || (opts.gifUrl ? 'image/gif' : null)
+        file_type: opts.fileType || (opts.gifUrl ? 'image/gif' : null),
+        reply_to: opts.replyTo || null
       };
       var { data, error } = await sb.from('messages').insert(payload).select().single();
       if (error) { errorToast('send', error); return { ok: false, error: error }; }
@@ -1347,7 +1393,8 @@ var dbActions = {
         file_url: opts.fileUrl || opts.gifUrl || null,
         gif_url: opts.gifUrl || null,
         file_name: opts.fileName || (opts.gifUrl ? 'gif.gif' : null),
-        file_type: opts.fileType || (opts.gifUrl ? 'image/gif' : null)
+        file_type: opts.fileType || (opts.gifUrl ? 'image/gif' : null),
+        reply_to: opts.replyTo || null
       };
       var { data, error } = await sb.from('bubble_messages').insert(payload).select().maybeSingle();
       if (error) { errorToast('send', error); return { ok: false, error: error }; }

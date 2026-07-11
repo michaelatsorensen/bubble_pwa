@@ -16,39 +16,39 @@
 <meta name="theme-color" content="#0E141C">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=30129">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=30129">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=30129">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=30129">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=30129">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=30129">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=30129">
+<link rel="manifest" href="manifest.json?v=30130">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=30130">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=30130">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=30130">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=30130">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=30130">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=30130">
 
-<link rel="stylesheet" href="app.css?v=30129">
+<link rel="stylesheet" href="app.css?v=30130">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous" defer></script>
-<script src="bubble-icons.js?v=30129" defer></script>
-<script src="tag-data.js?v=30129" defer></script>
-<script src="b-i18n.js?v=30129" defer></script>
-<script src="b-config.js?v=30129" defer></script>
-<script src="b-utils.js?v=30129" defer></script>
-<script src="b-guides.js?v=30129" defer></script>
-<script src="b-terms.js?v=30129" defer></script>
-<script src="b-auth.js?v=30129" defer></script>
-<script src="b-home.js?v=30129" defer></script>
-<script src="b-bubbles.js?v=30129" defer></script>
-<script src="b-profile.js?v=30129" defer></script>
-<script src="b-radar.js?v=30129" defer></script>
-<script src="b-messages.js?v=30129" defer></script>
-<script src="b-realtime.js?v=30129" defer></script>
-<script src="b-onboarding.js?v=30129" defer></script>
-<script src="b-chat.js?v=30129" defer></script>
-<script src="b-notifications.js?v=30129" defer></script>
-<script src="b-live.js?v=30129" defer></script>
-<script src="b-admin.js?v=30129" defer></script>
-<script src="b-navigation.js?v=30129" defer></script>
-<script src="b-boot.js?v=30129" defer></script>
+<script src="bubble-icons.js?v=30130" defer></script>
+<script src="tag-data.js?v=30130" defer></script>
+<script src="b-i18n.js?v=30130" defer></script>
+<script src="b-config.js?v=30130" defer></script>
+<script src="b-utils.js?v=30130" defer></script>
+<script src="b-guides.js?v=30130" defer></script>
+<script src="b-terms.js?v=30130" defer></script>
+<script src="b-auth.js?v=30130" defer></script>
+<script src="b-home.js?v=30130" defer></script>
+<script src="b-bubbles.js?v=30130" defer></script>
+<script src="b-profile.js?v=30130" defer></script>
+<script src="b-radar.js?v=30130" defer></script>
+<script src="b-messages.js?v=30130" defer></script>
+<script src="b-realtime.js?v=30130" defer></script>
+<script src="b-onboarding.js?v=30130" defer></script>
+<script src="b-chat.js?v=30130" defer></script>
+<script src="b-notifications.js?v=30130" defer></script>
+<script src="b-live.js?v=30130" defer></script>
+<script src="b-admin.js?v=30130" defer></script>
+<script src="b-navigation.js?v=30130" defer></script>
+<script src="b-boot.js?v=30130" defer></script>
   
 
 
@@ -1121,6 +1121,7 @@
         <span><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg> Redigerer besked</span>
         <span class="chat-edit-cancel" onclick="bcCancelEdit()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17M7 7l10 10"/></svg></span>
       </div>
+      <div class="reply-preview" id="bc-reply-preview"></div>
       <div class="chat-composer-row">
         <input type="file" id="bc-file-input" class="u-hidden" accept="image/*,video/*,.pdf,.doc,.docx,.xlsx,.pptx" onchange="bcHandleFile(this)">
         <button class="chat-plus-btn" onclick="toggleChatMenu('bc')">+</button>
@@ -1270,6 +1271,7 @@
         <span><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4L16.5 3.5z"/></svg> Redigerer besked</span>
         <span class="chat-edit-cancel" onclick="dmCancelEdit()"><svg class="ico" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7L7 17M7 7l10 10"/></svg></span>
       </div>
+      <div class="reply-preview" id="dm-reply-preview"></div>
       <div class="chat-composer-row">
         <input type="file" id="dm-file-input" class="u-hidden" accept="image/*,video/*,.pdf,.doc,.docx,.xlsx,.pptx" onchange="dmHandleFile(this)">
         <button class="chat-plus-btn" onclick="toggleChatMenu('dm')">+</button>

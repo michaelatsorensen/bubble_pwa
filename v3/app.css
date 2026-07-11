@@ -1740,6 +1740,19 @@ a.person-action-btn { text-decoration:none; }
 .msg-act-item svg { width:19px; height:19px; opacity:0.75; flex-shrink:0; }
 .msg-act-item.danger { color:#F0889F; }
 .msg-act-item.danger svg { opacity:1; }
+/* ── Svar/citat (DELT DM+boble) ── */
+/* Citat-boble indlejret i besked (variant C) - i traaden OG i composer-preview */
+.msg-quote-inner { background:rgba(0,0,0,0.22); border-radius:12px; padding:5px 9px; margin-bottom:5px; }
+.msg-bubble.sent .msg-quote-inner, .msg-content .sent .msg-quote-inner { background:rgba(0,0,0,0.18); }
+.mq-name { font-size:0.6rem; font-weight:700; color:rgba(206,203,246,0.95); margin-bottom:1px; }
+.mq-text { font-size:0.72rem; color:rgba(255,255,255,0.65); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* Composer reply-preview */
+.reply-preview { display:none; padding:8px 14px 4px; border-bottom:0.5px solid rgba(255,255,255,0.06); }
+.reply-preview-label { font-size:0.62rem; font-weight:700; color:rgba(100,180,230,0.9); margin-bottom:4px; }
+.reply-preview-row { display:flex; align-items:flex-start; gap:8px; }
+.reply-preview-bubble { flex:1; min-width:0; background:rgba(255,255,255,0.06); border-radius:12px 12px 12px 4px; padding:6px 10px; }
+.reply-preview-bubble .msg-quote-inner { background:none; padding:0; margin:0; }
+.reply-preview-close { width:24px; height:24px; border-radius:50%; background:rgba(255,255,255,0.08); border:none; color:rgba(255,255,255,0.6); font-size:13px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
 
 /* ══════════════════════════════════════
    FIX: Chat screens — locked viewport height

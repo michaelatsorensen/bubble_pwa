@@ -259,18 +259,22 @@ async function sendMessage() {
     } else {
       // Optimistic UI: show message instantly with pending state
       var tempId = '_pending_' + Date.now();
+      var _replyTo = replyState.dm ? replyState.dm.id : null;
+      var _replyMeta = replyState.dm ? { name: replyState.dm.name, text: replyState.dm.text } : null;
       var tempMsg = {
         id: tempId, sender_id: currentUser.id, receiver_id: currentChatUser,
         content: content, created_at: new Date().toISOString(),
-        _gp: 'single', file_url: null, edited: false, read_at: null
+        _gp: 'single', file_url: null, edited: false, read_at: null,
+        reply_to: _replyTo, _replyMeta: _replyMeta
       };
       dmReduceMsg(tempMsg, { pending: true });
       input.value = '';
       input.blur();
+      if (replyState.dm) cancelReply('dm'); // ryd svar-bjaelken
 
       // DB insert
       const { data: newMsg, error } = await sb.from('messages').insert({
-        sender_id: currentUser.id, receiver_id: currentChatUser, content
+        sender_id: currentUser.id, receiver_id: currentChatUser, content, reply_to: _replyTo
       }).select().single();
 
       if (error) {

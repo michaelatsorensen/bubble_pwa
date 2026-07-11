@@ -923,9 +923,15 @@ function _dmMaybeInsertDateSep(container, createdAt) {
   }
 }
 
+// Cache af DM-beskeder (id -> {name, text}) saa svar kan finde citeret besked.
+var dmMsgCache = {};
 function dmRenderMsg(m) {
   const sent = m.sender_id === currentUser.id;
   const gp = m._gp || 'single'; // single, first, cont, tail
+  // Gem i cache saa senere svar kan citere denne besked
+  if (m.id && m.content) {
+    dmMsgCache[m.id] = { name: sent ? (currentProfile?.name || 'Dig') : (currentChatName || '?'), text: m.content };
+  }
 
   // Read receipt: only on the last sent message (marked by _showReceipt)
   let receipt = '';
@@ -959,10 +965,17 @@ function dmRenderMsg(m) {
     var edited = m.edited ? ' <span class="msg-edited">' + t('misc_edited') + '</span>' : '';
     var content = m.content || '';
     var emojiOnly = isEmojiOnly(content);
-    if (emojiOnly) {
+    // Citat hvis beskeden er et svar (reply_to). Data fra _replyMeta (optimistisk)
+    // eller opslag i dmMsgCache (bygget efterhaanden som beskeder renderes).
+    var quoteHtml = '';
+    if (m.reply_to) {
+      var qm = m._replyMeta || (typeof dmMsgCache !== 'undefined' ? dmMsgCache[m.reply_to] : null);
+      if (qm) quoteHtml = buildQuoteHtml(qm.name, qm.text);
+    }
+    if (emojiOnly && !quoteHtml) {
       bubble = '<div class="msg-emoji" id="dm-bubble-' + m.id + '">' + escHtml(content) + '</div>';
     } else {
-      bubble = '<div class="msg-bubble' + (sent ? ' sent' : '') + '" id="dm-bubble-' + m.id + '">' + linkify(escHtml(filterChatContent(content))) + edited + '</div>';
+      bubble = '<div class="msg-bubble' + (sent ? ' sent' : '') + '" id="dm-bubble-' + m.id + '">' + quoteHtml + linkify(escHtml(filterChatContent(content))) + edited + '</div>';
     }
   }
 
@@ -1094,6 +1107,12 @@ function dmOpenActions(msgId, isSent) {
     canEdit: editable,
     canReact: true, // DM-reaktioner nu bygget (message_reactions-tabel + RLS)
     onReact: function(emoji) { dmToggleReaction(msgId, emoji); },
+    onReply: function() {
+      var bubble = document.getElementById('dm-bubble-' + msgId);
+      var text = bubble ? bubble.textContent : '';
+      var name = sent ? (currentProfile?.name || 'Dig') : (currentChatName || 'Den anden');
+      startReply('dm', msgId, name, text);
+    },
     onCopy: function() {
       var bubble = document.getElementById('dm-bubble-' + msgId);
       if (bubble) { navigator.clipboard.writeText(bubble.textContent).then(function() { showToast(t('misc_copied')); }); }
