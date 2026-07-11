@@ -493,6 +493,42 @@ async function getSavedBubbleIds(forceRefresh) {
 function clearSavedBubbleIdsCache() { _savedBubbleIds = null; }
 function isBubbleSaved(id) { return !!(_savedBubbleIds && _savedBubbleIds.indexOf(id) >= 0); }
 
+// ── Shared: bubble STAR ratings (cached per session) — mirrors saved-bubble cache ──
+// Ratings live in DB table `bubble_stars` (user_id, bubble_id, rating 1-3) so they
+// follow the user across devices/PWA-shortcuts. Cache makes bubbleStarGet() sync,
+// which is required because it's called inside sort-comparators and render loops.
+var _bubbleStarMap = null;
+var _bubbleStarMapTs = 0;
+async function getBubbleStarMap(forceRefresh) {
+  if (!forceRefresh && _bubbleStarMap && (Date.now() - _bubbleStarMapTs < 30000)) return _bubbleStarMap;
+  if (!currentUser) { _bubbleStarMap = {}; return _bubbleStarMap; }
+  var { data } = await sb.from('bubble_stars').select('bubble_id, rating').eq('user_id', currentUser.id);
+  var m = {};
+  (data || []).forEach(function(r) { m[r.bubble_id] = r.rating; });
+  _bubbleStarMap = m;
+  _bubbleStarMapTs = Date.now();
+  return _bubbleStarMap;
+}
+function clearBubbleStarCache() { _bubbleStarMap = null; }
+
+// ── Shared: contact STAR ratings (cached per session) — mirrors bubble-star cache ──
+// Ratings live in DB table `contact_stars` (user_id, contact_id, rating 1-3) so they
+// follow the user across devices/PWA-shortcuts. Cache makes starGet() sync, which is
+// required because it's called inside sort-comparators and render loops.
+var _contactStarMap = null;
+var _contactStarMapTs = 0;
+async function getContactStarMap(forceRefresh) {
+  if (!forceRefresh && _contactStarMap && (Date.now() - _contactStarMapTs < 30000)) return _contactStarMap;
+  if (!currentUser) { _contactStarMap = {}; return _contactStarMap; }
+  var { data } = await sb.from('contact_stars').select('contact_id, rating').eq('user_id', currentUser.id);
+  var m = {};
+  (data || []).forEach(function(r) { m[r.contact_id] = r.rating; });
+  _contactStarMap = m;
+  _contactStarMapTs = Date.now();
+  return _contactStarMap;
+}
+function clearContactStarCache() { _contactStarMap = null; }
+
 // Bookmark SVG — outline (not saved) / teal fill (saved). Tuned for dark surfaces.
 function bookmarkIcon(saved) {
   return saved
@@ -1251,6 +1287,52 @@ var dbActions = {
       if (error) { errorToast('save', error); return { ok: false, error: error }; }
       return { ok: true };
     } catch (e) { logError('dbActions.removeSavedBubble', e); return { ok: false, error: e }; }
+  },
+
+  // ── BUBBLE STAR RATING (1-3, DB-backed, cross-device) ──
+  // rating>0 upserts, rating<=0 removes. Cache is updated optimistically by the
+  // caller (bubbleStarSet) so UI responds instantly; this persists to DB.
+  async setBubbleStar(bubbleId, rating) {
+    if (!currentUser || !bubbleId) return { ok: false };
+    try {
+      if (rating > 0) {
+        var { error } = await sb.from('bubble_stars').upsert({
+          user_id: currentUser.id,
+          bubble_id: bubbleId,
+          rating: Math.min(rating, 3),
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id,bubble_id' });
+        if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      } else {
+        var { error: delErr } = await sb.from('bubble_stars').delete()
+          .eq('user_id', currentUser.id).eq('bubble_id', bubbleId);
+        if (delErr) { errorToast('save', delErr); return { ok: false, error: delErr }; }
+      }
+      return { ok: true };
+    } catch (e) { logError('dbActions.setBubbleStar', e); errorToast('save', e); return { ok: false, error: e }; }
+  },
+
+  // ── CONTACT STAR RATING (1-3, DB-backed, cross-device) ──
+  // rating>0 upserts, rating<=0 removes. Cache is updated optimistically by the
+  // caller (starSet) so UI responds instantly; this persists to DB.
+  async setContactStar(contactId, rating) {
+    if (!currentUser || !contactId) return { ok: false };
+    try {
+      if (rating > 0) {
+        var { error } = await sb.from('contact_stars').upsert({
+          user_id: currentUser.id,
+          contact_id: contactId,
+          rating: Math.min(rating, 3),
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id,contact_id' });
+        if (error) { errorToast('save', error); return { ok: false, error: error }; }
+      } else {
+        var { error: delErr } = await sb.from('contact_stars').delete()
+          .eq('user_id', currentUser.id).eq('contact_id', contactId);
+        if (delErr) { errorToast('save', delErr); return { ok: false, error: delErr }; }
+      }
+      return { ok: true };
+    } catch (e) { logError('dbActions.setContactStar', e); errorToast('save', e); return { ok: false, error: e }; }
   },
 
   // ── BUBBLE MEMBERSHIP ──

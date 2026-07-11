@@ -741,16 +741,23 @@ async function loadProfile() {
 // ══════════════════════════════════════════════════════════
 //  STAR RATING for saved contacts
 // ══════════════════════════════════════════════════════════
+// Contact stars are DB-backed (table `contact_stars`) so they follow the user across
+// devices/PWA-shortcuts. Reads are synchronous off the in-memory cache map
+// (_contactStarMap in b-utils.js), which is warmed at boot via getContactStarMap().
 function starGetAll() {
-  try { var s = localStorage.getItem('bubble_stars'); return s ? JSON.parse(s) : {}; } catch(e) { return {}; }
+  return (typeof _contactStarMap !== 'undefined' && _contactStarMap) ? _contactStarMap : {};
 }
 function starGet(contactId) {
   return starGetAll()[contactId] || 0;
 }
+// Optimistic: update the cache map immediately (so sync renders reflect it), then
+// persist to DB in the background via dbActions.setContactStar.
 function starSet(contactId, rating) {
-  var all = starGetAll();
-  if (rating <= 0) { delete all[contactId]; } else { all[contactId] = Math.min(rating, 3); }
-  try { localStorage.setItem('bubble_stars', JSON.stringify(all)); } catch(e) {}
+  if (typeof _contactStarMap === 'undefined' || !_contactStarMap) { _contactStarMap = {}; }
+  if (rating <= 0) { delete _contactStarMap[contactId]; } else { _contactStarMap[contactId] = Math.min(rating, 3); }
+  if (typeof dbActions !== 'undefined' && dbActions.setContactStar) {
+    dbActions.setContactStar(contactId, rating);
+  }
 }
 function starRender(contactId) {
   var r = starGet(contactId);
@@ -758,16 +765,23 @@ function starRender(contactId) {
   return '<span class="star-badge">' + '\u2605'.repeat(r) + '</span>';
 }
 
+// Bubble stars are DB-backed (table `bubble_stars`) so they follow the user across
+// devices/PWA-shortcuts. Reads are synchronous off the in-memory cache map
+// (_bubbleStarMap in b-utils.js), which is warmed at boot via getBubbleStarMap().
 function bubbleStarGetAll() {
-  try { var s = localStorage.getItem('bubble_bubblestars'); return s ? JSON.parse(s) : {}; } catch(e) { return {}; }
+  return (typeof _bubbleStarMap !== 'undefined' && _bubbleStarMap) ? _bubbleStarMap : {};
 }
 function bubbleStarGet(bubbleId) {
   return bubbleStarGetAll()[bubbleId] || 0;
 }
+// Optimistic: update the cache map immediately (so sync renders reflect it), then
+// persist to DB in the background via dbActions.setBubbleStar.
 function bubbleStarSet(bubbleId, rating) {
-  var all = bubbleStarGetAll();
-  if (rating <= 0) { delete all[bubbleId]; } else { all[bubbleId] = Math.min(rating, 3); }
-  try { localStorage.setItem('bubble_bubblestars', JSON.stringify(all)); } catch(e) {}
+  if (typeof _bubbleStarMap === 'undefined' || !_bubbleStarMap) { _bubbleStarMap = {}; }
+  if (rating <= 0) { delete _bubbleStarMap[bubbleId]; } else { _bubbleStarMap[bubbleId] = Math.min(rating, 3); }
+  if (typeof dbActions !== 'undefined' && dbActions.setBubbleStar) {
+    dbActions.setBubbleStar(bubbleId, rating);
+  }
 }
 function bubbleStarRender(bubbleId) {
   var r = bubbleStarGet(bubbleId);

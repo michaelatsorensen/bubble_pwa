@@ -15,7 +15,7 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
 const BUILD_TIMESTAMP = '2026-07-11 09:49';
-const BUILD_VERSION  = 'v3-v3.131';
+const BUILD_VERSION  = 'v3-v3.132';
 // AUTO_UPDATE: naar true, aktiverer ny service worker STRAKS (auto-reload) uden at
 // vente paa brugeren. Til udviklingsfasen (v3) saa deploys slaar igennem med det samme.
 // SAET TIL false FOER produktion/pilot - ellers genindlaeses appen under brugere midt i noget.
@@ -369,6 +369,8 @@ function resetAppState() {
   if (debugOv) debugOv.classList.remove('open');
 
   if (typeof _bubbleUnreadSet !== 'undefined') _bubbleUnreadSet = {};
+  if (typeof clearBubbleStarCache === 'function') clearBubbleStarCache();
+  if (typeof clearContactStarCache === 'function') clearContactStarCache();
 
   console.debug('[resetAppState] All session state cleared');
 }

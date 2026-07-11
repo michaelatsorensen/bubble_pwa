@@ -39,6 +39,10 @@ async function loadEssentials() {
   await loadCurrentProfile();
   await loadPromotedCustomTags();
   await loadBlockedUsers();
+  // Warm star caches so ★ ratings + sort are ready before lists render.
+  // Non-blocking tolerance: stars are an enhancement, not a critical-path gate.
+  try { if (typeof getBubbleStarMap === 'function') await getBubbleStarMap(true); } catch(e) { logError('loadEssentials:bubbleStars', e); }
+  try { if (typeof getContactStarMap === 'function') await getContactStarMap(true); } catch(e) { logError('loadEssentials:contactStars', e); }
 }
 
 // Step 3: Init background services (fire-and-forget)
