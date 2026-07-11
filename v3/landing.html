@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#120B29">
+<meta name="theme-color" content="#0E141C">
 <title>Bubble — Mød dit netværk</title>
 <meta name="description" content="Bubble — netværksradar for virkelige møder. Find de rigtige mennesker til events, netværk og fællesskaber. Bygget i Sønderborg. Tidlig beta.">
 <link rel="icon" type="image/png" sizes="32x32" href="/bubble-favicon-32.png">
@@ -23,9 +23,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#170F34; --bg-2:#120B29;
-    --ink:rgba(255,255,255,0.95); --ink-2:rgba(255,255,255,0.70);
-    --ink-3:rgba(255,255,255,0.50); --ink-4:rgba(255,255,255,0.40);
+    --bg:#0E141C; --bg-2:#0B1017;
+    --ink:rgba(207,230,247,0.95); --ink-2:rgba(207,230,247,0.70);
+    --ink-3:rgba(207,230,247,0.50); --ink-4:rgba(207,230,247,0.40);
     --ice:100,180,230; --teal:#1A9E8E; --pink:#E879A8;
     --line:rgba(255,255,255,0.08); --glass:rgba(255,255,255,0.045); --glass-2:rgba(255,255,255,0.06);
     --max-w:1040px;
@@ -37,12 +37,12 @@
     --gap-card:1rem;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth;background:#120B29}
+  html{scroll-behavior:smooth;background:#0B1017}
   body{
     font-family:'Figtree',system-ui,-apple-system,sans-serif;
     background:
-      radial-gradient(1200px 720px at 50% -12%, rgba(var(--ice),0.10), transparent 60%),
-      radial-gradient(900px 600px at 88% 32%, rgba(232,121,168,0.05), transparent 55%),
+      radial-gradient(1200px 720px at 50% -12%, rgba(var(--ice),0.12), transparent 60%),
+      radial-gradient(900px 600px at 88% 32%, rgba(232,121,168,0.06), transparent 55%),
       linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%);
     background-attachment:fixed;
     color:var(--ink); line-height:1.6; -webkit-font-smoothing:antialiased;
@@ -58,7 +58,7 @@
   .lang button.on{color:var(--ink);background:rgba(var(--ice),0.18)}
 
   /* nav */
-  nav{position:sticky;top:0;z-index:40;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(18,11,41,0.55);border-bottom:0.5px solid var(--line)}
+  nav{position:sticky;top:0;z-index:40;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(14,20,28,0.55);border-bottom:0.5px solid var(--line)}
   .nav-in{max-width:calc(var(--measure) + 3rem);margin:0 auto;padding:0.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
   .mark{width:98px;height:26px;background:var(--wm) left center/contain no-repeat;font-size:0}
   .nav-cta{font-size:0.86rem;font-weight:700;text-decoration:none;color:var(--ink);background:rgba(var(--ice),0.18);border:0.5px solid rgba(var(--ice),0.30);height:36px;display:inline-flex;align-items:center;padding:0 1rem;border-radius:11px;transition:background .2s}
@@ -83,9 +83,9 @@
 
   /* phone */
   .hero-phone{display:flex;justify-content:flex-end}
-  .phone-frame{width:286px;background:#0C0822;border-radius:42px;padding:10px;border:1px solid rgba(255,255,255,0.10);box-shadow:0 30px 80px rgba(0,0,0,0.5),0 0 60px rgba(var(--ice),0.10);position:relative}
-  .phone-notch{position:absolute;top:18px;left:50%;transform:translateX(-50%);width:90px;height:22px;background:#0C0822;border-radius:99px;z-index:3}
-  .phone-screen{background:linear-gradient(180deg,#170F34,#140C2C);border-radius:33px;overflow:hidden;height:540px;display:flex;flex-direction:column}
+  .phone-frame{width:286px;background:#0A0F16;border-radius:42px;padding:10px;border:1px solid rgba(255,255,255,0.10);box-shadow:0 30px 80px rgba(0,0,0,0.5),0 0 60px rgba(var(--ice),0.10);position:relative}
+  .phone-notch{position:absolute;top:18px;left:50%;transform:translateX(-50%);width:90px;height:22px;background:#0A0F16;border-radius:99px;z-index:3}
+  .phone-screen{background:linear-gradient(180deg,#0E141C,#0B1017);border-radius:33px;overflow:hidden;height:540px;display:flex;flex-direction:column}
   .phone-header{padding:2.3rem 1.1rem 0.7rem;text-align:left}
   .phone-header .pm{display:inline-block;width:56px;height:15px;background:var(--wm) center/contain no-repeat;font-size:0}
   .phone-radar{flex:1;display:flex;align-items:center;justify-content:center;padding:0.5rem}
@@ -99,7 +99,7 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   @keyframes pulse{0%,100%{opacity:0.55;transform:scale(1)}50%{opacity:1;transform:scale(1.16)}}
   .phone-card{margin:0 0.8rem 0.7rem;background:var(--glass-2);border:0.5px solid var(--line);border-radius:14px;padding:0.7rem;display:flex;align-items:center;gap:0.6rem}
-  .pc-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#9FCFF2,var(--teal));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.72rem;color:#0C0822;flex-shrink:0}
+  .pc-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#9FCFF2,var(--teal));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.72rem;color:#0E141C;flex-shrink:0}
   .pc-name{font-weight:700;font-size:0.8rem}
   .pc-badge{font-size:0.56rem;font-weight:700;color:var(--teal);background:rgba(26,158,142,0.14);padding:1px 5px;border-radius:4px}
   .pc-meta{font-size:0.66rem;color:var(--ink-3);margin-top:1px}
@@ -165,7 +165,7 @@
   .fdot{width:3px;height:3px;border-radius:99px;background:var(--ink-4)}
 
   /* cookie banner */
-  #cookie{display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(18,11,41,0.92);border-top:0.5px solid var(--line);padding:1rem 1.5rem;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+  #cookie{display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(14,20,28,0.92);border-top:0.5px solid var(--line);padding:1rem 1.5rem;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
   .ck-in{max-width:38rem;margin:0 auto;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
   .ck-txt{flex:1;min-width:200px;font-size:0.82rem;color:var(--ink-2);line-height:1.5}
   .ck-txt a{color:rgba(var(--ice),0.85);text-decoration:none}
@@ -236,7 +236,7 @@
         <a class="btn-primary" href="./?auth=1" data-i="cta_start">Prøv betaen →</a>
         <a class="btn-secondary" href="#how" data-i="cta_how">Se hvordan det virker</a>
       </div>
-      <p class="hero-note" data-i="hero_note">Tidlig beta · Gratis at oprette profil · Bygget i Sønderborg</p>
+      <p class="hero-note" data-i="hero_note">Tidlig beta · Gratis · Reklamefri</p>
     </div>
     <div class="hero-phone">
       <div class="phone-frame">
@@ -248,7 +248,7 @@
               <circle class="ring" cx="100" cy="100" r="28"/><circle class="ring" cx="100" cy="100" r="52"/><circle class="ring" cx="100" cy="100" r="76"/><circle class="ring" cx="100" cy="100" r="96"/>
               <g class="sweep"><defs><linearGradient id="sw" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="rgba(100,180,230,0)"/><stop offset="100%" stop-color="rgba(100,180,230,0.16)"/></linearGradient></defs><path d="M100 100 L100 4 A96 96 0 0 1 188 70 Z" fill="url(#sw)"/></g>
               <line class="pr-link" x1="100" y1="100" x2="146" y2="62"/><line class="pr-link" x1="100" y1="100" x2="58" y2="138"/><line class="pr-link" x1="100" y1="100" x2="140" y2="140"/>
-              <g class="pulse"><circle cx="146" cy="62" r="11" fill="#9FCFF2"/><text class="pr-init" x="146" y="65" text-anchor="middle" fill="#0C0822">MK</text></g>
+              <g class="pulse"><circle cx="146" cy="62" r="11" fill="#9FCFF2"/><text class="pr-init" x="146" y="65" text-anchor="middle" fill="#0E141C">MK</text></g>
               <g class="pulse b"><circle cx="58" cy="138" r="10" fill="#1A9E8E"/><text class="pr-init" x="58" y="141" text-anchor="middle">SL</text></g>
               <g class="pulse c"><circle cx="140" cy="140" r="9.5" fill="#E879A8"/><text class="pr-init" x="140" y="143" text-anchor="middle">JH</text></g>
               <circle cx="64" cy="66" r="5" fill="rgba(255,255,255,0.3)"/><circle cx="150" cy="110" r="4" fill="rgba(255,255,255,0.25)"/>
@@ -406,7 +406,7 @@
   </div>
 </div>
 
-<script src="b-terms.js?v=30132"></script>
+<script src="b-terms.js?v=30133"></script>
 <script>
   var I = {
     da:{
@@ -414,7 +414,7 @@
       h1a:"De rigtige mennesker er ", h1b:"allerede omkring dig", h1c:".",
       hero_sub:"Bubble hjælper dig med at finde relevante personer i dine events, netværk og fællesskaber — og viser hvorfor det giver mening at tage samtalen.",
       cta_start:"Prøv betaen →", cta_how:"Se hvordan det virker",
-      hero_note:"Tidlig beta · Gratis at oprette profil · Bygget i Sønderborg",
+      hero_note:"Tidlig beta · Gratis · Reklamefri",
       ph_match:"Match", ph_meta:"Afdelingschef · Nordbjerg Group", ph_home:"Hjem", ph_profile:"Profil",
       how_label:"Sådan virker det", how_title:"Tre skridt. Under ét minut.",
       s1t:"Fortæl hvem du er", s1d:"Interesser, rolle og hvad du leder efter.",
@@ -454,7 +454,7 @@
       h1a:"The right people are ", h1b:"already around you", h1c:".",
       hero_sub:"Bubble helps you discover relevant people in your events, networks, and communities — and shows why the conversation is worth having.",
       cta_start:"Try the beta →", cta_how:"See how it works",
-      hero_note:"Early beta · Free to create a profile · Built in Sønderborg",
+      hero_note:"Early beta · Free · Ad-free",
       ph_match:"Match", ph_meta:"Director · Nordbjerg Group", ph_home:"Home", ph_profile:"Profile",
       how_label:"How it works", how_title:"Three steps. Under a minute.",
       s1t:"Tell us who you are", s1d:"Interests, role, and what you're looking for.",
