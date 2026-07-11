@@ -1643,6 +1643,7 @@ async function bcHandleFile(input) {
 function bcOpenActions(msgId, isMe) {
   if (navigator.vibrate) navigator.vibrate(8);
   openMsgActions({
+    focusEl: document.getElementById('bc-msg-' + msgId),
     canEdit: isMe,
     canReact: true, // boble HAR reaktioner (bubble_message_reactions)
     onReact: function(emoji) { bcToggleReaction(msgId, emoji); },

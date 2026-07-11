@@ -715,15 +715,36 @@ function chatDateLabel(date) {
 function openMsgActions(opts) {
   opts = opts || {};
   var overlay = document.createElement('div');
-  overlay.className = 'emoji-sheet-overlay';
+  overlay.className = 'emoji-sheet-overlay msg-actions-overlay';
   overlay.onclick = function(e) { if (e.target === overlay) close(); };
 
   var sheet = document.createElement('div');
   sheet.className = 'msg-actions-sheet';
 
+  // Fokusér den valgte besked (iMessage-mønster): klon beskeden ind i overlayet
+  // paa dens praecise position, saa den forbliver skarp over det dæmpede lag.
+  // (z-index alene virker ikke: beskeden er faanget i screen-chat's stacking
+  // context paa z-index 1, under overlayet - saa vi kloner i stedet.)
+  var focusEl = opts.focusEl || null;
+  var focusClone = null;
+  if (focusEl) {
+    var r = focusEl.getBoundingClientRect();
+    focusClone = focusEl.cloneNode(true);
+    focusClone.removeAttribute('id');
+    var actBtn = focusClone.querySelector('.msg-act-btn');
+    if (actBtn) actBtn.remove(); // knap giver ikke mening paa klonen
+    focusClone.style.cssText = 'position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;margin:0;z-index:1201;pointer-events:none;';
+    focusEl.style.visibility = 'hidden'; // skjul originalen saa klonen ikke ser dobbelt ud
+  }
+
   function close() {
     sheet.classList.remove('open');
-    setTimeout(function() { overlay.remove(); }, 300);
+    if (focusClone) focusClone.style.opacity = '0';
+    setTimeout(function() {
+      overlay.remove();
+      if (focusClone && focusClone.parentNode) focusClone.parentNode.removeChild(focusClone);
+      if (focusEl) focusEl.style.visibility = '';
+    }, 300);
   }
 
   var html = '<div class="emoji-grip"></div>';
@@ -773,6 +794,7 @@ function openMsgActions(opts) {
 
   overlay.appendChild(sheet);
   document.body.appendChild(overlay);
+  if (focusClone) document.body.appendChild(focusClone); // over overlayet (z-index 1201)
   requestAnimationFrame(function() { requestAnimationFrame(function() { sheet.classList.add('open'); }); });
 }
 

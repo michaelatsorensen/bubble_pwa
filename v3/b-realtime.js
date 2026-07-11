@@ -1084,6 +1084,7 @@ var _dmTypingTimer = null;
 function dmOpenActions(msgId, isSent) {
   if (navigator.vibrate) navigator.vibrate(8);
   openMsgActions({
+    focusEl: document.getElementById('dm-msg-' + msgId),
     canEdit: isSent,
     canReact: false, // DM-reaktioner endnu ikke bygget (#5) - aktiveres der
     onCopy: function() {
