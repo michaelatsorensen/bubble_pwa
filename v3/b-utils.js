@@ -708,6 +708,20 @@ function chatDateLabel(date) {
   return d.toLocaleDateString(_locale(), { weekday:'short', day:'numeric', month:'short' });
 }
 
+// ── Redigerings-vindue (DELT: DM + boble) ──
+// Man kan kun redigere sine egne beskeder i 30 min (iMessage-lignende).
+// Efter det er beskeden laast - forhindrer at gamle beskeder aendres.
+var EDIT_WINDOW_MS = 30 * 60 * 1000; // 30 minutter
+function canEditMsg(msgId, rowSelector) {
+  try {
+    var el = document.querySelector(rowSelector);
+    if (!el) return false;
+    var ts = parseInt(el.getAttribute('data-ts'), 10);
+    if (!ts) return true; // ingen timestamp = tillad (fail-open, sjaeldent)
+    return (Date.now() - ts) < EDIT_WINDOW_MS;
+  } catch(e) { return true; }
+}
+
 // ── Besked-handlings-sheet (DELT: DM + boble, erstatter long-press) ──
 // Aabnes via tap paa handlingsknap (...). Ren tap = 100% paalidelig paa iOS,
 // ingen kamp med native tekstmarkering. opts: { canEdit, canReact,

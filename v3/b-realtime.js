@@ -990,6 +990,7 @@ function dmRenderMsg(m) {
     '<div class="msg-content">' + bubble +
     '<button class="msg-act-btn" onclick="dmOpenActions(\'' + m.id + '\',' + sent + ')" aria-label="' + t('misc_actions') + '">\u22EF</button>' +
     '</div>' +
+    '<div class="msg-reactions" id="dm-reactions-' + m.id + '"></div>' +
     timeHtml + receipt +
     '</div>' +
   '</div>';
@@ -1074,6 +1075,10 @@ async function loadChatMessages() {
     });
     el.innerHTML = html;
     el.scrollTop = el.scrollHeight;
+    // Load reaktioner for alle beskeder (spejler boblens setTimeout(bcLoadReactions))
+    setTimeout(function() {
+      sorted.forEach(function(m) { dmLoadReactions(m.id); });
+    }, 80);
   } catch(e) { logError("loadChatMessages", e); errorToast("load", e); }
 }
 
@@ -1083,17 +1088,61 @@ var _dmTypingTimer = null;
 // ── Besked-handlinger via tap (erstatter long-press - paalidelig paa iOS) ──
 function dmOpenActions(msgId, isSent) {
   if (navigator.vibrate) navigator.vibrate(8);
+  var editable = isSent && canEditMsg(msgId, '#dm-msg-' + msgId);
   openMsgActions({
     focusEl: document.getElementById('dm-msg-' + msgId),
-    canEdit: isSent,
-    canReact: false, // DM-reaktioner endnu ikke bygget (#5) - aktiveres der
+    canEdit: editable,
+    canReact: true, // DM-reaktioner nu bygget (message_reactions-tabel + RLS)
+    onReact: function(emoji) { dmToggleReaction(msgId, emoji); },
     onCopy: function() {
       var bubble = document.getElementById('dm-bubble-' + msgId);
       if (bubble) { navigator.clipboard.writeText(bubble.textContent).then(function() { showToast(t('misc_copied')); }); }
     },
-    onEdit: isSent ? function() { dmStartEdit(msgId); } : null,
+    onEdit: editable ? function() { dmStartEdit(msgId); } : null,
     onDelete: isSent ? function() { dmDeleteMsg(msgId); } : null
   });
+}
+
+// ── DM-reaktioner (spejler boblens bcToggleReaction/bcLoadReactions 1:1) ──
+// Samme skema (message_reactions), samme toggle-logik, samme pill-render.
+// Eneste forskel fra boble: tabelnavn (message_reactions vs bubble_message_reactions).
+async function dmToggleReaction(msgId, emoji) {
+  try {
+    const { data: existing, error: lookupErr } = await sb.from('message_reactions')
+      .select('id').eq('message_id', msgId).eq('user_id', currentUser.id).eq('emoji', emoji).maybeSingle();
+    if (lookupErr) { logError("dmReact:lookup", lookupErr); showErrorToast(t('err_reaction_failed')); return; }
+    if (existing) {
+      const { error: delErr } = await sb.from('message_reactions').delete().eq('id', existing.id);
+      if (delErr) { logError("dmReact:delete", delErr); showErrorToast(t('err_reaction_failed')); return; }
+    } else {
+      const { error: insErr } = await sb.from('message_reactions').insert({ message_id: msgId, user_id: currentUser.id, emoji });
+      if (insErr) { logError("dmReact:insert", insErr); showErrorToast(t('err_reaction_failed')); return; }
+    }
+    await dmLoadReactions(msgId);
+    // Broadcast saa modparten ser reaktionen live (samme kanal som chatten bruger)
+    try {
+      if (chatSubscription) chatSubscription.send({ type: 'broadcast', event: 'reaction', payload: { msgId: msgId } });
+    } catch(e) { /* fire-and-forget */ }
+  } catch(e) { logError("dmReact", e); showErrorToast(t('err_reaction_failed')); }
+}
+
+async function dmLoadReactions(msgId) {
+  try {
+    const { data: reactions } = await sb.from('message_reactions')
+      .select('emoji, user_id, profiles(name)').eq('message_id', msgId);
+    const el = document.getElementById('dm-reactions-' + msgId);
+    if (!el) return;
+    if (!reactions || reactions.length === 0) { el.innerHTML = ''; return; }
+    const groups = {};
+    reactions.forEach(r => {
+      if (!groups[r.emoji]) groups[r.emoji] = [];
+      groups[r.emoji].push(r.profiles?.name || '?');
+    });
+    el.innerHTML = Object.entries(groups).map(([emoji, names]) => {
+      const mine = reactions.some(r => r.emoji === emoji && r.user_id === currentUser.id);
+      return `<button class="chat-reaction-pill${mine ? ' mine' : ''}" onclick="dmToggleReaction('${msgId}','${emoji}')" title="${escHtml(names.join(', '))}">${emoji} ${names.length}</button>`;
+    }).join('');
+  } catch(e) { /* silent */ }
 }
 
 function dmStartEdit(msgId) {
@@ -1206,6 +1255,11 @@ function subscribeToChat() {
     .on('broadcast', { event: 'read_receipt' }, function(payload) {
       var p = payload.payload;
       if (p && p.msgIds) dmUpdateReceipts(p.msgIds);
+    })
+    // Reaktion tilfoejet/fjernet af modparten - genindlaes den beskeds reaktioner
+    .on('broadcast', { event: 'reaction' }, function(payload) {
+      var p = payload.payload;
+      if (p && p.msgId) dmLoadReactions(p.msgId);
     })
     // Fallback: Postgres Changes (covers edge cases like push notifications)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages',

@@ -1397,6 +1397,7 @@ function bcRenderMsg(m) {
   row.className = 'msg-row msg-' + gp + (isMe ? ' me' : '');
   row.id = 'bc-msg-' + m.id;
   row.setAttribute('data-bc-msg-id', m.id);
+  row.setAttribute('data-ts', new Date(m.created_at).getTime());
 
   let bubble = '';
   if (m.file_url) {
@@ -1642,16 +1643,17 @@ async function bcHandleFile(input) {
 // ── Besked-handlinger via tap (erstatter long-press - paalidelig paa iOS) ──
 function bcOpenActions(msgId, isMe) {
   if (navigator.vibrate) navigator.vibrate(8);
+  var editable = isMe && canEditMsg(msgId, '#bc-msg-' + msgId);
   openMsgActions({
     focusEl: document.getElementById('bc-msg-' + msgId),
-    canEdit: isMe,
+    canEdit: editable,
     canReact: true, // boble HAR reaktioner (bubble_message_reactions)
     onReact: function(emoji) { bcToggleReaction(msgId, emoji); },
     onCopy: function() {
       var b = document.getElementById('bc-bubble-' + msgId);
       if (b) navigator.clipboard.writeText(b.textContent).then(function(){ showToast(t('misc_copied')); });
     },
-    onEdit: isMe ? function() { bcEditStart(msgId); } : null,
+    onEdit: editable ? function() { bcEditStart(msgId); } : null,
     onDelete: isMe ? function() { bcDeleteConfirm(msgId); } : null
   });
 }
