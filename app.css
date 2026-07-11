@@ -1712,7 +1712,7 @@ a.person-action-btn { text-decoration:none; }
 /* ── Emoji-sheet (DELT picker: boble + DM) - bruger sheet-tokens ── */
 .emoji-sheet-overlay { position:fixed; inset:0; z-index:1200; background:rgba(0,0,0,0.35); }
 /* Besked-handlinger: kraftigere dæmpning saa den fokuserede (klonede) besked isoleres */
-.msg-actions-overlay { background:rgba(0,0,0,0.6); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); }
+.msg-actions-overlay { background:rgba(0,0,0,0.6); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); opacity:1; transition:opacity 0.26s ease; }
 .emoji-sheet { position:absolute; bottom:0; left:0; right:0; max-height:62vh; display:flex; flex-direction:column; background:rgba(20,22,28,0.94); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); border-top:var(--sheet-border); box-shadow:var(--sheet-shadow); border-radius:var(--sheet-radius) var(--sheet-radius) 0 0; padding:8px 14px calc(14px + env(safe-area-inset-bottom,0px)); transform:translateY(100%); transition:transform var(--sheet-dur) var(--sheet-ease); }
 .emoji-sheet.open { transform:translateY(0); }
 .emoji-grip { width:36px; height:4px; border-radius:99px; background:rgba(255,255,255,0.15); margin:2px auto 10px; flex-shrink:0; }

@@ -742,6 +742,7 @@ function openMsgActions(opts) {
     if (_closing) return; // undgaa dobbelt-luk
     _closing = true;
     sheet.classList.remove('open');
+    overlay.style.opacity = '0'; // fad det daempede lag ud (ellers forsvinder det brat)
     // Gendan originalen STRAKS (usynligt under klonen), saa traaden aldrig har et
     // hul - klonen ligger stadig ovenpaa og fader ud, saa der er ingen blink.
     if (focusEl) focusEl.style.visibility = '';
@@ -749,7 +750,7 @@ function openMsgActions(opts) {
     setTimeout(function() {
       overlay.remove();
       if (focusClone && focusClone.parentNode) focusClone.parentNode.removeChild(focusClone);
-    }, 300);
+    }, 360); // > --sheet-dur (350ms) saa sheet-nedgliden ikke klippes
   }
 
   var html = '<div class="emoji-grip"></div>';
