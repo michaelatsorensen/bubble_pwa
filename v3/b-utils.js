@@ -733,17 +733,22 @@ function openMsgActions(opts) {
     focusClone.removeAttribute('id');
     var actBtn = focusClone.querySelector('.msg-act-btn');
     if (actBtn) actBtn.remove(); // knap giver ikke mening paa klonen
-    focusClone.style.cssText = 'position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;margin:0;z-index:1201;pointer-events:none;';
+    focusClone.style.cssText = 'position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;margin:0;z-index:1201;pointer-events:none;transition:opacity 0.22s ease;';
     focusEl.style.visibility = 'hidden'; // skjul originalen saa klonen ikke ser dobbelt ud
   }
 
+  var _closing = false;
   function close() {
+    if (_closing) return; // undgaa dobbelt-luk
+    _closing = true;
     sheet.classList.remove('open');
+    // Gendan originalen STRAKS (usynligt under klonen), saa traaden aldrig har et
+    // hul - klonen ligger stadig ovenpaa og fader ud, saa der er ingen blink.
+    if (focusEl) focusEl.style.visibility = '';
     if (focusClone) focusClone.style.opacity = '0';
     setTimeout(function() {
       overlay.remove();
       if (focusClone && focusClone.parentNode) focusClone.parentNode.removeChild(focusClone);
-      if (focusEl) focusEl.style.visibility = '';
     }, 300);
   }
 
