@@ -329,6 +329,17 @@ function startChat() {
 //  DM FILE ATTACH
 // ══════════════════════════════════════════════════════════
 async function dmHandleFile(input) {
+  // PILOT-VAERN (jul 2026): DM-fil-upload deaktiveret. Private DM-filer laa i den
+  // offentlige bubble-files bucket med permanente getPublicUrl-links = databrud-risiko.
+  // Slukket paa BAADE UI (knap skjult i index.html) og her (tidlig afvisning), saa et
+  // manuelt kald heller ikke kan uploade. GIF-deling i DM er UAENDRET (separat knap,
+  // gemmer kun en Giphy-URL, ingen upload). Genaktiveres naar DM-filer serveres fra
+  // privat bucket med kortlivede signed URLs (Ring 2).
+  if (input) input.value = '';
+  showWarningToast(t('toast_generic_error'));
+  return;
+}
+async function _dmHandleFileDisabled(input) {
   try {
     const file = input.files[0];
     if (!file) return;

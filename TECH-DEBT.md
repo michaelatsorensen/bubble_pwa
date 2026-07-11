@@ -185,7 +185,7 @@ risiko, fordi de reelle sikkerhedsgraenser lever i Supabase, ikke i repo.
   er bevidst desc — ikke en bug.)
 
 ### BACKLOG — reelt men ikke kritisk (pilotvaern nu, ordentligt post-pilot)
-- **Push-autorisationshul (P0-3) — P2:** `send-push` deployet med `--no-verify-jwt` = hele
+- **Push-autorisationshul (P0-3) — LUKKET 11. juli 2026 (v4 edge function):** `send-push` deployet med `--no-verify-jwt` = hele
   internettet kan sende push til en bruger hvis de kender UUID'et. IKKE databrud — kan kun
   SENDE en notifikation (spam/phishing-tekst), ikke laese/aendre/eskalere. **Kompleksitet:**
   3 DB-triggers (`notify_new_message`, `notify_bubble_invite`, `notify_contact_saved`) kalder
@@ -196,11 +196,38 @@ risiko, fordi de reelle sikkerhedsgraenser lever i Supabase, ikke i repo.
   redeploy uden flaget. Haerdet `index.ts` allerede skrevet (edge_prep). **Pilotvaern:** slaa 4
   frontend-sendPush-kald fra (join_request/approved/checkin) — fjerner frontend-vektor, aabne-
   internet-hul bestaar. Acceptabel risiko for kontrolleret HoS-pilot.
-- **Private filer offentlige (P0-4) — P2, foer bredere vaekst:** DM + bubble-chat filer bruger
+
+  **LOEST:** Deployet v4 edge function med tillidsmodel — DB-triggere autentificerer
+  via `x-push-trigger` shared-secret (PUSH_TRIGGER_SECRET) og beholder personlig tekst;
+  frontend-kald kraever gyldigt JWT + faste servergenererede typer (kan ikke injicere fri
+  tekst); alt andet afvises 401. Deployet UDEN `--no-verify-jwt` saa Supabase-gateway'en
+  haandhaever JWT. Verificeret: push_events viser trigger-kald som `sent` efter laasning,
+  ingen nedetid. Aabne-internet-hul lukket. Backup: index.ts.backup-foer-v4 paa PC.
+- **Private filer offentlige (P0-4) — DELVIST 11. juli 2026:** DM + bubble-chat filer bruger
   permanent `getPublicUrl()`. Reelt databrud-potentiale (private samtaler/filer laekker via URL
   efter forladt boble/slettet besked/slettet konto). Avatar/ikon-brug er legitimt offentlig.
   **Pilotvaern:** slaa attachments fra. **Fix (Ring 2):** privat bucket + object path + kortlivede
   signed URLs efter medlemskabs/DM-check. Cross-ref memory "File URL-strategi uafklaret".
+
+  **STATUS 11. juli 2026:**
+  - DM-fil-upload SLUKKET (b-messages.js dmHandleFile tidlig afvisning + knap skjult i
+    index.html). Mest foelsomme vektor (privat 1-til-1) lukket paa begge lag. GIF i DM
+    uaendret (Giphy-URL, ingen upload).
+  - Boble-fil-upload BEVIDST UDSKUDT / accepteret pilotrisiko. Nye boble-filer faar
+    fortsat permanent getPublicUrl. Michaels beslutning: boblerne er smaa/personlige,
+    kontrolleret pilot, kendte deltagere. MAA IKKE beskrives som "lukket" over for
+    reviewer — det er accepteret risiko, ikke afhjaelpning.
+  - 8 eksisterende boble-filer i private/skjulte bobler, ladt ligge (Michaels egne:
+    familie/venner). Til gennemgang ved fuld migrering:
+      * gif.gif — Michael & Frederik (hidden)
+      * gif.gif — Drikkeklubben paa Bubble (hidden)
+      * IMG_0703.jpeg — Koebenhavn 30.03.26 (hidden)
+      * IMG_7400.jpeg + IMG_7401.jpeg — Familien Weiss Soerensen (hidden)
+      * 2. Sal.jpg + 2. Sal_1.jpg + 2. Sal_2.jpg — Bubble (private)
+  - FULD FIX (Ring 2): privat bucket + object paths + kortlivede signed URLs efter
+    medlemskabskontrol for BAADE dm/ og boble-stier; migrér/gennemgaa de 8 filer;
+    genaktivér DM-upload + behold boble-upload paa sikker grund. Avatars/ikoner
+    (avatars/ + bubbles/*/icon-) forbliver offentlige — roer dem ikke.
 - **external_url uvalideret (P0-6) — P3:** bubble `external_url` saettes direkte i href;
   escHtml beskytter markup men ikke protokol → `javascript:` passerer. Fix: whitelist kun
   `https:` klient+server. Hurtig frontend-fix.
