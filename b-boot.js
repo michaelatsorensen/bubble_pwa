@@ -99,13 +99,15 @@ document.addEventListener('click', (e) => {
   const PTR_RESISTANCE = 3;   // finger-to-indicator ratio
 
   // Map: screen ID → { scrollEl selector, refreshFn }
+  // NOTE: fn is wrapped lazily so the reference resolves at call time, not at boot.
+  // If a script file fails to load, this must not throw during boot.
   const screenMap = {
-    'screen-home':          { scroll: '#home-scroll', fn: loadHome },
-    'screen-bubbles':       { scroll: '#screen-bubbles .scroll-area', fn: loadMyBubbles },
-    'screen-bubbles-explore': { scroll: '#screen-bubbles .scroll-area', fn: loadDiscover },
-    'screen-messages':      { scroll: '#screen-messages .scroll-area', fn: loadMessages },
-    'screen-notifications': { scroll: '#screen-notifications .scroll-area', fn: loadNotifications },
-    'screen-profile':       { scroll: null, fn: loadProfile }, // uses active panel
+    'screen-home':          { scroll: '#home-scroll', fn: function(){ return loadHome(); } },
+    'screen-bubbles':       { scroll: '#screen-bubbles .scroll-area', fn: function(){ return loadMyBubbles(); } },
+    'screen-bubbles-explore': { scroll: '#screen-bubbles .scroll-area', fn: function(){ return loadDiscover(); } },
+    'screen-messages':      { scroll: '#screen-messages .scroll-area', fn: function(){ return loadMessages(); } },
+    'screen-notifications': { scroll: '#screen-notifications .scroll-area', fn: function(){ return loadNotifications(); } },
+    'screen-profile':       { scroll: null, fn: function(){ return loadProfile(); } }, // uses active panel
   };
 
   // Create the indicator element
