@@ -315,3 +315,35 @@ interesse-graf-system — men hver idé staar fint alene. Begge POST-PILOT.
 
 **UI-retning:** glas-design (mörk glasmorfisme) er den besluttede vej for UI fremover
 (design-vaerktoej-eksploration jul 2026). Ikke implementeret endnu — separat beslutning.
+
+## Offentlige rum (U-Bahn/tog/bus): QR i vognen -> se like-minded til stede (jul 2026)
+
+**Status: SEKUNDAER FUNKTIONALITET. IKKE en del af kerneformaalet. Parkeret post-pilot.**
+
+**Idéen:** Fanget i Berlins U-Bahn. En QR-kode i vognen; de interesserede scanner og ser om
+der er like-minded til stede. Viser at kernemekanikken (QR -> midlertidig boble -> radar) er
+generisk: den er ligeglad med om rummet er en konferencesal eller en togvogn.
+
+**Den vigtigste indsigt (behold denne, ogsaa selvom featuren aldrig bygges):**
+Bubble kraever ikke *delt rum* — Bubble kraever *delt formaal*. En togvogn har rum uden
+formaal. Alle vores fungerende use cases har begge: konferencen samler om et emne, foreningen
+om en klub, faggruppen om en faglighed. Det er dét faelles formaal matchet regner paa (sektor,
+faglighed, tags, faelles bobler). I en U-Bahn er det eneste faelles "vi skal samme vej lige nu",
+og saa har radaren intet at regne paa. God saetning at have klar naar nogen spoerger hvor
+Bubble passer — den forklarer praecis hvorfor de tre use cases virker.
+
+**Hvorfor det ikke virker som det staar:**
+- INGEN EJER til at oprette boblen og drive adoption (BVG? DSB?). Verified-bubble-modellen
+  forudsaetter en org der ejer rummet.
+- INGEN KRITISK MASSE. Brugerne er i Soenderborg, ikke i vogn 3.
+- POSITIONERING + TRYGHED. "Se hvem der er omkring dig i offentlig transport" lander taet paa
+  den fremmed-opdagelse og dating-association vi bevidst har bevaeget os vaek fra. Ikke kun
+  positionering — ogsaa et reelt trygheds-spoergsmaal.
+
+**Kvart omgang der KUNNE virke (post-pilot):** samme fysiske ramme, men med formaal og ejer:
+shuttlebus TIL en konference, pendlertog til en erhvervspark, transport til et bestemt event.
+Der giver mekanikken mening igen — og det er reelt bare en Event Bubble med en anden lokation.
+Ingen ny arkitektur.
+
+**Beslutning:** ikke prioriteret. Roerer ikke roadmap. Den eneste metrik der baerer nu er
+uopfordret adoption i Soenderborg-piloten.
