@@ -4,12 +4,20 @@ Formaal: Onboarding/indgang er poleret intensivt. Dette dokument daekker DEN AND
 den erfarne, tilbagevendende brugers kerneloop — som afgoer om HoS-deltagere stadig er der
 ugen efter. Alt herunder er VERIFICERET I KODEN (fil:linje), ikke antaget.
 
-**STATUS (3. juli 2026):** Bubble er teknisk klar til kontrolleret HoS-pilot paa kode-/RLS-
-niveau. Der er ikke kendte kode-blockers tilbage PAA STATISK REVIEW-/VERIFIKATIONSNIVEAU.
-Endeligt go afhaenger af device-test af QR, reverse QR og DM-delete regression — kode kan
-vaere logisk rigtig men stadig foele forkert paa en telefon (toast, reload, scanner-genstart,
-tilbage-navigation, PWA-state). Pilotkandidat-build: **v10.09** (frys medmindre device-test
-finder noget reelt).
+**STATUS (3. juli 2026, opdateret 17. juli 2026):** Bubble er teknisk klar til kontrolleret
+HoS-pilot paa kode-/RLS-niveau. Der er ikke kendte kode-blockers tilbage PAA STATISK REVIEW-/
+VERIFIKATIONSNIVEAU. Endeligt go afhaenger af device-test af QR, reverse QR og DM-delete
+regression — kode kan vaere logisk rigtig men stadig foele forkert paa en telefon (toast,
+reload, scanner-genstart, tilbage-navigation, PWA-state). Pilotkandidat-build: **v3 (naevaerende,
+v3.147)** — v10.09-sporet (Next-build) er forladt; al videre udvikling sker i v3. Frys
+medmindre device-test finder noget reelt.
+
+**Opdatering 17. juli 2026:** P2-punktet "Public file URLs for DM/chatfiler -> private bucket +
+signed URLs" (se afsnit 9) er LUKKET i v3.146 — ny privat bucket (bubble-private) + signed
+URLs for boble-chat og DM. Samtidig er DM-fildeling (var slukket som pilot-vaern) GENAKTIVERET.
+Konsekvens: tjeklistepunktet "Fil + GIF sendes begge veje" (afsnit 5) daekker nu ogsaa DM,
+ikke kun boble-chat — boer verificeres for begge. Ingen punkter er krydset af som foelge af
+dette; kun kode-/RLS-niveau er verificeret, ikke device.
 
 ---
 
@@ -108,7 +116,7 @@ Besked-loop:
 - [ ] DM: rediger + slet via long-press (iOS: ingen selection-konflikt)
 - [ ] DM: ulaest-dot forsvinder naar traad aabnes
 - [ ] BC: rediger viser "redigeret", historik intakt; slet m. bekraeftelse
-- [ ] Fil + GIF sendes begge veje
+- [ ] Fil + GIF sendes begge veje (BC og DM — DM-fildeling genaktiveret 17. jul, se STATUS)
 
 Join-loop:
 - [ ] Del boble-link -> ny bruger lander i pending_join -> medlem efter onboarding
@@ -200,7 +208,8 @@ anvender i praksis UUID'er og routes videre efter BOBLETYPEN, ikke efter paramet
 - Konsolidér ?event=/?join= (besluttet: ikke noedvendigt, se 8)
 - Chat/DM pagination (DM >100, BC >50)
 - Typing-indikator findes IKKE — maa ikke loves
-- Public file URLs for DM/chatfiler -> private bucket + signed URLs
+- Public file URLs for DM/chatfiler -> private bucket + signed URLs — **LUKKET v3.146 (17. jul)**,
+  se opdatering i STATUS ovenfor. DM-fildeling samtidig genaktiveret.
 - select('*') teknisk gaeld
 - CSP/inline handlers
 - Search i DM/bobler
