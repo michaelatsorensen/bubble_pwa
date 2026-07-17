@@ -1,8 +1,21 @@
 -- ─────────────────────────────────────────────────────────────────────
 -- RLS privacy + integrity hardening
--- STATUS: reviewed + replica-proven (tests/db/run-rls-test.sh), NOT yet applied.
---         Apply in the Supabase SQL editor. Fully reversible — every dropped
---         policy can be recreated verbatim from the pg_policies dump.
+-- STATUS: APPLIED LIVE — verificeret direkte mod produktion 17. juli 2026
+--         via pg_policies-dump (backend truth pack, review gate 3).
+--
+--         RETTELSE: denne linje sagde tidligere "NOT yet applied", hvilket
+--         var forkert og modsagde TECH-DEBT.md. Et eksternt review (17. juli
+--         2026) kunne derfor ikke afgoere produktionens faktiske tilstand ud
+--         fra repoet alene. Verifikationen viste at TECH-DEBT.md havde ret:
+--         migrationen ER koert. Dokumenteret bevis:
+--           - bubble_messages_select ..................... VAEK i prod ✓
+--           - "Authenticated users can view bubble messages" VAEK i prod ✓
+--           - auth_all_guest / anon_read_guest / anon_select_guest . VAEK ✓
+--           - bubble_messages_owner_read ................. FINDES i prod ✓
+--           - guest_checkins_owner_admin ................. FINDES i prod ✓
+--
+--         Fully reversible — every dropped policy can be recreated verbatim
+--         from the pg_policies dump.
 --
 -- Closes two cross-user holes proven by the RLS replica test, because Postgres
 -- OR-combines permissive policies so the loosest wins:
@@ -14,6 +27,10 @@
 --
 -- Legitimate paths preserved (all proven green in the replica test):
 --   member chat read; owner + admin guest read; owner + admin scanner check-in.
+--
+-- BEMAERK (fundet 17. juli 2026 under samme verifikation): den SAMME
+-- OR-kombinations-faelde lever videre paa INSERT/UPDATE/DELETE — se
+-- 2026-07_rls-policy-dedup.sql. Denne migration lukkede kun SELECT-siden.
 -- ─────────────────────────────────────────────────────────────────────
 BEGIN;
 
