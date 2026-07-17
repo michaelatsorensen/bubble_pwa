@@ -1792,4 +1792,37 @@ var dbActions = {
   }
 };
 
+// ══════════════════════════════════════════════════════════
+//  PRIVATE FIL-LINKS — delt mellem boble-chat og DM (jul 2026)
+//  Nye chat/DM-filer gemmes som STI i file_url (fx "chat/{bubbleId}/123-fil.jpg"
+//  eller "dm/{userId}/123-fil.jpg") i bucket'en 'bubble-private'. Vi henter et
+//  kortlivet signed URL (1 time) for stier, saa kun de berettigede (via storage-
+//  policy) kan aabne filen. Fulde URLs (gamle offentlige links, eller eksterne
+//  Tenor-GIF-links) bruges uaendret. Signed URLs caches i memory saa vi ikke
+//  spoerger Supabase for hvert re-render.
+// ══════════════════════════════════════════════════════════
+var _signedUrlCache = {}; // path -> { url, expires (ms epoch) }
+
+// Er den gemte vaerdi en fuld URL (ekstern/gammel) eller en storage-sti (ny)?
+function _isStoragePath(val) {
+  if (!val) return false;
+  return !/^https?:\/\//i.test(val); // starter IKKE med http(s):// => sti
+}
+
+// Returnér et brugbart link for en gemt file_url-vaerdi.
+// Fuld URL (ekstern GIF eller gammelt offentligt link): returnér uaendret.
+// Ny sti: hent (og cache) et kortlivet signed URL fra bubble-private.
+async function resolvePrivateFileUrl(stored) {
+  if (!_isStoragePath(stored)) return stored;
+  var now = Date.now();
+  var cached = _signedUrlCache[stored];
+  if (cached && cached.expires > now + 60000) return cached.url; // gyldig >1 min endnu
+  try {
+    var { data, error } = await sb.storage.from('bubble-private').createSignedUrl(stored, 3600);
+    if (error || !data?.signedUrl) { logError('resolvePrivateFileUrl', error || 'no signedUrl', { path: stored }); return null; }
+    _signedUrlCache[stored] = { url: data.signedUrl, expires: now + 3600000 };
+    return data.signedUrl;
+  } catch (e) { logError('resolvePrivateFileUrl', e, { path: stored }); return null; }
+}
+
 

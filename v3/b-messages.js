@@ -329,17 +329,6 @@ function startChat() {
 //  DM FILE ATTACH
 // ══════════════════════════════════════════════════════════
 async function dmHandleFile(input) {
-  // PILOT-VAERN (jul 2026): DM-fil-upload deaktiveret. Private DM-filer laa i den
-  // offentlige bubble-files bucket med permanente getPublicUrl-links = databrud-risiko.
-  // Slukket paa BAADE UI (knap skjult i index.html) og her (tidlig afvisning), saa et
-  // manuelt kald heller ikke kan uploade. GIF-deling i DM er UAENDRET (separat knap,
-  // gemmer kun en Giphy-URL, ingen upload). Genaktiveres naar DM-filer serveres fra
-  // privat bucket med kortlivede signed URLs (Ring 2).
-  if (input) input.value = '';
-  showWarningToast(t('toast_generic_error'));
-  return;
-}
-async function _dmHandleFileDisabled(input) {
   try {
     const file = input.files[0];
     if (!file) return;
@@ -361,20 +350,20 @@ async function _dmHandleFileDisabled(input) {
       .replace(/[^a-zA-Z0-9._-]/g, '_');
     const path = `dm/${currentUser.id}/${Date.now()}-${safeFilename}`;
 
-    const { error: uploadErr } = await sb.storage.from('bubble-files').upload(path, file, {
+    const { error: uploadErr } = await sb.storage.from('bubble-private').upload(path, file, {
       cacheControl: '3600', upsert: false, contentType: file.type
     });
     if (uploadErr) { errorToast('upload', uploadErr); input.value = ''; return; }
 
-    // Public URL — permanent, no expiry. Requires bubble-files bucket to be public in Supabase.
-    const { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
-    if (!urlData?.publicUrl) { _renderToast(t('msg_file_link_fail'), 'error'); input.value = ''; return; }
-
+    // Gem STIEN (ikke et offentligt link). Ved visning hentes et kortlivet
+    // signed URL via resolvePrivateFileUrl, saa kun samtalens to parter
+    // (via storage-policy paa 'messages') kan aabne filen. Loeser P0-4:
+    // private DM-filer laekker ikke laengere via permanente offentlige links.
     const { data: newMsg, error } = await sb.from('messages').insert({
       sender_id: currentUser.id,
       receiver_id: currentChatUser,
       content: '',
-      file_url: urlData.publicUrl,
+      file_url: path,
       file_name: file.name,
       file_type: file.type
     }).select().single();

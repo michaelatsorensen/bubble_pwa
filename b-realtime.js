@@ -925,6 +925,27 @@ function _dmMaybeInsertDateSep(container, createdAt) {
 
 // Cache af DM-beskeder (id -> {name, text}) saa svar kan finde citeret besked.
 var dmMsgCache = {};
+// Efter en DM-besked er renderet med en fil-placeholder: hent det rigtige
+// (signed) link fra bubble-private og udfyld elementet.
+// Kaldes fire-and-forget fra dmRenderMsg. Elementer markeres med data-file-pending.
+async function dmFillFileLink(msgId, storedPath, isImg) {
+  var real = await resolvePrivateFileUrl(storedPath);
+  if (!real) return;
+  var safe = escHtml(real);
+  if (isImg) {
+    var img = document.querySelector('#dm-msg-' + msgId + ' img.msg-img[data-file-pending]');
+    if (img) {
+      img.src = safe;
+      var link = img.closest('a');
+      if (link) link.setAttribute('onclick', "chatLightbox('" + safe + "')");
+      img.removeAttribute('data-file-pending');
+    }
+  } else {
+    var a = document.querySelector('#dm-msg-' + msgId + ' a.msg-file[data-file-pending]');
+    if (a) { a.setAttribute('href', safe); a.removeAttribute('data-file-pending'); }
+  }
+}
+
 function dmRenderMsg(m) {
   const sent = m.sender_id === currentUser.id;
   const gp = m._gp || 'single'; // single, first, cont, tail
@@ -952,14 +973,23 @@ function dmRenderMsg(m) {
 
   let bubble = '';
   if (m.file_url) {
-    const safeUrl = escHtml(m.file_url);
+    const isPath = _isStoragePath(m.file_url);
+    // Fuld URL (gammelt offentligt link, eller GIF): brug direkte.
+    // Ny sti: tom placeholder, udfyldes async efter render (dmFillFileLink).
+    const safeUrl = isPath ? '' : escHtml(m.file_url);
     const ext = m.file_name?.split('.').pop()?.toLowerCase() || '';
     const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext) || (m.file_type||'').startsWith('image/');
+    const pending = isPath ? ' data-file-pending="1"' : '';
     if (isImg) {
-      bubble = '<a href="javascript:void(0)" onclick="chatLightbox(\'' + safeUrl + '\')"><img class="msg-img" src="' + safeUrl + '" alt="' + escHtml(m.file_name||'') + '"></a>';
+      const onclickAttr = isPath ? '' : ' onclick="chatLightbox(\'' + safeUrl + '\')"';
+      bubble = '<a href="javascript:void(0)"' + onclickAttr + '><img class="msg-img"' + pending + ' src="' + safeUrl + '" alt="' + escHtml(m.file_name||'') + '"></a>';
     } else {
       const sz = m.file_size ? (m.file_size < 1048576 ? Math.round(m.file_size/1024)+'KB' : (m.file_size/1048576).toFixed(1)+'MB') : '';
-      bubble = '<a class="msg-file" href="' + safeUrl + '" target="_blank" rel="noopener">' + icon('clip') + ' ' + escHtml(m.file_name||t('dm_file_label')) + ' <span class="msg-file-sz">' + sz + '</span></a>';
+      const hrefAttr = isPath ? '#' : safeUrl;
+      bubble = '<a class="msg-file"' + pending + ' href="' + hrefAttr + '" target="_blank" rel="noopener">' + icon('clip') + ' ' + escHtml(m.file_name||t('dm_file_label')) + ' <span class="msg-file-sz">' + sz + '</span></a>';
+    }
+    if (isPath) {
+      (function(mid, path, isImgFile){ setTimeout(function(){ dmFillFileLink(mid, path, isImgFile); }, 0); })(m.id, m.file_url, isImg);
     }
   } else {
     var edited = m.edited ? ' <span class="msg-edited">' + t('misc_edited') + '</span>' : '';

@@ -347,3 +347,37 @@ Ingen ny arkitektur.
 
 **Beslutning:** ikke prioriteret. Roerer ikke roadmap. Den eneste metrik der baerer nu er
 uopfordret adoption i Soenderborg-piloten.
+
+## Fil-vedhaeftning i Boble-opslag (admin/ejer envejs-kommunikation) (jul 2026)
+
+**Status: VELDEFINERET FEATURE-IDE. IKKE bygget. Bevidst holdt ude af fil-sikkerheds-
+deployet jul 2026 for at undgaa scope-glidning i en i forvejen kritisk aendring.**
+
+**Idéen (fra Michael):** Boble-opslag er envejs-kommunikationskanalen hvor ejer/admin
+deler det vigtigste — modsat boble-chat og DM som er dialog. Det er derfor produktlogisk
+mistaenkeligt at netop opslag er den ENESTE beskeds-kanal uden filstoette i dag: ingen
+kampprogrammer som PDF, ingen officielle dokumenter, ingen billeder.
+
+**Bekraeftet i kode (b-chat.js/b-utils.js):**
+- `createPost(bubbleId, title, content, eventId)` — KUN titel + tekst + evt. event-reference.
+  INGEN file_url/file_name/file_type. Opslag kan i dag slet ikke baere en fil.
+- Skrive-adgang er allerede admin/ejer-only: `canPost = _isOwner || _isAdmin` (b-chat.js:1546,
+  2549). Det matcher envejs-modellen perfekt og goer en fremtidig storage-policy enkel.
+
+**Hvad det ville kraeve (naar det prioriteres):**
+- Ny DB-kolonne paa `bubble_posts`: file_url, file_name, file_type (+ evt. file_size).
+- Sti-konvention i bubble-private: `posts/{bubbleId}/...` — genbruger samme private bucket
+  og signed-URL-moenster (_isStoragePath / resolvePrivateFileUrl) som chat og DM allerede
+  bruger (jul 2026 fil-sikkerheds-arbejde).
+- Storage-policy: INSERT kun for admin/ejer (matcher canPost-gaten), SELECT for alle
+  boble-medlemmer (samme moenster som "chat read for bubble members").
+- UI: vedhaeft-knap i opret-opslag-flowet + fil-rendering i opslags-visning (billede/fil,
+  samme visning som chat-beskeder).
+
+**Bevidst IKKE i jul 2026-deployet:** deployet daekker allerede to chat-filer, en ny privat
+bucket, fire storage-policies og en genaktiveret DM-feature. At bundle en DB-skema-aendring
+og ny UI oveni er praecis den slags scope-glidning der goer en ellers ren, testet deploy
+risikabel. Parkeret til egen, rolig session.
+
+**Relateret:** roerer samme underliggende infrastruktur (bubble-private, signed URLs) som
+boble-chat og DM fil-haandtering — bygges oven paa det, ikke ved siden af.

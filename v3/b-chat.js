@@ -1390,6 +1390,27 @@ function bcReduceMsg(msg) {
 
 // Cache af boble-beskeder (id -> {name, text}) saa svar kan finde citeret besked.
 var bcMsgCache = {};
+// Efter en boble-chat-besked er renderet med en fil-placeholder: hent det
+// rigtige (signed) link fra bubble-private og udfyld elementet.
+// Kaldes fire-and-forget fra bcRenderMsg. Elementer markeres med data-file-pending.
+async function bcFillFileLink(msgId, storedPath, isImg) {
+  var real = await resolvePrivateFileUrl(storedPath);
+  if (!real) return;
+  var safe = escHtml(real);
+  if (isImg) {
+    var img = document.querySelector('#bc-msg-' + msgId + ' img.msg-img[data-file-pending]');
+    if (img) {
+      img.src = safe;
+      var link = img.closest('a');
+      if (link) link.setAttribute('onclick', "chatLightbox('" + safe + "')");
+      img.removeAttribute('data-file-pending');
+    }
+  } else {
+    var a = document.querySelector('#bc-msg-' + msgId + ' a.msg-file[data-file-pending]');
+    if (a) { a.setAttribute('href', safe); a.removeAttribute('data-file-pending'); }
+  }
+}
+
 function bcRenderMsg(m) {
   const isMe = m.user_id === currentUser.id;
   const p = m.profiles || {};
@@ -1409,14 +1430,23 @@ function bcRenderMsg(m) {
 
   let bubble = '';
   if (m.file_url) {
-    const safeUrl = escHtml(m.file_url);
+    const isPath = _isStoragePath(m.file_url);
+    // Fuld URL (gammelt offentligt link, eller GIF): brug direkte.
+    // Ny sti: tom placeholder, udfyldes async efter render (bcFillFileLink).
+    const safeUrl = isPath ? '' : escHtml(m.file_url);
     const ext = m.file_name?.split('.').pop()?.toLowerCase() || '';
     const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext) || (m.file_type||'').startsWith('image/');
+    const pending = isPath ? ' data-file-pending="1"' : '';
     if (isImg) {
-      bubble = '<a href="javascript:void(0)" onclick="chatLightbox(\'' + safeUrl + '\')"><img class="msg-img" src="' + safeUrl + '" alt="' + escHtml(m.file_name||'') + '"></a>';
+      const onclickAttr = isPath ? '' : ' onclick="chatLightbox(\'' + safeUrl + '\')"';
+      bubble = '<a href="javascript:void(0)"' + onclickAttr + '><img class="msg-img"' + pending + ' src="' + safeUrl + '" alt="' + escHtml(m.file_name||'') + '"></a>';
     } else {
       const sz = m.file_size ? (m.file_size < 1048576 ? Math.round(m.file_size/1024)+'KB' : (m.file_size/1048576).toFixed(1)+'MB') : '';
-      bubble = '<a class="msg-file" href="' + safeUrl + '" target="_blank" rel="noopener">' + icon('clip') + ' ' + escHtml(m.file_name||'Fil') + ' <span class="msg-file-sz">' + sz + '</span></a>';
+      const hrefAttr = isPath ? '#' : safeUrl;
+      bubble = '<a class="msg-file"' + pending + ' href="' + hrefAttr + '" target="_blank" rel="noopener">' + icon('clip') + ' ' + escHtml(m.file_name||'Fil') + ' <span class="msg-file-sz">' + sz + '</span></a>';
+    }
+    if (isPath) {
+      (function(mid, path, isImgFile){ setTimeout(function(){ bcFillFileLink(mid, path, isImgFile); }, 0); })(m.id, m.file_url, isImg);
     }
   } else {
     var content = m.content || '';
@@ -1628,9 +1658,9 @@ async function bcHandleFile(input) {
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // fjern accenter
       .replace(/[^a-zA-Z0-9._-]/g, '_');                 // erstat ugyldige tegn
 
-    const path = `${bcBubbleId}/${Date.now()}-${safeFilename}`;
+    const path = `chat/${bcBubbleId}/${Date.now()}-${safeFilename}`;
 
-    const { error: uploadErr } = await sb.storage.from('bubble-files').upload(path, file, {
+    const { error: uploadErr } = await sb.storage.from('bubble-private').upload(path, file, {
       cacheControl: '3600',
       upsert: false,
       contentType: file.type
@@ -1643,12 +1673,11 @@ async function bcHandleFile(input) {
       return;
     }
 
-    // Public URL — permanent, no expiry. Requires bubble-files bucket to be public in Supabase.
-    const { data: urlData } = sb.storage.from('bubble-files').getPublicUrl(path);
-    if (!urlData?.publicUrl) { _renderToast(t('err_file_link'), 'error'); input.value = ''; return; }
-
+    // Gem STIEN (ikke et offentligt link). Ved visning hentes et kortlivet
+    // signed URL via resolvePrivateFileUrl, saa kun boble-medlemmer (via
+    // storage-policy) kan aabne filen.
     var fileResult = await dbActions.sendBubbleMessage(bcBubbleId, '', {
-      fileUrl: urlData.publicUrl, fileName: file.name, fileType: file.type
+      fileUrl: path, fileName: file.name, fileType: file.type
     });
     if (fileResult.ok && fileResult.message) {
       bcReduceMsg(fileResult.message);
