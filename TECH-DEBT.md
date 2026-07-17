@@ -260,3 +260,157 @@ Server-side/pagineret profmatch, quotas/rate-limits, RPC-baseret invitation/join
 private realtime channels, storage lifecycle, incident playbook. Se reviewets Ring 2/3.
 
 *Self-audit gennemfoert 11. juli 2026. Kritisk punkt (privilegie-eskalering) verificeret sikker.*
+
+
+---
+
+## TD-001: get_profile_preview ignorerer p_bubble_id — anon kan slaa enhver profil op
+
+**Priority:** P0
+**Status:** IDENTIFIED
+**Fundet:** 17. juli 2026, backend truth pack (review gate 3), verificeret mod produktion.
+
+### Symptom
+`get_profile_preview(p_user_id uuid, p_bubble_id uuid DEFAULT NULL)` tager imod
+`p_bubble_id`, men parameteren optraeder INTET sted i funktionskroppen. Frontend
+SENDER den korrekt (b-boot.js:283), saa begraensningen var tydeligvis tiltaenkt —
+serveren ignorerer den bare.
+
+### Root cause (hypothesis)
+Boble-kontekst-tjekket blev aldrig implementeret serverside. Signaturen antyder
+intentionen "vis kun preview i konteksten af DENNE boble", men SQL'en filtrerer
+aldrig paa den.
+
+### Impact
+Funktionen er SECURITY DEFINER med `anon=X` (bevidst — QR-scanning skal virke foer
+login, se loadQRProfilePreview/checkQRAnonPreview). Men uden bubble-tjek kan en
+IKKE-logget-ind kalder sende et vilkaarligt p_user_id og faa:
+- navn, titel, arbejdsplads, avatar, keywords
+- antal gemte kontakter
+- offentlige bobler personen er medlem af
+- **de 6 personer i vedkommendes netvaerk** (saved_contacts join profiles)
+
+Dvs. hele brugerbasen kan enumereres af en anonym kalder der gaetter/kender UUIDs.
+Ikke bare den QR-scannede person.
+
+### Fix sketch
+Beslut foerst hvad teaser-flowet FAKTISK skal vise (produktbeslutning, ikke kun
+teknisk). Derefter enten:
+(a) brug p_bubble_id: kraev at p_user_id er medlem af p_bubble_id, ELLER
+(b) kraev et gyldigt QR-token som parameter i stedet for raa user_id, ELLER
+(c) fjern `network`-feltet fra anon-svar (mindst indgribende).
+MAA IKKE aendres blindt — QR-gaesteflowet braekker hvis anon-adgang fjernes helt.
+
+### Related
+- TD-002 (samme moenster i get_bubble_teaser)
+- b-boot.js:283 (loadQRProfilePreview), b-boot.js:~250 (checkQRAnonPreview)
+- Eksternt review 17. juli 2026 fandt IKKE dette — kraever laesning af funktionskrop
+  mod produktion, ikke kun pakke-review.
+
+---
+
+## TD-002: get_bubble_teaser 'recent' lister hele databasens nyeste profiler
+
+**Priority:** P0
+**Status:** IDENTIFIED
+**Fundet:** 17. juli 2026, backend truth pack (review gate 3), verificeret mod produktion.
+
+### Symptom
+`get_bubble_teaser(p_bubble_id uuid)` returnerer et `recent`-felt der henter de 6
+senest oprettede profiler i HELE databasen — uafhaengigt af p_bubble_id:
+
+    select p.id, p.name, p.title, p.workplace, p.avatar_url, p.keywords
+    from profiles p
+    where p.name is not null and p.title is not null
+      and coalesce(p.banned,false)=false and coalesce(p.is_anon,false)=false
+    order by p.created_at desc limit 6
+
+Ingen join til bubble_members. Ingen reference til p_bubble_id i det subquery.
+
+### Root cause (hypothesis)
+Sandsynligvis tiltaenkt som "nye ansigter i denne boble", men implementeret som
+"nyeste profiler i systemet" — muligvis bevidst som fyld da pilotdata var tyndt.
+
+### Impact
+SECURITY DEFINER + `anon=X`. En anonym kalder faar loebende udleveret navn, titel og
+arbejdsplads paa systemets nyeste brugere, uanset hvilken boble der spoerges om.
+Kombineret med TD-001 kan brugerbasen kortlaegges uden login.
+`member_count`, `members` og `host` er derimod korrekt bundet til p_bubble_id.
+
+### Fix sketch
+Afklar om `recent` skal vaere (a) boblens nyeste medlemmer (join bubble_members paa
+p_bubble_id), (b) fjernes helt, eller (c) beholdes men kun for authenticated.
+Bemaerk: `members`-feltet giver allerede boblens foerste 5 medlemmer — `recent` er
+muligvis redundant.
+
+### Related
+- TD-001 (samme klasse af fejl)
+- b-boot.js:418, b-boot.js:604 (get_bubble_teaser-kald)
+
+---
+
+## TD-003: bubble_messages INSERT — medlemskabskrav sat ud af kraft af loesere dubletter
+
+**Priority:** P0
+**Status:** IDENTIFIED
+**Fundet:** 17. juli 2026, backend truth pack (review gate 3), verificeret mod produktion.
+
+### Symptom
+`bubble_messages` har TRE permissive INSERT-policies i produktion:
+
+| Policy | Krav |
+|---|---|
+| "Medlemmer kan sende boble-beskeder" | user_id = auth.uid() **AND** EXISTS(bubble_members) |
+| bubble_messages_insert | user_id = auth.uid() |
+| "Users can insert own bubble messages" | user_id = auth.uid() |
+
+Postgres OR-kombinerer permissive policies — den LOESESTE vinder. Medlemskabskravet
+er derfor reelt doedt.
+
+### Root cause (hypothesis)
+Praecis samme faelde som 2026-06_rls-privacy-hardening.sql selv beskriver ("Postgres
+OR-combines permissive policies so the loosest wins"). Den migration lukkede
+dubletterne for SELECT, men de samme dubletter overlevede paa INSERT.
+
+### Impact
+Enhver logget-ind bruger kan skrive i ENHVER boble-chat — ogsaa bobler de ikke er
+medlem af — hvis de kender bubble_id. Ikke datalaekage (laesning ER medlemsbegraenset,
+verificeret), men uautoriseret skrivning.
+
+### Fix sketch
+Drop `bubble_messages_insert` og "Users can insert own bubble messages", behold
+medlems-gaten. MEN: bevis foerst paa replica at den stramme policy daekker ALLE
+legitime skrivestier (dbActions.sendBubbleMessage, bcHandleFile, evt. andre).
+Den loese policy findes maaske netop fordi en sti braekkede uden den.
+
+### Related
+- migrations/2026-06_rls-privacy-hardening.sql (samme klasse, lukket for SELECT)
+- Bemaerk: saved_contacts har 9 dublerede policies, men alle udtrykker SAMME regel —
+  rod, ikke hul. Kun bubble_messages har DIVERGERENDE dubletter.
+
+---
+
+## TD-004: send-push v4 — frontend-typer mangler relations-tjek
+
+**Priority:** P2
+**Status:** IDENTIFIED
+**Fundet:** 17. juli 2026, ved commit af den rigtige v4-kilde.
+
+### Symptom
+v4 verificerer at frontend-kaldere har gyldigt JWT og begraenser dem til faste
+servergenererede typer (join_request/approved/checkin) — men tjekker IKKE om
+kalderen har en legitim relation til modtageren.
+
+### Impact
+En autentificeret bruger kan kalde send-push direkte med vilkaarligt user_id og
+udloese generiske notifikationer, gentagne gange. Spam-vektor, ikke datalaekage.
+Teksten er servergenereret, saa der kan ikke injiceres indhold.
+
+### Fix sketch
+Foer frontend-typer honoreres: verificér relation (fx join_request kraever at
+kalderen har en pending request paa den boble; approved kraever at kalderen er
+owner/admin). Alternativt rate-limit pr. (caller, recipient).
+
+### Related
+- index.ts (v4-kilde, committet 17. juli 2026)
+- ADR-006 / push_events observability
