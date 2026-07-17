@@ -435,3 +435,67 @@ owner/admin). Alternativt rate-limit pr. (caller, recipient).
 ### Related
 - index.ts (v4-kilde, committet 17. juli 2026)
 - ADR-006 / push_events observability
+
+
+---
+
+## TD-005: Foraeldreloese bobler — ingen oprydning, ingen vej tilbage
+
+**Priority:** P2
+**Status:** IDENTIFIED
+**Fundet:** 17. juli 2026 (Michael: "en boble vil aldrig vaere tom... der vil altid vaere
+en ejer?"). Verificeret i kode.
+
+### Symptom
+En boble kan ende med NUL medlemmer, men stadig eksistere i `bubbles` med `created_by`
+pegende paa en person der ikke er medlem. Den bliver liggende i Discover med
+`member_count = 0`, og INGEN kan overtage den.
+
+### Root cause
+To veje derhen:
+
+1. **Ejeren som sidste medlem forlader.** `leaveBubble` (b-bubbles.js:546) blokerer
+   korrekt ejeren i at forlade saa laenge der er ANDRE medlemmer (`count > 0` ->
+   `toast_owner_leave`, "overdrag foerst", jf. ADR-009). Men er ejeren alene, er
+   `count = 0` og de faar lov. Boblen mister sit sidste medlem.
+
+2. **Auto-join fejler ved oprettelse.** `createBubble` (b-bubbles.js:961) opretter
+   boblen, forsoeger derefter `bubble_members.insert` med ét retry. Fejler begge,
+   logges det aerligt (`bb_created_join_retry`) og boblen bliver staaende — uden
+   medlemmer. Den fejlhaandtering er i sig selv god (aerlig frem for tavs), men
+   efterlader en foraeldreloes boble.
+
+### Impact
+- Doed boble i Discover (member_count 0) — kosmetisk stoej, daarligt foerstehaandsindtryk.
+- **Kan ikke reddes:** ADR-009's `accept_ownership_transfer` kraever at modtageren ER
+  medlem (verificeret i produktions-funktionskroppen: `IF NOT EXISTS(SELECT 1 FROM
+  bubble_members ...) THEN ... recipient_no_longer_member`). Uden medlemmer er der ingen
+  at overdrage til.
+- Kun den oprindelige ejer kan slette den (`bubbles_delete`: `auth.uid() = created_by`) —
+  men de ser den ikke laengere i "Mine bobler", da de ikke er medlem.
+- Ikke katastrofalt ved pilot-skala. Men det er en tilstand INGEN har besluttet skal
+  eksistere.
+
+### Relation til ADR-009
+ADR-009 loeste overdragelse MELLEM to ejere (request-baseret, ingen énvejsdoer) og er
+bygget + verificeret live. Den behandlede IKKE hvad der sker naar ejeren FORLADER.
+Michaels antagelse ("forlader ejeren, saa lukker den eller overdrages til admin") er
+IKKE implementeret — der er kun blokeringen ved count > 0.
+
+### Fix sketch
+Beslut foerst produktreglen (ikke kun teknisk):
+- (a) **Ejeren kan aldrig forlade** — heller ikke alene. Skal slette boblen i stedet.
+      Simplest, matcher "en boble har altid en ejer".
+- (b) **Auto-slet ved sidste medlem ud** — boblen doer med sit sidste medlem.
+      Bemaerk: sletning er i forvejen en ikke-transaktionel slettekaede (popBubble,
+      staar i eksternt review 17. jul som aabent punkt) — ryd op dér foerst.
+- (c) **Auto-overdrag til aeldste admin** hvis en saadan findes, ellers (a)/(b).
+      Michaels oprindelige antagelse. Mest arbejde, men blidest.
+- Uanset valg: en oprydningsrutine for EKSISTERENDE foraeldreloese bobler (tjek foerst
+  om der er nogen i prod: `select id, name, created_by from bubbles b where not exists
+  (select 1 from bubble_members m where m.bubble_id = b.id)`).
+
+### Related
+- ADR-009 (ownership transfer — loeste nabo-problemet, ikke dette)
+- FEATURE-IDEAS: anonym sammensaetnings-teaser (teaser-tilstande antager 1+ medlem)
+- Eksternt review 17. juli 2026: popBubble ikke-transaktionel slettekaede (aabent)

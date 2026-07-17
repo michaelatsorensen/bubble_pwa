@@ -403,9 +403,18 @@ delt rum. Se ogsaa FEATURE-IDEAS: U-Bahn-indsigten.
 
 | Deltagere | Hvad vises | Loefte |
 |---|---|---|
-| 0 | Ingen fordeling, ingen gaade | "Vaer den foerste til at joine denne boble" |
-| 1-4 (under taerskel) | Kun aerlig kontekst: vaert, formaal, tid | Almindelig invitation. Hverken gaade eller fyld. |
+| 1 (kun ejeren) | Ingen fordeling, ingen gaade | "Vaer den foerste til at joine denne boble" |
+| 2-4 (under taerskel) | Kun aerlig kontekst: vaert, formaal, tid | Almindelig invitation. Hverken gaade eller fyld. |
 | 5+ (over taerskel) | Sammensaetning: tags + sektor | "Join for at se hvem der gemmer sig bag profilerne" |
+
+**Bemaerk (Michael, 17. jul): en boble har ALTID mindst ejeren som medlem.**
+"0 deltagere" er derfor ikke en normal teaser-tilstand. Nyoprettede bobler auto-tilfoejer
+opretteren som medlem, og leaveBubble (b-bubbles.js:546) blokerer ejeren i at forlade saa
+laenge der er andre medlemmer ("overdrag foerst", jf. ADR-009).
+"Vaer den foerste" hoerer altsaa til ved **1 deltager** (kun ejeren), ikke ved 0.
+Den ENESTE vej til 0 medlemmer er rand-stien hvor ejeren er sidste medlem og forlader —
+det giver en foraeldreloes boble, som er et datamodel-problem, ikke en visnings-tilstand.
+Se TD-005.
 
 **Hvorfor taerskel (BEGGE grunde er vigtige):**
 1. *Privatliv:* "1 fra jura" ved 500 brugere i Soenderborg er en udpegning, ikke en
