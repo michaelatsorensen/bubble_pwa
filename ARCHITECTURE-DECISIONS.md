@@ -985,3 +985,89 @@ Ingen generisk pending-engine. Admin-rolle-tildeling kan følge samme princip se
 
 ---
 
+
+
+---
+
+## ADR-010: Foer adgang viser Bubble kontekst — efter adgang viser Bubble mennesker
+
+**Status:** ACCEPTED
+**Date:** 2026-07-17
+
+### Context
+Teaser-flowet (QR-scanning foer login) var aldrig gennemtaenkt som produktbeslutning.
+Det voksede organisk med "social proof" som uudtalt ambition, og endte med at vise
+medlemsansigter, personers netvaerk (5 kontakter) og — som fallback ved tomme bobler —
+systemets 6 nyeste profiler. Det blev afdaekket 17. juli 2026 under backend truth pack
+(se TD-001, TD-002) som anon-dataeksponering.
+
+Erkendelsen (Michael): naar nogen scanner en boble-QR, er interessen BOBLEN, ikke
+medlemmerne. Brugeren staar allerede i lokalet. Medlemmerne er noget man opdager EFTER
+man er inde — det er hele produktets vaerdi og maa ikke gives vaek paa doerklokken.
+
+Nuance vi ikke selv fangede: en scanning betyder hoej HANDLINGS-intention, men ikke
+noedvendigvis hoej FORSTAAELSE. Nogen scanner fordi koden staar paa en skaerm, fordi de
+tror det er wifi, eller af ren nysgerrighed. Teaseren skal derfor stadig forklare
+vaerdien kort — den skal bare ikke BEVISE den ved at udstille mennesker.
+
+### Decision
+**Foer adgang viser Bubble kontekst og trovaerdighed. Efter adgang viser Bubble
+mennesker og relevans.**
+
+Konkret:
+
+**Boble-teaser (get_bubble_teaser)** viser: boblens navn, formaal, vaert/organisation
+(institutionelt social proof — "Hosted by House of Software" er staerkere end fem
+ansigter, og goer Verified Bubbles synligt vaerdifuldt), tid/sted, aktivitetsniveau,
+én klar CTA. Viser IKKE: medlemsprofiler, ansigter, nyeste brugere, radar-resultater.
+
+**Profil-teaser (get_profile_preview)** viser: den scannede persons navn, titel,
+organisation, avatar, keywords + CTA "Forbind". Viser IKKE: personens netvaerk,
+forbindelser, aktivitet i andre bobler, matchdata.
+
+**Profil-opslag bindes til QR-token**, ikke raat user_id. En anonym kan kun se preview
+for et token de faktisk har scannet. Lukker enumerering ved roden.
+
+### Consequences
+**Positive**
+- Lukker TD-001 og TD-002 ved roden frem for med lapper.
+- Produktets dramaturgi bevares: radaren gives ikke vaek foer login.
+- Verified Bubbles faar synlig vaerdi paa teaseren (vaert = trovaerdighed).
+- Reglen er operationel: den afgoer fremtidige spoergsmaal uden ny diskussion.
+
+**Negative**
+- Teaseren bliver mindre "rig" visuelt. Accepteret: den skal vaere en doer, ikke en
+  gratis miniudgave af produktet.
+- Token-binding kraever aendring i baade RPC-signatur og frontend-flow.
+
+**Neutral**
+- Aggregeret sammensaetning (anonyme tags/sektor) er en SEPARAT feature-idé, ikke en
+  del af denne ADR. Se FEATURE-IDEAS.md. Den foelger reglen (sammensaetning = kontekst,
+  ikke mennesker), men bygges bevidst — ikke som sikkerhedslap.
+
+### Rejected alternatives
+- **Anonymisering som sikkerhedsloesning:** at fjerne navne lukker ikke hullet. Hullet
+  er at hvem som helst kan spoerge om hvem som helst uden login — ikke hvilke felter
+  der returneres. Ved 500 brugere i Soenderborg er "produktionschef i baeredygtighed"
+  ofte én person: aggregeret data er IKKE automatisk anonymt ved lille skala.
+- **LinkedIn-analogien som praecedens:** LinkedIn viser dig hvem der saa DIN profil
+  (dine data, dit samtykke, hundreder af millioner at gemme sig i). Vores hul var at
+  en fremmed kunne slaa ANDRE op. Ikke samme situation. Analogien holder derimod fint
+  for Profile Views-laget (se FEATURE-IDEAS).
+- **Monetiseringsargumentet som designprincip:** "det I giver vaek foer login kan I
+  ikke tage betaling for" er retorisk staerkt men forkert som princip — det optimerer
+  efter hvad man kan holde tilbage frem for hvad brugeren har brug for. De rigtige
+  grunde er privatlivsforventning, dramaturgi og datasikkerhed. Monetisering er en
+  sidegevinst, ikke en begrundelse.
+
+### Tenet alignment
+- **Tenet 3 (Preserve battle-tested behavior, replace ambiguous ownership):** teaserens
+  "social proof" var netop tvetydigt ejerskab — en ambition ingen havde besluttet.
+  Reglen giver den et ejerskab.
+- **Tenet 4 (Grundighed over hastighed):** vi retter ikke bare SQL'en; vi afgoer hvad
+  flowet SKAL vaere foerst.
+
+### Related
+- TD-001, TD-002 (hullerne denne ADR lukker)
+- FEATURE-IDEAS.md: anonym sammensaetnings-teaser
+- b-boot.js: loadQRProfilePreview (283), get_bubble_teaser-kald (418, 604)

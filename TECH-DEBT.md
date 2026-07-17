@@ -267,8 +267,17 @@ private realtime channels, storage lifecycle, incident playbook. Se reviewets Ri
 ## TD-001: get_profile_preview ignorerer p_bubble_id — anon kan slaa enhver profil op
 
 **Priority:** P0
-**Status:** IDENTIFIED
+**Status:** PLANNED — beslutning truffet 17. juli 2026, se ADR-010.
 **Fundet:** 17. juli 2026, backend truth pack (review gate 3), verificeret mod produktion.
+
+### BESLUTNING (ADR-010)
+Profil-opslag **bindes til QR-token** i stedet for raat p_user_id — en anonym kan kun se
+preview for et token de faktisk har scannet. Lukker enumerering ved roden (loeser ogsaa
+det p_bubble_id-tjek der aldrig blev implementeret; parameteren udgaar).
+`network`-feltet **fjernes** fra svaret: personens 5 kontakter hoerer til EFTER man er
+forbundet, ikke paa doerklokken.
+Beholdes: navn, titel, organisation, avatar, keywords + CTA "Forbind".
+Princip: *foer adgang viser Bubble kontekst — efter adgang viser Bubble mennesker.*
 
 ### Symptom
 `get_profile_preview(p_user_id uuid, p_bubble_id uuid DEFAULT NULL)` tager imod
@@ -312,8 +321,20 @@ MAA IKKE aendres blindt — QR-gaesteflowet braekker hvis anon-adgang fjernes he
 ## TD-002: get_bubble_teaser 'recent' lister hele databasens nyeste profiler
 
 **Priority:** P0
-**Status:** IDENTIFIED
+**Status:** PLANNED — beslutning truffet 17. juli 2026, se ADR-010.
 **Fundet:** 17. juli 2026, backend truth pack (review gate 3), verificeret mod produktion.
+
+### BESLUTNING (ADR-010)
+`recent`-feltet **fjernes helt**. Det var fallback-fyld ved tynde bobler (b-boot.js:423:
+"Fallback: recent active profiles" naar boblen har <3 medlemmer) — men det serverede
+systemets nyeste brugere som om de var i boblen. Baade misvisende OG laekkende.
+`members`-feltet (boblens foerste 5) **fjernes ogsaa**: ansigter hoerer til efter adgang.
+Boble-teaseren viser i stedet: navn, formaal, vaert/organisation (institutionelt social
+proof — "Hosted by House of Software" er staerkere end fem ansigter og goer Verified
+Bubbles synligt vaerdifuldt), tid/sted, aktivitetsniveau, én CTA.
+Tom boble faar fallback: *"Vaer den foerste til at joine denne boble"* — et aerligt
+loefte i stedet for laant fyld.
+Princip: *foer adgang viser Bubble kontekst — efter adgang viser Bubble mennesker.*
 
 ### Symptom
 `get_bubble_teaser(p_bubble_id uuid)` returnerer et `recent`-felt der henter de 6

@@ -381,3 +381,81 @@ risikabel. Parkeret til egen, rolig session.
 
 **Relateret:** roerer samme underliggende infrastruktur (bubble-private, signed URLs) som
 boble-chat og DM fil-haandtering — bygges oven paa det, ikke ved siden af.
+
+
+## Anonym sammensaetnings-teaser: "Join for at se hvem der gemmer sig bag profilerne" (jul 2026)
+
+**Status: FEATURE-IDE. Ikke bygget. Foelger ADR-010, men er IKKE en del af den —
+bygges bevidst, ikke som sikkerhedslap paa TD-001/TD-002.**
+
+**Idéen (Michael):** I stedet for at vise ansigter foer login, vis rummets SAMMENSAETNING
+anonymt — tags og sektor, ikke navne. Det siger noget aegte om boblen uden at udstille
+nogen, og skaber en aerlig gaade: *"Join for at se hvem der gemmer sig bag profilerne."*
+
+Det er dramaturgi, ikke tilbageholdelse. Loeftet er sandt: der ER tre fra baeredygtighed
+derinde. Brugeren opdager ikke bagefter at rummet var tomt.
+
+**Hvorfor det passer til ADR-010:** sammensaetning er KONTEKST (hvad handler rummet om),
+ikke MENNESKER (hvem er derinde). Det taler direkte til Bubbles kerne: delt FORMAAL, ikke
+delt rum. Se ogsaa FEATURE-IDEAS: U-Bahn-indsigten.
+
+**Tre tilstande — hver med sit loefte:**
+
+| Deltagere | Hvad vises | Loefte |
+|---|---|---|
+| 0 | Ingen fordeling, ingen gaade | "Vaer den foerste til at joine denne boble" |
+| 1-4 (under taerskel) | Kun aerlig kontekst: vaert, formaal, tid | Almindelig invitation. Hverken gaade eller fyld. |
+| 5+ (over taerskel) | Sammensaetning: tags + sektor | "Join for at se hvem der gemmer sig bag profilerne" |
+
+**Hvorfor taerskel (BEGGE grunde er vigtige):**
+1. *Privatliv:* "1 fra jura" ved 500 brugere i Soenderborg er en udpegning, ikke en
+   statistik. Aggregeret data er ikke automatisk anonymt ved lille skala.
+2. *Produkt:* en gaade paa en boble med to medlemmer er et loefte der brydes i samme
+   sekund det indfries. Under taerskel er der ikke nogen at afsloere.
+
+**Feltvalg (afgjort):**
+- **Tags/interesser** — BEDST. Fortaeller hvad rummet handler om. "Baeredygtig produktion
+  · Cirkulaer oekonomi · B2B-salg". Delt formaal gjort synligt.
+- **Branche/sektor** — OK. Bredt nok til at gemme i.
+- **Rolle/titel** — NEJ. Farligst ved vores skala: "produktionschef" er ofte én person.
+
+**Kritisk krav (Michael): rigtige personer bag de anonyme profiler.**
+Fordelingen maa KUN taelle brugere med rigtigt navn OG titel — ingen anon-brugere, ingen
+halvfaerdige profiler, intet fyld for at naa taersklen. Ellers er gaaden tom og loeftet
+brydes ved indgangen. Det er praecis samme fejl som den gamle `recent`-fallback lavede,
+bare paenere pakket ind.
+
+**Ikke afklaret endnu:**
+- Praecis taerskel (5 er et foerste bud, ikke maalt).
+- Skal aktivitetsniveau ("34 checket ind") vises separat fra sammensaetning?
+- Ved meget smaa bobler: helt undlade tal, eller neutral aktivitetsindikator?
+
+---
+
+## Profile Views: semi-anonym er en levedygtig freemium-model (jul 2026)
+
+**Status: NOTAT til eksisterende betalingslag (Profile Views, 29-49 DKK/md). Ikke ny feature.**
+
+**Indsigt fra LinkedIn-analogien (Michael):** LinkedIn viser "en produktionschef i
+medicinalbranchen har set din profil" — og selv uden premium kan man ofte regne ud hvem
+det er. Anonymiseringen er reelt gennemsigtig. Alligevel fungerer modellen.
+
+**Hvorfor det er relevant for os:** det beviser at UFULDKOMMEN anonymitet stadig har
+vaerdi. Pointen er ikke at goere identifikation umulig, men at goere den til en aktiv
+GAETNING frem for en UDLEVERING. Der er reel forskel paa "her er Simon Barslunds navn"
+og "en produktionschef har kigget" — ogsaa naar du regner det ud. Den ene er systemet
+der fortaeller; den anden er dig der slutter.
+
+**Hvorfor analogien holder HER men ikke paa teaseren:** LinkedIn viser dig hvem der saa
+DIN profil. Dine data, dit samtykke. Teaser-hullet (TD-001) var at en FREMMED kunne slaa
+ANDRE op uden login. Ikke samme situation. Se ADR-010, rejected alternatives.
+
+**Konsekvens for freemium-designet:** gratis = antal + evt. semi-anonym beskrivelse
+(sektor/tags, IKKE titel — samme skala-hensyn som ovenfor). Betalt = navne + kontekst.
+Den gratis version maa gerne vaere gennemsigtig nok til at man KAN gaette — det er
+netop det der driver konvertering, og det er aerligt saa laenge vi ikke paastaar
+fuld anonymitet.
+
+**Bemaerk skala-forskellen:** LinkedIn kan baere det med hundreder af millioner brugere.
+Ved 500 brugere i Soenderborg er der ingen maengde at gemme sig i. Vores taerskel skal
+derfor vaere HOEJERE end LinkedIns, ikke lavere.
