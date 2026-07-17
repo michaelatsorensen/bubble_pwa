@@ -1,170 +1,18 @@
-// ══════════════════════════════════════
-//  BUBBLE SERVICE WORKER
-// ══════════════════════════════════════
-// Version managed by CACHE_NAME below
-//
-// v8.17.31 update strategy:
-// - install does NOT call skipWaiting() — new SW waits in 'installed' state
-// - app detects waiting SW and shows "Ny version klar — genindlæs?" prompt
-// - When user accepts, app posts { type: 'SKIP_WAITING' } → SW activates
-// - This prevents mid-session SW replacement that can corrupt cache state
-//
-// Previous behavior (v8.17.30 and earlier): skipWaiting + clients.claim on install,
-// causing potentially-disruptive updates mid-write/mid-flow.
-
-const CACHE_NAME = 'bubble-v3-v3.147';
-const CACHE_URLS = [
-  './', './index.html', './app.css',
-  './bubble-icons.js',
-  './tag-data.js',
-  './b-config.js', './b-i18n.js', './b-utils.js', './b-guides.js', './b-navigation.js',
-  './b-terms.js', './b-auth.js', './b-home.js', './b-bubbles.js',
-  './b-profile.js', './b-radar.js', './b-messages.js',
-  './b-realtime.js', './b-onboarding.js', './b-chat.js',
-  './b-notifications.js', './b-live.js', './b-admin.js',
-  './b-boot.js',
-  './bubble-logo-topbar-v2.png',
-  './bubble-logo-splash.png',
-  './manifest.json',
-  './bubble-icon-152.png', './bubble-icon-167.png', './bubble-icon-180.png',
-  './bubble-icon-192.png', './bubble-icon-512.png', './bubble-favicon-32.png'
-];
-
-self.addEventListener('install', function(event) {
-  // Precache new version's files but do NOT skipWaiting.
-  // SW enters 'installed' state and waits for user-prompted activation.
-  event.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(CACHE_URLS)));
-});
-
-self.addEventListener('activate', function(event) {
-  // Activate only fires after skipWaiting() is called (via message handler).
-  // Clean up old caches and notify clients about new version.
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    ).then(function() {
-      return self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    }).then(function(clients) {
-      clients.forEach(function(client) {
-        client.postMessage({ type: 'SW_UPDATED', version: CACHE_NAME });
-      });
-    })
-  );
-  // NOTE: clients.claim() removed in v8.17.31. New SW only controls newly-loaded pages,
-  // not pages currently active. Prevents mid-session disruption.
-});
-
-// Message handler — supports version queries AND user-prompted SW activation
-self.addEventListener('message', function(event) {
-  if (event.data && event.data.type === 'GET_VERSION') {
-    event.source.postMessage({ type: 'SW_VERSION', version: CACHE_NAME });
-  }
-  // v8.17.31: user-prompted activation. App posts this when user accepts update.
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-});
-
-self.addEventListener('fetch', function(event) {
-  if (event.request.method !== 'GET') return;
-  // Don't intercept API/realtime calls — they must always be fresh.
-  // Both supabase.co default URLs AND custom domain api.bubbleme.dk.
-  // CRITICAL: Without api.bubbleme.dk here, SW would cache stale API responses
-  // (e.g. bubble visibility showing "private" even after DB was updated to "public").
-  if (event.request.url.includes('supabase.co')) return;
-  if (event.request.url.includes('api.bubbleme.dk')) return;
-  if (event.request.url.includes('giphy.com')) return;
-
-  // Strip querystring for local assets so cache keys match precache
-  var requestUrl = event.request.url;
-  var isLocal = requestUrl.startsWith(self.location.origin);
-  var cacheKey = isLocal ? requestUrl.split('?')[0] : requestUrl;
-  var cacheRequest = isLocal ? new Request(cacheKey) : event.request;
-
-  event.respondWith(
-    fetch(event.request).then(function(res) {
-      if (res.ok && res.type !== 'opaque' && res.status !== 206) {
-        try { var clone = res.clone(); caches.open(CACHE_NAME).then(function(c) { c.put(cacheRequest, clone); }); } catch(e) {}
-      }
-      return res;
-    }).catch(function() { return caches.match(cacheRequest); })
-  );
-});
-
-// ── Push: vis notifikation ──
-self.addEventListener('push', function(event) {
-  var title    = 'Bubble 🫧';
-  var body     = 'Du har en ny notifikation';
-  var tag      = 'bubble-notif';
-  var icon     = './bubble-icon-180.png';   // ✅ eksisterer
-  var badge    = './bubble-favicon-32.png'; // ✅ eksisterer
-  var notifData = {};
-
-  try {
-    if (event.data) {
-      var p    = event.data.json();
-      title    = p.title  || title;
-      body     = p.body   || body;
-      tag      = p.tag    || tag;
-      icon     = p.icon   || icon;
-      badge    = p.badge  || badge;
-      notifData = p.data  || {};
-    }
-  } catch(e) {
-    try { if (event.data) body = event.data.text(); } catch(_) {}
-  }
-
-  event.waitUntil(
-    self.registration.showNotification(title, {
-      body, icon, badge, tag,
-      data:     notifData,
-      vibrate:  [100, 50, 100],
-      renotify: true
-    })
-  );
-});
-
-// ── Klik på notifikation → naviger i app ──
-// v8.17.31: prefer focused tab, then visible tab, then any
-self.addEventListener('notificationclick', function(event) {
-  event.notification.close();
-  if (event.action === 'dismiss') return;
-
-  var d    = event.notification.data || {};
-  var type = d.type || '';
-  var url  = './';
-
-  if (type === 'new_message' || type === 'message') {
-    url = d.sender_id ? './?push=chat&uid=' + d.sender_id : './?push=messages';
-  } else if (type === 'new_invite' || type === 'invitation' || type === 'saved_contact') {
-    url = './?push=notifications';
-  } else if (type === 'checkin' && d.bubble_id) {
-    url = './?push=bubble&id=' + d.bubble_id;
-  }
-
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(list) {
-      if (list.length === 0) {
-        return clients.openWindow(url);
-      }
-      // Prefer: focused first, then visible, then any
-      list.sort(function(a, b) {
-        if (a.focused !== b.focused) return b.focused ? 1 : -1;
-        if (a.visibilityState !== b.visibilityState) {
-          return a.visibilityState === 'visible' ? -1 : 1;
-        }
-        return 0;
-      });
-      var target = list[0];
-      // Focus, then explicitly navigate (more reliable than postMessage alone)
-      return target.focus().then(function() {
-        // Send navigation hint to app (app router handles deep-link from URL params)
-        target.postMessage({ type: 'PUSH_NAVIGATE', url: url, data: d });
-        // Also navigate explicitly so URL params are present for boot/auth flow
-        if ('navigate' in target) {
-          try { target.navigate(url); } catch(e) {}
-        }
-      });
-    })
+// KILL-SWITCH SERVICE WORKER (17. juli 2026)
+// Denne PWA-installation (scope) er retireret — konsolideret til bubbleme.dk/ (root).
+// Denne fil erstatter den tidligere aktive service worker for at faa eksisterende
+// installationer til at slippe kontrollen, rydde deres cache, og lande paa root.
+// Se: eksternt build-review 17. juli 2026, punkt 1 (ét rent deployment-artifact).
+self.addEventListener('install', function(e){ self.skipWaiting(); });
+self.addEventListener('activate', function(e){
+  e.waitUntil(
+    caches.keys()
+      .then(function(keys){ return Promise.all(keys.map(function(k){ return caches.delete(k); })); })
+      .then(function(){ return self.clients.claim(); })
+      .then(function(){ return self.clients.matchAll({ type: 'window' }); })
+      .then(function(clientList){
+        clientList.forEach(function(c){ try { c.navigate('https://bubbleme.dk/'); } catch(e){} });
+      })
+      .then(function(){ return self.registration.unregister(); })
   );
 });

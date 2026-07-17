@@ -373,7 +373,8 @@ async function adminConfirmBan() {
   document.querySelectorAll('.admin-ban-confirm').forEach(function(t) { t.remove(); });
   if (!userId) return;
   try {
-    await sb.from('profiles').update({ banned: true }).eq('id', userId);
+    var { error } = await sb.from('profiles').update({ banned: true }).eq('id', userId);
+    if (error) { logError('adminConfirmBan', error, { userId: userId }); _renderToast(t('admin_error') + error.message, 'error'); return; }
     showToast((userName||t('pf_user')) + t('admin_is_banned'));
     adminLoadReports();
     adminLoadBanned();
@@ -390,7 +391,8 @@ function adminCancelBan(btn) {
 
 async function adminUnbanUser(userId) {
   try {
-    await sb.from('profiles').update({ banned: false }).eq('id', userId);
+    var { error } = await sb.from('profiles').update({ banned: false }).eq('id', userId);
+    if (error) { logError('adminUnbanUser', error, { userId: userId }); _renderToast(t('admin_error') + error.message, 'error'); return; }
     showToast(t('admin_user_unbanned'));
     adminLoadReports();
     adminLoadBanned();

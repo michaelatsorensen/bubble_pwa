@@ -1825,4 +1825,17 @@ async function resolvePrivateFileUrl(stored) {
   } catch (e) { logError('resolvePrivateFileUrl', e, { path: stored }); return null; }
 }
 
+// Valider og returnér en sikker https-URL, eller null hvis ugyldig/anden protokol.
+// Bruges paa BAADE gem-tidspunkt (bubble create/edit) og render-tidspunkt (forsvar i
+// dybden mod evt. aeldre gemte vaerdier). Blokerer javascript:, data:, vbscript: osv.
+function sanitizeHttpsUrl(raw) {
+  if (!raw) return null;
+  try {
+    var u = new URL(String(raw).trim());
+    if (u.protocol !== 'https:') return null;
+    return u.href;
+  } catch (e) { return null; }
+}
+
+
 

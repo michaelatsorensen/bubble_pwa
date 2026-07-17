@@ -921,7 +921,7 @@ async function createBubble() {
       name, type, type_label: typeLabel(type), description: desc, location,
       keywords: cbChips, created_by: currentUser.id, visibility
     };
-    var externalUrl = (document.getElementById('cb-external-url')?.value || '').trim();
+    var externalUrl = sanitizeHttpsUrl((document.getElementById('cb-external-url')?.value || '').trim());
     if (externalUrl) insertData.external_url = externalUrl;
     if (parentBubbleId) insertData.parent_bubble_id = parentBubbleId;
     // Inherit icon from parent (or grandparent) if available
@@ -1159,7 +1159,7 @@ async function saveEditBubble() {
       name, type, type_label: typeLabel(type),
       visibility, description: desc, location, keywords: ebChips
     };
-    var ebExtUrl = (document.getElementById('eb-external-url')?.value || '').trim();
+    var ebExtUrl = sanitizeHttpsUrl((document.getElementById('eb-external-url')?.value || '').trim());
     updateObj.external_url = ebExtUrl || null;
     if (_pendingBubbleIcon) updateObj.icon_url = _pendingBubbleIcon;
     // Event date/time
