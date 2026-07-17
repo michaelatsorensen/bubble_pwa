@@ -442,7 +442,8 @@ owner/admin). Alternativt rate-limit pr. (caller, recipient).
 ## TD-005: Foraeldreloese bobler — ingen oprydning, ingen vej tilbage
 
 **Priority:** P2
-**Status:** IDENTIFIED
+**Status:** PLANNED — beslutning truffet 17. juli 2026 (se nedenfor). Afhaenger af at
+sletning goeres transaktionel foerst.
 **Fundet:** 17. juli 2026 (Michael: "en boble vil aldrig vaere tom... der vil altid vaere
 en ejer?"). Verificeret i kode.
 
@@ -482,18 +483,68 @@ bygget + verificeret live. Den behandlede IKKE hvad der sker naar ejeren FORLADE
 Michaels antagelse ("forlader ejeren, saa lukker den eller overdrages til admin") er
 IKKE implementeret — der er kun blokeringen ved count > 0.
 
-### Fix sketch
-Beslut foerst produktreglen (ikke kun teknisk):
-- (a) **Ejeren kan aldrig forlade** — heller ikke alene. Skal slette boblen i stedet.
-      Simplest, matcher "en boble har altid en ejer".
-- (b) **Auto-slet ved sidste medlem ud** — boblen doer med sit sidste medlem.
-      Bemaerk: sletning er i forvejen en ikke-transaktionel slettekaede (popBubble,
-      staar i eksternt review 17. jul som aabent punkt) — ryd op dér foerst.
-- (c) **Auto-overdrag til aeldste admin** hvis en saadan findes, ellers (a)/(b).
-      Michaels oprindelige antagelse. Mest arbejde, men blidest.
-- Uanset valg: en oprydningsrutine for EKSISTERENDE foraeldreloese bobler (tjek foerst
-  om der er nogen i prod: `select id, name, created_by from bubbles b where not exists
-  (select 1 from bubble_members m where m.bubble_id = b.id)`).
+### BESLUTNING (17. juli 2026, Michael)
+**Luk hullet frem for at rydde op efter det.** Ingen auto-sletning, ingen tidsstyret
+oprydningsrutine — en boble skal aldrig kunne blive tom i foerste omgang.
+
+| Situation | Forlad | Slet |
+|---|---|---|
+| Ejer alene | NEJ — muligheden findes ikke. Slet i stedet. | JA |
+| Ejer + andre medlemmer | NEJ — overdrag foerst (som i dag, ADR-009) | JA, med advarsel |
+| Almindeligt medlem | JA | NEJ |
+
+**Forkastet: "smid alle ud foer sletning".** Sletningen fjerner alligevel alle
+medlemskaber (bubble_members CASCADE). At kraeve manuel udsmidning foerst ville betyde
+40 klik for en ejer med 40 deltagere — det beskytter ingen, det goer bare noget
+irreversibelt til noget LANGSOMT og irreversibelt. Og det ville vaere asymmetrisk:
+ejeren KAN allerede i dag slette en boble med medlemmer (`bubbles_delete`:
+`auth.uid() = created_by`, ingen betingelse om medlemsantal).
+
+**Forkastet: auto-slet ved sidste medlem ud.** To veje til tom boble, og de har
+modsat intention: (1) ejeren forlod bevidst, (2) auto-join FEJLEDE ved oprettelse
+(b-bubbles.js:961) — dér ville auto-sletning fjerne noget brugeren bevidst lavede for
+faa sekunder siden, mens de sidder og proever igen. En blind regel kan ikke skelne.
+
+**Naar tomme bobler ikke kan opstaa, er de eksisterende (8 stk, marts 2026) rent
+testaffald** — `__stress_0..4`, `__dupe_test_`, en XSS-testpayload, alle fra samme
+test-bruger inden for ét sekund + én tidlig manuel test. Ingen stammer fra rand-stien.
+Ryddes manuelt én gang, ikke med en rutine. Verificeret ufarligt: 0 underbobler,
+0 guest_checkins, 0 opslag der peger paa dem; alt oevrigt CASCADE'r.
+
+### Nuance: en tom boble er ikke helt herreloes
+Ejeren beholder teknisk adgang uden medlemskab:
+- `bubbles_select_scoped` -> `created_by = auth.uid()`
+- `bubble_messages_owner_read` -> ejeren kan laese chatten uden at vaere medlem
+- `bubble_members_insert_gated` har `is_bubble_owner(...)` -> ejeren kan altid joine igen
+
+Men de kan ikke FINDE den: "Mine bobler" bygger paa medlemskab, og Discover viser
+member_count 0. Adgangen findes, men er praktisk talt usynlig. Det aendrer ikke
+beslutningen — det er blot vigtigt at "ingen har adgang" ikke er praecist.
+
+### Sletteprocedure: genbrug konto-sletnings-moensteret
+Boble-sletning er samme klasse af handling som profil-sletning (irreversibel, rammer
+mennesker). Genbrug det bevist gennemtaenkte moenster fra b-profile.js:922-990:
+- **Foldet vaek som standard**, nulstilles hver gang skaermen aabnes (aldrig husket aaben)
+- **Skriv DELETE praecist** — case-sensitivt, samme ord DA+EN, knap `disabled` indtil match
+- **Laas mod dobbelt-tryk** — afvaebn knap + disable felt ved klik
+- **Serverside atomisk RPC**, ikke loes kaede af DELETEs fra frontend
+
+**Én forskel fra konto-sletning:** profil-sletning rammer kun dig selv. Boble-sletning
+rammer ANDRES data. Advarslen skal derfor vaere konkret frem for truende — tal, ikke
+skraemmeord: *"3 medlemmer mister adgang til 47 beskeder og 2 filer. Kan ikke fortrydes."*
+
+### AFHAENGIGHED — skal loeses FOERST
+Sletning er i dag en **ikke-transaktionel slettekaede** (`popBubble`, flaget i eksternt
+review 17. juli, stadig aabent). Vi maa IKKE goere sletning til ejerens eneste udvej
+foer den kaede er atomisk — gaar den i stykker halvvejs, har vi en DELVIST slettet
+boble, hvilket er vaerre end en tom. **Raekkefoelge: (1) goer sletning transaktionel
+via RPC, (2) derefter luk forlad-hullet.**
+
+### Sidegevinst-fund: GDPR-sletning rammer forbi bubble-private
+Analogien til konto-sletning afsloerede det igen: `_deleteOwnStorageFiles`
+(b-profile.js:~958) rydder `avatars/` og `dm/` — men peger stadig paa **bubble-files**.
+Efter 17. juli ligger DM-filer i **bubble-private**. Kontosletning rydder dem derfor
+ikke. Se ogsaa migrations/2026-07_bubble-private-storage-policies.sql (kendte huller).
 
 ### Related
 - ADR-009 (ownership transfer — loeste nabo-problemet, ikke dette)
