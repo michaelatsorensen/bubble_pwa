@@ -567,3 +567,46 @@ Det her er **det vigtigste dokument** for at gøre native-rewrite effektiv. Inve
 ---
 
 *Logbog vedligeholdt løbende. Sidste opdatering: Maj 2026.*
+
+---
+
+## 💡 LÆRING: En installeret standalone-PWA kan ikke redirecte sig selv ud af sit scope (18. jul 2026)
+
+**Kontekst:** Da vi konsoliderede alt til root (16.-17. jul), retirerede vi de gamle
+stier `/next/` og `/v3/` til en redirect-shim (`meta refresh` + `location.replace` til
+root) + en kill-switch service worker. Det bestod vores browser-test i går. Men da det
+ramte en RIGTIG installeret iOS-PWA (genvej oprettet fra `/next/` eller `/v3/`), opstod
+en loekke: evigt opdaterings-banner, Safari-overlay paa en "installeret" app, og appen
+kunne aldrig fuldfoere en opdatering.
+
+**Root cause:** En installeret standalone-PWA har sit scope bundet til sin sti (`/next/`).
+`location.replace('https://bubbleme.dk/')` forsoeger at navigere UD af det scope — hvilket
+iOS enten blokerer eller haandterer ved at smide brugeren ud i Safari (deraf overlayet).
+Manifestets `start_url` peger stadig paa den gamle sti, saa genvejen kommer tilbage til
+shim'en naeste gang. En PWA kan vise indhold PAA sin egen sti, men kan ikke permanent
+"blive til" en PWA paa en anden sti. **Auto-redirect ud af scope er umuligt i standalone.**
+
+**Hvorfor testen i gaar ikke fangede det:** browser-faner har ikke scope-bindingen. Det
+ene miljoe hvor det betyder noget — en installeret iOS standalone-PWA — var praecis det
+sandkassen ikke kan teste. Lektie: for SW/PWA-scope-adfaerd er browser-test noedvendig men
+ikke tilstraekkelig; kun en rigtig enhed bekraefter.
+
+**Loesning (kill-switch v2, verificeret paa rigtig iPhone):** Hold op med at forsoege
+redirect. Vis i stedet en aerlig besked ("Denne version er foraeldet — slet genvejen og
+opret en ny gennem bubbleme.dk"). Den nye SW serverer ALDRIG cache (fetch-handler med
+`no-store`), saa den gamle cachede shim ikke kan blive haengende. `updateViaCache:'none'`
+paa den gamle registrering lod den nye SW bryde igennem. Bekraeftet: virker paa alle gamle
+genveje, root uroert.
+
+**Vigtig nuance om alvor:** Paa dette tidspunkt er ALLE rigtige brugere familie/venner/
+taette samarbejdspartnere der ved Bubble er i test. En "geninstallér"-besked skraemmer
+dem ikke. Havde brugerbasen vaeret fremmede, ville en loekkende app vaeret alvorlig — men
+her var det en overgang haandteret blandt folk der forventer bumps. Risiko reelt lav.
+
+**Konsekvens fremadrettet (beslutning, Michael):** Root er den ENESTE tilgaengelige
+version. Uanset fremtidige versioner eller stier deployes intet som en parallel
+installerbar PWA-sti igen. Nye brugere kan derfor aldrig komme i denne tilstand.
+
+**Native-relevans:** Native apps har ikke dette problem (App Store haandterer versioner).
+Men lektien om at scope/installation er STATEFUL paa klienten — og ikke kan aendres
+serverside — gaelder generelt for enhver PWA-fallback vi maatte beholde.
