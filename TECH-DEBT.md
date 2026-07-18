@@ -310,6 +310,12 @@ teknisk). Derefter enten:
 (c) fjern `network`-feltet fra anon-svar (mindst indgribende).
 MAA IKKE aendres blindt — QR-gaesteflowet braekker hvis anon-adgang fjernes helt.
 
+### OPDATERING 18. jul (ADR-010 revision)
+Loeses nu ved at FJERNE det anonyme preview HELT (opret-foerst-model), ikke ved token-RPC.
+Ingen anonym profildata vises foer login. resolve_qr_token kaldes kun EFTER login.
+get_profile_preview_by_token-migrationen laegges vaek. Se ADR-010 REVISION.
+Restsikring: revoke anon paa gamle get_profile_preview(p_user_id) efter PWA-udrulning.
+
 ### Related
 - TD-002 (samme moenster i get_bubble_teaser)
 - b-boot.js:283 (loadQRProfilePreview), b-boot.js:~250 (checkQRAnonPreview)
@@ -363,6 +369,11 @@ Afklar om `recent` skal vaere (a) boblens nyeste medlemmer (join bubble_members 
 p_bubble_id), (b) fjernes helt, eller (c) beholdes men kun for authenticated.
 Bemaerk: `members`-feltet giver allerede boblens foerste 5 medlemmer — `recent` er
 muligvis redundant.
+
+### OPDATERING 18. jul (ADR-010 revision)
+Foer login vises INTET boble-navn/data (kun "et event/netvaerk paa Bubble") — intet anonymt
+opslag. get_bubble_teaser-trim (fjern recent/members) er kun relevant hvis teaser bruges
+EFTER login. Se ADR-010 REVISION.
 
 ### Related
 - TD-001 (samme klasse af fejl)

@@ -1071,3 +1071,65 @@ for et token de faktisk har scannet. Lukker enumerering ved roden.
 - TD-001, TD-002 (hullerne denne ADR lukker)
 - FEATURE-IDEAS.md: anonym sammensaetnings-teaser
 - b-boot.js: loadQRProfilePreview (283), get_bubble_teaser-kald (418, 604)
+
+---
+
+### ADR-010 REVISION (18. juli 2026): "opret foerst" erstatter anonymt preview helt
+
+**Hvad aendrede sig:** Den oprindelige ADR-010 (17. jul) beholdt et anonymt profil-preview
+men trimmede det (token-binding, fjern network). Under implementering + storyboarding blev
+en enklere og sikrere model tydelig: **fjern det anonyme preview HELT. Opret foerst.**
+
+**Udloeser (Michael):** Hvis en ny bruger alligevel skal scanne to gange (preview kunne
+ikke auto-gemme gennem OAuth uden skroebelig token-bevaring), saa er det sikre og enkle at
+kraeve oprettelse FOERST. Et engangsflow hver bruger oplever én gang.
+
+**Den endelige model:**
+```
+Scan QR
+  -> Gem token + type persistent (INGEN data resolveres)
+  -> "Log ind eller opret profil for at fortsaette"
+  -> Auth + onboarding
+  -> Token resolves som authenticated bruger (foerste opslag — nu trygt)
+  -> Vis destination + bekraeftelses-CTA
+  -> Bruger trykker: gem kontakt / check ind / deltag
+```
+
+**Fire praeciseringer (fra ekstern gennemgang, alle vedtaget):**
+
+1. **Token gemmes PERSISTENT, ikke i JS-hukommelse.** Ved OAuth forlader brugeren Bubble
+   og kommer tilbage via redirect — almindelig variabel er vaek. Gem `{token, type,
+   createdAt}` i kontrolleret storage (genbrug flowSet/consumeFlow + 15min TTL). Kort
+   udloeb, ryd ved afsluttet flow OG ved logout. ALDRIG persondata eller user-ID.
+
+2. **Ingen entity-navne foer login.** KRITISK RETTELSE: at vise "Baeredygtighedskonferencen"
+   kraever et anonymt token-opslag for at finde navnet — dvs. stadig en anonym
+   teaser-arkitektur, bare uden personer. Foerste version viser KUN type: "et event paa
+   Bubble" / "et netvaerk" / "en personlig Bubble-kode". Nul anonyme opslag for NOGEN type.
+   Navngivne events kan komme senere HVIS de beviseligt konverterer — men da som bevidst
+   offentligt teaser-endpoint, ikke som biprodukt.
+
+3. **CTA daekker eksisterende brugere.** Ikke "opret en bruger" (udelukker udloggede/anden
+   telefon) men **"Log ind eller opret profil for at fortsaette"**.
+
+4. **Bekraeftelse frem for automatik.** Efter login FOERER tokenet til handlingen med en
+   CTA ("Du scannede Michaels kode -> [Gem som kontakt]"), frem for at gemme/checke ind
+   som skjult konsekvens af onboarding. Mere transparent, ét ekstra tryk der koeber
+   tydelighed.
+
+**Konsekvens for TD-001/TD-002:** De lukkes nu ved at **fjerne det anonyme opslag helt**,
+ikke ved at bygge en token-baseret preview-RPC. `resolve_qr_token` kaldes udelukkende EFTER
+login (authenticated kontekst — altid trygt). Angrebsfladen FORSVINDER frem for at bevogtes.
+
+**Konsekvens for allerede-skrevet kode:** Migrationen `2026-07_adr010-teaser-token-binding.sql`
+(get_profile_preview_by_token) bliver OVERFLOEDIG — der er intet anonymt preview at vise.
+Laegges vaek. get_bubble_teaser's trim (fjern recent/members) er stadig relevant HVIS teaser
+bruges efter login, men det anonyme foer-login-opslag udgaar.
+
+**Produktprincip (skarpere formulering):** *Foer login bevarer Bubble brugerens intention,
+men afsloerer ingen entity-data. Efter login resolver Bubble scanningen og lader brugeren
+gennemfoere handlingen.*
+
+**Restsikring (Release 2, uaendret):** Den gamle anon `get_profile_preview(p_user_id)` skal
+stadig have anon-execute tilbagekaldt efter verificeret PWA-udrulning — ellers er den gamle
+enumereringsvej aaben uanset det nye flow.
