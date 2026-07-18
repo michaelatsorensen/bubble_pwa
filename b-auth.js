@@ -66,6 +66,78 @@ function initServices() {
 //  5. pending join? → join bubble
 //  6. default → screen-home
 // ══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+//  resumePendingScanIntent (ADR-010 "opret foerst")
+//  Den ENESTE funktion der genoptager en scan-intent efter login.
+//  Kaldes af resolvePostAuthDestination EFTER onboarding er faerdig.
+//
+//  Kontrakt:
+//   - Laeser scan_intent (gemt af den anonyme scan-sti, Del 3).
+//   - Resolver ref -> id i AUTHENTICATED kontekst (foerste opslag, nu trygt).
+//   - Router ind i den EKSISTERENDE showDeepLinkModal (samme bekraeftelses-UI
+//     som logged-in deep-links) — bruger bekraefter selv handlingen.
+//   - Udloebet/ugyldig kode: venlig besked, ryd intent, fald tilbage til normal.
+//   - Idempotent: rydder KUN intent ved endeligt udfald (succes-routing eller
+//     permanent fejl). Midlertidig netvaerksfejl bevarer intent til naeste forsoeg.
+//   Returnerer true hvis den haandterede en intent (og dermed satte destination).
+// ══════════════════════════════════════════════════════════
+async function resumePendingScanIntent() {
+  var intent = (typeof scanIntentGet === 'function') ? scanIntentGet() : null;
+  if (!intent) return false;
+
+  try {
+    if (intent.kind === 'person') {
+      // Resolve person-referencen -> user_id (authenticated).
+      var userId = null;
+      if (intent.refKind === 'qr_token') {
+        var td = await resolveQrToken(intent.ref);
+        if (td && td.expired) { scanIntentClear(); showWarningToast(t('scan_expired')); return false; }
+        userId = td ? td.user_id : null;
+      } else if (intent.refKind === 'uuid') {
+        userId = intent.ref;
+      }
+      if (!userId) { scanIntentClear(); showWarningToast(t('scan_expired')); return false; }
+      if (currentUser && userId === currentUser.id) { scanIntentClear(); return false; } // egen kode
+
+      scanIntentClear();
+      goTo('screen-home');
+      setTimeout(function() { showDeepLinkModal('contact', userId); }, 400);
+      return true;
+    }
+
+    if (intent.kind === 'event' || intent.kind === 'network') {
+      // Resolve bubble-referencen -> bubble.id (authenticated).
+      var bubbleId = null;
+      if (intent.refKind === 'uuid') {
+        bubbleId = intent.ref;
+      } else if (intent.refKind === 'join_code') {
+        try {
+          var { data: _b } = await sb.from('bubbles')
+            .select('id')
+            .or('id.eq.' + intent.ref + ',join_code.eq.' + intent.ref)
+            .limit(1).maybeSingle();
+          if (_b && _b.id) bubbleId = _b.id;
+        } catch(e) { logError('resumeScanIntent:resolveBubble', e); return false; } // midlertidig fejl: behold intent
+      }
+      if (!bubbleId) { scanIntentClear(); showWarningToast(t('scan_expired')); return false; }
+
+      scanIntentClear();
+      goTo('screen-home');
+      // showDeepLinkModal('event') auto-detekterer bubble-type: events faar den
+      // tidsbevidste modal, netvaerk faar den simple. Samme komponent som logged-in.
+      setTimeout(function() { showDeepLinkModal('event', bubbleId); }, 400);
+      return true;
+    }
+
+    // Ukendt kind (bør ikke ske — kontrakten valideres ved set): ryd defensivt.
+    scanIntentClear();
+    return false;
+  } catch(e) {
+    logError('resumePendingScanIntent', e);
+    return false; // behold intent ved uventet fejl — kan forsoeges igen
+  }
+}
+
 async function resolvePostAuthDestination() {
   // Step 1: Push notification deep link (unchanged)
   var pushParams = new URLSearchParams(window.location.search);
@@ -125,6 +197,16 @@ async function resolvePostAuthDestination() {
     goTo('screen-home');
     setTimeout(function() { showDeepLinkModal('event', pendingJoin); }, 400);
     return;
+  }
+
+  // Step 2.5: Scan-intent (ADR-010 "opret foerst") — a NEW user who scanned while
+  // logged out stored a scan_intent instead of pending_contact/pending_join. Resolve
+  // it now (authenticated) and route into the same confirmation modal. Kept AFTER the
+  // logged-in deep-link handlers above (those use pending_contact/pending_join and are
+  // untouched) and BEFORE the welcome/home fallback.
+  if (typeof resumePendingScanIntent === 'function') {
+    var handledScan = await resumePendingScanIntent();
+    if (handledScan) return;
   }
 
   // Step 3: Welcome screen for first-time users (no deep-link)

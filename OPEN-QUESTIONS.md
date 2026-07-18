@@ -1164,3 +1164,38 @@ Når et filter aktiveres på den magnetiske dartskive: skal ikke-match fises HEL
 **Status:** 💬 Leaning, ikke låst
 
 Forslag (fra eksternt input + Claude): "For mig" = passivt medlemskabs-filter (ændrer hvem, re-sorterer ikke), "Jeg søger" = aktiv re-scoring (reorganiserer relevans-rummet). Giver skarp mental model og beskytter mod "mystery machine" (kun én kraft re-scorer). Ikke endeligt bekræftet af Michael. Afklar før build.
+
+## Q-067 — Signup-abuse: email-bekræftelse vs guardrails vs OAuth-primær (PRE-LAUNCH)
+
+**Type:** C — Decision (retning valgt: udskyd til tæt før launch) · **Priority:** P1 · **Status:** 🔒 Låst timing, åben mekanisme
+
+**Kontekst:** Email-bekræftelse er PT slået fra. Under lukket pilot = ren fordel (nul friktion,
+ubegrænset test via inkognito, hurtig onboarding). Men det er en åben dør så snart FREMMEDE kan
+nå appen: opdigtede konti, spam-profiler, oprettelse som andre. Alle nuværende brugere er
+familie/venner/partnere der ved Bubble er i test → lav risiko NU.
+
+**Beslutning (Michael, 18. jul):** Sæt IKKE guardrails nu — det ville bremse udvikling/test for
+et problem vi ikke har endnu. Sadl om ELLER sæt guardrails **så tæt på launch som muligt**, når
+"fremmede kan nå appen" bliver sandt.
+
+**De tre muligheder (afvejning — vælg når vi er der):**
+
+1. **Email-bekræftelse.** Løser ægthed/ejerskab. MEN koster præcis det gyldne første møde vi
+   brugte lang tid på: bruger forlader app → tjekker mail → tilbage til login → password tabt →
+   "virkede det?". Se friktionspunkterne i onboarding-flow-kortet. Dyreste guardrail i
+   onboarding-valuta. Bryder også create-first-flowets kontinuitet (deep-link intent gennem
+   email-confirm — se Q relateret til deep-link-bevaring).
+
+2. **Guardrails (graduerbar).** Rate-limiting (konti pr. IP/enhed), CAPTCHA ved mistanke,
+   domæne-validering, eller bekræftelse først ved BESTEMTE handlinger frem for ved oprettelse.
+   Rammer mere præcist uden at koste hele første-mødet. Kan trappes op.
+
+3. **OAuth-primær (Claudes hældning for professionel netværksapp).** Gør LinkedIn/Google til den
+   PRIMÆRE vej: løser ægthed GRATIS (provider har verificeret), udfylder navn+arbejdsplads,
+   bevarer hurtigt flow. Email-med-bekræftelse bliver fallback for mindretallet uden LinkedIn,
+   hvor friktionen er acceptabel. Ægthed uden at ofre første-mødet for flertallet.
+   Forudsætning: LinkedIn-OAuth skal verificeres stabil + at den faktisk giver navn+arbejdsplads
+   (ikke bekræftet endnu — samme åbne punkt som i create-first-diskussionen).
+
+**Ikke et rent enten-eller.** Sandsynligt endeligt svar: OAuth-primær + email-fallback +
+lette guardrails (rate-limit). Afgør når launch nærmer sig, ikke før.

@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bubble — Monkey test: create-first onboarding</title>
+<style>
+  :root{
+    --bg:#EEECE5; --card:#FAF9F5; --ink:#2C2C2A; --sub:#5F5E5A; --line:#E4E1D8;
+    --admin:#8B5CF6; --admin-bg:#F0EDFC; --admin-br:#C4B5F0;
+    --desktop:#1D7F9E; --desktop-bg:#E1F0F5; --desktop-br:#9FD0E1;
+    --phone:#1D9E75; --phone-bg:#E1F5EE; --phone-br:#9FE1CB;
+    --warn-bg:#FAEEDA; --warn-br:#BA7517; --warn-ink:#854F0B;
+    --pass:#639922; --fail:#A32D2D;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);font-family:'Figtree',-apple-system,BlinkMacSystemFont,system-ui,sans-serif}
+  .wrap{max-width:820px;margin:0 auto;background:var(--card);color:var(--ink);padding:26px 22px 60px}
+  h1{font-size:24px;font-weight:700;margin:0 0 4px}
+  .sub{font-size:13.5px;color:var(--sub);margin:0 0 18px;line-height:1.55}
+  .status{background:var(--warn-bg);border:1px solid var(--warn-br);color:var(--warn-ink);
+    border-radius:11px;padding:12px 16px;font-size:12.5px;line-height:1.55;margin:0 0 22px}
+
+  /* Setup box */
+  .setup{background:#fff;border:1px solid var(--line);border-radius:13px;padding:16px 18px;margin:0 0 24px}
+  .setup h2{font-size:15px;font-weight:600;margin:0 0 10px}
+  .setup ul{margin:6px 0 0;padding-left:20px}
+  .setup li{font-size:13px;line-height:1.7;color:#444}
+  .setup code{background:#F1EFE8;padding:1px 6px;border-radius:5px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+  /* Role legend */
+  .roles{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 22px}
+  .role-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;
+    padding:6px 12px;border-radius:99px;border:1px solid}
+  .role-chip.admin{background:var(--admin-bg);border-color:var(--admin-br);color:#5b3ca8}
+  .role-chip.desktop{background:var(--desktop-bg);border-color:var(--desktop-br);color:#155e77}
+  .role-chip.phone{background:var(--phone-bg);border-color:var(--phone-br);color:#0f6e56}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .dot.admin{background:var(--admin)} .dot.desktop{background:var(--desktop)} .dot.phone{background:var(--phone)}
+
+  /* Progress */
+  .progress{position:sticky;top:0;background:var(--card);padding:12px 0 10px;margin:0 0 8px;
+    border-bottom:1px solid var(--line);z-index:5;display:flex;align-items:center;gap:12px}
+  .bar{flex:1;height:8px;background:#E4E1D8;border-radius:99px;overflow:hidden}
+  .bar-fill{height:100%;width:0;background:var(--pass);transition:width .25s}
+  .prog-txt{font-size:12.5px;color:var(--sub);font-weight:600;white-space:nowrap}
+  .reset-btn{font-size:11.5px;color:var(--sub);background:none;border:1px solid var(--line);
+    border-radius:7px;padding:4px 9px;cursor:pointer}
+
+  /* Scenario */
+  .scen{margin:26px 0 0;border-top:2px solid var(--line);padding-top:20px}
+  .scen-head{display:flex;align-items:baseline;gap:10px;margin:0 0 4px}
+  .scen-num{font-size:12px;font-weight:700;color:#fff;background:var(--ink);border-radius:6px;
+    padding:2px 8px;flex-shrink:0}
+  .scen h2{font-size:17px;font-weight:600;margin:0}
+  .scen .why{font-size:12.5px;color:var(--sub);margin:2px 0 14px;line-height:1.55}
+
+  /* Step */
+  .step{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid #EFEDE6;align-items:flex-start}
+  .step:last-child{border-bottom:none}
+  .step-check{flex-shrink:0;width:22px;height:22px;border:2px solid #CBC9C0;border-radius:6px;
+    cursor:pointer;margin-top:1px;display:flex;align-items:center;justify-content:center;background:#fff;transition:all .15s}
+  .step-check.on{background:var(--pass);border-color:var(--pass)}
+  .step-check.on::after{content:"✓";color:#fff;font-size:14px;font-weight:700}
+  .step-body{flex:1}
+  .step-role{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:99px;
+    margin:0 0 5px;letter-spacing:.02em}
+  .step-role.admin{background:var(--admin-bg);color:#5b3ca8}
+  .step-role.desktop{background:var(--desktop-bg);color:#155e77}
+  .step-role.phone{background:var(--phone-bg);color:#0f6e56}
+  .step-action{font-size:14px;line-height:1.55;color:#333}
+  .step-expect{font-size:12.5px;line-height:1.5;color:var(--sub);margin-top:4px;
+    padding-left:11px;border-left:2px solid #DEDBCF}
+  .step-expect b{color:#0f6e56;font-weight:600}
+  .step.done .step-action{color:#8a8980;text-decoration:line-through;text-decoration-color:#CBC9C0}
+  code{background:#F1EFE8;padding:1px 6px;border-radius:5px;font-size:12px;font-family:ui-monospace,Menlo,monospace}
+
+  /* Fail note */
+  .failbox{margin-top:8px}
+  .failbox summary{font-size:11.5px;color:var(--fail);cursor:pointer;list-style:none;user-select:none}
+  .failbox summary::-webkit-details-marker{display:none}
+  .failbox textarea{width:100%;margin-top:6px;border:1px solid var(--warn-br);border-radius:8px;
+    padding:8px 10px;font-size:12.5px;font-family:inherit;resize:vertical;min-height:44px;background:#FFFDF8}
+
+  .crit{background:#FCEBEB;border:1px solid #E09595;border-radius:8px;padding:9px 13px;
+    font-size:12px;color:#791F1F;margin:10px 0 0;line-height:1.5}
+  .crit b{font-weight:700}
+  .foot{font-size:12px;color:#888780;margin-top:36px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="status"><b>Intern QA-protokol — create-first onboarding (ADR-010).</b> Kør denne test FØR pilot, efter deploy af create-first-flowet. Afkrydsning gemmes lokalt i browseren (localStorage) så du kan lukke og vende tilbage. Ikke slutbrugerdokumentation.</div>
+
+  <h1>Monkey test — create-first onboarding</h1>
+  <p class="sub">Systematisk gennemgang af det nye "opret først"-flow på tværs af tre roller og to fysiske enheder. Målet er at bekræfte at en helt ny bruger kan scanne → oprette → onboarde → fuldføre handlingen, og at eksisterende brugere er upåvirkede.</p>
+
+  <div class="setup">
+    <h2>Opsætning — det skal du bruge</h2>
+    <div class="crit" style="margin:0 0 12px">💡 <b>Email-bekræftelse er slået fra i pilot.</b> Det betyder du kan oprette <b>ubegrænset</b> testbrugere øjeblikkeligt: en hvilken som helst email (også opdigtet, fx <code>test1@test.dk</code>) + adgangskode giver en fuldt fungerende bruger med det samme — ingen bekræftelsesmail skal åbnes. Hver inkognito-fane = én ny, ren testbruger.</div>
+    <ul>
+      <li><b>Super-admin</b> (din hovedkonto, <code>role = 'admin'</code>) på en hvilken som helst enhed. Bruges til at generere QR-koder/links og rydde op mellem tests via debug-værktøjerne.</li>
+      <li><b>Testbrugere på desktop:</b> så mange du vil, hver i sin egen <b>inkognito-fane</b> (frisk session hver gang). Brug opdigtede emails — <code>test1@test.dk</code>, <code>test2@test.dk</code> osv. Ideelt til at teste bruger-mod-bruger og eksisterende-mod-ny på samme skærm.</li>
+      <li><b>Testtelefon — det ægte første møde:</b> en telefon der <b>ikke</b> er din egen, helst hvor Bubble aldrig har været installeret. Denne enhed er uerstattelig — den beviser PWA-install + standalone-adfærd som en desktop-browser IKKE kan.</li>
+      <li>Slet evt. gamle Bubble-genveje og ryd Safari-data på testtelefonen før start (frisk tilstand).</li>
+      <li>Have <code>bubbleme.dk</code> klar. Alle test-links åbnes i den <b>rigtige</b> app på root — ikke gamle <code>/next/</code> eller <code>/v3/</code>.</li>
+    </ul>
+  </div>
+
+  <div class="roles">
+    <span class="role-chip admin"><i class="dot admin"></i>Super-admin</span>
+    <span class="role-chip desktop"><i class="dot desktop"></i>Testbruger A · desktop</span>
+    <span class="role-chip phone"><i class="dot phone"></i>Testbruger B · telefon</span>
+  </div>
+
+  <div class="progress">
+    <span class="prog-txt" id="progTxt">0 / 0</span>
+    <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+    <button class="reset-btn" onclick="resetAll()">Nulstil</button>
+  </div>
+
+  <div id="scenarios"></div>
+
+  <div class="foot">
+    Når alle punkter er krydset af og fejl-noter udfyldt: send dokumentet (eller dine noter) tilbage til en ny session for gennemgang.
+    Husk at mocks i koden allerede har bekræftet <i>logikken</i> — denne test bekræfter <i>virkeligheden</i> på rigtige enheder, som mocks ikke kan.
+  </div>
+</div>
+
+<script>
+// ── Test-data: scenarier med rolle-opdelte trin ──
+var SCENARIOS = [
+  {
+    n: "0", title: "Forberedelse — generér testmateriale",
+    why: "Super-admin laver de QR-koder og links som testbrugerne skal scanne. Gør dette først, så du har alt klar.",
+    steps: [
+      { role:"admin", action:"Log ind som super-admin. Åbn debug-værktøjerne (lyn-ikonet) og generér et <b>personligt QR-testlink</b> (<code>?qrt=…</code>).", expect:"Du får et link/QR der peger på din egen profil." },
+      { role:"admin", action:"Opret (eller find) et <b>public event</b> og kopiér dets del-link (<code>?event=…</code>).", expect:"Et event-link du kan sende til testbrugerne." },
+      { role:"admin", action:"Opret (eller find) et <b>public netværk</b> og kopiér dets join-link (<code>?join=…</code> eller <code>?event=…</code>).", expect:"Et netværks-link klar til test." },
+      { role:"admin", action:"Send de tre links til dig selv, så de er tilgængelige på både desktop og testtelefonen.", expect:"Alle tre links klar begge steder." }
+    ]
+  },
+  {
+    n: "1", title: "Ny bruger scanner PERSON → email-signup (telefon)",
+    why: "Kerneflowet: det gyldne første møde. En helt ny bruger på en anden telefon scanner en persons kode og skal ende med personen gemt som kontakt.",
+    steps: [
+      { role:"phone", action:"På testtelefonen (ingen session): åbn det <b>personlige QR-link</b> fra admin.", expect:"Velkomst-modal vises: <b>“Du har scannet en personlig Bubble-kode”</b> + “Log ind eller opret profil”. INGEN navn eller data om personen vises endnu." },
+      { role:"phone", action:"Tryk “Log ind eller opret profil” → vælg <b>opret med email</b>. Udfyld email + adgangskode.", expect:"Du føres til onboarding (gate-model), ét skridt ad gangen." },
+      { role:"phone", action:"Gennemfør onboarding: navn, derefter arbejdsplads.", expect:"Roligt, pædagogisk flow — ikke alle felter på én skærm." },
+      { role:"phone", action:"Efter onboarding: se hvad der sker automatisk.", expect:"Bekræftelses-modal vises: <b>“Vil du gemme [navn] som kontakt?”</b> — NU vises personens navn (efter login). Du trykker aktivt for at gemme." },
+      { role:"phone", action:"Bekræft “Gem som kontakt”.", expect:"Personen er nu i dine kontakter. Toast bekræfter." }
+    ],
+    crit: "Dette er hele pointen med create-first. Hvis navnet vises FØR login, eller hvis kontakten IKKE gemmes efter, er flowet brudt."
+  },
+  {
+    n: "2", title: "Ny bruger scanner EVENT → email-signup (desktop)",
+    why: "Samme flow, men event-type og på desktop. Bekræfter at event-check-in fungerer gennem hele create-first-kæden.",
+    steps: [
+      { role:"desktop", action:"I inkognito-browser (ingen session): åbn <b>event-linket</b> fra admin.", expect:"Velkomst-modal: <b>“Du har scannet et event på Bubble”</b> + CTA. Intet event-navn vises endnu." },
+      { role:"desktop", action:"Opret profil med email → gennemfør onboarding.", expect:"Samme gate-model som på telefon." },
+      { role:"desktop", action:"Efter onboarding: se bekræftelsen.", expect:"Event-bekræftelsesmodal vises med event-navnet (nu efter login) + <b>“Check ind”</b>." },
+      { role:"desktop", action:"Bekræft check-in.", expect:"Du er checket ind / medlem af eventet." }
+    ]
+  },
+  {
+    n: "3", title: "Ny bruger scanner NETVÆRK (telefon eller desktop)",
+    why: "Tredje scan-type. Netværk kan kræve ansøgning (private) eller direkte join (public) — bekræft begge udfald hvis muligt.",
+    steps: [
+      { role:"phone", action:"Ny session: åbn <b>netværks-linket</b>.", expect:"Velkomst-modal: <b>“Du har scannet et netværk på Bubble”</b> + CTA." },
+      { role:"phone", action:"Opret profil → onboarding → se bekræftelse.", expect:"Netværks-modal med <b>“Deltag”</b> (public) eller <b>“Ansøg om medlemskab”</b> (private)." },
+      { role:"phone", action:"Bekræft handlingen.", expect:"Public: du er medlem. Private: “Afventer godkendelse” vises." }
+    ]
+  },
+  {
+    n: "4", title: "EKSISTERENDE bruger scanner (upåvirket sti)",
+    why: "Kritisk regression: vi ændrede KUN den nye brugers flow. En allerede indlogget bruger skal opleve nøjagtig samme flow som før — handlingen sker uden create-first-mellemtrin.",
+    steps: [
+      { role:"desktop", action:"Med testbruger A NU logget ind: åbn et <b>nyt personligt QR-link</b> (fra en anden testkonto eller admin).", expect:"INGEN velkomst-modal. Bekræftelsesmodal (eller direkte gem) vises straks — den gamle sti." },
+      { role:"desktop", action:"Logget ind: åbn event-linket igen.", expect:"Går direkte til event-bekræftelse/check-in, ingen “opret profil”-mellemtrin." },
+      { role:"phone", action:"Med testbruger B logget ind: gentag person-scan.", expect:"Samme: direkte handling, intet create-first-mellemtrin." }
+    ],
+    crit: "Hvis en logget-ind bruger ser velkomst-modalen “opret profil”, er den logged-in sti fejlagtigt blevet påvirket."
+  },
+  {
+    n: "5", title: "Edge cases — det der plejer at fejle",
+    why: "De sjældne tilfælde der rammer i produktion men ikke i en glad-sti-demo. Disse er acceptance-kriterier vi eksplicit byggede for.",
+    steps: [
+      { role:"phone", action:"<b>Afbrudt onboarding:</b> Start person-scan → opret profil → LUK appen midt i onboarding. Genåbn inden for 15 min.", expect:"Du kan genoptage — scan-intentionen overlevede. Ender stadig ved bekræftelses-modal." },
+      { role:"phone", action:"<b>Udløbet kode:</b> Brug et gammelt/udløbet QR-link (bed admin generere ét og vent til det udløber, eller genbrug et brugt engangstoken).", expect:"Venlig besked: <b>“Denne scanning kan ikke længere bruges … scan igen”</b>. INGEN crash, ingen uendelig loop." },
+      { role:"desktop", action:"<b>Dobbelt-tryk:</b> Ved bekræftelses-modalen, tryk “Gem/Check ind” hurtigt to gange.", expect:"Ingen dublet — kun én kontakt/ét medlemskab. Idempotent." },
+      { role:"phone", action:"<b>Allerede kontakt:</b> Scan en person du ALLEREDE har gemt.", expect:"Behandles pænt — “allerede gemt”-tilstand, ingen fejl." },
+      { role:"admin", action:"<b>Logout rydder:</b> Start en scan (velkomst vises), men log ud i stedet for at oprette. Log ind igen.", expect:"Ingen efterladt scan-intention popper uventet op. Ren tilstand." }
+    ],
+    crit: "Udløbet kode og dobbelt-tryk er de to vigtigste. En loop eller en dublet her er en blocker."
+  },
+  {
+    n: "6", title: "PWA-install på testtelefonen (root)",
+    why: "Bekræfter at det nye flow spiller sammen med at installere appen fra root — og at der ikke er spøgelser fra de gamle /next//v3/-genveje.",
+    steps: [
+      { role:"phone", action:"Efter oprettelse: installér Bubble via Safari → Del → “Føj til hjemmeskærm”.", expect:"Genvej oprettes fra <code>bubbleme.dk</code> (root)." },
+      { role:"phone", action:"Åbn appen fra hjemmeskærms-genvejen.", expect:"Åbner i standalone (ingen Safari-adresselinje), ingen “opdatering”-loop." },
+      { role:"phone", action:"Scan en ny kode fra den installerede app (nu logget ind).", expect:"Direkte handling — den gentagne oplevelse. Dette er 30-sekunders-flowet." }
+    ]
+  }
+];
+
+// ── Render ──
+var container = document.getElementById('scenarios');
+var STORAGE_KEY = 'bubble_monkeytest_createfirst_v1';
+var state = {};
+try { state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { state = {}; }
+
+var roleLabel = { admin:"Super-admin", desktop:"Testbruger A · desktop", phone:"Testbruger B · telefon" };
+
+function stepId(si, ti){ return 's'+si+'_'+ti; }
+
+SCENARIOS.forEach(function(sc, si){
+  var div = document.createElement('div');
+  div.className = 'scen';
+  var stepsHtml = sc.steps.map(function(st, ti){
+    var id = stepId(si, ti);
+    var done = !!state[id];
+    var noteId = id + '_note';
+    var noteVal = state[noteId] || '';
+    return '<div class="step' + (done?' done':'') + '" data-id="'+id+'">' +
+      '<div class="step-check' + (done?' on':'') + '" onclick="toggle(\''+id+'\')"></div>' +
+      '<div class="step-body">' +
+        '<span class="step-role '+st.role+'">'+roleLabel[st.role]+'</span>' +
+        '<div class="step-action">'+st.action+'</div>' +
+        '<div class="step-expect"><b>Forventet:</b> '+st.expect+'</div>' +
+        '<details class="failbox"'+(noteVal?' open':'')+'>' +
+          '<summary>✗ Noter afvigelse hvis det fejlede</summary>' +
+          '<textarea placeholder="Hvad skete der i stedet?" oninput="saveNote(\''+noteId+'\', this.value)">'+noteVal.replace(/</g,'&lt;')+'</textarea>' +
+        '</details>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  var critHtml = sc.crit ? '<div class="crit"><b>Kritisk:</b> '+sc.crit+'</div>' : '';
+  div.innerHTML =
+    '<div class="scen-head"><span class="scen-num">'+sc.n+'</span><h2>'+sc.title+'</h2></div>' +
+    '<div class="why">'+sc.why+'</div>' +
+    stepsHtml + critHtml;
+  container.appendChild(div);
+});
+
+function toggle(id){
+  state[id] = !state[id];
+  save();
+  var el = document.querySelector('[data-id="'+id+'"]');
+  var chk = el.querySelector('.step-check');
+  if(state[id]){ el.classList.add('done'); chk.classList.add('on'); }
+  else { el.classList.remove('done'); chk.classList.remove('on'); }
+  updateProgress();
+}
+function saveNote(id, val){ state[id] = val; save(); }
+function save(){ try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){} }
+
+function updateProgress(){
+  var total = 0, done = 0;
+  SCENARIOS.forEach(function(sc, si){
+    sc.steps.forEach(function(st, ti){ total++; if(state[stepId(si,ti)]) done++; });
+  });
+  document.getElementById('progTxt').textContent = done + ' / ' + total;
+  document.getElementById('barFill').style.width = total ? (done/total*100)+'%' : '0';
+}
+function resetAll(){
+  if(!confirm('Nulstil alle afkrydsninger og noter?')) return;
+  state = {}; save();
+  document.querySelectorAll('.step').forEach(function(el){ el.classList.remove('done'); });
+  document.querySelectorAll('.step-check').forEach(function(c){ c.classList.remove('on'); });
+  document.querySelectorAll('.failbox textarea').forEach(function(t){ t.value=''; });
+  document.querySelectorAll('.failbox').forEach(function(d){ d.removeAttribute('open'); });
+  updateProgress();
+}
+updateProgress();
+</script>
+</body>
+</html>

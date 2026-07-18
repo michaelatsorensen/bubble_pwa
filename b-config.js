@@ -14,8 +14,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-07-18 09:35';
-const BUILD_VERSION  = 'v3-v3.149';
+const BUILD_TIMESTAMP = '2026-07-18 16:58';
+const BUILD_VERSION  = 'v3-v3.150';
 // AUTO_UPDATE: naar true, aktiverer ny service worker STRAKS (auto-reload) uden at
 // vente paa brugeren. Til udviklingsfasen (v3) saa deploys slaar igennem med det samme.
 // SAET TIL false FOER produktion/pilot - ellers genindlaeses appen under brugere midt i noget.
@@ -270,10 +270,47 @@ function consumeFlow(key) {
 
 // Safety clear — removes ALL flow flags to prevent stale state
 function flowClearAll() {
-  ['pending_contact', 'pending_join', 'event_flow', 'post_tags_destination'].forEach(function(key) {
+  ['pending_contact', 'pending_join', 'event_flow', 'post_tags_destination', 'scan_intent'].forEach(function(key) {
     flowRemove(key);
   });
 }
+
+// ══════════════════════════════════════════════════════════
+//  SCAN-INTENT (ADR-010 "opret foerst")
+//  Naar en IKKE-logget bruger scanner en QR, gemmer vi INTENTIONEN
+//  persistent — men resolver INTET data foer login. Efter login/onboarding
+//  resolves intentionen i authenticated kontekst og brugeren bekraefter
+//  handlingen. Se ADR-010 REVISION (18. jul).
+//
+//  DATAKONTRAKT (streng — undgaa "hvad betoed den streng"-bugs):
+//    {
+//      kind:    'person' | 'event' | 'network'   // hvad blev scannet
+//      ref:     string                            // den raa reference
+//      refKind: 'qr_token' | 'join_code' | 'uuid' // hvordan ref skal resolves
+//    }
+//  Gemmer ALDRIG persondata, user-ID eller entity-navn. Kun hvordan man
+//  senere (efter login) kan slaa det op. TTL = _flowTTL (15 min) via flowSet.
+// ══════════════════════════════════════════════════════════
+var SCAN_KINDS = ['person', 'event', 'network'];
+var SCAN_REF_KINDS = ['qr_token', 'join_code', 'uuid'];
+
+function scanIntentSet(kind, ref, refKind) {
+  // Valider strengt — afvis alt der ikke matcher kontrakten frem for at gemme skrald.
+  if (SCAN_KINDS.indexOf(kind) < 0) { logError('scanIntentSet', new Error('bad kind: ' + kind)); return false; }
+  if (SCAN_REF_KINDS.indexOf(refKind) < 0) { logError('scanIntentSet', new Error('bad refKind: ' + refKind)); return false; }
+  if (!ref || typeof ref !== 'string' || ref.length > 64) { logError('scanIntentSet', new Error('bad ref')); return false; }
+  flowSet('scan_intent', { kind: kind, ref: ref, refKind: refKind });
+  return true;
+}
+
+// Ikke-destruktiv laesning (til modal-visning). Returnerer null hvis fravaerende/udloebet.
+function scanIntentGet() {
+  var v = flowGet('scan_intent');
+  if (!v || SCAN_KINDS.indexOf(v.kind) < 0 || SCAN_REF_KINDS.indexOf(v.refKind) < 0 || !v.ref) return null;
+  return v;
+}
+
+function scanIntentClear() { flowRemove('scan_intent'); }
 
 // ══════════════════════════════════════════════════════════
 //  SAFE APP RESET — clears ALL session state on logout

@@ -227,45 +227,49 @@ async function checkQRAnonPreview() {
     // qrToken is short-lived random string, not UUID — keep as-is but cap length
     if (qrToken && (typeof qrToken !== 'string' || qrToken.length > 40 || !/^[a-z0-9]+$/i.test(qrToken))) qrToken = null;
 
-    // Resolve QR token → profile ID
-    if (qrToken && !profileId) {
-      try {
-        var tokenData = await resolveQrToken(qrToken);
-        if (tokenData) {
-          if (!tokenData.expired) {
-            profileId = tokenData.user_id;
-          } else {
-            // Token expired — clean URL and show toast
-            window.history.replaceState({}, document.title, window.location.pathname);
-            // Don't block boot — just ignore expired token
-          }
-        }
-      } catch(e) { logError('qrToken resolve', e); }
-    }
-    
-    // Only show anon preview if NOT logged in
+    if (!profileId && !joinId && !qrToken) return false;
+
     var { data: { session } } = await sb.auth.getSession();
+
+    // ── LOGGED-IN sti (UAENDRET adfaerd) ──
+    // En logget bruger maa gerne resolve tokenet (authenticated opslag er trygt) og
+    // faa kontakten gemt. Denne sti roeres ikke af ADR-010 "opret foerst".
     if (session) {
-      // Logged-in user scanning a QR → save contact + navigate to profile
+      // qrt -> profileId (kun her, hvor brugeren er authenticated)
+      if (qrToken && !profileId) {
+        try {
+          var tokenData = await resolveQrToken(qrToken);
+          if (tokenData && !tokenData.expired) profileId = tokenData.user_id;
+        } catch(e) { logError('qrToken resolve (logged-in)', e); }
+      }
       if (profileId && profileId !== session.user.id) {
         flowSet('pending_contact', profileId);
+      } else if (joinId) {
+        flowSet('pending_join', joinId);
       }
-      // Clean URL to prevent re-entry on refresh
       window.history.replaceState({}, document.title, window.location.pathname);
       return false;
     }
-    
-    if (profileId) {
-      flowSet('pending_contact', profileId);
-      await loadQRProfilePreview(profileId);
-      return true;
+
+    // ── ANON sti (ADR-010 "opret foerst") ──
+    // INGEN dataopslag. Gem scan-intentionen persistent (token/param + type), rens
+    // URL'en, og vis velkomst-modalen. Tokenet resolves FOERST efter login (Del 4).
+    var stored = false;
+    if (qrToken) {
+      stored = scanIntentSet('person', qrToken, 'qr_token');
+    } else if (profileId) {
+      // Direkte ?profile=uuid (aeldre link-form) — gem som person via uuid.
+      stored = scanIntentSet('person', profileId, 'uuid');
+    } else if (joinId) {
+      stored = scanIntentSet('network', joinId, 'uuid');
     }
-    if (joinId) {
-      flowSet('pending_join', joinId);
-      await loadQRProfilePreview(null, joinId);
-      return true;
-    }
-    return false;
+    // Rens URL'en FOERST efter intent er gemt sikkert (undgaa re-entry-loop ved refresh).
+    window.history.replaceState({}, document.title, window.location.pathname);
+    if (!stored) return false;
+
+    var intent = scanIntentGet();
+    showScanWelcome(intent ? intent.kind : 'person');
+    return true;
   } catch(e) {
     logError('checkQRAnonPreview', e);
     return false;
@@ -275,123 +279,50 @@ async function checkQRAnonPreview() {
 // ── Store QR owner profile for contextual auth ──
 var _qrContactProfile = null;
 
-async function loadQRProfilePreview(userId, bubbleId) {
-  try {
-    if (!sb) initSupabase();
-    
-    if (userId) {
-      var _pv = ((await sb.rpc('get_profile_preview', { p_user_id: userId, p_bubble_id: bubbleId || null })).data) || {};
-      var profile = _pv.profile;
-      
-      if (profile) {
-        // Store for contextual auth
-        _qrContactProfile = profile;
+// ══════════════════════════════════════════════════════════
+//  SCAN-VELKOMST (ADR-010 "opret foerst")
+//  Vist naar en IKKE-logget bruger scanner. INTET dataopslag —
+//  kun scan-TYPEN vises. Genbruger screen-qr-preview men skjuler
+//  alle data-elementer og viser en ren velkomst + CTA.
+//  Entity-navne vises FOERST efter login (se ADR-010 REVISION).
+// ══════════════════════════════════════════════════════════
+function showScanWelcome(kind) {
+  // Skjul alle data-baerende elementer fra den gamle preview-skaerm.
+  ['qr-preview-stats-row', 'qr-preview-bubbles', 'qr-preview-network-section'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  var tagsEl = document.getElementById('qr-preview-tags');
+  if (tagsEl) tagsEl.innerHTML = '';
 
-        // ── Hero ──
-        var nameEl = document.getElementById('qr-preview-name');
-        var titleEl = document.getElementById('qr-preview-title');
-        var tagsEl = document.getElementById('qr-preview-tags');
-        var avatarEl = document.getElementById('qr-preview-avatar');
-        
-        if (nameEl) nameEl.textContent = profile.name || 'Bubble-bruger';
-        if (titleEl) {
-          var titleParts = [];
-          if (profile.title) titleParts.push(profile.title);
-          if (profile.workplace) titleParts.push(profile.workplace);
-          titleEl.textContent = titleParts.join(' · ') || '';
-        }
-        if (tagsEl) {
-          tagsEl.innerHTML = (profile.keywords || []).slice(0, 5).map(function(t) {
-            return '<span style="font-size:0.68rem;padding:0.2rem 0.55rem;border-radius:99px;background:rgba(100,180,230,0.07);color:#534AB7;font-weight:500">' + escHtml(t) + '</span>';
-          }).join('');
-        }
-        if (avatarEl) {
-          if (profile.avatar_url) {
-            avatarEl.innerHTML = '<img src="' + escHtml(profile.avatar_url) + '" class="u-avatar-img">';
-          } else {
-            avatarEl.textContent = (profile.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-          }
-        }
-        
-        // ── Stats: network count + bubbles (from preview RPC) ──
-        var netCount = _pv.contact_count || 0;
-        var memberships = (_pv.bubbles || []).map(function(b) { return { bubbles: b, bubble_id: b.id }; });
-        
-        var netEl = document.getElementById('qr-preview-network-count');
-        if (netEl) netEl.textContent = netCount;
-        var bubCountEl = document.getElementById('qr-preview-bubble-count');
-        if (bubCountEl) bubCountEl.textContent = memberships.length;
-        
-        // ── Bubble pills ──
-        var bubblesEl = document.getElementById('qr-preview-bubbles');
-        if (bubblesEl && memberships.length > 0) {
-          bubblesEl.innerHTML = memberships.map(function(m) {
-            var b = m.bubbles || {};
-            var isEvent = b.type === 'event' || b.type === 'live';
-            var col = isEvent ? 'rgba(46,207,207,' : 'rgba(100,180,230,';
-            var dotCol = isEvent ? '#2ECFCF' : 'rgb(100,180,230)';
-            var txtCol = isEvent ? '#0F6E56' : '#534AB7';
-            return '<div style="display:flex;align-items:center;gap:0.3rem;padding:0.35rem 0.65rem;border-radius:10px;background:' + col + '0.06);border:1px solid ' + col + '0.12);flex-shrink:0">' +
-              '<div style="width:6px;height:6px;border-radius:50%;background:' + dotCol + '"></div>' +
-              '<span style="font-size:0.68rem;font-weight:600;color:' + txtCol + ';white-space:nowrap">' + escHtml(b.name || '...') + '</span></div>';
-          }).join('');
-        }
-        
-        // ── Network contacts (real profiles from shared bubbles) ──
-        var labelEl = document.getElementById('qr-preview-context-label');
-        if (labelEl && profile.name) {
-          labelEl.textContent = t('qr_people_network', {name: profile.name.split(' ')[0]});
-        }
-        var listEl = document.getElementById('qr-preview-network-list');
-        var moreEl = document.getElementById('qr-preview-more-label');
-        if (listEl) {
-          // Network from preview RPC (contacts, safe fields only)
-          var contacts = (_pv.network || []).slice(0, 5).map(function(p) { return { profiles: p }; });
-          
-          var colors = [
-            'linear-gradient(135deg,#2ECFCF,#22B8CF)','linear-gradient(135deg,#8B5CF6,#A855F7)',
-            'linear-gradient(135deg,#E879A8,#EC4899)','linear-gradient(135deg,#1A9E8E,#10B981)',
-            'linear-gradient(135deg,#6366F1,rgb(100,180,230))'
-          ];
-          if (contacts && contacts.length > 0) {
-            listEl.innerHTML = contacts.map(function(c, i) {
-              var p = c.profiles || {};
-              var ini = (p.name || '?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-              var avHtml = p.avatar_url
-                ? '<img src="' + escHtml(p.avatar_url) + '" class="u-avatar-img">'
-                : ini;
-              var tags = (p.keywords || []).slice(0, 2).map(function(t) {
-                return '<span style="font-size:0.55rem;padding:0.1rem 0.35rem;border-radius:6px;background:rgba(100,180,230,0.07);color:#534AB7">' + escHtml(t) + '</span>';
-              }).join('');
-              return '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.6rem 0.7rem;border-radius:12px;background:rgba(30,27,46,0.02);border:1px solid var(--glass-border-subtle)">' +
-                '<div style="width:38px;height:38px;border-radius:50%;background:' + colors[i % colors.length] + ';display:flex;align-items:center;justify-content:center;color:white;font-size:0.72rem;font-weight:700;flex-shrink:0;overflow:hidden">' + avHtml + '</div>' +
-                '<div style="flex:1;min-width:0"><div style="font-size:0.8rem;font-weight:600;color:var(--text)">' + escHtml(p.name || '?') + '</div>' +
-                '<div style="font-size:0.68rem;color:var(--text-secondary)">' + escHtml(p.title || '') + '</div></div>' +
-                (tags ? '<div style="display:flex;gap:0.15rem;flex-shrink:0">' + tags + '</div>' : '') +
-              '</div>';
-            }).join('');
-            // "More" label
-            if (moreEl && netCount > contacts.length) {
-              moreEl.textContent = '+ ' + (netCount - contacts.length) + ' flere i netværket';
-            }
-          } else {
-            listEl.innerHTML = '';
-          }
-        }
-      }
-      goTo('screen-qr-preview');
-    } else {
-      // Bubble join — route by bubble TYPE: events get the event-landing, networks the teaser
-      var { data: _jb } = await sb.from('bubbles').select('id, name, type, location').eq('id', bubbleId).maybeSingle();
-      if (_jb) { _routeBubblePreScreen(_jb); }
-      else { goTo('screen-qr-teaser'); loadTeaserProfiles(bubbleId); }
-    }
-    window.history.replaceState({}, document.title, window.location.pathname);
-  } catch(e) {
-    logError('loadQRProfilePreview', e);
-    goTo('screen-auth');
+  // Type-specifik, data-fri velkomsttekst.
+  var lines = {
+    person:  { icon: 'user',    what: t('scan_what_person') },
+    event:   { icon: 'calendar', what: t('scan_what_event') },
+    network: { icon: 'network',  what: t('scan_what_network') }
+  }[kind] || { icon: 'qr', what: t('scan_what_generic') };
+
+  var avatarEl = document.getElementById('qr-preview-avatar');
+  if (avatarEl) {
+    avatarEl.innerHTML = icon(lines.icon);
+    avatarEl.style.display = 'flex';
+    avatarEl.style.alignItems = 'center';
+    avatarEl.style.justifyContent = 'center';
   }
+  var nameEl = document.getElementById('qr-preview-name');
+  if (nameEl) nameEl.textContent = t('scan_welcome_title');
+  var titleEl = document.getElementById('qr-preview-title');
+  if (titleEl) titleEl.textContent = lines.what;
+
+  // CTA daekker BAADE ny og udlogget-eksisterende bruger.
+  var ctaBtn = document.querySelector('#screen-qr-preview .btn-primary');
+  if (ctaBtn) ctaBtn.textContent = t('scan_cta_login_or_signup');
+  var ctaSub = document.getElementById('qr-preview-cta-sub');
+  if (ctaSub) ctaSub.textContent = t('scan_cta_sub');
+
+  goTo('screen-qr-preview');
 }
+
 
 function qrPreviewSignup() {
   // Go directly to auth with QR context — no teaser detour
@@ -570,28 +501,15 @@ async function checkGuestEventRoute() {
       return false;
     }
     
-    // Resolve bubble
-    var bubble = null;
-    var { data: b } = await sb.from('bubbles')
-      .select('id, name, type, location')
-      .or('id.eq.' + eventId + ',join_code.eq.' + eventId)
-      .limit(1)
-      .maybeSingle();
-    if (b) bubble = b;
-    
-    if (!bubble) {
-      var uuidMatch = eventId.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-      if (uuidMatch) {
-        var { data: b2 } = await sb.from('bubbles').select('id, name, type, location').eq('id', uuidMatch[0]).maybeSingle();
-        if (b2) bubble = b2;
-      }
-    }
-    
-    if (!bubble) { _renderToast('Event ikke fundet', 'error'); return false; }
-    
-    // Route by bubble TYPE (events/live → event-landing, networks → teaser) — same as the QR path
-    _routeBubblePreScreen(bubble);
+    // ── ANON sti (ADR-010 "opret foerst") ──
+    // INGEN bubble-opslag foer login. Gem event-parameteren raat som scan-intent
+    // (refKind afhaenger af format), rens URL, vis velkomst-modal. Den autoritative
+    // bubble-type (event vs netvaerk) resolves FOERST efter login (Del 4).
+    var _evRefKind = isUuid(eventId) ? 'uuid' : 'join_code';
+    var _stored = scanIntentSet('event', eventId, _evRefKind);
     window.history.replaceState({}, document.title, window.location.pathname);
+    if (!_stored) return false;
+    showScanWelcome('event');
     return true;
   } catch(e) {
     logError('checkGuestEventRoute', e);
