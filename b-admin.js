@@ -727,6 +727,96 @@ function _debugUpdateTabDots() {
   if (sd) sd.style.display = (typeof _debugErrors !== 'undefined' && _debugErrors.length > 0) ? 'block' : 'none';
 }
 
+// ══════════════════════════════════════════════════════════════════
+//  IN-APP SMOKETEST — create-first onboarding (admin-only)
+//  Kører i browseren med adminens EGEN session. Bekvem "virker det
+//  stadig?"-tjek uden terminal. Bundet af admin-RLS: kan verificere
+//  token-resolve, scan-intent-mekanik og at flow-funktioner findes —
+//  men IKKE anon-RLS-graenser eller auth-sletning (det kraever
+//  terminal-scriptet med service_role). Se scripts/smoketest.mjs.
+// ══════════════════════════════════════════════════════════════════
+async function runInAppSmoketest() {
+  var out = document.getElementById('debug-smoketest-out');
+  if (!out) return;
+  var res = [];
+  function ok(n) { res.push('<div style="color:#7ee08a;padding:2px 0">✓ ' + escHtml(n) + '</div>'); }
+  function no(n, d) { res.push('<div style="color:#ff8a8a;padding:2px 0">✗ ' + escHtml(n) + (d ? ' <span style="color:rgba(255,255,255,0.4)">— ' + escHtml(d) + '</span>' : '') + '</div>'); }
+  function render() { out.innerHTML = res.join(''); }
+
+  out.innerHTML = '<div style="color:rgba(255,255,255,0.5)">Kører…</div>';
+  var createdToken = null;
+
+  try {
+    // 1. Scan-intent-kontrakten (Del 1) — ren klient-logik, ingen DB.
+    if (typeof scanIntentSet === 'function' && typeof scanIntentGet === 'function' && typeof scanIntentClear === 'function') {
+      var okSet = scanIntentSet('person', 'smoketest_ref', 'qr_token');
+      var got = scanIntentGet();
+      var roundtrip = got && got.kind === 'person' && got.ref === 'smoketest_ref' && got.refKind === 'qr_token';
+      var rejectsBad = scanIntentSet('hacker', 'x', 'qr_token') === false;
+      scanIntentClear();
+      var cleared = scanIntentGet() === null;
+      if (okSet && roundtrip && rejectsBad && cleared) ok('Scan-intent: gemmer, validerer, rydder korrekt');
+      else no('Scan-intent kontrakt', 'roundtrip=' + roundtrip + ' rejectBad=' + rejectsBad + ' clear=' + cleared);
+    } else no('Scan-intent funktioner findes', 'scanIntentSet/Get/Clear mangler');
+    render();
+
+    // 2. Velkomst-flow-funktioner findes (Del 2-4).
+    var flowFns = ['showScanWelcome', 'checkQRAnonPreview', 'resumePendingScanIntent'];
+    var missing = flowFns.filter(function(f) { return typeof window[f] !== 'function'; });
+    if (missing.length === 0) ok('Create-first flow-funktioner findes (alle 3)');
+    else no('Flow-funktioner findes', 'mangler: ' + missing.join(', '));
+    render();
+
+    // 3. QR-token: generér for admin selv + resolve (authenticated — som appen).
+    if (currentUser) {
+      var token = 'smoke' + Math.random().toString(36).slice(2, 12);
+      var { error: insErr } = await sb.from('qr_tokens').insert({
+        token: token, user_id: currentUser.id,
+        expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString()
+      });
+      if (insErr) { no('QR-token oprettet', insErr.message); }
+      else {
+        createdToken = token;
+        ok('QR-token oprettet for din konto');
+        var resolved = await resolveQrToken(token);
+        if (resolved && resolved.user_id === currentUser.id) ok('Token resolves korrekt til dig (authenticated)');
+        else no('Token resolves korrekt', 'forkert/manglende user_id');
+      }
+    } else no('Bruger-session', 'ingen currentUser');
+    render();
+
+    // 4. Udløbet token håndteres pænt (opret ét der allerede er udløbet).
+    if (currentUser) {
+      var expToken = 'smokeexp' + Math.random().toString(36).slice(2, 10);
+      var { error: expErr } = await sb.from('qr_tokens').insert({
+        token: expToken, user_id: currentUser.id,
+        expires_at: new Date(Date.now() - 60 * 1000).toISOString() // 1 min siden
+      });
+      if (!expErr) {
+        var expResolved = await resolveQrToken(expToken);
+        // resolve_qr_token bør markere expired (eller returnere null) — ingen crash.
+        var handledExpiry = !expResolved || expResolved.expired === true;
+        if (handledExpiry) ok('Udløbet token håndteres pænt (ingen crash)');
+        else no('Udløbet token', 'blev ikke markeret udløbet');
+        // ryd op
+        await sb.from('qr_tokens').delete().eq('token', expToken);
+      }
+    }
+    render();
+
+  } catch (e) {
+    no('Uventet fejl', e && e.message ? e.message : String(e));
+    render();
+  } finally {
+    // Ryd testtoken op.
+    if (createdToken) { try { await sb.from('qr_tokens').delete().eq('token', createdToken); } catch (e) {} }
+  }
+
+  // Note om hvad in-app IKKE dækker.
+  res.push('<div style="margin-top:0.5rem;padding-top:0.4rem;border-top:0.5px solid rgba(255,255,255,0.08);font-size:0.6rem;color:rgba(255,255,255,0.35);line-height:1.5">Dette tester klient-logik + authenticated datalag. Anon-RLS-grænser og auth-oprydning kræver terminal-scriptet (scripts/smoketest.mjs).</div>');
+  render();
+}
+
 async function _renderDebugFeedback() {
   var el = document.getElementById('debug-feedback-list');
   if (!el) return;

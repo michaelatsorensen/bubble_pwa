@@ -12,7 +12,7 @@
 // Previous behavior (v8.17.30 and earlier): skipWaiting + clients.claim on install,
 // causing potentially-disruptive updates mid-write/mid-flow.
 
-const CACHE_NAME = 'bubble-v3-v3.150';
+const CACHE_NAME = 'bubble-v3-v3.151';
 const CACHE_URLS = [
   './', './index.html', './app.css',
   './bubble-icons.js',
