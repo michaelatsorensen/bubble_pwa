@@ -71,7 +71,7 @@ async function toggleBubbleUpvote(bubbleId) {
     if (allBubbles && allBubbles.length) {
       var nl = document.getElementById('discover-net-list');
       var el = document.getElementById('discover-evt-list');
-      if (nl && nl.offsetParent) _renderDiscoverList(nl, allBubbles.filter(function(b){return b.type!=='event';}), 'netværk');
+      if (nl && nl.offsetParent) _renderDiscoverTree(nl, allBubbles);
       if (el && el.offsetParent) _renderDiscoverList(el, _discoverUpcomingEvents(), 'events');
     }
     // Update info panel button if open
@@ -151,7 +151,7 @@ async function _fetchDiscoverData() {
     // Resolve parent + grandparent names for child bubbles
     var parentIds = allBubbles.filter(function(b) { return b.parent_bubble_id; }).map(function(b) { return b.parent_bubble_id; }).filter(function(v, i, a) { return a.indexOf(v) === i; });
     if (parentIds.length > 0) {
-      var { data: parents } = await sb.from('bubbles').select('id, name, parent_bubble_id').in('id', parentIds);
+      var { data: parents } = await sb.from('bubbles').select('id, name, parent_bubble_id, visibility').in('id', parentIds);
       if (_navVersion !== myNav) return;
       var parentMap = {};
       (parents || []).forEach(function(p) { parentMap[p.id] = p; });
@@ -160,17 +160,24 @@ async function _fetchDiscoverData() {
       var gpIds = (parents || []).filter(function(p) { return p.parent_bubble_id; }).map(function(p) { return p.parent_bubble_id; }).filter(function(v, i, a) { return a.indexOf(v) === i; });
       var gpMap = {};
       if (gpIds.length > 0) {
-        var { data: gps } = await sb.from('bubbles').select('id, name').in('id', gpIds);
+        var { data: gps } = await sb.from('bubbles').select('id, name, visibility').in('id', gpIds);
         if (_navVersion !== myNav) return;
-        (gps || []).forEach(function(g) { gpMap[g.id] = g.name; });
+        (gps || []).forEach(function(g) { gpMap[g.id] = g; });
       }
 
       allBubbles.forEach(function(b) {
         if (b.parent_bubble_id && parentMap[b.parent_bubble_id]) {
           var p = parentMap[b.parent_bubble_id];
           b._parentName = p.name;
+          b._parentId = p.id;
+          // Regel B (ADR/TD): et event/boble arver foraelderens synlighed nedad.
+          // Er foraelder ELLER bedsteforaelder 'hidden', skal barnet skjules i Discover
+          // selv om barnet selv er public. En hidden org skal ikke afsloeres via sine boern.
+          b._parentHidden = (p.visibility === 'hidden');
           if (p.parent_bubble_id && gpMap[p.parent_bubble_id]) {
-            b._grandparentName = gpMap[p.parent_bubble_id];
+            var gp = gpMap[p.parent_bubble_id];
+            b._grandparentName = gp.name;
+            if (gp.visibility === 'hidden') b._parentHidden = true;
           }
         }
       });
@@ -215,8 +222,7 @@ async function loadDiscoverNetworks() {
   list.innerHTML = skelCards(4);
   try {
     await _fetchDiscoverData();
-    var nets = allBubbles.filter(function(b) { return b.type !== 'event'; });
-    _renderDiscoverList(list, nets, 'netværk');
+    _renderDiscoverTree(list, allBubbles);
   } catch(e) { showRetryState('discover-net-list', 'loadDiscoverNetworks', t('err_load_networks')); }
 }
 
@@ -262,6 +268,64 @@ async function _renderDiscoverList(list, bubbles, label) {
   list.innerHTML = bubbles.map(function(b) { return bubbleCard(b, false); }).join('');
 }
 
+// ═══ DISCOVER NETVAERKS-TRAE (genbruger bbRenderTree fra Mine bobler) ═══
+// Netvaerks-listen i Opdag vises som traestruktur: netvaerk -> sub-netvaerk -> events,
+// med guide-linjer og foldbar Historik-gren, praecis som Mine bobler (se ARCHITECTURE-MAP
+// afsnit 21). Events-listen forbliver flad med broedkrummer (uaendret).
+//
+// Regel B (ADR-010-familie): et event/boble arver foraelderens synlighed nedad. Er
+// foraelder/bedsteforaelder 'hidden' (b._parentHidden, sat i _fetchDiscoverData), skjules
+// barnet her — selv om barnet selv er public. En hidden org afsloeres ikke via sine boern.
+//
+// Sortering: nuvaerende popularitet (upvote_count -> member_count -> dato) paa ROD-noder.
+// Boern foelger bbRenderTree's egen orden (sub-netvaerk -> naermeste event -> Historik).
+// Interesse-vaegtet relevans er en separat feature (se FEATURE-IDEAS).
+var _discoverTreeRerender = null;
+async function _renderDiscoverTree(list, allNetworksAndEvents) {
+  await getSavedBubbleIds();
+
+  // Regel B: skjul noder hvis en foraelder/bedsteforaelder er hidden.
+  var visible = allNetworksAndEvents.filter(function(b) { return !b._parentHidden; });
+
+  // Kun noder hvis HELE foraeldre-kaede er til stede blandt de synlige noder faar en
+  // parent_id — ellers ville de haenge uden gren. Mangler foraelderen (fx den er hidden
+  // og dermed ikke i Discover-datasaettet), vises noden paa rodniveau.
+  var visibleIds = {};
+  visible.forEach(function(b) { visibleIds[b.id] = true; });
+
+  var nodes = visible.map(function(b) {
+    var isEv = b.type === 'event' || b.type === 'live';
+    var parentId = (b.parent_bubble_id && visibleIds[b.parent_bubble_id]) ? b.parent_bubble_id : null;
+    return {
+      id: b.id,
+      name: b.name,
+      type: b.type,
+      parent_id: parentId,
+      member_count: b.member_count ?? b.bubble_members?.[0]?.count ?? 0,
+      event_date: b.event_date || null,
+      event_end_date: b.event_end_date || null,
+      visibility: b.visibility,
+      icon_url: b.icon_url || null,
+      _star: !isEv
+    };
+  });
+
+  if (!nodes.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">' + icon('search') + '</div><div class="empty-text">' + t('bb_none_to_discover', {label: 'netværk'}) + '</div></div>';
+    return;
+  }
+
+  // Foldet ind som standard: ingen id'er i expanded ved foerste render.
+  list.innerHTML = bbRenderTree(nodes, _bbFlatExpanded, { fromScreen: 'screen-bubbles' });
+
+  // Re-render callback for toggle (ren DOM, ingen DB-kald — kun expanded-state aendrer sig).
+  _discoverTreeRerender = function() {
+    var _l = document.getElementById('discover-net-list');
+    if (_l) _l.innerHTML = bbRenderTree(nodes, _bbFlatExpanded, { fromScreen: 'screen-bubbles' });
+  };
+  _bbFlatRerender = _discoverTreeRerender;
+}
+
 let _filterTimer = null;
 function filterBubbles(type) {
   clearTimeout(_filterTimer);
@@ -273,9 +337,16 @@ function filterBubbles(type) {
     if (!list || !input) return;
     var q = input.value.toLowerCase();
     if (q) trackEvent('search_discover', { query_length: q.length, type: type });
+    // Netvaerks-fanen: tom soegning -> traestruktur; aktiv soegning -> flade resultater
+    // (traeet giver ikke mening naar man soeger; man vil se matchende bobler direkte).
+    // Events-fanen: altid flad.
+    if (type !== 'evt' && !q) {
+      _renderDiscoverTree(list, allBubbles);
+      return;
+    }
     var source = type === 'evt'
       ? _discoverUpcomingEvents()
-      : allBubbles.filter(function(b) { return b.type !== 'event'; });
+      : allBubbles.filter(function(b) { return !b._parentHidden; }); // regel B ogsaa i soegning
     var filtered = q ? source.filter(function(b) {
       return b.name.toLowerCase().indexOf(q) >= 0 || (b.keywords || []).some(function(k) { return k.toLowerCase().indexOf(q) >= 0; });
     }) : source;
