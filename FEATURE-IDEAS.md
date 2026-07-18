@@ -468,3 +468,40 @@ fuld anonymitet.
 **Bemaerk skala-forskellen:** LinkedIn kan baere det med hundreder af millioner brugere.
 Ved 500 brugere i Soenderborg er der ingen maengde at gemme sig i. Vores taerskel skal
 derfor vaere HOEJERE end LinkedIns, ikke lavere.
+
+
+## Interesse-vaegtet Discover-sortering: upvotes vaegtet efter relevans (jul 2026)
+
+**Status: FEATURE-IDE. Ikke bygget. Byggeklodser findes allerede — kun koblingen mangler.**
+
+**Idéen (Michael):** I dag sorterer Discover efter RAA popularitet (`upvote_count` →
+`member_count` → dato). Bedre: vaegt hver upvote efter hvor meget upvoteren ligner DIG.
+En boble anbefalet af 5 personer med overlappende interesser/bobler skal rangere hoejere
+FOR DIG end en boble anbefalet af 5 tilfaeldige. Sorteringen bliver personaliseret paa
+"forventet relevans" i stedet for ren popularitet.
+
+**Hvorfor det er en ren mulighed — infrastrukturen er der allerede:**
+- `bubble_upvotes` ved HVEM der har upvotet hvad (user_id + bubble_id).
+- `calcMatchScore(myProfile, theirProfile, tier)` (b-radar.js:407) scorer allerede
+  interesse-overlap mellem to PERSONER — bruges paa radar, home-matches, chat-medlemmer.
+  Tier-baseret: sektor-overlap, livsfase, tag-cluster, faelles bobler, cross-match.
+- Manglende led: for hver boble, hent dens upvoteres profiler, score hver mod currentProfile,
+  summér til en relevans-vaegt. `sum(calcMatchScore(me, upvoter))` i stedet for `count(upvotes)`.
+
+**Hvorfor IKKE bygget nu (bevidst):**
+Discover-traeet (mockup klar jul 2026) er en afgraenset UI-opgave. At bundle en ny
+scoring-mekanisme ind ville forvandle den til "UI + helt nyt relevans-system" = scope-glidning.
+Traeet (struktur) og sorteringen (raekkefoelge) er UAFHAENGIGE lag — sorteringen kan
+skiftes senere uden at roere traeet.
+
+**Naar det bygges — aabne spoergsmaal:**
+- Performance: at hente + score alle upvoteres profiler for hver boble i Discover kan blive
+  tungt. Sandsynligvis: cache upvoter-tags, eller score kun top-N bobler, eller praeberegn
+  serverside (RPC). Se ogsaa reviewets Ring 2 (server-side profmatch).
+- Skal raa popularitet stadig vaere en synlig faktor (hybrid), eller ren relevans?
+- Hvad med brugere UDEN interesse-data endnu (nye)? Fallback til popularitet.
+- Bemaerk: upvote-funktionen er i dag en REN popularitetstaeller ("Anbefal"-knap → tal +
+  Discover-sortering). Den feeder intet andet (ikke radar, matches, notifikationer). Denne
+  feature ville give upvote-signalet en anden, personaliseret betydning — vaerd at overveje
+  om "Anbefalet"-tallet stadig skal vise raa antal (socialt bevis) mens SORTERINGEN bruger
+  den vaegtede version.
