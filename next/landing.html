@@ -1,33 +1,79 @@
 <!DOCTYPE html>
 <html lang="da"><head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="refresh" content="0;url=https://bubbleme.dk/">
-<title>Bubble er flyttet</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Bubble — geninstallér</title>
 <style>
-  body{font-family:system-ui,-apple-system,sans-serif;background:#05080C;color:#EAF2FB;
-    display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;
-    text-align:center;padding:2rem;box-sizing:border-box}
-  p{font-size:0.95rem;line-height:1.6;max-width:320px}
-  a{color:#8FC6EC}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:system-ui,-apple-system,'Figtree',sans-serif;
+    background:radial-gradient(ellipse 90% 40% at 50% 0%, rgba(100,140,190,0.15), transparent 60%),#05080C;
+    color:#EAF2FB;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:calc(env(safe-area-inset-top,0px) + 2rem) 1.5rem calc(env(safe-area-inset-bottom,0px) + 2rem);
+    -webkit-font-smoothing:antialiased;line-height:1.5}
+  .card{max-width:400px;width:100%;text-align:center}
+  .icon{width:64px;height:64px;border-radius:19px;margin:0 auto 1.5rem;
+    background:rgba(100,180,230,0.14);border:0.5px solid rgba(100,180,230,0.35);
+    display:flex;align-items:center;justify-content:center;color:rgb(120,190,235)}
+  h1{font-size:1.35rem;font-weight:900;letter-spacing:-0.01em;margin-bottom:0.7rem}
+  .lead{font-size:0.95rem;color:rgba(207,230,247,0.72);margin-bottom:1.8rem}
+  .steps{text-align:left;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.1);
+    border-radius:16px;padding:1.2rem 1.3rem;margin-bottom:1.6rem}
+  .step{display:flex;gap:0.85rem;align-items:flex-start;padding:0.55rem 0}
+  .step:not(:last-child){border-bottom:0.5px solid rgba(255,255,255,0.07)}
+  .num{width:26px;height:26px;border-radius:8px;flex-shrink:0;font-size:0.8rem;font-weight:800;
+    background:rgba(100,180,230,0.16);border:0.5px solid rgba(100,180,230,0.3);color:rgb(140,200,240);
+    display:flex;align-items:center;justify-content:center}
+  .step-txt{font-size:0.9rem;color:rgba(255,255,255,0.88);padding-top:2px}
+  .step-txt b{color:#fff;font-weight:700}
+  .cta{display:block;background:rgba(100,180,230,0.18);border:0.5px solid rgba(100,180,230,0.4);
+    color:#DCEEFB;padding:0.9rem;border-radius:99px;font-weight:800;font-size:0.95rem;
+    text-decoration:none;margin-bottom:0.8rem}
+  .url{font-size:0.85rem;color:rgba(207,230,247,0.55)}
+  .url b{color:#8FC6EC;font-weight:700}
+  .why{font-size:0.78rem;color:rgba(207,230,247,0.42);margin-top:1.6rem;line-height:1.5}
 </style>
 </head><body>
-<div>
-  <p>Bubble er flyttet. Du sendes videre&hellip;</p>
-  <p><a href="https://bubbleme.dk/">Klik her hvis du ikke automatisk sendes videre</a></p>
+<div class="card">
+  <div class="icon">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+    </svg>
+  </div>
+  <h1>Denne version er forældet</h1>
+  <p class="lead">For at få den fulde udnyttelse af Bubbles funktioner skal du slette denne genvej og oprette en ny gennem bubbleme.dk. Det tager kun et øjeblik.</p>
+
+  <div class="steps">
+    <div class="step"><div class="num">1</div><div class="step-txt"><b>Slet denne genvej</b> fra din hjemmeskærm (hold på ikonet → Fjern app).</div></div>
+    <div class="step"><div class="num">2</div><div class="step-txt">Åbn <b>bubbleme.dk</b> i Safari.</div></div>
+    <div class="step"><div class="num">3</div><div class="step-txt">Tryk <b>Del</b>-knappen → <b>Føj til hjemmeskærm</b>.</div></div>
+  </div>
+
+  <a class="cta" href="https://bubbleme.dk/">Åbn bubbleme.dk</a>
+  <div class="url">eller skriv <b>bubbleme.dk</b> i Safari</div>
+
+  <p class="why">Fremover er Bubble samlet ét sted, så du altid er på den nyeste version. Du skal kun opdatere som normalt — aldrig geninstallere igen.</p>
 </div>
+
 <script>
-// Ryd op efter den gamle installation (afregistrer SW + ryd caches) og send videre.
-try {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(regs){
-      regs.forEach(function(r){ r.unregister(); });
-    });
-  }
-  if (window.caches && caches.keys) {
-    caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); });
-  }
-} catch(e) {}
-location.replace('https://bubbleme.dk/');
+// Ryd op efter den gamle installation: afregistrer ALLE service workers + ryd ALLE caches.
+// VIGTIGT: vi redirecter IKKE automatisk. En installeret standalone-PWA kan ikke navigere
+// permanent ud af sit eget scope — forsoeget smider brugeren ud i Safari eller loeper i ring
+// (praecis den bug denne side erstatter). I stedet rydder vi op og viser en aerlig besked,
+// saa naeste gang genvejen aabnes er der intet cachet gammelt tilbage.
+(function(){
+  try {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs){
+        regs.forEach(function(r){ r.unregister(); });
+      }).catch(function(){});
+    }
+    if (window.caches && caches.keys) {
+      caches.keys().then(function(keys){
+        keys.forEach(function(k){ caches.delete(k); });
+      }).catch(function(){});
+    }
+  } catch(e) {}
+})();
 </script>
 </body></html>
