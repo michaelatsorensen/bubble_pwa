@@ -2300,10 +2300,14 @@ async function bcLoadInfo() {
         }
 
         var childCount = allBubbleIds.length - 1;
+        // Label matcher tallets omfang: tæller RPC'en kun boblen (ingen sub-bobler)
+        // er "Medlemmer" korrekt; dækker den også sub-bobler/events, siger vi det
+        // ærligt, så tallet ikke ser ud til at modsige boblens egen header.
+        var memLabel = childCount > 0 ? t('bi_members_network_label') : t('bi_members_label');
         statsHtml = '<div class="section-card">' +
           '<div class="section-card-title">' + t('bi_statistics') + '</div>' +
           '<div class="dash-pair"><div class="dash-row">' +
-            oCard('o-mem-' + b.id, 'users', 'rgba(100,180,230,0.08)', 'var(--accent)', memTotalCount, t('bi_members_label'), memNewCount, 'accent') +
+            oCard('o-mem-' + b.id, 'users', 'rgba(100,180,230,0.08)', 'var(--accent)', memTotalCount, memLabel, memNewCount, 'accent') +
             oCard('o-msg-' + b.id, 'chat', 'rgba(232,121,168,0.08)', 'var(--pink)', msgTotal.count || 0, t('bi_messages_label'), msgNew.count, 'pink') +
           '</div><div class="dash-tray" id="dtray-o1-' + b.id.slice(0,8) + '"><div class="dash-tray-collapse"><div class="dash-tray-inner" id="dti-o1"><div style="font-size:0.72rem;font-weight:700" id="dtitle-o1"></div><div style="font-size:0.55rem;color:rgba(255,255,255,0.55)" id="dsub-o1"></div><div class="dash-chart-wrap"><canvas id="dcv-o1"></canvas></div></div></div></div></div>' +
           '</div>';
