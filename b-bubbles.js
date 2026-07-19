@@ -2528,7 +2528,7 @@ function confirmRequestJoin(bubbleId) {
     '<div style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin-bottom:1.1rem;line-height:1.45">' + escHtml(bName) + ' ' + t('bb_is_private_suffix') + '</div>' +
     '<div style="display:flex;gap:0.6rem">' +
       '<button class="btn-secondary" onclick="document.getElementById(\'request-join-overlay\').remove()" style="flex:1;padding:0.7rem;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:var(--font);margin-bottom:0;border-radius:12px">Annuller</button>' +
-      '<button class="btn-primary" onclick="document.getElementById(\'request-join-overlay\').remove();requestJoin(\'' + bubbleId + '\')" style="flex:1;padding:0.7rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:0;border-radius:12px">' + t('bb_send_request') + '</button>' +
+      '<button class="btn-primary" onclick="document.getElementById(\'request-join-overlay\').remove();requestJoin(\'' + bubbleId + '\')" style="flex:1;padding:0.7rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:0;border-radius:12px;color:#DCEEFB">' + t('bb_send_request') + '</button>' +
     '</div>';
   overlay.appendChild(card);
   document.body.appendChild(overlay);
