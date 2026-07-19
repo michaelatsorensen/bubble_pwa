@@ -2517,20 +2517,17 @@ function confirmRequestJoin(bubbleId) {
   var bName = bcBubbleData?.name || '';
   var overlay = document.createElement('div');
   overlay.id = 'request-join-overlay';
-  // Centreret modal med mørk baggrunds-overlay (ikke bottom-sheet).
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(4px);z-index:999;display:flex;align-items:center;justify-content:center;padding:1.5rem';
-  // Klik udenfor kortet lukker.
+  overlay.className = 'confirm-modal-overlay';
   overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
-  var card = document.createElement('div');
-  card.style.cssText = 'background:#1E2530;border:1px solid rgba(255,255,255,0.16);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);padding:1.5rem 1.4rem;max-width:340px;width:100%;text-align:center;color:rgba(255,255,255,0.95)';
-  card.innerHTML =
-    '<div style="font-size:1rem;font-weight:700;margin-bottom:0.35rem;color:rgba(255,255,255,0.95)">' + t('bb_request_membership_q') + '</div>' +
-    '<div style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin-bottom:1.1rem;line-height:1.45">' + escHtml(bName) + ' ' + t('bb_is_private_suffix') + '</div>' +
-    '<div style="display:flex;gap:0.6rem">' +
-      '<button class="btn-secondary" onclick="document.getElementById(\'request-join-overlay\').remove()" style="flex:1;padding:0.7rem;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:var(--font);margin-bottom:0;border-radius:12px">Annuller</button>' +
-      '<button class="btn-primary" onclick="document.getElementById(\'request-join-overlay\').remove();requestJoin(\'' + bubbleId + '\')" style="flex:1;padding:0.7rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:0;border-radius:12px;color:#DCEEFB">' + t('bb_send_request') + '</button>' +
+  overlay.innerHTML =
+    '<div class="confirm-modal-card">' +
+      '<div class="confirm-modal-title">' + t('bb_request_membership_q') + '</div>' +
+      '<div class="confirm-modal-body">' + escHtml(bName) + ' ' + t('bb_is_private_suffix') + '</div>' +
+      '<div class="confirm-modal-actions">' +
+        '<button class="btn-secondary" onclick="document.getElementById(\'request-join-overlay\').remove()">' + t('misc_cancel') + '</button>' +
+        '<button class="btn-primary" onclick="document.getElementById(\'request-join-overlay\').remove();requestJoin(\'' + bubbleId + '\')">' + t('bb_send_request') + '</button>' +
+      '</div>' +
     '</div>';
-  overlay.appendChild(card);
   document.body.appendChild(overlay);
 }
 
