@@ -1699,8 +1699,8 @@ var dbActions = {
   async requestJoin(bubbleId) {
     if (!currentUser || !bubbleId) return { ok: false };
     try {
-      var { error } = await sb.from('bubble_members').insert({
-        bubble_id: bubbleId, user_id: currentUser.id, status: 'pending'
+      var { error } = await sb.from('bubble_join_requests').insert({
+        bubble_id: bubbleId, user_id: currentUser.id
       });
       if (error && !String(error.message || '').includes('duplicate')) {
         errorToast('save', error); return { ok: false, error: error };

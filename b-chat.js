@@ -669,14 +669,16 @@ async function bcConfigureTabs(b, bubbleId) {
 
 // Phase 3: Load membership, roles, pending state, action buttons
 async function bcLoadMembership(b, bubbleId) {
-  var [upvoteRes, memberRes, roleRes] = await Promise.all([
+  var [upvoteRes, memberRes, roleRes, pendingRes] = await Promise.all([
     loadBubbleUpvotes().catch(function() {}),
     sb.from('bubble_members').select('id,status').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle(),
-    sb.from('bubble_members').select('role').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle()
+    sb.from('bubble_members').select('role').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle(),
+    sb.from('bubble_join_requests').select('id').eq('bubble_id', bubbleId).eq('user_id', currentUser.id).maybeSingle()
   ]);
   var myMembership = memberRes?.data;
   var myRole = roleRes?.data;
-  var isPending = myMembership && myMembership.status === 'pending';
+  // Pending now lives in its own table. A bubble_members row means ACTIVE member.
+  var isPending = !myMembership && !!(pendingRes?.data);
   var isOwner = b.created_by === currentUser.id;
   var isBubbleAdmin = myRole && myRole.role === 'admin';
   var canEdit = isOwner || isBubbleAdmin;
@@ -684,7 +686,7 @@ async function bcLoadMembership(b, bubbleId) {
   bcBubbleData._isAdmin = isBubbleAdmin;
   bcBubbleData._canEdit = canEdit;
   bcBubbleData._isPending = isPending;
-  bcBubbleData._isMember = !!myMembership && !isPending;
+  bcBubbleData._isMember = !!myMembership;
 
   // Pending membership banner
   bcRenderPendingBanner(isPending);
@@ -831,7 +833,7 @@ function bcRenderPendingBanner(isPending) {
 async function bcCancelPending() {
   if (!bcBubbleId || !currentUser) return;
   try {
-    await sb.from('bubble_members').delete().eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id);
+    await sb.from('bubble_join_requests').delete().eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id);
     bcBubbleData._isPending = false;
     bcBubbleData._isMember = false;
     bcRenderPendingBanner(false);
@@ -846,11 +848,14 @@ async function bcRefreshMembership() {
   try {
     var { data: myM } = await sb.from('bubble_members').select('id,status,role')
       .eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id).maybeSingle();
+    var { data: myReq } = await sb.from('bubble_join_requests').select('id')
+      .eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id).maybeSingle();
     var wasMember = bcBubbleData._isMember;
     var wasAdmin = bcBubbleData._isAdmin;
     var wasOwner = bcBubbleData._isOwner;
-    var isPending = myM && myM.status === 'pending';
-    var isMember = !!myM && !isPending;
+    // Member row = active. Pending lives in its own table now.
+    var isPending = !myM && !!myReq;
+    var isMember = !!myM;
     bcBubbleData._isMember = isMember;
     bcBubbleData._isPending = isPending;
     bcBubbleData._isAdmin = myM && myM.role === 'admin';
@@ -1113,8 +1118,10 @@ async function bcLoadBubbleInfo() {
     // Membership flags from current state
     var { data: myM } = await sb.from('bubble_members').select('id,status,role')
       .eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id).maybeSingle();
-    var isPending = myM && myM.status === 'pending';
-    bcBubbleData._isMember = !!myM && !isPending;
+    var { data: myReq2 } = await sb.from('bubble_join_requests').select('id')
+      .eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id).maybeSingle();
+    var isPending = !myM && !!myReq2;
+    bcBubbleData._isMember = !!myM;
     bcBubbleData._isPending = isPending;
     bcBubbleData._isAdmin = myM && myM.role === 'admin';
     bcBubbleData._canEdit = bcBubbleData._isOwner || bcBubbleData._isAdmin;
@@ -1872,6 +1879,17 @@ async function bcLoadMembers() {
       .eq('bubble_id', bcBubbleId)
       .order('joined_at', {ascending:true});
 
+    // Pending join-requests live in their OWN table now (C, jul 2026). Only
+    // owner/admin can read them (RLS). For non-managers this returns empty.
+    var _pendingReqs = [];
+    if (bcBubbleData?._isOwner || bcBubbleData?._isAdmin) {
+      var { data: _pr } = await sb.from('bubble_join_requests')
+        .select('user_id, created_at')
+        .eq('bubble_id', bcBubbleId)
+        .order('created_at', {ascending:true});
+      _pendingReqs = _pr || [];
+    }
+
     if (!members || members.length === 0) {
       // If the count says there ARE members but the list is empty, they're hidden by RLS
       // (non-member of a private/hidden bubble) — say so instead of "no members".
@@ -1904,8 +1922,8 @@ async function bcLoadMembers() {
 
     // Privacy gate removed — non-members handled above
 
-    // Hent profiler separat
-    const userIds = members.map(m => m.user_id);
+    // Hent profiler separat — inkludér pending-ansøgere (de er ikke i members-listen)
+    const userIds = members.map(m => m.user_id).concat(_pendingReqs.map(r => r.user_id));
     const { data: profiles } = await sb.from('profiles').select('id, name, title, workplace, avatar_url, keywords, lifestage, dynamic_keywords, bio, linkedin, is_anon').in('id', userIds);
     const profileMap = {};
     (profiles || []).forEach(p => profileMap[p.id] = p);
@@ -1931,9 +1949,10 @@ async function bcLoadMembers() {
     const ownerId = bcBubbleData?.created_by;
     const isOwner = currentUser && ownerId === currentUser.id;
 
-    // Separate pending from active members
+    // Members are now all active (pending lives in bubble_join_requests). Pending
+    // comes from the separate fetch above.
     var activeMembers = members.filter(m => m.status !== 'pending');
-    var pendingMembers = members.filter(m => m.status === 'pending');
+    var pendingMembers = _pendingReqs;
 
     // Sort active: owner first, then live members, then rest
     const sorted = [...activeMembers].filter(m => !isBlocked(m.user_id)).sort((a, b) => {
@@ -2087,9 +2106,12 @@ async function bcConfirmKick(userId, userName) {
 async function bcApproveMember(userId) {
   if (!bcBubbleId) return;
   try {
-    var { error } = await sb.from('bubble_members').update({ status: 'active' })
-      .eq('bubble_id', bcBubbleId).eq('user_id', userId);
+    var { data, error } = await sb.rpc('approve_join_request', { p_bubble_id: bcBubbleId, p_user_id: userId });
     if (error) throw error;
+    if (data && data.ok === false) {
+      // not_authorized / no_request — vis en pæn besked frem for at fejle stille
+      errorToast('save', new Error(data.error || 'approve_failed')); return;
+    }
     showSuccessToast(t('bc_member_approved'));
     bcLoadMembers();
     bcLoadBubbleInfo();
@@ -2109,8 +2131,8 @@ async function bcApproveMember(userId) {
 async function bcRejectMember(userId) {
   if (!bcBubbleId) return;
   try {
-    var { error } = await sb.from('bubble_members').delete()
-      .eq('bubble_id', bcBubbleId).eq('user_id', userId).eq('status', 'pending');
+    var { error } = await sb.from('bubble_join_requests').delete()
+      .eq('bubble_id', bcBubbleId).eq('user_id', userId);
     if (error) throw error;
     showToast(t('bc_request_rejected'));
     bcLoadMembers();
