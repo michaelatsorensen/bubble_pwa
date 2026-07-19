@@ -2518,11 +2518,11 @@ function confirmRequestJoin(bubbleId) {
   var overlay = document.createElement('div');
   overlay.id = 'request-join-overlay';
   // Centreret modal med mørk baggrunds-overlay (ikke bottom-sheet).
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(2px);z-index:999;display:flex;align-items:center;justify-content:center;padding:1.5rem';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(4px);z-index:999;display:flex;align-items:center;justify-content:center;padding:1.5rem';
   // Klik udenfor kortet lukker.
   overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
   var card = document.createElement('div');
-  card.style.cssText = 'background:var(--n3-card);border:0.5px solid var(--border-1);border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,0.4);padding:1.4rem 1.3rem;max-width:340px;width:100%;text-align:center;color:rgba(255,255,255,0.95)';
+  card.style.cssText = 'background:#1E2530;border:1px solid rgba(255,255,255,0.16);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);padding:1.5rem 1.4rem;max-width:340px;width:100%;text-align:center;color:rgba(255,255,255,0.95)';
   card.innerHTML =
     '<div style="font-size:1rem;font-weight:700;margin-bottom:0.35rem;color:rgba(255,255,255,0.95)">' + t('bb_request_membership_q') + '</div>' +
     '<div style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin-bottom:1.1rem;line-height:1.45">' + escHtml(bName) + ' ' + t('bb_is_private_suffix') + '</div>' +
