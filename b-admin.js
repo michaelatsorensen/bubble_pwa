@@ -266,11 +266,20 @@ async function dashToggle(card, chartId, trayId) {
   // Fetch data if not cached
   if (!_dashChartData[chartId]) {
     try {
-      // Ingen tidsgrænse: hent al historik så man kan scrolle vandret til ældre data.
-      var q = sb.from(meta.table).select(meta.field).order(meta.field, { ascending: true });
-      if (meta.filter) q = q.in('bubble_id', meta.filter);
-      var { data } = await q;
-      _dashChartData[chartId] = _dashBucketWeeks(data || [], meta.field);
+      if (meta.mode === 'delta_sum') {
+        // Medlemsgraf: hent til/afmeldinger + baseline for DENNE boble, byg løbende
+        // sum af delta over tid = faktisk medlemstal på hvert tidspunkt (stiger OG falder).
+        var qd = sb.from(meta.table).select('created_at, delta').order('created_at', { ascending: true });
+        if (meta.filter) qd = qd.in('bubble_id', meta.filter);
+        var { data: evRows } = await qd;
+        _dashChartData[chartId] = _dashRunningSum(evRows || []);
+      } else {
+        // Ingen tidsgrænse: hent al historik så man kan scrolle vandret til ældre data.
+        var q = sb.from(meta.table).select(meta.field).order(meta.field, { ascending: true });
+        if (meta.filter) q = q.in('bubble_id', meta.filter);
+        var { data } = await q;
+        _dashChartData[chartId] = _dashBucketWeeks(data || [], meta.field);
+      }
     } catch(e) { _dashChartData[chartId] = { labels: [], values: [] }; }
   }
   setTimeout(function() { _dashRenderChart(cvId, chartId, color); }, 120);
@@ -305,6 +314,39 @@ function _dashBucketWeeks(rows, field) {
   return { labels: labels, values: values };
 }
 
+// Medlemsgraf: byg faktisk medlemstal over tid fra delta-hændelser (baseline/joined/left).
+// Uge-bucket som _dashBucketWeeks (samme UTC-mandag-logik), men værdien er den LØBENDE SUM
+// af delta til og med hver uge — så linjen stiger ved tilmelding, falder ved afmelding,
+// og altid viser det faktiske antal på det tidspunkt. Slutter på nuværende medlemstal.
+function _dashRunningSum(rows) {
+  function utcMonday(dt) {
+    var w = new Date(dt);
+    var day = w.getUTCDay();
+    w.setUTCDate(w.getUTCDate() - day + 1);
+    w.setUTCHours(0, 0, 0, 0);
+    return w;
+  }
+  if (!rows || rows.length === 0) return { labels: [], values: [] };
+  // Sumér delta per uge.
+  var weekDelta = {};
+  rows.forEach(function(r) {
+    var key = utcMonday(new Date(r.created_at)).toISOString().slice(0, 10);
+    weekDelta[key] = (weekDelta[key] || 0) + (r.delta || 0);
+  });
+  var keys = Object.keys(weekDelta).sort();
+  var start = utcMonday(new Date(keys[0] + 'T00:00:00.000Z'));
+  var end = utcMonday(new Date());
+  var labels = [], values = [], running = 0;
+  for (var cur = new Date(start); cur <= end; cur.setUTCDate(cur.getUTCDate() + 7)) {
+    var key = cur.toISOString().slice(0, 10);
+    running += (weekDelta[key] || 0);   // akkumulér ugens netto-ændring
+    if (running < 0) running = 0;        // medlemstal kan aldrig være negativt (defensivt)
+    labels.push(cur.getUTCDate() + '/' + (cur.getUTCMonth() + 1));
+    values.push(running);
+  }
+  return { labels: labels, values: values };
+}
+
 function _dashRenderChart(canvasId, chartId, color) {
   var el = document.getElementById(canvasId);
   if (!el || typeof Chart === 'undefined') return;
@@ -326,9 +368,16 @@ function _dashRenderChart(canvasId, chartId, color) {
     }
   };
   if (meta.type === 'line') {
-    var cumValues = []; var sum = 0;
-    d.values.forEach(function(v) { sum += v; cumValues.push(sum); });
-    cfg = { type: 'line', data: { labels: d.labels, datasets: [{ data: cumValues, fill: true, backgroundColor: c.bg, borderColor: c.solid, borderWidth: 2, tension: 0.35, pointRadius: 3, pointBackgroundColor: c.solid }] }, options: baseOpts };
+    var lineValues;
+    if (meta.mode === 'delta_sum') {
+      // Medlemsgraf: værdierne ER allerede den løbende sum (faktisk medlemstal). Brug som de er.
+      lineValues = d.values;
+    } else {
+      // Øvrige linjegrafer: bucket-tællinger gøres kumulative her.
+      lineValues = []; var sum = 0;
+      d.values.forEach(function(v) { sum += v; lineValues.push(sum); });
+    }
+    cfg = { type: 'line', data: { labels: d.labels, datasets: [{ data: lineValues, fill: true, backgroundColor: c.bg, borderColor: c.solid, borderWidth: 2, tension: 0.35, pointRadius: 3, pointBackgroundColor: c.solid }] }, options: baseOpts };
   } else {
     cfg = { type: 'bar', data: { labels: d.labels, datasets: [{ data: d.values, backgroundColor: c.solid, borderRadius: 4, barPercentage: 0.55 }] }, options: baseOpts };
   }

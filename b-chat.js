@@ -2313,7 +2313,7 @@ async function bcLoadInfo() {
         var memNewCount = memNewRpc.data || 0;
         var memNewOwnCount = memNewOwnRpc.data || 0;
         // Register bubble-specific chart meta
-        _dashMeta['o-mem-' + b.id] = { title: t('bi_member_growth'), sub: t('bi_member_growth_sub'), table: 'bubble_members', field: 'joined_at', type: 'line', filter: allBubbleIds, icon: 'users' };
+        _dashMeta['o-mem-' + b.id] = { title: t('bi_member_growth'), sub: t('bi_member_growth_sub'), table: 'bubble_membership_events', field: 'created_at', type: 'line', filter: [b.id], mode: 'delta_sum', icon: 'users' };
         _dashMeta['o-msg-' + b.id] = { title: t('bi_chat_activity'), sub: t('bi_chat_activity_sub'), table: 'bubble_messages', field: 'created_at', type: 'bar', filter: allBubbleIds, icon: 'chat' };
 
         function oCard(id, iconName, icoBg, icoCol, val, label, delta, color, subContext) {
