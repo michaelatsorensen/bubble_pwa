@@ -2512,21 +2512,26 @@ function openBubbleScannerFromInfo(bubbleId) {
 //  POP (DELETE) BUBBLE — owner only, with confirmation tray
 // ══════════════════════════════════════════════════════════
 function confirmRequestJoin(bubbleId) {
-  var existing = document.getElementById('request-join-tray');
+  var existing = document.getElementById('request-join-overlay');
   if (existing) { existing.remove(); return; }
-  // Get bubble name from bcBubbleData or DOM
   var bName = bcBubbleData?.name || '';
-  var tray = document.createElement('div');
-  tray.id = 'request-join-tray';
-  tray.style.cssText = 'position:fixed;bottom:0;left:0;right:0;padding:1.2rem 1rem;background:var(--n3-card);border-top:0.5px solid var(--border-1);box-shadow:0 -4px 20px rgba(0,0,0,0.15);z-index:999;text-align:center;color:rgba(255,255,255,0.95)';
-  tray.innerHTML =
-    '<div style="font-size:0.9rem;font-weight:700;margin-bottom:0.2rem;color:rgba(255,255,255,0.95)">' + t('bb_request_membership_q') + '</div>' +
-    '<div style="font-size:0.75rem;color:rgba(255,255,255,0.55);margin-bottom:0.8rem">' + escHtml(bName) + ' ' + t('bb_is_private_suffix') + '</div>' +
-    '<div style="display:flex;gap:0.5rem;justify-content:center">' +
-      '<button class="btn-primary" onclick="document.getElementById(\'request-join-tray\').remove();requestJoin(\'' + bubbleId + '\')" style="padding:0.65rem 1.5rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:0;width:auto">' + t('bb_send_request') + '</button>' +
-      '<button class="btn-secondary" onclick="document.getElementById(\'request-join-tray\').remove()" style="padding:0.65rem 1.2rem;font-size:0.85rem;cursor:pointer;font-family:var(--font);width:auto">Annuller</button>' +
+  var overlay = document.createElement('div');
+  overlay.id = 'request-join-overlay';
+  // Centreret modal med mørk baggrunds-overlay (ikke bottom-sheet).
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(2px);z-index:999;display:flex;align-items:center;justify-content:center;padding:1.5rem';
+  // Klik udenfor kortet lukker.
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+  var card = document.createElement('div');
+  card.style.cssText = 'background:var(--n3-card);border:0.5px solid var(--border-1);border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,0.4);padding:1.4rem 1.3rem;max-width:340px;width:100%;text-align:center;color:rgba(255,255,255,0.95)';
+  card.innerHTML =
+    '<div style="font-size:1rem;font-weight:700;margin-bottom:0.35rem;color:rgba(255,255,255,0.95)">' + t('bb_request_membership_q') + '</div>' +
+    '<div style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin-bottom:1.1rem;line-height:1.45">' + escHtml(bName) + ' ' + t('bb_is_private_suffix') + '</div>' +
+    '<div style="display:flex;gap:0.6rem">' +
+      '<button class="btn-secondary" onclick="document.getElementById(\'request-join-overlay\').remove()" style="flex:1;padding:0.7rem;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:var(--font);margin-bottom:0;border-radius:12px">Annuller</button>' +
+      '<button class="btn-primary" onclick="document.getElementById(\'request-join-overlay\').remove();requestJoin(\'' + bubbleId + '\')" style="flex:1;padding:0.7rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:0;border-radius:12px">' + t('bb_send_request') + '</button>' +
     '</div>';
-  document.body.appendChild(tray);
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
 }
 
 function confirmPopBubble(bubbleId) {
