@@ -1336,8 +1336,8 @@ async function updateTopbarNotifBadge() {
     ]);
     var pendingCount = 0;
     if (ownedIds.length > 0) {
-      var { count: pc } = await sb.from('bubble_members').select('*', { count: 'exact', head: true })
-        .in('bubble_id', ownedIds).eq('status', 'pending');
+      var { count: pc } = await sb.from('bubble_join_requests').select('*', { count: 'exact', head: true })
+        .in('bubble_id', ownedIds);
       pendingCount = pc || 0;
     }
     var total = (invRes.count || 0) + (saveRes.count || 0) + pendingCount;
@@ -1528,7 +1528,12 @@ async function loadMyNetworks() {
     var myIds = memberships.map(function(m) { return m.bubble_id; });
     _myBubbleMemberIds = myIds; // eksponér til b-realtime.js
     var pendingSet = {};
-    memberships.forEach(function(m) { if (m.status === 'pending') pendingSet[m.bubble_id] = true; });
+    // Pending join-requests live in their own table now (C). Fetch mine so bubbles
+    // I've requested still get the "afventer" badge if shown.
+    try {
+      var { data: myReqs } = await sb.from('bubble_join_requests').select('bubble_id').eq('user_id', currentUser.id);
+      (myReqs || []).forEach(function(r) { pendingSet[r.bubble_id] = true; });
+    } catch(e) {}
 
     // 2. Fetch my bubbles
     var { data: allMyBubbles, error: fetchErr } = await sb.from('bubbles').select('*, bubble_members(count)').in('id', myIds);

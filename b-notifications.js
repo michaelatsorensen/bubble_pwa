@@ -272,12 +272,11 @@ async function _notifPendingRequests() {
     var bubNameMap = {};
     ownedBubbles.forEach(function(b) { bubNameMap[b.id] = b.name; });
 
-    // Find pending members in owned bubbles
-    var { data: pending } = await sb.from('bubble_members')
-      .select('user_id, bubble_id, joined_at')
+    // Find pending join-requests in owned bubbles (moved to own table in C, jul 2026)
+    var { data: pending } = await sb.from('bubble_join_requests')
+      .select('user_id, bubble_id, created_at')
       .in('bubble_id', ownedIds)
-      .eq('status', 'pending')
-      .order('joined_at', { ascending: false });
+      .order('created_at', { ascending: false });
     if (!pending || pending.length === 0) return '';
 
     // Fetch profiles
@@ -311,9 +310,9 @@ async function _notifPendingRequests() {
 async function notifApproveJoin(bubbleId, userId, btn) {
   try {
     var card = btn.closest('.notif-card');
-    var { error } = await sb.from('bubble_members').update({ status: 'active' })
-      .eq('bubble_id', bubbleId).eq('user_id', userId);
+    var { data, error } = await sb.rpc('approve_join_request', { p_bubble_id: bubbleId, p_user_id: userId });
     if (error) throw error;
+    if (data && data.ok === false) { errorToast('save', new Error(data.error || 'approve_failed')); return; }
     if (card) { card.style.opacity = '0.4'; card.innerHTML = '<div style="padding:0.5rem;font-size:0.78rem;color:var(--green);font-weight:600">Godkendt \u2713</div>'; }
     updateTopbarNotifBadge();
     // Notify approved user via Broadcast
@@ -331,8 +330,8 @@ async function notifApproveJoin(bubbleId, userId, btn) {
 async function notifRejectJoin(bubbleId, userId, btn) {
   try {
     var card = btn.closest('.notif-card');
-    var { error } = await sb.from('bubble_members').delete()
-      .eq('bubble_id', bubbleId).eq('user_id', userId).eq('status', 'pending');
+    var { error } = await sb.from('bubble_join_requests').delete()
+      .eq('bubble_id', bubbleId).eq('user_id', userId);
     if (error) throw error;
     if (card) card.remove();
     updateTopbarNotifBadge();
