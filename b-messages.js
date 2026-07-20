@@ -269,7 +269,7 @@ async function sendMessage() {
       };
       dmReduceMsg(tempMsg, { pending: true });
       input.value = '';
-      input.blur();
+      input.focus(); // behold keyboardet oppe efter afsendelse (som iMessage/Messenger)
       if (replyState.dm) cancelReply('dm'); // ryd svar-bjaelken
 
       // DB insert

@@ -14,8 +14,8 @@ var isDesktop = window.matchMedia('(min-width: 600px)').matches && !('ontouchsta
 // ══════════════════════════════════════════════════════════
 //  CONFIGURATION
 // ══════════════════════════════════════════════════════════
-const BUILD_TIMESTAMP = '2026-07-20 10:03';
-const BUILD_VERSION  = 'v3-v3.161';
+const BUILD_TIMESTAMP = '2026-07-20 10:12';
+const BUILD_VERSION  = 'v3-v3.162';
 // AUTO_UPDATE: naar true, aktiverer ny service worker STRAKS (auto-reload) uden at
 // vente paa brugeren. Til udviklingsfasen (v3) saa deploys slaar igennem med det samme.
 // SAET TIL false FOER produktion/pilot - ellers genindlaeses appen under brugere midt i noget.
