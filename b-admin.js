@@ -319,6 +319,11 @@ function _dashBucketWeeks(rows, field) {
 // af delta til og med hver uge — så linjen stiger ved tilmelding, falder ved afmelding,
 // og altid viser det faktiske antal på det tidspunkt. Slutter på nuværende medlemstal.
 function _dashRunningSum(rows) {
+  function utcDay(dt) {
+    var w = new Date(dt);
+    w.setUTCHours(0, 0, 0, 0);
+    return w;
+  }
   function utcMonday(dt) {
     var w = new Date(dt);
     var day = w.getUTCDay();
@@ -327,20 +332,30 @@ function _dashRunningSum(rows) {
     return w;
   }
   if (!rows || rows.length === 0) return { labels: [], values: [] };
-  // Sumér delta per uge.
-  var weekDelta = {};
+  // Adaptiv granularitet: når historikken er kort (fx en ny boble hvor baseline og
+  // de første joins ligger i samme uge), kollapser uge-bucketing alt til ÉT punkt —
+  // og ét punkt tegner ingen linje. Så vi bucketer per DAG når spændet er <= 56 dage,
+  // ellers per uge. Det giver en meningsfuld linje fra dag ét uden at blive uoverskuelig.
+  var firstMs = new Date(rows[0].created_at).getTime();
+  var nowMs = Date.now();
+  var spanDays = (nowMs - firstMs) / 86400000;
+  var byDay = spanDays <= 56;
+  var bucketFn = byDay ? utcDay : utcMonday;
+  var stepDays = byDay ? 1 : 7;
+
+  var bucketDelta = {};
   rows.forEach(function(r) {
-    var key = utcMonday(new Date(r.created_at)).toISOString().slice(0, 10);
-    weekDelta[key] = (weekDelta[key] || 0) + (r.delta || 0);
+    var key = bucketFn(new Date(r.created_at)).toISOString().slice(0, 10);
+    bucketDelta[key] = (bucketDelta[key] || 0) + (r.delta || 0);
   });
-  var keys = Object.keys(weekDelta).sort();
-  var start = utcMonday(new Date(keys[0] + 'T00:00:00.000Z'));
-  var end = utcMonday(new Date());
+  var keys = Object.keys(bucketDelta).sort();
+  var start = bucketFn(new Date(keys[0] + 'T00:00:00.000Z'));
+  var end = bucketFn(new Date());
   var labels = [], values = [], running = 0;
-  for (var cur = new Date(start); cur <= end; cur.setUTCDate(cur.getUTCDate() + 7)) {
+  for (var cur = new Date(start); cur <= end; cur.setUTCDate(cur.getUTCDate() + stepDays)) {
     var key = cur.toISOString().slice(0, 10);
-    running += (weekDelta[key] || 0);   // akkumulér ugens netto-ændring
-    if (running < 0) running = 0;        // medlemstal kan aldrig være negativt (defensivt)
+    running += (bucketDelta[key] || 0);  // akkumulér bucketens netto-ændring
+    if (running < 0) running = 0;         // medlemstal kan aldrig være negativt (defensivt)
     labels.push(cur.getUTCDate() + '/' + (cur.getUTCMonth() + 1));
     values.push(running);
   }
