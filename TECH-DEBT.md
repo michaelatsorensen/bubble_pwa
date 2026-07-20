@@ -561,3 +561,70 @@ ikke. Se ogsaa migrations/2026-07_bubble-private-storage-policies.sql (kendte hu
 - ADR-009 (ownership transfer — loeste nabo-problemet, ikke dette)
 - FEATURE-IDEAS: anonym sammensaetnings-teaser (teaser-tilstande antager 1+ medlem)
 - Eksternt review 17. juli 2026: popBubble ikke-transaktionel slettekaede (aabent)
+
+---
+
+## TD-006: Medlems-tabeller ikke i realtime-publikationen — postgres_changes virker ikke paa dem
+
+**Priority:** P3
+**Status:** WONT_FIX (bevidst trade-off — genbesoeg hvis Broadcast viser sig utilstraekkelig)
+**Owner:** Michael
+**Estimated fix:** S (1-2h, men kraever RLS-verifikation foerst)
+
+### Symptom
+`bubble_members`, `bubble_join_requests` og `bubble_membership_events` er IKKE i
+`supabase_realtime`-publikationen. Bekraeftet 20. juli 2026 via:
+```sql
+select schemaname, tablename from pg_publication_tables where pubname = 'supabase_realtime';
+-- Returnerer kun: bubble_invitations, bubble_messages, messages
+```
+Konsekvens: `postgres_changes`-lyttere paa de tre tabeller modtager aldrig events.
+Medlemskabsaendringer (join/leave/godkendelse), anmodninger og membership-events kan
+derfor ikke opdatere klienter via postgres_changes.
+
+### Root cause (hypothesis)
+Tabellerne blev aldrig tilfoejet til publikationen da de blev oprettet. For
+`bubble_join_requests` og `bubble_membership_events` er det fordi de er nye (C- og
+B-migreringen, juli 2026). For `bubble_members` har det sandsynligvis aldrig vaeret
+sat op. Hoej sikkerhed — det er en ren konfigurations-mangel, ikke en kode-fejl.
+
+### Hvorfor WONT_FIX (for nu)
+Funktionaliteten er IKKE i stykker, fordi live-opdatering paa disse events sker via
+TO andre mekanismer der ikke afhaenger af publikationen:
+1. **Broadcast** (`join_change`, `checkin`, `approved`) — omgaar postgres_changes helt
+   og kraever IKKE at tabellen er i publikationen. Bypasser ogsaa RLS.
+2. **Database-pull** (v3.173) — korrekthedsgaranti via foreground-refresh + pending-poll.
+   DB er sandheden; klienten henter frisk tilstand naar skaermen bliver synlig, saa
+   ingen sidder med foraeldet data uanset om realtime virker.
+
+Disse to opfylder allerede kravet ("ingen skal skulle refreshe manuelt for at se en
+opdatering"). At tilfoeje postgres_changes ville vaere en TREDJE mekanisme oveni — marginal
+gevinst mod reel risiko.
+
+### Risiko ved at "fikse" det (hvorfor det kraever omtanke)
+`postgres_changes` respekterer RLS. Hvis RLS paa de tre tabeller ikke er praecis rigtig,
+kan tilfoejelse til publikationen enten (a) lade events LAEKKE til brugere der ikke burde
+se dem, eller (b) tavst fejle (events droppes uden fejl). Derfor: **verificer RLS paa alle
+tre tabeller FOER de tilfoejes til publikationen.** En naiv `alter publication ... add table`
+uden RLS-gennemgang er ikke sikker.
+
+### Genbesoegs-betingelse
+Tilfoej postgres_changes (efter RLS-verifikation) HVIS:
+- Broadcast viser sig utilstraekkelig i praksis (fx events der gaar tabt fordi begge
+  parter ikke er online samtidig, og pull-on-focus foles for langsom), ELLER
+- Vi vil have en ekstra sikkerhedsnet-kanal oveni Broadcast for kritiske medlems-events.
+
+Fix (naar betingelsen er opfyldt):
+```sql
+-- KUN efter RLS paa hver tabel er verificeret korrekt:
+alter publication supabase_realtime add table bubble_members;
+alter publication supabase_realtime add table bubble_join_requests;
+alter publication supabase_realtime add table bubble_membership_events;
+```
+
+### Related
+- v3.173 (database-pull korrekthedsgaranti — goer dette ikke-kritisk)
+- v3.175 (bc-kanal dobbelt-kald-guard — separat realtime-fix, samme session)
+- ADR-006 (push backend-owned — beslaegtet "observérbar realtime"-filosofi)
+- Note: realtime er IKKE nede (fejl-log 20. juli viser kanaler "ok"); 0/9 i debug var
+  et opstarts-oejebliksbillede foer kanalerne forbandt.
