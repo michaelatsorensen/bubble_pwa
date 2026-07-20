@@ -12,6 +12,7 @@
 
 // ── Bubble chat unread state ──
 var _bubbleUnreadSet = {};
+var _ownedRequestsSet = {}; // boble-ids hvor jeg er ejer/admin og har indkommende anmodninger
 var _allMyBubblesCache = [];
 var _myBubbleMemberIds = []; // Global liste af mine boble-IDs — bruges af b-realtime til unread nav-dot
 
@@ -1336,9 +1337,13 @@ async function updateTopbarNotifBadge() {
     ]);
     var pendingCount = 0;
     if (ownedIds.length > 0) {
-      var { count: pc } = await sb.from('bubble_join_requests').select('*', { count: 'exact', head: true })
+      // Hent selve rækkerne så vi ved HVILKE bobler har anmodninger (til prik på boble-kort),
+      // ikke bare det samlede antal.
+      var { data: _pendRows } = await sb.from('bubble_join_requests').select('bubble_id')
         .in('bubble_id', ownedIds);
-      pendingCount = pc || 0;
+      _ownedRequestsSet = {};
+      (_pendRows || []).forEach(function(r) { _ownedRequestsSet[r.bubble_id] = true; });
+      pendingCount = (_pendRows || []).length;
     }
     var total = (invRes.count || 0) + (saveRes.count || 0) + pendingCount;
     // Topbar bell: pure dot only (no number) — matches unreadState.notifSet pattern
@@ -1512,6 +1517,9 @@ async function loadMyNetworks() {
     var list = document.getElementById('bb-net-list');
     if (!list) return;
     list.innerHTML = skelCards(3);
+    // Sørg for at _ownedRequestsSet er friskt før render, så prikken på boble-kort
+    // (bobler med indkommende anmodninger) vises korrekt fra første load.
+    await updateTopbarNotifBadge().catch(function() {});
 
     // Load pending invitations in parallel (issue 2)
     _bbLoadPendingInvites();
@@ -1717,6 +1725,7 @@ async function loadMyNetworks() {
         _unread: !!_bubbleUnreadSet[b.id],
         _star: !isEv,
         _pending: !!pendingSet[b.id],
+        _hasRequests: !!_ownedRequestsSet[b.id],
         _ghost: !!b._isGhost
       });
     }
@@ -2075,7 +2084,9 @@ function bubbleCard(b, joined, fromScreen) {
   }
 
   return '<div class="' + cardClass + '" data-action="openBubble" data-id="' + b.id + '"' + (fromScreen ? ' data-from="' + fromScreen + '"' : '') + '>' +
-    '<div class="' + iconClass + '">' + iconInner + '</div>' +
+    '<div class="' + iconClass + '" style="position:relative">' + iconInner +
+      (b._hasRequests ? '<div style="position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:#BA7517;border:2px solid var(--p-scene);box-shadow:0 0 6px rgba(186,117,23,0.5)"></div>' : '') +
+    '</div>' +
     '<div class="bb-card-text">' +
       breadcrumb +
       '<div class="bb-card-title">' + escHtml(b.name) + statusBadge + '</div>' +
