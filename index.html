@@ -16,15 +16,15 @@
 <meta name="theme-color" content="#0E141C">
 <meta name="color-scheme" content="light">
 <title>Bubble — Network Radar</title>
-<link rel="manifest" href="manifest.json?v=30162">
-<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=30162">
-<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=30162">
-<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=30162">
-<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=30162">
-<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=30162">
-<link rel="apple-touch-icon" href="bubble-icon-180.png?v=30162">
+<link rel="manifest" href="manifest.json?v=30163">
+<link rel="icon" type="image/png" sizes="32x32" href="bubble-favicon-32.png?v=30163">
+<link rel="icon" type="image/x-icon" href="bubble-favicon.ico?v=30163">
+<link rel="apple-touch-icon" sizes="180x180" href="bubble-icon-180.png?v=30163">
+<link rel="apple-touch-icon" sizes="167x167" href="bubble-icon-167.png?v=30163">
+<link rel="apple-touch-icon" sizes="152x152" href="bubble-icon-152.png?v=30163">
+<link rel="apple-touch-icon" href="bubble-icon-180.png?v=30163">
 
-<link rel="stylesheet" href="app.css?v=30162">
+<link rel="stylesheet" href="app.css?v=30163">
 <script>
 /* Script-load guard. Must run BEFORE all other scripts.
    Resource load failures (a .js file that never arrives) do NOT fire window.onerror -
@@ -62,27 +62,27 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous" defer></script>
-<script src="bubble-icons.js?v=30162" defer></script>
-<script src="tag-data.js?v=30162" defer></script>
-<script src="b-i18n.js?v=30162" defer></script>
-<script src="b-config.js?v=30162" defer></script>
-<script src="b-utils.js?v=30162" defer></script>
-<script src="b-guides.js?v=30162" defer></script>
-<script src="b-terms.js?v=30162" defer></script>
-<script src="b-auth.js?v=30162" defer></script>
-<script src="b-home.js?v=30162" defer></script>
-<script src="b-bubbles.js?v=30162" defer></script>
-<script src="b-profile.js?v=30162" defer></script>
-<script src="b-radar.js?v=30162" defer></script>
-<script src="b-messages.js?v=30162" defer></script>
-<script src="b-realtime.js?v=30162" defer></script>
-<script src="b-onboarding.js?v=30162" defer></script>
-<script src="b-chat.js?v=30162" defer></script>
-<script src="b-notifications.js?v=30162" defer></script>
-<script src="b-live.js?v=30162" defer></script>
-<script src="b-admin.js?v=30162" defer></script>
-<script src="b-navigation.js?v=30162" defer></script>
-<script src="b-boot.js?v=30162" defer></script>
+<script src="bubble-icons.js?v=30163" defer></script>
+<script src="tag-data.js?v=30163" defer></script>
+<script src="b-i18n.js?v=30163" defer></script>
+<script src="b-config.js?v=30163" defer></script>
+<script src="b-utils.js?v=30163" defer></script>
+<script src="b-guides.js?v=30163" defer></script>
+<script src="b-terms.js?v=30163" defer></script>
+<script src="b-auth.js?v=30163" defer></script>
+<script src="b-home.js?v=30163" defer></script>
+<script src="b-bubbles.js?v=30163" defer></script>
+<script src="b-profile.js?v=30163" defer></script>
+<script src="b-radar.js?v=30163" defer></script>
+<script src="b-messages.js?v=30163" defer></script>
+<script src="b-realtime.js?v=30163" defer></script>
+<script src="b-onboarding.js?v=30163" defer></script>
+<script src="b-chat.js?v=30163" defer></script>
+<script src="b-notifications.js?v=30163" defer></script>
+<script src="b-live.js?v=30163" defer></script>
+<script src="b-admin.js?v=30163" defer></script>
+<script src="b-navigation.js?v=30163" defer></script>
+<script src="b-boot.js?v=30163" defer></script>
   
 
 
@@ -1887,17 +1887,10 @@
       <button id="push-toggle-btn" onclick="togglePushNotifications()" style="font-size:0.75rem;font-weight:700;font-family:inherit;padding:0.35rem 0.85rem;border-radius:99px;cursor:pointer;transition:all 0.2s;white-space:nowrap;border:0.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.075);color:rgba(255,255,255,0.7)" data-t="settings_enable">Aktivér</button>
     </div>
 
-    <!-- Anonymous mode: hidden for pilot -->
-    <div class="section-label" style="display:none;margin-top:1.25rem;margin-bottom:0.25rem" data-t="settings_visibility">Synlighed</div>
-    <div class="settings-row u-hidden">
-      <div class="u-flex1">
-        <div style="font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.95)" data-t="settings_anon_mode">Anonym tilstand</div>
-        <div style="font-size:0.68rem;color:rgba(255,255,255,0.55);margin-top:0.1rem" data-t="settings_anon_desc">Skjul dit navn og billede på radaren</div>
-      </div>
-      <div id="anon-toggle" onclick="toggleAnon()" style="width:46px;height:26px;background:rgba(255,255,255,0.08);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0">
-        <div id="anon-knob" style="width:20px;height:20px;background:rgba(255,255,255,0.25);border-radius:50%;position:absolute;top:3px;left:3px;transition:all 0.2s"></div>
-      </div>
-    </div>
+    <!-- Anonymity is NOT a user feature: being visible to relevant people present is
+         Bubble's core value, so users must never be able to hide on radar/lists (not
+         even as premium). The is_anon field is retained ONLY as an admin/dev tool
+         (set directly in DB) to keep test accounts off the radar during development. -->
 
     <div class="section-label u-section-label" data-t="pf_language">Sprog</div>
     <div style="display:flex;gap:0.4rem;margin-bottom:0.5rem">

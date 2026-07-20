@@ -541,34 +541,8 @@ function drawProxRings(canvas) {
 }
 
 
-function toggleProximityVisibility() {
-  proxVisible = !proxVisible;
-  var btn = document.getElementById('prox-toggle');
-  var d = document.getElementById('prox-toggle-dot');
-  var l = document.getElementById('prox-toggle-label');
-  var c = document.getElementById('prox-center');
-  if (d) d.style.background = proxVisible ? '#1A9E8E' : 'rgba(255,255,255,0.25)';
-  if (l) l.textContent = proxVisible ? t('prox_visible') : t('prox_hidden');
-  // Restyle the whole button for clear on/off state
-  if (btn) {
-    if (proxVisible) {
-      btn.style.background = 'rgba(26,158,142,0.12)';
-      btn.style.borderColor = 'rgba(26,158,142,0.3)';
-      btn.style.color = '#1A9E8E';
-    } else {
-      btn.style.background = 'rgba(255,255,255,0.04)';
-      btn.style.borderColor = 'rgba(255,255,255,0.08)';
-      btn.style.color = 'rgba(255,255,255,0.25)';
-    }
-  }
-  if (c) { if (proxVisible && currentProfile && currentProfile.name) { 
-    if (currentProfile.avatar_url) { c.innerHTML = '<img src="' + escHtml(currentProfile.avatar_url) + '">'; } 
-    else { c.textContent = currentProfile.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); }
-    c.style.background = 'linear-gradient(135deg,rgb(100,180,230),rgb(70,150,210))'; } else { c.textContent = '?'; c.style.background = 'rgba(255,255,255,0.06)'; } }
-  var hint = document.getElementById('prox-toggle-hint');
-  if (hint) hint.textContent = proxVisible ? t('pf_visible_on_radar') : t('pf_invisible_on_radar');
-  toggleAnon();
-}
+// toggleProximityVisibility REMOVED: dead code (no caller, no UI button) and it
+// called toggleAnon. Radar visibility is not user-toggleable — see note at toggleAnon.
 
 // ── Universal swipe-down-to-close for sheets/modals ──
 function initSwipeClose(sheetEl, closeFn) {
@@ -1378,19 +1352,10 @@ function switchAppLanguage(lang) {
   showSuccessToast(lang === 'da' ? 'Sprog ændret til dansk' : 'Language changed to English');
 }
 
-function toggleAnon() {
-  isAnon = !isAnon;
-  updateAnonToggle();
-  sb.from('profiles').update({ is_anon: isAnon }).eq('id', currentUser.id).then(function() {
-    showToast(isAnon ? t('pf_anon_on') : t('pf_visible_now'));
-  }).catch(function(e) {
-    // Revert on failure
-    isAnon = !isAnon;
-    updateAnonToggle();
-    logError('toggleAnon', e);
-    _renderToast(t('err_visibility'), 'error');
-  });
-}
+// toggleAnon REMOVED: anonymity is not a user feature. Being visible to relevant
+// people who are present is Bubble's core value — a user who could hide on radar/lists
+// would take that value while denying it to others. is_anon remains ONLY as a dev tool
+// (set directly in the DB) to keep test accounts off the radar during development.
 
 
 

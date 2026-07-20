@@ -117,3 +117,20 @@ When the question "should X be in native?" comes up:
 ---
 
 *To be populated during pre-kickoff planning session (target: late juli 2026)*
+
+---
+
+## Anonymitet på radar/lister — ALDRIG en brugerfunktion
+
+**Beslutning (Michael, 19. jul 2026):** En Bubble-bruger må ALDRIG kunne gøre sig anonym/usynlig på radar, lister, eller andre steder hvor de vises til relevante mennesker der er fysisk til stede. Ikke gratis, ikke som premium.
+
+**Hvorfor:** Bubbles kerneværdi er at reducere friktion mellem relevante mennesker der er til stede — det BYGGER på at man kan se hvem der er der. En anonym bruger tager værdien af at se andre, men nægter andre værdien af at se dem. Det er en fribytter-position der kollapser hele netværkets værdi. At sælge muligheden (premium) er værre, ikke bedre.
+
+**Implementering:**
+- Den brugervendte anonymitets-toggle er FJERNET (var skjult "for pilot", nu helt væk): `toggleAnon()` (b-profile.js), `toggleProximityVisibility()` (død kode, b-profile.js), og toggle-UI (index.html). `updateAnonToggle()` er en tom stub.
+- `isAnon`-variablen kan nu KUN læses fra databasen, aldrig ændres i UI. Profil-gemning bevarer den værdi der står i DB.
+- `is_anon`-VISNINGS-laget (~33 steder: radar, lister, profil, live, chat) er BEVARET som et rent DEV/ADMIN-værktøj.
+
+**Dev-værktøj (bevidst bevaret):** `is_anon` kan sættes direkte i databasen for en testkonto, så den kan bruge Bubble aktivt uden at forurene radaren under udvikling. Dette er IKKE en brugerfunktion — der er ingen UI-vej til det. En almindelig bruger har `is_anon = false` og kan aldrig ændre det.
+
+**Advarsel til fremtidige udviklere:** Genindfør ALDRIG en brugervendt anonymitets-toggle. Hvis nogen foreslår "anonym tilstand som premium", er svaret nej — det modsiger Bubbles eksistensberettigelse.

@@ -2153,12 +2153,9 @@ function hsApplyToHome() {
 
 
 function updateAnonToggle() {
-  var toggle = document.getElementById('anon-toggle');
-  var knob = document.getElementById('anon-knob');
-  if (!toggle || !knob) return;
-  toggle.style.background = isAnon ? 'var(--accent)' : 'var(--border)';
-  knob.style.background = isAnon ? 'white' : 'var(--muted)';
-  knob.style.left = isAnon ? '23px' : '3px';
+  // No-op: the anonymity toggle UI was removed (anonymity is not a user feature).
+  // Kept as an empty stub because loadProfile still calls it; is_anon is a dev-only
+  // field set directly in the DB, never through UI.
 }
 
 // ══════════════════════════════════════════════════════════
