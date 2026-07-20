@@ -1199,3 +1199,49 @@ et problem vi ikke har endnu. Sadl om ELLER sæt guardrails **så tæt på launc
 
 **Ikke et rent enten-eller.** Sandsynligt endeligt svar: OAuth-primær + email-fallback +
 lette guardrails (rate-limit). Afgør når launch nærmer sig, ikke før.
+
+---
+
+## Q-068 — Organisationsprofiler vs. kun personprofiler: skal ejer og opretter skilles ad? (POST-PILOT)
+
+**Type:** A — Question (reel usikkerhed — IKKE besluttet) · **Priority:** P1 · **Status:** DEFERRED (afklares når Corporate/Verified Bubbles bygges)
+
+**Kontekst:** I dag har en boble kun `created_by` (en person-UID), som samtidig fungerer som
+"ejer/kontrollerer". Der findes INGEN organisations-entitet — en `profile` er altid en person, og
+medlemskab er altid personer. Så "ejer" = "opretter" = en person, af nødvendighed, ikke af design.
+
+Spørgsmålet dukkede op under privatlivsarbejdet (skjul ejer for ikke-medlemmer, jul 2026): i den
+virkelige verden vil en boble typisk være drevet af en ORGANISATION (fx House of Software som
+entitet), mens en PERSON/administrator opretter og administrerer den. De to er konceptuelt
+forskellige, men smeltet sammen i datamodellen i dag.
+
+**Det egentlige åbne spørgsmål (to lag, begge uafklarede):**
+
+1. **Skal Bubble overhovedet have organisationsprofiler som en separat entitet** — ved siden af
+   personprofiler? Eller er "person opretter/ejer" tilstrækkeligt, også langsigtet? Michael er
+   IKKE sikker på at vi skal have BÅDE private profiler og organisationsprofiler (noteret 20. jul).
+   Dette er ikke afgjort og skal ikke afgøres nu.
+
+2. **HVIS organisationsprofiler indføres:** skal ejerskab (organisationen) og oprettelse/administration
+   (personen) så skilles formelt ad — så en boble ejet af House of Software ikke er bundet til én
+   persons konto, men til organisationen, og overlever medarbejderudskiftning?
+
+**Hvorfor det hænger sammen med forretningsmodellen:** Corporate Bubbles og Verified Bubbles handler
+netop om organisations-ejerskab der overlever staff turnover ("role-based access surviving staff
+turnover"). Så hvis svaret på (1) er ja, hører (2)-arbejdet naturligt til dén fase — det er en
+større datamodel-ændring (ny `organizations`-tabel, kobling fra bobler, admin-roller), ikke noget
+der bygges for piloten.
+
+**Beslutning for NU (Michael, 20. jul):** Hold "person = ejer = opretter" for piloten. Byg IKKE
+organisationsprofiler nu — det ville være infrastruktur til et produktlag vi endnu ikke sælger.
+For piloten (alle bobler drevet af enkeltpersoner/små grupper) er `created_by` tilstrækkeligt, og
+privatlivsgarantien (skjul ejer = skjul medlem, siden ejer er medlem) virker uændret.
+
+**Hvornår genbesøges:** Når Corporate/Verified Bubbles-fasen starter. Afklar (1) FØRST — skal vi
+have organisationsprofiler overhovedet? — før (2) designes. Svaret på (1) former hele
+tilgangen til de to øverste indtægtslag.
+
+**Relateret:**
+- STRATEGI.md (4 indtægtslag — Corporate + Verified Bubbles = organisations-ejerskab)
+- Privatlivsarbejde jul 2026 (v3.176: skjul medlemsliste/ejer for ikke-medlemmer af private/hidden bobler)
+- ADR-009 (ownership transfer mellem PERSONER — løser et nabo-problem, ikke dette)
