@@ -384,11 +384,8 @@ async function _populateLivePreviewSocial() {
       var presentIds2 = present.map(function(p) { return p.id; });
       if (presentIds2.length > 0) {
         try {
-          var { count } = await sb.from('profile_views')
-            .select('*', { count: 'exact', head: true })
-            .eq('viewed_id', currentUser.id)
-            .in('viewer_id', presentIds2);
-          var vCount = count || 0;
+          var { data: vCountData } = await sb.rpc('get_my_view_count', { p_viewer_ids: presentIds2 });
+          var vCount = vCountData || 0;
           viewsEl.querySelector('[data-val]').textContent = vCount;
           viewsEl.style.display = vCount > 0 ? 'flex' : 'none';
         } catch(e) { viewsEl.style.display = 'none'; }

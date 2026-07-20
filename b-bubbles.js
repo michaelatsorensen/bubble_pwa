@@ -1882,8 +1882,8 @@ async function generateEventReport(bubbleId) {
     // ── 4. Fetch profile views between members ──
     var viewCount = 0;
     try {
-      var { count } = await sb.from('profile_views').select('*', { count: 'exact', head: true }).in('viewer_id', userIds).in('viewed_id', userIds);
-      viewCount = count || 0;
+      var { data: bvcData } = await sb.rpc('get_bubble_view_count', { p_bubble_id: bubbleId });
+      viewCount = bvcData || 0;
     } catch(e) {}
 
     // ── 5. Compute stats ──

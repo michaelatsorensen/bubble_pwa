@@ -155,7 +155,7 @@ async function adminLoadStats() {
       sb.from('saved_contacts').select('*', { count: 'exact', head: true }).gte('created_at', d30),
       sb.from('profiles').select('*', { count: 'exact', head: true }).eq('banned', true),
       sb.from('bubble_members').select('*', { count: 'exact', head: true }).gt('last_active', liveExpiry),
-      sb.from('profile_views').select('*', { count: 'exact', head: true }).gte('created_at', d7)
+      sb.rpc('get_global_view_count', { p_days: 7 }).then(function(r) { return { count: r.data || 0 }; }).catch(function() { return { count: 0 }; })
     ]);
 
     var uc = userRes.count||0, bc = bubbleRes.count||0, mc = memberRes.count||0;
