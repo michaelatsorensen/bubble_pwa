@@ -23,6 +23,9 @@ registerState(function() {
   if (typeof _bcLivePollTimer !== 'undefined' && _bcLivePollTimer) {
     clearInterval(_bcLivePollTimer); _bcLivePollTimer = null;
   }
+  if (typeof _bcPendingPollTimer !== 'undefined' && _bcPendingPollTimer) {
+    clearInterval(_bcPendingPollTimer); _bcPendingPollTimer = null;
+  }
   if (typeof _bcActiveTab !== 'undefined') _bcActiveTab = 'info';
   if (typeof _bcPrevTab !== 'undefined') _bcPrevTab = null;
   if (typeof _profileCache !== 'undefined') _profileCache = {};
@@ -372,6 +375,7 @@ let bcMsgHistories = {};
 let bcSubscription = null;
 let bcBubbleData = null;
 var _bcLivePollTimer = null;
+var _bcPendingPollTimer = null;
 var _bcTypingTimer = null;
 var _bcBroadcastTypingTimer = null;
 
@@ -381,6 +385,7 @@ var _bcBroadcastTypingTimer = null;
 function bcUnsubscribe() {
   if (bcSubscription) { bcSubscription.unsubscribe(); bcSubscription = null; }
   if (_bcLivePollTimer) { clearInterval(_bcLivePollTimer); _bcLivePollTimer = null; }
+  if (_bcPendingPollTimer) { clearInterval(_bcPendingPollTimer); _bcPendingPollTimer = null; }
   if (typeof bcHideTyping === 'function') bcHideTyping();
   if (_bcBroadcastTypingTimer) { clearTimeout(_bcBroadcastTypingTimer); _bcBroadcastTypingTimer = null; }
 }
@@ -708,6 +713,19 @@ async function bcLoadMembership(b, bubbleId) {
   // Live polling: refresh member list every 15s for active events
   // (postgres_changes may not deliver other users' check-ins due to RLS)
   if (_bcLivePollTimer) { clearInterval(_bcLivePollTimer); _bcLivePollTimer = null; }
+  // Pending-poll: while the current user is awaiting approval and viewing this bubble,
+  // check every few seconds whether they've been approved. Guarantees the applicant's
+  // screen self-corrects without a manual refresh, independent of whether realtime works.
+  if (_bcPendingPollTimer) { clearInterval(_bcPendingPollTimer); _bcPendingPollTimer = null; }
+  if (bcBubbleData._isPending) {
+    _bcPendingPollTimer = setInterval(function() {
+      if (_activeScreen === 'screen-bubble-chat' && bcBubbleId === bubbleId && bcBubbleData._isPending) {
+        bcRefreshMembership(); // flips to member + re-renders if approved; clears pending banner
+      } else {
+        clearInterval(_bcPendingPollTimer); _bcPendingPollTimer = null;
+      }
+    }, 5000);
+  }
   if (bcBubbleData._isMember && (b.type === 'event' || b.type === 'live') && b.event_date) {
     var _pollNow = new Date();
     var _pollStart = new Date(b.event_date);

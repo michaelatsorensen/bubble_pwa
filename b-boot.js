@@ -987,7 +987,14 @@ document.addEventListener('visibilitychange', function() {
     if (_activeScreen === 'screen-messages') loadMessages();
     else if (_activeScreen === 'screen-home') { loadHome(); }
     else if (_activeScreen === 'screen-notifications') loadNotifications();
-    else if (_activeScreen === 'screen-bubble-chat' && typeof bcBubbleId !== 'undefined' && bcBubbleId && typeof bcLoadMessages === 'function') bcLoadMessages();
+    else if (_activeScreen === 'screen-bubble-chat' && typeof bcBubbleId !== 'undefined' && bcBubbleId) {
+      // Refresh BOTH messages and membership: an applicant approved while backgrounded
+      // must see it without a manual refresh, and the pending list must be current.
+      // The DB is the source of truth; broadcasts are only a speed bonus when they work.
+      if (typeof bcLoadMessages === 'function') bcLoadMessages();
+      if (typeof bcRefreshMembership === 'function') bcRefreshMembership();
+      if (typeof bcLoadMembers === 'function') bcLoadMembers();
+    }
     else if (_activeScreen === 'screen-chat' && typeof currentChatUser !== 'undefined' && currentChatUser && typeof loadChatMessages === 'function') loadChatMessages();
   }
 });
