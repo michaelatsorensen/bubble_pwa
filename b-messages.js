@@ -269,7 +269,9 @@ async function sendMessage() {
       };
       dmReduceMsg(tempMsg, { pending: true });
       input.value = '';
-      input.focus(); // behold keyboardet oppe efter afsendelse (som iMessage/Messenger)
+      // Behold keyboardet oppe: vi hverken blur'er eller focus'er. At rydde value
+      // taber ikke fokus, mens et eksplicit focus() efter dmReduceMsg's re-render
+      // gav et "twitch" (keyboard lukker og åbner). At lade fokus være i fred = glat.
       if (replyState.dm) cancelReply('dm'); // ryd svar-bjaelken
 
       // DB insert

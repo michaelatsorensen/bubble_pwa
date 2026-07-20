@@ -1636,7 +1636,7 @@ async function bcSendMessage() {
       showToast(t('toast_updated'));
     } else {
       inp.value = '';
-      inp.focus(); // behold keyboardet oppe efter afsendelse (som iMessage/Messenger)
+      // Behold keyboardet oppe uden twitch: hverken blur eller focus (se b-messages).
 
       var _bcReplyTo = replyState.bc ? replyState.bc.id : null;
       var _bcReplyMeta = replyState.bc ? { name: replyState.bc.name, text: replyState.bc.text } : null;
