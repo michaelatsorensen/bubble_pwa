@@ -384,6 +384,7 @@ var _bcBroadcastTypingTimer = null;
 // Global channels are owned by b-realtime.js → rtUnsubscribeAll().
 function bcUnsubscribe() {
   if (bcSubscription) { bcSubscription.unsubscribe(); bcSubscription = null; }
+  _bcSubscribingFor = null;
   if (_bcLivePollTimer) { clearInterval(_bcLivePollTimer); _bcLivePollTimer = null; }
   if (_bcPendingPollTimer) { clearInterval(_bcPendingPollTimer); _bcPendingPollTimer = null; }
   if (typeof bcHideTyping === 'function') bcHideTyping();
@@ -1004,9 +1005,17 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
 }
 
 // ── Realtime subscription: only call AFTER data is loaded ──
+var _bcSubscribingFor = null; // hvilken bubbleId vi aktuelt subscriber for (dobbelt-kald-guard)
 function bcSubscribeRealtime() {
   if (!currentUser || !bcBubbleId) { console.warn('bcSubscribeRealtime: missing user or bubbleId'); return; }
-  if (bcSubscription) bcSubscription.unsubscribe();
+  // Guard mod hurtige dobbelt-kald (kaldes fra 2 steder): hvis vi allerede har en aktiv
+  // subscription for PRÆCIS denne boble, så lad være med at rive den ned og bygge en ny.
+  // At oprette sb.channel('bc-<id>') igen før den gamle er fuldt unsubscribet giver
+  // Supabase-fejlen "cannot add postgres_changes callbacks" (kanalen genbruges i
+  // subscribet tilstand). Kun genopbyg hvis vi skifter til en ANDEN boble.
+  if (bcSubscription && _bcSubscribingFor === bcBubbleId) return;
+  if (bcSubscription) { bcSubscription.unsubscribe(); bcSubscription = null; }
+  _bcSubscribingFor = bcBubbleId;
   bcSubscription = sb.channel('bc-' + bcBubbleId)
     .on('broadcast', { event: 'checkin' }, function() {
       // Someone checked in/out. postgres_changes on bubble_members can be blocked
