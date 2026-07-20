@@ -1636,7 +1636,9 @@ async function bcSendMessage() {
       showToast(t('toast_updated'));
     } else {
       inp.value = '';
-      // Behold keyboardet oppe uden twitch: hverken blur eller focus (se b-messages).
+      // Behold keyboardet oppe uden twitch: genvind fokus via requestAnimationFrame
+      // efter re-renderens maling, men inden for gesture-konteksten (se b-messages).
+      requestAnimationFrame(function() { try { inp.focus(); } catch(e) {} });
 
       var _bcReplyTo = replyState.bc ? replyState.bc.id : null;
       var _bcReplyMeta = replyState.bc ? { name: replyState.bc.name, text: replyState.bc.text } : null;

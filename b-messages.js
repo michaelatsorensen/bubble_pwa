@@ -269,9 +269,12 @@ async function sendMessage() {
       };
       dmReduceMsg(tempMsg, { pending: true });
       input.value = '';
-      // Behold keyboardet oppe: vi hverken blur'er eller focus'er. At rydde value
-      // taber ikke fokus, mens et eksplicit focus() efter dmReduceMsg's re-render
-      // gav et "twitch" (keyboard lukker og åbner). At lade fokus være i fred = glat.
+      // Behold keyboardet oppe uden twitch: dmReduceMsg re-renderer beskedlisten, hvilket
+      // stjæler fokus fra input. At kalde focus() med det samme kæmper med re-renderen
+      // (twitch); slet ikke at kalde det lader keyboardet kollapse. Løsning: genvind fokus
+      // via requestAnimationFrame — EFTER re-renderens maling er færdig, men stadig inden
+      // for afsendelsens gesture-kontekst (før DB-await), så iOS tillader keyboardet oppe.
+      requestAnimationFrame(function() { try { input.focus(); } catch(e) {} });
       if (replyState.dm) cancelReply('dm'); // ryd svar-bjaelken
 
       // DB insert
