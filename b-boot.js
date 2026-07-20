@@ -689,6 +689,16 @@ if ('serviceWorker' in navigator) {
         loadNotifications();
       } else if (pushType === 'checkin' && d.bubble_id) {
         if (currentUser) openBubbleChat(d.bubble_id, 'screen-home');
+      } else if (pushType === 'join_request' && d.bubble_id) {
+        // Åbn boblen direkte på Medlemmer-fanen, hvor anmodningen står under
+        // "AFVENTER GODKENDELSE" med Godkend/Afvis — ejeren lander præcis på handlingen.
+        if (currentUser) {
+          openBubbleChat(d.bubble_id, 'screen-home');
+          setTimeout(function() { bcSwitchTab('members'); }, 400);
+        }
+      } else if (pushType === 'approved' && d.bubble_id) {
+        // Godkendt medlem → åbn boblen så de kan se den de nu er medlem af.
+        if (currentUser) openBubbleChat(d.bubble_id, 'screen-home');
       }
       // Refresh badges after push navigation
       setTimeout(function() { _unreadRecount(); updateTopbarNotifBadge(); }, 500);
