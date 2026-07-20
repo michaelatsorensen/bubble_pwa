@@ -838,6 +838,17 @@ async function bcCancelPending() {
     bcBubbleData._isMember = false;
     bcRenderPendingBanner(false);
     bcRenderActions(bcBubbleData, null, false, false);
+    // Fortæl ejer/admin (hvis de har boblen åben) at pending-listen skal opdateres live.
+    var _bid = bcBubbleId;
+    (function() {
+      var ch = sb.channel('bc-' + _bid);
+      ch.subscribe(function(status) {
+        if (status === 'SUBSCRIBED') {
+          ch.send({ type: 'broadcast', event: 'join_change', payload: {} });
+          setTimeout(function() { ch.unsubscribe(); }, 2000);
+        }
+      });
+    })();
     showToast(t('chat_request_cancelled'));
   } catch(e) { logError('bcCancelPending', e); errorToast('delete', e); }
 }
@@ -984,6 +995,12 @@ function bcSubscribeRealtime() {
       if (typeof bcLoadBubbleInfo === 'function') bcLoadBubbleInfo();
       if (typeof _bcActiveTab !== 'undefined' && _bcActiveTab === 'info' && typeof bcLoadInfo === 'function') bcLoadInfo();
       if (typeof loadLiveBubbleStatus === 'function') loadLiveBubbleStatus();
+    })
+    .on('broadcast', { event: 'join_change' }, function() {
+      // En anmodning blev oprettet, trukket tilbage, godkendt eller afvist et andet
+      // sted. Genopfrisk medlemslisten + pending-visning så ejer/admin ser det live.
+      if (typeof bcLoadMembers === 'function') bcLoadMembers();
+      if (typeof bcLoadBubbleInfo === 'function') bcLoadBubbleInfo();
     })
     // Typing indicator (spejler DM's typing-listener)
     .on('broadcast', { event: 'typing' }, function(payload) {
@@ -1953,6 +1970,9 @@ async function bcLoadMembers() {
     // comes from the separate fetch above.
     var activeMembers = members.filter(m => m.status !== 'pending');
     var pendingMembers = _pendingReqs;
+    // Prik på Medlemmer-fanen når der er ubehandlede anmodninger (kun owner/admin ser dem).
+    var _memDot = document.getElementById('bc-members-dot');
+    if (_memDot) _memDot.style.display = (pendingMembers.length > 0 && (bcBubbleData?._isOwner || bcBubbleData?._isAdmin)) ? 'block' : 'none';
 
     // Sort active: owner first, then live members, then rest
     const sorted = [...activeMembers].filter(m => !isBlocked(m.user_id)).sort((a, b) => {

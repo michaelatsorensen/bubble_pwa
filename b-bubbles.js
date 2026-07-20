@@ -1113,6 +1113,17 @@ async function requestJoin(bubbleId) {
         setTimeout(function() { ch.unsubscribe(); }, 2000);
         // Push notification to owner
         sendPush(b.created_by, t('bb_new_request'), (currentProfile?.name || t('bb_someone')) + ' ' + t('bb_wants_join_mid') + ' ' + (b.name || t('bb_your_bubble')), { type: 'join_request', bubble_id: bubbleId });
+        // Opdatér ejerens pending-liste live hvis boblen er åben (join_change på bc-kanal).
+        var _jbid = bubbleId;
+        (function() {
+          var ch2 = sb.channel('bc-' + _jbid);
+          ch2.subscribe(function(status) {
+            if (status === 'SUBSCRIBED') {
+              ch2.send({ type: 'broadcast', event: 'join_change', payload: {} });
+              setTimeout(function() { ch2.unsubscribe(); }, 2000);
+            }
+          });
+        })();
       }
     } catch(e2) { console.debug('[requestJoin] broadcast error:', e2); }
   } catch(e) { logError("requestJoin", e); errorToast("save", e); }

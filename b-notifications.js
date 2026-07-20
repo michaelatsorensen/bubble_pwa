@@ -293,15 +293,15 @@ async function _notifPendingRequests() {
         var avatarHtml = p.avatar_url ?
           '<div class="notif-avatar" style="overflow:hidden"><img src="' + escHtml(p.avatar_url) + '" style="width:100%;height:100%;object-fit:cover"></div>' :
           '<div class="notif-avatar" style="background:linear-gradient(135deg,#F59E0B,#EAB308)">' + ini + '</div>';
-        return '<div class="notif-card invite" style="border-left:3px solid #BA7517">' +
+        return '<div class="notif-card invite" style="border-left:3px solid #BA7517;cursor:pointer" onclick="openBubbleChat(\'' + m.bubble_id + '\',\'screen-notifications\');setTimeout(function(){bcSwitchTab(\'members\')},400)">' +
           '<div class="notif-header">' + avatarHtml +
           '<div>' +
           '<div class="notif-title">' + escHtml(p.name || t('misc_unknown')) + ' ' + t('notif_requests_access') + '</div>' +
           '<div class="notif-sub">' + escHtml(bName) + (p.title ? ' \u00B7 ' + escHtml(p.title) : '') + '</div>' +
           '</div></div>' +
           '<div class="notif-actions">' +
-          '<button class="notif-btn accept" onclick="notifApproveJoin(\'' + m.bubble_id + '\',\'' + m.user_id + '\',this)">' + t('bc_approve') + '</button>' +
-          '<button class="notif-btn decline" onclick="notifRejectJoin(\'' + m.bubble_id + '\',\'' + m.user_id + '\',this)">' + t('bc_reject') + '</button>' +
+          '<button class="notif-btn accept" onclick="event.stopPropagation();notifApproveJoin(\'' + m.bubble_id + '\',\'' + m.user_id + '\',this)">' + t('bc_approve') + '</button>' +
+          '<button class="notif-btn decline" onclick="event.stopPropagation();notifRejectJoin(\'' + m.bubble_id + '\',\'' + m.user_id + '\',this)">' + t('bc_reject') + '</button>' +
           '</div></div>';
       }).join('');
   } catch(e) { logError('_notifPendingRequests', e); return ''; }
