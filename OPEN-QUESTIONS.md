@@ -1245,3 +1245,43 @@ tilgangen til de to øverste indtægtslag.
 - STRATEGI.md (4 indtægtslag — Corporate + Verified Bubbles = organisations-ejerskab)
 - Privatlivsarbejde jul 2026 (v3.176: skjul medlemsliste/ejer for ikke-medlemmer af private/hidden bobler)
 - ADR-009 (ownership transfer mellem PERSONER — løser et nabo-problem, ikke dette)
+
+---
+
+## Q-069 — Profile Views-laget vs. anonymitets-princippet: kan "betalende ser navne" overleve? (POST-PILOT)
+
+**Type:** A — Question (design-spørgsmål under et STÅENDE princip) · **Priority:** P1 (gater indtægtslag 3) · **Status:** DEFERRED (afklares når lag 3 bygges)
+
+**Stående princip (Michael, 20. jul 2026):** Engagement FØR aktiv kontakt er ANONYMT.
+Hvem der ser din profil, hvem der gemmer din kontakt — modtageren ser antal (og evt.
+anonym kontekst), aldrig identitet, før afsenderen selv aktivt rækker ud. Dette er nu
+hårdt håndhævet i alle lag (RLS + RPC + UI, jul 2026: bm_select_scoped, pv_read_own_activity,
+get_my_view_count/get_bubble_view_count/get_my_saved_by_count, teaser-gate).
+Michael forventer at både han selv og andre kan udfordre princippet senere — men indtil
+en udfordring vinder, STÅR princippet, og alt nyt bygges under det.
+
+**Spændingen:** Forretningsmodellens lag 3 (Profile Views, 29–49 DKK/md) er spec'et som
+"free = antal, betalt = navne + kontekst". Det er i direkte konflikt med princippet:
+at SÆLGE identiteten af folk der kiggede, er præcis det princippet forbyder. Ugens
+privatlivsarbejde har gjort den konflikt teknisk eksplicit (identiteten er nu utilgængelig
+by design, ikke bare uvist).
+
+**Mulige forligsdesigns (vælg/udforsk når lag 3 bygges):**
+1. **Anonym-men-kontekstrig (Michaels egen model):** "Person fra [branche/boble X] har set
+   din profil" — betalt lag giver KONTEKST, aldrig navn. Princippet holdes 100 %.
+2. **Samtykke-baseret viewer-synlighed:** man kan aktivt vælge at være synlig som viewer
+   ("vis mig når jeg kigger") — identitet afsløres kun med afsenderens eget samtykke.
+   Princippet holdes (afsløring = en aktiv handling fra afsenderen).
+3. **Revidér laget:** hvis hverken 1 eller 2 bærer betalingsvilje, gentænkes lag 3
+   (fx flyt værdien til bedre match-indsigt frem for hvem-så-mig).
+
+**Hvorfor det ikke afgøres nu:** Pre-revenue, lag 3 er ikke bygget, og princippet
+beskytter kernetilliden i piloten. En for tidlig beslutning ville enten svække garantien
+uden indtægt at vise for det, eller låse produktdesign uden brugerdata.
+
+**Relateret:**
+- STRATEGI.md lag 3 (Profile Views "paid = names + context" — skal revideres eller forliges)
+- migrations/2026-07_profile-views-identity-privacy.sql (den tekniske håndhævelse)
+- Q-068 (organisationsprofiler — gater tilsvarende lag 2+4)
+- NEGATIVE-SCOPE.md anonymitets-afsnit (bruger-anonymitet på radar = aldrig; DETTE princip
+  er det spejlvendte: HANDLINGS-anonymitet = altid, indtil aktiv kontakt)
