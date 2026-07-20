@@ -980,8 +980,14 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
       actionBar.style.display = 'flex';
     }
   } else {
-    // Non-members + pending: only Medlemmer + Info tabs
-    if (membersTab) membersTab.style.display = '';
+    // Non-members + pending. Member-list visibility now follows the 3-tier model:
+    //   hidden  → members NOT visible until invited + accepted
+    //   private → members NOT visible until joined/approved
+    //   open    → everything visible, incl. member list, before joining
+    // The owner is a member, so hiding the member list also hides the owner —
+    // exactly the privacy requirement for hidden/private bubbles.
+    var _membersVisibleToNonMember = (b.visibility !== 'hidden' && b.visibility !== 'private');
+    if (membersTab) membersTab.style.display = _membersVisibleToNonMember ? '' : 'none';
     if (infoTab) infoTab.style.display = '';
     if (chatTab) chatTab.style.display = 'none';
     if (postsTab) postsTab.style.display = 'none';
@@ -997,7 +1003,7 @@ function bcRenderActions(b, myMembership, canEdit, isPending) {
     } else {
       actionArea.innerHTML = `<button class="btn-sm btn-accent" data-action="joinBubble" data-id="${b.id}">+ Join</button>`;
     }
-    // Non-members land on Info first so they can read about the bubble
+    // Land on Info first (members tab may be hidden for private/hidden bubbles anyway).
     bcSwitchTab('info');
   }
   // Update chat lock state
