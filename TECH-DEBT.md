@@ -108,7 +108,7 @@ Fra tværgående sanity check efter v9.01. Intet kritisk, intet i stykker — ko
 
 - **4 lilla-legacy-rester (`var(--gradient-primary)`):** overlevede design v6-migrationen. (1) b-home.js:228 radar-toggle "Alle"-fane aktiv-tilstand — MEST synlig. (2) b-bubbles.js:376 generisk confirm-dialog-knap. (3+4) b-bubbles.js:1964+1993 event-rapport header-kort + nummer-cirkler (måske bevidst, det er print/PDF-agtig rapport — afklar før fix). Skift til Isblå CTA-tokens hvor ikke bevidst.
 - **Hardcoded danske strenge i b-auth.js:** bekræftelsesmail-skærmen (linje ~509-527: "Jeg har bekræftet — log ind", "Vi har sendt en bekræftelsesmail...") + beta-beskrivelse (~721). Ikke i i18n → engelske brugere ser dansk. Flyt til t()-nøgler.
-- **P3-tællere (allerede kendt):** ~35 console.debug/log spredt (b-realtime 9, b-bubbles 7, b-live 6 størst), 43 `transition:all` i app.css. Står allerede på P3-backlog.
+- **P3-tællere (opdateret ved audit 20. jul 2026):** 42 console.debug spredt (vokset fra ~35 — harmløs støj, men BEHOLD til piloten er slut: [rt]-channel-debug var afgørende for realtime-diagnosen 20. jul). `transition:all` i app.css: LØST (0 tilbage, var 43).
 - **Døde localStorage-stjernenøgler efter DB-migration (v3.132, jul 2026):** Da bubble- + kontakt-stjerner blev flyttet til DB (`bubble_stars` + `contact_stars`-tabeller), holdt koden op med at LÆSE de to gamle localStorage-nøgler `bubble_bubblestars` (bobler) + `bubble_stars` (kontakter — forvirrende genbrug af navnet som DB-tabellen, men det er en localStorage-key). Ingen aktiv sletning → nøglerne bliver liggende ubrugt i alle eksisterende brugeres browsere. Harmløst (koden rører dem aldrig igen), rent kosmetisk hygiejne. **Fix:** engangs-oprydning ved boot der kalder `localStorage.removeItem('bubble_bubblestars')` + `localStorage.removeItem('bubble_stars')`. Kan evt. gates bag et migrations-flag så den kun kører én gang. Lav sammen med resten af oprydningsrunden — ingen hast.
 
 Verificeret RENT samme check: alle 21 .js syntaks-OK, CSS brace −1, dvh-guard rent, version konsistent v9.01, i18n 679/679 balanceret, dagens ADR-009 + recovery-funktioner alle forbundet (ingen døde referencer).
@@ -267,7 +267,13 @@ private realtime channels, storage lifecycle, incident playbook. Se reviewets Ri
 ## TD-001: get_profile_preview ignorerer p_bubble_id — anon kan slaa enhver profil op
 
 **Priority:** P0
-**Status:** PLANNED — beslutning truffet 17. juli 2026, se ADR-010.
+**Status:** RESOLVED — 20. juli 2026. Frontend-brugen forsvandt med create-first (v3.150);
+audit 20. jul bekraeftede RPC'en var HELT ubrugt men stadig anon-eksekverbar (proacl).
+Lukket endeligt: `revoke all ... from public, anon, authenticated` koert mod prod.
+Samme runde lukkede den beslaegtede teaser-laekage: get_bubble_teaser er nu
+synligheds-gated i funktionen (private/hidden NETVAERK -> kun member_count, ingen
+host/members; events/live beholder fuld teaser da QR'en ER invitationen dér).
+Se migrations/BASELINE-rpcs.sql (audit-noter) + AUDIT-2026-07-20.md.
 **Fundet:** 17. juli 2026, backend truth pack (review gate 3), verificeret mod produktion.
 
 ### BESLUTNING (ADR-010)

@@ -695,7 +695,7 @@ async function loadProfile() {
       try {
         var [qViews, qSaved, qBubbles] = await Promise.all([
           sb.rpc('get_my_view_count').then(function(r) { return r.data || 0; }).catch(function() { return 0; }),
-          sb.from('saved_contacts').select('*', { count: 'exact', head: true }).eq('contact_id', currentUser.id).then(function(r) { return r.count || 0; }).catch(function() { return 0; }),
+          sb.rpc('get_my_saved_by_count').then(function(r) { return r.data || 0; }).catch(function() { return 0; }),
           sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).then(function(r) { return r.count || 0; }).catch(function() { return 0; })
         ]);
         function qStat(val, label) {
@@ -1569,7 +1569,7 @@ async function loadDashboard() {
 
     var [viewsRes, savedByRes, savedRes, bubblesRes, matchesRes] = await Promise.all([
       safe(async function() { var r = await sb.rpc('get_my_view_count'); return { count: r.data || 0 }; }),
-      safe(function() { return sb.from('saved_contacts').select('*', { count: 'exact', head: true }).eq('contact_id', currentUser.id); }),
+      safe(async function() { var r = await sb.rpc('get_my_saved_by_count'); return { count: r.data || 0 }; }),
       safe(function() { return sb.from('saved_contacts').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id); }),
       safe(function() { return sb.from('bubble_members').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id); }),
       safe(async function() {
