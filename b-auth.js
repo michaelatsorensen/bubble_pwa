@@ -154,6 +154,14 @@ async function resolvePostAuthDestination() {
       goToThen('screen-home', function() { openBubbleChat(pushParams.get('id'), 'screen-home'); });
       return;
     }
+    else if (pushAction === 'bubble_members' && pushParams.get('id')) {
+      // Join-request push: åbn boblen på Medlemmer-fanen hvor anmodningen står.
+      goToThen('screen-home', function() {
+        openBubbleChat(pushParams.get('id'), 'screen-home');
+        setTimeout(function() { if (typeof bcSwitchTab === 'function') bcSwitchTab('members'); }, 400);
+      });
+      return;
+    }
   }
 
   // Step 2: Deep-link flows → show confirmation modal

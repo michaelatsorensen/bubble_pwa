@@ -12,7 +12,7 @@
 // Previous behavior (v8.17.30 and earlier): skipWaiting + clients.claim on install,
 // causing potentially-disruptive updates mid-write/mid-flow.
 
-const CACHE_NAME = 'bubble-v3-v3.166';
+const CACHE_NAME = 'bubble-v3-v3.167';
 const CACHE_URLS = [
   './', './index.html', './app.css',
   './bubble-icons.js',
@@ -139,6 +139,10 @@ self.addEventListener('notificationclick', function(event) {
   } else if (type === 'new_invite' || type === 'invitation' || type === 'saved_contact') {
     url = './?push=notifications';
   } else if (type === 'checkin' && d.bubble_id) {
+    url = './?push=bubble&id=' + d.bubble_id;
+  } else if (type === 'join_request' && d.bubble_id) {
+    url = './?push=bubble_members&id=' + d.bubble_id;
+  } else if (type === 'approved' && d.bubble_id) {
     url = './?push=bubble&id=' + d.bubble_id;
   }
 
