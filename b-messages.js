@@ -269,11 +269,6 @@ async function sendMessage() {
       };
       dmReduceMsg(tempMsg, { pending: true });
       input.value = '';
-      // iOS keyboard: clearing a focused input can drop the keyboard. Re-assert focus
-      // both synchronously (best-effort within gesture) and via a micro-delay to catch
-      // the case where the re-render defers focus loss. preventScroll avoids a jump.
-      try { input.focus({ preventScroll: true }); } catch(e) { try { input.focus(); } catch(e2) {} }
-      setTimeout(function() { try { input.focus({ preventScroll: true }); } catch(e) {} }, 0);
       if (replyState.dm) cancelReply('dm'); // ryd svar-bjaelken
 
       // DB insert
