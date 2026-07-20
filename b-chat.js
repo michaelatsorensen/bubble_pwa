@@ -678,15 +678,18 @@ async function bcLoadMembership(b, bubbleId) {
   var myMembership = memberRes?.data;
   var myRole = roleRes?.data;
   // Pending now lives in its own table. A bubble_members row means ACTIVE member.
-  var isPending = !myMembership && !!(pendingRes?.data);
   var isOwner = b.created_by === currentUser.id;
+  // Owner is IMPLICITLY a member of their own bubble even without a bubble_members
+  // row (ownership is via created_by). Without this, an owner sees "Anmod om
+  // medlemskab" on their own bubble. Pending only applies to non-members/non-owners.
+  var isPending = !myMembership && !isOwner && !!(pendingRes?.data);
   var isBubbleAdmin = myRole && myRole.role === 'admin';
   var canEdit = isOwner || isBubbleAdmin;
   bcBubbleData._isOwner = isOwner;
   bcBubbleData._isAdmin = isBubbleAdmin;
   bcBubbleData._canEdit = canEdit;
   bcBubbleData._isPending = isPending;
-  bcBubbleData._isMember = !!myMembership;
+  bcBubbleData._isMember = !!myMembership || isOwner;
 
   // Pending membership banner
   bcRenderPendingBanner(isPending);
@@ -864,9 +867,10 @@ async function bcRefreshMembership() {
     var wasMember = bcBubbleData._isMember;
     var wasAdmin = bcBubbleData._isAdmin;
     var wasOwner = bcBubbleData._isOwner;
-    // Member row = active. Pending lives in its own table now.
-    var isPending = !myM && !!myReq;
-    var isMember = !!myM;
+    // Member row = active. Pending lives in its own table now. Owner is implicitly a member.
+    var _isOwnerR = bcBubbleData._isOwner || (bcBubbleData.created_by === currentUser.id);
+    var isPending = !myM && !_isOwnerR && !!myReq;
+    var isMember = !!myM || _isOwnerR;
     bcBubbleData._isMember = isMember;
     bcBubbleData._isPending = isPending;
     bcBubbleData._isAdmin = myM && myM.role === 'admin';
@@ -1137,8 +1141,8 @@ async function bcLoadBubbleInfo() {
       .eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id).maybeSingle();
     var { data: myReq2 } = await sb.from('bubble_join_requests').select('id')
       .eq('bubble_id', bcBubbleId).eq('user_id', currentUser.id).maybeSingle();
-    var isPending = !myM && !!myReq2;
-    bcBubbleData._isMember = !!myM;
+    var isPending = !myM && !bcBubbleData._isOwner && !!myReq2;
+    bcBubbleData._isMember = !!myM || bcBubbleData._isOwner;
     bcBubbleData._isPending = isPending;
     bcBubbleData._isAdmin = myM && myM.role === 'admin';
     bcBubbleData._canEdit = bcBubbleData._isOwner || bcBubbleData._isAdmin;
