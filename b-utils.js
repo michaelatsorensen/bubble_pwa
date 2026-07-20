@@ -357,8 +357,12 @@ function showConfirmDialog(opts) {
 function sendPush(userId, title, body, data) {
   if (!userId || !currentUser || userId === currentUser.id) return;
   try {
+    // Edge-funktionen kræver 'type' på TOPNIVEAU (ikke inde i data) — ellers
+    // afvises pushet med "type required" og logges som event_type=null. Backend-
+    // triggere sender allerede type på topniveau; frontend skal gøre det samme.
+    var evType = (data && data.type) ? data.type : 'generic';
     sb.functions.invoke('send-push', {
-      body: { user_id: userId, title: title || 'Bubble', body: body || '', data: data || {} }
+      body: { user_id: userId, type: evType, title: title || 'Bubble', body: body || '', data: data || {} }
     }).then(function(r) {
       if (r.error) console.warn('[push] error:', r.error.message);
     }).catch(function() {});
