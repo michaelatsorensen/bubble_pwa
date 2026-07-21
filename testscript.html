@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bubble — Testguide (stage-gate)</title>
+<style>
+  :root{
+    --scene:#0E141C; --card:rgba(255,255,255,0.045); --border:rgba(255,255,255,0.10);
+    --text:rgba(255,255,255,0.92); --muted:rgba(207,230,247,0.58);
+    --teal:#1A9E8E; --pink:#E879A8; --orange:#F5A94A; --red:#E05C5C; --blue:#64B4E6;
+    --cta-bg:rgba(100,180,230,0.18); --cta-border:rgba(100,180,230,0.35);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,system-ui,sans-serif;background:var(--scene);color:var(--text);
+    line-height:1.5;padding:max(env(safe-area-inset-top),0.8rem) 0.85rem calc(env(safe-area-inset-bottom)+1rem)}
+  h1{font-size:1.1rem} .sub{font-size:0.72rem;color:var(--muted)}
+  button{font-family:inherit;cursor:pointer}
+
+  /* ── Oversigt ── */
+  .meta{display:flex;gap:0.5rem;margin:0.8rem 0}
+  .meta input{flex:1;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:9px;
+    color:var(--text);font-size:0.74rem;padding:0.5rem 0.6rem}
+  .gate{display:flex;align-items:center;gap:0.7rem;background:var(--card);border:1px solid var(--border);
+    border-radius:14px;padding:0.75rem 0.85rem;margin:0.5rem 0;width:100%;text-align:left;color:var(--text)}
+  .gate:disabled{opacity:1}
+  .gate.locked{opacity:0.45}
+  .gate.done{border-color:rgba(26,158,142,0.5)}
+  .gate.hasfail{border-color:rgba(224,92,92,0.6)}
+  .gate .ic{font-size:1.05rem;width:1.6rem;text-align:center;flex-shrink:0}
+  .gate .gt{flex:1}
+  .gate .gt b{font-size:0.82rem;display:block}
+  .gate .gt span{font-size:0.66rem;color:var(--muted)}
+  .gate .gp{font-size:0.66rem;color:var(--muted);font-variant-numeric:tabular-nums}
+  .gbar{height:4px;border-radius:99px;background:rgba(255,255,255,0.08);overflow:hidden;display:flex;margin-top:0.3rem}
+  .gbar i{display:block;height:100%}
+  .gbar .p{background:var(--teal)} .gbar .f{background:var(--red)} .gbar .k{background:rgba(255,255,255,0.25)}
+  .bigrow{display:flex;gap:0.5rem;margin-top:1rem}
+  .bigbtn{flex:1;padding:0.7rem;font-size:0.8rem;font-weight:750;border-radius:12px;border:1px solid var(--cta-border);
+    background:var(--cta-bg);color:var(--text)}
+  .bigbtn.ghost{background:rgba(224,92,92,0.10);border-color:rgba(224,92,92,0.35);color:#F5A3A3;flex:0.45}
+
+  /* ── Trin-visning ── */
+  .stephead{display:flex;align-items:center;gap:0.6rem;margin-bottom:0.6rem}
+  .backbtn{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:10px;
+    padding:0.45rem 0.7rem;font-size:0.78rem;font-weight:700}
+  .crumb{flex:1}
+  .crumb b{font-size:0.82rem;display:block}
+  .crumb span{font-size:0.66rem;color:var(--muted)}
+  .steppb{height:5px;border-radius:99px;background:rgba(255,255,255,0.08);overflow:hidden;margin-bottom:0.9rem}
+  .steppb i{display:block;height:100%;background:var(--blue);transition:width 0.25s}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:0.95rem;margin-bottom:0.8rem}
+  .card.stop{border-color:rgba(224,92,92,0.55)}
+  .roles{display:flex;gap:0.35rem;flex-wrap:wrap;margin-bottom:0.5rem}
+  .role{font-size:0.6rem;font-weight:800;letter-spacing:0.04em;padding:0.18rem 0.5rem;border-radius:99px}
+  .role.sa{background:rgba(100,180,230,0.15);color:var(--blue);border:1px solid rgba(100,180,230,0.35)}
+  .role.pc{background:rgba(232,121,168,0.12);color:var(--pink);border:1px solid rgba(232,121,168,0.35)}
+  .role.sql{background:rgba(245,169,74,0.12);color:var(--orange);border:1px solid rgba(245,169,74,0.35)}
+  .stitle{font-size:0.95rem;font-weight:750;margin-bottom:0.15rem}
+  .swhy{font-size:0.7rem;color:var(--muted);margin-bottom:0.7rem;font-style:italic}
+  .lbl{font-size:0.62rem;font-weight:850;letter-spacing:0.08em;margin:0.75rem 0 0.35rem}
+  .lbl.do{color:var(--blue)} .lbl.exp{color:var(--teal)} .lbl.fail{color:var(--orange)}
+  ol.do{padding-left:1.2rem;font-size:0.8rem}
+  ol.do li{margin-bottom:0.4rem}
+  ol.do b{color:#BFE0F5}
+  .expbox{background:rgba(26,158,142,0.07);border:1px solid rgba(26,158,142,0.3);border-radius:10px;
+    padding:0.55rem 0.7rem;font-size:0.78rem}
+  .expbox b{color:#7FE0D4}
+  .failbox{font-size:0.72rem;color:var(--muted);background:rgba(245,169,74,0.06);
+    border:1px solid rgba(245,169,74,0.25);border-radius:10px;padding:0.5rem 0.65rem}
+  .stopbadge{display:inline-block;font-size:0.6rem;font-weight:850;color:#F5A3A3;background:rgba(224,92,92,0.15);
+    border:1px solid rgba(224,92,92,0.4);border-radius:99px;padding:0.15rem 0.55rem;margin-bottom:0.45rem}
+  .sqlbox{position:relative;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:10px;
+    padding:0.6rem 0.65rem;padding-right:4rem;margin:0.4rem 0;font-family:ui-monospace,Menlo,monospace;
+    font-size:0.63rem;white-space:pre-wrap;word-break:break-all;color:#9BC4E8}
+  .copybtn{position:absolute;top:0.35rem;right:0.35rem;font-size:0.6rem;padding:0.25rem 0.55rem;border-radius:7px;
+    border:1px solid var(--cta-border);background:var(--cta-bg);color:var(--text)}
+  textarea{width:100%;min-height:2.4rem;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px;
+    color:var(--text);font-size:0.78rem;font-family:inherit;padding:0.5rem 0.6rem;resize:vertical;margin-top:0.6rem}
+  textarea:focus{outline:none;border-color:var(--cta-border)}
+  .resrow{display:flex;gap:0.45rem;margin-top:0.7rem}
+  .rbtn{flex:1;padding:0.62rem 0.2rem;font-size:0.78rem;font-weight:750;border-radius:11px;
+    border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--muted)}
+  .rbtn.pass.on{background:rgba(26,158,142,0.28);border-color:var(--teal);color:#7FE0D4}
+  .rbtn.fail.on{background:rgba(224,92,92,0.25);border-color:var(--red);color:#F5A3A3}
+  .rbtn.skip.on{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3);color:var(--text)}
+  .navrow{display:flex;gap:0.5rem;margin-top:0.4rem}
+  .navbtn{flex:1;padding:0.55rem;font-size:0.76rem;font-weight:700;border-radius:11px;
+    border:1px solid var(--border);background:var(--card);color:var(--text)}
+  .navbtn.next{background:var(--cta-bg);border-color:var(--cta-border)}
+  .navbtn:disabled{opacity:0.35}
+  .toast{position:fixed;left:50%;bottom:2.2rem;transform:translateX(-50%);background:rgba(26,158,142,0.95);
+    color:#04211D;font-size:0.78rem;font-weight:750;padding:0.55rem 1.1rem;border-radius:99px;z-index:100;
+    opacity:0;transition:opacity 0.25s;pointer-events:none;white-space:nowrap;max-width:92vw}
+  .toast.warn{background:rgba(224,92,92,0.96);color:#2A0808}
+  .toast.show{opacity:1}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════ SQL-snipper (genbruges) ═══════════ */
+var SQL = {
+  members: "select p.name, m.role from bubble_members m join profiles p on p.id=m.user_id where m.bubble_id='adde6208-2f9b-4519-b96d-ef6bdf084bbe' order by m.joined_at;",
+  pending: "select p.name, r.created_at from bubble_join_requests r join profiles p on p.id=r.user_id where r.bubble_id='adde6208-2f9b-4519-b96d-ef6bdf084bbe';",
+  events: "select event_type, delta, created_at from bubble_membership_events where bubble_id='adde6208-2f9b-4519-b96d-ef6bdf084bbe' order by created_at;",
+  push: "select event_type, source, status, sent_count, error, created_at from push_events order by created_at desc limit 8;",
+  findMonkey: "select id, name from profiles where name ilike 'Monkey%' order by created_at desc;",
+  delReq: "delete from bubble_join_requests where bubble_id='adde6208-2f9b-4519-b96d-ef6bdf084bbe' and user_id='<MONKEY-UUID>';",
+  delMember: "delete from bubble_members where bubble_id='adde6208-2f9b-4519-b96d-ef6bdf084bbe' and user_id='<MONKEY-UUID>';"
+};
+
+/* ═══════════ GATES & TRIN ═══════════
+   Hvert trin: id, roles[], t (titel), why, do[] (konkrete handlinger),
+   exp (forventet), fail (hvad du gør/rapporterer ved fejl), sql[] (valgfri), stop (bool) */
+var GATES = [
+
+{g:"0", name:"Forberedelse", desc:"Enheder, SW-opdatering og udgangstilstand", steps:[
+ {id:"0.1", roles:["sa","pc"], t:"Gør enhederne klar",
+  why:"Hele testen kører med telefonen som SA og computeren som testbrugere.",
+  do:["Hav <b>iPhonen</b> klar med Bubble-PWA'en (du er logget ind som dig selv = SA).",
+      "Åbn <b>Chrome på computeren</b>. Ét almindeligt vindue (til T1 = Bubble Tester senere).",
+      "Hold incognito-genvejen klar (<b>Ctrl+Shift+N</b>) — hver \"Monkey\"-testbruger får sit EGET incognito-vindue.",
+      "Åbn <b>Supabase SQL Editor</b> i en fane — flere trin beder dig køre SQL."],
+  exp:"Alt åbent og klar. Tryk <b>Som forventet</b> når du er sat op."},
+ {id:"0.2", roles:["sa"], t:"Tving service worker-opdatering",
+  why:"iOS henter ny app-version i to omgange. Tester du på en gammel SW, fejler push-routing FALSKT — det var fælden 20. jul.",
+  do:["Åbn app-switcheren på iPhonen og <b>swipe Bubble helt væk</b>.",
+      "Åbn Bubble igen fra hjemmeskærmen.",
+      "Tryk på <b>puls-ikonet</b> nederst til højre → <b>Super admin</b> → fanen <b>System</b>.",
+      "Aflæs <b>Version</b> og <b>SW</b>."],
+  exp:"Version = <b>v3-v3.178</b> og SW = <b>synced</b>. Ældre version? Luk og åbn appen én gang til, tjek igen.",
+  fail:"Stadig gammel version efter 3 forsøg → skriv versionen du ser i noten og rapportér. Fortsæt IKKE til push-tests."},
+ {id:"0.3", roles:["sql"], t:"Fastlæg udgangstilstanden N₀",
+  why:"Alle tal-tests måles mod det FAKTISKE medlemstal nu. Vi kalder det N₀.",
+  do:["Kør SQL'en i Supabase (kopiér-knappen).","Tæl rækkerne i resultatet.",
+      "Skriv i notefeltet herunder: <b>\"N₀ = X\"</b> (og gerne navnene)."],
+  sql:["members"],
+  exp:"En liste over de aktive medlemmer af House of Software. Antallet er dit N₀ resten af testen."},
+ {id:"0.4", roles:["sql"], t:"Ingen hængende anmodninger",
+  why:"En gammel pending-anmodning ville forurene anmodningsflow-testene.",
+  do:["Kør SQL'en."],
+  sql:["pending"],
+  exp:"<b>0 rækker.</b>",
+  fail:"Er der rækker: behandl dem i appen (godkend/afvis) ELLER slet dem med oprydnings-SQL'en fra gate-oversigtens værktøjskasse — og kør dette trin igen."},
+ {id:"0.5", roles:["sql"], t:"Grafens events-log stemmer",
+  why:"Grafen bygges af denne log. Den løbende sum SKAL ende på N₀.",
+  do:["Kør SQL'en.","Læg delta'erne sammen fra top til bund (baseline + joined − left)."],
+  sql:["events"],
+  exp:"Summen ender på <b>N₀</b> fra trin 0.3.",
+  fail:"Stemmer den ikke: kopiér hele outputtet ind i noten og rapportér — fortsæt gerne, men B-gaten vil sandsynligvis fejle."}
+]},
+
+{g:"A", name:"Sundhedstjek", desc:"Version, realtime, fejl-log, smoketest", steps:[
+ {id:"A.1", roles:["sa"], t:"Realtime-kanaler forbinder",
+  why:"0/9 lige efter opstart er NORMALT (dagens lærestreg) — det interessante er tilstanden efter et minut.",
+  do:["Gå til forsiden i appen og lad den stå åben i <b>ca. 1 minut</b>.",
+      "Åbn Super admin → System igen.","Aflæs <b>RT kanaler</b>."],
+  exp:"Mere end 0 — typisk <b>8–9/9</b>.",
+  fail:"Stadig 0/9: notér også <b>RT retry</b>-tallet og skriv begge i noten."},
+ {id:"A.2", roles:["sa"], t:"Fejl-loggen er ren for kanal-fejl",
+  why:"v3.175 fixede 'cannot add postgres_changes'-fejlen. Nye forekomster = guarden virker ikke.",
+  do:["Samme System-fane → åbn <b>Fejl-log</b>.",
+      "Kig efter poster fra <b>i dag</b> med teksten <b>\"cannot add postgres_changes\"</b>."],
+  exp:"Ingen fra i dag. (Gamle fra 19/7 og før er OK — de er historik.)"},
+ {id:"A.3", roles:["sa"], t:"In-app smoketest",
+  do:["System-fanen → find smoketesten → kør den."],
+  exp:"Alle punkter grønne.",
+  fail:"Skriv præcis hvilket punkt der fejler i noten."},
+ {id:"A.4", roles:["sa"], t:"Super admin-statistik henter",
+  why:"Profil-visnings-tallet går nu via en ny RPC (get_global_view_count) — vi tjekker at den svarer.",
+  do:["Super admin → <b>Stats</b>-fanen.","Find profil-visnings-tallet (seneste 7 dage)."],
+  exp:"Et tal vises uden fejl. (Selve tallet er underordnet her.)"}
+]},
+
+{g:"B", name:"Tal & graf", desc:"Medlemstal-sandheden — statiske tjek", steps:[
+ {id:"B.1", roles:["sa"], t:"Tre tal — ét sandt tal", stop:true,
+  why:"Kernen i C-migreringen: der findes kun ÉT medlemstal, og alle visninger skal vise det.",
+  do:["Åbn <b>House of Software</b>.",
+      "Notér tallet i <b>toppen</b> under boblenavnet (\"X medlemmer\").",
+      "Åbn <b>Medlemmer</b>-fanen — notér det store tal.",
+      "Åbn <b>Info</b>-fanen → Statistik-kortet — notér \"MEDLEMMER\"-tallet."],
+  exp:"Alle tre = <b>N₀</b>. Ingen afvigelse.",
+  fail:"STOP-KRITERIUM: skriv de tre tal i noten og rapportér STRAKS — test ikke videre i denne gate."},
+ {id:"B.2", roles:["sa"], t:"Statistik-kortets kontekst",
+  do:["Bliv på Info → Statistik-kortet.","Kig på <b>\"+X denne md.\"</b> og evt. grå linje under."],
+  exp:"\"+X denne md.\" er <b>boblens egne</b> nye medlemmer. Grå \"Y i hele netværket\" vises kun hvis der findes sub-bobler OG tallet afviger."},
+ {id:"B.3", roles:["sa"], t:"Grafen tegner en linje",
+  why:"v3.174: dag-buckets når historikken er kort — før viste den ét ensomt punkt.",
+  do:["Scroll til <b>Medlemsvækst</b>-grafen på Info-fanen."],
+  exp:"En <b>linje</b> (mindst to punkter) med dag-labels (fx 19/7 → 20/7). Sidste punkt = <b>N₀</b>.",
+  fail:"Ét enkelt punkt eller tom graf: tag et skærmbillede og notér."}
+]},
+
+{g:"C", name:"Anmodningsflowet", desc:"Hovedscenariet — ende til ende med Monkey 1", steps:[
+ {id:"C.1", roles:["pc"], t:"Opret Monkey 1",
+  do:["Åbn et <b>nyt incognito-vindue</b> i Chrome.",
+      "Gå til <b>bubbleme.dk</b> → opret konto (email kan være fri fantasi — bekræftelse er slået fra).",
+      "Navn: <b>\"Monkey 1\"</b>.","Gennemfør velkomst-flowet (vælg et par tags)."],
+  exp:"Du står på forsiden som ny, tom bruger."},
+ {id:"C.2", roles:["pc"], t:"Privat boble skjuler medlemmer",
+  why:"3-lags-modellen (v3.176): privat = synlig i Discover, men medlemmer og ejer er skjult før man er inde.",
+  do:["Som Monkey 1: gå til <b>Discover</b> → find <b>House of Software netværk</b> → åbn den."],
+  exp:"Du lander på Info. <b>Der ER ingen Medlemmer-fane.</b> Du kan se antal medlemmer — men ingen navne, ingen ansigter, og IKKE hvem ejeren er.",
+  fail:"Kan du se medlemsliste eller ejer: skærmbillede + rapportér (privatlivsfejl)."},
+ {id:"C.3", roles:["pc"], t:"Send anmodningen",
+  do:["Tryk <b>\"Anmod om medlemskab\"</b>.","Se på bekræftelses-modalen — er den centreret og tydelig mod baggrunden?","Bekræft."],
+  exp:"Efter bekræftelse: gult <b>\"⏳ Afventer godkendelse\"</b>-banner med Annuller-knap. Stadig ingen medlemsliste (pending er ikke inde).",
+  fail:"Grim/utydelig modal er også et fund — notér."},
+ {id:"C.4", roles:["sa"], t:"Push ankommer (app i baggrund)",
+  do:["<b>Send Bubble i baggrunden</b> på iPhonen (gå til hjemmeskærmen — luk den IKKE helt).",
+      "Vent op til ~30 sekunder."],
+  exp:"Push: <b>\"Monkey 1 vil gerne være medlem…\"</b> (eller lignende).",
+  fail:"Ingen push: åbn appen — ligger notifikationen i klokken? (Så er det KUN push-leddet der fejler.) Kør push-SQL'en og skriv nyeste rækkers status/error i noten.",
+  sql:["push"]},
+ {id:"C.5", roles:["sa"], t:"Push-tap lander på Medlemmer-fanen", stop:true,
+  why:"v3.164+167: hele kæden sw.js → boot → auth skal kende join_request-typen.",
+  do:["<b>Tap på pushen.</b>"],
+  exp:"Appen åbner <b>DIREKTE i House of Software på Medlemmer-fanen</b> med \"AFVENTER GODKENDELSE · 1\" øverst. IKKE forsiden.",
+  fail:"Lander du på forsiden: 90 % sandsynlighed for gammel SW → gå til trin 0.2, tving opdatering, og kør C.4–C.5 igen (Monkey 1 kan annullere og anmode igen). Fejler det STADIG: rapportér."},
+ {id:"C.6", roles:["sa"], t:"Breadcrumb-sporet lyser",
+  why:"v3.165-166: du skal kunne FINDE en ventende anmodning ad tre veje.",
+  do:["Gå til <b>forsiden</b> (godkend IKKE endnu).",
+      "Tjek 1: <b>klokke-ikonet</b> øverst har en prik.",
+      "Tjek 2: gå til <b>Bobler</b>-listen — HoS-kortets ikon har en lille <b>orange prik</b>.",
+      "Tjek 3: åbn HoS — <b>Medlemmer-fanen</b> har en orange prik."],
+  exp:"Alle tre prikker lyser."},
+ {id:"C.7", roles:["sa"], t:"Notifikationskortet er en genvej",
+  do:["Åbn <b>klokken</b> → find \"Monkey 1 anmoder om adgang…\".",
+      "Tap på <b>selve kortet</b> — IKKE på Godkend/Afvis-knapperne."],
+  exp:"Åbner boblen på Medlemmer-fanen. Gå derefter <b>tilbage til klokken</b> til næste trin."},
+ {id:"C.8", roles:["sa","pc"], t:"Godkend — med Monkey-vinduet synligt!",
+  why:"Næste trin (kronjuvelen) kræver at du KIGGER på Monkey 1's skærm i godkendelses-øjeblikket.",
+  do:["<b>FØRST:</b> stil Monkey 1's incognito-vindue synligt på computeren — Monkey 1 skal stå på boble-skærmen med \"Afventer\"-banneret.",
+      "På telefonen: tryk <b>Godkend</b> på notifikationskortet.",
+      "Kig STRAKS over på computeren (næste trin)."],
+  exp:"På telefonen: kortet skifter til <b>\"Godkendt ✓\"</b> og du BLIVER i notifikationslisten (knappen navigerer ikke)."},
+ {id:"C.9", roles:["pc"], t:"KRONJUVELEN: ansøgeren flipper selv ≤5 sek", stop:true,
+  why:"v3.173: databasen er sandheden — ansøgerens skærm skal rette sig selv UDEN refresh og UDEN at realtime behøver virke (5-sek-poll).",
+  do:["Kig på Monkey 1's vindue. <b>RØR INTET.</b> Tæl langsomt til fem."],
+  exp:"Inden <b>≤5 sekunder</b>: \"Afventer godkendelse\" forsvinder af sig selv, og skærmen skifter til medlems-visning (faner, chat osv.).",
+  fail:"STOP-KRITERIUM: sidder Monkey 1 fast som pending efter 10+ sek → notér om en manuel refresh (F5) løser det, og rapportér STRAKS."},
+ {id:"C.10", roles:["sa"], t:"Alle prikker slukker",
+  do:["Tjek klokken, Bobler-listen og Medlemmer-fanen igen (som i C.6)."],
+  exp:"Alle tre prikker er <b>væk</b> — intet ubehandlet."},
+ {id:"C.11", roles:["sa"], t:"Grafen og tallene fulgte med OP",
+  do:["Åbn HoS → Info → Statistik + Medlemsvækst."],
+  exp:"Medlemmer = <b>N₀+1</b> overalt (husk B.1's tre steder). Grafen har et nyt punkt på N₀+1."},
+ {id:"C.12", roles:["sa"], t:"Ryd op — og se grafen dykke",
+  why:"Fjernelsen ER en test: B-loggen skal registrere afgangen, og grafen skal vise den.",
+  do:["Medlemmer-fanen → find Monkey 1 → <b>fjern</b> (X).",
+      "Genåbn Info → Statistik + graf."],
+  exp:"Tilbage på <b>N₀</b> overalt. Grafen dykker. (Valgfrit SQL-tjek: events-loggen har nu +1 og −1 for Monkey 1.)",
+  sql:["events"]}
+]},
+
+{g:"D", name:"Flow-varianter", desc:"Annullér, afvis, gentag, uden push", steps:[
+ {id:"D.1", roles:["pc","sa"], t:"Annullering når ejeren kigger",
+  do:["Nyt incognito-vindue → opret <b>Monkey 2</b> → find HoS → anmod (som C.1–C.3).",
+      "SA: åbn HoS → <b>Medlemmer-fanen</b> — se pending-kortet, og <b>BLIV stående</b> dér.",
+      "Monkey 2: tryk <b>Annuller</b> på banneret."],
+  exp:"Pending-kortet forsvinder hos SA — <b>live</b> (broadcast) eller senest når du navigerer ud og ind af boblen (DB-pull). Aldrig et dødt kort der kræver refresh.",
+  fail:"Notér PRÆCIS hvad der skulle til før kortet forsvandt (intet / navigation / manuel refresh)."},
+ {id:"D.2", roles:["pc","sa"], t:"Afvis-flowet",
+  do:["Monkey 2: anmod <b>igen</b>.","SA: tryk <b>Afvis</b> (i boblen eller notifikationen).",
+      "Monkey 2: vent lidt / skift væk og tilbage til boblen."],
+  exp:"Kortet væk hos SA. Monkey 2 ser <b>\"Anmod om medlemskab\"</b> igen (senest efter at have forladt og genåbnet boble-skærmen). Medlemstal stadig N₀."},
+ {id:"D.3", roles:["pc"], t:"Anmod → annullér → anmod (hurtigt)",
+  do:["Monkey 2: anmod → annullér → anmod igen, i rap rækkefølge."],
+  exp:"Ingen fejl, ingen dubletter — SA ser præcis <b>én</b> pending. (SA: afvis den bagefter som oprydning.)"},
+ {id:"D.4", roles:["pc","sa"], t:"Alt virker HELT uden push og realtime",
+  why:"Robusthedsprincippet: klokken + DB-pull skal bære det hele alene.",
+  do:["<b>Luk SA's app HELT</b> (swipe væk).",
+      "Nyt incognito → opret <b>Monkey 3</b> → anmod om HoS.",
+      "SA: åbn appen normalt fra hjemmeskærmen — tap IKKE på nogen push."],
+  exp:"Klokke-prikken lyser og notifikationen ligger klar. Intet gik tabt.",
+  fail:"(SA: afvis Monkey 3 bagefter som oprydning.)"}
+]},
+
+{g:"E", name:"Push-matrix", desc:"DM-push + push-loggen", steps:[
+ {id:"E.1", roles:["pc","sa"], t:"DM-push åbner den rigtige tråd",
+  do:["Computer, <b>almindeligt</b> Chrome-vindue: log ind som <b>Bubble Tester (T1)</b>.",
+      "SA: send appen i baggrunden.",
+      "T1: send en DM til Michael Sørensen, fx \"push-test\".",
+      "SA: vent på push → <b>tap</b>."],
+  exp:"Push viser beskedteksten. Tap åbner <b>præcis den DM-tråd</b>."},
+ {id:"E.2", roles:["sql"], t:"push_events er ren",
+  do:["Kør push-SQL'en og kig på dagens rækker."],
+  sql:["push"],
+  exp:"Alle dagens events: status = <b>sent</b>, sent_count ≥ 1. <b>INGEN</b> rækker med error \"type required\" (v3.161-fejlen) eller status invalid.",
+  fail:"Kopiér de fejlende rækker ind i noten."}
+]},
+
+{g:"F", name:"3 lag + teaser", desc:"Åben/Privat/Skjult + pre-auth teaser-gaten", steps:[
+ {id:"F.1", roles:["sa"], t:"Opret de tre testbobler",
+  do:["Opret tre bobler (netværk): <b>\"Monkey Åben\"</b> (synlighed: åben), <b>\"Monkey Privat\"</b> (privat), <b>\"Monkey Skjult\"</b> (skjult).",
+      "Opret også <b>\"Monkey Event\"</b> — et EVENT med dato i dag (til F.6)."],
+  exp:"Fire bobler oprettet. (Slettes i F.7.)"},
+ {id:"F.2", roles:["pc"], t:"Åben boble: alt synligt før join",
+  do:["Som <b>T1</b> (ikke-medlem): find og åbn <b>Monkey Åben</b>."],
+  exp:"<b>Medlemmer-fanen er synlig</b> med fuld liste (inkl. dig som ejer). Join-knap. Alt åbent — det er hele pointen med \"åben\"."},
+ {id:"F.3", roles:["pc"], t:"Privat boble: medlemmer skjult",
+  do:["T1: åbn <b>Monkey Privat</b>."],
+  exp:"<b>Ingen Medlemmer-fane.</b> Kun Info + antal. Ejeren (dig) er usynlig. \"Anmod\"-knap."},
+ {id:"F.4", roles:["pc"], t:"Discover-synlighed pr. lag",
+  do:["T1: gå til Discover og kig efter de tre bobler."],
+  exp:"<b>Monkey Åben</b> og <b>Monkey Privat</b> vises. <b>Monkey Skjult vises IKKE</b> (invitation-only)."},
+ {id:"F.5", roles:["pc"], t:"TEASER-GATEN — pre-auth, ikke logget ind", stop:true,
+  why:"DAGENS STØRSTE AUDIT-FUND, lukket i v3.178: teaseren måtte ikke længere afsløre vært + medlemmer af private bobler til hele internettet.",
+  do:["SA (telefon): åbn <b>Monkey Privat</b> → Del → <b>kopiér linket</b> og send det til computeren (mail/besked til dig selv).",
+      "Computer: åbn et <b>HELT NYT incognito-vindue</b> — du må IKKE være logget ind.",
+      "Indsæt linket og se på teaser-siden."],
+  exp:"Teaseren viser <b>KUN et antal</b> (\"X medlemmer\"). <b>INGEN ansigter/profiler. INGEN vært.</b>",
+  fail:"STOP-KRITERIUM: ser du ansigter eller vært → skærmbillede og rapportér STRAKS. Det er et privatlivshul."},
+ {id:"F.6", roles:["pc"], t:"Event-teaser er stadig FULD",
+  why:"For events er QR'en invitationen — dér SKAL teaseren vise mennesker (produktoplevelsen).",
+  do:["Samme friske incognito: åbn dele-linket til <b>Monkey Event</b>."],
+  exp:"<b>Fuld teaser</b>: ansigter/profiler + vært vises."},
+ {id:"F.7", roles:["sa"], t:"Ejer-invariant + oprydning",
+  do:["SA: åbn dine egne Monkey-bobler én for én.",
+      "Tjek at du ALDRIG ser \"Anmod om medlemskab\" på egne bobler (v3.170-fejlen).",
+      "<b>Slet derefter alle fire Monkey-bobler.</b>"],
+  exp:"Fuld ejer-adgang overalt, aldrig Anmod-knap. Bobler slettet."}
+]},
+
+{g:"G", name:"Identitets-tal", desc:"Tal, aldrig navne — views & gemt", steps:[
+ {id:"G.1", roles:["sa","pc"], t:"\"Har set din profil\" tæller op",
+  do:["SA: åbn <b>Min profil</b> → notér tallet \"har set din profil\".",
+      "T1 (computer): find Michael Sørensen (radar/søgning) → åbn den <b>fulde profil</b>.",
+      "SA: forlad og genåbn Min profil."],
+  exp:"Tallet er steget med <b>+1</b>. Der vises INTET navn nogen steder — kun tallet."},
+ {id:"G.2", roles:["sa","pc"], t:"\"Har gemt dig\" tæller op (NYT — var 0 for evigt)",
+  why:"Auditten fandt at dette tal ALTID har vist 0 pga. RLS. Fixet i dag med en ny RPC — dette er første gang det kan virke.",
+  do:["SA: notér \"har gemt dig\"-tallet på Min profil.",
+      "T1: gem Michael Sørensen som kontakt (bogmærke/gem).",
+      "SA: genåbn Min profil."],
+  exp:"Tallet er steget med <b>+1</b>.",
+  fail:"Viser det stadig 0: rapportér — så mangler get_my_saved_by_count-RPC'en eller grants."},
+ {id:"G.3", roles:["sa"], t:"Ejer-rapporten er anonym",
+  do:["SA: åbn en boble med aktivitet → generér <b>event-rapporten</b>.",
+      "Kig på \"Profilvisninger\"-kortet og \"Mest aktive\"-listen."],
+  exp:"Profilvisninger viser et <b>tal</b>. Mest aktive = <b>\"Deltager #1 / #2\"</b> — anonyme numre, ingen navne på visnings-/gemme-adfærd."}
+]},
+
+{g:"H", name:"Keyboard", desc:"Baseline efter v3.172-reverten", steps:[
+ {id:"H.1", roles:["sa"], t:"DM: indhold skubbes, intet twitch",
+  why:"v3.171 gjorde det VÆRRE (keyboard over indhold); v3.172 rullede tilbage til ren baseline. Vi verificerer baselinen.",
+  do:["Åbn en DM på iPhonen.","Tryk i tekstfeltet → se hvordan skærmen reagerer.",
+      "Skriv og send <b>3 beskeder i træk</b>."],
+  exp:"Keyboardet skubber indhold+composer OP (intet overlap). Ingen twitch (luk-og-åbn-blink) mellem beskederne.",
+  fail:"Keyboard OVEN PÅ indholdet = regression → rapportér straks. NB: at keyboardet <i>falder ned</i> efter send er den ACCEPTEREDE begrænsning — notér blot om det sker, det er ikke en fejl."},
+ {id:"H.2", roles:["sa"], t:"Boble-chat: samme baseline",
+  do:["Gentag H.1 i en boble-chat."],
+  exp:"Samme opførsel som H.1."}
+]},
+
+{g:"I", name:"Kaos / monkey", desc:"Fri leg under observation", steps:[
+ {id:"I.1", roles:["sa","pc"], t:"To enheder, samme konto",
+  do:["Log ind som SA i det almindelige Chrome-vindue OGSÅ (T1 kan logge ud).",
+      "Opret <b>Monkey 4</b> (incognito) → anmod om HoS.",
+      "iPhone: stil dig på HoS' Medlemmer-fane. <b>Godkend fra Chrome.</b>"],
+  exp:"iPhonen opdaterer sig (live eller ved næste forgrund/navigation). Ingen spøgelses-pending hænger."},
+ {id:"I.2", roles:["pc","sa"], t:"Baggrund under pending",
+  do:["Fjern Monkey 4 fra boblen igen (oprydning). Monkey 4: anmod igen og BLIV på boble-skærmen.",
+      "Minimér Monkey 4's vindue / skift fane i ~30 sek.","SA: godkend imens.","Skift tilbage til Monkey 4's fane."],
+  exp:"Monkey 4 er medlem ved tilbagekomsten — UDEN refresh (forgrund-refresh, v3.173)."},
+ {id:"I.3", roles:["sa"], t:"Hammer-tryk på Godkend",
+  do:["Fjern Monkey 4, lad den anmode igen.","Tryk Godkend <b>5 gange så hurtigt du kan</b>."],
+  exp:"Præcis ÉN godkendelse, ingen fejl-toasts, tal +1 (RPC'en er idempotent). Fjern Monkey 4 bagefter."},
+ {id:"I.4", roles:["sa"], t:"Boble-hop ×10",
+  do:["Skift lynhurtigt frem og tilbage mellem HoS og en anden boble 10 gange.","Tjek fejl-loggen (System)."],
+  exp:"Ingen frys. Ingen NYE \"cannot add postgres_changes\" (v3.175-guarden)."},
+ {id:"I.5", roles:["pc","sa"], t:"3 anmodninger på én gang",
+  do:["Lad Monkey 2, 3 og 4 (eller nye) anmode samtidig.","SA: kig på Medlemmer-fanen."],
+  exp:"\"AFVENTER · 3\". Hver kan behandles enkeltvis. Tallene ender korrekt. Ryd op (afvis/fjern alle)."},
+ {id:"I.6", roles:["pc"], t:"Flystilstand / offline",
+  do:["Slå netværk fra for et Monkey-vindue (eller flystilstand på telefonen som en testbruger).",
+      "Prøv at anmode offline.","Slå netværk til igen og prøv igen."],
+  exp:"Offline: pæn fejl eller ingen handling — <b>ingen halv-tilstand</b>. Online: virker normalt."},
+ {id:"I.7", roles:["sa"], t:"Log ud/ind midt i det hele",
+  do:["Med mindst én pending aktiv: log HELT ud som SA på iPhonen → log ind igen."],
+  exp:"Prikker og tal er korrekte efter login (frisk state). Intet hænger fra før logout."},
+ {id:"I.8", roles:["sa"], t:"Gammelt push",
+  do:["Find et ÆLDRE Bubble-push i notifikationscenteret (fra i går/tidligere) og tap på det."],
+  exp:"Ingen crash — appen lander et fornuftigt sted (boblen/forsiden), selv hvis indholdet er forældet."}
+]},
+
+{g:"J", name:"Afslutning", desc:"Oprydning + rapport", steps:[
+ {id:"J.1", roles:["sql","sa"], t:"Fuld oprydning",
+  do:["Kør medlems-SQL'en: kun de RIGTIGE medlemmer tilbage (N₀-listen fra 0.3).",
+      "Kør pending-SQL'en: 0 rækker.",
+      "Evt. støjende Monkey-konti af radaren: kør is_anon-SQL fra værktøjskassen med deres uuid (find-Monkey-SQL'en giver uuid'erne)."],
+  sql:["members","pending","findMonkey"],
+  exp:"Udgangstilstanden er genskabt: N₀ medlemmer, 0 pending."},
+ {id:"J.2", roles:["sa"], t:"Eksportér og send rapporten",
+  do:["Tryk <b>📤 Eksportér rapport</b> nederst på gate-oversigten.",
+      "Rapporten kopieres til udklipsholderen — <b>send den til Claude</b> (paste i chatten), sammen med skærmbilleder af eventuelle fails."],
+  exp:"Rapport sendt. Godt arbejde! 🫧"}
+]}
+];
+
+/* ═══════════ STATE ═══════════ */
+var LS = 'bubble-testguide-2026-07';
+var S = {};
+try { S = JSON.parse(localStorage.getItem(LS) || '{}'); } catch(e) { S = {}; }
+S.steps = S.steps || {}; S.meta = S.meta || {};
+var view = { mode: 'home', gate: 0, step: 0 };
+function save(){ try{ localStorage.setItem(LS, JSON.stringify(S)); }catch(e){} }
+function toast(msg, warn){
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast' + (warn ? ' warn' : '') + ' show';
+  clearTimeout(t._h); t._h = setTimeout(function(){ t.classList.remove('show'); }, warn ? 2600 : 1500);
+}
+function stepState(id){ return S.steps[id] || {}; }
+function gateStats(gi){
+  var g = GATES[gi], p=0,f=0,k=0;
+  g.steps.forEach(function(st){ var s = stepState(st.id).s;
+    if (s==='pass') p++; else if (s==='fail') f++; else if (s==='skip') k++; });
+  return {p:p,f:f,k:k,total:g.steps.length,done:p+f+k};
+}
+function gateUnlocked(gi){
+  if (gi===0) return true;
+  var prev = gateStats(gi-1);
+  return prev.done === prev.total;
+}
+
+/* ═══════════ RENDER ═══════════ */
+function esc(s){ return s; } // indhold er vores eget HTML
+function sqlBlock(key){
+  return '<div class="sqlbox"><button class="copybtn" data-sql="'+key+'">Kopiér</button>'+SQL[key]+'</div>';
+}
+function render(){
+  var app = document.getElementById('app');
+  if (view.mode === 'home') { app.innerHTML = renderHome(); bindHome(); }
+  else { app.innerHTML = renderStep(); bindStep(); window.scrollTo(0,0); }
+  document.querySelectorAll('.copybtn').forEach(function(b){
+    b.onclick = function(e){ e.stopPropagation();
+      var sql = SQL[b.dataset.sql];
+      if (navigator.clipboard) navigator.clipboard.writeText(sql).then(function(){ toast('SQL kopieret'); });
+    };
+  });
+}
+function renderHome(){
+  var h = '<h1>🫧 Bubble — Testguide</h1>' +
+    '<div class="sub">Stage-gate · ét trin ad gangen · gemmes automatisk på denne enhed</div>' +
+    '<div class="meta">' +
+    '<input id="m-ver" placeholder="Version testet (fx v3-v3.178)" value="'+(S.meta.ver||'')+'">' +
+    '<input id="m-dev" placeholder="Enhed" style="flex:0.6" value="'+(S.meta.dev||'')+'"></div>';
+  GATES.forEach(function(g, gi){
+    var st = gateStats(gi), unlocked = gateUnlocked(gi);
+    var cls = 'gate' + (!unlocked ? ' locked' : '') +
+      (st.done===st.total && st.f===0 && st.total>0 ? ' done' : '') + (st.f>0 ? ' hasfail' : '');
+    var ic = !unlocked ? '🔒' : (st.done===st.total ? (st.f>0 ? '❌' : '✅') : (st.done>0 ? '▶️' : '⚪'));
+    h += '<button class="'+cls+'" data-g="'+gi+'"><span class="ic">'+ic+'</span>' +
+      '<span class="gt"><b>Gate '+g.g+' — '+g.name+'</b><span>'+g.desc+'</span>' +
+      '<span class="gbar"><i class="p" style="width:'+(st.p/st.total*100)+'%"></i>' +
+      '<i class="f" style="width:'+(st.f/st.total*100)+'%"></i>' +
+      '<i class="k" style="width:'+(st.k/st.total*100)+'%"></i></span></span>' +
+      '<span class="gp">'+st.done+'/'+st.total+(st.f?' · ❌'+st.f:'')+'</span></button>';
+  });
+  h += '<div class="bigrow"><button class="bigbtn" id="btn-export">📤 Eksportér rapport</button>' +
+       '<button class="bigbtn ghost" id="btn-reset">Nulstil</button></div>';
+  return h;
+}
+function bindHome(){
+  document.querySelectorAll('.gate').forEach(function(b){
+    b.onclick = function(){
+      var gi = +b.dataset.g;
+      if (!gateUnlocked(gi)) {
+        if (!confirm('Gate ' + GATES[gi].g + ' er låst — forrige gate er ikke færdig.\n\nÅbn alligevel?')) return;
+      }
+      view = { mode:'step', gate: gi, step: firstOpenStep(gi) };
+      render();
+    };
+  });
+  var mv = document.getElementById('m-ver'), md = document.getElementById('m-dev');
+  mv.oninput = function(){ S.meta.ver = mv.value; save(); };
+  md.oninput = function(){ S.meta.dev = md.value; save(); };
+  document.getElementById('btn-export').onclick = exportReport;
+  document.getElementById('btn-reset').onclick = function(){
+    if (!confirm('Nulstil ALLE resultater og noter? Kan ikke fortrydes.')) return;
+    S = { steps:{}, meta:S.meta }; save(); render(); toast('Nulstillet');
+  };
+}
+function firstOpenStep(gi){
+  var g = GATES[gi];
+  for (var i=0;i<g.steps.length;i++) if (!stepState(g.steps[i].id).s) return i;
+  return 0;
+}
+function renderStep(){
+  var g = GATES[view.gate], st = g.steps[view.step], ss = stepState(st.id);
+  var h = '<div class="stephead"><button class="backbtn" id="btn-back">‹ Gates</button>' +
+    '<span class="crumb"><b>Gate '+g.g+' — '+g.name+'</b>' +
+    '<span>Trin '+(view.step+1)+' af '+g.steps.length+'</span></span></div>' +
+    '<div class="steppb"><i style="width:'+((view.step)/g.steps.length*100)+'%"></i></div>';
+  h += '<div class="card'+(st.stop?' stop':'')+'">';
+  if (st.stop) h += '<span class="stopbadge">⛔ STOP-KRITERIUM ved fejl</span>';
+  h += '<div class="roles">' + (st.roles||[]).map(function(r){
+    var lbl = r==='sa' ? '📱 SA (iPhone)' : r==='pc' ? '💻 Computer' : '🗄 SQL';
+    return '<span class="role '+r+'">'+lbl+'</span>';
+  }).join('') + '</div>';
+  h += '<div class="stitle">'+st.id+' · '+st.t+'</div>';
+  if (st.why) h += '<div class="swhy">'+st.why+'</div>';
+  h += '<div class="lbl do">DU GØR</div><ol class="do">' +
+    st.do.map(function(d){ return '<li>'+d+'</li>'; }).join('') + '</ol>';
+  (st.sql||[]).forEach(function(k){ h += sqlBlock(k); });
+  h += '<div class="lbl exp">DU KIGGER EFTER</div><div class="expbox">'+st.exp+'</div>';
+  if (st.fail) h += '<div class="lbl fail">HVIS DET FEJLER</div><div class="failbox">'+st.fail+'</div>';
+  h += '<div class="resrow">' +
+    '<button class="rbtn pass'+(ss.s==='pass'?' on':'')+'" data-r="pass">✅ Som forventet</button>' +
+    '<button class="rbtn fail'+(ss.s==='fail'?' on':'')+'" data-r="fail">❌ Fejlede</button>' +
+    '<button class="rbtn skip'+(ss.s==='skip'?' on':'')+'" data-r="skip">⏭</button></div>';
+  h += '<textarea id="note" placeholder="Note / bug / observation… (fx N₀, tal du så, skærmbilledenavn)">'+(ss.n||'')+'</textarea>';
+  h += '</div>';
+  h += '<div class="navrow">' +
+    '<button class="navbtn" id="btn-prev"'+(view.step===0?' disabled':'')+'>‹ Forrige</button>' +
+    '<button class="navbtn next" id="btn-next">'+(view.step===g.steps.length-1?'Afslut gate ✓':'Næste ›')+'</button></div>';
+  return h;
+}
+function bindStep(){
+  var g = GATES[view.gate], st = g.steps[view.step];
+  document.getElementById('btn-back').onclick = function(){ view.mode='home'; render(); };
+  document.querySelectorAll('.rbtn').forEach(function(b){
+    b.onclick = function(){
+      var cur = S.steps[st.id] || {};
+      cur.s = (cur.s === b.dataset.r) ? null : b.dataset.r;
+      S.steps[st.id] = cur; save();
+      if (cur.s === 'fail' && st.stop) { toast('⛔ Stop-kriterium — rapportér til Claude før du fortsætter!', true); render(); return; }
+      if (cur.s) { advance(); } else { render(); }
+    };
+  });
+  var ta = document.getElementById('note');
+  ta.oninput = function(){ var cur = S.steps[st.id] || {}; cur.n = ta.value; S.steps[st.id] = cur; save(); };
+  document.getElementById('btn-prev').onclick = function(){ if (view.step>0){ view.step--; render(); } };
+  document.getElementById('btn-next').onclick = advance;
+}
+function advance(){
+  var g = GATES[view.gate];
+  if (view.step < g.steps.length - 1) { view.step++; render(); }
+  else {
+    var stx = gateStats(view.gate);
+    toast(stx.f ? 'Gate ' + g.g + ' færdig — med ' + stx.f + ' fejl' : 'Gate ' + g.g + ' bestået ✅', !!stx.f);
+    view.mode = 'home'; render();
+  }
+}
+
+/* ═══════════ EKSPORT ═══════════ */
+function exportReport(){
+  var L = [];
+  L.push('BUBBLE TESTGUIDE — RAPPORT · ' + new Date().toLocaleString('da-DK'));
+  L.push('Version: ' + (S.meta.ver||'?') + ' · Enhed: ' + (S.meta.dev||'?'));
+  var fails=[], notes=[], p=0,k=0,o=0;
+  GATES.forEach(function(g){ g.steps.forEach(function(st){
+    var s = stepState(st.id);
+    if (s.s==='fail') fails.push({g:g,st:st,s:s});
+    else if (s.s==='pass'){ p++; if((s.n||'').trim()) notes.push({g:g,st:st,s:s}); }
+    else if (s.s==='skip') k++;
+    else { o++; if((s.n||'').trim()) notes.push({g:g,st:st,s:s}); }
+  });});
+  L.push('Resultat: ✅ '+p+' · ❌ '+fails.length+' · ⏭ '+k+' · åbne '+o);
+  L.push('');
+  if (fails.length){
+    L.push('═══ FAILS ═══');
+    fails.forEach(function(f){
+      L.push('❌ '+f.st.id+' ('+f.g.name+') — '+f.st.t.replace(/<[^>]*>/g,''));
+      if ((f.s.n||'').trim()) L.push('   Note: '+f.s.n.trim().replace(/\n/g,'\n   '));
+    });
+    L.push('');
+  }
+  if (notes.length){
+    L.push('═══ ØVRIGE NOTER ═══');
+    notes.forEach(function(f){
+      L.push('· '+f.st.id+' ('+(stepState(f.st.id).s||'åben')+') — '+f.s.n.trim().replace(/\n/g,' '));
+    });
+    L.push('');
+  }
+  L.push('═══ FULD STATUS ═══');
+  GATES.forEach(function(g){
+    L.push('Gate '+g.g+': '+g.steps.map(function(st){
+      var s = stepState(st.id).s;
+      return st.id+(s==='pass'?'✅':s==='fail'?'❌':s==='skip'?'⏭':'·');
+    }).join('  '));
+  });
+  var rep = L.join('\n');
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(rep).then(function(){ toast('📋 Rapport kopieret — send til Claude'); },
+      function(){ dl(rep); });
+  } else dl(rep);
+}
+function dl(txt){
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([txt],{type:'text/plain'}));
+  a.download = 'bubble-testrapport.txt'; a.click(); toast('💾 Rapport downloadet');
+}
+
+render();
+</script>
+</body>
+</html>
