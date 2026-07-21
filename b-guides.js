@@ -56,6 +56,10 @@ var _GUIDES = {
       { ico: 'join',    tKey: 'guide_bobler_2_t', dKey: 'guide_bobler_2_d' },
       { ico: 'plus',    tKey: 'guide_bobler_3_t', dKey: 'guide_bobler_3_d' },
       { ico: 'chat',    tKey: 'guide_bobler_4_t', dKey: 'guide_bobler_4_d' },
+      { ico: 'inbox',   tKey: 'guide_bobler_6_t', dKey: 'guide_bobler_6_d' },
+      { ico: 'edit',    tKey: 'guide_bobler_7_t', dKey: 'guide_bobler_7_d' },
+      { ico: 'rocket',  tKey: 'guide_bobler_8_t', dKey: 'guide_bobler_8_d' },
+      { ico: 'qr',      tKey: 'guide_bobler_9_t', dKey: 'guide_bobler_9_d' },
       { ico: 'layers',  tKey: 'guide_bobler_5_t', hintKey: 'guide_bobler_5_hint', access: true }
     ] },
   dms: { icon: 'chat', titleKey: 'guide_dms_title', subKey: 'guide_dms_sub', tipKey: 'guide_dms_tip',
