@@ -1678,7 +1678,7 @@ async function loadMyNetworks() {
         return '<span class="bb-pill bb-pill-coming" style="margin-right:4px">' + t('live_starts') + ' ' + dateStr + '</span>';
       }
       // Active window + self check-in — use new pink CTA button
-      return '<button onclick="event.stopPropagation();quickGoLive(\'' + ev.id + '\',\'' + escHtml(ev.name).replace(/'/g,"\\'") + '\')" class="bb-go-live-btn">' + t('live_go_live') + '</button>';
+      return '<button onclick="event.stopPropagation();quickGoLive(\'' + ev.id + '\',\'' + escHtml(ev.name).replace(/'/g,"\\'") + '\',event)" class="bb-go-live-btn">' + t('live_go_live') + '</button>';
     }
 
     // ── Accordion restore helper ──
@@ -1795,19 +1795,43 @@ function bbTreeToggle(accId) {
 }
 
 // ── Quick "Go Live" from bubble hierarchy ──
-async function quickGoLive(bubbleId, bubbleName) {
+async function quickGoLive(bubbleId, bubbleName, ev) {
   if (!currentUser) return;
-  // If already live somewhere, confirm switch
+  // If already live in a DIFFERENT bubble, confirm the switch with the inline tray
+  // (consistent with the rest of the app — no native confirm()).
   if (appMode.is('live') && appMode.live && appMode.live.bubbleId !== bubbleId) {
-    if (!confirm(t('live_switch_confirm', { name: appMode.live.bubbleName || '' }))) return;
+    var btn = (ev && ev.target) ? ev.target.closest('.bb-go-live-btn') : null;
+    if (btn) {
+      bbConfirm(btn, {
+        label: t('live_switch_confirm', { name: appMode.live.bubbleName || '' }),
+        confirmText: t('live_go_live'),
+        confirmClass: 'bb-confirm-btn-accept',
+        onConfirm: "confirmGoLive('" + bubbleId + "')"
+      });
+      return;
+    }
+    // Fallback (no button element): proceed directly rather than blocking.
     try { await liveCheckout(); } catch(e) {}
   }
   try {
     await liveCheckin(bubbleId);
-    // Re-render the bubble list to update button states
     if (_activeScreen === 'screen-bubbles') loadMyBubbles();
   } catch(e) {
     logError('quickGoLive', e);
+    errorToast('checkin', e);
+  }
+}
+
+// Completes a live-switch confirmed via the inline tray: checkout of the current
+// bubble, then check in to the new one.
+async function confirmGoLive(bubbleId) {
+  if (!currentUser) return;
+  try { await liveCheckout(); } catch(e) {}
+  try {
+    await liveCheckin(bubbleId);
+    if (_activeScreen === 'screen-bubbles') loadMyBubbles();
+  } catch(e) {
+    logError('confirmGoLive', e);
     errorToast('checkin', e);
   }
 }
