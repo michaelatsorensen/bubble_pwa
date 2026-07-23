@@ -1285,3 +1285,79 @@ uden indtægt at vise for det, eller låse produktdesign uden brugerdata.
 - Q-068 (organisationsprofiler — gater tilsvarende lag 2+4)
 - NEGATIVE-SCOPE.md anonymitets-afsnit (bruger-anonymitet på radar = aldrig; DETTE princip
   er det spejlvendte: HANDLINGS-anonymitet = altid, indtil aktiv kontakt)
+
+---
+
+## Q-070 — Boble-medlemskab på profilen: opdagelse af netværk gennem mennesker (LØBENDE)
+
+**Type:** A — Question (stærk produktmulighed, uafklaret model) · **Priority:** P1 (vækst/rekruttering) · **Status:** DEFERRED — arbejdes på løbende, besluttes tidligst efter pilot
+
+**Muligheden (Michael, 20. jul):** Folk opdager fællesskaber gennem MENNESKER, ikke kataloger.
+At kunne se hvilke bobler en interessant profil er engageret i, er et stærkt rekrutterings- og
+opdagelsesværktøj — "un-tapped potential". Det driver netværkseffekten direkte: interessant
+person → interessant boble → nyt medlem.
+
+**Konflikten:** En naiv implementering ville UNDERMINERE hele 3-lags-privatlivsarbejdet
+(jul 2026). Reglen i dag: medlemslisten af private/hidden bobler er skjult for ikke-medlemmer
+— håndhævet i RLS (`bm_select_scoped`), UI (v3.176) og teaser-RPC (v3.178). At vise "X er med
+i disse bobler" på profilen ville omgå reglen BAGVENDT: gør man det for 20 profiler, har man
+rekonstrueret medlemslisten person for person. Samme lækage, modsat retning.
+
+**Hvorfor "fælles bobler" (findes i dag) er sikkert:** Det viser kun bobler JEG selv er medlem
+af — jeg har allerede adgang til den medlemsliste og lærer intet nyt. Denne sektion skal blive.
+
+**Den afgørende indsigt — hvem giver samtykke:** Problemet er ikke informationen, men hvem der
+beslutter. Der er en principiel forskel på (a) handlinger jeg foretager MOD andre (profil-
+visninger, gemte kontakter — skal altid være private, Q-069) og (b) MIN EGEN tilknytning til
+et fællesskab. Der er intet principielt forkert i at jeg selv vælger at fortælle om (b).
+Sammenlign: "hvem kigger på min profil" (privat) vs. "hvor arbejder jeg" (mit valg at oplyse).
+
+### Tre modeller
+
+**A · Boblen tillader det.** Ejer sætter flag: "medlemmer må vise dette medlemskab".
+– Bevarer boble-kontrol. – MEN ejeren beslutter på medlemmernes vegne; et medlem kan ikke sige nej.
+
+**B · Personen vælger, per boble** (ANBEFALET). I egen profil markerer jeg hvilke af mine
+bobler der vises. Standard: skjult. Jeg fremhæver aktivt fx 2–3.
+– Ægte samtykke fra den eneste person hvis data det er.
+– Bedre signal: aktivt fremhævet medlemskab siger mere end en automatisk liste.
+– MEN: en privat boble kan blive delvist synlig hvis mange medlemmer vælger at vise den.
+  Vurdering: acceptabelt — løftet er "boblen afslører ikke sine medlemmer", ikke "dit
+  medlemskab er en hemmelighed du aldrig må dele". Folk fortæller i forvejen frit at de
+  sidder i en bestyrelse eller et netværk.
+
+**C · Begge skal sige ja** (A+B). Maksimal beskyttelse, men to lag friktion → featuren dør.
+
+### HÅRD GRÆNSE (uanset model)
+**Hidden bobler må ALDRIG kunne vises på en profil.** En hidden boble er DEFINERET ved ikke at
+findes offentligt. Kan den opdages via profiler, er den ikke længere hidden, og folk der
+oprettede/joinede under det løfte får det brudt. → Åben + privat: kan vises hvis medlemmet
+vælger det. Hidden: aldrig, intet samtykke ændrer det.
+
+### Afvist mellemvej (dokumenteret så den ikke genopfindes)
+"Vis kun offentlige bobler automatisk" — teknisk lovligt, men skaber en misvisende
+HALV-SANDHED: brugeren ser "med i 2 bobler" og tror det er hele billedet, mens personen er med
+i 9. Beslutninger på forkert grundlag er værre end ingen information.
+
+### Sikker mellemvej hvis der ønskes noget FØR fuld model
+Antal uden navne: "Med i 9 bobler · 2 fælles med dig". Tal afslører ikke HVILKE bobler, så
+medlemslister kan ikke rekonstrueres. Samme mønster som profil-visnings-RPC'erne (jul 2026):
+tal er sikre, identiteter er ikke.
+
+### Beslægtet, men separat: "Bobler der kunne passe dig"
+Anbefalinger baseret på MINE tags/bobler lækker ingenting og driver netværkseffekten — men
+hører hjemme i **Discover**, ikke på en anden persons profil (dér ville det være støj).
+Noteres som selvstændig feature-idé.
+
+### Estimeret arbejde (derfor ikke "en aften")
+Ny kolonne `show_on_profile` på `bubble_members` · RLS-revurdering (hvem må læse hvilke
+medlemsrækker nu) · redigerings-UI til at vælge bobler · profil-visning · hidden-guard i
+alle læsestier · verifikation af at 3-lags-modellen stadig holder.
+
+### Genbesøgs-betingelse
+Arbejdes på LØBENDE. Beslut tidligst efter pilot, hvor der også er data om hvor meget folk
+faktisk bruger bobler. Afklar model (A/B/C) FØR implementering. Hidden-grænsen er ikke til
+forhandling.
+
+**Relateret:** v3.176/v3.178 (3-lags-håndhævelse + teaser-gate) · Q-069 (handlings-anonymitet
+— beslægtet princip, modsat konklusion fordi datatypen er en anden) · STRATEGI.md (vækst/rekruttering)
