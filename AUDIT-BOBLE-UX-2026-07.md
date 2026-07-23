@@ -135,3 +135,26 @@ funktionalitet, og ugens arbejde har gjort fundamentet (tal, tilstande, privatli
 Manglerne er (a) én strategisk beslutning der skal TRÆFFES bevidst (push-løs boble-chat),
 og (b) en håndfuld selvforklarings-huller hvor 3 af 4 kan lukkes med ren mikrocopy på
 under en time. Det er en usædvanlig billig vej til "nemt at forstå".
+
+---
+
+## Tilføjelse 20. jul (aften) — U2 i sin skarpeste form: hidden-boblens to QR'er
+
+Michael stødte på det live: på en hidden boble er "QR"-knappen OVERSTREGET (korrekt — ingen
+delbar kode), mens scanner-ikonet i topbaren er AKTIVT. Det læses som en selvmodsigelse —
+selv af manden der byggede appen.
+
+**Det er det ikke:** scanning af en persons QR laver upsert i `bubble_members` — scanneren
+ER hidden-boblens optagelsesmekanisme ansigt-til-ansigt (den eneste vej ind ud over digital
+invitation). Mekanikken er konsistent: ingen udadvendt kode, fuld indadvendt dør.
+
+**Konsekvens for U2-løsningen (v3-designløftet):** Label-adskillelsen ("Vis QR" vs "Check-in")
+SKAL tage højde for hidden-casen specifikt — det er her kontrasten (overstreget + aktiv i
+samme skærm) er størst og forvirringen mest sandsynlig. Guiden dækker nu casen (v3.184).
+
+**Relateret produktbeslutning (Michael spurgte, 20. jul):** Skal den scannede have en
+samtykke-modal ("Du er blevet scannet — bliv medlem af X?") i stedet for direkte medlemskab?
+Status i dag: direkte medlemskab + live-toast + push til den scannede (informeret, ikke
+forhånds-samtykke). Beslutning: se DECISIONS/diskussion — fysisk fremvisning af egen QR
+betragtes som samtykket; en bekræftelses-modal ville ødelægge event-dør-flowet (kø!).
+Evt. forbedring: "let fortrydelse" i den scannedes notifikation frem for forhånds-samtykke.
