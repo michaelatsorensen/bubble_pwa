@@ -77,6 +77,7 @@ document.addEventListener('click', (e) => {
   const from = el.dataset.from;
   switch (action) {
     case 'openBubble': openBubble(id, from); break;
+    case 'openBubbleFromPerson': openBubbleFromPerson(id); break;
     case 'openPerson': openPerson(id, from); break;
     case 'openChat': openChat(id, from); break;
     case 'joinBubble': joinBubble(id); break;

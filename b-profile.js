@@ -26,6 +26,14 @@ function closePersonSheet() {
   if (sh) sh.classList.remove('open');
   setTimeout(function() { if (ov) ov.classList.remove('open'); }, 320);
 }
+
+// Fra profilens "Bobler"-sektion: luk sheet'et FØR navigation — ellers åbner boblen
+// bag overlayet (z-index 1100) og det ligner at intet sker. openBubble finder selv
+// den rigtige underliggende skærm via _activeScreen når from udelades.
+function openBubbleFromPerson(bubbleId) {
+  closePersonSheet();
+  openBubble(bubbleId);
+}
 async function openPerson(userId, fromScreen) {
   try {
     currentPerson = userId;
@@ -1918,7 +1926,7 @@ async function loadPersonBubbles(userId, navRef) {
         ? '<img src="' + escHtml(b.icon_url) + '" class="u-thumb">'
         : bubbleEmoji(b.type);
       var avStack = renderAvatarStack(personBubbleMemberMap[b.id] || [], memberCount);
-      return '<div class="person-bubble-pill" data-action="openBubble" data-id="' + b.id + '" data-from="screen-person">' +
+      return '<div class="person-bubble-pill" data-action="openBubbleFromPerson" data-id="' + b.id + '">' +
         '<div class="person-bubble-pill-icon" style="background:' + colorBg + ';color:' + colorFg + '">' + emojiHtml + '</div>' +
         '<div class="person-bubble-pill-info">' +
           '<div class="person-bubble-pill-name">' + escHtml(b.name) + '</div>' +
