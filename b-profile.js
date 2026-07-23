@@ -236,8 +236,18 @@ async function _personRenderMatch(p, userId, myNav) {
 function _personRenderDynamic(p) {
   var dynEl = document.getElementById('person-dynamic-keywords');
   var card = document.getElementById('person-dynamic-card');
-  if ((p.dynamic_keywords||[]).length) {
-    dynEl.innerHTML = '<div class="pp-sec-label">'+t("ps_seeking_now")+'</div>' + p.dynamic_keywords.map(k => `<span class="tag gold">${icon("fire")} ${escHtml(k)}</span>`).join('');
+  var seekTxt = (p.seeking || '').trim();
+  var seekTags = (p.dynamic_keywords || []);
+  if (seekTxt || seekTags.length) {
+    // Guldkortet rummer nu BEGGE dele: personens egne ord først, derefter tags til
+    // hurtig scanning. Feltet er frivilligt — kortet vises kun hvis der er indhold.
+    var html = '<div class="pp-sec-label">' + t("ps_seeking_now") + '</div>';
+    if (seekTxt) html += '<div class="pp-seeking-text">' + escHtml(seekTxt) + '</div>';
+    if (seekTags.length) {
+      html += '<div' + (seekTxt ? ' style="margin-top:0.5rem"' : '') + '>' +
+        seekTags.map(k => `<span class="tag gold">${icon("fire")} ${escHtml(k)}</span>`).join('') + '</div>';
+    }
+    dynEl.innerHTML = html;
     if (card) card.style.display = '';
   } else { dynEl.innerHTML = ''; if (card) card.style.display = 'none'; }
 }
@@ -1288,6 +1298,8 @@ function openEditProfile() {
   if (epEmail) epEmail.textContent = currentUser?.email || t('pf_not_available');
   document.getElementById('ep-title').value = currentProfile.title || '';
   document.getElementById('ep-bio').value = currentProfile.bio || '';
+  var epSeek = document.getElementById('ep-seeking');
+  if (epSeek) epSeek.value = currentProfile.seeking || '';
   document.getElementById('ep-linkedin').value = currentProfile.linkedin || '';
   var wpEl = document.getElementById('ep-workplace');
   if (wpEl) wpEl.value = currentProfile.workplace || '';
@@ -1311,12 +1323,14 @@ async function saveProfile() {
     const name      = document.getElementById('ep-name').value.trim();
     const title     = document.getElementById('ep-title').value.trim();
     const bio       = document.getElementById('ep-bio').value.trim();
+    const seekingEl = document.getElementById('ep-seeking');
+    const seeking   = seekingEl ? seekingEl.value.trim() : '';
     const linkedin  = (document.getElementById('ep-linkedin')?.value || '').trim();
     const workplace = (document.getElementById('ep-workplace')?.value || '').trim();
     if (!name) return showWarningToast(t('val_name_required'));
-    if (tooLong(name, 'name') || tooLong(title, 'title') || tooLong(workplace, 'workplace') || tooLong(bio, 'bio') || tooLong(linkedin, 'url')) return;
+    if (tooLong(name, 'name') || tooLong(title, 'title') || tooLong(workplace, 'workplace') || tooLong(bio, 'bio') || tooLong(seeking, 'seeking') || tooLong(linkedin, 'url')) return;
     const { error } = await sb.from('profiles').upsert({
-      id: currentUser.id, name, title, bio, linkedin, workplace,
+      id: currentUser.id, name, title, bio, seeking, linkedin, workplace,
       dynamic_keywords: epDynChips, is_anon: isAnon
     });
     if (error) return errorToast('save', error);

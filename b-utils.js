@@ -313,7 +313,7 @@ function showWarningToast(message) {
 
 // Resiliens: haard laengde-graense paa bruger-input for DB-skrivning.
 // Returnerer true hvis for langt (og viser advarsel), saa kalder kan afbryde.
-var FIELD_LIMITS = { name: 120, title: 120, workplace: 120, bio: 1000, description: 1500, agenda: 5000, message: 2000, tag: 40, url: 300 };
+var FIELD_LIMITS = { name: 120, title: 120, workplace: 120, bio: 1000, seeking: 400, description: 1500, agenda: 5000, message: 2000, tag: 40, url: 300 };
 function tooLong(value, field) {
   var max = FIELD_LIMITS[field] || 1000;
   if (value && value.length > max) {
