@@ -1133,3 +1133,53 @@ gennemfoere handlingen.*
 **Restsikring (Release 2, uaendret):** Den gamle anon `get_profile_preview(p_user_id)` skal
 stadig have anon-execute tilbagekaldt efter verificeret PWA-udrulning — ellers er den gamle
 enumereringsvej aaben uanset det nye flow.
+
+---
+
+## ADR-011: Scanning er samtykket — direkte medlemskab ved QR-scan, fortrydelse frem for forhånds-godkendelse
+
+**Dato:** 20. jul 2026 · **Status:** BESLUTTET (Michael) · **Kontekst:** Hidden-boble-scanneren, rejst under pre-pilot-test
+
+### Spørgsmålet
+Når en ejer/admin scanner en persons QR ind i en boble (event-check-in ELLER optagelse i
+privat/hidden netværk), skal den scannede så forhånds-godkende medlemskabet via en modal
+("Du er blevet scannet — bliv medlem af X?") — eller er scanningen i sig selv nok?
+
+### Beslutningen
+**Scanningen er samtykket.** Direkte medlemskab (upsert i `bubble_members`) bevares.
+Ingen forhånds-godkendelses-modal — hverken for events eller netværk.
+
+### Begrundelse
+1. **Event-døren må ikke brydes.** Reverse QR-scanning er kerneproduktet i Event Bubbles-laget.
+   En bekræftelses-modal ville kræve at hver deltager låser telefonen op og accepterer i kø —
+   dør-flowet fordobles, og attendee-tal bliver upålidelige ("scannet men ubekræftet").
+   Værdien ER ti sekunder pr. person.
+2. **Samtykket er allerede givet — fysisk.** Personen rækker selv sin QR frem, ansigt til
+   ansigt. En digital "er du sikker?" oven på et fysisk ja er ceremoni, ikke beskyttelse.
+3. **Teknisk realisme.** En live-modal forudsætter at den scannedes app er åben i øjeblikket.
+   Fallback ville være en ventende invitation — netop det langsommelige flow scanneren løser.
+
+### Den reelle bekymring — og det valgte mønster
+Risikoen er misforstået hensigt: nogen viser QR for at udveksle kontakt og opdager at de
+blev meldt ind i en boble. I dag er den scannede INFORMERET (live-toast + push), men skal
+selv finde vej ud.
+
+**Valgt retning (hvis piloten viser behovet): LET FORTRYDELSE, ikke forhånds-samtykke.**
+Notifikationen til den scannede udvides med en ét-tryks-udgang:
+"Du er nu medlem af X · [Fint 👍] [Det var en fejl — forlad]".
+Bevarer dør-hastigheden 100 %, giver den scannede fuld agens bagefter, koster intet i køen.
+
+### Udskudt til efter pilot
+Fortrydelses-knappen bygges IKKE før pilot. Testrunden + de første rigtige events afgør om
+misforståelsen overhovedet opstår i praksis. Opstår den ikke, er selv fortrydelses-knappen
+unødig kompleksitet. Opstår den, ligger løsningen klar her.
+
+### Sikkerhedsforudsætninger (uændrede, dokumenteret for fuldstændighed)
+- Kun ejer/admin ser scanneren (canEdit-gate, b-chat.js:955), skjules efter event-slut
+- Check-in kræver TOKEN-verificeret identitet — profil-only QR nedgraderes til gem-kontakt
+  (b-live.js:622, sikkerhedsbeslutning fra QR-hærdningen)
+- Scanningen kræver aktiv bekræftelse fra scanneren ("Check [navn] ind"-knap)
+- Den scannede kan altid forlade boblen (leaveBubble)
+
+**Relateret:** AUDIT-BOBLE-UX-2026-07 (U2 + tilføjelse 20. jul) · Q-070 (medlemskabs-synlighed)
+· ADR-010 (kontekst før adgang)
