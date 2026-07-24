@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Bubble — Føj til kalender</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,system-ui,sans-serif;background:#0E141C;color:rgba(255,255,255,0.92);
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;line-height:1.5}
+  .card{max-width:420px;width:100%;background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.12);
+    border-radius:20px;padding:2rem 1.6rem;text-align:center}
+  .logo{font-size:2rem;margin-bottom:0.6rem}
+  h1{font-size:1.15rem;font-weight:800;margin-bottom:0.3rem;word-break:break-word}
+  .meta{font-size:0.85rem;color:rgba(207,230,247,0.65);margin-bottom:1.4rem}
+  .dl{display:inline-flex;align-items:center;gap:0.5rem;width:100%;justify-content:center;
+    padding:0.85rem 1rem;font-size:0.95rem;font-weight:800;border-radius:14px;cursor:pointer;
+    border:1px solid rgba(100,180,230,0.4);background:rgba(100,180,230,0.18);color:rgba(255,255,255,0.95);
+    font-family:inherit}
+  .small{font-size:0.72rem;color:rgba(207,230,247,0.45);margin-top:0.8rem}
+  .open{display:inline-block;margin-top:1.3rem;font-size:0.82rem;font-weight:700;color:#64B4E6;text-decoration:none}
+  .err{font-size:0.85rem;color:rgba(255,180,180,0.85)}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">🫧</div>
+  <h1 id="t">Føj til kalender</h1>
+  <p class="meta" id="meta"></p>
+  <button class="dl" id="dl">📅 Hent kalenderfil</button>
+  <p class="small">Filen åbner i din kalender — Outlook, Google eller Apple.</p>
+  <a class="open" id="open" href="https://bubbleme.dk">Åbn eventet i Bubble ›</a>
+</div>
+<script>
+(function(){
+  function q(k){ try { return new URLSearchParams(location.search).get(k) || ''; } catch(e) { return ''; } }
+  function esc(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n'); }
+  function utc(d){ function p(n){return (n<10?'0':'')+n;}
+    return d.getUTCFullYear()+p(d.getUTCMonth()+1)+p(d.getUTCDate())+'T'+p(d.getUTCHours())+p(d.getUTCMinutes())+'00Z'; }
+
+  var title = q('t'), s = q('s'), e = q('e'), loc = q('l'), bid = q('b');
+  var card = document.querySelector('.card');
+
+  if (!title || !s || isNaN(new Date(s).getTime())) {
+    card.innerHTML = '<div class="logo">🫧</div><p class="err">Linket mangler event-oplysninger.</p>' +
+      '<a class="open" href="https://bubbleme.dk">Gå til Bubble ›</a>';
+    return;
+  }
+
+  var start = new Date(s);
+  var end = (e && !isNaN(new Date(e).getTime())) ? new Date(e) : new Date(start.getTime() + 2*60*60*1000);
+  var evUrl = 'https://bubbleme.dk/' + (bid ? '?b=' + encodeURIComponent(bid) : '');
+
+  document.getElementById('t').textContent = title;
+  document.getElementById('meta').textContent =
+    start.toLocaleDateString('da-DK', { weekday:'long', day:'numeric', month:'long' }) +
+    ' · ' + start.toLocaleTimeString('da-DK', { hour:'2-digit', minute:'2-digit' }) +
+    ' – ' + end.toLocaleTimeString('da-DK', { hour:'2-digit', minute:'2-digit' }) +
+    (loc ? ' · ' + loc : '');
+  document.getElementById('open').href = evUrl;
+
+  var ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Bubble//bubbleme.dk//DA\r\nBEGIN:VEVENT\r\n' +
+    'UID:' + (bid || 'event') + '@bubbleme.dk\r\n' +
+    'DTSTAMP:' + utc(new Date()) + '\r\n' +
+    'DTSTART:' + utc(start) + '\r\nDTEND:' + utc(end) + '\r\n' +
+    'SUMMARY:' + esc(title) + '\r\n' +
+    (loc ? 'LOCATION:' + esc(loc) + '\r\n' : '') +
+    'DESCRIPTION:' + esc(evUrl) + '\r\nURL:' + evUrl + '\r\n' +
+    'END:VEVENT\r\nEND:VCALENDAR\r\n';
+
+  function download(){
+    try {
+      var blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = title.toLowerCase().replace(/[^a-z0-9æøå]+/gi,'-').replace(/^-+|-+$/g,'').slice(0,60) + '.ics';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ try { URL.revokeObjectURL(a.href); } catch(x) {} }, 4000);
+    } catch(x) {}
+  }
+  document.getElementById('dl').onclick = download;
+  // Auto-download ved åbning — knappen er fallback hvis browseren blokerer
+  setTimeout(download, 350);
+})();
+</script>
+</body>
+</html>

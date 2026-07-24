@@ -2555,12 +2555,21 @@ async function bcLoadInfo() {
             : (evD <= new Date()
               ? '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(46,207,207,0.22);color:#5FE0CC;font-weight:600;border:0.5px solid rgba(46,207,207,0.4)">I gang</span>'
               : '<span style="font-size:0.62rem;padding:2px 7px;border-radius:99px;background:rgba(100,180,230,0.18);color:#A9D9F5;font-weight:600;border:0.5px solid rgba(100,180,230,0.35)">' + t('bb_coming') + '</span>');
-          return '<div style="background:rgba(46,207,207,0.12);border:0.5px solid rgba(46,207,207,0.28);border-radius:10px;padding:8px 12px;margin-top:0.6rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem">' +
-            '<div style="text-align:left">' +
-              '<div style="font-size:0.8rem;font-weight:700;color:#5FE0CC">' + evDateStr + '</div>' +
-              (evEndStr ? '<div style="font-size:0.68rem;color:rgba(95,224,204,0.75);margin-top:1px">' + evEndStr + '</div>' : '') +
+          _bcCalEv = { id: b.id, name: b.name, start: b.event_date, end: b.event_end_date || null,
+            location: b.location || '', desc: b.description || '' };
+          return '<div style="background:rgba(46,207,207,0.12);border:0.5px solid rgba(46,207,207,0.28);border-radius:10px;padding:8px 12px;margin-top:0.6rem">' +
+            '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">' +
+              '<div style="text-align:left">' +
+                '<div style="font-size:0.8rem;font-weight:700;color:#5FE0CC">' + evDateStr + '</div>' +
+                (evEndStr ? '<div style="font-size:0.68rem;color:rgba(95,224,204,0.75);margin-top:1px">' + evEndStr + '</div>' : '') +
+              '</div>' +
+              evBadge +
             '</div>' +
-            evBadge +
+            (evPast ? '' :
+              '<div style="display:flex;gap:0.45rem;margin-top:0.55rem">' +
+                '<button class="cal-glass-btn" onclick="bcAddToCalendar()">\uD83D\uDCC5 ' + t('cal_btn') + '</button>' +
+                '<button class="cal-glass-btn" onclick="bcOpenMailModal()">\u2709\uFE0F ' + t('cal_mail_btn') + '</button>' +
+              '</div>') +
           '</div>';
         })() : '') +
         (b.description ? '<div class="glass-dark" style="font-size:0.8rem;margin-top:0.5rem;line-height:1.6;text-align:left;padding:0.75rem 0.9rem;border-radius:12px;white-space:pre-line">' + escHtml(b.description) + '</div>' : '') +
@@ -2936,4 +2945,111 @@ async function bcTogglePostLike(postId) {
     if (expandBtn) expandBtn.classList.toggle('liked', result.liked);
     if (expandCount) expandCount.textContent = c > 0 ? c : '';
   }
+}
+// ══════════════════════════════════════════════════════════
+//  EVENT → KALENDER & MAIL (v3.185)
+//  Ren frontend: ICS via blob + mailto med forudfyldt modtager.
+//  Ingen backend/edge functions (ADR-beslutning: mailto-version først).
+// ══════════════════════════════════════════════════════════
+var _bcCalEv = null;        // sat af dato-kortet i bcLoadInfo
+var _calMailChoice = 'bubble';
+
+function _icsEsc(s) {
+  return String(s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+}
+function _icsUTC(d) {
+  function p(n) { return (n < 10 ? '0' : '') + n; }
+  return d.getUTCFullYear() + p(d.getUTCMonth() + 1) + p(d.getUTCDate()) + 'T' +
+    p(d.getUTCHours()) + p(d.getUTCMinutes()) + '00Z';
+}
+
+function bcBuildICS(ev) {
+  var start = new Date(ev.start);
+  // Uden slut-tid: 2 timers standardvarighed, så eventet ikke bliver et 0-minutters punkt
+  var end = ev.end ? new Date(ev.end) : new Date(start.getTime() + 2 * 60 * 60 * 1000);
+  var url = 'https://bubbleme.dk/?b=' + ev.id;
+  return 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Bubble//bubbleme.dk//DA\r\nBEGIN:VEVENT\r\n' +
+    'UID:' + ev.id + '@bubbleme.dk\r\n' +
+    'DTSTAMP:' + _icsUTC(new Date()) + '\r\n' +
+    'DTSTART:' + _icsUTC(start) + '\r\n' +
+    'DTEND:' + _icsUTC(end) + '\r\n' +
+    'SUMMARY:' + _icsEsc(ev.name) + '\r\n' +
+    (ev.location ? 'LOCATION:' + _icsEsc(ev.location) + '\r\n' : '') +
+    'DESCRIPTION:' + _icsEsc((ev.desc ? ev.desc + '\n\n' : '') + url) + '\r\n' +
+    'URL:' + url + '\r\n' +
+    'END:VEVENT\r\nEND:VCALENDAR\r\n';
+}
+
+function bcAddToCalendar() {
+  if (!_bcCalEv || !_bcCalEv.start) return;
+  try {
+    var blob = new Blob([bcBuildICS(_bcCalEv)], { type: 'text/calendar;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = String(_bcCalEv.name || 'event').toLowerCase()
+      .replace(/[^a-z0-9\u00e6\u00f8\u00e5]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 60) + '.ics';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function() { try { URL.revokeObjectURL(a.href); } catch(e) {} }, 4000);
+    trackEvent('event_calendar_ics', { bubble: _bcCalEv.id });
+  } catch(e) { logError('bcAddToCalendar', e); errorToast('save', e); }
+}
+
+function bcOpenMailModal() {
+  if (!_bcCalEv) return;
+  var ov = document.getElementById('cal-mail-overlay'); if (!ov) return;
+  var bubbleMail = (currentUser && currentUser.email) || '';
+  var addrEl = document.getElementById('cal-mail-bubble-addr');
+  if (addrEl) addrEl.textContent = bubbleMail || '\u2014';
+  var saved = '';
+  try { saved = localStorage.getItem('bubble-cal-mail') || ''; } catch(e) {}
+  var inp = document.getElementById('cal-mail-custom-input');
+  if (inp) inp.value = saved;
+  _calMailPick(saved ? 'custom' : 'bubble');
+  ov.classList.add('open');
+}
+function bcCloseMailModal() {
+  var ov = document.getElementById('cal-mail-overlay');
+  if (ov) ov.classList.remove('open');
+}
+function _calMailPick(c) {
+  _calMailChoice = c;
+  var ob = document.getElementById('cal-mail-opt-bubble');
+  var oc = document.getElementById('cal-mail-opt-custom');
+  if (ob) ob.classList.toggle('sel', c === 'bubble');
+  if (oc) oc.classList.toggle('sel', c === 'custom');
+  if (c === 'custom') setTimeout(function() {
+    var i = document.getElementById('cal-mail-custom-input'); if (i) i.focus();
+  }, 60);
+}
+function bcMailSend() {
+  var ev = _bcCalEv; if (!ev) return;
+  var to = '';
+  if (_calMailChoice === 'custom') {
+    to = (document.getElementById('cal-mail-custom-input').value || '').trim();
+    if (!to || to.indexOf('@') < 1) { showWarningToast(t('cal_mail_invalid')); return; }
+    try { localStorage.setItem('bubble-cal-mail', to); } catch(e) {}
+  } else {
+    to = (currentUser && currentUser.email) || '';
+  }
+  var start = new Date(ev.start);
+  var dateStr = start.toLocaleDateString(_locale(), { weekday: 'long', day: 'numeric', month: 'long' }) +
+    ' \u00B7 ' + start.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' });
+  var endStr = ev.end ? ' \u2013 ' + new Date(ev.end).toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' }) : '';
+  var evUrl = 'https://bubbleme.dk/?b=' + ev.id;
+  var calUrl = 'https://bubbleme.dk/cal.html?t=' + encodeURIComponent(ev.name) +
+    '&s=' + encodeURIComponent(ev.start) +
+    (ev.end ? '&e=' + encodeURIComponent(ev.end) : '') +
+    (ev.location ? '&l=' + encodeURIComponent(ev.location) : '') +
+    '&b=' + encodeURIComponent(ev.id);
+  var subject = '\uD83D\uDCC5 ' + ev.name + ' \u00B7 ' +
+    start.toLocaleDateString(_locale(), { day: 'numeric', month: 'short' }) + ' ' +
+    start.toLocaleTimeString(_locale(), { hour: '2-digit', minute: '2-digit' });
+  var body = ev.name + '\n' + dateStr + endStr + '\n' +
+    (ev.location ? '\uD83D\uDCCD ' + ev.location + '\n' : '') + '\n' +
+    t('cal_mail_body_cal') + '\n' + calUrl + '\n\n' +
+    t('cal_mail_body_open') + '\n' + evUrl + '\n';
+  bcCloseMailModal();
+  location.href = 'mailto:' + to.replace(/[?&\s]/g, '') +
+    '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  trackEvent('event_calendar_mail', { bubble: ev.id });
 }

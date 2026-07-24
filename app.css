@@ -4397,3 +4397,23 @@ a:not(.btn-primary):not(.btn-secondary):active {
 .u-row-btn { display:flex; align-items:center; gap:0.6rem; padding:0.65rem 0.75rem; cursor:pointer; }
 .u-meta-sm { font-size:0.88rem; color:var(--p-text-3); }
 .u-thumb { width:1.2rem; height:1.2rem; border-radius:4px; object-fit:cover; }
+
+/* ── Event -> kalender & mail (v3.185) ── */
+.cal-glass-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:0.35rem; padding:0.5rem 0.3rem; font-size:0.72rem; font-weight:750; border-radius:10px; border:1px solid rgba(100,180,230,0.35); background:rgba(100,180,230,0.15); color:rgba(255,255,255,0.9); cursor:pointer; font-family:inherit; }
+.cal-glass-btn:active { transform:scale(0.97); }
+.cal-mail-overlay { position:fixed; inset:0; background:rgba(5,8,12,0.55); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); display:none; align-items:flex-end; z-index:1200; }
+.cal-mail-overlay.open { display:flex; }
+.cal-mail-sheet { width:100%; background:rgba(24,27,36,0.98); border-top:1px solid rgba(255,255,255,0.14); border-radius:18px 18px 0 0; padding:1rem 1rem calc(env(safe-area-inset-bottom) + 1rem); animation:calUp 0.25s ease; }
+@keyframes calUp { from { transform:translateY(40px); opacity:0; } to { transform:none; opacity:1; } }
+.cal-mail-title { font-size:0.95rem; font-weight:800; }
+.cal-mail-sub { font-size:0.72rem; color:rgba(207,230,247,0.55); margin:0.15rem 0 0.8rem; }
+.cal-mail-opt { display:flex; align-items:center; gap:0.6rem; padding:0.65rem 0.7rem; border-radius:11px; margin-bottom:0.45rem; border:1px solid rgba(255,255,255,0.10); background:rgba(255,255,255,0.03); cursor:pointer; }
+.cal-mail-opt.sel { border-color:rgba(100,180,230,0.45); background:rgba(100,180,230,0.10); }
+.cal-mail-radio { width:15px; height:15px; border-radius:50%; flex-shrink:0; border:1.5px solid rgba(255,255,255,0.35); }
+.cal-mail-opt.sel .cal-mail-radio { border:4.5px solid #64B4E6; }
+.cal-mail-ot { font-size:0.8rem; font-weight:700; }
+.cal-mail-od { font-size:0.64rem; color:rgba(207,230,247,0.55); }
+.cal-mail-input { width:100%; background:transparent; border:none; outline:none; color:rgba(255,255,255,0.92); font-size:0.78rem; padding:0.15rem 0 0; font-family:inherit; }
+.cal-mail-btns { display:flex; gap:0.5rem; margin-top:0.6rem; }
+.cal-mail-cancel { flex:0.6; padding:0.6rem; font-size:0.76rem; font-weight:700; border-radius:11px; border:1px solid rgba(255,255,255,0.10); background:rgba(255,255,255,0.05); color:rgba(207,230,247,0.55); font-family:inherit; cursor:pointer; }
+.cal-mail-send { flex:1; padding:0.6rem; font-size:0.76rem; font-weight:800; border-radius:11px; border:1px solid rgba(100,180,230,0.35); background:rgba(100,180,230,0.18); color:rgba(255,255,255,0.92); font-family:inherit; cursor:pointer; }
