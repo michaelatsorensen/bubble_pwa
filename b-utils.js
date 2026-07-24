@@ -1843,3 +1843,93 @@ function sanitizeHttpsUrl(raw) {
 
 
 
+
+// ══════════════════════════════════════════════════════════════
+//  ⌨️  KEYBOARD-DEBUG (v3.188) — midlertidigt diagnoseværktøj
+//  Slås til med bubbleme.dk/?kbdebug=1 (huskes), fra med ?kbdebug=0.
+//  Er den slukket, er ALT herunder no-ops — nul effekt for brugere.
+//
+//  Formål: afgøre ÉT spørgsmål i den installerede PWA:
+//    (A) mister inputfeltet fokus ved send  → vores fejl, kan rettes
+//    (B) beholder det fokus, men tastaturet lukker → WebKit-fejl, kun mitigering
+// ══════════════════════════════════════════════════════════════
+var _KBDEBUG = false;
+var _kbPanel = null;
+var _kbNodeRef = null;
+
+(function _kbBoot(){
+  try {
+    var p = new URLSearchParams(location.search).get('kbdebug');
+    if (p === '1') localStorage.setItem('bubble-kbdebug', '1');
+    if (p === '0') localStorage.removeItem('bubble-kbdebug');
+    _KBDEBUG = localStorage.getItem('bubble-kbdebug') === '1';
+  } catch(e) {}
+})();
+
+function _kbInfo(){
+  var ae = document.activeElement;
+  var inp = document.getElementById('chat-input') || document.getElementById('bc-input');
+  var sameNode = _kbNodeRef ? (_kbNodeRef === inp) : true;
+  if (inp) _kbNodeRef = inp;
+  return {
+    af: ae ? (ae.id || ae.tagName.toLowerCase()) : 'null',
+    conn: inp ? inp.isConnected : '-',
+    same: sameNode ? 'ja' : 'NEJ',
+    vv: window.visualViewport ? Math.round(window.visualViewport.height) : '-'
+  };
+}
+
+function _kbLog(label, cls){
+  if (!_KBDEBUG) return;
+  try {
+    if (!_kbPanel) _kbInitPanel();
+    var i = _kbInfo();
+    var t = new Date().toISOString().substr(17, 6);
+    var row = document.createElement('div');
+    row.style.cssText = 'white-space:nowrap;color:' +
+      (cls === 'blur' ? '#FF8A8A' : cls === 'focus' ? '#4ADE80' : cls === 'send' ? '#FFCF6B' : '#9ED0F0');
+    row.textContent = t + '  ' + label + '  af=' + i.af + ' node=' + i.same + ' vv=' + i.vv;
+    _kbPanel.insertBefore(row, _kbPanel.firstChild);
+    while (_kbPanel.childElementCount > 60) _kbPanel.removeChild(_kbPanel.lastChild);
+  } catch(e) {}
+}
+
+function _kbInitPanel(){
+  _kbPanel = document.createElement('div');
+  _kbPanel.id = 'kb-debug-panel';
+  _kbPanel.style.cssText = 'position:fixed;left:0;right:0;top:0;max-height:38vh;overflow-y:auto;' +
+    'background:rgba(5,8,12,0.94);color:#9ED0F0;font:600 10px/1.5 ui-monospace,monospace;' +
+    'padding:6px 8px;z-index:99999;-webkit-overflow-scrolling:touch;border-bottom:1px solid #2A3644';
+  _kbPanel.addEventListener('dblclick', function(){ _kbPanel.innerHTML = ''; });
+  document.body.appendChild(_kbPanel);
+
+  // Fokus-livscyklus for hele dokumentet (focusin/focusout bobler)
+  document.addEventListener('focusin', function(e){
+    var id = e.target && e.target.id;
+    if (id === 'chat-input' || id === 'bc-input') _kbLog('INPUT FOCUS', 'focus');
+  }, true);
+  document.addEventListener('focusout', function(e){
+    var id = e.target && e.target.id;
+    if (id === 'chat-input' || id === 'bc-input') _kbLog('INPUT BLUR  <<<<', 'blur');
+  }, true);
+
+  // Knap-hændelser i rækkefølge
+  ['pointerdown','touchstart','touchend','mousedown','click'].forEach(function(ev){
+    document.addEventListener(ev, function(e){
+      var el = e.target && e.target.closest ? e.target.closest('.chat-send-btn') : null;
+      if (el) _kbLog('btn ' + ev);
+    }, true);
+  });
+
+  _kbLog('=== KB-DEBUG AKTIV (?kbdebug=0 for at slukke) ===', 'send');
+}
+
+// Selvstartende når DOM er klar — kræver ingen ændring i boot-flowet
+function _kbMaybeStart(){ if (_KBDEBUG && !_kbPanel) _kbInitPanel(); }
+if (_KBDEBUG) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _kbMaybeStart);
+  } else {
+    _kbMaybeStart();
+  }
+}

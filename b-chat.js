@@ -1633,9 +1633,11 @@ async function bcSendMessage() {
     showWarningToast(t('bc_chat_locked'));
     return;
   }
+  _kbLog('BEFORE SEND (bc)', 'send');
   bcSending = true;
   var sendBtn = document.getElementById("bc-send-btn");
   if (sendBtn) { sendBtn.disabled = true; }
+  _kbLog('efter btn.disabled=true', 'send');
   console.debug('[bc] bcSendMessage');
   try {
     const inp = document.getElementById('bc-input');
@@ -1677,7 +1679,9 @@ async function bcSendMessage() {
       var _bcReplyTo = replyState.bc ? replyState.bc.id : null;
       var _bcReplyMeta = replyState.bc ? { name: replyState.bc.name, text: replyState.bc.text } : null;
       if (replyState.bc) cancelReply('bc'); // ryd svar-bjaelken
+      _kbLog('BEFORE AWAIT (bc)', 'send');
       var sendResult = await dbActions.sendBubbleMessage(bcBubbleId, text, { replyTo: _bcReplyTo });
+      _kbLog('AFTER AWAIT (bc)', 'send');
       if (!sendResult.ok) {
         inp.value = text;
         return;
@@ -1685,6 +1689,7 @@ async function bcSendMessage() {
       if (sendResult.message) {
         if (_bcReplyMeta) sendResult.message._replyMeta = _bcReplyMeta;
         bcReduceMsg(sendResult.message);
+        _kbLog('efter DOM-render', 'send');
         trackEvent('bubble_chat_msg_sent', { bubble_id: bcBubbleId });
       }
     }

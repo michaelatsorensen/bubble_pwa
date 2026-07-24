@@ -218,9 +218,11 @@ registerState(function() { dmSending = false; dmEditingId = null; _dmLastSent = 
 
 async function sendMessage() {
   if (dmSending) return;
+  _kbLog('BEFORE SEND (dm)', 'send');
   dmSending = true;
   var sendBtn = document.getElementById("chat-send-btn");
   if (sendBtn) { sendBtn.disabled = true; }
+  _kbLog('efter btn.disabled=true', 'send');
   console.debug('[dm] sendMessage');
   try {
     if (isBlocked(currentChatUser)) { _renderToast(t('msg_user_blocked'), 'error'); return; }
@@ -271,6 +273,7 @@ async function sendMessage() {
       input.value = '';
       if (replyState.dm) cancelReply('dm'); // ryd svar-bjaelken
 
+      _kbLog('BEFORE AWAIT (dm)', 'send');
       // DB insert
       const { data: newMsg, error } = await sb.from('messages').insert({
         sender_id: currentUser.id, receiver_id: currentChatUser, content, reply_to: _replyTo
@@ -290,9 +293,11 @@ async function sendMessage() {
         return;
       }
 
+      _kbLog('AFTER AWAIT (dm)', 'send');
       if (newMsg) {
         // Replace pending message with confirmed via reducer
         dmReduceMsg(newMsg, { replaceTempId: tempId });
+        _kbLog('efter DOM-render', 'send');
         // Broadcast to recipient
         if (chatSubscription) {
           try { chatSubscription.send({ type: 'broadcast', event: 'new_message', payload: newMsg }); } catch(e) { logError("dm:new_message_broadcast", e); }
@@ -302,7 +307,7 @@ async function sendMessage() {
       }
     }
   } catch(e) { logError("sendMessage", e); errorToast("send", e); }
-  finally { dmSending = false; if (sendBtn) { sendBtn.disabled = false; } }
+  finally { dmSending = false; if (sendBtn) { sendBtn.disabled = false; } _kbLog('SEND SLUT (dm)', 'send'); }
 }
 
 async function sendDirectMessage(toId, content) {
