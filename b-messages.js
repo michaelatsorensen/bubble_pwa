@@ -220,15 +220,12 @@ async function sendMessage() {
   if (dmSending) return;
   dmSending = true;
   var sendBtn = document.getElementById("chat-send-btn");
-  // ⌨️ TASTATUR: ingen .disabled — se kommentar i bcSendMessage.
-  if (sendBtn) { sendBtn.classList.add('is-sending'); }
+  if (sendBtn) { sendBtn.disabled = true; }
   console.debug('[dm] sendMessage');
   try {
     if (isBlocked(currentChatUser)) { _renderToast(t('msg_user_blocked'), 'error'); return; }
     const input = document.getElementById('chat-input');
     const content = filterChatContent(input.value.trim());
-    // ⌨️ Refokusér SYNKRONT foer ethvert await.
-    _keepKeyboard(input);
     if (!content) return;
     if (tooLong(content, 'message')) return; // dmSending + button reset by finally block
 
@@ -305,7 +302,7 @@ async function sendMessage() {
       }
     }
   } catch(e) { logError("sendMessage", e); errorToast("send", e); }
-  finally { dmSending = false; if (sendBtn) { sendBtn.classList.remove('is-sending'); } }
+  finally { dmSending = false; if (sendBtn) { sendBtn.disabled = false; } }
 }
 
 async function sendDirectMessage(toId, content) {

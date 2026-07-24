@@ -1843,28 +1843,3 @@ function sanitizeHttpsUrl(raw) {
 
 
 
-
-// ══════════════════════════════════════════════════════════════
-//  ⌨️  TASTATUR-BEVARELSE VED SEND  (v3.186)
-//  Problem: paa iOS lukker tastaturet naar man sender en besked, saa man skal
-//  trykke i feltet igen foer naeste besked. Aarsag: (1) send-knappen blev
-//  .disabled midt i beroeringen — at disable et element mens fokus/touch er
-//  aktiv faar Safari til at droppe fokus; (2) et efterfoelgende .focus() efter
-//  await ignoreres, fordi iOS kun tillader programmatisk fokus inde i en
-//  direkte brugerudloest haendelse.
-//
-//  ⛔ Denne funktion roerer ALDRIG html/body/height/viewport-meta/dvh.
-//     Tastatur-LAYOUT (skub) er en separat, accepteret baseline — se TECH-DEBT.
-//     Dette handler UDELUKKENDE om at bevare fokus.
-// ══════════════════════════════════════════════════════════════
-function _keepKeyboard(inputEl) {
-  if (!inputEl) return;
-  try {
-    // Hvis feltet allerede har fokus (typisk: send via Enter-tasten) er der
-    // intet at gøre — at kalde focus() igen kan i sig selv give et blink.
-    if (document.activeElement === inputEl) return;
-    // Synkront kald, mens vi stadig er inde i brugerens tap. Efter et await
-    // ville dette blive ignoreret af iOS.
-    inputEl.focus({ preventScroll: true });
-  } catch(e) { /* aldrig blokér afsendelse pga. fokus */ }
-}
