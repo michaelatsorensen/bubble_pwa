@@ -121,6 +121,9 @@
 
 <script>
 var MODE = 'prod';
+/* Baseline-højde UDEN tastatur. window.innerHeight kan ikke bruges — iOS ændrer
+   den selv i låste 100vh-layouts, hvilket gav falske målinger i runde 3. */
+var BASE_H = window.visualViewport ? window.visualViewport.height : window.innerHeight;
 var DESCS = {
   prod: 'Som Bubble i dag. Forventet: layout forskubbet (scroll ~377) — det er bug-en.',
   fit:  'Skallen får height = visualViewport.height og flyttes med translateY(offsetTop). Den udfylder altid præcis det synlige omraade, uanset hvor iOS har rullet dokumentet hen. Ingen kamp mod browseren.',
@@ -255,6 +258,10 @@ function verdict(kind, msg){
 function net(){ return new Promise(function(r){ setTimeout(r, 220); }); }
 
 async function doSend(){
+  try { await _doSend(); }
+  catch(e){ verdict('bad', 'JS-fejl: ' + (e && e.message ? e.message : e)); }
+}
+async function _doSend(){
   var inp = document.getElementById('inp');
   var list = document.getElementById('list');
   var btn = document.getElementById('btn');
