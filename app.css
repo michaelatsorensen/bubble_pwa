@@ -4417,3 +4417,8 @@ a:not(.btn-primary):not(.btn-secondary):active {
 .cal-mail-btns { display:flex; gap:0.5rem; margin-top:0.6rem; }
 .cal-mail-cancel { flex:0.6; padding:0.6rem; font-size:0.76rem; font-weight:700; border-radius:11px; border:1px solid rgba(255,255,255,0.10); background:rgba(255,255,255,0.05); color:rgba(207,230,247,0.55); font-family:inherit; cursor:pointer; }
 .cal-mail-send { flex:1; padding:0.6rem; font-size:0.76rem; font-weight:800; border-radius:11px; border:1px solid rgba(100,180,230,0.35); background:rgba(100,180,230,0.18); color:rgba(255,255,255,0.92); font-family:inherit; cursor:pointer; }
+
+/* ⌨️ Send-knap under afsendelse (v3.186) — erstatter :disabled, som lukkede
+   tastaturet paa iOS naar knappen blev disabled midt i beroeringen.
+   pointer-events:none giver samme dobbelt-klik-beskyttelse uden fokus-tab. */
+.chat-send-btn.is-sending { opacity: 0.45; pointer-events: none; }

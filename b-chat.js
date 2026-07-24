@@ -1635,13 +1635,18 @@ async function bcSendMessage() {
   }
   bcSending = true;
   var sendBtn = document.getElementById("bc-send-btn");
-  if (sendBtn) { sendBtn.disabled = true; }
+  // ⌨️ TASTATUR: brug IKKE .disabled — at disable et element midt i en berøring
+  // faar iOS til at droppe fokus og lukke tastaturet. Visuel laas i stedet.
+  if (sendBtn) { sendBtn.classList.add('is-sending'); }
   console.debug('[bc] bcSendMessage');
   try {
     const inp = document.getElementById('bc-input');
     const text = filterChatContent(inp.value.trim());
-    if (!text) { bcSending = false; if (sendBtn) { sendBtn.disabled = false; } return; }
-    if (tooLong(text, 'message')) { bcSending = false; if (sendBtn) { sendBtn.disabled = false; } return; }
+    // ⌨️ Refokusér SYNKRONT — foer ethvert await. iOS accepterer kun .focus()
+    // inde i en direkte brugerudloest haendelse; efter await er tilladelsen vaek.
+    _keepKeyboard(inp);
+    if (!text) { bcSending = false; if (sendBtn) { sendBtn.classList.remove('is-sending'); } return; }
+    if (tooLong(text, 'message')) { bcSending = false; if (sendBtn) { sendBtn.classList.remove('is-sending'); } return; }
 
     if (bcEditingId) {
       // Save edit to history first (log on failure but don't block edit)
@@ -1689,7 +1694,7 @@ async function bcSendMessage() {
       }
     }
   } catch(e) { logError("bcSendMessage", e); errorToast("send", e); }
-  finally { bcSending = false; var sb3 = document.getElementById("bc-send-btn"); if (sb3) { sb3.disabled = false; } }
+  finally { bcSending = false; var sb3 = document.getElementById("bc-send-btn"); if (sb3) { sb3.classList.remove('is-sending'); } }
   } catch(e) { logError("bcSendMessage", e); }
 }
 
