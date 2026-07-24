@@ -43,6 +43,12 @@
   #log .lost{color:#FF8A8A;font-weight:800}
   #log .kept{color:#4ADE80;font-weight:800}
   #log .vv{color:#FFCF6B}
+  .msglist{height:150px;overflow-y:auto;background:#F2F5F8;border:2px solid #C8CFD8;
+    border-radius:10px;padding:0.6rem;margin-bottom:0.7rem;display:flex;flex-direction:column;gap:0.35rem}
+  .msglist.rev{flex-direction:column-reverse}
+  .msg{background:#0A66C2;color:#fff;padding:0.45rem 0.7rem;border-radius:12px;
+    font-size:0.88rem;align-self:flex-end;max-width:80%;word-break:break-word}
+  .msglist .filler{color:#8A93A0;font-size:0.82rem;align-self:flex-start}
   .clearbtn{font-size:0.86rem;font-weight:700;color:#111;background:#EDF1F5;
     border:2px solid #C8CFD8;border-radius:10px;padding:0.5rem 1rem;margin-top:0.7rem}
   .note{font-size:0.88rem;color:#5A3D00;background:#FFF3D6;border:2px solid #E0B24D;
@@ -73,77 +79,69 @@
   <div class="row"><span class="k">Tastatur (est.)</span><span class="v" id="s-kb">—</span></div>
 </div>
 
+<div class="note" style="background:#FDE0E0;border-color:#C0392B;color:#7A1F16">
+  <b>Runde 2 — den rigtige mistænkte.</b> Runde 1 viste at send-knappen er uskyldig (alle grønne).
+  Forskellen i appen er at der ligger en <b>beskedliste der scrolles til bunden</b> efter afsendelse
+  (<code>scrollTop = scrollHeight</code>). Det er den klassiske iOS-tastaturdræber. Herunder er
+  samme send med en rigtig liste — fire scroll-metoder.
+</div>
+
 <!-- A -->
 <div class="panel" data-v="A">
-  <h2>A · Nuværende produktion (v3.187)</h2>
-  <div class="why">disabled=true under afsendelse + await. Dette er baseline — forventet: fokus tabes.</div>
+  <h2>A · Som appen i dag: scrollTop = scrollHeight</h2>
+  <div class="why">Præcis produktionens mønster. Forventet: tastaturet lukker/genåbner.</div>
+  <div class="msglist" id="list-A"></div>
   <div class="composer">
     <input id="in-A" placeholder="Skriv her…" enterkeyhint="send">
-    <button class="sendbtn" id="btn-A"
-      ontouchstart="event.preventDefault()"
+    <button class="sendbtn" id="btn-A" ontouchstart="event.preventDefault()"
       ontouchend="event.preventDefault();sendA()"
       onclick="if(!('ontouchstart' in window))sendA()">→</button>
   </div>
-  <div class="verdict" id="vd-A"></div><div class="msgs" id="ms-A"></div>
+  <div class="verdict" id="vd-A"></div>
 </div>
 
 <!-- B -->
 <div class="panel" data-v="B">
-  <h2>B · Ingen disabled (kun klasse-lås)</h2>
-  <div class="why">Erstatter disabled med pointer-events:none. Tester om det ALENE er nok.</div>
+  <h2>B · Ingen scroll overhovedet</h2>
+  <div class="why">Kontrolprøve: bekræfter om scroll ER synderen. Beskeden indsættes, intet scrolles.</div>
+  <div class="msglist" id="list-B"></div>
   <div class="composer">
     <input id="in-B" placeholder="Skriv her…" enterkeyhint="send">
-    <button class="sendbtn" id="btn-B"
-      ontouchstart="event.preventDefault()"
+    <button class="sendbtn" id="btn-B" ontouchstart="event.preventDefault()"
       ontouchend="event.preventDefault();sendB()"
       onclick="if(!('ontouchstart' in window))sendB()">→</button>
   </div>
-  <div class="verdict" id="vd-B"></div><div class="msgs" id="ms-B"></div>
+  <div class="verdict" id="vd-B"></div>
 </div>
 
 <!-- C -->
 <div class="panel" data-v="C">
-  <h2>C · Ingen disabled + mousedown-guard</h2>
-  <div class="why">Som B, plus onmousedown preventDefault så knappen aldrig tager fokus.</div>
+  <h2>C · Scroll via CSS-flex (ingen scrollTop)</h2>
+  <div class="why">Listen er vendt om med flex-direction:column-reverse, så nyeste altid er nederst
+    uden at nogen rører scrollTop. Ingen programmatisk scroll = intet at forstyrre tastaturet.</div>
+  <div class="msglist rev" id="list-C"></div>
   <div class="composer">
     <input id="in-C" placeholder="Skriv her…" enterkeyhint="send">
-    <button class="sendbtn" id="btn-C"
-      onmousedown="event.preventDefault()"
-      ontouchstart="event.preventDefault()"
+    <button class="sendbtn" id="btn-C" ontouchstart="event.preventDefault()"
       ontouchend="event.preventDefault();sendC()"
       onclick="if(!('ontouchstart' in window))sendC()">→</button>
   </div>
-  <div class="verdict" id="vd-C"></div><div class="msgs" id="ms-C"></div>
+  <div class="verdict" id="vd-C"></div>
 </div>
 
 <!-- D -->
 <div class="panel" data-v="D">
-  <h2>D · Ryd feltet FØR await, intet andet</h2>
-  <div class="why">Måske er det ikke knappen, men at input.value ryddes/DOM ændres midt i sendingen.</div>
+  <h2>D · scrollTop udskudt til efter tastatur-ro</h2>
+  <div class="why">Samme scroll som i dag, men først efter 350ms — når iOS er færdig med sin
+    tastatur-håndtering. Mindst indgribende hvis den virker.</div>
+  <div class="msglist" id="list-D"></div>
   <div class="composer">
     <input id="in-D" placeholder="Skriv her…" enterkeyhint="send">
-    <button class="sendbtn" id="btn-D"
-      onmousedown="event.preventDefault()"
-      ontouchstart="event.preventDefault()"
+    <button class="sendbtn" id="btn-D" ontouchstart="event.preventDefault()"
       ontouchend="event.preventDefault();sendD()"
       onclick="if(!('ontouchstart' in window))sendD()">→</button>
   </div>
-  <div class="verdict" id="vd-D"></div><div class="msgs" id="ms-D"></div>
-</div>
-
-<!-- E -->
-<div class="panel" data-v="E">
-  <h2>E · Label-wrap (knappen kan slet ikke få fokus)</h2>
-  <div class="why">Knappen har tabindex=-1 og er svøbt, så browseren aldrig flytter fokus dertil.</div>
-  <div class="composer">
-    <input id="in-E" placeholder="Skriv her…" enterkeyhint="send">
-    <button class="sendbtn" id="btn-E" tabindex="-1"
-      onmousedown="event.preventDefault()"
-      ontouchstart="event.preventDefault()"
-      ontouchend="event.preventDefault();sendE()"
-      onclick="if(!('ontouchstart' in window))sendE()">→</button>
-  </div>
-  <div class="verdict" id="vd-E"></div><div class="msgs" id="ms-E"></div>
+  <div class="verdict" id="vd-D"></div>
 </div>
 
 <div class="panel">
@@ -154,7 +152,7 @@
 </div>
 
 <script>
-var VS = ['A','B','C','D','E'];
+var VS = ['A','B','C','D'];
 var sending = {};
 
 function log(msg, cls){
@@ -163,7 +161,11 @@ function log(msg, cls){
   d.innerHTML = '<div><span class="t">'+t+'</span> <span class="'+(cls||'')+'">'+msg+'</span></div>' + d.innerHTML;
 }
 
-/* ── Live-status ── */
+function kbUp(){
+  if (!window.visualViewport) return null;
+  return (window.innerHeight - window.visualViewport.height) > 80;
+}
+
 function updateStatus(){
   var a = document.activeElement;
   var isInput = a && a.tagName === 'INPUT';
@@ -189,96 +191,93 @@ if (window.visualViewport){
   });
 }
 
-/* ── Fokus-overvågning pr. variant ── */
-VS.forEach(function(v){
-  var inp = document.getElementById('in-' + v);
-  inp.addEventListener('focus', function(){ log(v + ': fokus VUNDET'); });
-  inp.addEventListener('blur', function(){
-    if (sending[v]) {
-      log(v + ': fokus TABT under afsendelse ✗', 'lost');
-    } else {
-      log(v + ': fokus tabt (ikke under afsendelse)');
-    }
-  });
-});
-
 function setVerdict(v, kind, msg){
   var el = document.getElementById('vd-' + v);
   el.className = 'verdict ' + kind;
   el.textContent = msg;
 }
-function verdict(v, ok){ /* bevaret for blur-lytteren */ }
 
-function addMsg(v, text){
-  var m = document.getElementById('ms-' + v);
-  m.innerHTML = '↳ sendt: "' + text.replace(/</g,'&lt;') + '"<br>' + m.innerHTML;
-}
+/* Fyld listerne så der ER noget at scrolle i */
+VS.forEach(function(v){
+  var el = document.getElementById('list-' + v);
+  for (var n = 1; n <= 6; n++){
+    var d = document.createElement('div');
+    d.className = 'filler';
+    d.textContent = 'Tidligere besked ' + n;
+    el.appendChild(d);
+  }
+  el.scrollTop = el.scrollHeight;
+  var inp = document.getElementById('in-' + v);
+  inp.addEventListener('focus', function(){ log(v + ': fokus vundet'); });
+  inp.addEventListener('blur', function(){
+    log(v + ': fokus TABT' + (sending[v] ? ' under afsendelse ✗' : ''), sending[v] ? 'lost' : '');
+  });
+});
 
-/* Simulerer den rigtige send: netværkstur på ~250ms */
 function fakeNetwork(){ return new Promise(function(r){ setTimeout(r, 250); }); }
 
-function kbUp(){
-  if (!window.visualViewport) return null;
-  return (window.innerHeight - window.visualViewport.height) > 80;
-}
-
-async function runSend(v, opts){
+async function runSend(v, mode){
   var inp = document.getElementById('in-' + v);
+  var list = document.getElementById('list-' + v);
   var btn = document.getElementById('btn-' + v);
   var text = inp.value.trim();
   if (!text) { setVerdict(v, 'wait', 'Skriv noget i feltet først'); return; }
 
   var kbBefore = kbUp();
+  if (kbBefore === false) { setVerdict(v, 'wait', 'Tryk i feltet først så tastaturet er oppe'); return; }
+
   sending[v] = true;
-  log(v + ': === SEND START === (tastatur ' + (kbBefore===null?'n/a':(kbBefore?'oppe':'nede')) + ')');
+  btn.classList.add('is-sending');
+  log(v + ': === SEND (' + mode + ') ===');
 
-  if (opts.useDisabled) { btn.disabled = true; log(v + ': btn.disabled = true'); }
-  else { btn.classList.add('is-sending'); log(v + ': btn klasse-lås'); }
-
-  if (opts.clearBeforeAwait) { inp.value = ''; log(v + ': felt ryddet (før await)'); }
-
+  inp.value = '';
   await fakeNetwork();
 
-  if (!opts.clearBeforeAwait) { inp.value = ''; }
-  addMsg(v, text);
+  var d = document.createElement('div');
+  d.className = 'msg';
+  d.textContent = text;
+  if (mode === 'flexrev') list.insertBefore(d, list.firstChild);
+  else list.appendChild(d);
 
-  if (opts.useDisabled) { btn.disabled = false; }
-  else { btn.classList.remove('is-sending'); }
+  if (mode === 'scrollnow'){
+    list.scrollTop = list.scrollHeight;
+    log(v + ': scrollTop sat MED DET SAMME');
+  } else if (mode === 'scrolllater'){
+    setTimeout(function(){
+      list.scrollTop = list.scrollHeight;
+      log(v + ': scrollTop sat efter 350ms');
+    }, 350);
+  } else if (mode === 'noscroll'){
+    log(v + ': ingen scroll');
+  } else {
+    log(v + ': flex-reverse — ingen scrollTop nødvendig');
+  }
 
+  btn.classList.remove('is-sending');
   sending[v] = false;
-  var kept = document.activeElement === inp;
-  log(v + ': === SEND SLUT === fokus ' + (kept ? 'BEVARET ✓' : 'tabt ✗'), kept ? 'kept' : 'lost');
 
-  // Vent 400ms så iOS når at lukke/genåbne tastaturet, og aflæs så resultatet
   setTimeout(function(){
     var kbAfter = kbUp();
-    var stillFocused = document.activeElement === inp;
-    if (kbBefore === null) {
-      // Desktop: kun fokus
-      setVerdict(v, stillFocused ? 'ok' : 'bad',
-        stillFocused ? 'FOKUS BEVARET — lovende, test på iPhone' : 'FOKUS TABT — ville lukke tastaturet');
+    var focused = document.activeElement === inp;
+    if (kbBefore === null){
+      setVerdict(v, focused ? 'ok' : 'bad',
+        focused ? 'FOKUS BEVARET — test på iPhone' : 'FOKUS TABT');
       return;
     }
-    if (!kbBefore) {
-      setVerdict(v, 'wait', 'Tastaturet var ikke oppe — tryk i feltet først, så send');
-      return;
-    }
-    if (kbAfter && stillFocused) setVerdict(v, 'ok', 'TASTATUR BLEV OPPE ✓');
-    else if (kbAfter && !stillFocused) setVerdict(v, 'wait', 'Tastatur oppe, men fokus flyttet');
+    if (kbAfter && focused) setVerdict(v, 'ok', 'TASTATUR BLEV OPPE ✓');
+    else if (kbAfter) setVerdict(v, 'wait', 'Tastatur oppe, men fokus flyttet');
     else setVerdict(v, 'bad', 'TASTATURET LUKKEDE ✗');
-  }, 400);
+  }, 600);
 }
 
-function sendA(){ runSend('A', { useDisabled:true,  clearBeforeAwait:false }); }
-function sendB(){ runSend('B', { useDisabled:false, clearBeforeAwait:false }); }
-function sendC(){ runSend('C', { useDisabled:false, clearBeforeAwait:false }); }
-function sendD(){ runSend('D', { useDisabled:false, clearBeforeAwait:true  }); }
-function sendE(){ runSend('E', { useDisabled:false, clearBeforeAwait:true  }); }
+function sendA(){ runSend('A', 'scrollnow'); }
+function sendB(){ runSend('B', 'noscroll'); }
+function sendC(){ runSend('C', 'flexrev'); }
+function sendD(){ runSend('D', 'scrolllater'); }
 
-/* Enter-tasten i alle felter */
 VS.forEach(function(v){
   document.getElementById('in-' + v).addEventListener('keydown', function(e){
-    if (e.key === 'Enter') { e.preventDefault(); window['send' + v](); }
+    if (e.key === 'Enter'){ e.preventDefault(); window['send' + v](); }
   });
 });
 
