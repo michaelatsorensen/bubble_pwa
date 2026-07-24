@@ -87,6 +87,7 @@
     <button class="pbtn" data-m="raf" onclick="pick('raf',this)">C · scroll i rAF</button>
     <button class="pbtn" data-m="anchor" onclick="pick('anchor',this)">D · flex-reverse</button>
     <button class="pbtn" data-m="nofocus" onclick="pick('nofocus',this)">E · blur+refocus</button>
+    <button class="pbtn" data-m="lockscroll" onclick="pick('lockscroll',this)">F · lås vindues-scroll</button>
   </div>
 
   <div class="status">
@@ -120,7 +121,8 @@ var DESCS = {
   vv:     'Composeren følger tastaturets overkant via window.visualViewport (translateY). Rører ALDRIG html/body/dvh. Dette er sporet TECH-DEBT peger på.',
   raf:    'Samme scroll som i dag, men inde i requestAnimationFrame — efter browserens layout-pas, så scrollen ikke konkurrerer med tastaturet.',
   anchor: 'flex-direction:column-reverse: nyeste besked er altid nederst uden at nogen rører scrollTop. Ingen programmatisk scroll overhovedet.',
-  nofocus:'Feltet blur-es FØR indsættelse og refokuseres bagefter. Sidste udvej hvis intet andet virker.'
+  nofocus:'Feltet blur-es FØR indsættelse og refokuseres bagefter. Sidste udvej hvis intet andet virker.',
+  lockscroll:'iOS ruller HELE dokumentet op når tastaturet kommer — selv med overflow:hidden. Her tvinges window.scrollTo(0,0) løbende, og composeren følger tastaturet via visualViewport. Dette er den mest lovende kandidat.'
 };
 
 function pick(m, btn){
@@ -130,6 +132,8 @@ function pick(m, btn){
   var list = document.getElementById('list');
   list.classList.toggle('rev', m === 'anchor');
   resetVV();
+  if (_lockRaf) { cancelAnimationFrame(_lockRaf); _lockRaf = null; }
+  if (m === 'lockscroll') lockScrollLoop();
   seed();
 }
 
@@ -151,7 +155,21 @@ function resetVV(){
   var c = document.getElementById('composer');
   c.style.transform = '';
 }
+var _lockRaf = null;
+function lockScrollLoop(){
+  if (MODE !== 'lockscroll') { _lockRaf = null; return; }
+  if (window.scrollY !== 0) window.scrollTo(0, 0);
+  _lockRaf = requestAnimationFrame(lockScrollLoop);
+}
 function vvHandler(){
+  refreshBase();
+  if (MODE === 'lockscroll'){
+    var cc = document.getElementById('composer');
+    var g = BASE_H - window.visualViewport.height;
+    cc.style.transform = g > 80 ? 'translateY(-' + Math.round(g - (BASE_H - window.innerHeight)) + 'px)' : '';
+    if (window.scrollY !== 0) window.scrollTo(0, 0);
+    return;
+  }
   if (MODE !== 'vv') { resetVV(); return; }
   var c = document.getElementById('composer');
   var gap = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
@@ -166,9 +184,18 @@ if (window.visualViewport){
   window.visualViewport.addEventListener('scroll', vvHandler);
 }
 
+/* Baseline: højden UDEN tastatur, målt ved load og opdateret når tastaturet er nede.
+   window.innerHeight kan ikke bruges — iOS ændrer den i låste layouts. */
+var BASE_H = window.visualViewport ? window.visualViewport.height : window.innerHeight;
 function kbUp(){
   if (!window.visualViewport) return null;
-  return (window.innerHeight - window.visualViewport.height) > 80;
+  return (BASE_H - window.visualViewport.height) > 80;
+}
+function refreshBase(){
+  if (!window.visualViewport) return;
+  if (document.activeElement !== document.getElementById('inp')) {
+    BASE_H = Math.max(BASE_H, window.visualViewport.height);
+  }
 }
 
 function status(){
@@ -177,7 +204,10 @@ function status(){
   f.textContent = (a===inp) ? 'JA' : 'nej';
   f.className = 'v ' + (a===inp ? 'good':'bad');
   if (window.visualViewport){
-    document.getElementById('s-vv').textContent = Math.round(window.visualViewport.height);
+    var vv = window.visualViewport;
+    document.getElementById('s-vv').textContent =
+      Math.round(vv.height) + '/' + Math.round(BASE_H) + ' off' + Math.round(vv.offsetTop) +
+      ' sc' + Math.round(window.scrollY);
     var k = document.getElementById('s-kb'), up = kbUp();
     k.textContent = up ? 'OPPE' : 'nede';
     k.className = 'v ' + (up ? 'good':'bad');
@@ -206,7 +236,6 @@ async function doSend(){
   if (!text){ verdict('wait','Skriv noget først'); return; }
 
   var kbBefore = kbUp();
-  if (kbBefore === false){ verdict('wait','Tryk i feltet så tastaturet er oppe'); return; }
 
   btn.classList.add('is-sending');
 
@@ -221,7 +250,7 @@ async function doSend(){
   if (MODE === 'anchor') list.insertBefore(d, list.firstChild);
   else list.appendChild(d);
 
-  if (MODE === 'prod' || MODE === 'vv' || MODE === 'nofocus'){
+  if (MODE === 'prod' || MODE === 'vv' || MODE === 'nofocus' || MODE === 'lockscroll'){
     list.scrollTop = list.scrollHeight;
   } else if (MODE === 'raf'){
     requestAnimationFrame(function(){
@@ -235,10 +264,13 @@ async function doSend(){
 
   setTimeout(function(){
     var up = kbUp(), foc = document.activeElement === inp;
+    var shifted = Math.round(window.scrollY) > 2 ||
+      (window.visualViewport && Math.round(window.visualViewport.offsetTop) > 2);
     if (up === null){ verdict(foc?'ok':'bad', foc?'Fokus bevaret (desktop)':'Fokus tabt'); return; }
-    if (up && foc) verdict('ok','TASTATUR OPPE — kan du se feltet?');
-    else if (up) verdict('wait','Tastatur oppe, fokus flyttet');
-    else verdict('bad','TASTATURET LUKKEDE');
+    if (!up) { verdict('bad','TASTATURET LUKKEDE'); return; }
+    if (shifted) verdict('bad','Tastatur oppe MEN layout forskubbet (scroll ' + Math.round(window.scrollY) + ')');
+    else if (!foc) verdict('wait','Tastatur oppe, fokus flyttet');
+    else verdict('ok','TASTATUR OPPE + LAYOUT INTAKT');
   }, 550);
 }
 
