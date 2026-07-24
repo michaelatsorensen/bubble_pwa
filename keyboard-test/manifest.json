@@ -1,0 +1,9 @@
+{
+  "name": "KB-test",
+  "short_name": "KB-test",
+  "start_url": "/keyboard-test/",
+  "scope": "/keyboard-test/",
+  "display": "standalone",
+  "background_color": "#0E141C",
+  "theme_color": "#0E141C"
+}

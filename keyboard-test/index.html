@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KB-test">
+<link rel="manifest" href="manifest.json">
+<title>KB-test</title>
+<style>
+  /* Samme lås som Bubble */
+  html { height:100vh; overflow:hidden; overscroll-behavior:none; background:#0E141C; }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,system-ui,sans-serif;background:transparent;
+    color:rgba(255,255,255,0.92);height:100vh;overflow:hidden}
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}
+
+  .modebar{flex-shrink:0;padding:0.5rem 0.9rem;font-size:0.74rem;font-weight:850;text-align:center;
+    padding-top:calc(0.5rem + env(safe-area-inset-top,0px))}
+  .modebar.ok{background:#0A2E1A;color:#4ADE80}
+  .modebar.bad{background:#3A1010;color:#FF8A8A}
+
+  .picker{flex-shrink:0;display:flex;gap:0.3rem;padding:0.5rem 0.7rem;overflow-x:auto;
+    background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.07);scrollbar-width:none}
+  .picker::-webkit-scrollbar{display:none}
+  .pbtn{flex-shrink:0;padding:0.45rem 0.8rem;font-size:0.76rem;font-weight:800;border-radius:99px;
+    border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.05);
+    color:rgba(207,230,247,0.6);font-family:inherit}
+  .pbtn.on{background:rgba(100,180,230,0.25);border-color:rgba(100,180,230,0.55);color:#fff}
+
+  .desc{flex-shrink:0;padding:0.5rem 0.9rem;font-size:0.72rem;line-height:1.45;
+    color:rgba(207,230,247,0.7);background:rgba(100,180,230,0.06);
+    border-bottom:1px solid rgba(100,180,230,0.15)}
+
+  .log{flex:1;overflow-y:auto;background:#080B10;padding:0.5rem 0.7rem;
+    font-family:ui-monospace,monospace;font-size:0.7rem;line-height:1.6;-webkit-overflow-scrolling:touch}
+  .log div{white-space:nowrap}
+  .t{color:#5A6572}
+  .ev{color:#9ED0F0}
+  .foc{color:#4ADE80;font-weight:800}
+  .blu{color:#FF8A8A;font-weight:800}
+  .snd{color:#FFCF6B;font-weight:800}
+  .res{color:#C4A8E8}
+
+  .composer{flex-shrink:0;border-top:0.5px solid rgba(255,255,255,0.08);
+    background:rgba(20,22,28,0.97);padding:0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom,0px))}
+  .crow{display:flex;align-items:center;gap:0.45rem}
+  .cinput{flex:1;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.12);
+    border-radius:20px;padding:0.6rem 0.9rem;font-size:16px;color:#fff;outline:none;font-family:inherit}
+  .cinput:focus{border-color:rgba(100,180,230,0.5)}
+  .sbtn{width:42px;height:42px;border-radius:50%;background:rgba(100,180,230,0.25);
+    border:1px solid rgba(100,180,230,0.45);color:#fff;font-size:1.05rem;font-weight:800;flex-shrink:0;
+    font-family:inherit}
+  .sbtn.is-sending{opacity:0.55}
+  .clear{position:absolute;right:0.6rem;top:calc(0.4rem + env(safe-area-inset-top,0px));
+    font-size:0.66rem;font-weight:700;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.08);
+    border:none;border-radius:99px;padding:0.25rem 0.6rem;font-family:inherit;z-index:20}
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="modebar bad" id="modebar">—</div>
+  <button class="clear" onclick="document.getElementById('log').innerHTML=''">ryd</button>
+
+  <div class="picker">
+    <button class="pbtn on" data-v="A" onclick="pick('A',this)">A</button>
+    <button class="pbtn" data-v="B" onclick="pick('B',this)">B</button>
+    <button class="pbtn" data-v="C" onclick="pick('C',this)">C</button>
+    <button class="pbtn" data-v="D" onclick="pick('D',this)">D</button>
+    <button class="pbtn" data-v="E" onclick="pick('E',this)">E</button>
+    <button class="pbtn" data-v="F" onclick="pick('F',this)">F</button>
+  </div>
+
+  <div class="desc" id="desc"></div>
+  <div class="log" id="log"></div>
+
+  <div class="composer" id="composer">
+    <div class="crow">
+      <input class="cinput" id="inp" placeholder="Skriv, tryk send…" enterkeyhint="send"
+        autocomplete="off" autocorrect="on">
+      <button class="sbtn" id="btn">→</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var V = 'A';
+var DESC = {
+  A: 'A · Nuværende Bubble: disabled=true, ingen eksplicit fokus.',
+  B: 'B · Kun disabled fjernet (klasse i stedet). Intet andet.',
+  C: 'C · Behold disabled, men focus() synkront FØR første await.',
+  D: 'D · Ingen disabled + focus() synkront før await.',
+  E: 'E · Som D, men 500 ms async-forsinkelse (realistisk netværk).',
+  F: 'F · Som D + DOM-insert, reply-preview-rydning og scroll (fuldt flow).'
+};
+
+function ts(){ return new Date().toISOString().substr(17,6); }
+function log(msg, cls){
+  var l = document.getElementById('log');
+  var ae = document.activeElement;
+  var who = ae ? (ae.id || ae.tagName.toLowerCase()) : 'null';
+  l.insertAdjacentHTML('afterbegin',
+    '<div><span class="t">'+ts()+'</span> <span class="'+(cls||'ev')+'">'+msg+'</span>'
+    + ' <span class="t">[af='+who+']</span></div>');
+}
+
+function pick(v, btn){
+  V = v;
+  document.querySelectorAll('.pbtn').forEach(function(b){ b.classList.toggle('on', b===btn); });
+  document.getElementById('desc').textContent = DESC[v];
+  log('--- variant ' + v + ' valgt ---', 'res');
+}
+
+function isStandalone(){
+  return window.navigator.standalone === true ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+}
+(function(){
+  var m = document.getElementById('modebar');
+  if (isStandalone()){ m.className='modebar ok'; m.textContent='STANDALONE — resultater gælder'; }
+  else { m.className='modebar bad'; m.textContent='SAFARI-FANE — føj til hjemmeskærm først!'; }
+})();
+
+/* ── Hændelses-logning på input ── */
+var inp = document.getElementById('inp');
+inp.addEventListener('focus', function(){ log('input FOCUS', 'foc'); });
+inp.addEventListener('blur',  function(){ log('input BLUR', 'blu'); });
+
+/* ── Knap-hændelser: log ALT, i rækkefølge ── */
+var btn = document.getElementById('btn');
+btn.addEventListener('touchstart', function(e){
+  e.preventDefault();
+  log('btn touchstart (preventDefault)');
+}, {passive:false});
+btn.addEventListener('touchend', function(e){
+  e.preventDefault();
+  log('btn touchend → send');
+  doSend();
+}, {passive:false});
+btn.addEventListener('click', function(){
+  log('btn click');
+  if (!('ontouchstart' in window)) doSend();
+});
+
+inp.addEventListener('keydown', function(e){
+  if (e.key === 'Enter'){ e.preventDefault(); log('Enter → send'); doSend(); }
+});
+
+/* ── Send-varianter ── */
+var sending = false;
+function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
+async function doSend(){
+  try { await _send(); }
+  catch(err){ log('JS-FEJL: ' + (err && err.message ? err.message : err), 'blu'); }
+}
+
+async function _send(){
+  if (sending) { log('afvist: sending allerede i gang'); return; }
+  var text = inp.value.trim();
+  if (!text) { log('tomt felt — intet sendt'); return; }
+
+  log('SEND START (' + V + ')', 'snd');
+  sending = true;
+
+  // ── Fokus-strategi ──
+  if (V === 'C' || V === 'D' || V === 'E' || V === 'F'){
+    log('kalder input.focus() synkront');
+    try { inp.focus({preventScroll:true}); } catch(e){ inp.focus(); }
+  }
+
+  // ── Knap-strategi ──
+  if (V === 'A' || V === 'C'){
+    btn.disabled = true;
+    log('btn.disabled = true');
+  } else {
+    btn.classList.add('is-sending');
+    btn.setAttribute('aria-busy','true');
+    log('btn klasse is-sending (ingen disabled)');
+  }
+
+  inp.value = '';
+
+  var delay = (V === 'E' || V === 'F') ? 500 : 220;
+  log('await ' + delay + 'ms…');
+  await wait(delay);
+  log('await færdig', 'res');
+
+  // ── Fuldt flow kun i F ──
+  if (V === 'F'){
+    var l = document.getElementById('log');
+    log('DOM-insert + scroll (som appen)');
+    l.scrollTop = 0;
+  }
+
+  if (V === 'A' || V === 'C'){
+    btn.disabled = false;
+    log('btn.disabled = false');
+  } else {
+    btn.classList.remove('is-sending');
+    btn.removeAttribute('aria-busy');
+  }
+
+  sending = false;
+  log('SEND SLUT', 'snd');
+
+  setTimeout(function(){
+    log('300ms efter: fokus=' + (document.activeElement === inp ? 'JA' : 'NEJ'),
+        document.activeElement === inp ? 'foc' : 'blu');
+  }, 300);
+}
+
+pick('A', document.querySelector('.pbtn'));
+log('Klar. Tryk i feltet, skriv, tryk send.', 'res');
+</script>
+</body>
+</html>
