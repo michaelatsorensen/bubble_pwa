@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KB-test">
 <title>Bubble — tastatur runde 3 (ægte layout)</title>
 <style>
   /* ══ SAMME LÅS SOM BUBBLE ══ */
@@ -86,6 +89,10 @@
     <button class="pbtn" data-m="fit" onclick="pick('fit',this)">G · Skal følger viewport</button>
     <button class="pbtn" data-m="fitfixed" onclick="pick('fitfixed',this)">H · Fixed + viewport</button>
     <button class="pbtn" data-m="fitsnap" onclick="pick('fitsnap',this)">I · Viewport + snap</button>
+  </div>
+
+  <div class="status" id="modebar" style="background:#3A1010">
+    <span id="s-mode" style="font-weight:800">—</span>
   </div>
 
   <div class="status">
@@ -198,6 +205,24 @@ function refreshBase(){
     BASE_H = Math.max(BASE_H, window.visualViewport.height);
   }
 }
+
+function isStandalone(){
+  return window.navigator.standalone === true ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+}
+function showMode(){
+  var el = document.getElementById('s-mode'), bar = document.getElementById('modebar');
+  if (isStandalone()){
+    el.textContent = 'STANDALONE (som Bubble) — resultater gaelder';
+    bar.style.background = '#0A2E1A';
+    el.style.color = '#4ADE80';
+  } else {
+    el.textContent = 'SAFARI-FANE — foej til hjemmeskaerm og test derfra!';
+    bar.style.background = '#3A1010';
+    el.style.color = '#FF8A8A';
+  }
+}
+showMode();
 
 function status(){
   var a = document.activeElement, inp = document.getElementById('inp');
