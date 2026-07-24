@@ -83,11 +83,9 @@
 
   <div class="picker">
     <button class="pbtn on" data-m="prod" onclick="pick('prod',this)">A · Som i dag</button>
-    <button class="pbtn" data-m="vv" onclick="pick('vv',this)">B · visualViewport</button>
-    <button class="pbtn" data-m="raf" onclick="pick('raf',this)">C · scroll i rAF</button>
-    <button class="pbtn" data-m="anchor" onclick="pick('anchor',this)">D · flex-reverse</button>
-    <button class="pbtn" data-m="nofocus" onclick="pick('nofocus',this)">E · blur+refocus</button>
-    <button class="pbtn" data-m="lockscroll" onclick="pick('lockscroll',this)">F · lås vindues-scroll</button>
+    <button class="pbtn" data-m="fit" onclick="pick('fit',this)">G · Skal følger viewport</button>
+    <button class="pbtn" data-m="fitfixed" onclick="pick('fitfixed',this)">H · Fixed + viewport</button>
+    <button class="pbtn" data-m="fitsnap" onclick="pick('fitsnap',this)">I · Viewport + snap</button>
   </div>
 
   <div class="status">
@@ -117,23 +115,18 @@
 <script>
 var MODE = 'prod';
 var DESCS = {
-  prod:   'Præcis som Bubble i dag: scrollTop = scrollHeight umiddelbart efter beskeden indsættes. Reproducér bug-en her først.',
-  vv:     'Composeren følger tastaturets overkant via window.visualViewport (translateY). Rører ALDRIG html/body/dvh. Dette er sporet TECH-DEBT peger på.',
-  raf:    'Samme scroll som i dag, men inde i requestAnimationFrame — efter browserens layout-pas, så scrollen ikke konkurrerer med tastaturet.',
-  anchor: 'flex-direction:column-reverse: nyeste besked er altid nederst uden at nogen rører scrollTop. Ingen programmatisk scroll overhovedet.',
-  nofocus:'Feltet blur-es FØR indsættelse og refokuseres bagefter. Sidste udvej hvis intet andet virker.',
-  lockscroll:'iOS ruller HELE dokumentet op når tastaturet kommer — selv med overflow:hidden. Her tvinges window.scrollTo(0,0) løbende, og composeren følger tastaturet via visualViewport. Dette er den mest lovende kandidat.'
+  prod: 'Som Bubble i dag. Forventet: layout forskubbet (scroll ~377) — det er bug-en.',
+  fit:  'Skallen får height = visualViewport.height og flyttes med translateY(offsetTop). Den udfylder altid præcis det synlige omraade, uanset hvor iOS har rullet dokumentet hen. Ingen kamp mod browseren.',
+  fitfixed: 'Samme, men skallen er position:fixed i stedet for absolute — saa dokument-scrollen slet ikke kan flytte den.',
+  fitsnap: 'Som G, plus et enkelt window.scrollTo(0,0) naar viewporten er faldet til ro (debounced, ingen rAF-loekke — det var dét der gav rystelser i F).'
 };
 
 function pick(m, btn){
   MODE = m;
   document.querySelectorAll('.pbtn').forEach(function(b){ b.classList.toggle('on', b===btn); });
   document.getElementById('desc').textContent = DESCS[m];
-  var list = document.getElementById('list');
-  list.classList.toggle('rev', m === 'anchor');
-  resetVV();
-  if (_lockRaf) { cancelAnimationFrame(_lockRaf); _lockRaf = null; }
-  if (m === 'lockscroll') lockScrollLoop();
+  resetFit();
+  if (m !== 'prod') applyFit();
   seed();
 }
 
@@ -144,10 +137,9 @@ function seed(){
     var d = document.createElement('div');
     d.className = 'msg' + (i%3===0 ? ' mine' : '');
     d.textContent = 'Tidligere besked ' + i + ' — fylder listen så der er noget at scrolle i.';
-    if (MODE === 'anchor') list.insertBefore(d, list.firstChild);
-    else list.appendChild(d);
+    list.appendChild(d);
   }
-  if (MODE !== 'anchor') list.scrollTop = list.scrollHeight;
+  list.scrollTop = list.scrollHeight;
 }
 
 /* ── visualViewport: flyt KUN composeren ── */
@@ -155,38 +147,47 @@ function resetVV(){
   var c = document.getElementById('composer');
   c.style.transform = '';
 }
-var _lockRaf = null;
-function lockScrollLoop(){
-  if (MODE !== 'lockscroll') { _lockRaf = null; return; }
-  if (window.scrollY !== 0) window.scrollTo(0, 0);
-  _lockRaf = requestAnimationFrame(lockScrollLoop);
+var _snapT = null;
+var _screenEl = null;
+function screenEl(){ if (!_screenEl) _screenEl = document.querySelector('.screen'); return _screenEl; }
+
+function resetFit(){
+  var s = screenEl();
+  s.style.height = ''; s.style.transform = ''; s.style.position = '';
+  document.getElementById('composer').style.transform = '';
+  clearTimeout(_snapT);
 }
+
+function applyFit(){
+  if (!window.visualViewport) return;
+  var vv = window.visualViewport, s = screenEl();
+  if (MODE === 'fit' || MODE === 'fitsnap'){
+    s.style.position = 'absolute';
+    s.style.height = vv.height + 'px';
+    s.style.transform = 'translateY(' + Math.round(vv.offsetTop + window.scrollY) + 'px)';
+  } else if (MODE === 'fitfixed'){
+    s.style.position = 'fixed';
+    s.style.top = '0'; s.style.left = '0'; s.style.right = '0';
+    s.style.height = vv.height + 'px';
+    s.style.transform = 'translateY(' + Math.round(vv.offsetTop) + 'px)';
+  }
+  if (MODE === 'fitsnap'){
+    clearTimeout(_snapT);
+    _snapT = setTimeout(function(){ if (window.scrollY !== 0) window.scrollTo(0,0); }, 260);
+  }
+}
+
 function vvHandler(){
   refreshBase();
-  if (MODE === 'lockscroll'){
-    var cc = document.getElementById('composer');
-    var g = BASE_H - window.visualViewport.height;
-    cc.style.transform = g > 80 ? 'translateY(-' + Math.round(g - (BASE_H - window.innerHeight)) + 'px)' : '';
-    if (window.scrollY !== 0) window.scrollTo(0, 0);
-    return;
-  }
-  if (MODE !== 'vv') { resetVV(); return; }
-  var c = document.getElementById('composer');
-  var gap = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
-  if (gap > 80){
-    c.style.transform = 'translateY(-' + Math.round(gap) + 'px)';
-  } else {
-    c.style.transform = '';
-  }
+  if (MODE === 'prod') { resetFit(); return; }
+  applyFit();
 }
 if (window.visualViewport){
   window.visualViewport.addEventListener('resize', vvHandler);
   window.visualViewport.addEventListener('scroll', vvHandler);
 }
+window.addEventListener('scroll', function(){ if (MODE !== 'prod') applyFit(); });
 
-/* Baseline: højden UDEN tastatur, målt ved load og opdateret når tastaturet er nede.
-   window.innerHeight kan ikke bruges — iOS ændrer den i låste layouts. */
-var BASE_H = window.visualViewport ? window.visualViewport.height : window.innerHeight;
 function kbUp(){
   if (!window.visualViewport) return null;
   return (BASE_H - window.visualViewport.height) > 80;
@@ -239,26 +240,15 @@ async function doSend(){
 
   btn.classList.add('is-sending');
 
-  if (MODE === 'nofocus') inp.blur();
-
   inp.value = '';
   await net();
 
   var d = document.createElement('div');
   d.className = 'msg mine';
   d.textContent = text;
-  if (MODE === 'anchor') list.insertBefore(d, list.firstChild);
-  else list.appendChild(d);
+  list.appendChild(d);
 
-  if (MODE === 'prod' || MODE === 'vv' || MODE === 'nofocus' || MODE === 'lockscroll'){
-    list.scrollTop = list.scrollHeight;
-  } else if (MODE === 'raf'){
-    requestAnimationFrame(function(){
-      requestAnimationFrame(function(){ list.scrollTop = list.scrollHeight; });
-    });
-  }
-
-  if (MODE === 'nofocus') inp.focus({preventScroll:true});
+  list.scrollTop = list.scrollHeight;
 
   btn.classList.remove('is-sending');
 
