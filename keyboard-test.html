@@ -4,161 +4,166 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>Bubble — tastatur/fokus-testbænk</title>
+<title>Bubble — tastatur runde 3 (ægte layout)</title>
 <style>
+  /* ══ SAMME LÅS SOM BUBBLE ══ */
+  html { height:100vh; overflow:hidden; overscroll-behavior:none; background:#0E141C; }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  body{font-family:-apple-system,system-ui,sans-serif;background:#FFFFFF;color:#111418;
-    line-height:1.5;padding:1rem 0.9rem 4rem;font-size:1rem;-webkit-text-size-adjust:100%}
-  h1{font-size:1.25rem;color:#000;margin-bottom:0.2rem}
-  .sub{font-size:0.9rem;color:#3A4048;margin-bottom:1rem}
-  .panel{background:#FFFFFF;border:2px solid #C8CFD8;border-radius:14px;
-    padding:1rem;margin-bottom:1.1rem}
-  .panel h2{font-size:1.05rem;font-weight:800;color:#000;margin-bottom:0.25rem}
-  .why{font-size:0.86rem;color:#3A4048;margin-bottom:0.8rem;line-height:1.5}
-  .composer{display:flex;gap:0.6rem;align-items:center}
-  .composer input{flex:1;background:#FFFFFF;border:2px solid #8A93A0;border-radius:10px;
-    padding:0.75rem 0.9rem;color:#000;font-size:17px;outline:none;font-family:inherit;font-weight:500}
-  .composer input:focus{border-color:#0A66C2;box-shadow:0 0 0 3px rgba(10,102,194,0.18)}
-  .sendbtn{width:52px;height:48px;border-radius:10px;background:#0A66C2;
-    border:2px solid #084E93;color:#fff;font-size:1.3rem;font-weight:800;flex-shrink:0}
-  .sendbtn.is-sending{opacity:0.5;pointer-events:none}
-  .verdict{margin-top:0.8rem;font-size:1rem;font-weight:800;padding:0.7rem 0.8rem;
-    border-radius:10px;display:none;text-align:center;border:2px solid}
-  .verdict.ok{display:block;background:#D9F5E6;border-color:#0F8A4F;color:#08512E}
-  .verdict.bad{display:block;background:#FDE0E0;border-color:#C0392B;color:#7A1F16}
-  .verdict.wait{display:block;background:#FFF3D6;border-color:#C98A00;color:#6B4A00}
-  .msgs{font-size:0.82rem;color:#4A5058;margin-top:0.6rem}
-  .live{position:sticky;top:0;z-index:10;background:#111418;color:#fff;
-    border-radius:12px;padding:0.8rem 0.9rem;margin-bottom:1.1rem;
-    box-shadow:0 4px 16px rgba(0,0,0,0.25)}
-  .live .row{display:flex;justify-content:space-between;align-items:center;
-    font-size:0.92rem;padding:0.2rem 0}
-  .live .k{color:#B8C4D0}
-  .live .v{font-weight:800;font-family:ui-monospace,monospace;font-size:1rem}
+  body{font-family:-apple-system,system-ui,sans-serif;background:transparent;
+    color:rgba(255,255,255,0.92);height:100vh;overflow:hidden}
+
+  /* Skærm-container som Bubbles .screen */
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}
+
+  .topbar{flex-shrink:0;display:flex;align-items:center;gap:0.6rem;padding:0.7rem 0.9rem;
+    background:rgba(20,22,28,0.95);border-bottom:1px solid rgba(255,255,255,0.08);
+    padding-top:calc(0.7rem + env(safe-area-inset-top,0px))}
+  .topbar h1{font-size:0.92rem;font-weight:800}
+  .topbar .sub{font-size:0.66rem;color:rgba(207,230,247,0.55)}
+
+  /* Variant-vælger */
+  .picker{flex-shrink:0;display:flex;gap:0.3rem;padding:0.5rem 0.7rem;
+    background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.07);
+    overflow-x:auto;scrollbar-width:none}
+  .picker::-webkit-scrollbar{display:none}
+  .pbtn{flex-shrink:0;padding:0.45rem 0.75rem;font-size:0.72rem;font-weight:750;
+    border-radius:99px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.05);
+    color:rgba(207,230,247,0.6);font-family:inherit}
+  .pbtn.on{background:rgba(100,180,230,0.22);border-color:rgba(100,180,230,0.5);color:#fff}
+
+  .status{flex-shrink:0;padding:0.45rem 0.9rem;font-size:0.7rem;
+    background:#0A0D12;border-bottom:1px solid rgba(255,255,255,0.07);
+    display:flex;justify-content:space-between;font-family:ui-monospace,monospace}
+  .status .v{font-weight:800}
   .v.good{color:#4ADE80}.v.bad{color:#FF8A8A}
-  #log{font-family:ui-monospace,monospace;font-size:0.8rem;line-height:1.7;
-    background:#0E1116;color:#D8E0E8;border-radius:10px;padding:0.7rem 0.8rem;
-    max-height:240px;overflow-y:auto}
-  #log .t{color:#7A8794}
-  #log .lost{color:#FF8A8A;font-weight:800}
-  #log .kept{color:#4ADE80;font-weight:800}
-  #log .vv{color:#FFCF6B}
-  .msglist{height:150px;overflow-y:auto;background:#F2F5F8;border:2px solid #C8CFD8;
-    border-radius:10px;padding:0.6rem;margin-bottom:0.7rem;display:flex;flex-direction:column;gap:0.35rem}
-  .msglist.rev{flex-direction:column-reverse}
-  .msg{background:#0A66C2;color:#fff;padding:0.45rem 0.7rem;border-radius:12px;
-    font-size:0.88rem;align-self:flex-end;max-width:80%;word-break:break-word}
-  .msglist .filler{color:#8A93A0;font-size:0.82rem;align-self:flex-start}
-  .clearbtn{font-size:0.86rem;font-weight:700;color:#111;background:#EDF1F5;
-    border:2px solid #C8CFD8;border-radius:10px;padding:0.5rem 1rem;margin-top:0.7rem}
-  .note{font-size:0.88rem;color:#5A3D00;background:#FFF3D6;border:2px solid #E0B24D;
-    border-radius:11px;padding:0.8rem 0.9rem;margin-bottom:1.1rem;line-height:1.55}
-  .note b{color:#3D2900}
-  .steps{background:#E8F1FB;border:2px solid #8FBEEA;border-radius:11px;
-    padding:0.8rem 0.9rem;margin-bottom:1.1rem;font-size:0.9rem;color:#0B3B66}
-  .steps b{color:#062744}
-  .steps ol{margin:0.4rem 0 0 1.1rem;line-height:1.75}
+
+  .desc{flex-shrink:0;padding:0.5rem 0.9rem;font-size:0.72rem;line-height:1.5;
+    color:rgba(207,230,247,0.65);background:rgba(100,180,230,0.06);
+    border-bottom:1px solid rgba(100,180,230,0.15)}
+
+  /* ══ SAMME SOM BUBBLES .chat-messages ══ */
+  .messages{flex:1;padding:0.75rem;display:flex;flex-direction:column;gap:0.4rem;
+    overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+  .messages.rev{flex-direction:column-reverse}
+  .msg{max-width:78%;padding:0.5rem 0.7rem;border-radius:14px;font-size:0.82rem;
+    background:rgba(255,255,255,0.07);align-self:flex-start;word-break:break-word}
+  .msg.mine{background:rgba(100,180,230,0.2);align-self:flex-end}
+
+  /* ══ SAMME SOM BUBBLES .chat-composer ══ */
+  .composer{flex-shrink:0;border-top:0.5px solid rgba(255,255,255,0.08);
+    background:rgba(20,22,28,0.95);padding:0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom,0px));
+    z-index:10}
+  .crow{display:flex;align-items:center;gap:0.45rem}
+  .cinput{flex:1;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.12);
+    border-radius:20px;padding:0.6rem 0.9rem;font-size:16px;color:#fff;outline:none;font-family:inherit}
+  .cinput:focus{border-color:rgba(100,180,230,0.5)}
+  .sbtn{width:40px;height:40px;border-radius:50%;background:rgba(100,180,230,0.25);
+    border:1px solid rgba(100,180,230,0.45);color:#fff;font-size:1.05rem;font-weight:800;flex-shrink:0}
+  .sbtn.is-sending{opacity:0.45;pointer-events:none}
+
+  .verdict{position:fixed;left:50%;transform:translateX(-50%);bottom:5.5rem;z-index:60;
+    padding:0.6rem 1.1rem;border-radius:99px;font-size:0.82rem;font-weight:850;
+    opacity:0;transition:opacity 0.25s;pointer-events:none;white-space:nowrap;
+    max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+  .verdict.show{opacity:1}
+  .verdict.ok{background:#0F8A4F;color:#fff}
+  .verdict.bad{background:#C0392B;color:#fff}
+  .verdict.wait{background:#C98A00;color:#fff}
 </style>
 </head>
 <body>
+<div class="screen">
 
-<h1>⌨️ Tastatur/fokus-testbænk</h1>
-<div class="sub">Fem varianter af send-knappen. Klik/tap send i hver — se om fokus overlever.</div>
-
-<div class="steps"><b>Sådan tester du hver boks:</b>
-  <ol><li>Tryk i skrivefeltet — tastaturet kommer op</li>
-  <li>Skriv et par tegn</li>
-  <li>Tryk den blå send-knap</li>
-  <li>Se om tastaturet <b>bliver oppe</b> — og aflæs dommen</li></ol></div>
-<div class="note"><b>Desktop:</b> viser kun om FOKUS bevares.
-  <b>iPhone:</b> viser dét plus om tastaturet bliver oppe og indholdet stadig skubbes.</div>
-
-<div class="live">
-  <div class="row"><span class="k">Fokus i felt lige nu</span><span class="v" id="s-focus">—</span></div>
-  <div class="row"><span class="k">visualViewport-højde</span><span class="v" id="s-vv">—</span></div>
-  <div class="row"><span class="k">Tastatur (est.)</span><span class="v" id="s-kb">—</span></div>
-</div>
-
-<div class="note" style="background:#FDE0E0;border-color:#C0392B;color:#7A1F16">
-  <b>Runde 2 — den rigtige mistænkte.</b> Runde 1 viste at send-knappen er uskyldig (alle grønne).
-  Forskellen i appen er at der ligger en <b>beskedliste der scrolles til bunden</b> efter afsendelse
-  (<code>scrollTop = scrollHeight</code>). Det er den klassiske iOS-tastaturdræber. Herunder er
-  samme send med en rigtig liste — fire scroll-metoder.
-</div>
-
-<!-- A -->
-<div class="panel" data-v="A">
-  <h2>A · Som appen i dag: scrollTop = scrollHeight</h2>
-  <div class="why">Præcis produktionens mønster. Forventet: tastaturet lukker/genåbner.</div>
-  <div class="msglist" id="list-A"></div>
-  <div class="composer">
-    <input id="in-A" placeholder="Skriv her…" enterkeyhint="send">
-    <button class="sendbtn" id="btn-A" ontouchstart="event.preventDefault()"
-      ontouchend="event.preventDefault();sendA()"
-      onclick="if(!('ontouchstart' in window))sendA()">→</button>
+  <div class="topbar">
+    <div>
+      <h1>Tastatur-test · ægte layout</h1>
+      <div class="sub">Samme 100vh-lås og flex-struktur som Bubble</div>
+    </div>
   </div>
-  <div class="verdict" id="vd-A"></div>
-</div>
 
-<!-- B -->
-<div class="panel" data-v="B">
-  <h2>B · Ingen scroll overhovedet</h2>
-  <div class="why">Kontrolprøve: bekræfter om scroll ER synderen. Beskeden indsættes, intet scrolles.</div>
-  <div class="msglist" id="list-B"></div>
-  <div class="composer">
-    <input id="in-B" placeholder="Skriv her…" enterkeyhint="send">
-    <button class="sendbtn" id="btn-B" ontouchstart="event.preventDefault()"
-      ontouchend="event.preventDefault();sendB()"
-      onclick="if(!('ontouchstart' in window))sendB()">→</button>
+  <div class="picker">
+    <button class="pbtn on" data-m="prod" onclick="pick('prod',this)">A · Som i dag</button>
+    <button class="pbtn" data-m="vv" onclick="pick('vv',this)">B · visualViewport</button>
+    <button class="pbtn" data-m="raf" onclick="pick('raf',this)">C · scroll i rAF</button>
+    <button class="pbtn" data-m="anchor" onclick="pick('anchor',this)">D · flex-reverse</button>
+    <button class="pbtn" data-m="nofocus" onclick="pick('nofocus',this)">E · blur+refocus</button>
   </div>
-  <div class="verdict" id="vd-B"></div>
-</div>
 
-<!-- C -->
-<div class="panel" data-v="C">
-  <h2>C · Scroll via CSS-flex (ingen scrollTop)</h2>
-  <div class="why">Listen er vendt om med flex-direction:column-reverse, så nyeste altid er nederst
-    uden at nogen rører scrollTop. Ingen programmatisk scroll = intet at forstyrre tastaturet.</div>
-  <div class="msglist rev" id="list-C"></div>
-  <div class="composer">
-    <input id="in-C" placeholder="Skriv her…" enterkeyhint="send">
-    <button class="sendbtn" id="btn-C" ontouchstart="event.preventDefault()"
-      ontouchend="event.preventDefault();sendC()"
-      onclick="if(!('ontouchstart' in window))sendC()">→</button>
+  <div class="status">
+    <span>fokus: <span class="v" id="s-f">—</span></span>
+    <span>vv: <span class="v" id="s-vv">—</span></span>
+    <span>tastatur: <span class="v" id="s-kb">—</span></span>
   </div>
-  <div class="verdict" id="vd-C"></div>
-</div>
 
-<!-- D -->
-<div class="panel" data-v="D">
-  <h2>D · scrollTop udskudt til efter tastatur-ro</h2>
-  <div class="why">Samme scroll som i dag, men først efter 350ms — når iOS er færdig med sin
-    tastatur-håndtering. Mindst indgribende hvis den virker.</div>
-  <div class="msglist" id="list-D"></div>
-  <div class="composer">
-    <input id="in-D" placeholder="Skriv her…" enterkeyhint="send">
-    <button class="sendbtn" id="btn-D" ontouchstart="event.preventDefault()"
-      ontouchend="event.preventDefault();sendD()"
-      onclick="if(!('ontouchstart' in window))sendD()">→</button>
+  <div class="desc" id="desc"></div>
+
+  <div class="messages" id="list"></div>
+
+  <div class="composer" id="composer">
+    <div class="crow">
+      <input class="cinput" id="inp" placeholder="Skriv en besked…" enterkeyhint="send"
+        autocomplete="off" autocorrect="on">
+      <button class="sbtn" id="btn"
+        ontouchstart="event.preventDefault()"
+        ontouchend="event.preventDefault();doSend()"
+        onclick="if(!('ontouchstart' in window))doSend()">→</button>
+    </div>
   </div>
-  <div class="verdict" id="vd-D"></div>
-</div>
 
-<div class="panel">
-  <h2>Log</h2>
-  <div class="why">Alt hvad der sker med fokus og viewport. Nyeste øverst.</div>
-  <div id="log"></div>
-  <button class="clearbtn" onclick="document.getElementById('log').innerHTML=''">Ryd log</button>
 </div>
+<div class="verdict" id="verdict"></div>
 
 <script>
-var VS = ['A','B','C','D'];
-var sending = {};
+var MODE = 'prod';
+var DESCS = {
+  prod:   'Præcis som Bubble i dag: scrollTop = scrollHeight umiddelbart efter beskeden indsættes. Reproducér bug-en her først.',
+  vv:     'Composeren følger tastaturets overkant via window.visualViewport (translateY). Rører ALDRIG html/body/dvh. Dette er sporet TECH-DEBT peger på.',
+  raf:    'Samme scroll som i dag, men inde i requestAnimationFrame — efter browserens layout-pas, så scrollen ikke konkurrerer med tastaturet.',
+  anchor: 'flex-direction:column-reverse: nyeste besked er altid nederst uden at nogen rører scrollTop. Ingen programmatisk scroll overhovedet.',
+  nofocus:'Feltet blur-es FØR indsættelse og refokuseres bagefter. Sidste udvej hvis intet andet virker.'
+};
 
-function log(msg, cls){
-  var d = document.getElementById('log');
-  var t = new Date().toISOString().substr(14,9);
-  d.innerHTML = '<div><span class="t">'+t+'</span> <span class="'+(cls||'')+'">'+msg+'</span></div>' + d.innerHTML;
+function pick(m, btn){
+  MODE = m;
+  document.querySelectorAll('.pbtn').forEach(function(b){ b.classList.toggle('on', b===btn); });
+  document.getElementById('desc').textContent = DESCS[m];
+  var list = document.getElementById('list');
+  list.classList.toggle('rev', m === 'anchor');
+  resetVV();
+  seed();
+}
+
+function seed(){
+  var list = document.getElementById('list');
+  list.innerHTML = '';
+  for (var i=1;i<=12;i++){
+    var d = document.createElement('div');
+    d.className = 'msg' + (i%3===0 ? ' mine' : '');
+    d.textContent = 'Tidligere besked ' + i + ' — fylder listen så der er noget at scrolle i.';
+    if (MODE === 'anchor') list.insertBefore(d, list.firstChild);
+    else list.appendChild(d);
+  }
+  if (MODE !== 'anchor') list.scrollTop = list.scrollHeight;
+}
+
+/* ── visualViewport: flyt KUN composeren ── */
+function resetVV(){
+  var c = document.getElementById('composer');
+  c.style.transform = '';
+}
+function vvHandler(){
+  if (MODE !== 'vv') { resetVV(); return; }
+  var c = document.getElementById('composer');
+  var gap = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
+  if (gap > 80){
+    c.style.transform = 'translateY(-' + Math.round(gap) + 'px)';
+  } else {
+    c.style.transform = '';
+  }
+}
+if (window.visualViewport){
+  window.visualViewport.addEventListener('resize', vvHandler);
+  window.visualViewport.addEventListener('scroll', vvHandler);
 }
 
 function kbUp(){
@@ -166,123 +171,83 @@ function kbUp(){
   return (window.innerHeight - window.visualViewport.height) > 80;
 }
 
-function updateStatus(){
-  var a = document.activeElement;
-  var isInput = a && a.tagName === 'INPUT';
-  var f = document.getElementById('s-focus');
-  f.textContent = isInput ? ('JA (' + a.id + ')') : 'NEJ';
-  f.className = 'v ' + (isInput ? 'good' : 'bad');
+function status(){
+  var a = document.activeElement, inp = document.getElementById('inp');
+  var f = document.getElementById('s-f');
+  f.textContent = (a===inp) ? 'JA' : 'nej';
+  f.className = 'v ' + (a===inp ? 'good':'bad');
   if (window.visualViewport){
-    var vh = Math.round(window.visualViewport.height);
-    document.getElementById('s-vv').textContent = vh + 'px';
-    var kb = window.innerHeight - vh;
-    var k = document.getElementById('s-kb');
-    k.textContent = kb > 80 ? ('OPPE (~' + Math.round(kb) + 'px)') : 'nede';
-    k.className = 'v ' + (kb > 80 ? 'good' : 'bad');
+    document.getElementById('s-vv').textContent = Math.round(window.visualViewport.height);
+    var k = document.getElementById('s-kb'), up = kbUp();
+    k.textContent = up ? 'OPPE' : 'nede';
+    k.className = 'v ' + (up ? 'good':'bad');
   } else {
-    document.getElementById('s-vv').textContent = 'ikke understøttet';
-    document.getElementById('s-kb').textContent = 'desktop — ingen';
+    document.getElementById('s-vv').textContent = 'n/a';
+    document.getElementById('s-kb').textContent = 'desktop';
   }
 }
-setInterval(updateStatus, 200);
-if (window.visualViewport){
-  window.visualViewport.addEventListener('resize', function(){
-    log('visualViewport resize → ' + Math.round(window.visualViewport.height) + 'px', 'vv');
-  });
+setInterval(status, 150);
+
+function verdict(kind, msg){
+  var v = document.getElementById('verdict');
+  v.className = 'verdict show ' + kind;
+  v.textContent = msg;
+  clearTimeout(v._h);
+  v._h = setTimeout(function(){ v.classList.remove('show'); }, 2600);
 }
 
-function setVerdict(v, kind, msg){
-  var el = document.getElementById('vd-' + v);
-  el.className = 'verdict ' + kind;
-  el.textContent = msg;
-}
+function net(){ return new Promise(function(r){ setTimeout(r, 220); }); }
 
-/* Fyld listerne så der ER noget at scrolle i */
-VS.forEach(function(v){
-  var el = document.getElementById('list-' + v);
-  for (var n = 1; n <= 6; n++){
-    var d = document.createElement('div');
-    d.className = 'filler';
-    d.textContent = 'Tidligere besked ' + n;
-    el.appendChild(d);
-  }
-  el.scrollTop = el.scrollHeight;
-  var inp = document.getElementById('in-' + v);
-  inp.addEventListener('focus', function(){ log(v + ': fokus vundet'); });
-  inp.addEventListener('blur', function(){
-    log(v + ': fokus TABT' + (sending[v] ? ' under afsendelse ✗' : ''), sending[v] ? 'lost' : '');
-  });
-});
-
-function fakeNetwork(){ return new Promise(function(r){ setTimeout(r, 250); }); }
-
-async function runSend(v, mode){
-  var inp = document.getElementById('in-' + v);
-  var list = document.getElementById('list-' + v);
-  var btn = document.getElementById('btn-' + v);
+async function doSend(){
+  var inp = document.getElementById('inp');
+  var list = document.getElementById('list');
+  var btn = document.getElementById('btn');
   var text = inp.value.trim();
-  if (!text) { setVerdict(v, 'wait', 'Skriv noget i feltet først'); return; }
+  if (!text){ verdict('wait','Skriv noget først'); return; }
 
   var kbBefore = kbUp();
-  if (kbBefore === false) { setVerdict(v, 'wait', 'Tryk i feltet først så tastaturet er oppe'); return; }
+  if (kbBefore === false){ verdict('wait','Tryk i feltet så tastaturet er oppe'); return; }
 
-  sending[v] = true;
   btn.classList.add('is-sending');
-  log(v + ': === SEND (' + mode + ') ===');
+
+  if (MODE === 'nofocus') inp.blur();
 
   inp.value = '';
-  await fakeNetwork();
+  await net();
 
   var d = document.createElement('div');
-  d.className = 'msg';
+  d.className = 'msg mine';
   d.textContent = text;
-  if (mode === 'flexrev') list.insertBefore(d, list.firstChild);
+  if (MODE === 'anchor') list.insertBefore(d, list.firstChild);
   else list.appendChild(d);
 
-  if (mode === 'scrollnow'){
+  if (MODE === 'prod' || MODE === 'vv' || MODE === 'nofocus'){
     list.scrollTop = list.scrollHeight;
-    log(v + ': scrollTop sat MED DET SAMME');
-  } else if (mode === 'scrolllater'){
-    setTimeout(function(){
-      list.scrollTop = list.scrollHeight;
-      log(v + ': scrollTop sat efter 350ms');
-    }, 350);
-  } else if (mode === 'noscroll'){
-    log(v + ': ingen scroll');
-  } else {
-    log(v + ': flex-reverse — ingen scrollTop nødvendig');
+  } else if (MODE === 'raf'){
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ list.scrollTop = list.scrollHeight; });
+    });
   }
 
+  if (MODE === 'nofocus') inp.focus({preventScroll:true});
+
   btn.classList.remove('is-sending');
-  sending[v] = false;
 
   setTimeout(function(){
-    var kbAfter = kbUp();
-    var focused = document.activeElement === inp;
-    if (kbBefore === null){
-      setVerdict(v, focused ? 'ok' : 'bad',
-        focused ? 'FOKUS BEVARET — test på iPhone' : 'FOKUS TABT');
-      return;
-    }
-    if (kbAfter && focused) setVerdict(v, 'ok', 'TASTATUR BLEV OPPE ✓');
-    else if (kbAfter) setVerdict(v, 'wait', 'Tastatur oppe, men fokus flyttet');
-    else setVerdict(v, 'bad', 'TASTATURET LUKKEDE ✗');
-  }, 600);
+    var up = kbUp(), foc = document.activeElement === inp;
+    if (up === null){ verdict(foc?'ok':'bad', foc?'Fokus bevaret (desktop)':'Fokus tabt'); return; }
+    if (up && foc) verdict('ok','TASTATUR OPPE — kan du se feltet?');
+    else if (up) verdict('wait','Tastatur oppe, fokus flyttet');
+    else verdict('bad','TASTATURET LUKKEDE');
+  }, 550);
 }
 
-function sendA(){ runSend('A', 'scrollnow'); }
-function sendB(){ runSend('B', 'noscroll'); }
-function sendC(){ runSend('C', 'flexrev'); }
-function sendD(){ runSend('D', 'scrolllater'); }
-
-VS.forEach(function(v){
-  document.getElementById('in-' + v).addEventListener('keydown', function(e){
-    if (e.key === 'Enter'){ e.preventDefault(); window['send' + v](); }
-  });
+document.getElementById('inp').addEventListener('keydown', function(e){
+  if (e.key === 'Enter'){ e.preventDefault(); doSend(); }
 });
 
-log('Testbænk klar. Skriv i et felt og tryk send.');
-updateStatus();
+pick('prod', document.querySelector('.pbtn'));
+status();
 </script>
 </body>
 </html>
