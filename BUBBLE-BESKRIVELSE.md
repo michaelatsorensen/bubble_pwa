@@ -303,7 +303,101 @@ opgradering af værdi, ikke en anden app. Og intet lag er reklamer.
 
 ---
 
-## 8. HVAD BUBBLE BEVIDST IKKE ER
+## 8. KONKURRENTBILLEDET — og hvad Bubble gør bedre
+
+> Den vigtigste konkurrent er ikke en app. Det er **status quo**: visitkort, tilmeldingsark,
+> en død LinkedIn-gruppe og "vi har vist en mail-liste". Alt herunder skal måles mod dét.
+
+### Kategori for kategori
+
+**1 · Det globale professionelle netværk — LinkedIn**
+*Hvad det er:* Verdens CV-arkiv med et feed ovenpå. *Styrken:* Alle er der; den professionelle
+identitet bor dér. *Hullet:* Intet fysisk anker — LinkedIn ved ikke hvem der er i rummet, og
+vil aldrig vide det. Grupper er reelt døde, feedet er performativt, og det lokale erhvervsliv
+har ingen struktur dér.
+**Bubbles svar:** Bubble konkurrerer bevidst IKKE med LinkedIn — LinkedIn-knappen på profilen
+gør de to komplementære. LinkedIn er hvor du *beviser* dig; Bubble er hvor du *møder* nogen.
+
+**2 · Event-platforme — Luma, Eventbrite (i DK: Billetto)**
+*Hvad de er:* Tilmelding, billetter og pæne invitationssider. *Styrken:* Polerede
+arrangør-værktøjer og en stærk vane — arrangører bruger dem allerede. *Hullet:* Relationen
+slutter ved døren. Deltagerne ser aldrig hinanden, der er intet fællesskab mellem events,
+og ingen matching.
+**Bubbles svar:** Bubble begynder hvor de slutter — fællesskabet FØR, UNDER og EFTER eventet.
+Deltagerlisten bliver et netværk, ikke et regneark.
+*Ærlig note:* Luma er ikke en direkte konkurrent på nogen af Bubbles fire forretningslag —
+men arrangør-vanen ("vi bruger allerede Luma") er Bubbles største **adoptionsbarriere** for
+Event-laget. Den skal overvindes med værdi, ikke ignoreres.
+
+**3 · Event-matchmaking — Brella, Grip**
+*Hvad de er:* Enterprise-værktøjer til store konferencer: matchmaking og mødebooking pr.
+event. *Styrken:* Modne til messer og kongresser. *Hullet:* Dyre, sælges pr. event, og
+livet mellem events findes ikke — netværket nulstilles hver gang.
+**Bubbles svar:** Kontinuitet og pris. Bubble er byens vedvarende væv, ikke konferencens
+engangs-værktøj — og prissat så den lokale fredagsbar har råd.
+
+**4 · AI-intro-tjenester — Lunchclub (Shapr: lukket 2026)**
+*Hvad de er:* AI-kuraterede 1:1-introduktioner, primært virtuelle. *Status:* Shapr —
+swipe-baseret netværk uden fællesskabsanker — lukkede i 2026. Lunchclub består, men er
+stagneret, og brugerkritikken går netop på black-box-matching uden kontrol.
+**Bubbles svar:** Præcis de to ting kritikken efterlyser: **transparent match** (du ser
+hvorfor — fælles tags, fælles bobler) og **fysisk kontekst** (mennesker du faktisk kan
+mødes med). Shaprs skæbne er samtidig lærestregen: introduktioner uden et fællesskab at
+lande i, holder ikke.
+
+**5 · Community-platforme — Facebook-grupper, Slack/Discord, Heylo**
+*Hvad de er:* Dér hvor lokale netværk faktisk bor i dag. *Styrken:* Gratis, og folk er der
+i forvejen. *Hullet:* Ingen professionel identitet, ingen matching, ingen check-in eller
+arrangør-data, støjende — og på Facebooks præmisser (reklamer, algoritme, privatliv).
+**Bubbles svar:** Professionel kontekst med struktur: roller, adgangslag, arrangørværktøjer,
+statistik — og et privatlivs-løfte Facebook aldrig kan give.
+
+**6 · Status quo — visitkortet, tilmeldingsarket, mail-listen**
+Den reelle konkurrent i enhver by. Gratis, kendt, og fuldstændig værdiløs dagen efter.
+**Bubbles svar:** Hele afsnit 4.
+
+### Sammenligning på de dimensioner der betyder noget
+
+| | Bubble | LinkedIn | Luma/Eventbrite | Brella/Grip | Lunchclub | FB-grupper |
+|---|---|---|---|---|---|---|
+| Fysisk forankring (check-in, live) | ✅ | — | (kun tilmelding) | ✅ pr. event | — | — |
+| Person-matching med begrundelse | ✅ | — | — | ✅ (black-box) | (black-box) | — |
+| Fællesskabs-hjem mellem events | ✅ | (døde grupper) | — | — | — | ✅ (støjende) |
+| Arrangør-data & rapport | ✅ | — | (kun salg) | ✅ | — | — |
+| Privatliv: tal, aldrig navne | ✅ | — | — | — | — | — |
+| Lokal-først-strategi | ✅ | — | — | — | — | (tilfældigt) |
+| Prisbart for SMV/lokale | ✅ | — | ✅ | — | ✅ | ✅ |
+
+Mønstret er pointen: **hver konkurrent står på ét af Bubbles fire ben. Ingen står på alle.**
+Radar + bobler + live/QR + privatliv i ét produkt er kombinationen, ikke enkeltdelene.
+
+### Hvorfor kombinationen er svær at kopiere
+
+1. **Lokal tæthed som voldgrav.** Radaren er værdiløs uden tæthed — og tæthed bygges by for
+   by, ikke globalt. Det er derfor Bubble går Sønderborg → 3 byer → nationalt: hver by der
+   når kritisk masse, er en voldgrav i sig selv. En global aktør kan ikke svare igen med et
+   globalt produkt; de skulle eksekvere lokalt, hvilket er det modsatte af deres DNA.
+2. **Tillid som aktiv.** Privatlivspositionen (afsnit 5) er ikke compliance — det er grunden
+   til at bestyrelsen, erhvervsklubben og kommunen tør flytte ind. Den kan ikke eftermonteres
+   af aktører hvis forretningsmodel ER opmærksomhed.
+3. **Arrangøren som distributionskanal.** Hvert event rekrutterer sine egne deltagere til
+   Bubble (QR ved døren). Væksten er indbygget i brugen — ikke købt.
+
+### Ærlig risikovurdering (hvor konkurrenterne er stærkere)
+
+- **LinkedIn ejer den professionelle identitet.** Derfor er strategien komplementær, aldrig
+  konfronterende. Bubble skal ikke vinde over LinkedIn — bare eje det fysiske møde.
+- **Luma ejer arrangør-vanen.** Inerti er Bubbles største adoptionsbarriere for Event-laget.
+  Modtrækket er værdi Luma ikke har (deltagerne som netværk) — og på sigt evt. integration
+  frem for erstatning.
+- **Facebook-grupper er gratis og etablerede.** Bubbles svar: gratis for brugerne, og en
+  flytte-gevinst (struktur + data + ro) der skal kunne mærkes fra dag ét.
+- **Intet af ovenstående er en voldgrav uden tæthed.** Konkurrencefordelen SKAL eksekveres
+  by for by — det er hele go-to-market-strategien, og den er både styrken og risikoen.
+
+---
+
+## 9. HVAD BUBBLE BEVIDST IKKE ER
 
 - **Ikke et CV-arkiv.** LinkedIn-knappen findes; karrierehistorik bor dér.
 - **Ikke en dating-app.** Matchet er fagligt og transparent begrundet.
