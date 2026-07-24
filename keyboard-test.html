@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Bubble — tastatur/fokus-testbænk</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,system-ui,sans-serif;background:#FFFFFF;color:#111418;
+    line-height:1.5;padding:1rem 0.9rem 4rem;font-size:1rem;-webkit-text-size-adjust:100%}
+  h1{font-size:1.25rem;color:#000;margin-bottom:0.2rem}
+  .sub{font-size:0.9rem;color:#3A4048;margin-bottom:1rem}
+  .panel{background:#FFFFFF;border:2px solid #C8CFD8;border-radius:14px;
+    padding:1rem;margin-bottom:1.1rem}
+  .panel h2{font-size:1.05rem;font-weight:800;color:#000;margin-bottom:0.25rem}
+  .why{font-size:0.86rem;color:#3A4048;margin-bottom:0.8rem;line-height:1.5}
+  .composer{display:flex;gap:0.6rem;align-items:center}
+  .composer input{flex:1;background:#FFFFFF;border:2px solid #8A93A0;border-radius:10px;
+    padding:0.75rem 0.9rem;color:#000;font-size:17px;outline:none;font-family:inherit;font-weight:500}
+  .composer input:focus{border-color:#0A66C2;box-shadow:0 0 0 3px rgba(10,102,194,0.18)}
+  .sendbtn{width:52px;height:48px;border-radius:10px;background:#0A66C2;
+    border:2px solid #084E93;color:#fff;font-size:1.3rem;font-weight:800;flex-shrink:0}
+  .sendbtn.is-sending{opacity:0.5;pointer-events:none}
+  .verdict{margin-top:0.8rem;font-size:1rem;font-weight:800;padding:0.7rem 0.8rem;
+    border-radius:10px;display:none;text-align:center;border:2px solid}
+  .verdict.ok{display:block;background:#D9F5E6;border-color:#0F8A4F;color:#08512E}
+  .verdict.bad{display:block;background:#FDE0E0;border-color:#C0392B;color:#7A1F16}
+  .verdict.wait{display:block;background:#FFF3D6;border-color:#C98A00;color:#6B4A00}
+  .msgs{font-size:0.82rem;color:#4A5058;margin-top:0.6rem}
+  .live{position:sticky;top:0;z-index:10;background:#111418;color:#fff;
+    border-radius:12px;padding:0.8rem 0.9rem;margin-bottom:1.1rem;
+    box-shadow:0 4px 16px rgba(0,0,0,0.25)}
+  .live .row{display:flex;justify-content:space-between;align-items:center;
+    font-size:0.92rem;padding:0.2rem 0}
+  .live .k{color:#B8C4D0}
+  .live .v{font-weight:800;font-family:ui-monospace,monospace;font-size:1rem}
+  .v.good{color:#4ADE80}.v.bad{color:#FF8A8A}
+  #log{font-family:ui-monospace,monospace;font-size:0.8rem;line-height:1.7;
+    background:#0E1116;color:#D8E0E8;border-radius:10px;padding:0.7rem 0.8rem;
+    max-height:240px;overflow-y:auto}
+  #log .t{color:#7A8794}
+  #log .lost{color:#FF8A8A;font-weight:800}
+  #log .kept{color:#4ADE80;font-weight:800}
+  #log .vv{color:#FFCF6B}
+  .clearbtn{font-size:0.86rem;font-weight:700;color:#111;background:#EDF1F5;
+    border:2px solid #C8CFD8;border-radius:10px;padding:0.5rem 1rem;margin-top:0.7rem}
+  .note{font-size:0.88rem;color:#5A3D00;background:#FFF3D6;border:2px solid #E0B24D;
+    border-radius:11px;padding:0.8rem 0.9rem;margin-bottom:1.1rem;line-height:1.55}
+  .note b{color:#3D2900}
+  .steps{background:#E8F1FB;border:2px solid #8FBEEA;border-radius:11px;
+    padding:0.8rem 0.9rem;margin-bottom:1.1rem;font-size:0.9rem;color:#0B3B66}
+  .steps b{color:#062744}
+  .steps ol{margin:0.4rem 0 0 1.1rem;line-height:1.75}
+</style>
+</head>
+<body>
+
+<h1>⌨️ Tastatur/fokus-testbænk</h1>
+<div class="sub">Fem varianter af send-knappen. Klik/tap send i hver — se om fokus overlever.</div>
+
+<div class="steps"><b>Sådan tester du hver boks:</b>
+  <ol><li>Tryk i skrivefeltet — tastaturet kommer op</li>
+  <li>Skriv et par tegn</li>
+  <li>Tryk den blå send-knap</li>
+  <li>Se om tastaturet <b>bliver oppe</b> — og aflæs dommen</li></ol></div>
+<div class="note"><b>Desktop:</b> viser kun om FOKUS bevares.
+  <b>iPhone:</b> viser dét plus om tastaturet bliver oppe og indholdet stadig skubbes.</div>
+
+<div class="live">
+  <div class="row"><span class="k">Fokus i felt lige nu</span><span class="v" id="s-focus">—</span></div>
+  <div class="row"><span class="k">visualViewport-højde</span><span class="v" id="s-vv">—</span></div>
+  <div class="row"><span class="k">Tastatur (est.)</span><span class="v" id="s-kb">—</span></div>
+</div>
+
+<!-- A -->
+<div class="panel" data-v="A">
+  <h2>A · Nuværende produktion (v3.187)</h2>
+  <div class="why">disabled=true under afsendelse + await. Dette er baseline — forventet: fokus tabes.</div>
+  <div class="composer">
+    <input id="in-A" placeholder="Skriv her…" enterkeyhint="send">
+    <button class="sendbtn" id="btn-A"
+      ontouchstart="event.preventDefault()"
+      ontouchend="event.preventDefault();sendA()"
+      onclick="if(!('ontouchstart' in window))sendA()">→</button>
+  </div>
+  <div class="verdict" id="vd-A"></div><div class="msgs" id="ms-A"></div>
+</div>
+
+<!-- B -->
+<div class="panel" data-v="B">
+  <h2>B · Ingen disabled (kun klasse-lås)</h2>
+  <div class="why">Erstatter disabled med pointer-events:none. Tester om det ALENE er nok.</div>
+  <div class="composer">
+    <input id="in-B" placeholder="Skriv her…" enterkeyhint="send">
+    <button class="sendbtn" id="btn-B"
+      ontouchstart="event.preventDefault()"
+      ontouchend="event.preventDefault();sendB()"
+      onclick="if(!('ontouchstart' in window))sendB()">→</button>
+  </div>
+  <div class="verdict" id="vd-B"></div><div class="msgs" id="ms-B"></div>
+</div>
+
+<!-- C -->
+<div class="panel" data-v="C">
+  <h2>C · Ingen disabled + mousedown-guard</h2>
+  <div class="why">Som B, plus onmousedown preventDefault så knappen aldrig tager fokus.</div>
+  <div class="composer">
+    <input id="in-C" placeholder="Skriv her…" enterkeyhint="send">
+    <button class="sendbtn" id="btn-C"
+      onmousedown="event.preventDefault()"
+      ontouchstart="event.preventDefault()"
+      ontouchend="event.preventDefault();sendC()"
+      onclick="if(!('ontouchstart' in window))sendC()">→</button>
+  </div>
+  <div class="verdict" id="vd-C"></div><div class="msgs" id="ms-C"></div>
+</div>
+
+<!-- D -->
+<div class="panel" data-v="D">
+  <h2>D · Ryd feltet FØR await, intet andet</h2>
+  <div class="why">Måske er det ikke knappen, men at input.value ryddes/DOM ændres midt i sendingen.</div>
+  <div class="composer">
+    <input id="in-D" placeholder="Skriv her…" enterkeyhint="send">
+    <button class="sendbtn" id="btn-D"
+      onmousedown="event.preventDefault()"
+      ontouchstart="event.preventDefault()"
+      ontouchend="event.preventDefault();sendD()"
+      onclick="if(!('ontouchstart' in window))sendD()">→</button>
+  </div>
+  <div class="verdict" id="vd-D"></div><div class="msgs" id="ms-D"></div>
+</div>
+
+<!-- E -->
+<div class="panel" data-v="E">
+  <h2>E · Label-wrap (knappen kan slet ikke få fokus)</h2>
+  <div class="why">Knappen har tabindex=-1 og er svøbt, så browseren aldrig flytter fokus dertil.</div>
+  <div class="composer">
+    <input id="in-E" placeholder="Skriv her…" enterkeyhint="send">
+    <button class="sendbtn" id="btn-E" tabindex="-1"
+      onmousedown="event.preventDefault()"
+      ontouchstart="event.preventDefault()"
+      ontouchend="event.preventDefault();sendE()"
+      onclick="if(!('ontouchstart' in window))sendE()">→</button>
+  </div>
+  <div class="verdict" id="vd-E"></div><div class="msgs" id="ms-E"></div>
+</div>
+
+<div class="panel">
+  <h2>Log</h2>
+  <div class="why">Alt hvad der sker med fokus og viewport. Nyeste øverst.</div>
+  <div id="log"></div>
+  <button class="clearbtn" onclick="document.getElementById('log').innerHTML=''">Ryd log</button>
+</div>
+
+<script>
+var VS = ['A','B','C','D','E'];
+var sending = {};
+
+function log(msg, cls){
+  var d = document.getElementById('log');
+  var t = new Date().toISOString().substr(14,9);
+  d.innerHTML = '<div><span class="t">'+t+'</span> <span class="'+(cls||'')+'">'+msg+'</span></div>' + d.innerHTML;
+}
+
+/* ── Live-status ── */
+function updateStatus(){
+  var a = document.activeElement;
+  var isInput = a && a.tagName === 'INPUT';
+  var f = document.getElementById('s-focus');
+  f.textContent = isInput ? ('JA (' + a.id + ')') : 'NEJ';
+  f.className = 'v ' + (isInput ? 'good' : 'bad');
+  if (window.visualViewport){
+    var vh = Math.round(window.visualViewport.height);
+    document.getElementById('s-vv').textContent = vh + 'px';
+    var kb = window.innerHeight - vh;
+    var k = document.getElementById('s-kb');
+    k.textContent = kb > 80 ? ('OPPE (~' + Math.round(kb) + 'px)') : 'nede';
+    k.className = 'v ' + (kb > 80 ? 'good' : 'bad');
+  } else {
+    document.getElementById('s-vv').textContent = 'ikke understøttet';
+    document.getElementById('s-kb').textContent = 'desktop — ingen';
+  }
+}
+setInterval(updateStatus, 200);
+if (window.visualViewport){
+  window.visualViewport.addEventListener('resize', function(){
+    log('visualViewport resize → ' + Math.round(window.visualViewport.height) + 'px', 'vv');
+  });
+}
+
+/* ── Fokus-overvågning pr. variant ── */
+VS.forEach(function(v){
+  var inp = document.getElementById('in-' + v);
+  inp.addEventListener('focus', function(){ log(v + ': fokus VUNDET'); });
+  inp.addEventListener('blur', function(){
+    if (sending[v]) {
+      log(v + ': fokus TABT under afsendelse ✗', 'lost');
+    } else {
+      log(v + ': fokus tabt (ikke under afsendelse)');
+    }
+  });
+});
+
+function setVerdict(v, kind, msg){
+  var el = document.getElementById('vd-' + v);
+  el.className = 'verdict ' + kind;
+  el.textContent = msg;
+}
+function verdict(v, ok){ /* bevaret for blur-lytteren */ }
+
+function addMsg(v, text){
+  var m = document.getElementById('ms-' + v);
+  m.innerHTML = '↳ sendt: "' + text.replace(/</g,'&lt;') + '"<br>' + m.innerHTML;
+}
+
+/* Simulerer den rigtige send: netværkstur på ~250ms */
+function fakeNetwork(){ return new Promise(function(r){ setTimeout(r, 250); }); }
+
+function kbUp(){
+  if (!window.visualViewport) return null;
+  return (window.innerHeight - window.visualViewport.height) > 80;
+}
+
+async function runSend(v, opts){
+  var inp = document.getElementById('in-' + v);
+  var btn = document.getElementById('btn-' + v);
+  var text = inp.value.trim();
+  if (!text) { setVerdict(v, 'wait', 'Skriv noget i feltet først'); return; }
+
+  var kbBefore = kbUp();
+  sending[v] = true;
+  log(v + ': === SEND START === (tastatur ' + (kbBefore===null?'n/a':(kbBefore?'oppe':'nede')) + ')');
+
+  if (opts.useDisabled) { btn.disabled = true; log(v + ': btn.disabled = true'); }
+  else { btn.classList.add('is-sending'); log(v + ': btn klasse-lås'); }
+
+  if (opts.clearBeforeAwait) { inp.value = ''; log(v + ': felt ryddet (før await)'); }
+
+  await fakeNetwork();
+
+  if (!opts.clearBeforeAwait) { inp.value = ''; }
+  addMsg(v, text);
+
+  if (opts.useDisabled) { btn.disabled = false; }
+  else { btn.classList.remove('is-sending'); }
+
+  sending[v] = false;
+  var kept = document.activeElement === inp;
+  log(v + ': === SEND SLUT === fokus ' + (kept ? 'BEVARET ✓' : 'tabt ✗'), kept ? 'kept' : 'lost');
+
+  // Vent 400ms så iOS når at lukke/genåbne tastaturet, og aflæs så resultatet
+  setTimeout(function(){
+    var kbAfter = kbUp();
+    var stillFocused = document.activeElement === inp;
+    if (kbBefore === null) {
+      // Desktop: kun fokus
+      setVerdict(v, stillFocused ? 'ok' : 'bad',
+        stillFocused ? 'FOKUS BEVARET — lovende, test på iPhone' : 'FOKUS TABT — ville lukke tastaturet');
+      return;
+    }
+    if (!kbBefore) {
+      setVerdict(v, 'wait', 'Tastaturet var ikke oppe — tryk i feltet først, så send');
+      return;
+    }
+    if (kbAfter && stillFocused) setVerdict(v, 'ok', 'TASTATUR BLEV OPPE ✓');
+    else if (kbAfter && !stillFocused) setVerdict(v, 'wait', 'Tastatur oppe, men fokus flyttet');
+    else setVerdict(v, 'bad', 'TASTATURET LUKKEDE ✗');
+  }, 400);
+}
+
+function sendA(){ runSend('A', { useDisabled:true,  clearBeforeAwait:false }); }
+function sendB(){ runSend('B', { useDisabled:false, clearBeforeAwait:false }); }
+function sendC(){ runSend('C', { useDisabled:false, clearBeforeAwait:false }); }
+function sendD(){ runSend('D', { useDisabled:false, clearBeforeAwait:true  }); }
+function sendE(){ runSend('E', { useDisabled:false, clearBeforeAwait:true  }); }
+
+/* Enter-tasten i alle felter */
+VS.forEach(function(v){
+  document.getElementById('in-' + v).addEventListener('keydown', function(e){
+    if (e.key === 'Enter') { e.preventDefault(); window['send' + v](); }
+  });
+});
+
+log('Testbænk klar. Skriv i et felt og tryk send.');
+updateStatus();
+</script>
+</body>
+</html>
